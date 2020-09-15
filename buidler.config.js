@@ -5,6 +5,12 @@ usePlugin('solidity-coverage');
 module.exports = {
   defaultNetwork: 'buidlerevm',
   networks: {
+    buidlerevm: {
+      gas: 11500000,
+      blockGasLimit: 11500000,
+      allowUnlimitedContractSize: false,
+      timeout: 1800000,
+    },
     development: {
       url: 'http://127.0.0.1:8545',
       gas: 12400000,

@@ -19,7 +19,7 @@
     "multiple-sends": "error",
     "no-complex-fallback": "error",
     "no-empty-blocks": "off",
-    "no-inline-assembly": "error",
+    "no-inline-assembly": "off",
     "no-unused-vars": "error",
     "not-rely-on-block-hash": "error",
     "not-rely-on-time": "off",

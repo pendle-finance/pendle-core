@@ -12,3 +12,9 @@ Ownership of the future cash flows is guaranteed by the smart contract, so there
 This allows for freely tradable on-chain fixed and floating yields of alt coins, creating forward yield curves across tokens, giving the lending market greater visibility and more maturity. Having on-chain information tradable across multiple time horizons creates a new avenue for yield strategies such as Yearn vaults to maximize or protect returns. It allows for lenders to lock in their yields and traders to speculate and gain exposure to changes in yield.
 
 The tokenization of future yields also allows for the creation of products with future yield as collateral. Various new trading derivatives will be feasible, such as rate swap products, the selling and buying of yield protection and spread trading. Besides creating a vibrant rates trading layer across the most relevant lending token pairs, Benchmark may also participate in the creation of yield products,providing the ecosystem with a greater selection of strategies to choose from to easily express their view of the market.
+
+## Contracts' terminologies
+* `underlyingToken`: the token that was deposited into Aave. For example: USDT
+* `underlyingYieldToken`: the Aave aToken. For example, aUSDT
+* Each OT and XYT is uniquely identified by `(address underlyingToken, ContractDurations contractDuration, uint256 expiry)`
+  * The `expiry` is the UNIX timestamp at 0:00 UTC of the day right after the expiry date. For example: if it expires on 3rd Oct, the `expiry` is the Unix timestamp of 4th Oct, 0:00 UTC
