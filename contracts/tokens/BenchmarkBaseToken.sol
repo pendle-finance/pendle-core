@@ -28,31 +28,16 @@ import "../interfaces/IBenchmarkToken.sol";
 import "../utils/Utils.sol";
 
 
-contract BenchmarkBaseToken is IBenchmarkToken, ERC20 {
-    /**
-    * @dev emitted after the redeem action
-    * @param _from the address performing the redeem
-    * @param _value the amount to be redeemed
-    **/
-    /* event Redeem(
-        address indexed _from,
-        uint256 _value
-    ); */
-
+abstract contract BenchmarkBaseToken is IBenchmarkToken, ERC20 {
     modifier onlyYieldForge {
-        require(
-            msg.sender == forgeAddress,
-            "Must be forge"
-        );
+        require(msg.sender == forgeAddress, "Must be forge");
         _;
     }
 
-    address public forgeAddress;
-    address public underlyingYieldToken;
-    ContractDurations public contractDuration;
     uint256 public expiry;
-
-    // Forge private forge;
+    address public override forgeAddress;
+    ContractDurations public contractDuration;
+    address public override underlyingYieldToken;
 
     constructor(
         address _underlyingYieldToken,
@@ -60,13 +45,13 @@ contract BenchmarkBaseToken is IBenchmarkToken, ERC20 {
         string memory _name,
         string memory _symbol,
         ContractDurations _contractDuration,
-        uint256 _expiry,
-    ) public ERC20Detailed(_name, _symbol, _underlyingYieldTokenDecimals) {
-        // forge = ... // reference the forge
-        underlyingYieldToken = _underlyingYieldToken;
+        uint256 _expiry
+    ) ERC20(_name, _symbol) {
         contractDuration = _contractDuration;
         expiry = _expiry;
-        forgeAddress = msg.sender
+        forgeAddress = msg.sender;
+        underlyingYieldToken = _underlyingYieldToken;
+        _setupDecimals(_underlyingYieldTokenDecimals);
     }
 
     /**
@@ -84,48 +69,4 @@ contract BenchmarkBaseToken is IBenchmarkToken, ERC20 {
     function mint(address account, uint256 value) external override onlyYieldForge {
         _mint(account, value);
     }
-
-    /**
-     * @param _account the address receiving the minted tokens
-     * @param _amount the amount of tokens to mint
-     */
-    /* function mintOnDeposit(address _recipient, uint256 _recipient)
-        external
-        override
-        // role == minter
-    {
-        // minting logic
-
-        _mint(_recipient, _recipient);
-        emit MintOnDeposit(_account, _amount);
-    } */
-
-
-    // Should the redeem logic be done in the Forge, and we just need to burn stuff here, when called by the Forge?
-
-    /* function redeem(uint256 _amount) external {
-        require(_amount > 0, "Amount to redeem needs to be > 0");
-
-        uint256 amountToRedeem = _amount;
-
-        //if amount is equal to uint(-1), the user wants to redeem everything
-        if(_amount == UINT_MAX_VALUE){
-            amountToRedeem = currentBalance;
-        }
-
-        require(amountToRedeem <= token.balanceOf(msg.sender), "Cannot redeem more than the available balance");
-
-        // burns tokens equivalent to the amount requested
-        _burn(msg.sender, amountToRedeem);
-
-        // executes redeem of the underlying asset
-        forge.redeemUnderlying(
-            underlyingAssetAddress,
-            msg.sender,
-            amountToRedeem,
-            currentBalance.sub(amountToRedeem)
-        );
-
-        emit Redeem(msg.sender, amountToRedeem);
-    } */
 }

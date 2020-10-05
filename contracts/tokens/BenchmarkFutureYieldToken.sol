@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 /*
  * MIT License
  * ===========
@@ -23,23 +23,31 @@
 
 pragma solidity =0.7.1;
 
-/* import "@openzeppelin/contracts/token/ERC20/ERC20.sol"; */
-import "BenchmarkBaseToken.sol";
+import "./BenchmarkBaseToken.sol";
+
 
 contract BenchmarkFutureYieldToken is BenchmarkBaseToken {
+    address public ot;
+
     constructor(
+        address _ot,
         address _underlyingYieldToken,
         uint8 _underlyingYieldTokenDecimals,
         string memory _name,
         string memory _symbol,
         ContractDurations _contractDuration,
-        uint256 _expiry,
-    ) public BenchmarkBaseToken(
-        _underlyingYieldToken,
-        _underlyingYieldTokenDecimals,
-        _name,
-        _symbol,
-        _contractDuration,
-        _expiry,
+        uint256 _expiry
+    )
+        public
+        BenchmarkBaseToken(
+            _underlyingYieldToken,
+            _underlyingYieldTokenDecimals,
+            _name,
+            _symbol,
+            _contractDuration,
+            _expiry
+        )
+    {
+        ot = _ot;
     }
 }

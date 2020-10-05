@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 /*
  * MIT License
  * ===========
@@ -23,10 +23,10 @@
 
 pragma solidity =0.7.1;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../interfaces/IBenchmarkCommon.sol";
 
 
-abstract contract IBenchmarkToken is IERC20, IBenchmarkCommon {
+interface IBenchmarkToken is IBenchmarkCommon {
     /**
      * @dev emitted after the mint action
      * @param sender the address performing the mint
@@ -43,22 +43,28 @@ abstract contract IBenchmarkToken is IERC20, IBenchmarkCommon {
 
     /**
      * @dev mint new benchmark ownership or yield tokens
-     * @param to the address to send the minted tokens
+     * @param account the address to send the minted tokens
      * @param amount the amount to be minted
      **/
-    function mint(address to, uint256 amount) external virtual;
+    function mint(address account, uint256 amount) external;
 
     /**
      * @dev burn the underlying token by burning benchmark ownership and yield tokens
+     * @param account the address to burn the tokens
      * @param amount the amount to be burned
      **/
-    function burn(uint256 amount) external virtual;
+    function burn(address account, uint256 amount) external;
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
 
     /**
      * @dev ERC20 standard: returns the number of decimals the token uses
      * @return returns the token's decimals
      **/
-    function decimals() external virtual pure returns (uint8);
+    function decimals() external pure returns (uint8);
 
     /**
      * @dev ERC20 standard: returns the name of the token
@@ -71,6 +77,11 @@ abstract contract IBenchmarkToken is IERC20, IBenchmarkCommon {
      * @return returns the token's symbol
      **/
     function symbol() external virtual pure returns (string memory);
+
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
 
     /**
      * @dev returns the address of the forge

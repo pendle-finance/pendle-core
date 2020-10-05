@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 /*
  * MIT License
  * ===========
@@ -24,82 +24,31 @@
 pragma solidity =0.7.1;
 
 /* import "@openzeppelin/contracts/token/ERC20/ERC20.sol"; */
-import "BenchmarkBaseToken.sol";
+import "./BenchmarkBaseToken.sol";
+
 
 contract BenchmarkOwnershipToken is BenchmarkBaseToken {
+    address public xyt;
+
     constructor(
-<<<<<<< HEAD
+        address _xyt,
         address _underlyingYieldToken,
         uint8 _underlyingYieldTokenDecimals,
         string memory _name,
         string memory _symbol,
         ContractDurations _contractDuration,
-        uint256 _expiry,
-    ) public BenchmarkBaseToken(
-        _underlyingYieldToken,
-        _underlyingYieldTokenDecimals,
-        _name,
-        _symbol,
-        _contractDuration,
-        _expiry,
-=======
-        string memory _tokenName,
-        string memory _tokenSymbol,
-        uint8 _tokenDecimals,
-        address _underlyingToken,
-        Contracts _contractDuration
-    ) public ERC20Detailed(_name, _symbol, _underlyingYieldTokenDecimals) {
-        // forge = ... // reference the forge
-        underlyingYieldToken = _underlyingYieldToken;
-    }
-
-    /**
-     * @dev Burns `value` tokens owned by `msg.sender`.
-     * @param value amount of tokens to burn.
-     */
-    function burn(uint256 value) external override onlyRoleHolder(uint256(Roles.Burner)) {
-        _burn(msg.sender, value);
-    }
-
-    /**
-     * @param _account the address receiving the minted tokens
-     * @param _amount the amount of tokens to mint
-     */
-    function mintOnDeposit(address _recipient, uint256 _recipient)
-        external
-        override
-        // role == minter
+        uint256 _expiry
+    )
+        public
+        BenchmarkBaseToken(
+            _underlyingYieldToken,
+            _underlyingYieldTokenDecimals,
+            _name,
+            _symbol,
+            _contractDuration,
+            _expiry
+        )
     {
-        // minting logic
-
-        _mint(_recipient, _recipient);
-        emit MintOnDeposit(_account, _amount);
-    }
-
-    function redeem(uint256 _amount) external {
-        require(_amount > 0, "Amount to redeem needs to be > 0");
-
-        uint256 amountToRedeem = _amount;
-
-        //if amount is equal to uint(-1), the user wants to redeem everything
-        if(_amount == UINT_MAX_VALUE){
-            amountToRedeem = currentBalance;
-        }
-
-        require(amountToRedeem <= token.balanceOf(msg.sender), "Cannot redeem more than the available balance");
-
-        // burns tokens equivalent to the amount requested
-        _burn(msg.sender, amountToRedeem);
-
-        // executes redeem of the underlying asset
-        forge.redeemUnderlying(
-            underlyingAssetAddress,
-            msg.sender,
-            amountToRedeem,
-            currentBalance.sub(amountToRedeem)
-        );
-
-        emit Redeem(msg.sender, amountToRedeem);
->>>>>>> fc6f5937... Adding to skeleton
+        xyt = _xyt;
     }
 }

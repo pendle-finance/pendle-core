@@ -39,6 +39,32 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         underlyingToken = _underlyingToken;
     }
 
+    /* function redeem(uint256 _amount) external {
+        require(_amount > 0, "Amount to redeem needs to be > 0");
+
+        uint256 amountToRedeem = _amount;
+
+        //if amount is equal to uint(-1), the user wants to redeem everything
+        if(_amount == UINT_MAX_VALUE){
+            amountToRedeem = currentBalance;
+        }
+
+        require(amountToRedeem <= token.balanceOf(msg.sender), "Cannot redeem more than the available balance");
+
+        // burns tokens equivalent to the amount requested
+        _burn(msg.sender, amountToRedeem);
+
+        // executes redeem of the underlying asset
+        forge.redeemUnderlying(
+            underlyingAssetAddress,
+            msg.sender,
+            amountToRedeem,
+            currentBalance.sub(amountToRedeem)
+        );
+
+        emit Redeem(msg.sender, amountToRedeem);
+    } */
+
     function tokenizeYield(
         Contracts _contractDuration,
         uint256 _amountToTokenize,

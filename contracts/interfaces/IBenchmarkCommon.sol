@@ -23,6 +23,7 @@
 
 pragma solidity =0.7.1;
 
+
 interface IBenchmarkCommon {
   enum ContractDurations {OneMonth, ThreeMonths, SixMonths}
 }
