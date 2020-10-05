@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 /*
  * MIT License
  * ===========
@@ -20,7 +20,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity =0.7.1;
+pragma solidity ^0.7.0;
+
 
 import "../interfaces/IBenchmarkFactory.sol";
 import "./BenchmarkForge.sol";
@@ -28,17 +29,21 @@ import "./BenchmarkForge.sol";
 
 contract BenchmarkFactory is IBenchmarkFactory {
 
-    mapping(address => IBenchmarkForge) public override getForge;
-    IBenchmarkForge[] public override allForges;
+    mapping(address => address) public override getForge;
     address public governance;
+    address[] private allForges;
 
     constructor(address _governance) {
         governance = _governance;
     }
 
+    function getAllForges() public override view returns (address[] memory) {
+      return allForges;
+    }
+
     function createForge(address underlyingToken) external override returns (address forge) {
       require(underlyingToken != address(0), "zero address");
-      require(getForge(underlyingToken) == address(0), "forge exists");
+      require(getForge[underlyingToken] == address(0), "forge exists");
 
       bytes memory bytecode = type(BenchmarkForge).creationCode;
       bytes32 salt = keccak256(abi.encodePacked(underlyingToken));
@@ -48,8 +53,8 @@ contract BenchmarkFactory is IBenchmarkFactory {
       }
 
       IBenchmarkForge(forge).initialize(underlyingToken); 
-      getForge[underlyingToken] = IBenchmarkForge(forge);
-      allForges.push(IBenchmarkForge(forge));
+      getForge[underlyingToken] = forge;
+      allForges.push(forge);
 
       emit ForgeCreated(underlyingToken, forge);
     }

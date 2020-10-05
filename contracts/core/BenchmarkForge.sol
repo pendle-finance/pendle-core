@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 /*
  * MIT License
  * ===========
@@ -20,8 +20,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity =0.7.1;
-
+pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../interfaces/IBenchmarkForge.sol";
@@ -29,57 +28,61 @@ import "../tokens/BenchmarkFutureYieldToken.sol";
 import "../tokens/BenchmarkOwnershipToken.sol";
 
 contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
-    address public underlyingToken;
+    address public override factory;
+    address public override underlyingYieldToken;
 
     constructor() {
         factory = msg.sender;
     }
 
-    function initialize(address _underlyingToken) external override {
-        underlyingToken = _underlyingToken;
+    function initialize(address _underlyingYieldToken) external override {
+        underlyingYieldToken = _underlyingYieldToken;
     }
 
-    /* function redeem(uint256 _amount) external {
-        require(_amount > 0, "Amount to redeem needs to be > 0");
+    // function redeem(uint256 _amount) external {
+    //     require(_amount > 0, "Amount to redeem needs to be > 0");
 
-        uint256 amountToRedeem = _amount;
+    //     uint256 amountToRedeem = _amount;
 
-        //if amount is equal to uint(-1), the user wants to redeem everything
-        if(_amount == UINT_MAX_VALUE){
-            amountToRedeem = currentBalance;
-        }
+    //     //if amount is equal to uint(-1), the user wants to redeem everything
+    //     if (_amount == UINT_MAX_VALUE) {
+    //         amountToRedeem = currentBalance;
+    //     }
 
-        require(amountToRedeem <= token.balanceOf(msg.sender), "Cannot redeem more than the available balance");
+    //     require(
+    //         amountToRedeem <= token.balanceOf(msg.sender),
+    //         "Cannot redeem more than the available balance"
+    //     );
 
-        // burns tokens equivalent to the amount requested
-        _burn(msg.sender, amountToRedeem);
+    //     // burns tokens equivalent to the amount requested
+    //     _burn(msg.sender, amountToRedeem);
 
-        // executes redeem of the underlying asset
-        forge.redeemUnderlying(
-            underlyingAssetAddress,
-            msg.sender,
-            amountToRedeem,
-            currentBalance.sub(amountToRedeem)
-        );
+    //     // executes redeem of the underlying asset
+    //     forge.redeemUnderlying(
+    //         underlyingAssetAddress,
+    //         msg.sender,
+    //         amountToRedeem,
+    //         currentBalance.sub(amountToRedeem)
+    //     );
 
-        emit Redeem(msg.sender, amountToRedeem);
-    } */
+    //     emit Redeem(msg.sender, amountToRedeem);
+    // }
 
-    function tokenizeYield(
-        Contracts _contractDuration,
-        uint256 _amountToTokenize,
-        address _to
-    ) external override returns (address ot, address xyt) {
-        ot = forgeOwnershipToken();
-        xyt = forgeOwnershipToken();
-    }
+    // function tokenizeYield(
+    //     ContractDurations _contractDuration,
+    //     uint256 _amountToTokenize,
+    //     address _to
+    // ) external override returns (address ot, address xyt) {
+    //     ot = forgeOwnershipToken();
+    //     xyt = forgeOwnershipToken();
+    // }
 
-    function forgeFutureYieldToken(
+    function _forgeFutureYieldToken(
         string calldata _tokenName,
         string calldata _tokenSymbol,
         uint8 _tokenDecimals,
         address _underlyingToken,
-        Contracts _contractDuration
+        ContractDurations _contractDuration
     ) internal nonReentrant() returns (address xyt) {
         bytes memory bytecode = type(BenchmarkFutureYieldToken).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(_underlyingToken, _contractDuration));
@@ -100,12 +103,12 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         }
     }
 
-    function forgeOwnershipToken(
+    function _forgeOwnershipToken(
         string calldata _tokenName,
         string calldata _tokenSymbol,
         uint8 _tokenDecimals,
         address _underlyingToken,
-        Contracts _contractDuration
+        ContractDurations _contractDuration
     ) internal nonReentrant() returns (address ot) {
         bytes memory bytecode = type(BenchmarkOwnershipToken).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(_underlyingToken, _contractDuration));

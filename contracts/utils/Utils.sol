@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 /*
  * MIT License
  * ===========
@@ -20,9 +20,9 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity =0.7.1;
+pragma solidity ^0.7.0;
 
 
-contract Utils {
+abstract contract Utils {
     uint256 public constant UINT_MAX_VALUE = uint256(-1);
 }

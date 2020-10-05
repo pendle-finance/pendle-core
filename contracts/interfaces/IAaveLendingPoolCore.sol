@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 /*
  * MIT License
  * ===========
@@ -20,10 +20,17 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity =0.7.1;
+pragma solidity ^0.7.0;
+
 
 interface AaveLendingPoolCore {
-    function getReserveATokenAddress(address _reserveUnderlyingToken) public view returns (address);
+    function getReserveATokenAddress(address _reserveUnderlyingToken)
+        external
+        view
+        returns (address);
 
-    function getReserveNormalizedIncome(address _reserveUnderlyingToken) external view returns (uint256);
+    function getReserveNormalizedIncome(address _reserveUnderlyingToken)
+        external
+        view
+        returns (uint256);
 }

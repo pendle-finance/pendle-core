@@ -20,10 +20,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
+pragma solidity ^0.7.0;
 
-pragma solidity =0.7.1;
-
-/* import "@openzeppelin/contracts/token/ERC20/ERC20.sol"; */
 import "./BenchmarkBaseToken.sol";
 
 
@@ -39,7 +37,6 @@ contract BenchmarkOwnershipToken is BenchmarkBaseToken {
         ContractDurations _contractDuration,
         uint256 _expiry
     )
-        public
         BenchmarkBaseToken(
             _underlyingYieldToken,
             _underlyingYieldTokenDecimals,

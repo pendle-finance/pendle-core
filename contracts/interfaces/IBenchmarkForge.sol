@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 /*
  * MIT License
  * ===========
@@ -21,57 +21,83 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 
-pragma solidity =0.7.1;
+pragma solidity ^0.7.0;
+
+import "./IBenchmarkCommon.sol";
 
 
 interface IBenchmarkForge is IBenchmarkCommon {
-    event MintYieldToken(address indexed underlying, uint256 amount);
-    event RedeemYieldToken(address indexed underlying, uint256 amount);
+    /**
+     * @dev Emitted when the Forge has minted the OT and XYT tokens.
+     * @param underlyingYieldToken The address of the underlying yield token.
+     * @param amount The amount to be minted.
+     **/
+    event MintYieldToken(address indexed underlyingYieldToken, uint256 amount);
 
-    function factory() external view;
+    /**
+     * @dev Emitted when the Forge has redeemed the OT and XYT tokens.
+     * @param underlyingYieldToken The address of the underlying yield token.
+     * @param amount The amount to be redeemed.
+     **/
+    event RedeemYieldToken(address indexed underlyingYieldToken, uint256 amount);
 
-    function initialize(address underlyingToken) external;
+    /**
+     * @dev Returns the address of the BenchmarkFactory for this BenchmarkForge.
+     * @return Returns the factory's address.
+     **/
+    function factory() external view returns (address);
 
-    function redeemUnderlying(
-        ContractDurations contractDuration,
-        uint256 expiry,
-        uint256 amountToRedeem,
-        address to
-    ) external returns (uint256 redeemedAmount);
+    /**
+     * @dev Initializes the newly created Forge.
+     **/
+    function initialize(address underlyingYieldToken) external;
 
-    function tokenizeYield(
-        ContractDurations contractDuration,
-        uint256 expiry,
-        uint256 amountToTokenize,
-        address to
-    ) external returns (address ot, address xyt);
+    // function redeemUnderlying(
+    //     ContractDurations contractDuration,
+    //     uint256 expiry,
+    //     uint256 amountToRedeem,
+    //     address to
+    // ) external returns (uint256 redeemedAmount);
 
-    function redeemAfterExpiry(
-        ContractDurations contractDuration,
-        uint256 expiry,
-        address to
-    ) external returns (uint256 redeemedAmount);
+    // function tokenizeYield(
+    //     ContractDurations contractDuration,
+    //     uint256 expiry,
+    //     uint256 amountToTokenize,
+    //     address to
+    // ) external returns (address ot, address xyt);
 
-    function renew(
-        ContractDurations oldContractDuration,
-        uint256 oldExpiry,
-        ContractDurations newContractDuration,
-        uint256 newExpiry,
-        address to
-    ) external returns (uint256 redeemedAmount);
+    // function redeemAfterExpiry(
+    //     ContractDurations contractDuration,
+    //     uint256 expiry,
+    //     address to
+    // ) external returns (uint256 redeemedAmount);
 
-    // TODO: we need some logic to only allow some kinds of expiry for each contractDuration
-    // For example: For each duration, only allow expiry at the start, 1/3rd and 2/3rd of the duration
-    function generateNewContracts(
-        ContractDurations contractDuration,
-        uint256 expiry
-    );
+    // function renew(
+    //     ContractDurations oldContractDuration,
+    //     uint256 oldExpiry,
+    //     ContractDurations newContractDuration,
+    //     uint256 newExpiry,
+    //     address to
+    // ) external returns (uint256 redeemedAmount);
 
-    function redeemDueInterests(
-        ContractDurations contractDuration,
-        uint256 expiry,
-        address to
-    )
+    // TODO: We need some logic to only allow some kinds of expiry
+    // for each contractDuration
+    // For example: For each duration, only allow expiry at the start,
+    // 1/3rd and 2/3rd of the duration
+    // function generateNewContracts(
+    //     ContractDurations contractDuration,
+    //     uint256 expiry
+    // ) external;
 
-    function underlyingToken() external view returns (address);
+    // function redeemDueInterests(
+    //     ContractDurations contractDuration,
+    //     uint256 expiry,
+    //     address to
+    // ) external;
+
+    /**
+     * @dev returns the address of the underlying yield token
+     * @return returns the underlying forge address
+     **/
+    function underlyingYieldToken() external view returns (address);
 }

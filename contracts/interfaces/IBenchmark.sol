@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 /*
  * MIT License
  * ===========
@@ -21,14 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 
-pragma solidity =0.7.1;
+pragma solidity ^0.7.0;
+
+import "./IBenchmarkCommon.sol";
+
 
 interface IBenchmark is IBenchmarkCommon {
-
-    /**
-    * @dev deploy a new Benchmark protocol instance
-    * @param aaveLendingPoolCoreAddress
-    **/
     function initialize(address aaveLendingPoolCoreAddress) external;
 
     function tokenizeYield(
@@ -55,7 +53,8 @@ interface IBenchmark is IBenchmarkCommon {
         address to
     ) external returns (uint256 redeemedAmount);
 
-    // the user has existing OTs for an expired expiry, and wants to mint new OTs+XYTs for a new expiry
+    // TODO: the user has existing OTs for an expired expiry, and wants to
+    // mint new OTs+XYTs for a new expiry
     function renew(
         address underlyingToken,
         ContractDurations oldContractDuration,
@@ -64,5 +63,4 @@ interface IBenchmark is IBenchmarkCommon {
         uint256 newExpiry,
         address to
     ) external returns (uint256 redeemedAmount);
-
 }

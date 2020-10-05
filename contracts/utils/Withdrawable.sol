@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 /*
  * MIT License
  * ===========
@@ -20,7 +20,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity =0.7.1;
+pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../tokens/BenchmarkOwnershipToken.sol";
@@ -28,14 +28,13 @@ import "../tokens/BenchmarkFutureYieldToken.sol";
 import "./Roles.sol";
 
 
-contract Withdrawable is Roles {
-
-    event OTWithdraw(OwnershipToken token, uint256 amount, address sendTo);
-    event XYTWithdraw(YieldToken token, uint256 amount, address sendTo);
+abstract contract Withdrawable is Roles {
+    event OTWithdraw(BenchmarkOwnershipToken token, uint256 amount, address sendTo);
+    event XYTWithdraw(BenchmarkFutureYieldToken token, uint256 amount, address sendTo);
     event TokenWithdraw(IERC20 token, uint256 amount, address sendTo);
     event EtherWithdraw(uint256 amount, address sendTo);
 
-    constructor(address _admin) public Roles(_admin) {}
+    constructor(address _admin) Roles(_admin) {}
 
     /**
      * @dev Withdraw Ethers
@@ -60,7 +59,7 @@ contract Withdrawable is Roles {
     }
 
     function withdrawOT(
-        OwnershipToken token,
+        BenchmarkOwnershipToken token,
         uint256 amount,
         address sendTo
     ) external onlyAdmin {
@@ -69,7 +68,7 @@ contract Withdrawable is Roles {
     }
 
     function withdrawXYT(
-        YieldToken token,
+        BenchmarkFutureYieldToken token,
         uint256 amount,
         address sendTo
     ) external onlyAdmin {

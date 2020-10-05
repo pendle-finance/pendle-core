@@ -20,8 +20,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-
-pragma solidity =0.7.1;
+pragma solidity ^0.7.0;
 
 import "./BenchmarkBaseToken.sol";
 
@@ -38,7 +37,6 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken {
         ContractDurations _contractDuration,
         uint256 _expiry
     )
-        public
         BenchmarkBaseToken(
             _underlyingYieldToken,
             _underlyingYieldTokenDecimals,

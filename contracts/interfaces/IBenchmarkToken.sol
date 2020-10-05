@@ -21,86 +21,84 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 
-pragma solidity =0.7.1;
+pragma solidity ^0.7.0;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IBenchmarkCommon.sol";
 
 
-interface IBenchmarkToken is IBenchmarkCommon {
+interface IBenchmarkToken is IBenchmarkCommon, IERC20 {
     /**
-     * @dev emitted after the mint action
-     * @param sender the address performing the mint
-     * @param amount the amount to be minted
+     * @dev Emitted when burning OT or XYT tokens.
+     * @param account The address performing the burn.
+     * @param amount The amount to be burned.
      **/
-    event Mint(address indexed sender, uint256 amount);
+    event Burn(address indexed account, uint256 amount);
 
     /**
-     * @dev emitted when burning the underlying
-     * @param sender the address performing the mint
-     * @param amount the amount to be burned
+     * @dev Emitted when minting OT or XYT tokens.
+     * @param account The address performing the mint.
+     * @param amount The amount to be minted.
      **/
-    event Burn(address indexed sender, uint256 amount);
+    event Mint(address indexed account, uint256 amount);
 
     /**
-     * @dev mint new benchmark ownership or yield tokens
-     * @param account the address to send the minted tokens
-     * @param amount the amount to be minted
-     **/
-    function mint(address account, uint256 amount) external;
-
-    /**
-     * @dev burn the underlying token by burning benchmark ownership and yield tokens
-     * @param account the address to burn the tokens
-     * @param amount the amount to be burned
+     * @dev Burns OT or XYT tokens from account, reducing the total supply.
+     * @param account The address performing the burn.
+     * @param amount The amount to be burned.
      **/
     function burn(address account, uint256 amount) external;
 
     /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev ERC20 standard: returns the number of decimals the token uses
-     * @return returns the token's decimals
+     * @dev Decreases the allowance granted to spender by the caller.
+     * @param spender The address to reduce the allowance from.
+     * @param subtractedValue The amount allowance to subtract.
+     * @return Returns true if allowance has decreased, otherwise false.
      **/
-    function decimals() external pure returns (uint8);
+    function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
 
     /**
-     * @dev ERC20 standard: returns the name of the token
-     * @return returns the token's name
+     * @dev Increases the allowance granted to spender by the caller.
+     * @param spender The address to increase the allowance from.
+     * @param addedValue The amount allowance to add.
+     * @return returns true if allowance has increased, otherwise false
      **/
-    function name() external virtual pure returns (string memory);
+    function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
 
     /**
-     * @dev ERC20 standard: returns the symbol of the token
-     * @return returns the token's symbol
+     * @dev Mints new OT or XYT tokens for account, increasing the total supply.
+     * @param account The address to send the minted tokens.
+     * @param amount The amount to be minted.
      **/
-    function symbol() external virtual pure returns (string memory);
+    function mint(address account, uint256 amount) external;
 
     /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
-
-    /**
-     * @dev returns the address of the forge
-     * @return returns the forge address
+     * @dev Returns the number of decimals the token uses.
+     * @return Returns the token's decimals.
      **/
-    function forgeAddress() external virtual view returns (address);
+    function decimals() external view returns (uint8);
 
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external virtual;
+    /**
+     * @dev Returns the address of the BenchmarkForge for this BenchmarkToken.
+     * @return Returns the forge's address.
+     **/
+    function forgeAddress() external view returns (address);
+
+    /**
+     * @dev Returns the name of the token.
+     * @return returns the token's name.
+     **/
+    function name() external view returns (string memory);
+
+    /**
+     * @dev Returns the symbol of the token.
+     * @return Returns the token's symbol.
+     **/
+    function symbol() external view returns (string memory);
 
     /**
      * @dev returns the address of the underlying yield token
      * @return returns the underlying forge address
      **/
-    function underlyingYieldToken() external virtual view returns (address);
+    function underlyingYieldToken() external view returns (address);
 }

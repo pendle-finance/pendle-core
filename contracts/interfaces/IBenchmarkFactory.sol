@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 /*
  * MIT License
  * ===========
@@ -21,7 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 
-pragma solidity =0.7.1;
+pragma solidity ^0.7.0;
+
+import "./IBenchmarkCommon.sol";
 
 
 interface IBenchmarkFactory is IBenchmarkCommon {
@@ -29,7 +31,7 @@ interface IBenchmarkFactory is IBenchmarkCommon {
 
     function getForge(address underlyingToken) external view returns (address forge);
 
-    function allForges(uint256) external view returns (address forge);
+    function getAllForges() external view returns (address[] calldata);
 
     function allForgesLength() external view returns (uint256);
 

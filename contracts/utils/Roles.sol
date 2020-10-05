@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 /*
  * MIT License
  * ===========
@@ -20,10 +20,10 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity =0.7.1;
+pragma solidity ^0.7.0;
 
 
-contract Roles {
+abstract contract Roles {
     event AdminClaimed(address newAdmin, address previousAdmin);
     event TransferAdminPending(address pendingAdmin);
     event MaintainerAdded(address newOperator, bool isAdd);
