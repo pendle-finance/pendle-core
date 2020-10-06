@@ -24,3 +24,4 @@ The tokenization of future yields also allows for the creation of products with 
 * Compile (both benchmark and aave): `npm run compile`
 * Deploy an instance of Aave to the network: `npm run deploy:aave` [WIP]
 * run a console for development network: `npm run console:dev`
+* run tests: `npm run test`

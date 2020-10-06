@@ -33,7 +33,7 @@ contract Benchmark is IBenchmark {
     }
 
     function initialize(address aaveLendingPoolCoreAddress) public override {
-        
+
     }
 
     function tokenizeYield(
