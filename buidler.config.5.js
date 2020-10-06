@@ -18,15 +18,14 @@ module.exports = {
     },
   },
   solc: {
-    version: '0.7.2',
+    version: '0.5.14',
     optimizer: {
       enabled: true,
       runs: 200,
     },
   },
   paths: {
-    sources: './contracts/benchmark',
-    tests: './test',
+    sources: './contracts/aave',
   },
   mocha: {
     enableTimeouts: false,
