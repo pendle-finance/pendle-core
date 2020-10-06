@@ -11,8 +11,8 @@ async function main() {
 
   const lendingPool = await LendingPool.new();
   console.log(`Deployed LendingPool at ${lendingPool.address}`);
-  const testReserveDataa = await lendingPool.getReserveConfigurationData(DUMMY_ADDRESS);
-  console.log(`testReserveDataa = ${testReserveDataa}`);
+  // const testReserveDataa = await lendingPool.getReserveConfigurationData(DUMMY_ADDRESS);
+  // console.log(`testReserveDataa = ${testReserveDataa}`);
 }
 
 main()
