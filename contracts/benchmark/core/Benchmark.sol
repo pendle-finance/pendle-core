@@ -76,6 +76,6 @@ contract Benchmark is IBenchmark {
         uint256 newExpiry,
         address to
     ) public override returns (uint256 redeemedAmount) {
-      
+
     }
 }

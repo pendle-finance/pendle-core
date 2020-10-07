@@ -18,3 +18,10 @@ The tokenization of future yields also allows for the creation of products with 
 * `underlyingYieldToken`: the Aave aToken. For example, aUSDT
 * Each OT and XYT is uniquely identified by `(address underlyingToken, ContractDurations contractDuration, uint256 expiry)`
   * The `expiry` is the UNIX timestamp at 0:00 UTC of the day right after the expiry date. For example: if it expires on 3rd Oct, the `expiry` is the Unix timestamp of 4th Oct, 0:00 UTC
+
+## Scripts:
+* Run a mainnet fork on ganache: `npm run ganache`
+* Compile (both benchmark and aave): `npm run compile`
+* Deploy an instance of Aave to the network: `npm run deploy:aave` [WIP]
+* run a console for development network: `npm run console:dev`
+* run tests: `npm run test`
