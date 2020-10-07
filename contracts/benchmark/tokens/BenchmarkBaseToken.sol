@@ -24,7 +24,6 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IBenchmarkToken.sol";
-import "../utils/Utils.sol";
 
 
 /**
@@ -156,7 +155,7 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
         emit Approval(owner, spender, amount);
     }
 
-    function _mint(address account, uint256 amount) internal virtual {
+    function _mint(address account, uint256 amount) internal {
         require(account != address(0), "BenchmarkToken: mint to the zero address");
 
         totalSupply = totalSupply.add(amount);
@@ -164,7 +163,7 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
         emit Transfer(address(0), account, amount);
     }
 
-    function _burn(address account, uint256 amount) internal virtual {
+    function _burn(address account, uint256 amount) internal {
         require(account != address(0), "BenchmarkToken: burn from the zero address");
 
         balanceOf[account] = balanceOf[account].sub(amount, "BenchmarkToken: burn amount exceeds balance");
