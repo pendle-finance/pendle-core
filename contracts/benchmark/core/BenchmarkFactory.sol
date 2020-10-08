@@ -25,6 +25,7 @@ pragma solidity ^0.7.0;
 
 import "../interfaces/IBenchmarkFactory.sol";
 import "./BenchmarkForge.sol";
+import "./AddressesProvider.sol";
 
 
 contract BenchmarkFactory is IBenchmarkFactory {
@@ -32,15 +33,18 @@ contract BenchmarkFactory is IBenchmarkFactory {
     mapping(address => address) public override getForge;
     address public governance;
     address[] private allForges;
+    AddressesProvider addressesProvider;
 
-    constructor(address _governance) {
+    constructor(address _governance, AddressesProvider _addressesProvider) {
         governance = _governance;
+        addressesProvider = _addressesProvider;
     }
 
     function getAllForges() public override view returns (address[] memory) {
       return allForges;
     }
 
+    // TODO: Check if the underlyingToken is available in Aave
     function createForge(address underlyingToken) external override returns (address forge) {
       require(underlyingToken != address(0), "zero address");
       require(getForge[underlyingToken] == address(0), "forge exists");
@@ -52,7 +56,7 @@ contract BenchmarkFactory is IBenchmarkFactory {
           forge := create2(0, add(bytecode, 32), mload(bytecode), salt)
       }
 
-      IBenchmarkForge(forge).initialize(underlyingToken); 
+      IBenchmarkForge(forge).initialize(underlyingToken, addressesProvider);
       getForge[underlyingToken] = forge;
       allForges.push(forge);
 

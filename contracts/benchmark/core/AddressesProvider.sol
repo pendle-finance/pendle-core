@@ -22,30 +22,26 @@
  */
 pragma solidity ^0.7.0;
 
-import "./BenchmarkBaseToken.sol";
+import "../interfaces/IAaveLendingPoolCore.sol";
 
+contract AddressesProvider {
+    address public aaveLendingPoolCore;
+    address public governance;
 
-contract BenchmarkOwnershipToken is BenchmarkBaseToken {
-    /* address public xyt; */
+    constructor(address _governance) {
+        governance = _governance;
+    }
 
-    constructor(
-        /* address _xyt, */
-        address _underlyingYieldToken,
-        uint8 _underlyingYieldTokenDecimals,
-        string memory _name,
-        string memory _symbol,
-        ContractDurations _contractDuration,
-        uint256 _expiry
-    )
-        BenchmarkBaseToken(
-            _underlyingYieldToken,
-            _underlyingYieldTokenDecimals,
-            _name,
-            _symbol,
-            _contractDuration,
-            _expiry
-        )
-    {
-        /* xyt = _xyt; */
+    modifier onlyGovernance {
+        /* require(msg.sender == governance, "AddressesProvider: Must be Governance"); */
+        _;
+    }
+
+    function setAddresses(address _aaveLendingPoolCore) public onlyGovernance {
+        aaveLendingPoolCore = _aaveLendingPoolCore;
+    }
+
+    function getReserveATokenAddress(address _underlyingToken) public view returns (address) {
+        return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveATokenAddress(_underlyingToken);
     }
 }
