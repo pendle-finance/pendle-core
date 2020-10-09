@@ -48,6 +48,6 @@
     "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c './**/*.js'",
     "test": "yarn buidler test",
     "console:dev": "yarn buidler console",
-    "ganache": "./node_modules/.bin/ganache-cli --fork https://mainnet.infura.io/v3/4cfb95aafba043709804b40162889505 -i 1"
+    "ganache": "./node_modules/.bin/ganache-cli --fork https://mainnet.infura.io/v3/4cfb95aafba043709804b40162889505 -i 1 --gasLimit 20000000"
   }
 }

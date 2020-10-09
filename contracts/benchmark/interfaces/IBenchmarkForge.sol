@@ -24,6 +24,7 @@
 pragma solidity ^0.7.0;
 
 import "./IBenchmarkCommon.sol";
+import "../core/AddressesProvider.sol";
 
 
 interface IBenchmarkForge is IBenchmarkCommon {
@@ -50,7 +51,7 @@ interface IBenchmarkForge is IBenchmarkCommon {
     /**
      * @dev Initializes the newly created Forge.
      **/
-    function initialize(address underlyingYieldToken) external;
+    function initialize(address underlyingYieldToken, AddressesProvider addressesProvider) external;
 
     // function redeemUnderlying(
     //     ContractDurations contractDuration,
@@ -84,10 +85,10 @@ interface IBenchmarkForge is IBenchmarkCommon {
     // for each contractDuration
     // For example: For each duration, only allow expiry at the start,
     // 1/3rd and 2/3rd of the duration
-    // function generateNewContracts(
-    //     ContractDurations contractDuration,
-    //     uint256 expiry
-    // ) external;
+    function generateNewContracts(
+        ContractDurations contractDuration,
+        uint256 expiry
+    ) external returns (address ot, address xyt);
 
     // function redeemDueInterests(
     //     ContractDurations contractDuration,
@@ -99,5 +100,6 @@ interface IBenchmarkForge is IBenchmarkCommon {
      * @dev returns the address of the underlying yield token
      * @return returns the underlying forge address
      **/
-    function underlyingYieldToken() external view returns (address);
+    function underlyingToken() external view returns (address);
+    function addressesProvider() external view returns (AddressesProvider);
 }

@@ -26,10 +26,10 @@ import "./BenchmarkBaseToken.sol";
 
 
 contract BenchmarkFutureYieldToken is BenchmarkBaseToken {
-    address public ot;
+    /* address public ot; */
 
     constructor(
-        address _ot,
+        /* address _ot, */
         address _underlyingYieldToken,
         uint8 _underlyingYieldTokenDecimals,
         string memory _name,
@@ -46,6 +46,6 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken {
             _expiry
         )
     {
-        ot = _ot;
+        
     }
 }
