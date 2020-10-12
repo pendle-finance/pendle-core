@@ -22,21 +22,14 @@
  */
 pragma solidity ^0.7.0;
 
-
 import "../interfaces/IAaveLendingPoolCore.sol";
+import "../utils/Permissions.sol";
 
-contract AddressesProvider {
+
+contract BenchmarkProvider is Permissions {
     address public aaveLendingPoolCore;
-    address public governance;
 
-    constructor(address _governance) {
-        governance = _governance;
-    }
-
-    modifier onlyGovernance {
-        /* require(msg.sender == governance, "AddressesProvider: Must be Governance"); */
-        _;
-    }
+    constructor(address _governance) Permissions(_governance) {}
 
     function setAddresses(address _aaveLendingPoolCore) public onlyGovernance {
         aaveLendingPoolCore = _aaveLendingPoolCore;

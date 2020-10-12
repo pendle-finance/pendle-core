@@ -16,6 +16,7 @@
     "chai-as-promised": "7.1.1",
     "chai-bn": "0.2.1",
     "cp": "^0.2.0",
+    "cross-var": "^1.1.0",
     "eslint": "^7.11.0",
     "eslint-config-prettier": "^6.12.0",
     "eslint-plugin-import": "^2.22.1",
@@ -44,10 +45,10 @@
   "scripts": {
     "deploy:aave": "yarn buidler run scripts/deploy_aave.js",
     "compile": "yarn buidler compile && yarn buidler compile --config buidler.config.5.js",
-    "coverage": "yarn buidler clean && yarn buidler coverage --config ./buidler.config.js --testfiles '' --temp ''",
-    "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c './**/*.js'",
-    "test": "yarn buidler test",
     "console:dev": "yarn buidler console",
-    "ganache": "./node_modules/.bin/ganache-cli --fork https://mainnet.infura.io/v3/4cfb95aafba043709804b40162889505 -i 1 --gasLimit 20000000"
+    "coverage": "yarn buidler clean && yarn buidler coverage --config ./buidler.config.js --testfiles '' --temp ''",
+    "ganache": "cross-var ganache-cli --fork https://mainnet.infura.io/v3/$INFURA_KEY --networkId 1 --gasLimit 12500000",
+    "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c './**/*.js'",
+    "test": "yarn buidler test"
   }
 }

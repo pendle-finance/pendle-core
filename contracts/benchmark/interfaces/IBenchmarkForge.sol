@@ -24,7 +24,7 @@
 pragma solidity ^0.7.0;
 
 import "./IBenchmarkCommon.sol";
-import "../core/AddressesProvider.sol";
+import "../core/BenchmarkProvider.sol";
 
 
 interface IBenchmarkForge is IBenchmarkCommon {
@@ -51,7 +51,22 @@ interface IBenchmarkForge is IBenchmarkCommon {
     /**
      * @dev Initializes the newly created Forge.
      **/
-    function initialize(address underlyingYieldToken, AddressesProvider addressesProvider) external;
+    function initialize(address underlyingYieldToken, BenchmarkProvider provider) external;
+
+    // TODO: We need some logic to only allow some kinds of expiry
+    // for each contractDuration
+    // For example: For each duration, only allow expiry at the start,
+    // 1/3rd and 2/3rd of the duration
+    function newYieldContracts(
+        ContractDurations contractDuration,
+        uint256 expiry
+    ) external returns (address ot, address xyt);
+
+    /**
+     * @dev Returns a reference to the BenchmarkProvider
+     * @return returns the provider reference
+     **/
+    function provider() external view returns (BenchmarkProvider);
 
     // function redeemUnderlying(
     //     ContractDurations contractDuration,
@@ -81,15 +96,6 @@ interface IBenchmarkForge is IBenchmarkCommon {
     //     address to
     // ) external returns (uint256 redeemedAmount);
 
-    // TODO: We need some logic to only allow some kinds of expiry
-    // for each contractDuration
-    // For example: For each duration, only allow expiry at the start,
-    // 1/3rd and 2/3rd of the duration
-    function generateNewContracts(
-        ContractDurations contractDuration,
-        uint256 expiry
-    ) external returns (address ot, address xyt);
-
     // function redeemDueInterests(
     //     ContractDurations contractDuration,
     //     uint256 expiry,
@@ -97,9 +103,8 @@ interface IBenchmarkForge is IBenchmarkCommon {
     // ) external;
 
     /**
-     * @dev returns the address of the underlying yield token
+     * @dev Returns the address of the underlying yield token
      * @return returns the underlying forge address
      **/
-    function underlyingToken() external view returns (address);
-    function addressesProvider() external view returns (AddressesProvider);
+    function underlyingToken() external view returns (address);    
 }

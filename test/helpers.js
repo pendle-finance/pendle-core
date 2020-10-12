@@ -56,10 +56,11 @@ async function deployContracts() {
 
 function getCreate2Address(factory, salt, contractBytecode, constructorTypes, constructorArgs) {
   const bytecode = `${contractBytecode}${web3.eth.abi.encodeParameter(constructorTypes, constructorArgs).slice(2)}`;
-
-  return `0x${web3.utils
+  const address = `0x${web3.utils
     .sha3(`0x${['ff', factory, salt, web3.utils.sha3(bytecode)].map((x) => x.replace(/0x/, '')).join('')}`)
-    .slice(-40)}`.toLowerCase();
+    .slice(-40)}`;
+
+  return web3.utils.toChecksumAddress(address);
 }
 
 function getCurrentBlock() {

@@ -1,9 +1,7 @@
-const LendingPoolCore = artifacts.require("LendingPoolCore");
-const {
-  getContracts
-} = require('./AaveHelper');
+const LendingPoolCore = artifacts.require('LendingPoolCore');
+const {getContracts} = require('./AaveHelper');
 
-USDT_ADDRESS="0xdac17f958d2ee523a2206206994597c13d831ec7";
+USDT_ADDRESS = '0xdac17f958d2ee523a2206206994597c13d831ec7';
 
 contract('Aave', function (accounts) {
   describe('LendingPoolCore', async function () {

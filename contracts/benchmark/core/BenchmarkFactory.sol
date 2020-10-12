@@ -22,48 +22,48 @@
  */
 pragma solidity ^0.7.0;
 
-
-import "./AddressesProvider.sol";
 import "./BenchmarkForge.sol";
+import "./BenchmarkProvider.sol";
 import "../interfaces/IBenchmarkFactory.sol";
+import "../utils/Permissions.sol";
 
 
-contract BenchmarkFactory is IBenchmarkFactory {
-
+contract BenchmarkFactory is IBenchmarkFactory, Permissions {
     mapping(address => address) public override getForge;
-    address public governance;
+    BenchmarkProvider public provider;
     address[] private allForges;
-    AddressesProvider addressesProvider;
 
-    constructor(address _governance, AddressesProvider _addressesProvider) {
-        governance = _governance;
-        addressesProvider = _addressesProvider;
+    constructor(address _governance, BenchmarkProvider _provider) Permissions(_governance) {
+        provider = _provider;
     }
 
-    function getAllForges() public override view returns (address[] memory) {
-      return allForges;
-    }
-
-    // TODO: Check if the underlyingToken is available in Aave
     function createForge(address underlyingToken) external override returns (address forge) {
-      require(underlyingToken != address(0), "zero address");
-      require(getForge[underlyingToken] == address(0), "forge exists");
+        require(underlyingToken != address(0), "Benchmark: zero address");
+        require(getForge[underlyingToken] == address(0), "Benchmark: forge exists");
+        // require(
+        //     provider.getReserveATokenAddress(underlyingToken) != address(0),
+        //     "Benchmark: underlying token doesn't exist"
+        // );
 
-      bytes memory bytecode = type(BenchmarkForge).creationCode;
-      bytes32 salt = keccak256(abi.encodePacked(underlyingToken));
+        bytes memory bytecode = type(BenchmarkForge).creationCode;
+        bytes32 salt = keccak256(abi.encodePacked(underlyingToken));
 
-      assembly {
-          forge := create2(0, add(bytecode, 32), mload(bytecode), salt)
-      }
+        assembly {
+            forge := create2(0, add(bytecode, 32), mload(bytecode), salt)
+        }
 
-      IBenchmarkForge(forge).initialize(underlyingToken, addressesProvider);
-      getForge[underlyingToken] = forge;
-      allForges.push(forge);
+        IBenchmarkForge(forge).initialize(underlyingToken, provider);
+        getForge[underlyingToken] = forge;
+        allForges.push(forge);
 
-      emit ForgeCreated(underlyingToken, forge);
+        emit ForgeCreated(underlyingToken, forge);
     }
 
     function allForgesLength() external view override returns (uint256) {
-      return allForges.length;
+        return allForges.length;
+    }
+
+    function getAllForges() public view override returns (address[] memory) {
+        return allForges;
     }
 }

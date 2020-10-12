@@ -24,16 +24,16 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../interfaces/IBenchmarkForge.sol";
+import "../interfaces/IBenchmarkToken.sol";
 import "../tokens/BenchmarkFutureYieldToken.sol";
 import "../tokens/BenchmarkOwnershipToken.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "./AddressesProvider.sol";
+import "./BenchmarkProvider.sol";
 
 
 contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
     address public override factory;
     address public override underlyingToken;
-    AddressesProvider public override addressesProvider;
+    BenchmarkProvider public override provider;
 
     mapping (ContractDurations => mapping(uint256 => address)) public otTokens;
     mapping (ContractDurations => mapping(uint256 => address)) public xytTokens;
@@ -42,9 +42,10 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         factory = msg.sender;
     }
 
-    function initialize(address _underlyingToken, AddressesProvider _addressesProvider) external override {
+    function initialize(address _underlyingToken, BenchmarkProvider _provider) external override {
+        require(msg.sender == factory, "Benchmark: only factory");
         underlyingToken = _underlyingToken;
-        addressesProvider = _addressesProvider;
+        provider = _provider;
     }
 
     // function redeem(uint256 _amount) external {
@@ -86,15 +87,15 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
     // }
 
 
-    function generateNewContracts(
+    function newYieldContracts(
         ContractDurations contractDuration,
         uint256 expiry
     ) external override returns (address ot, address xyt) {
-        address aTokenAddress = addressesProvider.getReserveATokenAddress(underlyingToken);
-        uint8 aTokenDecimals = ERC20(aTokenAddress).decimals();
+        address aTokenAddress = provider.getReserveATokenAddress(underlyingToken);
+        uint8 aTokenDecimals = IBenchmarkToken(aTokenAddress).decimals(); // IBenchmarkToken extends ERC20, so using this is good enough
 
         ot = _forgeOwnershipToken("OT Test Token", "OT_TEST", aTokenDecimals, aTokenAddress, contractDuration, expiry);
-        xyt = _forgeFutureYieldToken("XYT Test Token", "OT_TEST", aTokenDecimals, aTokenAddress, contractDuration, expiry);
+        xyt = _forgeFutureYieldToken("XYT Test Token", "XYT_TEST", aTokenDecimals, aTokenAddress, contractDuration, expiry);
         otTokens[contractDuration][expiry] = ot;
         xytTokens[contractDuration][expiry] = xyt;
     }
