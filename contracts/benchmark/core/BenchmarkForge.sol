@@ -112,8 +112,6 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         bytes memory bytecode = type(BenchmarkFutureYieldToken).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(underlyingToken, _contractDuration));
 
-
-
         bytecode = abi.encodePacked(
             bytecode,
             abi.encode(

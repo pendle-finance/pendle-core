@@ -23,9 +23,9 @@
 pragma solidity ^0.7.0;
 
 
-import "../interfaces/IBenchmarkFactory.sol";
-import "./BenchmarkForge.sol";
 import "./AddressesProvider.sol";
+import "./BenchmarkForge.sol";
+import "../interfaces/IBenchmarkFactory.sol";
 
 
 contract BenchmarkFactory is IBenchmarkFactory {
