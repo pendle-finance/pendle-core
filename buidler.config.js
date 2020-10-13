@@ -3,7 +3,7 @@ usePlugin('@nomiclabs/buidler-web3');
 usePlugin('solidity-coverage');
 
 module.exports = {
-  defaultNetwork: 'buidlerevm',
+  defaultNetwork: 'development',
   networks: {
     buidlerevm: {
       gas: 11500000,

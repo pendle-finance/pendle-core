@@ -38,7 +38,7 @@ async function deployContracts() {
   console.log(`\t\tDeployed USDT forge contract at ${forgeAddress}`);
   contracts.benchmarkForge = await BenchmarkForge.at(forgeAddress);
 
-  await contracts.benchmarkForge.generateNewContracts(constants.DURATION_THREEMONTHS, constants.TEST_EXPIRY);
+  await contracts.benchmarkForge.newYieldContracts(constants.DURATION_THREEMONTHS, constants.TEST_EXPIRY);
   const otTokenAddress = await contracts.benchmarkForge.otTokens.call(
     constants.DURATION_THREEMONTHS,
     constants.TEST_EXPIRY

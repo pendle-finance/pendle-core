@@ -17,7 +17,7 @@ import "../../lendingpool/LendingPoolCore.sol";
 /*************************************************************************************
 * @title MockLendingPoolCore contract
 * @author Aave
-* @notice This is a mock contract to test upgradeability of the BenchmarkProvider
+* @notice This is a mock contract to test upgradeability of the AddressProvider
  *************************************************************************************/
 
 contract MockLendingPoolCore is LendingPoolCore {
@@ -30,8 +30,8 @@ contract MockLendingPoolCore is LendingPoolCore {
         return CORE_REVISION;
     }
 
-    function initialize(LendingPoolAddressesProvider _provider) public initializer {
-        provider = _provider;
+    function initialize(LendingPoolAddressesProvider _addressesProvider) public initializer {
+        addressesProvider = _addressesProvider;
         refreshConfigInternal();
     }
 
