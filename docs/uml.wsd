@@ -1,0 +1,172 @@
+@startuml "Benchmark Protocol"
+' -- for auto-render install: https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml
+' -- options --
+
+' -- classes --
+
+package "User Facing" <<Folder>>  {
+	class Benchmark {
+			' -- inheritance --
+		{abstract}IBenchmark
+		{abstract}Permissions
+
+			' -- usingFor --
+
+			' -- vars --
+		+[[address]] factory
+		+[[address]] governance
+
+			' -- methods --
+		+**__constructor__**()
+		+initialize()
+		+tokenizeYield()
+		+redeemUnderlying()
+		+redeemAfterExpiry()
+		+renew()
+
+	}
+
+	class BenchmarkFactory {
+			' -- inheritance --
+		{abstract}IBenchmarkFactory
+		{abstract}Permissions
+
+			' -- usingFor --
+
+			' -- vars --
+		+[[mapping address=>address ]] getForge
+		+[[mapping address=>mapping address=>address  ]] getMarket
+		+[[BenchmarkProvider]] provider
+		+[[address]] core
+		+[[address]] treasury
+		-[[address]] allForges
+		-[[address]] allMarkets
+
+			' -- methods --
+		+**__constructor__**()
+		+createForge()
+		+createMarket()
+		+🔍allForgesLength()
+		+🔍allMarketsLength()
+		+🔍getAllForges()
+		+🔍getAllMarkets()
+
+	}
+}
+
+class BenchmarkProvider {
+    ' -- inheritance --
+	{abstract}IBenchmarkProvider
+	{abstract}Permissions
+
+    ' -- usingFor --
+
+    ' -- vars --
+	+[[address]] aaveLendingPoolCore
+
+    ' -- methods --
+	+**__constructor__**()
+	+setAaveAddress()
+	+🔍getATokenAddress()
+
+}
+
+class BenchmarkForge {
+    ' -- inheritance --
+		{abstract}IBenchmarkForge
+		{abstract}ReentrancyGuard
+
+			' -- usingFor --
+
+			' -- vars --
+		+[[address]] factory
+		+[[address]] treasury
+		+[[address]] underlyingToken
+		+[[BenchmarkProvider]] provider
+		+[[mapping ContractDurations=>mapping uint256=>address  ]] otTokens
+		+[[mapping ContractDurations=>mapping uint256=>address  ]] xytTokens
+
+			' -- methods --
+		+**__constructor__**()
+		+newYieldContracts()
+		#_forgeFutureYieldToken()
+		#_forgeOwnershipToken()
+	}
+
+	class BenchmarkMarket {
+			' -- inheritance --
+		{abstract}IBenchmarkMarket
+
+			' -- usingFor --
+
+			' -- vars --
+		+[[address]] factory
+		+[[address]] treasury
+		+[[address]] underlyingToken
+
+    ' -- methods --
+		+**__constructor__**()
+	}
+
+package "Tokens" {
+	class BenchmarkOwnershipToken {
+    ' -- inheritance --
+	{abstract}BenchmarkBaseToken
+
+    ' -- usingFor --
+
+    ' -- vars --
+		+[[address]] xyt
+
+			' -- methods --
+		+**__constructor__**()
+
+	}
+
+	class BenchmarkFutureYieldToken {
+    ' -- inheritance --
+	{abstract}BenchmarkBaseToken
+
+    ' -- usingFor --
+
+    ' -- vars --
+		+[[address]] ot
+
+			' -- methods --
+		+**__constructor__**()
+
+	}
+}
+
+' -- inheritance --
+IBenchmark --[#DarkGoldenRod]|> Benchmark
+Permissions --[#DarkGoldenRod]|> Benchmark
+
+IBenchmarkFactory --[#DarkGoldenRod]|> BenchmarkFactory
+Permissions --[#DarkGoldenRod]|> BenchmarkFactory
+
+IBenchmarkProvider --[#DarkGoldenRod]|> BenchmarkProvider
+Permissions --[#DarkGoldenRod]|> BenchmarkProvider
+
+IBenchmarkForge --[#DarkGoldenRod]|> BenchmarkForge
+ReentrancyGuard --[#DarkGoldenRod]|> BenchmarkForge
+
+IBenchmarkMarket --[#DarkGoldenRod]|> BenchmarkMarket
+
+BenchmarkBaseToken --[#DarkGoldenRod]|> BenchmarkOwnershipToken
+BenchmarkBaseToken --[#DarkGoldenRod]|> BenchmarkFutureYieldToken
+
+
+' -- creation --
+BenchmarkFactory *--[#Red]|> BenchmarkForge : creates
+BenchmarkFactory *--[#Red]|> BenchmarkMarket : creates
+
+' -- tokenization --
+Benchmark <--[#Blue]--> BenchmarkForge : "tokenize/redeem"
+BenchmarkForge *--[#Blue]|> BenchmarkOwnershipToken : tokenizes
+BenchmarkForge *--[#Blue]|> BenchmarkFutureYieldToken : tokenizes
+
+' -- trading -- 
+Benchmark <--[#Blue]--> BenchmarkMarket : "trading"
+
+@enduml

@@ -23,26 +23,35 @@
 pragma solidity ^0.7.0;
 
 import "../interfaces/IBenchmark.sol";
+import "../utils/Permissions.sol";
 
 
-contract Benchmark is IBenchmark {
-    address public governance;
+contract Benchmark is IBenchmark, Permissions {
+    address public override factory;
+    address private initializer;
 
-    constructor(address _governance) {
+    constructor(address _governance) Permissions(_governance) {        
+        require(_governance != address(0), "Benchmark: zero address");
         governance = _governance;
     }
 
-    function initialize(address aaveLendingPoolCoreAddress) public override {
-
+    function initialize(address _factory) external {
+        require(msg.sender == initializer, "Benchmark: forbidden");
+        require(_factory != address(0), "Benchmark: zero address");
+        initializer = address(0);
+        factory = _factory;
     }
 
-    function tokenizeYield(
+    /**
+     * @notice Redeems Ownership Tokens for the underlying yield token
+     * @dev Can only redeem all of the OTs.
+     **/
+    function redeemAfterExpiry(
         address underlyingToken,
         ContractDurations contractDuration,
         uint256 expiry,
-        uint256 amountToTokenize,
         address to
-    ) public override returns (address ot, address xyt) {
+    ) public override returns (uint256 redeemedAmount) {
 
     }
 
@@ -51,16 +60,6 @@ contract Benchmark is IBenchmark {
         ContractDurations contractDuration,
         uint256 expiry,
         uint256 amountToRedeem,
-        address to
-    ) public override returns (uint256 redeemedAmount) {
-
-    }
-
-    // Can only redeem all of the OTs
-    function redeemAfterExpiry(
-        address underlyingToken,
-        ContractDurations contractDuration,
-        uint256 expiry,
         address to
     ) public override returns (uint256 redeemedAmount) {
 
@@ -76,6 +75,16 @@ contract Benchmark is IBenchmark {
         uint256 newExpiry,
         address to
     ) public override returns (uint256 redeemedAmount) {
+
+    }
+
+    function tokenizeYield(
+        address underlyingToken,
+        ContractDurations contractDuration,
+        uint256 expiry,
+        uint256 amountToTokenize,
+        address to
+    ) public override returns (address ot, address xyt) {
 
     }
 }

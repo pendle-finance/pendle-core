@@ -20,16 +20,12 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-
 pragma solidity ^0.7.0;
 
+import "../interfaces/IBenchmarkTreasury.sol";
+import "../utils/Permissions.sol";
 
-interface IBenchmarkCommon {
-  /**
-   * @notice Contract duration definitions.
-   * @dev Represents a fixed configuration of the yield contracts offered.
-   *      At the moment, we fix these duration at 1 month, 3 months, and 6 months
-   *      respectively.
-   **/
-  enum ContractDurations {OneMonth, ThreeMonths, SixMonths}
+
+contract BenchmarkTreasury is IBenchmarkTreasury, Permissions {
+    constructor(address _governance) Permissions(_governance) {}
 }

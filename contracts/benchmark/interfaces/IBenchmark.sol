@@ -27,15 +27,18 @@ import "./IBenchmarkCommon.sol";
 
 
 interface IBenchmark is IBenchmarkCommon {
-    function initialize(address aaveLendingPoolCoreAddress) external;
+    /**
+     * @notice Returns the address of the BenchmarkFactory
+     * @return Returns the factory address
+     **/
+    function factory() external view returns (address);
 
-    function tokenizeYield(
+    function redeemAfterExpiry(
         address underlyingToken,
         ContractDurations contractDuration,
         uint256 expiry,
-        uint256 amountToTokenize,
         address to
-    ) external returns (address ot, address xyt);
+    ) external returns (uint256 redeemedAmount);
 
     function redeemUnderlying(
         address underlyingToken,
@@ -45,16 +48,6 @@ interface IBenchmark is IBenchmarkCommon {
         address to
     ) external returns (uint256 redeemedAmount);
 
-    // Can only redeem all of the OTs
-    function redeemAfterExpiry(
-        address underlyingToken,
-        ContractDurations contractDuration,
-        uint256 expiry,
-        address to
-    ) external returns (uint256 redeemedAmount);
-
-    // TODO: the user has existing OTs for an expired expiry, and wants to
-    // mint new OTs+XYTs for a new expiry
     function renew(
         address underlyingToken,
         ContractDurations oldContractDuration,
@@ -63,4 +56,12 @@ interface IBenchmark is IBenchmarkCommon {
         uint256 newExpiry,
         address to
     ) external returns (uint256 redeemedAmount);
+
+    function tokenizeYield(
+        address underlyingToken,
+        ContractDurations contractDuration,
+        uint256 expiry,
+        uint256 amountToTokenize,
+        address to
+    ) external returns (address ot, address xyt);
 }

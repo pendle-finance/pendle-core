@@ -1,5 +1,5 @@
 const BN = web3.utils.BN;
-const { time } = require('@openzeppelin/test-helpers');
+const {time} = require('@openzeppelin/test-helpers');
 
 const BenchmarkProvider = artifacts.require('BenchmarkProvider');
 const Benchmark = artifacts.require('Benchmark');
@@ -8,10 +8,9 @@ const BenchmarkForge = artifacts.require('BenchmarkForge');
 const BenchmarkOwnershipToken = artifacts.require('BenchmarkOwnershipToken');
 const BenchmarkFutureYieldToken = artifacts.require('BenchmarkFutureYieldToken');
 
-const { constants } = require('./Constants');
-const { getAaveContracts, mintUSDT, mintAUSDT, printAaveAddressDetails } = require('./AaveHelpers');
-const { getTokenAmount } = require('./Math');
-
+const {constants} = require('./Constants');
+const {getAaveContracts, mintUSDT, mintAUSDT, printAaveAddressDetails} = require('./AaveHelpers');
+const {getTokenAmount} = require('./Math');
 
 async function deployContracts(governanceAddress) {
   const contracts = {};
@@ -51,7 +50,7 @@ async function deployContracts(governanceAddress) {
 }
 
 function getCreate2Address(factory, salt, contractBytecode, constructorTypes, constructorArgs) {
-  const bytecode = `${contractBytecode}${web3.eth.abi.encodeParameter(constructorTypes, constructorArgs).slice(2)}`;
+  const bytecode = `${contractBytecode}${web3.eth.abi.encodeParameters(constructorTypes, constructorArgs).slice(2)}`;
   const address = `0x${web3.utils
     .sha3(`0x${['ff', factory, salt, web3.utils.sha3(bytecode)].map((x) => x.replace(/0x/, '')).join('')}`)
     .slice(-40)}`;
@@ -84,11 +83,17 @@ async function mineBlocks(blocks) {
 }
 
 async function printBenchmarkAddressDetails(contracts, address) {
-  const aaveContracts = await getAaveContracts()
+  const aaveContracts = await getAaveContracts();
   console.log(`\tBenchmark balances for address ${address}:`);
   console.log(`\t\tOT balance = ${await contracts.benchmarkOwnershipToken.balanceOf.call(address)}`);
   console.log(`\t\tXYT balance = ${await contracts.benchmarkFutureYieldToken.balanceOf.call(address)}`);
-  console.log(`\t\tlastNormalisedIncome = ${await contracts.benchmarkForge.lastNormalisedIncome.call(constants.DURATION_THREEMONTHS, constants.TEST_EXPIRY, address)}`);
+  console.log(
+    `\t\tlastNormalisedIncome = ${await contracts.benchmarkForge.lastNormalisedIncome.call(
+      constants.DURATION_THREEMONTHS,
+      constants.TEST_EXPIRY,
+      address
+    )}`
+  );
   console.log(`\t\taUSDT balance = ${await aaveContracts.aUSDT.balanceOf.call(address)}`);
 }
 
@@ -113,7 +118,7 @@ function mineBlockAtTime(timestamp) {
 
 async function sendDummyTransactions(accounts, count) {
   if (count == 0) return;
-  await web3.eth.sendTransaction({ from: accounts[0], to: accounts[0], value: 1 });
+  await web3.eth.sendTransaction({from: accounts[0], to: accounts[0], value: 1});
   await sendDummyTransactions(accounts, count - 1);
 }
 
@@ -133,5 +138,5 @@ module.exports = {
   getCurrentBlockTime,
   mineBlocks,
   mineBlockAtTime,
-  printBenchmarkAddressDetails
+  printBenchmarkAddressDetails,
 };

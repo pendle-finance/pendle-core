@@ -24,12 +24,5 @@
 pragma solidity ^0.7.0;
 
 
-interface IBenchmarkCommon {
-  /**
-   * @notice Contract duration definitions.
-   * @dev Represents a fixed configuration of the yield contracts offered.
-   *      At the moment, we fix these duration at 1 month, 3 months, and 6 months
-   *      respectively.
-   **/
-  enum ContractDurations {OneMonth, ThreeMonths, SixMonths}
+interface IBenchmarkTreasury {
 }

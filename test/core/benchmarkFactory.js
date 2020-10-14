@@ -2,29 +2,54 @@ const {constants, expectRevert, time} = require('@openzeppelin/test-helpers');
 const {BN} = require('@openzeppelin/test-helpers/src/setup');
 const {expect, assert} = require('chai');
 var RLP = require('rlp');
+const Benchmark = artifacts.require('Benchmark');
 const BenchmarkFactory = artifacts.require('BenchmarkFactory');
 const BenchmarkForge = artifacts.require('BenchmarkForge');
 const BenchmarkProvider = artifacts.require('BenchmarkProvider');
+const BenchmarkTreasury = artifacts.require('BenchmarkTreasury');
 // const MockAToken = artifacts.require('aUSDT');
 const TestToken = artifacts.require('Token');
-const Helpers = require('../helpers');
+const Helpers = require('../helpers/Helpers');
 require('chai').use(require('chai-as-promised')).use(require('chai-bn')(BN)).should();
 
-contract('BenchmarkFactory', ([governance]) => {
-  before('Initialize the Factory and test tokens', async () => {
-    this.provider = await BenchmarkProvider.new(governance, {from: governance});
-    this.factory = await BenchmarkFactory.new(governance, this.provider.address, {from: governance});
-    // TODO: use actual aUSDT
-    this.token = await TestToken.new('Token', 'TST', '18', {from: governance});
-  });
+contract('BenchmarkFactory', ([deployer, governance, stub]) => {
+  describe('# Initialization and Constants', async () => {
+    before('create the factory', async () => {
+      this.benchmark = await Benchmark.new(governance, {from: deployer});
+      this.provider = await BenchmarkProvider.new(governance, {from: deployer});
+      this.treasury = await BenchmarkTreasury.new(governance, {from: deployer});
+      this.factory = await BenchmarkFactory.new(governance, this.treasury.address, this.provider.address, {
+        from: deployer,
+      });
+    });
 
-  describe('# Constants', async () => {
+    it('should initialize the factory', async () => {
+      await this.factory.initialize(this.benchmark.address, {from: deployer});
+
+      const factoryCore = await this.factory.core();
+      expect(factoryCore).to.eq(this.benchmark.address);
+    });
+
     it('should get the constants from contract creation', async () => {
       const factoryGovernance = await this.factory.governance();
-      assert.equal(factoryGovernance, governance);
+      expect(factoryGovernance).to.eq(governance);
 
       const factoryProvider = await this.factory.provider();
-      assert.equal(factoryProvider, this.provider.address);
+      expect(factoryProvider).to.eq(this.provider.address);
+
+      const factoryTreasury = await this.factory.treasury();
+      expect(factoryTreasury).to.eq(this.treasury.address);
+    });
+
+    it('should set the new treasury address', async () => {
+      await this.factory.setTreasury(stub, {from: governance});
+
+      const factoryTreasury = await this.factory.treasury();
+      expect(factoryTreasury).to.eq(stub);
+    });
+
+    it('should revert if non-governance address sets the new treasury', async () => {
+      await expectRevert(this.factory.setTreasury(stub, {from: stub}), 'Benchmark: only governance');
     });
   });
 
@@ -32,33 +57,86 @@ contract('BenchmarkFactory', ([governance]) => {
     const allForges = [];
     const getForge = {};
 
+    before('create the factory and tokens', async () => {
+      this.benchmark = await Benchmark.new(governance, {from: deployer});
+      this.provider = await BenchmarkProvider.new(governance, {from: deployer});
+      this.treasury = await BenchmarkTreasury.new(governance, {from: deployer});
+      this.factory = await BenchmarkFactory.new(governance, this.treasury.address, this.provider.address, {
+        from: deployer,
+      });
+      this.token = await TestToken.new('Token', 'TST', '18', {from: deployer});
+    });
+
     it('should create an aUSDT Forge', async () => {
+      // Initialize
+      await this.factory.initialize(this.benchmark.address, {from: deployer});
+
       const computedForgeAddress = Helpers.getCreate2Address(
         this.factory.address,
         web3.utils.sha3(this.token.address),
         BenchmarkForge._json.bytecode,
-        '',
-        ''
+        ['address', 'address', 'address'],
+        [this.token.address, this.treasury.address, this.provider.address]
       );
+
       let forge = await this.factory.createForge(this.token.address);
       forge = forge.logs[0].args.forge;
+
       allForges.push(forge);
       getForge[this.token.address] = forge;
 
-      assert.equal(forge, computedForgeAddress);
+      expect(forge).to.eq(computedForgeAddress);
     });
 
     it('should get forge address given an underlying token', async () => {
       const forgeAddress = await this.factory.getForge(this.token.address);
-      assert.equal(forgeAddress, getForge[this.token.address]);
+      expect(forgeAddress).to.eq(getForge[this.token.address]);
     });
 
     it('should get all forges', async () => {
       const factoryAllForges = await this.factory.getAllForges();
       const factoryAllForgesLength = await this.factory.allForgesLength();
 
-      assert.equal(factoryAllForgesLength, allForges.length);
+      expect(parseInt(factoryAllForgesLength)).to.eq(allForges.length);
       expect(factoryAllForges).to.deep.equal(allForges);
     });
   });
+
+  describe('# Forge Reverts', async () => {
+    before('create the factory', async () => {
+      this.benchmark = await Benchmark.new(governance, {from: deployer});
+      this.provider = await BenchmarkProvider.new(governance, {from: deployer});
+      this.treasury = await BenchmarkTreasury.new(governance, {from: deployer});
+      this.factory = await BenchmarkFactory.new(governance, this.treasury.address, this.provider.address, {
+        from: deployer,
+      });
+      this.token = await TestToken.new('Token', 'TST', '18', {from: deployer});
+    });
+
+    it('should revert for initialize() if initializer was not the deployer address', async () => {
+      await expectRevert(this.factory.initialize(this.benchmark.address, {from: stub}), 'Benchmark: forbidden');
+    });
+
+    it('should revert for initialize() if Benchmark core address param is zero address', async () => {
+      await expectRevert(this.factory.initialize(constants.ZERO_ADDRESS, {from: deployer}), 'Benchmark: zero address');
+    });
+
+    it('should revert for createForge() if factory is not initialized', async () => {
+      await expectRevert(this.factory.createForge(this.token.address), 'Benchmark: not initialized');
+    });
+
+    it('should revert for createForge() if underlying yield token is zero address', async () => {
+      await this.factory.initialize(this.benchmark.address, {from: deployer});
+      await expectRevert(this.factory.createForge(constants.ZERO_ADDRESS), 'Benchmark: zero address');
+    });
+
+    it('should revert for createForge() if the forge for underlying yield token already exists', async () => {
+      await this.factory.createForge(this.token.address);
+      await expectRevert(this.factory.createForge(this.token.address), 'Benchmark: forge exists');
+    });
+  });
+
+  describe('# Market Creation', async () => {});
+
+  describe('# Market Reverts', async () => {});
 });

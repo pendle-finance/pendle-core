@@ -29,28 +29,34 @@ import "../interfaces/IBenchmarkCommon.sol";
 
 interface IBenchmarkToken is IBenchmarkCommon, IERC20 {
     /**
-     * @dev Emitted when burning OT or XYT tokens.
+     * @notice Emitted when burning OT or XYT tokens.
      * @param account The address performing the burn.
      * @param amount The amount to be burned.
      **/
     event Burn(address indexed account, uint256 amount);
 
     /**
-     * @dev Emitted when minting OT or XYT tokens.
+     * @notice Emitted when minting OT or XYT tokens.
      * @param account The address performing the mint.
      * @param amount The amount to be minted.
      **/
     event Mint(address indexed account, uint256 amount);
 
     /**
-     * @dev Burns OT or XYT tokens from account, reducing the total supply.
+     * @notice Burns OT or XYT tokens from account, reducing the total supply.
      * @param account The address performing the burn.
      * @param amount The amount to be burned.
      **/
     function burn(address account, uint256 amount) external;
 
     /**
-     * @dev Decreases the allowance granted to spender by the caller.
+     * @notice The yield contract duration in enums.
+     * @return Returns the contract duration.
+     **/
+    function contractDuration() external returns (ContractDurations);
+
+    /**
+     * @notice Decreases the allowance granted to spender by the caller.
      * @param spender The address to reduce the allowance from.
      * @param subtractedValue The amount allowance to subtract.
      * @return Returns true if allowance has decreased, otherwise false.
@@ -58,47 +64,47 @@ interface IBenchmarkToken is IBenchmarkCommon, IERC20 {
     function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
 
     /**
-     * @dev Increases the allowance granted to spender by the caller.
+     * @notice The yield contract expiry in epoch time.
+     * @return Returns the yield expiry date.
+     **/
+    function expiry() external returns (uint256);
+
+    /**
+     * @notice Increases the allowance granted to spender by the caller.
      * @param spender The address to increase the allowance from.
      * @param addedValue The amount allowance to add.
-     * @return returns true if allowance has increased, otherwise false
+     * @return Returns true if allowance has increased, otherwise false
      **/
     function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
 
     /**
-     * @dev Mints new OT or XYT tokens for account, increasing the total supply.
+     * @notice Mints new OT or XYT tokens for account, increasing the total supply.
      * @param account The address to send the minted tokens.
      * @param amount The amount to be minted.
      **/
     function mint(address account, uint256 amount) external;
 
     /**
-     * @dev Returns the number of decimals the token uses.
+     * @notice Returns the number of decimals the token uses.
      * @return Returns the token's decimals.
      **/
     function decimals() external view returns (uint8);
 
     /**
-     * @dev Returns the address of the BenchmarkForge for this BenchmarkToken.
-     * @return Returns the forge's address.
-     **/
-    function forgeAddress() external view returns (address);
-
-    /**
-     * @dev Returns the name of the token.
-     * @return returns the token's name.
+     * @notice Returns the name of the token.
+     * @return Returns the token's name.
      **/
     function name() external view returns (string memory);
 
     /**
-     * @dev Returns the symbol of the token.
+     * @notice Returns the symbol of the token.
      * @return Returns the token's symbol.
      **/
     function symbol() external view returns (string memory);
 
     /**
-     * @dev returns the address of the underlying yield token
-     * @return returns the underlying forge address
+     * @notice Returns the address of the underlying yield token.
+     * @return Returns the underlying yield token address.
      **/
     function underlyingYieldToken() external view returns (address);
 }

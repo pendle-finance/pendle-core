@@ -23,19 +23,20 @@
 pragma solidity ^0.7.0;
 
 import "../interfaces/IAaveLendingPoolCore.sol";
+import "../interfaces/IBenchmarkProvider.sol";
 import "../utils/Permissions.sol";
 
 
-contract BenchmarkProvider is Permissions {
-    address public aaveLendingPoolCore;
+contract BenchmarkProvider is IBenchmarkProvider, Permissions {
+    address public override aaveLendingPoolCore;
 
     constructor(address _governance) Permissions(_governance) {}
 
-    function setAddresses(address _aaveLendingPoolCore) public onlyGovernance {
+    function setAaveAddress(address _aaveLendingPoolCore) public override onlyMaintainer {
         aaveLendingPoolCore = _aaveLendingPoolCore;
     }
 
-    function getReserveATokenAddress(address _underlyingToken) public view returns (address) {
+    function getATokenAddress(address _underlyingToken) public view override returns (address) {
         return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveATokenAddress(_underlyingToken);
     }
 

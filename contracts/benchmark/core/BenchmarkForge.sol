@@ -22,31 +22,33 @@
  */
 pragma solidity ^0.7.0;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "./BenchmarkProvider.sol";
 import "../interfaces/IBenchmarkForge.sol";
 import "../interfaces/IBenchmarkToken.sol";
 import "../tokens/BenchmarkFutureYieldToken.sol";
 import "../tokens/BenchmarkOwnershipToken.sol";
-import "./BenchmarkProvider.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 
 contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
-    address public override factory;
-    address public override underlyingToken;
-    BenchmarkProvider public override provider;
+    address public immutable override factory;
+    address public immutable override treasury;
+    address public immutable override underlyingYieldToken;
+    BenchmarkProvider public immutable override provider;
 
     mapping (ContractDurations => mapping(uint256 => address)) public otTokens;
     mapping (ContractDurations => mapping(uint256 => mapping(address => uint256))) public lastNormalisedIncome;
     mapping (ContractDurations => mapping(uint256 => address)) public xytTokens;
 
-    constructor() {
-        factory = msg.sender;
-    }
+    constructor(address _underlyingYieldToken, address _treasury, BenchmarkProvider _provider) {
+        require(_underlyingYieldToken != address(0), "Benchmark: zero address");
+        require(_treasury != address(0), "Benchmark: zero address");
+        require(address(_provider) != address(0), "Benchmark: zero address");
 
-    function initialize(address _underlyingToken, BenchmarkProvider _provider) external override {
-        require(msg.sender == factory, "Benchmark: only factory");
-        underlyingToken = _underlyingToken;
+        factory = msg.sender;
+        underlyingYieldToken = _underlyingYieldToken;
+        treasury = _treasury;
         provider = _provider;
     }
 
@@ -89,13 +91,13 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
     ) external override returns (uint256 redeemedAmount) {
         BenchmarkFutureYieldToken xytContract = BenchmarkFutureYieldToken(xytTokens[contractDuration][expiry]);
         BenchmarkOwnershipToken otContract = BenchmarkOwnershipToken(otTokens[contractDuration][expiry]);
-        ERC20 underlyingYieldToken = ERC20(provider.getReserveATokenAddress(underlyingToken));
+        IERC20 underlyingToken = IERC20(provider.getATokenAddress(underlyingYieldToken));
 
         require(otContract.balanceOf(msg.sender) >= amountToRedeem, "Must have enough OT tokens");
         require(xytContract.balanceOf(msg.sender) >= amountToRedeem, "Must have enough XYT tokens");
 
-        underlyingYieldToken.transfer(to, amountToRedeem);
-        settleDueInterests(contractDuration, expiry, xytContract, msg.sender, underlyingYieldToken);
+        underlyingToken.transfer(to, amountToRedeem);
+        settleDueInterests(contractDuration, expiry, xytContract, msg.sender);
         otContract.burn(msg.sender, amountToRedeem);
         xytContract.burn(msg.sender, amountToRedeem);
 
@@ -109,17 +111,17 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         ContractDurations contractDuration,
         uint256 expiry,
         BenchmarkFutureYieldToken xytContract,
-        address account,
-        ERC20 underlyingYieldToken
+        address account
     ) internal returns (uint256){
+        IERC20 underlyingToken = IERC20(provider.getATokenAddress(underlyingYieldToken));
         uint256 principal = xytContract.balanceOf(account);
         uint256 Ix = lastNormalisedIncome[contractDuration][expiry][account];
-        uint256 In = provider.getAaveNormalisedIncome(underlyingToken);
+        uint256 In = provider.getAaveNormalisedIncome(underlyingYieldToken);
 
         uint256 dueInterests = principal * In / Ix - principal;
 
         if (dueInterests > 0) {
-          underlyingYieldToken.transfer(account, dueInterests);
+          underlyingToken.transfer(account, dueInterests);
         }
 
         lastNormalisedIncome[contractDuration][expiry][account] = In;
@@ -135,12 +137,12 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         BenchmarkFutureYieldToken xytContract = BenchmarkFutureYieldToken(xytTokens[_contractDuration][_expiry]);
         BenchmarkOwnershipToken otContract = BenchmarkOwnershipToken(otTokens[_contractDuration][_expiry]);
 
-        ERC20 underlyingYieldToken = ERC20(provider.getReserveATokenAddress(underlyingToken));
-        underlyingYieldToken.transferFrom(msg.sender, address(this), _amountToTokenize);
+        IERC20 underlyingToken = IERC20(provider.getATokenAddress(underlyingYieldToken));
+        underlyingToken.transferFrom(msg.sender, address(this), _amountToTokenize);
 
         otContract.mint(_to, _amountToTokenize);
         xytContract.mint(_to, _amountToTokenize);
-        lastNormalisedIncome[_contractDuration][_expiry][_to] = provider.getAaveNormalisedIncome(underlyingToken);
+        lastNormalisedIncome[_contractDuration][_expiry][_to] = provider.getAaveNormalisedIncome(address(underlyingToken));
         return (address(otContract), address(xytContract));
     }
 
@@ -149,33 +151,34 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         ContractDurations contractDuration,
         uint256 expiry
     ) external override returns (address ot, address xyt) {
-        address aTokenAddress = provider.getReserveATokenAddress(underlyingToken);
+        address aTokenAddress = provider.getATokenAddress(underlyingYieldToken);
         uint8 aTokenDecimals = IBenchmarkToken(aTokenAddress).decimals(); // IBenchmarkToken extends ERC20, so using this is good enough
 
-        ot = _forgeOwnershipToken("OT Test Token", "OT_TEST", aTokenDecimals, aTokenAddress, contractDuration, expiry);
-        xyt = _forgeFutureYieldToken("XYT Test Token", "XYT_TEST", aTokenDecimals, aTokenAddress, contractDuration, expiry);
+        // TODO: Use actual aTokens
+        ot = _forgeOwnershipToken(aTokenAddress, aTokenDecimals, "OT Test Token", "OT_TEST", contractDuration, expiry);
+        xyt = _forgeFutureYieldToken(ot, aTokenAddress, aTokenDecimals, "XYT Test Token", "XYT_TEST", contractDuration, expiry);
         otTokens[contractDuration][expiry] = ot;
         xytTokens[contractDuration][expiry] = xyt;
     }
 
     function _forgeFutureYieldToken(
-        /* string calldata _tokenName,
-        string calldata _tokenSymbol, */
+        address _ot,
+        address _underlyingYieldToken,
+        uint8 _underlyingYieldTokenDecimals,
         string memory _tokenName,
         string memory _tokenSymbol,
-        uint8 _tokenDecimals,
-        address _underlyingYieldToken,
         ContractDurations _contractDuration,
         uint256 _expiry
     ) internal nonReentrant() returns (address xyt) {
         bytes memory bytecode = type(BenchmarkFutureYieldToken).creationCode;
-        bytes32 salt = keccak256(abi.encodePacked(underlyingToken, _contractDuration));
+        bytes32 salt = keccak256(abi.encodePacked(_ot, _underlyingYieldToken, _contractDuration));
 
         bytecode = abi.encodePacked(
             bytecode,
             abi.encode(
+                _ot,
                 _underlyingYieldToken,
-                _tokenDecimals,
+                _underlyingYieldTokenDecimals,
                 _tokenName,
                 _tokenSymbol,
                 _contractDuration,
@@ -189,23 +192,21 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
     }
 
     function _forgeOwnershipToken(
-        /* string calldata _tokenName,
-        string calldata _tokenSymbol, */
+        address _underlyingYieldToken,
+        uint8 _underlyingYieldTokenDecimals,
         string memory _tokenName,
         string memory _tokenSymbol,
-        uint8 _tokenDecimals,
-        address _underlyingYieldToken,
         ContractDurations _contractDuration,
         uint256 _expiry
     ) internal nonReentrant() returns (address ot) {
         bytes memory bytecode = type(BenchmarkOwnershipToken).creationCode;
-        bytes32 salt = keccak256(abi.encodePacked(underlyingToken, _contractDuration));
+        bytes32 salt = keccak256(abi.encodePacked(_underlyingYieldToken, _contractDuration));
 
         bytecode = abi.encodePacked(
             bytecode,
             abi.encode(
                 _underlyingYieldToken,
-                _tokenDecimals,
+                _underlyingYieldTokenDecimals,
                 _tokenName,
                 _tokenSymbol,
                 _contractDuration,

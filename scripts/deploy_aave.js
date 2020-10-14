@@ -1,9 +1,9 @@
-const bre = require("@nomiclabs/buidler");
-const LendingPool = artifacts.require("LendingPool");
-const LendingPoolAddressesProvider = artifacts.require("LendingPoolAddressesProvider");
-const CoreLibrary = artifacts.require("CoreLibrary");
+const bre = require('@nomiclabs/buidler');
+const LendingPool = artifacts.require('LendingPool');
+const LendingPoolAddressesProvider = artifacts.require('LendingPoolAddressesProvider');
+const CoreLibrary = artifacts.require('CoreLibrary');
 
-const DUMMY_ADDRESS="0x7c2C195CD6D34B8F845992d380aADB2730bB9C6F";
+const DUMMY_ADDRESS = '0x7c2C195CD6D34B8F845992d380aADB2730bB9C6F';
 
 async function main() {
   const coreLibrary = await CoreLibrary.new();
@@ -17,7 +17,7 @@ async function main() {
 
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });

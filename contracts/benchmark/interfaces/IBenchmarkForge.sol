@@ -48,11 +48,6 @@ interface IBenchmarkForge is IBenchmarkCommon {
      **/
     function factory() external view returns (address);
 
-    /**
-     * @dev Initializes the newly created Forge.
-     **/
-    function initialize(address underlyingYieldToken, BenchmarkProvider provider) external;
-
     // TODO: We need some logic to only allow some kinds of expiry
     // for each contractDuration
     // For example: For each duration, only allow expiry at the start,
@@ -102,9 +97,17 @@ interface IBenchmarkForge is IBenchmarkCommon {
     //     address to
     // ) external;
 
+    // TODO: Function to track all the XYTs/OTs for a contract duration
+
+    /**
+     * @notice Gets the treasury contract address where fees are being sent to.
+     * @return Address of the treasury contract.
+     **/
+    function treasury() external view returns (address);
+
     /**
      * @dev Returns the address of the underlying yield token
-     * @return returns the underlying forge address
+     * @return returns the underlying yield token address
      **/
-    function underlyingToken() external view returns (address);
+    function underlyingYieldToken() external view returns (address);
 }

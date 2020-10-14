@@ -47,13 +47,12 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
 
     mapping(address => mapping(address => uint256)) public override allowance;
     mapping(address => uint) public override balanceOf;
-    ContractDurations public contractDuration;
+    ContractDurations public override contractDuration;
     string public override name;
     string public override symbol;
     uint8 public override decimals;
-    uint256 public expiry;
+    uint256 public override expiry;
     uint256 public override totalSupply;
-    address public override forgeAddress;
     address public override underlyingYieldToken;
 
     constructor(
@@ -67,7 +66,6 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
         contractDuration = _contractDuration;
         decimals = _underlyingYieldTokenDecimals;
         expiry = _expiry;
-        forgeAddress = msg.sender;
         name = _name;
         symbol = _symbol;
         underlyingYieldToken = _underlyingYieldToken;

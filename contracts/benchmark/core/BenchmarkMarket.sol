@@ -22,38 +22,58 @@
  */
 pragma solidity ^0.7.0;
 
-import "./BenchmarkBaseToken.sol";
+import "../interfaces/IBenchmarkMarket.sol";
+import "../tokens/BenchmarkBaseToken.sol";
 
 
-contract BenchmarkFutureYieldToken is BenchmarkBaseToken {
-    address forgeAddress;
-    address public ot;
-    // mapping (address => uint256) public lastNormalisedIncome;
+contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
+    address public immutable override factory;
+    address public immutable override token;
+    address public immutable override treasury;
+    address public immutable override xyt;
+    uint256 public constant override minLiquidity = 10**3;
+    string private constant _name = "Benchmark Market";
+    string private constant _symbol = "BMKT";
+    uint8 private constant _decimals = 18;
 
     constructor(
-        address _ot,
+        address _xyt,
+        address _token,
         address _underlyingYieldToken,
-        uint8 _underlyingYieldTokenDecimals,
-        string memory _name,
-        string memory _symbol,
+        address _treasury,
         ContractDurations _contractDuration,
         uint256 _expiry
-    )
-        BenchmarkBaseToken(
-            _underlyingYieldToken,
-            _underlyingYieldTokenDecimals,
-            _name,
-            _symbol,
-            _contractDuration,
-            _expiry
-        )
-    {
-        forgeAddress = msg.sender;
-        ot = _ot;
+    )  BenchmarkBaseToken(
+        _underlyingYieldToken,
+        _decimals,
+        _name,
+        _symbol,
+        _contractDuration,
+        _expiry
+    ) {
+        factory = msg.sender;
+        xyt = _xyt;
+        token = _token;
+        treasury = _treasury;
     }
 
-    /* function setLastNormalisedIncome(address account, uint256 normalisedIncome) public returns (bool) {
-        lastNormalisedIncome[account] = normalisedIncome;
-        return true;
-    } */
+    function getReserves()
+        external
+        view
+        override
+        returns (
+            uint112 xytReserves,
+            uint112 tokenReserves,
+            uint32 lastBlockTimestamp
+        ) {
+
+    }
+
+    function swap(uint256 srcAmount, address destination) external override {
+
+    }
+
+    function sync() external override {
+
+    }
 }

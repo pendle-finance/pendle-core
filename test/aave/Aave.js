@@ -7,7 +7,7 @@ const {
   getTokenAmount,
   getCurrentBlockTime,
   mineBlockAtTime,
-  printAaveAddressDetails
+  printAaveAddressDetails,
 } = require('../helpers/Helpers');
 
 contract('Aave', function (accounts) {
@@ -29,7 +29,7 @@ contract('Aave', function (accounts) {
 
     it('deposit aUSDT in one month', async function () {
       await mintAUSDT(accounts[0], 10000);
-      console.log("\n\tBefore:");
+      console.log('\n\tBefore:');
       await printAaveAddressDetails(accounts[0]);
 
       const currentTime = await getCurrentBlockTime();
@@ -38,7 +38,7 @@ contract('Aave', function (accounts) {
       const timeAfterOneMonth = await getCurrentBlockTime();
 
       const aaveContracts = await getAaveContracts();
-      console.log("\n\tAfter one month:");
+      console.log('\n\tAfter one month:');
       await printAaveAddressDetails(accounts[0]);
     });
   });

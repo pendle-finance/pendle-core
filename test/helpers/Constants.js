@@ -3,7 +3,7 @@ const BN = web3.utils.BN;
 module.exports = {
   constants: {
     tokenAmountMultipliers: {
-      "USDT": new BN(1000000)
+      USDT: new BN(1000000),
     },
     DUMMY_GOVERNANCE_ADDRESS: '0xdac17f958d2ee523a2206206994597c13d831ec7',
     USDT_ADDRESS: '0xdac17f958d2ee523a2206206994597c13d831ec7',
@@ -18,5 +18,5 @@ module.exports = {
     DURATION_SIXMONTHS: 2,
     MAX_ALLOWANCE: new BN(2).pow(new BN(256)).sub(new BN(1)),
     TEST_EXPIRY: 1606780800, // 1st Dec 2020, 0:00 UTC
-  }
+  },
 };
