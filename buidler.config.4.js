@@ -18,14 +18,14 @@ module.exports = {
     },
   },
   solc: {
-    version: '0.5.14',
+    version: '0.4.17',
     optimizer: {
       enabled: true,
       runs: 200,
     },
   },
   paths: {
-    sources: './contracts/aave',
+    sources: './contracts/v4',
   },
   mocha: {
     enableTimeouts: false,

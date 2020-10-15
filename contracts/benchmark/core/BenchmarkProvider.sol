@@ -38,4 +38,8 @@ contract BenchmarkProvider is Permissions {
     function getReserveATokenAddress(address _underlyingToken) public view returns (address) {
         return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveATokenAddress(_underlyingToken);
     }
+
+    function getAaveNormalisedIncome(address _underlyingToken) public view returns (uint256) {
+        return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveNormalizedIncome(_underlyingToken);
+    }
 }

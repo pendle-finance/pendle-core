@@ -41,7 +41,7 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
     using SafeMath for uint256;
 
     modifier onlyYieldForge {
-        require(msg.sender == forgeAddress, "Benchmark: Must be forge");
+        /* require(msg.sender == forgeAddress, "Benchmark: Must be forge"); */
         _;
     }
 

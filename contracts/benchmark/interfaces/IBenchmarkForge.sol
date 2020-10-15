@@ -68,19 +68,19 @@ interface IBenchmarkForge is IBenchmarkCommon {
      **/
     function provider() external view returns (BenchmarkProvider);
 
-    // function redeemUnderlying(
-    //     ContractDurations contractDuration,
-    //     uint256 expiry,
-    //     uint256 amountToRedeem,
-    //     address to
-    // ) external returns (uint256 redeemedAmount);
+    function redeemUnderlying(
+        ContractDurations contractDuration,
+        uint256 expiry,
+        uint256 amountToRedeem,
+        address to
+    ) external returns (uint256 redeemedAmount);
 
-    // function tokenizeYield(
-    //     ContractDurations contractDuration,
-    //     uint256 expiry,
-    //     uint256 amountToTokenize,
-    //     address to
-    // ) external returns (address ot, address xyt);
+    function tokenizeYield(
+        ContractDurations contractDuration,
+        uint256 expiry,
+        uint256 amountToTokenize,
+        address to
+    ) external returns (address ot, address xyt);
 
     // function redeemAfterExpiry(
     //     ContractDurations contractDuration,
@@ -106,5 +106,5 @@ interface IBenchmarkForge is IBenchmarkCommon {
      * @dev Returns the address of the underlying yield token
      * @return returns the underlying forge address
      **/
-    function underlyingToken() external view returns (address);    
+    function underlyingToken() external view returns (address);
 }

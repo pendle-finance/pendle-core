@@ -28,6 +28,7 @@ import "../interfaces/IBenchmarkToken.sol";
 import "../tokens/BenchmarkFutureYieldToken.sol";
 import "../tokens/BenchmarkOwnershipToken.sol";
 import "./BenchmarkProvider.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 
 contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
@@ -36,6 +37,7 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
     BenchmarkProvider public override provider;
 
     mapping (ContractDurations => mapping(uint256 => address)) public otTokens;
+    mapping (ContractDurations => mapping(uint256 => mapping(address => uint256))) public lastNormalisedIncome;
     mapping (ContractDurations => mapping(uint256 => address)) public xytTokens;
 
     constructor() {
@@ -47,6 +49,7 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         underlyingToken = _underlyingToken;
         provider = _provider;
     }
+
 
     // function redeem(uint256 _amount) external {
     //     require(_amount > 0, "Amount to redeem needs to be > 0");
@@ -77,14 +80,69 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
     //     emit Redeem(msg.sender, amountToRedeem);
     // }
 
-    // function tokenizeYield(
-    //     ContractDurations _contractDuration,
-    //     uint256 _amountToTokenize,
-    //     address _to
-    // ) external override returns (address ot, address xyt) {
-    //     ot = forgeOwnershipToken();
-    //     xyt = forgeOwnershipToken();
-    // }
+    // msg.sender needs to have both OT and XYT tokens
+    function redeemUnderlying(
+        ContractDurations contractDuration,
+        uint256 expiry,
+        uint256 amountToRedeem,
+        address to
+    ) external override returns (uint256 redeemedAmount) {
+        BenchmarkFutureYieldToken xytContract = BenchmarkFutureYieldToken(xytTokens[contractDuration][expiry]);
+        BenchmarkOwnershipToken otContract = BenchmarkOwnershipToken(otTokens[contractDuration][expiry]);
+        ERC20 underlyingYieldToken = ERC20(provider.getReserveATokenAddress(underlyingToken));
+
+        require(otContract.balanceOf(msg.sender) >= amountToRedeem, "Must have enough OT tokens");
+        require(xytContract.balanceOf(msg.sender) >= amountToRedeem, "Must have enough XYT tokens");
+
+        underlyingYieldToken.transfer(to, amountToRedeem);
+        settleDueInterests(contractDuration, expiry, xytContract, msg.sender, underlyingYieldToken);
+        otContract.burn(msg.sender, amountToRedeem);
+        xytContract.burn(msg.sender, amountToRedeem);
+
+
+
+        return amountToRedeem;
+    }
+
+    //TODO: safemath
+    function settleDueInterests(
+        ContractDurations contractDuration,
+        uint256 expiry,
+        BenchmarkFutureYieldToken xytContract,
+        address account,
+        ERC20 underlyingYieldToken
+    ) internal returns (uint256){
+        uint256 principal = xytContract.balanceOf(account);
+        uint256 Ix = lastNormalisedIncome[contractDuration][expiry][account];
+        uint256 In = provider.getAaveNormalisedIncome(underlyingToken);
+
+        uint256 dueInterests = principal * In / Ix - principal;
+
+        if (dueInterests > 0) {
+          underlyingYieldToken.transfer(account, dueInterests);
+        }
+
+        lastNormalisedIncome[contractDuration][expiry][account] = In;
+        return dueInterests;
+    }
+
+    function tokenizeYield(
+        ContractDurations _contractDuration,
+        uint256 _expiry,
+        uint256 _amountToTokenize,
+        address _to
+    ) external override returns (address ot, address xyt) {
+        BenchmarkFutureYieldToken xytContract = BenchmarkFutureYieldToken(xytTokens[_contractDuration][_expiry]);
+        BenchmarkOwnershipToken otContract = BenchmarkOwnershipToken(otTokens[_contractDuration][_expiry]);
+
+        ERC20 underlyingYieldToken = ERC20(provider.getReserveATokenAddress(underlyingToken));
+        underlyingYieldToken.transferFrom(msg.sender, address(this), _amountToTokenize);
+
+        otContract.mint(_to, _amountToTokenize);
+        xytContract.mint(_to, _amountToTokenize);
+        lastNormalisedIncome[_contractDuration][_expiry][_to] = provider.getAaveNormalisedIncome(underlyingToken);
+        return (address(otContract), address(xytContract));
+    }
 
 
     function newYieldContracts(

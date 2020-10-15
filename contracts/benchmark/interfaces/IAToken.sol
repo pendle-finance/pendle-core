@@ -29,7 +29,7 @@ pragma solidity ^0.7.0;
  * @dev Implementation of the interest bearing token for the DLP protocol.
  * @author Aave
  */
-interface AToken {
+interface IAToken {
     /**
      * @dev gives allowance to an address to execute the interest redirection
      * on behalf of the caller.

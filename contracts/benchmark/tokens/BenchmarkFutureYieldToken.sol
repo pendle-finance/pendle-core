@@ -27,6 +27,7 @@ import "./BenchmarkBaseToken.sol";
 
 contract BenchmarkFutureYieldToken is BenchmarkBaseToken {
     /* address public ot; */
+    /* mapping (address => uint256) public lastNormalisedIncome; */
 
     constructor(
         /* address _ot, */
@@ -46,6 +47,11 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken {
             _expiry
         )
     {
-        
+
     }
+
+    /* function setLastNormalisedIncome(address account, uint256 normalisedIncome) public returns (bool) {
+        lastNormalisedIncome[account] = normalisedIncome;
+        return true;
+    } */
 }
