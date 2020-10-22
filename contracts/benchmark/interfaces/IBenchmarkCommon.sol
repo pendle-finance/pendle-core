@@ -31,5 +31,5 @@ interface IBenchmarkCommon {
    *      At the moment, we fix these duration at 1 month, 3 months, and 6 months
    *      respectively.
    **/
-  enum ContractDurations {OneMonth, ThreeMonths, SixMonths}
+  enum ContractDurations {OneMonth, ThreeMonths, SixMonths, OneYear}
 }

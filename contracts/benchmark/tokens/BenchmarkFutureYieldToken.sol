@@ -23,16 +23,16 @@
 pragma solidity ^0.7.0;
 
 import "./BenchmarkBaseToken.sol";
+import "../core/BenchmarkForge.sol";
 
 
 contract BenchmarkFutureYieldToken is BenchmarkBaseToken {
     address forgeAddress;
-    address public ot;
-    // mapping (address => uint256) public lastNormalisedIncome;
 
     constructor(
-        address _ot,
-        address _underlyingYieldToken,
+        /* address _ot, */
+        address _benchmarkProvider,
+        address _underlyingToken,
         uint8 _underlyingYieldTokenDecimals,
         string memory _name,
         string memory _symbol,
@@ -40,7 +40,8 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken {
         uint256 _expiry
     )
         BenchmarkBaseToken(
-            _underlyingYieldToken,
+            _benchmarkProvider,
+            _underlyingToken,
             _underlyingYieldTokenDecimals,
             _name,
             _symbol,
@@ -49,11 +50,9 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken {
         )
     {
         forgeAddress = msg.sender;
-        ot = _ot;
     }
 
-    /* function setLastNormalisedIncome(address account, uint256 normalisedIncome) public returns (bool) {
-        lastNormalisedIncome[account] = normalisedIncome;
-        return true;
-    } */
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
+        BenchmarkForge(forgeAddress).redeemDueInterestsBeforeTransfer(contractDuration, expiry, from);
+    }
 }

@@ -77,11 +77,11 @@ interface IBenchmarkForge is IBenchmarkCommon {
         address to
     ) external returns (address ot, address xyt);
 
-    // function redeemAfterExpiry(
-    //     ContractDurations contractDuration,
-    //     uint256 expiry,
-    //     address to
-    // ) external returns (uint256 redeemedAmount);
+    function redeemAfterExpiry(
+        ContractDurations contractDuration,
+        uint256 expiry,
+        address to
+    ) external returns (uint256 redeemedAmount);
 
     // function renew(
     //     ContractDurations oldContractDuration,
@@ -91,11 +91,10 @@ interface IBenchmarkForge is IBenchmarkCommon {
     //     address to
     // ) external returns (uint256 redeemedAmount);
 
-    // function redeemDueInterests(
-    //     ContractDurations contractDuration,
-    //     uint256 expiry,
-    //     address to
-    // ) external;
+    function redeemDueInterests(
+        ContractDurations contractDuration,
+        uint256 expiry
+    ) external returns (uint256 interests);
 
     // TODO: Function to track all the XYTs/OTs for a contract duration
 
@@ -109,5 +108,5 @@ interface IBenchmarkForge is IBenchmarkCommon {
      * @dev Returns the address of the underlying yield token
      * @return returns the underlying yield token address
      **/
-    function underlyingYieldToken() external view returns (address);
+    function underlyingToken() external view returns (address);
 }

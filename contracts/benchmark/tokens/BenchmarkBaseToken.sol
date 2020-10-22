@@ -40,6 +40,7 @@ import "../interfaces/IBenchmarkToken.sol";
 abstract contract BenchmarkBaseToken is IBenchmarkToken {
     using SafeMath for uint256;
 
+
     modifier onlyYieldForge {
         /* require(msg.sender == forgeAddress, "Benchmark: Must be forge"); */
         _;
@@ -53,22 +54,25 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
     uint8 public override decimals;
     uint256 public override expiry;
     uint256 public override totalSupply;
-    address public override underlyingYieldToken;
+    address public override underlyingToken;
+    address public benchmarkProvider;
 
     constructor(
-        address _underlyingYieldToken,
+        address _benchmarkProvider,
+        address _underlyingToken,
         uint8 _underlyingYieldTokenDecimals,
         string memory _name,
         string memory _symbol,
         ContractDurations _contractDuration,
         uint256 _expiry
     ) {
+        benchmarkProvider = _benchmarkProvider;
         contractDuration = _contractDuration;
         decimals = _underlyingYieldTokenDecimals;
         expiry = _expiry;
         name = _name;
         symbol = _symbol;
-        underlyingYieldToken = _underlyingYieldToken;
+        underlyingToken = _underlyingToken;
     }
 
    /**
@@ -174,8 +178,12 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
         require(sender != address(0), "BenchmarkToken: transfer from the zero address");
         require(recipient != address(0), "BenchmarkToken: transfer to the zero address");
 
+        _beforeTokenTransfer(sender, recipient, amount);
+        
         balanceOf[sender] = balanceOf[sender].sub(amount, "BenchmarkToken: transfer amount exceeds balance");
         balanceOf[recipient] = balanceOf[recipient].add(amount);
         emit Transfer(sender, recipient, amount);
     }
+
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
 }

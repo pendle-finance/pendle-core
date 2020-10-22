@@ -30,7 +30,7 @@ interface IBenchmarkFactory is IBenchmarkCommon {
     /**
      * @notice Sets the treasury contract address where fees will be sent to.
      **/
-    function setTreasury(address) external;
+    /* function setTreasury(address) external; */
 
     /**
      * @notice Gets the core Benchmark contract address.

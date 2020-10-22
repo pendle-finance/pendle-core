@@ -30,9 +30,10 @@ contract Benchmark is IBenchmark, Permissions {
     address public override factory;
     address private initializer;
 
-    constructor(address _governance) Permissions(_governance) {        
+    constructor(address _governance) Permissions(_governance) {
         require(_governance != address(0), "Benchmark: zero address");
         governance = _governance;
+        initializer = msg.sender;
     }
 
     function initialize(address _factory) external {

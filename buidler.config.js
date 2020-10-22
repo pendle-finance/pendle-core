@@ -14,7 +14,7 @@ module.exports = {
     development: {
       url: 'http://127.0.0.1:8545',
       gas: 12400000,
-      timeout: 100000,
+      timeout: 1000000,
     },
   },
   solc: {
@@ -30,5 +30,6 @@ module.exports = {
   },
   mocha: {
     enableTimeouts: false,
+    timeout: 100000
   },
 };

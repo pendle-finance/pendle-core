@@ -37,6 +37,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     uint8 private constant _decimals = 18;
 
     constructor(
+        address _benchmarkProvider,
         address _xyt,
         address _token,
         address _underlyingYieldToken,
@@ -44,6 +45,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         ContractDurations _contractDuration,
         uint256 _expiry
     )  BenchmarkBaseToken(
+        _benchmarkProvider,
         _underlyingYieldToken,
         _decimals,
         _name,

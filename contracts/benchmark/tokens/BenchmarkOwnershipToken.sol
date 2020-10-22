@@ -27,11 +27,12 @@ import "./BenchmarkBaseToken.sol";
 
 contract BenchmarkOwnershipToken is BenchmarkBaseToken {
     address public forgeAddress;
-    address public xyt;
+    /* address public xyt; */
 
     constructor(
-        address _xyt,
-        address _underlyingYieldToken,
+        /* address _xyt, */
+        address _benchmarkProvider,
+        address _underlyingToken,
         uint8 _underlyingYieldTokenDecimals,
         string memory _name,
         string memory _symbol,
@@ -39,7 +40,8 @@ contract BenchmarkOwnershipToken is BenchmarkBaseToken {
         uint256 _expiry
     )
         BenchmarkBaseToken(
-            _underlyingYieldToken,
+            _benchmarkProvider,
+            _underlyingToken,
             _underlyingYieldTokenDecimals,
             _name,
             _symbol,
@@ -48,6 +50,6 @@ contract BenchmarkOwnershipToken is BenchmarkBaseToken {
         )
     {
         forgeAddress = msg.sender;
-        xyt = _xyt;
+        /* xyt = _xyt; */
     }
 }

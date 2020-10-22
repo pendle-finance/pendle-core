@@ -28,7 +28,7 @@ import "../interfaces/IBenchmarkFactory.sol";
 import "../interfaces/IBenchmarkProvider.sol";
 import "../utils/Permissions.sol";
 
-contract BenchmarkFactory is IBenchmarkFactory, Permissions {
+contract BenchmarkFactory is IBenchmarkFactory {
     mapping(address => address) public override getForge;
     mapping(address => mapping(address => address)) public override getMarket;
     IBenchmarkProvider public provider;
@@ -37,12 +37,13 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
     address private initializer;
     address[] private allForges;
     address[] private allMarkets;
+    address governance;
 
     constructor(
         address _governance,
         address _treasury,
         IBenchmarkProvider _provider
-    ) Permissions(_governance) {
+    ) {
         require(_governance != address(0), "Benchmark: zero address");
         require(_treasury != address(0), "Benchmark: zero address");
         require(address(_provider) != address(0), "Benchmark: zero address");
@@ -123,10 +124,10 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         emit MarketCreated(_xyt, _token, treasury, market);
     }
 
-    function setTreasury(address _treasury) external override onlyGovernance {
+    /* function setTreasury(address _treasury) external override onlyGovernance {
         require(_treasury != address(0), "Benchmark: zero address");
         treasury = _treasury;
-    }
+    } */
 
     function allForgesLength() external view override returns (uint256) {
         return allForges.length;

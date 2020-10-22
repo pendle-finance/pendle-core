@@ -106,5 +106,5 @@ interface IBenchmarkToken is IBenchmarkCommon, IERC20 {
      * @notice Returns the address of the underlying yield token.
      * @return Returns the underlying yield token address.
      **/
-    function underlyingYieldToken() external view returns (address);
+    function underlyingToken() external view returns (address);
 }
