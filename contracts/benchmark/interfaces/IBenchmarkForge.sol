@@ -24,6 +24,7 @@
 pragma solidity ^0.7.0;
 
 import "./IBenchmarkCommon.sol";
+import "./IBenchmarkProvider.sol";
 import "../core/BenchmarkProvider.sol";
 
 
@@ -42,12 +43,6 @@ interface IBenchmarkForge is IBenchmarkCommon {
      **/
     event RedeemYieldToken(address indexed underlyingYieldToken, uint256 amount);
 
-    /**
-     * @dev Returns the address of the BenchmarkFactory for this BenchmarkForge.
-     * @return Returns the factory's address.
-     **/
-    function factory() external view returns (address);
-
     // TODO: We need some logic to only allow some kinds of expiry
     // for each contractDuration
     // For example: For each duration, only allow expiry at the start,
@@ -56,12 +51,6 @@ interface IBenchmarkForge is IBenchmarkCommon {
         ContractDurations contractDuration,
         uint256 expiry
     ) external returns (address ot, address xyt);
-
-    /**
-     * @dev Returns a reference to the BenchmarkProvider
-     * @return returns the provider reference
-     **/
-    function provider() external view returns (BenchmarkProvider);
 
     function redeemUnderlying(
         ContractDurations contractDuration,
@@ -100,10 +89,16 @@ interface IBenchmarkForge is IBenchmarkCommon {
     // TODO: Function to track all the XYTs/OTs for a contract duration
 
     /**
-     * @notice Gets the treasury contract address where fees are being sent to.
-     * @return Address of the treasury contract.
+     * @dev Returns the address of the BenchmarkFactory contract address.
+     * @return Returns the factory's address.
      **/
-    function treasury() external view returns (address);
+    function factory() external view returns (address);
+
+    /**
+     * @dev Returns an instance of the BenchmarkProvider contract.
+     * @return Returns the provider's instance.
+     **/
+    function provider() external view returns (IBenchmarkProvider);
 
     /**
      * @dev Returns the address of the underlying yield token

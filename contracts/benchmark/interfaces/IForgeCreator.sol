@@ -20,27 +20,23 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
+
 pragma solidity ^0.7.0;
 
-import "../interfaces/IAaveLendingPoolCore.sol";
-import "../interfaces/IBenchmarkProvider.sol";
-import "../periphery/Permissions.sol";
+import "./IBenchmarkCommon.sol";
 
 
-contract BenchmarkProvider is IBenchmarkProvider, Permissions {
-    address public override aaveLendingPoolCore;
+interface IForgeCreator is IBenchmarkCommon {
+    /**
+     * @notice Creates a forge given an underlying yield token.
+     * @param underlyingYieldToken Token address of the underlying yield token.
+     * @return forge Returns the address of the newly created forge.
+     **/
+    function create(address underlyingYieldToken) external returns (address forge);
 
-    constructor(address _governance) Permissions(_governance) {}
-
-    function setAaveAddress(address _aaveLendingPoolCore) public override onlyMaintainer {
-        aaveLendingPoolCore = _aaveLendingPoolCore;
-    }
-
-    function getAaveNormalisedIncome(address _underlyingToken) public view override returns (uint256) {
-        return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveNormalizedIncome(_underlyingToken);
-    }
-
-    function getATokenAddress(address _underlyingYieldToken) public view override returns (address) {
-        return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveATokenAddress(_underlyingYieldToken);
-    }
+    /**
+     * @dev Returns the address of the BenchmarkFactory for this BenchmarkForge.
+     * @return Returns the factory's address.
+     **/
+    function factory() external view returns (address);
 }

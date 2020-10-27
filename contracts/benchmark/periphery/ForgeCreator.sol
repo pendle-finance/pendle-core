@@ -22,25 +22,39 @@
  */
 pragma solidity ^0.7.0;
 
-import "../interfaces/IAaveLendingPoolCore.sol";
+import "../core/BenchmarkForge.sol";
 import "../interfaces/IBenchmarkProvider.sol";
-import "../periphery/Permissions.sol";
+import "../interfaces/IForgeCreator.sol";
+import "../periphery/Utils.sol";
 
+contract ForgeCreator is IForgeCreator, Utils {
+    address public override factory;
+    address private initializer;
 
-contract BenchmarkProvider is IBenchmarkProvider, Permissions {
-    address public override aaveLendingPoolCore;
-
-    constructor(address _governance) Permissions(_governance) {}
-
-    function setAaveAddress(address _aaveLendingPoolCore) public override onlyMaintainer {
-        aaveLendingPoolCore = _aaveLendingPoolCore;
+    constructor() {
+        initializer = msg.sender;
     }
 
-    function getAaveNormalisedIncome(address _underlyingToken) public view override returns (uint256) {
-        return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveNormalizedIncome(_underlyingToken);
+    /**
+     * @notice Initializes the BenchmarkFactory.
+     * @dev Only called once.
+     * @param _factory The address of the BenchmarkFactory core contract.
+     **/
+    function initialize(address _factory) external {
+        require(msg.sender == initializer, "Benchmark: forbidden");
+        require(_factory != address(0), "Benchmark: zero address");
+
+        initializer = address(0);
+        factory = _factory;
     }
 
-    function getATokenAddress(address _underlyingYieldToken) public view override returns (address) {
-        return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveATokenAddress(_underlyingYieldToken);
+    function create(address _underlyingYieldToken) external override returns (address forge) {
+        require(msg.sender == factory, "Benchmark: forbidden");
+
+        forge = _create(
+            type(BenchmarkForge).creationCode,
+            abi.encodePacked(_underlyingYieldToken),
+            abi.encode(_underlyingYieldToken)
+        );
     }
 }

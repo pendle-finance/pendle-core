@@ -65,6 +65,7 @@ contract('BenchmarkFactory', ([deployer, governance, stub]) => {
         from: deployer,
       });
       this.token = await TestToken.new('Token', 'TST', '18', {from: deployer});
+      console.log(this.token.address)
     });
 
     it('should create an aUSDT Forge', async () => {
@@ -95,9 +96,6 @@ contract('BenchmarkFactory', ([deployer, governance, stub]) => {
 
     it('should get all forges', async () => {
       const factoryAllForges = await this.factory.getAllForges();
-      const factoryAllForgesLength = await this.factory.allForgesLength();
-
-      expect(parseInt(factoryAllForgesLength)).to.eq(allForges.length);
       expect(factoryAllForges).to.deep.equal(allForges);
     });
   });

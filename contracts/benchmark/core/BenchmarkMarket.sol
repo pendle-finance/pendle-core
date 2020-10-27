@@ -25,11 +25,9 @@ pragma solidity ^0.7.0;
 import "../interfaces/IBenchmarkMarket.sol";
 import "../tokens/BenchmarkBaseToken.sol";
 
-
 contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     address public immutable override factory;
     address public immutable override token;
-    address public immutable override treasury;
     address public immutable override xyt;
     uint256 public constant override minLiquidity = 10**3;
     string private constant _name = "Benchmark Market";
@@ -39,22 +37,12 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     constructor(
         address _xyt,
         address _token,
-        address _underlyingYieldToken,
-        address _treasury,
         ContractDurations _contractDuration,
         uint256 _expiry
-    )  BenchmarkBaseToken(
-        _underlyingYieldToken,
-        _decimals,
-        _name,
-        _symbol,
-        _contractDuration,
-        _expiry
-    ) {
+    ) BenchmarkBaseToken(_name, _symbol, _decimals, _contractDuration, _expiry) {
         factory = msg.sender;
         xyt = _xyt;
         token = _token;
-        treasury = _treasury;
     }
 
     function getReserves()
@@ -65,15 +53,12 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             uint112 xytReserves,
             uint112 tokenReserves,
             uint32 lastBlockTimestamp
-        ) {
-
+        )
+    {
+        
     }
 
-    function swap(uint256 srcAmount, address destination) external override {
+    function swap(uint256 srcAmount, address destination) external override {}
 
-    }
-
-    function sync() external override {
-
-    }
+    function sync() external override {}
 }

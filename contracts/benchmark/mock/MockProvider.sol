@@ -27,4 +27,8 @@ import "../core/BenchmarkProvider.sol";
 
 contract MockBenchmark is BenchmarkProvider {
     constructor() BenchmarkProvider(0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa) {}
+
+    // function getATokenAddress(address _underlyingYieldToken) public view override returns (address) {
+    //     return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveATokenAddress(_underlyingYieldToken);
+    // }
 }

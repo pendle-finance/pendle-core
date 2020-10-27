@@ -26,13 +26,12 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IBenchmarkToken.sol";
 
 
-
 /**
  *   @title BenchmarkBaseToken
  *   @dev The contract implements the standard ERC20 functions, plus some
  *        Benchmark specific fields and functions, namely:
- *          - forgeAddress()
- *          - underlyingYieldToken()
+ *          - contractDuration
+ *          - expiry
  *
  *        This abstract contract is inherited by BenchmarkFutureYieldToken
  *        and BenchmarkOwnershipToken contracts.
@@ -40,7 +39,8 @@ import "../interfaces/IBenchmarkToken.sol";
 abstract contract BenchmarkBaseToken is IBenchmarkToken {
     using SafeMath for uint256;
 
-    modifier onlyYieldForge {
+    // TODO: forge address is in child contract, so move this check in child contract
+    modifier onlyForge {
         /* require(msg.sender == forgeAddress, "Benchmark: Must be forge"); */
         _;
     }
@@ -53,22 +53,19 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
     uint8 public override decimals;
     uint256 public override expiry;
     uint256 public override totalSupply;
-    address public override underlyingYieldToken;
 
     constructor(
-        address _underlyingYieldToken,
-        uint8 _underlyingYieldTokenDecimals,
         string memory _name,
         string memory _symbol,
+        uint8 _decimals,
         ContractDurations _contractDuration,
         uint256 _expiry
     ) {
         contractDuration = _contractDuration;
-        decimals = _underlyingYieldTokenDecimals;
         expiry = _expiry;
         name = _name;
         symbol = _symbol;
-        underlyingYieldToken = _underlyingYieldToken;
+        decimals = _decimals;
     }
 
    /**
@@ -82,12 +79,13 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
         return true;
     }
 
+    // TODO: set this as internal, and put external definition on child
     /**
      * @dev Burns OT or XYT tokens from account, reducting the total supply.
      * @param account The address performing the burn.
      * @param amount The amount to be burned.
      **/
-    function burn(address account, uint256 amount) public override onlyYieldForge {
+    function burn(address account, uint256 amount) public override onlyForge {
         _burn(account, amount);
     }
 
@@ -113,12 +111,13 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
         return true;
     }
 
+    // TODO: set this as internal, and put external definition on child
     /**
      * @dev Mints new OT or XYT tokens for account, increasing the total supply.
      * @param account The address to send the minted tokens.
      * @param amount The amount to be minted.
      **/
-    function mint(address account, uint256 amount) public override onlyYieldForge {
+    function mint(address account, uint256 amount) public override onlyForge {
         _mint(account, amount);
     }
 

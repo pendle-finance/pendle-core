@@ -1,4 +1,3 @@
-const bre = require('@nomiclabs/buidler');
 const LendingPool = artifacts.require('LendingPool');
 const LendingPoolAddressesProvider = artifacts.require('LendingPoolAddressesProvider');
 const CoreLibrary = artifacts.require('CoreLibrary');

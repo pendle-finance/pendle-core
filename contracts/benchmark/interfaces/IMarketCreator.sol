@@ -20,9 +20,31 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
+
 pragma solidity ^0.7.0;
 
+import "./IBenchmarkCommon.sol";
 
-abstract contract Utils {
-    uint256 public constant UINT_MAX_VALUE = uint256(-1);
+
+interface IMarketCreator is IBenchmarkCommon {
+    /**
+     * @notice Creates a market given a future yield token and an ERC20 token.
+     * @param xyt Token address of the future yield token as base asset.
+     * @param token Token address of an ERC20 token as quote asset.
+     * @param contractDuration Yield contract duration type from enums.
+     * @param expiry Yield contract expiry in epoch time.
+     * @return market Returns the address of the newly created market.
+     **/
+    function create(
+        address xyt,
+        address token,
+        ContractDurations contractDuration,
+        uint256 expiry
+    ) external returns (address market);
+
+    /**
+     * @dev Returns the address of the BenchmarkFactory for this BenchmarkForge.
+     * @return Returns the factory's address.
+     **/
+    function factory() external view returns (address);
 }

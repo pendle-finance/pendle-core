@@ -30,7 +30,7 @@ abstract contract Permissions {
     event EtherWithdraw(uint256 amount, address sendTo);
     event TokenWithdraw(IERC20 token, uint256 amount, address sendTo);
 
-    address public governance;
+    address public immutable governance;
     address[] internal maintainersGroup;
     mapping(address => bool) internal maintainers;
 

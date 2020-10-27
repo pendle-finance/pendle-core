@@ -22,25 +22,21 @@
  */
 pragma solidity ^0.7.0;
 
-import "../interfaces/IAaveLendingPoolCore.sol";
-import "../interfaces/IBenchmarkProvider.sol";
-import "../periphery/Permissions.sol";
 
+abstract contract Utils {
+    uint256 public constant UINT_MAX_VALUE = uint256(-1);
 
-contract BenchmarkProvider is IBenchmarkProvider, Permissions {
-    address public override aaveLendingPoolCore;
+    function _create(
+        bytes memory bytecode,
+        bytes memory salting,
+        bytes memory ctor
+    ) internal returns (address forge) {
+        bytes32 salt = keccak256(salting);
 
-    constructor(address _governance) Permissions(_governance) {}
+        bytecode = abi.encodePacked(bytecode, ctor);
 
-    function setAaveAddress(address _aaveLendingPoolCore) public override onlyMaintainer {
-        aaveLendingPoolCore = _aaveLendingPoolCore;
-    }
-
-    function getAaveNormalisedIncome(address _underlyingToken) public view override returns (uint256) {
-        return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveNormalizedIncome(_underlyingToken);
-    }
-
-    function getATokenAddress(address _underlyingYieldToken) public view override returns (address) {
-        return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveATokenAddress(_underlyingYieldToken);
+        assembly {
+            forge := create2(0, add(bytecode, 32), mload(bytecode), salt)
+        }
     }
 }

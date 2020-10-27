@@ -26,7 +26,8 @@ import "./BenchmarkBaseToken.sol";
 
 
 contract BenchmarkFutureYieldToken is BenchmarkBaseToken {
-    address forgeAddress;
+    address public forgeAddress;
+    address public underlyingYieldToken;
     address public ot;
     // mapping (address => uint256) public lastNormalisedIncome;
 
@@ -40,15 +41,15 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken {
         uint256 _expiry
     )
         BenchmarkBaseToken(
-            _underlyingYieldToken,
-            _underlyingYieldTokenDecimals,
             _name,
             _symbol,
+            _underlyingYieldTokenDecimals,
             _contractDuration,
             _expiry
         )
     {
         forgeAddress = msg.sender;
+        underlyingYieldToken = _underlyingYieldToken;
         ot = _ot;
     }
 

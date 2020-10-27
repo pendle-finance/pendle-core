@@ -29,5 +29,7 @@ interface IBenchmarkProvider {
 
   function setAaveAddress(address _aaveLendingPoolCore) external;
 
-  function getATokenAddress(address _underlyingToken) external view returns (address);
+  function getAaveNormalisedIncome(address _underlyingToken) external view returns (uint256);
+  
+  function getATokenAddress(address _underlyingYieldToken) external view returns (address);
 }

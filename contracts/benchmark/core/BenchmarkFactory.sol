@@ -25,79 +25,73 @@ pragma solidity ^0.7.0;
 import "./BenchmarkForge.sol";
 import "./BenchmarkMarket.sol";
 import "../interfaces/IBenchmarkFactory.sol";
-import "../interfaces/IBenchmarkProvider.sol";
-import "../utils/Permissions.sol";
+import "../interfaces/IForgeCreator.sol";
+import "../interfaces/IMarketCreator.sol";
+import "../periphery/Permissions.sol";
+
 
 contract BenchmarkFactory is IBenchmarkFactory, Permissions {
     mapping(address => address) public override getForge;
     mapping(address => mapping(address => address)) public override getMarket;
-    IBenchmarkProvider public provider;
     address public override core;
-    address public override treasury;
-    address private initializer;
+    IBenchmarkProvider public override provider;
+    IForgeCreator public forgeCreator;
+    IMarketCreator public marketCreator;
     address[] private allForges;
     address[] private allMarkets;
+    address private initializer;
 
-    constructor(
-        address _governance,
-        address _treasury,
-        IBenchmarkProvider _provider
-    ) Permissions(_governance) {
-        require(_governance != address(0), "Benchmark: zero address");
-        require(_treasury != address(0), "Benchmark: zero address");
-        require(address(_provider) != address(0), "Benchmark: zero address");
-
+    constructor(address _governance) Permissions(_governance) {
         initializer = msg.sender;
-        governance = _governance;
-        treasury = _treasury;
-        provider = _provider;
     }
 
     /**
      * @notice Initializes the BenchmarkFactory.
      * @dev Only called once.
      * @param _core The address of the Benchmark core contract.
+     * @param _provider The address of the BenchmarkProvider contract.
      **/
-    function initialize(address _core) external {
+    function initialize(
+        address _core,
+        IBenchmarkProvider _provider,
+        IForgeCreator _forgeCreator,
+        IMarketCreator _marketCreator
+    ) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
         require(_core != address(0), "Benchmark: zero address");
+        require(address(_provider) != address(0), "Benchmark: zero address");
+        require(address(_forgeCreator) != address(0), "Benchmark: zero address");
+        require(address(_marketCreator) != address(0), "Benchmark: zero address");
+
         initializer = address(0);
         core = _core;
+        provider = _provider;
+        forgeCreator = _forgeCreator;
+        marketCreator = _marketCreator;
     }
 
     function createForge(address _underlyingYieldToken) external override returns (address forge) {
         require(core != address(0), "Benchmark: not initialized");
         require(_underlyingYieldToken != address(0), "Benchmark: zero address");
         require(getForge[_underlyingYieldToken] == address(0), "Benchmark: forge exists");
-        // TODO: Have a test environment for Aave before uncommenting below
-        // require(
-        //     provider.getReserveATokenAddress(underlyingYieldToken) != address(0),
-        //     "Benchmark: underlying token doesn't exist"
-        // );
-
-        bytes memory bytecode = type(BenchmarkForge).creationCode;
-        bytes32 salt = keccak256(abi.encodePacked(_underlyingYieldToken));
-
-        bytecode = abi.encodePacked(
-            bytecode,
-            abi.encode(_underlyingYieldToken, treasury, provider)
+        require(
+            provider.getATokenAddress(_underlyingYieldToken) != address(0),
+            "Benchmark: underlying not found"
         );
 
-        assembly {
-            forge := create2(0, add(bytecode, 32), mload(bytecode), salt)
-        }
-
+        forge = IForgeCreator(forgeCreator).create(_underlyingYieldToken);
         getForge[_underlyingYieldToken] = forge;
         allForges.push(forge);
 
         emit ForgeCreated(_underlyingYieldToken, forge);
     }
 
-    function createMarket(address _xyt, address _token)
-        external
-        override
-        returns (address market)
-    {
+    function createMarket(
+        address _xyt,
+        address _token,
+        ContractDurations _contractDuration,
+        uint256 _expiry
+    ) external override returns (address market) {
         require(core != address(0), "Benchmark: not initialized");
         require(_xyt != _token, "Benchmark: similar tokens");
         require(_xyt != address(0) && _token != address(0), "Benchmark: zero address");
@@ -105,39 +99,23 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         // TODO: Verify that xyt really exists on Benchmark
         // require(, "Benchmark: not xyt token");
 
-        // TODO: Get the underlyingYieldToken of xyt
-        address underlyingYieldToken;
-
-        bytes memory bytecode = type(BenchmarkMarket).creationCode;
-        bytes32 salt = keccak256(abi.encodePacked(_xyt, _token));
-
-        bytecode = abi.encodePacked(bytecode, abi.encode(underlyingYieldToken, provider));
-
-        assembly {
-            market := create2(0, add(bytecode, 32), mload(bytecode), salt)
-        }
-
+        market = IMarketCreator(marketCreator).create(_xyt, _token, _contractDuration, _expiry);
         getMarket[_xyt][_token] = market;
         allMarkets.push(market);
 
-        emit MarketCreated(_xyt, _token, treasury, market);
-    }
-
-    function setTreasury(address _treasury) external override onlyGovernance {
-        require(_treasury != address(0), "Benchmark: zero address");
-        treasury = _treasury;
+        emit MarketCreated(_xyt, _token, market);
     }
 
     function allForgesLength() external view override returns (uint256) {
         return allForges.length;
     }
 
-    function allMarketsLength() external view override returns (uint256) {
-        return allMarkets.length;
-    }
-
     function getAllForges() public view override returns (address[] memory) {
         return allForges;
+    }
+
+    function allMarketsLength() external view override returns (uint256) {
+        return allMarkets.length;
     }
 
     function getAllMarkets() public view override returns (address[] memory) {

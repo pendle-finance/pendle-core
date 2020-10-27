@@ -63,12 +63,6 @@ interface IBenchmarkMarket is IBenchmarkToken {
 
     function minLiquidity() external pure returns (uint256);
 
-    /**
-     * @notice Gets the treasury contract address where fees are being sent to.
-     * @return Address of the treasury contract.
-     **/
-    function treasury() external view returns (address);
-
     function token() external view returns (address);
 
     function xyt() external view returns (address);
