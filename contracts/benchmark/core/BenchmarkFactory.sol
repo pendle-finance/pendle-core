@@ -29,7 +29,7 @@ import "../interfaces/IBenchmarkFactory.sol";
 import "../periphery/Permissions.sol";
 
 
-contract BenchmarkFactory is IBenchmarkFactory {
+contract BenchmarkFactory is IBenchmarkFactory, Permissions {
     mapping(address => address) public override getForge;
     mapping(address => mapping(address => address)) public override getMarket;
     IBenchmark public override core;
@@ -64,8 +64,8 @@ contract BenchmarkFactory is IBenchmarkFactory {
         marketCreator = _marketCreator;
     }
 
-    function createForge(address _underlyingYieldToken) external override returns (address forge) {
-        require(core != address(0), "Benchmark: not initialized");
+    function createForge(address _underlyingAsset, address _underlyingYieldToken) external override returns (address forge) {
+        require(initializer == address(0), "Benchmark: not initialized");
         require(_underlyingYieldToken != address(0), "Benchmark: zero address");
         require(getForge[_underlyingYieldToken] == address(0), "Benchmark: forge exists");
 
@@ -76,17 +76,16 @@ contract BenchmarkFactory is IBenchmarkFactory {
             "Benchmark: underlying not found"
         );
 
-        forge = IForgeCreator(forgeCreator).create(_underlyingYieldToken);
+        forge = IForgeCreator(forgeCreator).create(_underlyingAsset,_underlyingYieldToken);
         getForge[_underlyingYieldToken] = forge;
         allForges.push(forge);
 
-        emit ForgeCreated(_underlyingYieldToken, forge);
+        emit ForgeCreated(_underlyingAsset, _underlyingYieldToken, forge);
     }
 
     function createMarket(
         address _xyt,
         address _token,
-        ContractDurations _contractDuration,
         uint256 _expiry
     ) external override returns (address market) {
         require(initializer == address(0), "Benchmark: not initialized");
@@ -96,11 +95,11 @@ contract BenchmarkFactory is IBenchmarkFactory {
         // TODO: Verify that xyt really exists on Benchmark
         // require(, "Benchmark: not xyt token");
 
-        market = IMarketCreator(marketCreator).create(_xyt, _token, _contractDuration, _expiry);
+        market = IMarketCreator(marketCreator).create(_xyt, _token, _expiry);
         getMarket[_xyt][_token] = market;
         allMarkets.push(market);
 
-        emit MarketCreated(_xyt, _token, treasury, market);
+        emit MarketCreated(_xyt, _token, market);
     }
 
     function allForgesLength() external view override returns (uint256) {

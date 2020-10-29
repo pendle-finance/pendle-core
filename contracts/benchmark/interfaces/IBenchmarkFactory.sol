@@ -24,24 +24,17 @@
 pragma solidity ^0.7.0;
 
 import "./IBenchmark.sol";
-import "./IBenchmarkCommon.sol";
 import "./IBenchmarkProvider.sol";
 import "./IForgeCreator.sol";
 import "./IMarketCreator.sol";
 
 
-interface IBenchmarkFactory is IBenchmarkCommon {
+interface IBenchmarkFactory {
     /**
      * @notice Gets a reference to the Benchmark core contract.
      * @return Returns the core contract reference.
      **/
     function core() external view returns (IBenchmark);
-
-    /**
-     * @notice Gets the address of the BenchmarkProvider contract.
-     * @return Retuns the Benchmark provider address.
-     **/
-    function provider() external view returns (IBenchmarkProvider);
 
     /***********
      *  FORGE  *
@@ -49,17 +42,23 @@ interface IBenchmarkFactory is IBenchmarkCommon {
 
     /**
      * @notice Emitted when a forge for an underlying yield token is created.
+     * @param underlyingAsset The address of the underlying asset.
      * @param underlyingYieldToken The address of the underlying yield token.
      * @param forge The address of the created forge.
      **/
-    event ForgeCreated(address indexed underlyingYieldToken, address forge);
+    event ForgeCreated(
+        address indexed underlyingAsset,
+        address indexed underlyingYieldToken,
+        address indexed forge
+    );
 
     /**
      * @notice Creates a forge given an underlying yield token.
+     * @param _underlyingAsset Token address of the underlying asset
      * @param _underlyingYieldToken Token address of the underlying yield token.
      * @return forge Returns the address of the newly created forge.
      **/
-    function createForge(address _underlyingYieldToken)
+    function createForge(address _underlyingAsset, address _underlyingYieldToken)
         external
         returns (address forge);
 
@@ -92,20 +91,18 @@ interface IBenchmarkFactory is IBenchmarkCommon {
      * @param token The address of an ERC20 token as the quote asset.
      * @param market The address of the newly created market.
      **/
-    event MarketCreated(address indexed xyt, address indexed token, address market);
+    event MarketCreated(address indexed xyt, address indexed token, address indexed market);
 
     /**
      * @notice Creates a market given a future yield token and an ERC20 token.
      * @param _xyt Token address of the future yield token as base asset.
      * @param _token Token address of an ERC20 token as quote asset.
-     * @param _contractDuration Yield contract duration type from enums.
      * @param _expiry Yield contract expiry in epoch time.
      * @return market Returns the address of the newly created market.
      **/
     function createMarket(
         address _xyt,
         address _token,
-        ContractDurations _contractDuration,
         uint256 _expiry
     ) external returns (address market);
 

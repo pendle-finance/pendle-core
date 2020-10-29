@@ -30,7 +30,6 @@ import "../interfaces/IBenchmarkBaseToken.sol";
  *   @title BenchmarkBaseToken
  *   @dev The contract implements the standard ERC20 functions, plus some
  *        Benchmark specific fields and functions, namely:
- *          - contractDuration
  *          - expiry
  *
  *        This abstract contract is inherited by BenchmarkFutureYieldToken

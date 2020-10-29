@@ -103,14 +103,12 @@ contract Benchmark is IBenchmark, Permissions {
      **/
     function redeemAfterExpiry(
         address underlyingToken,
-        ContractDurations contractDuration,
         uint256 expiry,
         address to
     ) public override returns (uint256 redeemedAmount) {}
 
     function redeemUnderlying(
         address underlyingToken,
-        ContractDurations contractDuration,
         uint256 expiry,
         uint256 amountToRedeem,
         address to
@@ -120,16 +118,13 @@ contract Benchmark is IBenchmark, Permissions {
     // mint new OTs+XYTs for a new expiry
     function renew(
         address underlyingToken,
-        ContractDurations oldContractDuration,
         uint256 oldExpiry,
-        ContractDurations newContractDuration,
         uint256 newExpiry,
         address to
     ) public override returns (uint256 redeemedAmount) {}
 
     function tokenizeYield(
         address underlyingToken,
-        ContractDurations contractDuration,
         uint256 expiry,
         uint256 amountToTokenize,
         address to

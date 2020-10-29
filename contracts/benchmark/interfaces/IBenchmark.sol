@@ -23,12 +23,11 @@
 
 pragma solidity ^0.7.0;
 
-import "./IBenchmarkCommon.sol";
 import "../interfaces/IBenchmarkFactory.sol";
 import "../interfaces/IBenchmarkProvider.sol";
 
 
-interface IBenchmark is IBenchmarkCommon {
+interface IBenchmark {
     /**
      * @notice Gets a reference to the BenchmarkFactory.
      * @return Returns the factory reference.
@@ -79,14 +78,12 @@ interface IBenchmark is IBenchmarkCommon {
 
     function redeemAfterExpiry(
         address underlyingToken,
-        ContractDurations contractDuration,
         uint256 expiry,
         address to
     ) external returns (uint256 redeemedAmount);
 
     function redeemUnderlying(
         address underlyingToken,
-        ContractDurations contractDuration,
         uint256 expiry,
         uint256 amountToRedeem,
         address to
@@ -94,16 +91,13 @@ interface IBenchmark is IBenchmarkCommon {
 
     function renew(
         address underlyingToken,
-        ContractDurations oldContractDuration,
         uint256 oldExpiry,
-        ContractDurations newContractDuration,
         uint256 newExpiry,
         address to
     ) external returns (uint256 redeemedAmount);
 
     function tokenizeYield(
         address underlyingToken,
-        ContractDurations contractDuration,
         uint256 expiry,
         uint256 amountToTokenize,
         address to

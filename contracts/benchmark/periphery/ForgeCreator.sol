@@ -27,34 +27,48 @@ import "../interfaces/IBenchmarkProvider.sol";
 import "../interfaces/IForgeCreator.sol";
 import "../periphery/Utils.sol";
 
+
 contract ForgeCreator is IForgeCreator, Utils {
-    address public override factory;
+    IBenchmarkProvider public override provider;
+    address public override core;
+    address public immutable override factory;
     address private initializer;
 
-    constructor() {
+    constructor(address _factory) {
+        require(_factory != address(0), "Benchmark: zero address");
+
         initializer = msg.sender;
+        factory = _factory;
     }
 
     /**
      * @notice Initializes the BenchmarkFactory.
      * @dev Only called once.
-     * @param _factory The address of the BenchmarkFactory core contract.
+     * @param _provider The reference to the BenchmarkProvider contract.
+     * @param _core The address of the Benchmark core contract.
      **/
-    function initialize(address _factory) external {
+    function initialize(IBenchmarkProvider _provider, address _core) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
-        require(_factory != address(0), "Benchmark: zero address");
+        require(address(_provider) != address(0), "Benchmark: zero address");
+        require(_core != address(0), "Benchmark: zero address");
 
         initializer = address(0);
-        factory = _factory;
+        core = _core;
+        provider = _provider;
     }
 
-    function create(address _underlyingYieldToken) external override returns (address forge) {
+    function create(address _underlyingAsset, address _underlyingYieldToken)
+        external
+        override
+        returns (address forge)
+    {
         require(msg.sender == factory, "Benchmark: forbidden");
+        require(initializer == address(0), "Benchmark: not initialized");
 
         forge = _create(
             type(BenchmarkForge).creationCode,
-            abi.encodePacked(_underlyingYieldToken),
-            abi.encode(_underlyingYieldToken)
+            abi.encodePacked(provider, core, factory, _underlyingAsset, _underlyingYieldToken),
+            abi.encode(provider, core, factory, _underlyingAsset, _underlyingYieldToken)
         );
     }
 }

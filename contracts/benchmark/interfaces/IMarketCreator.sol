@@ -23,28 +23,38 @@
 
 pragma solidity ^0.7.0;
 
-import "./IBenchmarkCommon.sol";
+import "./IBenchmarkProvider.sol";
 
 
-interface IMarketCreator is IBenchmarkCommon {
+interface IMarketCreator {
     /**
      * @notice Creates a market given a future yield token and an ERC20 token.
-     * @param xyt Token address of the future yield token as base asset.
-     * @param token Token address of an ERC20 token as quote asset.
-     * @param contractDuration Yield contract duration type from enums.
-     * @param expiry Yield contract expiry in epoch time.
+     * @param _xyt Token address of the future yield token as base asset.
+     * @param _token Token address of an ERC20 token as quote asset.
+     * @param _expiry Yield contract expiry in epoch time.
      * @return market Returns the address of the newly created market.
      **/
     function create(
-        address xyt,
-        address token,
-        ContractDurations contractDuration,
-        uint256 expiry
+        address _xyt,
+        address _token,
+        uint256 _expiry
     ) external returns (address market);
+
+    /**
+     * @dev Returns the address of the Benchmark core contract for this BenchmarkMarket.
+     * @return Returns core's address.
+     **/
+    function core() external view returns (address);
 
     /**
      * @dev Returns the address of the BenchmarkFactory for this BenchmarkForge.
      * @return Returns the factory's address.
      **/
     function factory() external view returns (address);
+
+    /**
+     * @dev Returns an instance of the BenchmarkProvider contract.
+     * @return Returns the provider's instance.
+     **/
+    function provider() external view returns (IBenchmarkProvider);
 }

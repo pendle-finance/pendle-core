@@ -28,38 +28,46 @@ import "../interfaces/IMarketCreator.sol";
 import "../periphery/Utils.sol";
 
 contract MarketCreator is IMarketCreator, Utils {
-    address public override factory;
+    IBenchmarkProvider public override provider;
+    address public override core;
+    address public override immutable factory;
     address private initializer;
 
-    constructor() {
+    constructor(address _factory) {
+        require(_factory != address(0), "Benchmark: zero address");
+
         initializer = msg.sender;
+        factory = _factory;
     }
 
     /**
      * @notice Initializes the BenchmarkFactory.
      * @dev Only called once.
-     * @param _factory The address of the BenchmarkFactory core contract.
+     * @param _provider The reference to the BenchmarkProvider contract.
+     * @param _core The address of the Benchmark core contract.
      **/
-    function initialize(address _factory) external {
+    function initialize(IBenchmarkProvider _provider, address _core) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
-        require(_factory != address(0), "Benchmark: zero address");
+        require(address(_provider) != address(0), "Benchmark: zero address");
+        require(_core != address(0), "Benchmark: zero address");
 
         initializer = address(0);
-        factory = _factory;
+        core = _core;        
+        provider = _provider;
     }
 
     function create(
         address _xyt,
         address _token,
-        ContractDurations _contractDuration,
         uint256 _expiry
     ) external override returns (address market) {
         require(msg.sender == factory, "Benchmark: forbidden");
+        require(initializer == address(0), "Benchmark: not initialized");
 
         market = _create(
             type(BenchmarkMarket).creationCode,
-            abi.encodePacked(_xyt, _token, _contractDuration, _expiry),
-            abi.encode(_xyt, _token, _contractDuration, _expiry)
+            abi.encodePacked(provider, core, factory, _xyt, _token, _expiry),
+            abi.encode(provider, core, factory, _xyt, _token, _expiry)
         );
     }
 }

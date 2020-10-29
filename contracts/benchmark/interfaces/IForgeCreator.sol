@@ -23,20 +23,35 @@
 
 pragma solidity ^0.7.0;
 
-import "./IBenchmarkCommon.sol";
+import "./IBenchmarkProvider.sol";
 
 
-interface IForgeCreator is IBenchmarkCommon {
+interface IForgeCreator {
     /**
      * @notice Creates a forge given an underlying yield token.
-     * @param underlyingYieldToken Token address of the underlying yield token.
+     * @param _underlyingAsset Token address of the underlying asset.
+     * @param _underlyingYieldToken Token address of the underlying yield token.
      * @return forge Returns the address of the newly created forge.
      **/
-    function create(address underlyingYieldToken) external returns (address forge);
+    function create(address _underlyingAsset, address _underlyingYieldToken)
+        external
+        returns (address forge);
+
+    /**
+     * @dev Returns the address of the Benchmark core contract for this BenchmarkMarket.
+     * @return Returns core's address.
+     **/
+    function core() external view returns (address);
 
     /**
      * @dev Returns the address of the BenchmarkFactory for this BenchmarkForge.
      * @return Returns the factory's address.
      **/
     function factory() external view returns (address);
+
+    /**
+     * @dev Returns an instance of the BenchmarkProvider contract.
+     * @return Returns the provider's instance.
+     **/
+    function provider() external view returns (IBenchmarkProvider);
 }
