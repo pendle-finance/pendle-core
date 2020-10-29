@@ -5,6 +5,7 @@ const BenchmarkProvider = artifacts.require('BenchmarkProvider');
 const Benchmark = artifacts.require('Benchmark');
 const BenchmarkFactory = artifacts.require('BenchmarkFactory');
 const BenchmarkForge = artifacts.require('BenchmarkForge');
+const BenchmarkTreasury = artifacts.require('BenchmarkTreasury');
 const BenchmarkOwnershipToken = artifacts.require('BenchmarkOwnershipToken');
 const BenchmarkFutureYieldToken = artifacts.require('BenchmarkFutureYieldToken');
 
@@ -12,36 +13,47 @@ const {constants} = require('./Constants');
 const {getAaveContracts, mintUSDT, mintAUSDT, printAaveAddressDetails} = require('./AaveHelpers');
 const {getTokenAmount} = require('./Math');
 
+// governanceAddress should be an unlocked address
 async function deployContracts(governanceAddress) {
   const contracts = {};
 
   contracts.benchmarkProvider = await BenchmarkProvider.new(governanceAddress);
-  await contracts.benchmarkProvider.setAddresses(constants.AAVE_LENDING_POOL_CORE_ADDRESS);
+  await contracts.benchmarkProvider.addMaintainer(governanceAddress, { from: governanceAddress });
+
+  await contracts.benchmarkProvider.setAaveAddress(constants.AAVE_LENDING_POOL_CORE_ADDRESS);
   console.log(`\t\tDeployed and setup BenchmarkProvider contract at ${contracts.benchmarkProvider.address}`);
 
   contracts.benchmark = await Benchmark.new(governanceAddress);
   console.log(`\t\tDeployed Benchmark contract at ${contracts.benchmark.address}`);
 
+  contracts.benchmarkTreasury = await BenchmarkTreasury.new(governanceAddress);
+
   contracts.benchmarkFactory = await BenchmarkFactory.new(
-    constants.DUMMY_GOVERNANCE_ADDRESS,
+    governanceAddress,
+    contracts.benchmarkTreasury.address,
     contracts.benchmarkProvider.address
   );
   console.log(`\t\tDeployed BenchmarkFactory contract at ${contracts.benchmarkFactory.address}`);
+  await contracts.benchmarkFactory.initialize(contracts.benchmark.address);
+  await contracts.benchmark.initialize(contracts.benchmarkFactory.address);
+
+  console.log(`\t\tInitialised BenchmarkFactory and Benchmark contracts`);
 
   await contracts.benchmarkFactory.createForge(constants.USDT_ADDRESS);
   const forgeAddress = await contracts.benchmarkFactory.getForge.call(constants.USDT_ADDRESS);
   console.log(`\t\tDeployed USDT forge contract at ${forgeAddress}`);
   contracts.benchmarkForge = await BenchmarkForge.at(forgeAddress);
 
-  await contracts.benchmarkForge.newYieldContracts(constants.DURATION_THREEMONTHS, constants.TEST_EXPIRY);
+  await contracts.benchmarkForge.newYieldContracts(constants.DURATION_ONEYEAR, constants.TEST_EXPIRY);
   const otTokenAddress = await contracts.benchmarkForge.otTokens.call(
-    constants.DURATION_THREEMONTHS,
+    constants.DURATION_ONEYEAR,
     constants.TEST_EXPIRY
   );
   const xytTokenAddress = await contracts.benchmarkForge.xytTokens.call(
-    constants.DURATION_THREEMONTHS,
+    constants.DURATION_ONEYEAR,
     constants.TEST_EXPIRY
   );
+  // console.log(`otTokenAddress = ${otTokenAddress}, xytTokenAddress = ${xytTokenAddress}`);
   contracts.benchmarkOwnershipToken = await BenchmarkOwnershipToken.at(otTokenAddress);
   contracts.benchmarkFutureYieldToken = await BenchmarkFutureYieldToken.at(xytTokenAddress);
   console.log(`\t\tDeployed OT contract at ${otTokenAddress} and XYT contract at ${xytTokenAddress}`);
@@ -89,7 +101,7 @@ async function printBenchmarkAddressDetails(contracts, address) {
   console.log(`\t\tXYT balance = ${await contracts.benchmarkFutureYieldToken.balanceOf.call(address)}`);
   console.log(
     `\t\tlastNormalisedIncome = ${await contracts.benchmarkForge.lastNormalisedIncome.call(
-      constants.DURATION_THREEMONTHS,
+      constants.DURATION_ONEYEAR,
       constants.TEST_EXPIRY,
       address
     )}`

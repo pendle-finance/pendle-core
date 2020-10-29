@@ -25,24 +25,44 @@ pragma solidity ^0.7.0;
 import "../interfaces/IBenchmarkMarket.sol";
 import "../tokens/BenchmarkBaseToken.sol";
 
+
 contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
+    address public immutable override core;
     address public immutable override factory;
     address public immutable override token;
     address public immutable override xyt;
-    uint256 public constant override minLiquidity = 10**3;
+    IBenchmarkProvider public immutable override provider;
     string private constant _name = "Benchmark Market";
-    string private constant _symbol = "BMKT";
+    string private constant _symbol = "BMK-LPT";
     uint8 private constant _decimals = 18;
+    uint256 public constant override minLiquidity = 10**3;
 
     constructor(
+        address _core,
+        address _factory,
         address _xyt,
         address _token,
-        ContractDurations _contractDuration,
+        IBenchmarkProvider _provider,
         uint256 _expiry
-    ) BenchmarkBaseToken(_name, _symbol, _decimals, _contractDuration, _expiry) {
+    )
+        BenchmarkBaseToken(
+            _name,
+            _symbol,
+            _decimals,
+            _expiry
+        )
+    {
+        require(_core != address(0), "Benchmark: zero address");
+        require(_factory != address(0), "Benchmark: zero address");
+        require(_xyt != address(0), "Benchmark: zero address");
+        require(_token != address(0), "Benchmark: zero address");
+        require(address(_provider) != address(0), "Benchmark: zero address");
+
         factory = msg.sender;
+        core = _core;
         xyt = _xyt;
         token = _token;
+        provider = _provider;
     }
 
     function getReserves()
@@ -54,11 +74,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             uint112 tokenReserves,
             uint32 lastBlockTimestamp
         )
-    {
-        
-    }
+    {}
 
     function swap(uint256 srcAmount, address destination) external override {}
-
-    function sync() external override {}
 }

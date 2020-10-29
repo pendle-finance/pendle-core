@@ -23,13 +23,25 @@
 
 pragma solidity ^0.7.0;
 
+import "./IBenchmarkBaseToken.sol";
 
-interface IBenchmarkCommon {
-  /**
-   * @notice Contract duration definitions.
-   * @dev Represents a fixed configuration of the yield contracts offered.
-   *      At the moment, we fix these duration at 1 month, 3 months, and 6 months
-   *      respectively.
-   **/
-  enum ContractDurations {OneMonth, ThreeMonths, SixMonths}
+
+interface IBenchmarkYieldToken is IBenchmarkBaseToken {
+    /**
+     * @notice Gets the address of the BenchmarkForge contract for this yield token.
+     * @return Retuns the forge address.
+     **/
+    function forge() external view returns (address);
+
+    /**
+     * @notice Returns the address of the underlying asset.
+     * @return Returns the underlying asset address.
+     **/
+    function underlyingAsset() external view returns (address);
+
+    /**
+     * @notice Returns the address of the underlying yield token.
+     * @return Returns the underlying yield token address.
+     **/
+    function underlyingYieldToken() external view returns (address);
 }

@@ -16,7 +16,8 @@ module.exports = {
     DURATION_ONEMONTH: 0,
     DURATION_THREEMONTHS: 1,
     DURATION_SIXMONTHS: 2,
+    DURATION_ONEYEAR: 3,
     MAX_ALLOWANCE: new BN(2).pow(new BN(256)).sub(new BN(1)),
-    TEST_EXPIRY: 1606780800, // 1st Dec 2020, 0:00 UTC
+    TEST_EXPIRY: 1638316800, // 1st Dec 2021, 0:00 UTC
   },
 };

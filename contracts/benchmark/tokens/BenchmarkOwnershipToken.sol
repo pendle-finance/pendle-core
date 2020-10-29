@@ -23,32 +23,34 @@
 pragma solidity ^0.7.0;
 
 import "./BenchmarkBaseToken.sol";
+import "../interfaces/IBenchmarkYieldToken.sol";
 
 
-contract BenchmarkOwnershipToken is BenchmarkBaseToken {
-    address public forgeAddress;
-    address public underlyingYieldToken;
+contract BenchmarkOwnershipToken is BenchmarkBaseToken, IBenchmarkYieldToken {
+    address public override forge;
+    address public override underlyingAsset;
+    address public override underlyingYieldToken;
     address public xyt;
 
     constructor(
         address _xyt,
+        address _underlyingAsset,
         address _underlyingYieldToken,
-        uint8 _underlyingYieldTokenDecimals,
         string memory _name,
         string memory _symbol,
-        ContractDurations _contractDuration,
+        uint8 _underlyingYieldTokenDecimals,
         uint256 _expiry
     )
         BenchmarkBaseToken(
             _name,
             _symbol,
             _underlyingYieldTokenDecimals,
-            _contractDuration,
             _expiry
         )
     {
-        forgeAddress = msg.sender;
-        underlyingYieldToken = _underlyingYieldToken;
+        forge = msg.sender;
         xyt = _xyt;
+        underlyingAsset = _underlyingAsset;
+        underlyingYieldToken = _underlyingYieldToken;
     }
 }

@@ -24,17 +24,15 @@ pragma solidity ^0.7.0;
 
 import "./BenchmarkForge.sol";
 import "./BenchmarkMarket.sol";
+import "../interfaces/IBenchmark.sol";
 import "../interfaces/IBenchmarkFactory.sol";
-import "../interfaces/IForgeCreator.sol";
-import "../interfaces/IMarketCreator.sol";
 import "../periphery/Permissions.sol";
 
 
-contract BenchmarkFactory is IBenchmarkFactory, Permissions {
+contract BenchmarkFactory is IBenchmarkFactory {
     mapping(address => address) public override getForge;
     mapping(address => mapping(address => address)) public override getMarket;
-    address public override core;
-    IBenchmarkProvider public override provider;
+    IBenchmark public override core;
     IForgeCreator public forgeCreator;
     IMarketCreator public marketCreator;
     address[] private allForges;
@@ -49,23 +47,19 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
      * @notice Initializes the BenchmarkFactory.
      * @dev Only called once.
      * @param _core The address of the Benchmark core contract.
-     * @param _provider The address of the BenchmarkProvider contract.
      **/
     function initialize(
-        address _core,
-        IBenchmarkProvider _provider,
+        IBenchmark _core,
         IForgeCreator _forgeCreator,
         IMarketCreator _marketCreator
     ) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
-        require(_core != address(0), "Benchmark: zero address");
-        require(address(_provider) != address(0), "Benchmark: zero address");
+        require(address(_core) != address(0), "Benchmark: zero address");
         require(address(_forgeCreator) != address(0), "Benchmark: zero address");
         require(address(_marketCreator) != address(0), "Benchmark: zero address");
 
         initializer = address(0);
         core = _core;
-        provider = _provider;
         forgeCreator = _forgeCreator;
         marketCreator = _marketCreator;
     }
@@ -74,6 +68,9 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         require(core != address(0), "Benchmark: not initialized");
         require(_underlyingYieldToken != address(0), "Benchmark: zero address");
         require(getForge[_underlyingYieldToken] == address(0), "Benchmark: forge exists");
+
+        IBenchmarkProvider provider = core.provider();
+
         require(
             provider.getATokenAddress(_underlyingYieldToken) != address(0),
             "Benchmark: underlying not found"
@@ -92,7 +89,7 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         ContractDurations _contractDuration,
         uint256 _expiry
     ) external override returns (address market) {
-        require(core != address(0), "Benchmark: not initialized");
+        require(initializer == address(0), "Benchmark: not initialized");
         require(_xyt != _token, "Benchmark: similar tokens");
         require(_xyt != address(0) && _token != address(0), "Benchmark: zero address");
         require(getMarket[_xyt][_token] == address(0), "Benchmark: market already exists");
@@ -103,7 +100,7 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         getMarket[_xyt][_token] = market;
         allMarkets.push(market);
 
-        emit MarketCreated(_xyt, _token, market);
+        emit MarketCreated(_xyt, _token, treasury, market);
     }
 
     function allForgesLength() external view override returns (uint256) {

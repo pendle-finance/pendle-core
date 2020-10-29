@@ -23,11 +23,12 @@
 
 pragma solidity ^0.7.0;
 
-import "./IBenchmarkToken.sol";
+import "./IBenchmarkProvider.sol";
+import "./IBenchmarkBaseToken.sol";
 
-interface IBenchmarkMarket is IBenchmarkToken {
+interface IBenchmarkMarket is IBenchmarkBaseToken {
     /**
-     * @dev Emitted when a swap happens on the market.
+     * @notice Emitted when a swap happens on the market.
      * @param trader The address of msg.sender.
      * @param srcAmount The source amount being traded.
      * @param destAmount The destination amount received.
@@ -40,17 +41,7 @@ interface IBenchmarkMarket is IBenchmarkToken {
         address indexed destination
     );
 
-    event Sync(uint112 xytReserve, uint112 tokenReserve);
-
     function swap(uint256 srcAmount, address destination) external;
-
-    function sync() external;
-
-    /**
-     * @dev Returns the address of the BenchmarkFactory for this BenchmarkForge.
-     * @return Returns the factory's address.
-     **/
-    function factory() external view returns (address);
 
     function getReserves()
         external
@@ -60,6 +51,24 @@ interface IBenchmarkMarket is IBenchmarkToken {
             uint112 tokenReserves,
             uint32 lastBlockTimestamp
         );
+
+    /**
+     * @notice Gets a reference to the Benchmark core contract.
+     * @return Returns the core contract reference.
+     **/
+    function core() external view returns (address);
+
+    /**
+     * @dev Returns the address of the BenchmarkFactory contract address.
+     * @return Returns the factory's address.
+     **/
+    function factory() external view returns (address);
+
+    /**
+     * @dev Returns an instance of the BenchmarkProvider contract.
+     * @return Returns the provider's instance.
+     **/
+    function provider() external view returns (IBenchmarkProvider);
 
     function minLiquidity() external pure returns (uint256);
 

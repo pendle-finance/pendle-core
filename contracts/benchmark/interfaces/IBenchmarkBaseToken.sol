@@ -24,10 +24,9 @@
 pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../interfaces/IBenchmarkCommon.sol";
 
 
-interface IBenchmarkToken is IBenchmarkCommon, IERC20 {
+interface IBenchmarkBaseToken is IERC20 {
     /**
      * @notice Emitted when burning OT or XYT tokens.
      * @param account The address performing the burn.
@@ -48,12 +47,6 @@ interface IBenchmarkToken is IBenchmarkCommon, IERC20 {
      * @param amount The amount to be burned.
      **/
     function burn(address account, uint256 amount) external;
-
-    /**
-     * @notice The yield contract duration in enums.
-     * @return Returns the contract duration.
-     **/
-    function contractDuration() external returns (ContractDurations);
 
     /**
      * @notice Decreases the allowance granted to spender by the caller.

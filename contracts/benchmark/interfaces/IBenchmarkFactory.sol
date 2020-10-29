@@ -23,6 +23,7 @@
 
 pragma solidity ^0.7.0;
 
+import "./IBenchmark.sol";
 import "./IBenchmarkCommon.sol";
 import "./IBenchmarkProvider.sol";
 import "./IForgeCreator.sol";
@@ -31,10 +32,10 @@ import "./IMarketCreator.sol";
 
 interface IBenchmarkFactory is IBenchmarkCommon {
     /**
-     * @notice Gets the address of the core Benchmark contract.
-     * @return Retuns the core Benchmark address.
+     * @notice Gets a reference to the Benchmark core contract.
+     * @return Returns the core contract reference.
      **/
-    function core() external view returns (address);
+    function core() external view returns (IBenchmark);
 
     /**
      * @notice Gets the address of the BenchmarkProvider contract.

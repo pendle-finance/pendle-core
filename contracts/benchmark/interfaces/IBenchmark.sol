@@ -24,20 +24,22 @@
 pragma solidity ^0.7.0;
 
 import "./IBenchmarkCommon.sol";
+import "../interfaces/IBenchmarkFactory.sol";
+import "../interfaces/IBenchmarkProvider.sol";
 
 
 interface IBenchmark is IBenchmarkCommon {
     /**
-     * @notice Gets the address of the BenchmarkFactory for this BenchmarkForge.
-     * @return Returns the factory's address.
+     * @notice Gets a reference to the BenchmarkFactory.
+     * @return Returns the factory reference.
      **/
-    function factory() external view returns (address);
+    function factory() external view returns (IBenchmarkFactory);
 
     /**
      * @notice Gets a reference to the BenchmarkProvider.
      * @return Returns the provider reference.
      **/
-    function provider() external view returns (address);
+    function provider() external view returns (IBenchmarkProvider);
 
     /**
      * @notice Gets the treasury contract address where fees are being sent to.
@@ -52,18 +54,18 @@ interface IBenchmark is IBenchmarkCommon {
     function weth() external view returns (address);
 
     /**
-     * @notice Sets the BenchmarkFactory contract address where new forges and markets
+     * @notice Sets the BenchmarkFactory reference where new forges and markets
      *         will be created.
      * @param _factory Address of new factory contract.
      **/
-    function setFactory(address _factory) external;
+    function setFactory(IBenchmarkFactory _factory) external;
 
     /**
-     * @notice Sets the BenchmarkProvider contract address where connections to external
+     * @notice Sets the BenchmarkProvider reference where connections to external
      *         protocols is done.
      * @param _provider Address of new factory contract.
      **/
-    function setProvider(address _provider) external;
+    function setProvider(IBenchmarkProvider _provider) external;
 
     /**
      * @notice Sets the BenchmarkTreasury contract address where fees will be sent to.

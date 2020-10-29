@@ -23,38 +23,40 @@
 pragma solidity ^0.7.0;
 
 import "./BenchmarkBaseToken.sol";
+import "../interfaces/IBenchmarkForge.sol";
+import "../interfaces/IBenchmarkYieldToken.sol";
 
 
-contract BenchmarkFutureYieldToken is BenchmarkBaseToken {
-    address public forgeAddress;
-    address public underlyingYieldToken;
+contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
+    address public override forge;
+    address public override underlyingAsset;
+    address public override underlyingYieldToken;
     address public ot;
-    // mapping (address => uint256) public lastNormalisedIncome;
+    mapping (address => uint256) public lastNormalisedIncome;
 
     constructor(
         address _ot,
+        address _underlyingAsset,
         address _underlyingYieldToken,
-        uint8 _underlyingYieldTokenDecimals,
         string memory _name,
         string memory _symbol,
-        ContractDurations _contractDuration,
+        uint8 _underlyingYieldTokenDecimals,
         uint256 _expiry
     )
         BenchmarkBaseToken(
             _name,
             _symbol,
             _underlyingYieldTokenDecimals,
-            _contractDuration,
             _expiry
         )
     {
-        forgeAddress = msg.sender;
-        underlyingYieldToken = _underlyingYieldToken;
+        forge = msg.sender;
         ot = _ot;
+        underlyingAsset = _underlyingAsset;
+        underlyingYieldToken = _underlyingYieldToken;
     }
 
-    /* function setLastNormalisedIncome(address account, uint256 normalisedIncome) public returns (bool) {
-        lastNormalisedIncome[account] = normalisedIncome;
-        return true;
-    } */
+    function _beforeTokenTransfer(uint256 _expiry, address _account) internal {
+        IBenchmarkForge(forge).redeemDueInterestsBeforeTransfer(_expiry, _account);
+    }
 }

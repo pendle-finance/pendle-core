@@ -23,7 +23,7 @@
 pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../interfaces/IBenchmarkToken.sol";
+import "../interfaces/IBenchmarkBaseToken.sol";
 
 
 /**
@@ -36,18 +36,11 @@ import "../interfaces/IBenchmarkToken.sol";
  *        This abstract contract is inherited by BenchmarkFutureYieldToken
  *        and BenchmarkOwnershipToken contracts.
  **/
-abstract contract BenchmarkBaseToken is IBenchmarkToken {
+abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
     using SafeMath for uint256;
 
-    // TODO: forge address is in child contract, so move this check in child contract
-    modifier onlyForge {
-        /* require(msg.sender == forgeAddress, "Benchmark: Must be forge"); */
-        _;
-    }
-
     mapping(address => mapping(address => uint256)) public override allowance;
-    mapping(address => uint) public override balanceOf;
-    ContractDurations public override contractDuration;
+    mapping(address => uint256) public override balanceOf;
     string public override name;
     string public override symbol;
     uint8 public override decimals;
@@ -58,17 +51,15 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
-        ContractDurations _contractDuration,
         uint256 _expiry
     ) {
-        contractDuration = _contractDuration;
-        expiry = _expiry;
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
+        expiry = _expiry;
     }
 
-   /**
+    /**
      * @dev Sets amount as the allowance of spender over the owner's tokens.
      * @param spender The address spending the owner's tokens.
      * @param amount The amount allowed to be spent.
@@ -79,13 +70,12 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
         return true;
     }
 
-    // TODO: set this as internal, and put external definition on child
     /**
      * @dev Burns OT or XYT tokens from account, reducting the total supply.
      * @param account The address performing the burn.
      * @param amount The amount to be burned.
      **/
-    function burn(address account, uint256 amount) public override onlyForge {
+    function burn(address account, uint256 amount) public override {
         _burn(account, amount);
     }
 
@@ -95,8 +85,19 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
      * @param subtractedValue The amount allowance to subtract.
      * @return Returns true if allowance has decreased, otherwise false.
      **/
-    function decreaseAllowance(address spender, uint256 subtractedValue) public override returns (bool) {
-        _approve(msg.sender, spender, allowance[msg.sender][spender].sub(subtractedValue, "BenchmarkToken: decreased allowance below zero"));
+    function decreaseAllowance(address spender, uint256 subtractedValue)
+        public
+        override
+        returns (bool)
+    {
+        _approve(
+            msg.sender,
+            spender,
+            allowance[msg.sender][spender].sub(
+                subtractedValue,
+                "BenchmarkToken: decreased allowance below zero"
+            )
+        );
         return true;
     }
 
@@ -106,18 +107,21 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
      * @param addedValue The amount allowance to add.
      * @return returns true if allowance has increased, otherwise false
      **/
-    function increaseAllowance(address spender, uint256 addedValue) public override returns (bool) {
+    function increaseAllowance(address spender, uint256 addedValue)
+        public
+        override
+        returns (bool)
+    {
         _approve(msg.sender, spender, allowance[msg.sender][spender].add(addedValue));
         return true;
     }
 
-    // TODO: set this as internal, and put external definition on child
     /**
      * @dev Mints new OT or XYT tokens for account, increasing the total supply.
      * @param account The address to send the minted tokens.
      * @param amount The amount to be minted.
      **/
-    function mint(address account, uint256 amount) public override onlyForge {
+    function mint(address account, uint256 amount) public override {
         _mint(account, amount);
     }
 
@@ -135,17 +139,32 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
     /**
      * @dev The amount of tokens to transfer to recipient from the sender's address.
      * @param sender The address sending the tokens.
-      * @param recipient The address receiving the tokens.
+     * @param recipient The address receiving the tokens.
      * @param amount The amount to be transferred.
      * @return Returns true if transferFrom has succeeded, otherwise false.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
-        _approve(sender, msg.sender, allowance[sender][msg.sender].sub(amount, "BenchmarkToken: transfer amount exceeds allowance"));
+        _approve(
+            sender,
+            msg.sender,
+            allowance[sender][msg.sender].sub(
+                amount,
+                "BenchmarkToken: transfer amount exceeds allowance"
+            )
+        );
         return true;
     }
 
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
+    function _approve(
+        address owner,
+        address spender,
+        uint256 amount
+    ) internal virtual {
         require(owner != address(0), "BenchmarkToken: approve from the zero address");
         require(spender != address(0), "BenchmarkToken: approve to the zero address");
 
@@ -164,17 +183,35 @@ abstract contract BenchmarkBaseToken is IBenchmarkToken {
     function _burn(address account, uint256 amount) internal {
         require(account != address(0), "BenchmarkToken: burn from the zero address");
 
-        balanceOf[account] = balanceOf[account].sub(amount, "BenchmarkToken: burn amount exceeds balance");
+        balanceOf[account] = balanceOf[account].sub(
+            amount,
+            "BenchmarkToken: burn amount exceeds balance"
+        );
         totalSupply = totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
     }
 
-    function _transfer(address sender, address recipient, uint256 amount) internal {
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal {
         require(sender != address(0), "BenchmarkToken: transfer from the zero address");
         require(recipient != address(0), "BenchmarkToken: transfer to the zero address");
 
-        balanceOf[sender] = balanceOf[sender].sub(amount, "BenchmarkToken: transfer amount exceeds balance");
+        _beforeTokenTransfer(sender, recipient, amount);
+
+        balanceOf[sender] = balanceOf[sender].sub(
+            amount,
+            "BenchmarkToken: transfer amount exceeds balance"
+        );
         balanceOf[recipient] = balanceOf[recipient].add(amount);
         emit Transfer(sender, recipient, amount);
     }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {}
 }

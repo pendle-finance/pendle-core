@@ -30,13 +30,14 @@ import "../periphery/Permissions.sol";
 contract Benchmark is IBenchmark, Permissions {
     using SafeMath for uint256;
 
+    IBenchmarkFactory public override factory;
+    IBenchmarkProvider public override provider;
     address public immutable override weth;
-    address public override factory;
-    address public override provider;
     address public override treasury;
     address private initializer;
 
     constructor(address _governance, address _weth) Permissions(_governance) {
+        initializer = msg.sender;
         weth = _weth;
     }
 
@@ -48,13 +49,13 @@ contract Benchmark is IBenchmark, Permissions {
     }
 
     function initialize(
-        address _factory,
-        address _provider,
+        IBenchmarkFactory _factory,
+        IBenchmarkProvider _provider,
         address _treasury
     ) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
-        require(_factory != address(0), "Benchmark: zero address");
-        require(_provider != address(0), "Benchmark: zero address");
+        require(address(_factory) != address(0), "Benchmark: zero address");
+        require(address(_provider) != address(0), "Benchmark: zero address");
         require(_treasury != address(0), "Benchmark: zero address");
 
         initializer = address(0);
@@ -64,22 +65,22 @@ contract Benchmark is IBenchmark, Permissions {
     }
 
     /**
-     * @notice Sets the BenchmarkFactory contract address where new forges and markets
+     * @notice Sets the BenchmarkFactory reference where new forges and markets
      *         will be created.
      * @param _factory Address of new factory contract.
      **/
-    function setFactory(address _factory) external override onlyGovernance {
-        require(_factory != address(0), "Benchmark: zero address");
+    function setFactory(IBenchmarkFactory _factory) external override onlyGovernance {
+        require(address(_factory) != address(0), "Benchmark: zero address");
         factory = _factory;
     }
 
     /**
-     * @notice Sets the BenchmarkProvider contract address where connections to external
+     * @notice Sets the BenchmarkProvider reference where connections to external
      *         protocols is done.
      * @param _provider Address of new factory contract.
      **/
-    function setProvider(address _provider) external override onlyGovernance {
-        require(_provider != address(0), "Benchmark: zero address");
+    function setProvider(IBenchmarkProvider _provider) external override onlyGovernance {
+        require(address(_provider) != address(0), "Benchmark: zero address");
         provider = _provider;
     }
 

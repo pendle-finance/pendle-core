@@ -23,12 +23,11 @@
 
 pragma solidity ^0.7.0;
 
-import "./IBenchmarkCommon.sol";
 import "./IBenchmarkProvider.sol";
 import "../core/BenchmarkProvider.sol";
 
 
-interface IBenchmarkForge is IBenchmarkCommon {
+interface IBenchmarkForge {
     /**
      * @dev Emitted when the Forge has minted the OT and XYT tokens.
      * @param underlyingYieldToken The address of the underlying yield token.
@@ -48,29 +47,25 @@ interface IBenchmarkForge is IBenchmarkCommon {
     // For example: For each duration, only allow expiry at the start,
     // 1/3rd and 2/3rd of the duration
     function newYieldContracts(
-        ContractDurations contractDuration,
         uint256 expiry
     ) external returns (address ot, address xyt);
 
     function redeemUnderlying(
-        ContractDurations contractDuration,
         uint256 expiry,
         uint256 amountToRedeem,
         address to
     ) external returns (uint256 redeemedAmount);
 
     function tokenizeYield(
-        ContractDurations contractDuration,
         uint256 expiry,
         uint256 amountToTokenize,
         address to
     ) external returns (address ot, address xyt);
 
-    // function redeemAfterExpiry(
-    //     ContractDurations contractDuration,
-    //     uint256 expiry,
-    //     address to
-    // ) external returns (uint256 redeemedAmount);
+    function redeemAfterExpiry(
+        uint256 expiry,
+        address to
+    ) external returns (uint256 redeemedAmount);
 
     // function renew(
     //     ContractDurations oldContractDuration,
@@ -80,13 +75,23 @@ interface IBenchmarkForge is IBenchmarkCommon {
     //     address to
     // ) external returns (uint256 redeemedAmount);
 
-    // function redeemDueInterests(
-    //     ContractDurations contractDuration,
-    //     uint256 expiry,
-    //     address to
-    // ) external;
+    function redeemDueInterests(
+        uint256 expiry
+    ) external returns (uint256 interests);
 
-    // TODO: Function to track all the XYTs/OTs for a contract duration
+    function redeemDueInterestsBeforeTransfer(
+        uint256 expiry,
+        address account
+    ) external returns (uint256 interests);
+
+    function getAllXYTFromExpiry(uint256 _expiry) external view returns (address[] calldata);
+    function getAllOTFromExpiry(uint256 _expiry) external view returns (address[] calldata);
+
+    /**
+     * @notice Gets a reference to the Benchmark core contract.
+     * @return Returns the core contract reference.
+     **/
+    function core() external view returns (address);
 
     /**
      * @dev Returns the address of the BenchmarkFactory contract address.
@@ -99,6 +104,12 @@ interface IBenchmarkForge is IBenchmarkCommon {
      * @return Returns the provider's instance.
      **/
     function provider() external view returns (IBenchmarkProvider);
+
+    /**
+     * @dev Returns the address of the underlying asset
+     * @return returns the underlying asset address
+     **/
+    function underlyingAsset() external view returns (address);
 
     /**
      * @dev Returns the address of the underlying yield token
