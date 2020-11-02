@@ -25,8 +25,6 @@ const {
 
 require('chai').use(require('chai-as-promised')).use(require('chai-bn')(BN)).should();
 
-
-
 contract('BenchmarkForge', (accounts) => {
   let contracts;
   let aaveContracts;
@@ -34,8 +32,8 @@ contract('BenchmarkForge', (accounts) => {
   const emptyAUSDT = async (account) => {
     const balance = await aaveContracts.aUSDT.balanceOf.call(account);
     if (balance.toNumber() == 0) return;
-    await aaveContracts.aUSDT.transfer(accounts[8], balance, { from: account });
-  }
+    await aaveContracts.aUSDT.transfer(accounts[8], balance, {from: account});
+  };
 
   before('Initialize the Forge and test tokens', async () => {
     contracts = await deployContracts(accounts[0]);
@@ -102,8 +100,6 @@ contract('BenchmarkForge', (accounts) => {
     });
   });
 
-
-
   describe('redeemDueInterests', async () => {
     it('After one month, should be able to ping to get due interests', async () => {
       const testAmount = 1000 * 1000000; // 1000 USDT
@@ -119,7 +115,10 @@ contract('BenchmarkForge', (accounts) => {
       console.log('\tBefore [BenchmarkForge]');
       await printBenchmarkAddressDetails(contracts, contracts.benchmarkForge.address);
 
-      console.log('\tLastNormalisedIncomeBeforeExpiry = ', await contracts.benchmarkForge.lastNormalisedIncomeBeforeExpiry.call(constants.TEST_EXPIRY));
+      console.log(
+        '\tLastNormalisedIncomeBeforeExpiry = ',
+        await contracts.benchmarkForge.lastNormalisedIncomeBeforeExpiry.call(constants.TEST_EXPIRY)
+      );
 
       const aUSDTbalanceBefore = await aaveContracts.aUSDT.balanceOf.call(accounts[1]);
 
@@ -128,11 +127,9 @@ contract('BenchmarkForge', (accounts) => {
 
       console.log('\t1 month has passed ...');
 
-      await contracts.benchmarkForge.redeemDueInterests(
-        constants.DURATION_ONEYEAR,
-        constants.TEST_EXPIRY,
-        { from: accounts[1] }
-      );
+      await contracts.benchmarkForge.redeemDueInterests(constants.DURATION_ONEYEAR, constants.TEST_EXPIRY, {
+        from: accounts[1],
+      });
 
       const aUSDTbalanceAfter = await aaveContracts.aUSDT.balanceOf.call(accounts[1]);
       console.log('\n\tAfter redeeming:');
@@ -152,9 +149,8 @@ contract('BenchmarkForge', (accounts) => {
         testAmount,
         accounts[1]
       );
-      await contracts.benchmarkFutureYieldToken.transfer(accounts[2], testAmount, { from: accounts[1] });
+      await contracts.benchmarkFutureYieldToken.transfer(accounts[2], testAmount, {from: accounts[1]});
       console.log('\tTransfered out all XYT tokens away');
-
 
       const twoYears = 3600 * 24 * 30 * 24;
       await time.increase(twoYears);
@@ -169,7 +165,7 @@ contract('BenchmarkForge', (accounts) => {
         constants.DURATION_ONEYEAR,
         constants.TEST_EXPIRY,
         accounts[1],
-        { from: accounts[1] }
+        {from: accounts[1]}
       );
 
       const aUSDTbalanceAfter = await aaveContracts.aUSDT.balanceOf.call(accounts[1]);

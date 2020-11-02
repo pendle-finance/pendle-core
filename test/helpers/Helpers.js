@@ -18,7 +18,7 @@ async function deployContracts(governanceAddress) {
   const contracts = {};
 
   contracts.benchmarkProvider = await BenchmarkProvider.new(governanceAddress);
-  await contracts.benchmarkProvider.addMaintainer(governanceAddress, { from: governanceAddress });
+  await contracts.benchmarkProvider.addMaintainer(governanceAddress, {from: governanceAddress});
 
   await contracts.benchmarkProvider.setAaveAddress(constants.AAVE_LENDING_POOL_CORE_ADDRESS);
   console.log(`\t\tDeployed and setup BenchmarkProvider contract at ${contracts.benchmarkProvider.address}`);
@@ -37,7 +37,7 @@ async function deployContracts(governanceAddress) {
   await contracts.benchmarkFactory.initialize(contracts.benchmark.address);
   await contracts.benchmark.initialize(contracts.benchmarkFactory.address);
 
-  console.log(`\t\tInitialised BenchmarkFactory and Benchmark contracts`);
+  console.log('\t\tInitialised BenchmarkFactory and Benchmark contracts');
 
   await contracts.benchmarkFactory.createForge(constants.USDT_ADDRESS);
   const forgeAddress = await contracts.benchmarkFactory.getForge.call(constants.USDT_ADDRESS);
