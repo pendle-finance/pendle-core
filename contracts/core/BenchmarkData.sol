@@ -23,64 +23,95 @@
 pragma solidity ^0.7.0;
 
 import "../interfaces/IBenchmarkData.sol";
+import "../interfaces/IBenchmarkFactory.sol";
 import "../periphery/Permissions.sol";
 
 contract BenchmarkData is IBenchmarkData, Permissions {
-    mapping(address => mapping(address => address)) public override getForge;
+    mapping(address => mapping(address => address)) public override getForgeFromUnderlying;
+    mapping(address => address) public override getForgeFromXYT;
     mapping(address => mapping(address => address)) public override getMarket;
-    address public override core;
+    IBenchmark public override core;
+    mapping(address => bool) internal isForge;
+    mapping(address => bool) internal isMarket;
     address internal initializer;
 
     constructor(address _governance) Permissions(_governance) {
         initializer = msg.sender;
     }
 
-    function initialize(address _core) external {
+    modifier onlyFactory() {
+        require(msg.sender == address(core.factory()), "Benchmark: only factory");
+        _;
+    }
+
+    modifier onlyForge() {
+        require(isForge[msg.sender], "Benchmark: only forge");
+        _;
+    }
+
+    modifier onlyMarket() {
+        require(isMarket[msg.sender], "Benchmark: only market");
+        _;
+    }
+
+    function initialize(IBenchmark _core) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
-        require(_core != address(0), "Benchmark: zero address");
+        require(address(_core) != address(0), "Benchmark: zero address");
 
         initializer = address(0);
         core = _core;
     }
 
-    function setCore(address _core) external override onlyGovernance {
+    function setCore(IBenchmark _core) external override onlyGovernance {
         require(initializer == address(0), "Benchmark: not initialized");
-        require(_core != address(0), "Benchmark: zero address");
+        require(address(_core) != address(0), "Benchmark: zero address");
 
         core = _core;
-        emit CoreSet(_core);
+        emit CoreSet(address(_core));
     }
 
     /***********
      *  FORGE  *
      ***********/
 
-    function addForge(
+    function storeForge(
         address _underlyingAsset,
         address _underlyingYieldToken,
         address _forge
-    ) external override {
+    ) external override onlyFactory {
         require(initializer == address(0), "Benchmark: not initialized");
         require(_underlyingAsset != address(0), "Benchmark: zero address");
         require(_underlyingYieldToken != address(0), "Benchmark: zero address");
         require(_forge != address(0), "Benchmark: zero address");
 
-        getForge[_underlyingAsset][_underlyingYieldToken] = _forge;
+        getForgeFromUnderlying[_underlyingAsset][_underlyingYieldToken] = _forge;
+        isForge[_forge] = true;
+    }
+
+    function storeXYT(
+        address _xyt,
+        address _forge
+    ) external override onlyForge {
+        require(initializer == address(0), "Benchmark: not initialized");
+        require(_xyt != address(0), "Benchmark: zero address");
+
+        getForgeFromXYT[_xyt] = _forge;
     }
 
     /***********
      *  MARKET *
      ***********/
-    function addMarket(
+    function storeMarket(
         address _xyt,
         address _token,
         address _market
-    ) external override {
+    ) external override onlyFactory {
         require(initializer == address(0), "Benchmark: not initialized");
         require(_xyt != address(0), "Benchmark: zero address");
         require(_token != address(0), "Benchmark: zero address");
         require(_market != address(0), "Benchmark: zero address");
 
         getMarket[_xyt][_token] = _market;
+        isMarket[_market] = true;
     }
 }

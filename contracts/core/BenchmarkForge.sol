@@ -23,25 +23,27 @@
 pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "./BenchmarkProvider.sol";
+import {Factory, Utils} from "../libraries/BenchmarkLibrary.sol";
 import "../interfaces/IBenchmarkBaseToken.sol";
+import "../interfaces/IBenchmarkData.sol";
 import "../interfaces/IBenchmarkForge.sol";
-import "../interfaces/IBenchmarkProvider.sol";
 import "../tokens/BenchmarkFutureYieldToken.sol";
 import "../tokens/BenchmarkOwnershipToken.sol";
 
 
 contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
+    using Utils for string;
+
     struct Tokens {
         BenchmarkFutureYieldToken xyt;
         BenchmarkOwnershipToken ot;
         IERC20 underlyingYieldToken;
     }
 
-    address public immutable override core;
     address public immutable override factory;
     address public immutable override underlyingAsset;
     address public immutable override underlyingYieldToken;
+    IBenchmark public immutable override core;
     IBenchmarkProvider public immutable override provider;
 
     mapping(uint256 => address) public otTokens;
@@ -49,15 +51,18 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
     mapping(uint256 => uint256) public lastNormalisedIncomeBeforeExpiry;
     mapping(uint256 => mapping(address => uint256)) public lastNormalisedIncome;
 
+    string private constant OT = "OT";
+    string private constant XYT = "XYT";
+
     constructor(
+        IBenchmark _core,
         IBenchmarkProvider _provider,
-        address _core,
         address _factory,
         address _underlyingAsset,
         address _underlyingYieldToken
     ) {
+        require(address(_core) != address(0), "Benchmark: zero address");
         require(address(_provider) != address(0), "Benchmark: zero address");
-        require(_core != address(0), "Benchmark: zero address");
         require(_factory != address(0), "Benchmark: zero address");
         require(_underlyingAsset != address(0), "Benchmark: zero address");
         require(_underlyingYieldToken != address(0), "Benchmark: zero address");
@@ -67,6 +72,38 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         provider = _provider;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;
+    }
+
+    function newYieldContracts(uint256 expiry) public override returns (address ot, address xyt) {
+        address aTokenAddress = provider.getATokenAddress(underlyingAsset);
+        uint8 aTokenDecimals = IBenchmarkBaseToken(aTokenAddress).decimals();
+
+        string memory otName = OT.concat(IBenchmarkBaseToken(aTokenAddress).name(), " ");
+        string memory otSymbol = OT.concat(IBenchmarkBaseToken(aTokenAddress).symbol(), "-");
+        string memory xytName = XYT.concat(IBenchmarkBaseToken(aTokenAddress).name(), " ");
+        string memory xytSymbol = XYT.concat(IBenchmarkBaseToken(aTokenAddress).symbol(), "-");
+
+        ot = _forgeOwnershipToken(
+            otName.concat(expiry, " "),
+            otSymbol.concat(expiry, "-"),
+            aTokenDecimals,
+            expiry
+        );
+        xyt = _forgeFutureYieldToken(
+            ot,
+            xytName.concat(expiry, " "),
+            xytSymbol.concat(expiry, "-"),
+            aTokenDecimals,
+            expiry
+        );
+
+        otTokens[expiry] = ot;
+        xytTokens[expiry] = xyt;
+
+        IBenchmarkData data = core.data();
+        data.storeXYT(xyt, address(this));
+
+        emit NewYieldContracts(ot, xyt, expiry);
     }
 
     function redeemDueInterests(uint256 expiry) public override returns (uint256 interests) {
@@ -107,14 +144,8 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
     ) public override returns (uint256 redeemedAmount) {
         Tokens memory tokens = _getTokens(expiry);
 
-        require(
-            tokens.ot.balanceOf(msg.sender) >= amountToRedeem,
-            "Must have enough OT tokens"
-        );
-        require(
-            tokens.xyt.balanceOf(msg.sender) >= amountToRedeem,
-            "Must have enough XYT tokens"
-        );
+        require(tokens.ot.balanceOf(msg.sender) >= amountToRedeem, "Must have enough OT tokens");
+        require(tokens.xyt.balanceOf(msg.sender) >= amountToRedeem, "Must have enough XYT tokens");
 
         tokens.underlyingYieldToken.transfer(to, amountToRedeem);
         _settleDueInterests(tokens, expiry, msg.sender);
@@ -142,21 +173,6 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         return (address(tokens.ot), address(tokens.xyt));
     }
 
-    function newYieldContracts(uint256 expiry)
-        public
-        override
-        returns (address ot, address xyt)
-    {
-        address aTokenAddress = provider.getATokenAddress(underlyingAsset);
-        uint8 aTokenDecimals = IBenchmarkBaseToken(aTokenAddress).decimals();
-
-        // TODO: Use actual aTokens
-        ot = _forgeOwnershipToken(aTokenDecimals, "OT Test Token", "OT_TEST", expiry);
-        xyt = _forgeFutureYieldToken(aTokenDecimals, "XYT Test Token", "XYT_TEST", expiry);
-        otTokens[expiry] = ot;
-        xytTokens[expiry] = xyt;
-    }
-
     function getAllXYTFromExpiry(uint256 _expiry)
         public
         view
@@ -165,6 +181,41 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
     {}
 
     function getAllOTFromExpiry(uint256 _expiry) public view override returns (address[] memory) {}
+
+    function _forgeFutureYieldToken(
+        address _ot,
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals,
+        uint256 _expiry
+    ) internal nonReentrant() returns (address xyt) {
+        xyt = Factory.createContract(
+            type(BenchmarkFutureYieldToken).creationCode,
+            abi.encodePacked(_ot, underlyingAsset, underlyingYieldToken),
+            abi.encode(
+                _ot,
+                underlyingAsset,
+                underlyingYieldToken,
+                _name,
+                _symbol,
+                _decimals,
+                _expiry
+            )
+        );
+    }
+
+    function _forgeOwnershipToken(
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals,
+        uint256 _expiry
+    ) internal nonReentrant() returns (address ot) {
+        ot = Factory.createContract(
+            type(BenchmarkOwnershipToken).creationCode,
+            abi.encodePacked(underlyingAsset, underlyingYieldToken),
+            abi.encode(underlyingAsset, underlyingYieldToken, _name, _symbol, _decimals, _expiry)
+        );
+    }
 
     function _getTokens(uint256 expiry) internal view returns (Tokens memory _tokens) {
         _tokens.xyt = BenchmarkFutureYieldToken(xytTokens[expiry]);
@@ -196,57 +247,5 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
 
         lastNormalisedIncome[expiry][account] = In;
         return dueInterests;
-    }
-
-    function _forgeFutureYieldToken(
-        uint8 _underlyingYieldTokenDecimals,
-        string memory _tokenName,
-        string memory _tokenSymbol,
-        uint256 _expiry
-    ) internal nonReentrant() returns (address xyt) {
-        bytes memory bytecode = type(BenchmarkFutureYieldToken).creationCode;
-        bytes32 salt = keccak256(abi.encodePacked(underlyingAsset));
-
-        bytecode = abi.encodePacked(
-            bytecode,
-            abi.encode(
-                address(provider),
-                underlyingAsset,
-                _underlyingYieldTokenDecimals,
-                _tokenName,
-                _tokenSymbol,
-                _expiry
-            )
-        );
-
-        assembly {
-            xyt := create2(0, add(bytecode, 32), mload(bytecode), salt)
-        }
-    }
-
-    function _forgeOwnershipToken(
-        uint8 _underlyingYieldTokenDecimals,
-        string memory _tokenName,
-        string memory _tokenSymbol,
-        uint256 _expiry
-    ) internal nonReentrant() returns (address ot) {
-        bytes memory bytecode = type(BenchmarkOwnershipToken).creationCode;
-        bytes32 salt = keccak256(abi.encodePacked(underlyingAsset));
-
-        bytecode = abi.encodePacked(
-            bytecode,
-            abi.encode(
-                address(provider),
-                underlyingAsset,
-                _underlyingYieldTokenDecimals,
-                _tokenName,
-                _tokenSymbol,
-                _expiry
-            )
-        );
-
-        assembly {
-            ot := create2(0, add(bytecode, 32), mload(bytecode), salt)
-        }
     }
 }

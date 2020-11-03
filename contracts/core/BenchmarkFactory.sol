@@ -73,7 +73,7 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         IBenchmarkProvider provider = core.provider();
 
         require(
-            data.getForge(_underlyingAsset, _underlyingYieldToken) == address(0),
+            data.getForgeFromUnderlying(_underlyingAsset, _underlyingYieldToken) == address(0),
             "Benchmark: forge exists"
         );
         require(
@@ -82,7 +82,7 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         );
 
         forge = IForgeCreator(forgeCreator).create(_underlyingAsset, _underlyingYieldToken);
-        data.addForge(_underlyingAsset, _underlyingYieldToken, forge);
+        data.storeForge(_underlyingAsset, _underlyingYieldToken, forge);
         allForges.push(forge);
 
         emit ForgeCreated(_underlyingAsset, _underlyingYieldToken, forge);
@@ -98,16 +98,12 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         require(_xyt != address(0) && _token != address(0), "Benchmark: zero address");
 
         IBenchmarkData data = core.data();
-        IBenchmarkYieldToken xyt = IBenchmarkYieldToken(_xyt);
 
         require(data.getMarket(_xyt, _token) == address(0), "Benchmark: market already exists");
-        require(
-            data.getForge(xyt.underlyingAsset(), xyt.underlyingYieldToken()) == xyt.forge(),
-            "Benchmark: not xyt token"
-        );
+        require(data.getForgeFromXYT(_xyt) != address(0), "Benchmark: not xyt token");
 
         market = IMarketCreator(marketCreator).create(_xyt, _token, _expiry);
-        data.addMarket(_xyt, _token, market);
+        data.storeMarket(_xyt, _token, market);
         allMarkets.push(market);
 
         emit MarketCreated(_xyt, _token, market);

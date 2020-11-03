@@ -23,6 +23,7 @@
 
 pragma solidity ^0.7.0;
 
+import "./IBenchmark.sol";
 import "./IBenchmarkProvider.sol";
 
 
@@ -38,10 +39,10 @@ interface IForgeCreator {
         returns (address forge);
 
     /**
-     * @dev Returns the address of the Benchmark core contract for this BenchmarkMarket.
-     * @return Returns core's address.
+     * @dev Returns an instance of the Benchmark core contract.
+     * @return Returns the core's instance.
      **/
-    function core() external view returns (address);
+    function core() external view returns (IBenchmark);
 
     /**
      * @dev Returns the address of the BenchmarkFactory for this BenchmarkForge.

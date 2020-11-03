@@ -23,6 +23,8 @@
 
 pragma solidity ^0.7.0;
 
+import "./IBenchmark.sol";
+
 
 interface IBenchmarkData {
     /**
@@ -32,41 +34,60 @@ interface IBenchmarkData {
     event CoreSet(address core);
 
     /**
-     * @notice Gets the address of the Benchmark core contract.
-     * @return Returns the core contract address.
+     * @notice Gets a reference to the Benchmark core contract.
+     * @return Returns the core contract reference.
      **/
-    function core() external view returns (address);
-
+    function core() external view returns (IBenchmark);
     /**
      * @notice Sets the Benchmark core contract address.
      * @param _core Address of the new core contract.
      **/
-    function setCore(address _core) external;
+    function setCore(IBenchmark _core) external;
 
     /***********
      *  FORGE  *
      ***********/
 
     /**
-     * @notice Gets a forge given an underlying yield token.
+     * @notice Gets a forge given the underlying asset and yield token.
      * @param _underlyingAsset The address of the underlying asset.
      * @param _underlyingYieldToken Token address of the underlying yield token.
      * @return forge Returns the forge address.
      **/
-    function getForge(address _underlyingAsset, address _underlyingYieldToken)
+    function getForgeFromUnderlying(address _underlyingAsset, address _underlyingYieldToken)
         external
         view
         returns (address forge);
 
     /**
-     * @notice Add a new forge to the network.
+     * @notice Gets a forge given the XYT token.
+     * @param _xyt The address of XYT token.
+     * @return forge Returns the forge address.
+     **/
+    function getForgeFromXYT(address _xyt)
+        external
+        view
+        returns (address forge);
+
+    /**
+     * @notice Store new forge.
      * @param _underlyingAsset The address of the underlying asset.
      * @param _underlyingYieldToken Token address of the underlying yield token.
      * @param _forge The newly created forge address.
      **/
-    function addForge(
+    function storeForge(
         address _underlyingAsset,
         address _underlyingYieldToken,
+        address _forge
+    ) external;
+
+    /**
+     * @notice Store new XYT.
+     * @param _xyt The address of the new XYT token.
+     * @param _forge Forge that minted the XYT.
+     **/
+    function storeXYT(
+        address _xyt,
         address _forge
     ) external;
 
@@ -83,12 +104,12 @@ interface IBenchmarkData {
     function getMarket(address _xyt, address _token) external view returns (address market);
 
     /**
-     * @notice Add a new market to the network.
+     * @notice Store new market.
      * @param _xyt Token address of the future yield token as base asset.
      * @param _token Token address of an ERC20 token as quote asset.
      * @param _market The newly created market address.
      **/
-    function addMarket(
+    function storeMarket(
         address _xyt,
         address _token,
         address _market

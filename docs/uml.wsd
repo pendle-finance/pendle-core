@@ -5,168 +5,333 @@
 ' -- classes --
 
 package "User Facing" <<Folder>>  {
+
 	class Benchmark {
-			' -- inheritance --
+		' -- inheritance --
 		{abstract}IBenchmark
 		{abstract}Permissions
 
-			' -- usingFor --
+		' -- usingFor --
+		{abstract}📚SafeMath for [[uint256]]
 
-			' -- vars --
-		+[[address]] factory
-		+[[address]] governance
+		' -- vars --
+		+[[IBenchmarkData]] data
+		+[[IBenchmarkFactory]] factory
+		+[[IBenchmarkProvider]] provider
+		+[[address]] weth
+		+[[address]] treasury
+		-[[address]] initializer
 
-			' -- methods --
-		+**__constructor__**()
+		' -- methods --
+		+💰**__constructor__**()
 		+initialize()
-		+tokenizeYield()
-		+redeemUnderlying()
+		+setContracts()
 		+redeemAfterExpiry()
+		+redeemUnderlying()
 		+renew()
+		+tokenizeYield()
+		+addMarketLiquidity()
+		+💰addMarketLiquidityETH()
+		+removeMarketLiquidity()
+		+removeMarketLiquidityETH()
+		+swapTokenToToken()
+		+💰swapEthToToken()
+		+swapTokenToEth()
+		+🔍getDestAmount()
+		+🔍getSrcAmount()
+		+🔍getDestAmounts()
+		+🔍getSrcAmounts()
+		+🔍getMarketRate()
 
 	}
 
 	class BenchmarkFactory {
-			' -- inheritance --
+    ' -- inheritance --
 		{abstract}IBenchmarkFactory
 		{abstract}Permissions
 
 			' -- usingFor --
 
 			' -- vars --
-		+[[mapping address=>address ]] getForge
-		+[[mapping address=>mapping address=>address  ]] getMarket
-		+[[BenchmarkProvider]] provider
-		+[[address]] core
-		+[[address]] treasury
+		+[[IBenchmark]] core
+		+[[IForgeCreator]] forgeCreator
+		+[[IMarketCreator]] marketCreator
 		-[[address]] allForges
 		-[[address]] allMarkets
+		-[[address]] initializer
 
 			' -- methods --
 		+**__constructor__**()
+		+initialize()
 		+createForge()
 		+createMarket()
+		+setCore()
 		+🔍allForgesLength()
-		+🔍allMarketsLength()
 		+🔍getAllForges()
+		+🔍allMarketsLength()
 		+🔍getAllMarkets()
-
 	}
 }
 
+class BenchmarkData {
+	' -- inheritance --
+	{abstract}IBenchmarkData
+	{abstract}Permissions
+
+	' -- vars --
+	+[[mapping address=>mapping address=>address  ]] getForge
+	+[[mapping address=>mapping address=>address  ]] getMarket
+	+[[address]] core
+	-[[address]] initializer
+
+	' -- methods --
+	+**__constructor__**()
+	+initialize()
+	+setCore()
+	+addForge()
+	+addMarket()
+}
+
 class BenchmarkProvider {
-    ' -- inheritance --
+	' -- inheritance --
 	{abstract}IBenchmarkProvider
 	{abstract}Permissions
 
-    ' -- usingFor --
-
-    ' -- vars --
+	' -- vars --
 	+[[address]] aaveLendingPoolCore
 
-    ' -- methods --
+	' -- methods --
 	+**__constructor__**()
 	+setAaveAddress()
 	+🔍getATokenAddress()
-
 }
 
 class BenchmarkForge {
     ' -- inheritance --
-		{abstract}IBenchmarkForge
-		{abstract}ReentrancyGuard
+	{abstract}IBenchmarkForge
+	{abstract}ReentrancyGuard
 
-			' -- usingFor --
+    ' -- usingFor --
 
-			' -- vars --
-		+[[address]] factory
-		+[[address]] treasury
-		+[[address]] underlyingToken
-		+[[BenchmarkProvider]] provider
-		+[[mapping ContractDurations=>mapping uint256=>address  ]] otTokens
-		+[[mapping ContractDurations=>mapping uint256=>address  ]] xytTokens
-
-			' -- methods --
-		+**__constructor__**()
-		+newYieldContracts()
-		#_forgeFutureYieldToken()
-		#_forgeOwnershipToken()
-	}
-
-	class BenchmarkMarket {
-			' -- inheritance --
-		{abstract}IBenchmarkMarket
-
-			' -- usingFor --
-
-			' -- vars --
-		+[[address]] factory
-		+[[address]] treasury
-		+[[address]] underlyingToken
+    ' -- vars --
+	+[[address]] core
+	+[[address]] factory
+	+[[address]] underlyingAsset
+	+[[address]] underlyingYieldToken
+	+[[IBenchmarkProvider]] provider
+	+[[mapping uint256=>address ]] otTokens
+	+[[mapping uint256=>address ]] xytTokens
+	+[[mapping uint256=>uint256 ]] lastNormalisedIncomeBeforeExpiry
+	+[[mapping uint256=>mapping address=>uint256  ]] lastNormalisedIncome
 
     ' -- methods --
-		+**__constructor__**()
-	}
+	+**__constructor__**()
+	+redeemDueInterests()
+	+redeemDueInterestsBeforeTransfer()
+	+redeemAfterExpiry()
+	+redeemUnderlying()
+	+tokenizeYield()
+	+newYieldContracts()
+	+🔍getAllXYTFromExpiry()
+	+🔍getAllOTFromExpiry()
+	#🔍_getTokens()
+	#_settleDueInterests()
+	#_forgeFutureYieldToken()
+	#_forgeOwnershipToken()
+}
 
-package "Tokens" {
-	class BenchmarkOwnershipToken {
+class BenchmarkMarket {
     ' -- inheritance --
+	{abstract}IBenchmarkMarket
 	{abstract}BenchmarkBaseToken
 
     ' -- usingFor --
 
     ' -- vars --
+	+[[address]] core
+	+[[address]] factory
+	+[[address]] token
+	+[[address]] xyt
+	+[[IBenchmarkProvider]] provider
+	+{static}[[uint256]] minLiquidity
+	-{static}[[string]] _name
+	-{static}[[string]] _symbol
+	-{static}[[uint8]] _decimals
+
+    ' -- methods --
+	+**__constructor__**()
+	+🔍getReserves()
+	+swap()
+}
+
+class ForgeCreator {
+    ' -- inheritance --
+	{abstract}IForgeCreator
+
+    ' -- usingFor --
+
+    ' -- vars --
+	+[[IBenchmarkProvider]] provider
+	+[[address]] core
+	+[[address]] factory
+	-[[address]] initializer
+
+    ' -- methods --
+	+**__constructor__**()
+	+initialize()
+	+create()
+}
+
+class MarketCreator {
+    ' -- inheritance --
+	{abstract}IMarketCreator
+
+    ' -- usingFor --
+
+    ' -- vars --
+	+[[IBenchmarkProvider]] provider
+	+[[address]] core
+	+[[address]] factory
+	-[[address]] initializer
+
+    ' -- methods --
+	+**__constructor__**()
+	+initialize()
+	+create()
+}
+
+package "Yield Tokens" {
+	class BenchmarkOwnershipToken {
+		' -- inheritance --
+		{abstract}BenchmarkBaseToken
+
+		' -- usingFor --
+
+		' -- vars --
+		+[[address]] name
+		+[[address]] symbol
+		+[[address]] decimals
+		+[[address]] expiry
+		+[[address]] forge
+		+[[address]] underlyingAsset
+		+[[address]] underlyingYieldToken
 		+[[address]] xyt
 
-			' -- methods --
+		' -- methods --
 		+**__constructor__**()
 
 	}
 
 	class BenchmarkFutureYieldToken {
-    ' -- inheritance --
-	{abstract}BenchmarkBaseToken
+		' -- inheritance --
+		{abstract}BenchmarkBaseToken
 
-    ' -- usingFor --
+		' -- usingFor --
 
-    ' -- vars --
+		' -- vars --
+		+[[address]] name
+		+[[address]] symbol
+		+[[address]] decimals
+		+[[address]] expiry
+		+[[address]] forge
+		+[[address]] underlyingAsset
+		+[[address]] underlyingYieldToken
 		+[[address]] ot
 
-			' -- methods --
+		' -- methods --
 		+**__constructor__**()
 
 	}
 }
 
+package "Governance" {
+	class BenchmarkGovernance {
+		' -- inheritance --
+		' -- usingFor --
+		' -- vars --
+		' -- methods --
+	}
+
+	class BenchmarkTreasury {
+		' -- inheritance --
+		' -- usingFor --
+		' -- vars --
+		' -- methods --
+	}
+
+	class BMK {
+		' -- inheritance --
+		' -- usingFor --
+		' -- vars --
+		' -- methods --
+	}
+}
+
+
+' -- interfaces --
+' interface IBenchmarkData {
+' 	' -- methods --
+' 	+🔍core()
+' 	+setCore()
+' 	+🔍getForge()
+' 	+addForge()
+' 	+🔍getMarket()
+' 	+addMarket()
+' }
+
 ' -- inheritance --
-IBenchmark --[#DarkGoldenRod]|> Benchmark
-Permissions --[#DarkGoldenRod]|> Benchmark
+' IBenchmark --[#DarkGoldenRod]|> Benchmark
+' Permissions --[#DarkGoldenRod]|> Benchmark
+' SafeMath ..[#DarkOliveGreen]|> Benchmark : //for uint256//
 
-IBenchmarkFactory --[#DarkGoldenRod]|> BenchmarkFactory
-Permissions --[#DarkGoldenRod]|> BenchmarkFactory
+' IBenchmarkFactory --[#DarkGoldenRod]|> BenchmarkFactory
+' Permissions --[#DarkGoldenRod]|> BenchmarkFactory
 
-IBenchmarkProvider --[#DarkGoldenRod]|> BenchmarkProvider
-Permissions --[#DarkGoldenRod]|> BenchmarkProvider
+' IBenchmarkData --[#DarkGoldenRod]|> BenchmarkData
+' Permissions --[#DarkGoldenRod]|> BenchmarkData
 
-IBenchmarkForge --[#DarkGoldenRod]|> BenchmarkForge
-ReentrancyGuard --[#DarkGoldenRod]|> BenchmarkForge
+' IBenchmarkProvider --[#DarkGoldenRod]|> BenchmarkProvider
+' Permissions --[#DarkGoldenRod]|> BenchmarkProvider
 
-IBenchmarkMarket --[#DarkGoldenRod]|> BenchmarkMarket
+' IBenchmarkForge --[#DarkGoldenRod]|> BenchmarkForge
+' ReentrancyGuard --[#DarkGoldenRod]|> BenchmarkForge
 
-BenchmarkBaseToken --[#DarkGoldenRod]|> BenchmarkOwnershipToken
-BenchmarkBaseToken --[#DarkGoldenRod]|> BenchmarkFutureYieldToken
+' IBenchmarkMarket --[#DarkGoldenRod]|> BenchmarkMarket
+
+' BenchmarkBaseToken --[#DarkGoldenRod]|> BenchmarkOwnershipToken
+' BenchmarkBaseToken --[#DarkGoldenRod]|> BenchmarkFutureYieldToken
 
 
 ' -- creation --
-BenchmarkFactory *--[#Red]|> BenchmarkForge : creates
-BenchmarkFactory *--[#Red]|> BenchmarkMarket : creates
+BenchmarkFactory *--[#Red]|> ForgeCreator
+BenchmarkFactory *--[#Red]|> MarketCreator
+ForgeCreator *--[#Red]|> BenchmarkForge : creates
+MarketCreator *--[#Red]|> BenchmarkMarket : creates
+
+' -- data --
+BenchmarkData <--[#Magenta]--> Benchmark : read/write
+BenchmarkData <--[#Magenta]--> BenchmarkFactory : read/write
+
+' -- provider --
+BenchmarkProvider --[#Magenta]--> BenchmarkFactory : reads
+BenchmarkProvider --[#Magenta]--> BenchmarkForge : reads
+BenchmarkProvider --[#Magenta]--> BenchmarkMarket : reads
 
 ' -- tokenization --
 Benchmark <--[#Blue]--> BenchmarkForge : "tokenize/redeem"
 BenchmarkForge *--[#Blue]|> BenchmarkOwnershipToken : tokenizes
 BenchmarkForge *--[#Blue]|> BenchmarkFutureYieldToken : tokenizes
 
-' -- trading -- 
+' -- trading --
 Benchmark <--[#Blue]--> BenchmarkMarket : "trading"
+BenchmarkMarket --[#Blue]--> BenchmarkTreasury : "fees"
+
+' -- governance --
+BMK ..[#Green]..> BenchmarkGovernance : voting
+BenchmarkGovernance ..[#GreenYellow]..> Benchmark : governs
+BenchmarkGovernance ..[#GreenYellow]..> BenchmarkData : governs
+BenchmarkGovernance ..[#GreenYellow]..> BenchmarkFactory : governs
+BenchmarkGovernance ..[#GreenYellow]..> BenchmarkProvider : governs
+BenchmarkGovernance ..[#GreenYellow]..> BenchmarkTreasury : governs
 
 @enduml

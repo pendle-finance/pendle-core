@@ -23,8 +23,8 @@
 
 pragma solidity ^0.7.0;
 
+import "./IBenchmark.sol";
 import "./IBenchmarkProvider.sol";
-import "../core/BenchmarkProvider.sol";
 
 
 interface IBenchmarkForge {
@@ -34,6 +34,14 @@ interface IBenchmarkForge {
      * @param amount The amount to be minted.
      **/
     event MintYieldToken(address indexed underlyingYieldToken, uint256 amount);
+
+    /**
+     * @dev Emitted when the Forge has created new yield token contracts.
+     * @param ot The address of the ownership token.
+     * @param xyt The address of the new future yield token.
+     * @param expiry The date in epoch time when the contract will expire.
+     **/
+    event NewYieldContracts(address indexed ot, address indexed xyt, uint256 expiry);
 
     /**
      * @dev Emitted when the Forge has redeemed the OT and XYT tokens.
@@ -91,7 +99,7 @@ interface IBenchmarkForge {
      * @notice Gets a reference to the Benchmark core contract.
      * @return Returns the core contract reference.
      **/
-    function core() external view returns (address);
+    function core() external view returns (IBenchmark);
 
     /**
      * @dev Returns the address of the BenchmarkFactory contract address.

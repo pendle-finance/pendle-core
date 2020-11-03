@@ -29,8 +29,8 @@ import "../interfaces/IForgeCreator.sol";
 
 
 contract ForgeCreator is IForgeCreator {
+    IBenchmark public override core;
     IBenchmarkProvider public override provider;
-    address public override core;
     address public immutable override factory;
     address private initializer;
 
@@ -44,13 +44,13 @@ contract ForgeCreator is IForgeCreator {
     /**
      * @notice Initializes the BenchmarkFactory.
      * @dev Only called once.
+     * @param _core The reference to the Benchmark core contract.
      * @param _provider The reference to the BenchmarkProvider contract.
-     * @param _core The address of the Benchmark core contract.
      **/
-    function initialize(IBenchmarkProvider _provider, address _core) external {
+    function initialize(IBenchmark _core, IBenchmarkProvider _provider) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
+        require(address(_core) != address(0), "Benchmark: zero address");
         require(address(_provider) != address(0), "Benchmark: zero address");
-        require(_core != address(0), "Benchmark: zero address");
 
         initializer = address(0);
         core = _core;
@@ -67,8 +67,8 @@ contract ForgeCreator is IForgeCreator {
 
         forge = Factory.createContract(
             type(BenchmarkForge).creationCode,
-            abi.encodePacked(provider, core, factory, _underlyingAsset, _underlyingYieldToken),
-            abi.encode(provider, core, factory, _underlyingAsset, _underlyingYieldToken)
+            abi.encodePacked(core, provider, factory, _underlyingAsset, _underlyingYieldToken),
+            abi.encode(core, provider, factory, _underlyingAsset, _underlyingYieldToken)
         );
     }
 }
