@@ -129,7 +129,7 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         Tokens memory tokens = _getTokens(expiry);
 
         redeemedAmount = tokens.ot.balanceOf(msg.sender);
-        require(block.timestamp > expiry, "Must have after expiry");
+        require(block.timestamp > expiry, "Must be after expiry");
 
         tokens.underlyingYieldToken.transfer(to, redeemedAmount);
         _settleDueInterests(tokens, expiry, msg.sender);
