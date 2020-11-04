@@ -36,12 +36,8 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
     IBenchmark public override core;
     IForgeCreator public forgeCreator;
     IMarketCreator public marketCreator;
-    address[] private allForges;
-    address[] private allMarkets;
-    address private initializer;
 
     constructor(address _governance) Permissions(_governance) {
-        initializer = msg.sender;
     }
 
     function initialize(
@@ -63,9 +59,9 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
     function createForge(address _underlyingAsset, address _underlyingYieldToken)
         external
         override
+        initialized 
         returns (address forge)
     {
-        require(initializer == address(0), "Benchmark: not initialized");
         require(_underlyingAsset != address(0), "Benchmark: zero address");
         require(_underlyingYieldToken != address(0), "Benchmark: zero address");
 
@@ -73,17 +69,17 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         IBenchmarkProvider provider = core.provider();
 
         require(
-            data.getForgeFromUnderlying(_underlyingAsset, _underlyingYieldToken) == address(0),
+            data.getForgeFromUnderlying(_underlyingYieldToken) == address(0),
             "Benchmark: forge exists"
         );
         require(
-            provider.getATokenAddress(_underlyingYieldToken) != address(0),
+            provider.getATokenAddress(_underlyingAsset) != _underlyingYieldToken,
             "Benchmark: underlying not found"
         );
 
         forge = IForgeCreator(forgeCreator).create(_underlyingAsset, _underlyingYieldToken);
-        data.storeForge(_underlyingAsset, _underlyingYieldToken, forge);
-        allForges.push(forge);
+        data.storeForge(_underlyingYieldToken, forge);
+        data.addForge(forge);
 
         emit ForgeCreated(_underlyingAsset, _underlyingYieldToken, forge);
     }
@@ -92,19 +88,18 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         address _xyt,
         address _token,
         uint256 _expiry
-    ) external override returns (address market) {
-        require(initializer == address(0), "Benchmark: not initialized");
+    ) external override initialized  returns (address market) {
         require(_xyt != _token, "Benchmark: similar tokens");
         require(_xyt != address(0) && _token != address(0), "Benchmark: zero address");
 
         IBenchmarkData data = core.data();
 
         require(data.getMarket(_xyt, _token) == address(0), "Benchmark: market already exists");
-        require(data.getForgeFromXYT(_xyt) != address(0), "Benchmark: not xyt token");
+        require(data.getForgeFromXYT(_xyt) != address(0), "Benchmark: not xyt");
 
         market = IMarketCreator(marketCreator).create(_xyt, _token, _expiry);
         data.storeMarket(_xyt, _token, market);
-        allMarkets.push(market);
+        data.addMarket(market);
 
         emit MarketCreated(_xyt, _token, market);
     }
@@ -114,21 +109,5 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
 
         core = _core;
         emit CoreSet(address(_core));
-    }
-
-    function allForgesLength() external view override returns (uint256) {
-        return allForges.length;
-    }
-
-    function getAllForges() public view override returns (address[] memory) {
-        return allForges;
-    }
-
-    function allMarketsLength() external view override returns (uint256) {
-        return allMarkets.length;
-    }
-
-    function getAllMarkets() public view override returns (address[] memory) {
-        return allMarkets;
     }
 }

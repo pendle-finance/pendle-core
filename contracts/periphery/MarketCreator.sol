@@ -62,8 +62,8 @@ contract MarketCreator is IMarketCreator {
         address _token,
         uint256 _expiry
     ) external override returns (address market) {
-        require(msg.sender == factory, "Benchmark: forbidden");
         require(initializer == address(0), "Benchmark: not initialized");
+        require(msg.sender == factory, "Benchmark: forbidden");
 
         market = Factory.createContract(
             type(BenchmarkMarket).creationCode,

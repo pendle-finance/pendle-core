@@ -92,9 +92,6 @@ interface IBenchmarkForge {
         address account
     ) external returns (uint256 interests);
 
-    function getAllXYTFromExpiry(uint256 _expiry) external view returns (address[] calldata);
-    function getAllOTFromExpiry(uint256 _expiry) external view returns (address[] calldata);
-
     /**
      * @notice Gets a reference to the Benchmark core contract.
      * @return Returns the core contract reference.

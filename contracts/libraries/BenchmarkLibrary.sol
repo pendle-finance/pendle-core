@@ -42,7 +42,7 @@ library Utils {
     uint256 internal constant UINT_MAX_VALUE = uint256(-1);
 
     /**
-     * @notice Concatenates a Benchmark token name/symbol to a yield token name/symbol using
+     * @notice Concatenates a Benchmark token name/symbol to a yield token name/symbol
      *         using a delimiter (usually "-" or " ").
      * @param _bt The Benchmark token name/symbol.
      * @param _yt The yield token name/symbol.
@@ -80,7 +80,7 @@ library Utils {
     }
 
     /**
-     * @notice Concatenates a OT/XYT token name/symbol to an expiry using
+     * @notice Concatenates a OT/XYT token name/symbol to an expiry
      *         using a delimiter (usually "-" or " ").
      * @param _name The OT/XYT token name/symbol.
      * @param _expiry The expiry in epoch time.
@@ -96,8 +96,8 @@ library Utils {
         uint256 expiryPart;
         uint256 delimiterPart;
         uint256 resultPart;
-        uint256 i = _expiry;
         uint256 length;
+        uint256 i = _expiry;
 
         while (i != 0) {
             length++;

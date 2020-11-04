@@ -24,6 +24,7 @@
 pragma solidity ^0.7.0;
 
 import "./IBenchmark.sol";
+import "./IBenchmarkYieldToken.sol";
 
 
 interface IBenchmarkData {
@@ -34,77 +35,125 @@ interface IBenchmarkData {
     event CoreSet(address core);
 
     /**
-     * @notice Gets a reference to the Benchmark core contract.
-     * @return Returns the core contract reference.
-     **/
-    function core() external view returns (IBenchmark);
-    /**
      * @notice Sets the Benchmark core contract address.
      * @param _core Address of the new core contract.
      **/
     function setCore(IBenchmark _core) external;
+
+    /**
+     * @notice Gets a reference to the Benchmark core contract.
+     * @return Returns the core contract reference.
+     **/
+    function core() external view returns (IBenchmark);
+
+    /**
+     * @notice Gets the OT and XYT tokens.
+     * @param _underlyingYieldToken Token address of the underlying yield token.
+     * @param _expiry Yield contract expiry in epoch time.
+     * @return ot The OT token references.
+     * @return xyt The XYT token references.
+     **/
+    function getBenchmarkYieldTokens(address _underlyingYieldToken, uint256 _expiry)
+        external
+        view
+        returns (IBenchmarkYieldToken ot, IBenchmarkYieldToken xyt);
 
     /***********
      *  FORGE  *
      ***********/
 
     /**
-     * @notice Gets a forge given the underlying asset and yield token.
-     * @param _underlyingAsset The address of the underlying asset.
-     * @param _underlyingYieldToken Token address of the underlying yield token.
-     * @return forge Returns the forge address.
-     **/
-    function getForgeFromUnderlying(address _underlyingAsset, address _underlyingYieldToken)
-        external
-        view
-        returns (address forge);
-
-    /**
-     * @notice Gets a forge given the XYT token.
-     * @param _xyt The address of XYT token.
-     * @return forge Returns the forge address.
-     **/
-    function getForgeFromXYT(address _xyt)
-        external
-        view
-        returns (address forge);
-
-    /**
      * @notice Store new forge.
-     * @param _underlyingAsset The address of the underlying asset.
+     * @param _forge The newly created forge address.
+     **/
+    function addForge (address _forge) external;
+
+    /**
+     * @notice Store new forge details.
      * @param _underlyingYieldToken Token address of the underlying yield token.
      * @param _forge The newly created forge address.
      **/
-    function storeForge(
-        address _underlyingAsset,
+    function storeForge(address _underlyingYieldToken, address _forge) external;
+
+    /**
+     * @notice Store new OT and XYT details.
+     * @param _ot The address of the new XYT.
+     * @param _xyt The address of the new XYT.
+     * @param _underlyingYieldToken Token address of the underlying yield token.
+     * @param _forge Forge that minted the XYT.
+     * @param _expiry Yield contract expiry in epoch time.
+     **/
+    function storeTokens(
+        address _ot,
+        address _xyt,
         address _underlyingYieldToken,
-        address _forge
+        address _forge,
+        uint256 _expiry
     ) external;
 
     /**
-     * @notice Store new XYT.
-     * @param _xyt The address of the new XYT token.
-     * @param _forge Forge that minted the XYT.
+     * @notice Displays the number of forges currently existing.
+     * @return Returns forges length,
      **/
-    function storeXYT(
-        address _xyt,
-        address _forge
-    ) external;
+    function allForgesLength() external view returns (uint256);
+
+    /**
+     * @notice Gets all the forges.
+     * @return Returns an array of all forges.
+     **/
+    function getAllForges() external view returns (address[] calldata);
+
+    /**
+     * @notice Gets a forge given the underlying asset and yield token.
+     * @param _underlyingYieldToken Token address of the underlying yield token.
+     * @return forge Returns the forge address.
+     **/
+    function getForgeFromUnderlying(address _underlyingYieldToken)
+        external
+        view
+        returns (address forge);
+
+    /**
+     * @notice Gets a forge given an XYT.
+     * @param _xyt The address of XYT token.
+     * @return forge Returns the forge address.
+     **/
+    function getForgeFromXYT(address _xyt) external view returns (address forge);
+
+    /**
+     * @notice Gets a reference to a specific OT.
+     * @param _underlyingYieldToken Token address of the underlying yield token.
+     * @param _expiry Yield contract expiry in epoch time.
+     * @return ot Returns the reference to an OT.
+     **/
+    function otTokens(address _underlyingYieldToken, uint256 _expiry)
+        external
+        view
+        returns (IBenchmarkYieldToken ot);
+
+    /**
+     * @notice Gets a reference to a specific XYT.
+     * @param _underlyingYieldToken Token address of the underlying yield token.
+     * @param _expiry Yield contract expiry in epoch time.
+     * @return xyt Returns the reference to an XYT.
+     **/
+    function xytTokens(address _underlyingYieldToken, uint256 _expiry)
+        external
+        view
+        returns (IBenchmarkYieldToken xyt);
 
     /***********
      *  MARKET *
      ***********/
 
     /**
-     * @notice Gets a market given a future yield token and an ERC20 token.
-     * @param _xyt Token address of the future yield token as base asset.
-     * @param _token Token address of an ERC20 token as quote asset.
-     * @return market Returns the market address.
+     * @notice Store new market.
+     * @param _market The newly created market address.
      **/
-    function getMarket(address _xyt, address _token) external view returns (address market);
+     function addMarket (address _market) external;
 
     /**
-     * @notice Store new market.
+     * @notice Store new market details.
      * @param _xyt Token address of the future yield token as base asset.
      * @param _token Token address of an ERC20 token as quote asset.
      * @param _market The newly created market address.
@@ -114,4 +163,24 @@ interface IBenchmarkData {
         address _token,
         address _market
     ) external;
+
+    /**
+     * @notice Displays the number of markets currently existing.
+     * @return Returns markets length,
+     **/
+    function allMarketsLength() external view returns (uint256);
+
+    /**
+     * @notice Gets all the markets.
+     * @return Returns an array of all markets.
+     **/
+    function getAllMarkets() external view returns (address[] calldata);
+
+    /**
+     * @notice Gets a market given a future yield token and an ERC20 token.
+     * @param _xyt Token address of the future yield token as base asset.
+     * @param _token Token address of an ERC20 token as quote asset.
+     * @return market Returns the market address.
+     **/
+    function getMarket(address _xyt, address _token) external view returns (address market);
 }

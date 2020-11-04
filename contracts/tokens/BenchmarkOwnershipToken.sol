@@ -50,4 +50,14 @@ contract BenchmarkOwnershipToken is BenchmarkBaseToken, IBenchmarkYieldToken {
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;
     }
+
+    modifier onlyForge() {
+        require(msg.sender == forge, "Benchmark: only forge");
+        _;
+    }
+
+    function renew(uint256 _expiry) public onlyForge {
+        require(_expiry > block.timestamp, "Benchmark: invalid expiry");
+        expiry = _expiry;
+    }
 }

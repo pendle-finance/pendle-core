@@ -32,11 +32,17 @@ abstract contract Permissions {
 
     address public immutable governance;
     address public maintainer;
-    mapping(address => bool) internal maintainers;
+    address internal initializer;
 
     constructor(address _governance) {
         require(_governance != address(0), "Benchmark: zero address");
+        initializer = msg.sender;
         governance = _governance;
+    }
+
+    modifier initialized() {
+        require(initializer == address(0), "Benchmark: not initialized");
+        _;
     }
 
     modifier onlyGovernance() {
@@ -57,7 +63,7 @@ abstract contract Permissions {
     }
 
     /**
-     * @dev Allows maintainers to withdraw Ether in a Benchmark contract
+     * @dev Allows the maintainer to withdraw Ether in a Benchmark contract
      *      in case of accidental token transfer into the contract.
      * @param amount The amount of Ether to withdraw.
      * @param sendTo The recipient address.
@@ -69,7 +75,7 @@ abstract contract Permissions {
     }
 
     /**
-     * @dev Allows maintainers to withdraw all IERC20 compatible tokens in a Benchmark
+     * @dev Allows the maintainer to withdraw all IERC20 compatible tokens in a Benchmark
      *      contract in case of accidental token transfer into the contract.
      * @param token IERC20 The address of the token contract.
      * @param amount The amount of IERC20 tokens to withdraw.
