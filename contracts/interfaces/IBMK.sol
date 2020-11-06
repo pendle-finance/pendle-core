@@ -23,16 +23,7 @@
 
 pragma solidity ^0.7.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IBenchmarkTreasury {
-    function setFundPercentage(uint256 _fundPercentage) external;
-
-    function deposit(IERC20 token, uint256 amount) external;
-
-    function withdraw(uint256 amount, address withdrawAddress) external;
-
-    function balanceOf(IERC20 token) external view returns (uint256);
-
-    function fundToken() external view returns (IERC20);
+interface IBMK {
+    function getPriorVotes(address account, uint256 blockNumber) external view returns (uint96);
 }
