@@ -27,5 +27,10 @@ pragma experimental ABIEncoderV2;
 
 
 contract MockGovernance is BenchmarkGovernance {
-    constructor(){}
+  constructor(
+      IBMK _bmk,
+      ITimelock _timelock,
+      address _guardian
+  ) BenchmarkGovernance(_bmk, _timelock, _guardian) {
+  }
 }

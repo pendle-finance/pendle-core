@@ -56,29 +56,29 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         marketCreator = _marketCreator;
     }
 
-    function createForge(address _underlyingAsset, address _underlyingYieldToken)
+    function createForge(address _underlyingAsset)
         external
         override
-        initialized 
+        initialized
         returns (address forge)
     {
         require(_underlyingAsset != address(0), "Benchmark: zero address");
-        require(_underlyingYieldToken != address(0), "Benchmark: zero address");
-
         IBenchmarkData data = core.data();
         IBenchmarkProvider provider = core.provider();
 
+        address _underlyingYieldToken = provider.getATokenAddress(_underlyingAsset);
         require(
-            data.getForgeFromUnderlying(_underlyingYieldToken) == address(0),
-            "Benchmark: forge exists"
+            _underlyingYieldToken != address(0),
+            "Benchmark: underlying asset not supported"
         );
+
         require(
-            provider.getATokenAddress(_underlyingAsset) == _underlyingYieldToken,
-            "Benchmark: underlying and asset do not match"
+            data.getForgeFromUnderlyingAsset(_underlyingAsset) == address(0),
+            "Benchmark: forge exists"
         );
 
         forge = IForgeCreator(forgeCreator).create(_underlyingAsset, _underlyingYieldToken);
-        data.storeForge(_underlyingYieldToken, forge);
+        data.storeForge(_underlyingAsset, forge);
         data.addForge(forge);
 
         emit ForgeCreated(_underlyingAsset, _underlyingYieldToken, forge);

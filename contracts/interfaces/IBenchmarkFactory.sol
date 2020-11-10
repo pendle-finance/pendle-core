@@ -66,10 +66,9 @@ interface IBenchmarkFactory {
     /**
      * @notice Creates a forge given an underlying yield token.
      * @param _underlyingAsset Token address of the underlying asset
-     * @param _underlyingYieldToken Token address of the underlying yield token.
      * @return forge Returns the address of the newly created forge.
      **/
-    function createForge(address _underlyingAsset, address _underlyingYieldToken)
+    function createForge(address _underlyingAsset)
         external
         returns (address forge);
 

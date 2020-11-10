@@ -28,7 +28,7 @@ import "../periphery/Permissions.sol";
 
 
 contract BenchmarkData is IBenchmarkData, Permissions {
-    mapping(address => address) public override getForgeFromUnderlying;
+    mapping(address => address) public override getForgeFromUnderlyingAsset;
     mapping(address => address) public override getForgeFromXYT;
     mapping(address => mapping(address => address)) public override getMarket;
     mapping(address => mapping(uint256 => IBenchmarkYieldToken)) public override otTokens;
@@ -71,14 +71,14 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         emit CoreSet(address(_core));
     }
 
-    function getBenchmarkYieldTokens(address _underlyingYieldToken, uint256 _expiry)
+    function getBenchmarkYieldTokens(address _underlyingAsset, uint256 _expiry)
         external
         view
         override
         returns (IBenchmarkYieldToken ot, IBenchmarkYieldToken xyt)
     {
-        ot = otTokens[_underlyingYieldToken][_expiry];
-        xyt = xytTokens[_underlyingYieldToken][_expiry];
+        ot = otTokens[_underlyingAsset][_expiry];
+        xyt = xytTokens[_underlyingAsset][_expiry];
     }
 
     /***********
@@ -89,26 +89,26 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         allForges.push(_forge);
     }
 
-    function storeForge(address _underlyingYieldToken, address _forge)
+    function storeForge(address _underlyingAsset, address _forge)
         external
         override
         initialized
         onlyFactory
     {
-        getForgeFromUnderlying[_underlyingYieldToken] = _forge;
+        getForgeFromUnderlyingAsset[_underlyingAsset] = _forge;
         isForge[_forge] = true;
     }
 
     function storeTokens(
         address _ot,
         address _xyt,
-        address _underlyingYieldToken,
+        address _underlyingAsset,
         address _forge,
         uint256 _expiry
     ) external override initialized onlyForge {
         getForgeFromXYT[_xyt] = _forge;
-        otTokens[_underlyingYieldToken][_expiry] = IBenchmarkYieldToken(_ot);
-        xytTokens[_underlyingYieldToken][_expiry] = IBenchmarkYieldToken(_xyt);
+        otTokens[_underlyingAsset][_expiry] = IBenchmarkYieldToken(_ot);
+        xytTokens[_underlyingAsset][_expiry] = IBenchmarkYieldToken(_xyt);
     }
 
     function allForgesLength() external view override returns (uint256) {
@@ -125,7 +125,7 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     function addMarket (address _market) external override initialized onlyFactory {
         allMarkets.push(_market);
     }
-    
+
     function storeMarket(
         address _xyt,
         address _token,

@@ -198,7 +198,7 @@ contract BMK  is IBMK {
      * @param blockNumber The block number to get the vote balance at
      * @return The number of votes the account had as of the given block
      */
-    function getPriorVotes(address account, uint blockNumber) public view returns (uint96) {
+    function getPriorVotes(address account, uint blockNumber) public override view returns (uint96) {
         require(blockNumber < block.number, "Benchmark: not yet determined");
 
         uint32 nCheckpoints = numCheckpoints[account];

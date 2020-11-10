@@ -19,23 +19,27 @@ const {getTokenAmount} = require('./Math');
 
 
 async function deployTestBenchmarkTokens(contracts) {
-  await contracts.benchmarkFactory.createForge(constants.USDT_ADDRESS, constants.AUSDT_ADDRESS);
-  const forgeAddress = await contracts.benchmarkData.getForgeFromUnderlying.call(constants.USDT_ADDRESS, constants.AUSDT_ADDRESS);
+  console.log('\t\tDeploying test Benchmark Tokens');
+  await contracts.benchmarkFactory.createForge(constants.USDT_ADDRESS);
+  const forgeAddress = await contracts.benchmarkData.getForgeFromUnderlyingAsset.call(constants.USDT_ADDRESS);
   console.log(`\t\tDeployed USDT forge contract at ${forgeAddress}`);
 
   contracts.benchmarkForge = await BenchmarkForge.at(forgeAddress);
-
   await contracts.benchmarkForge.newYieldContracts(constants.TEST_EXPIRY);
-  const otTokenAddress = await contracts.benchmarkForge.otTokens.call(
+
+  const otTokenAddress = await contracts.benchmarkData.otTokens.call(
+    constants.USDT_ADDRESS,
     constants.TEST_EXPIRY
   );
-  const xytTokenAddress = await contracts.benchmarkForge.xytTokens.call(
+  const xytTokenAddress = await contracts.benchmarkData.xytTokens.call(
+    constants.USDT_ADDRESS,
     constants.TEST_EXPIRY
   );
+  console.log(`\t\tDeployed OT contract at ${otTokenAddress} and XYT contract at ${xytTokenAddress}`);
   // console.log(`otTokenAddress = ${otTokenAddress}, xytTokenAddress = ${xytTokenAddress}`);
   contracts.benchmarkOwnershipToken = await BenchmarkOwnershipToken.at(otTokenAddress);
   contracts.benchmarkFutureYieldToken = await BenchmarkFutureYieldToken.at(xytTokenAddress);
-  console.log(`\t\tDeployed OT contract at ${otTokenAddress} and XYT contract at ${xytTokenAddress}`);
+
   return contracts;
 }
 

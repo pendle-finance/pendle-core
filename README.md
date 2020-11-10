@@ -20,8 +20,12 @@ The tokenization of future yields also allows for the creation of products with 
   * The `expiry` is the UNIX timestamp at 0:00 UTC of the day right after the expiry date. For example: if it expires on 3rd Oct, the `expiry` is the Unix timestamp of 4th Oct, 0:00 UTC
 
 ## Scripts:
-* Run a mainnet fork on ganache: `npm run ganache`
-* Compile (both benchmark and aave): `npm run compile`
-* Deploy an instance of Aave to the network: `npm run deploy:aave` [WIP]
-* run a console for development network: `npm run console:dev`
-* run tests: `npm run test`
+* Run a mainnet fork on ganache: `yarn ganache`
+* Compile (both benchmark and aave): `yarn compile`
+* Deploy an instance of Aave to the network: `yarn deploy:aave` [WIP]
+* run a console for development network: `yarn console:dev`
+* run tests: `yarn test`
+
+## Testing:
+* On one terminal: `yarn ganache`
+* On another terminal: `yarn test test/core/benchmarkForge.js`

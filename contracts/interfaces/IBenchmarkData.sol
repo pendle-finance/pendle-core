@@ -108,7 +108,7 @@ interface IBenchmarkData {
      * @param _underlyingYieldToken Token address of the underlying yield token.
      * @return forge Returns the forge address.
      **/
-    function getForgeFromUnderlying(address _underlyingYieldToken)
+    function getForgeFromUnderlyingAsset(address _underlyingYieldToken)
         external
         view
         returns (address forge);

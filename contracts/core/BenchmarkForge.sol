@@ -74,7 +74,7 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
     modifier onlyXYT(uint256 _expiry) {
         IBenchmarkData data = core.data();
         require(
-            msg.sender == address(data.xytTokens(underlyingYieldToken, _expiry)),
+            msg.sender == address(data.xytTokens(underlyingAsset, _expiry)),
             "Benchmark: only XYT"
         );
         _;
@@ -104,7 +104,7 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         );
 
         IBenchmarkData data = core.data();
-        data.storeTokens(ot, xyt, underlyingYieldToken, address(this), expiry);
+        data.storeTokens(ot, xyt, underlyingAsset, address(this), expiry);
 
         emit NewYieldContracts(ot, xyt, expiry);
     }
@@ -239,6 +239,6 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
 
     function _getTokens(uint256 _expiry) internal view returns (BenchmarkTokens memory _tokens) {
         IBenchmarkData data = core.data();
-        (_tokens.ot, _tokens.xyt) = data.getBenchmarkYieldTokens(underlyingYieldToken, _expiry);
+        (_tokens.ot, _tokens.xyt) = data.getBenchmarkYieldTokens(underlyingAsset, _expiry);
     }
 }

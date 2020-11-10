@@ -5,7 +5,7 @@ const { deployContracts } = require('../helpers/Helpers');
 contract('Benchmark', function (accounts) {
   describe('Test Benchmark protocol deployment', async function () {
     it('Contracts can deploy', async function () {
-      this.timeout(100000);
+      this.timeout(200000);
       console.log(`Root account = ${accounts[0]}`);
       const contracts = await deployContracts(accounts[0]);
       console.log('\tFinished deploying');
