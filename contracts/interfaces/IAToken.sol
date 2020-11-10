@@ -22,14 +22,14 @@
  */
 pragma solidity ^0.7.0;
 
-
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /**
  * @title Aave ERC20 AToken
  *
  * @dev Implementation of the interest bearing token for the DLP protocol.
  * @author Aave
  */
-interface IAToken {
+interface IAToken is IERC20 {
     /**
      * @dev gives allowance to an address to execute the interest redirection
      * on behalf of the caller.
@@ -45,7 +45,7 @@ interface IAToken {
      * @param _user the user for which the balance is being calculated
      * @return the total balance of the user
      **/
-    function balanceOf(address _user) external view returns (uint256);
+    /* function balanceOf(address _user) external view returns (uint256); */
 
     /**
     * @dev returns the last index of the user, used to calculate the balance of the user

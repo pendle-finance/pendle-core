@@ -1,9 +1,9 @@
 const BN = web3.utils.BN;
 
-const LendingPoolCore = artifacts.require('LendingPoolCore');
-const LendingPool = artifacts.require('LendingPool');
-const TetherToken = artifacts.require('TetherToken');
-const AToken = artifacts.require('AToken');
+const LendingPoolCore = artifacts.require('IAaveLendingPoolCore');
+const LendingPool = artifacts.require('IAaveLendingPool');
+const TetherToken = artifacts.require('IUSDT');
+const AToken = artifacts.require('IAToken');
 
 const { constants } = require('./Constants');
 const { getTokenAmount } = require('./Math');

@@ -73,8 +73,8 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
             "Benchmark: forge exists"
         );
         require(
-            provider.getATokenAddress(_underlyingAsset) != _underlyingYieldToken,
-            "Benchmark: underlying not found"
+            provider.getATokenAddress(_underlyingAsset) == _underlyingYieldToken,
+            "Benchmark: underlying and asset do not match"
         );
 
         forge = IForgeCreator(forgeCreator).create(_underlyingAsset, _underlyingYieldToken);

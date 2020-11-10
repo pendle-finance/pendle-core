@@ -47,7 +47,7 @@ contract ForgeCreator is IForgeCreator {
      * @param _core The reference to the Benchmark core contract.
      * @param _provider The reference to the BenchmarkProvider contract.
      **/
-    function initialize(IBenchmark _core, IBenchmarkProvider _provider) external {
+    function initialize(IBenchmarkProvider _provider, IBenchmark _core) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
         require(address(_core) != address(0), "Benchmark: zero address");
         require(address(_provider) != address(0), "Benchmark: zero address");
