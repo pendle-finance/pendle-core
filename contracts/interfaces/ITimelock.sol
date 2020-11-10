@@ -23,16 +23,37 @@
 
 pragma solidity ^0.7.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IBenchmarkTreasury {
-    function setFundPercentage(uint256 _fundPercentage) external;
+interface ITimelock {
+    function GRACE_PERIOD() external view returns (uint256);
 
-    function deposit(IERC20 token, uint256 amount) external;
+    function acceptAdmin() external;
 
-    function withdraw(uint256 amount, address withdrawAddress) external;
+    function cancelTransaction(
+        address target,
+        uint256 value,
+        string memory signature,
+        bytes memory data,
+        uint256 eta
+    ) external;
 
-    function balanceOf(IERC20 token) external view returns (uint256);
+    function delay() external returns (uint256);
 
-    function fundToken() external view returns (IERC20);
+    function executeTransaction(
+        address target,
+        uint256 value,
+        string memory signature,
+        bytes memory data,
+        uint256 eta
+    ) external payable returns (bytes calldata);
+
+    function queueTransaction(
+        address target,
+        uint256 value,
+        string memory signature,
+        bytes memory data,
+        uint256 eta
+    ) external returns (bytes32);
+
+    function queuedTransactions(bytes32 txn) external returns (bool);
 }

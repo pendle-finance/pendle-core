@@ -23,6 +23,8 @@
 pragma solidity ^0.7.0;
 
 import "../core/BenchmarkGovernance.sol";
+pragma experimental ABIEncoderV2;
+
 
 contract MockGovernance is BenchmarkGovernance {
     constructor(){}

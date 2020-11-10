@@ -35,10 +35,8 @@ contract Benchmark is IBenchmark, Permissions {
     IBenchmarkProvider public override provider;
     address public immutable override weth;
     address public override treasury;
-    address private initializer;
 
     constructor(address _governance, address _weth) Permissions(_governance) {
-        initializer = msg.sender;
         weth = _weth;
     }
 
@@ -77,14 +75,12 @@ contract Benchmark is IBenchmark, Permissions {
         IBenchmarkFactory _factory,
         IBenchmarkProvider _provider,
         address _treasury
-    ) external override onlyGovernance {
-        require(initializer == address(0), "Benchmark: not initialized");
+    ) external override initialized  onlyGovernance {
         require(address(_data) != address(0), "Benchmark: zero address");
         require(address(_factory) != address(0), "Benchmark: zero address");
         require(address(_provider) != address(0), "Benchmark: zero address");
         require(_treasury != address(0), "Benchmark: zero address");
 
-        initializer = address(0);
         data = _data;
         factory = _factory;
         provider = _provider;

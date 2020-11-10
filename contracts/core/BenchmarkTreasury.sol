@@ -32,61 +32,38 @@ contract BenchmarkTreasury is IBenchmarkTreasury, Permissions {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    // IERC20 public defaultToken;
-    // SwapRouter public swapRouter;
-    // address public ecoFund;
-    // address public gov;
-    // address internal govSetter;
-
-    // mapping(address => uint256) public ecoFundAmts;
-
-    // // 1% = 100
-    // uint256 public constant MAX_FUND_PERCENTAGE = 1500; // 15%
-    // uint256 public constant PERCENTAGE_PRECISION = 10000; // 100%
-    // uint256 public fundPercentage = 500; // 5%
+    IERC20 public override fundToken;
+    uint256 public constant MAX_FUND_PERCENTAGE = 1500; // 15%
+    uint256 public constant PERCENTAGE_PRECISION = 10000; // 100%
+    uint256 public fundPercentage = 500; // 5%
     
-    constructor(address _governance) Permissions(_governance) {}
+    constructor(address _governance) Permissions(_governance) {
+        initializer = msg.sender;
+    }
 
-    // constructor(SwapRouter _swapRouter, IERC20 _defaultToken, address _ecoFund) public {
-    //     swapRouter = _swapRouter;
-    //     defaultToken = _defaultToken;
-    //     ecoFund = _ecoFund;
-    //     govSetter = msg.sender;
-    // }
+    function initialize(IERC20 _fundToken) external {
+        require(msg.sender == initializer, "Benchmark: forbidden");
+        require(address(_fundToken) != address(0), "Benchmark: zero address");
 
-    // function setGov(address _gov) external {
-    //     require(msg.sender == govSetter, "not authorized");
-    //     gov = _gov;
-    //     govSetter = address(0);
-    // }
+        initializer = address(0);
+        fundToken = _fundToken;
+    }
 
-    // function setSwapRouter(SwapRouter _swapRouter) external onlyOwner {
-    //     swapRouter = _swapRouter;
-    // }
+    function setFundPercentage(uint256 _fundPercentage) external override onlyGovernance {
+        require(_fundPercentage <= MAX_FUND_PERCENTAGE, "Benchmark: exceeded max%");
+        fundPercentage = _fundPercentage;
+    }
 
-    // function setEcoFund(address _ecoFund) external onlyOwner {
-    //     ecoFund = _ecoFund;
-    // }
+    function deposit(IERC20 token, uint256 amount) external override {
+        token.safeTransferFrom(msg.sender, address(this), amount);
+    }
 
-    // function setFundPercentage(uint256 _fundPercentage) external onlyOwner {
-    //     require(_fundPercentage <= MAX_FUND_PERCENTAGE, "exceed max percent");
-    //     fundPercentage = _fundPercentage;
-    // }
+    function withdraw(uint256 amount, address withdrawAddress) external override onlyGovernance {
+        require(balanceOf(fundToken) >= amount, "Benchmark: insufficient funds");
+        fundToken.safeTransfer(withdrawAddress, amount);
+    }
 
-    // function balanceOf(IERC20 token) public view returns (uint256) {
-    //     return token.balanceOf(address(this)).sub(ecoFundAmts[address(token)]);
-    // }
-
-    // function deposit(IERC20 token, uint256 amount) external {
-    //     token.safeTransferFrom(msg.sender, address(this), amount);
-    //     // portion allocated to ecoFund
-    //     ecoFundAmts[address(token)] = amount.mul(fundPercentage).div(PERCENTAGE_PRECISION);
-    // }
-
-    // // only default token withdrawals allowed
-    // function withdraw(uint256 amount, address withdrawAddress) external {
-    //     require(msg.sender == gov, "caller not gov");
-    //     require(balanceOf(defaultToken) >= amount, "insufficient funds");
-    //     defaultToken.safeTransfer(withdrawAddress, amount);
-    // }
+    function balanceOf(IERC20 token) public view override returns (uint256) {
+        return token.balanceOf(address(this));
+    }
 }

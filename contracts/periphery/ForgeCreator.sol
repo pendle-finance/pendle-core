@@ -62,8 +62,8 @@ contract ForgeCreator is IForgeCreator {
         override
         returns (address forge)
     {
-        require(msg.sender == factory, "Benchmark: forbidden");
         require(initializer == address(0), "Benchmark: not initialized");
+        require(msg.sender == factory, "Benchmark: forbidden");
 
         forge = Factory.createContract(
             type(BenchmarkForge).creationCode,

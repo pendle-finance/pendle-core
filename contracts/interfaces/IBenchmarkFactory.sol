@@ -36,16 +36,16 @@ interface IBenchmarkFactory {
     event CoreSet(address core);
 
     /**
-     * @notice Gets a reference to the Benchmark core contract.
-     * @return Returns the core contract reference.
-     **/
-    function core() external view returns (IBenchmark);
-
-    /**
      * @notice Sets the Benchmark core contract reference.
      * @param _core Address of the new core contract.
      **/
     function setCore(IBenchmark _core) external;
+
+    /**
+     * @notice Gets a reference to the Benchmark core contract.
+     * @return Returns the core contract reference.
+     **/
+    function core() external view returns (IBenchmark);
 
     /***********
      *  FORGE  *
@@ -73,18 +73,6 @@ interface IBenchmarkFactory {
         external
         returns (address forge);
 
-    /**
-     * @notice Displays the number of forges currently existing.
-     * @return Returns forges length,
-     **/
-    function allForgesLength() external view returns (uint256);
-
-    /**
-     * @notice Gets all the forges.
-     * @return Returns an array of all forges.
-     **/
-    function getAllForges() external view returns (address[] calldata);
-
     /***********
      *  MARKET *
      ***********/
@@ -109,16 +97,4 @@ interface IBenchmarkFactory {
         address _token,
         uint256 _expiry
     ) external returns (address market);
-
-    /**
-     * @notice Displays the number of markets currently existing.
-     * @return Returns markets length,
-     **/
-    function allMarketsLength() external view returns (uint256);
-
-    /**
-     * @notice Gets all the markets.
-     * @return Returns an array of all markets.
-     **/
-    function getAllMarkets() external view returns (address[] calldata);
 }
