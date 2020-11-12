@@ -1,4 +1,4 @@
-const BN = web3.utils.BN;
+// const BN = web3.utils.BN;
 const {time} = require('@openzeppelin/test-helpers');
 
 const BenchmarkProvider = artifacts.require('BenchmarkProvider');
@@ -18,22 +18,22 @@ const {getAaveContracts, mintUSDT, mintAUSDT, printAaveAddressDetails} = require
 const {getTokenAmount} = require('./Math');
 
 
-async function deployTestBenchmarkTokens(contracts) {
+async function deployTestBenchmarkTokens(contracts, constantsObject=constants) {
   console.log('\t\tDeploying test Benchmark Tokens');
-  await contracts.benchmarkFactory.createForge(constants.USDT_ADDRESS);
-  const forgeAddress = await contracts.benchmarkData.getForgeFromUnderlyingAsset.call(constants.USDT_ADDRESS);
+  await contracts.benchmarkFactory.createForge(constantsObject.USDT_ADDRESS);
+  const forgeAddress = await contracts.benchmarkData.getForgeFromUnderlyingAsset.call(constantsObject.USDT_ADDRESS);
   console.log(`\t\tDeployed USDT forge contract at ${forgeAddress}`);
 
   contracts.benchmarkForge = await BenchmarkForge.at(forgeAddress);
-  await contracts.benchmarkForge.newYieldContracts(constants.TEST_EXPIRY);
+  await contracts.benchmarkForge.newYieldContracts(constantsObject.TEST_EXPIRY);
 
   const otTokenAddress = await contracts.benchmarkData.otTokens.call(
-    constants.USDT_ADDRESS,
-    constants.TEST_EXPIRY
+    constantsObject.USDT_ADDRESS,
+    constantsObject.TEST_EXPIRY
   );
   const xytTokenAddress = await contracts.benchmarkData.xytTokens.call(
-    constants.USDT_ADDRESS,
-    constants.TEST_EXPIRY
+    constantsObject.USDT_ADDRESS,
+    constantsObject.TEST_EXPIRY
   );
   console.log(`\t\tDeployed OT contract at ${otTokenAddress} and XYT contract at ${xytTokenAddress}`);
   // console.log(`otTokenAddress = ${otTokenAddress}, xytTokenAddress = ${xytTokenAddress}`);
@@ -44,16 +44,19 @@ async function deployTestBenchmarkTokens(contracts) {
 }
 
 // governanceAddress should be an unlocked address
-async function deployCoreContracts(governanceAddress) {
+async function deployCoreContracts(governanceAddress, constantsObject=constants) {
+  console.log('\tDeploying core contracts');
   const contracts = {};
 
   contracts.benchmarkProvider = await BenchmarkProvider.new(governanceAddress);
+  // console.log(1);
   await contracts.benchmarkProvider.setMaintainer(governanceAddress, {from: governanceAddress});
+  // console.log(1);
 
-  await contracts.benchmarkProvider.setAaveAddress(constants.AAVE_LENDING_POOL_CORE_ADDRESS);
+  await contracts.benchmarkProvider.setAaveAddress(constantsObject.AAVE_LENDING_POOL_CORE_ADDRESS);
   console.log(`\t\tDeployed and setup BenchmarkProvider contract at ${contracts.benchmarkProvider.address}`);
 
-  contracts.benchmark = await Benchmark.new(governanceAddress, constants.WETH_ADDRESS);
+  contracts.benchmark = await Benchmark.new(governanceAddress, constantsObject.WETH_ADDRESS);
   console.log(`\t\tDeployed Benchmark contract at ${contracts.benchmark.address}`);
 
   contracts.benchmarkTreasury = await BenchmarkTreasury.new(governanceAddress);

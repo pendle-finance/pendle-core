@@ -73,7 +73,7 @@ contract('BenchmarkForge', (accounts) => {
     it('[After 1 month] should be able to redeem aUSDT to get back OT, XYT and interests $', async () => {
       const testAmount = 1000 * 1000000; // 1000 USDT
 
-      console.log('\tBefore:');
+      console.log('\tBefore [user account]');
       await printBenchmarkAddressDetails(contracts, accounts[1]);
 
       console.log('\tBefore [BenchmarkForge]');
@@ -94,7 +94,7 @@ contract('BenchmarkForge', (accounts) => {
       );
       const aUSDTbalanceAfter = await aaveContracts.aUSDT.balanceOf.call(accounts[1]);
 
-      console.log('\n\tAfter:');
+      console.log('\n\tAfter [user account]');
       await printBenchmarkAddressDetails(contracts, accounts[1]);
       console.log('\tAfter [BenchmarkForge]');
       await printBenchmarkAddressDetails(contracts, contracts.benchmarkForge.address);
@@ -114,15 +114,13 @@ contract('BenchmarkForge', (accounts) => {
         accounts[1]
       );
 
-      console.log('\tBefore one month:');
+      console.log('\tBefore one month [user account]');
       await printBenchmarkAddressDetails(contracts, accounts[1]);
-      console.log('\tBefore [BenchmarkForge]');
+      console.log('\tBefore one month [BenchmarkForge]');
       await printBenchmarkAddressDetails(contracts, contracts.benchmarkForge.address);
+      const lastNormalisedIncomeBeforeExpiry = await contracts.benchmarkForge.lastNormalisedIncomeBeforeExpiry.call(constants.TEST_EXPIRY);
 
-      console.log(
-        '\tLastNormalisedIncomeBeforeExpiry = ',
-        await contracts.benchmarkForge.lastNormalisedIncomeBeforeExpiry.call(constants.TEST_EXPIRY)
-      );
+      console.log(`\tLastNormalisedIncomeBeforeExpiry = ${lastNormalisedIncomeBeforeExpiry}`);
 
       const aUSDTbalanceBefore = await aaveContracts.aUSDT.balanceOf.call(accounts[1]);
 
