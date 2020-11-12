@@ -1,9 +1,10 @@
+'use strict';
+
 const {expectRevert, time} = require('@openzeppelin/test-helpers');
 const {BN} = require('@openzeppelin/test-helpers/src/setup');
 const {expect, assert} = require('chai');
 
 var RLP = require('rlp');
-
 
 const BenchmarkForge = artifacts.require('BenchmarkForge');
 const BenchmarkProvider = artifacts.require('BenchmarkProvider');
@@ -57,12 +58,7 @@ contract('BenchmarkForge', (accounts) => {
       console.log('\tBefore:');
       await printBenchmarkAddressDetails(contracts, accounts[1]);
       const testAmount = 1000 * 1000000; // 1000 USDT
-      await contracts.benchmarkForge.tokenizeYield(
-
-        constants.TEST_EXPIRY,
-        testAmount,
-        accounts[1]
-      );
+      await contracts.benchmarkForge.tokenizeYield(constants.TEST_EXPIRY, testAmount, accounts[1]);
 
       console.log('\n\tAfter:');
       await printBenchmarkAddressDetails(contracts, accounts[1]);
@@ -85,13 +81,9 @@ contract('BenchmarkForge', (accounts) => {
       console.log('\tOne month has passed ...');
 
       const aUSDTbalanceBefore = await aaveContracts.aUSDT.balanceOf.call(accounts[1]);
-      await contracts.benchmarkForge.redeemUnderlying(
-
-        constants.TEST_EXPIRY,
-        testAmount,
-        accounts[1],
-        {from: accounts[1]}
-      );
+      await contracts.benchmarkForge.redeemUnderlying(constants.TEST_EXPIRY, testAmount, accounts[1], {
+        from: accounts[1],
+      });
       const aUSDTbalanceAfter = await aaveContracts.aUSDT.balanceOf.call(accounts[1]);
 
       console.log('\n\tAfter [user account]');
@@ -107,12 +99,7 @@ contract('BenchmarkForge', (accounts) => {
   describe('redeemDueInterests', async () => {
     it('After one month, should be able to ping to get due interests', async () => {
       const testAmount = 1000 * 1000000; // 1000 USDT
-      await contracts.benchmarkForge.tokenizeYield(
-
-        constants.TEST_EXPIRY,
-        testAmount,
-        accounts[1]
-      );
+      await contracts.benchmarkForge.tokenizeYield(constants.TEST_EXPIRY, testAmount, accounts[1]);
 
       console.log('\tBefore one month [user account]');
       await printBenchmarkAddressDetails(contracts, accounts[1]);
@@ -129,7 +116,7 @@ contract('BenchmarkForge', (accounts) => {
 
       console.log('\t1 month has passed ...');
 
-      await contracts.benchmarkForge.redeemDueInterests( constants.TEST_EXPIRY, {
+      await contracts.benchmarkForge.redeemDueInterests(constants.TEST_EXPIRY, {
         from: accounts[1],
       });
 
@@ -146,12 +133,7 @@ contract('BenchmarkForge', (accounts) => {
     it('After expiry, should be able to redeem aUSDT from OT', async () => {
       // lets use accounts[2] now
       const testAmount = 1000 * 1000000; // 1000 USDT
-      await contracts.benchmarkForge.tokenizeYield(
-
-        constants.TEST_EXPIRY,
-        testAmount,
-        accounts[2]
-      );
+      await contracts.benchmarkForge.tokenizeYield(constants.TEST_EXPIRY, testAmount, accounts[2]);
       await contracts.benchmarkFutureYieldToken.transfer(accounts[8], testAmount, {from: accounts[2]});
       console.log('\tTransfered out all XYT tokens away');
 
@@ -164,11 +146,7 @@ contract('BenchmarkForge', (accounts) => {
       await printBenchmarkAddressDetails(contracts, accounts[2]);
       const aUSDTbalanceBefore = await aaveContracts.aUSDT.balanceOf.call(accounts[2]);
 
-      await contracts.benchmarkForge.redeemAfterExpiry(
-        constants.TEST_EXPIRY,
-        accounts[2],
-        {from: accounts[2]}
-      );
+      await contracts.benchmarkForge.redeemAfterExpiry(constants.TEST_EXPIRY, accounts[2], {from: accounts[2]});
 
       const aUSDTbalanceAfter = await aaveContracts.aUSDT.balanceOf.call(accounts[2]);
       console.log('\n\tAfter redeeming:');

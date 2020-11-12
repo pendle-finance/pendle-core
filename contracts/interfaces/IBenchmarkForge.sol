@@ -99,26 +99,32 @@ interface IBenchmarkForge {
     function core() external view returns (IBenchmark);
 
     /**
-     * @dev Returns the address of the BenchmarkFactory contract address.
+     * @dev G the address of the BenchmarkFactory contract address.
      * @return Returns the factory's address.
      **/
     function factory() external view returns (address);
 
     /**
-     * @dev Returns an instance of the BenchmarkProvider contract.
+     * @notice Gets the protocol used for this yield token.
+     * @return Retuns the protocol enum.
+     **/
+    function protocol() external view returns (uint8);
+
+    /**
+     * @dev Gets an instance of the BenchmarkProvider contract.
      * @return Returns the provider's instance.
      **/
     function provider() external view returns (IBenchmarkProvider);
 
     /**
-     * @dev Returns the address of the underlying asset
-     * @return returns the underlying asset address
+     * @dev Gets the address of the underlying asset
+     * @return Returns the underlying asset address
      **/
     function underlyingAsset() external view returns (address);
 
     /**
-     * @dev Returns the address of the underlying yield token
-     * @return returns the underlying yield token address
+     * @dev Gets the address of the underlying yield token
+     * @return Returns the underlying yield token address
      **/
     function underlyingYieldToken() external view returns (address);
 }

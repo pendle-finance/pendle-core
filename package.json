@@ -45,12 +45,13 @@
   },
   "scripts": {
     "deploy:aave": "yarn hardhat run scripts/deploy_aave.js",
-    "compile": "yarn hardhat compile --config hardhat.config.js",
+    "compile": "yarn hardhat compile --config hardhat.config.js && yarn size",
     "console:dev": "yarn hardhat console",
     "coverage": "yarn hardhat clean && yarn hardhat coverage --config ./hardhat.config.js --testfiles '' --temp ''",
     "ganache": "bash scripts/start_ganache.sh",
     "fork": "yarn hardhat node",
     "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c './**/*.js'",
+    "size": "node scripts/contractBytecodeSize.js",
     "test": "yarn hardhat test"
   }
 }

@@ -104,7 +104,7 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         emit MarketCreated(_xyt, _token, market);
     }
 
-    function setCore(IBenchmark _core) public override {
+    function setCore(IBenchmark _core) public override onlyGovernance {
         require(address(_core) != address(0), "Benchmark: zero address");
 
         core = _core;

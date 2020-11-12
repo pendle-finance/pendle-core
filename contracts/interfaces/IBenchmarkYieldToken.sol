@@ -34,6 +34,12 @@ interface IBenchmarkYieldToken is IBenchmarkBaseToken {
     function forge() external view returns (address);
 
     /**
+     * @notice Gets the protocol used for this yield token.
+     * @return Retuns the protocol enum.
+     **/
+    function protocol() external view returns (uint8);
+
+    /**
      * @notice Returns the address of the underlying asset.
      * @return Returns the underlying asset address.
      **/

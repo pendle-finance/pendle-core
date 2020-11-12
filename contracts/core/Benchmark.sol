@@ -24,6 +24,7 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IBenchmark.sol";
+import "../interfaces/IBenchmarkForge.sol";
 import "../periphery/Permissions.sol";
 
 
@@ -92,10 +93,6 @@ contract Benchmark is IBenchmark, Permissions {
      *  FORGE  *
      ***********/
 
-    /**
-     * @notice Redeems Ownership Tokens for the underlying yield token
-     * @dev Can only redeem all of the OTs.
-     **/
     function redeemAfterExpiry(
         address underlyingToken,
         uint256 expiry,
@@ -103,14 +100,15 @@ contract Benchmark is IBenchmark, Permissions {
     ) public override returns (uint256 redeemedAmount) {}
 
     function redeemUnderlying(
-        address underlyingToken,
-        uint256 expiry,
-        uint256 amountToRedeem,
-        address to
-    ) public override returns (uint256 redeemedAmount) {}
+        address _underlyingAsset,
+        uint256 _expiry,
+        uint256 _amountToRedeem,
+        address _to
+    ) public override returns (uint256 redeemedAmount) {
+        IBenchmarkForge forge = IBenchmarkForge(data.getForgeFromUnderlyingAsset(_underlyingAsset));
+        redeemedAmount = forge.redeemUnderlying(_expiry, _amountToRedeem, _to);
+    }
 
-    // TODO: the user has existing OTs for an expired expiry, and wants to
-    // mint new OTs+XYTs for a new expiry
     function renew(
         address underlyingToken,
         uint256 oldExpiry,
@@ -119,11 +117,14 @@ contract Benchmark is IBenchmark, Permissions {
     ) public override returns (uint256 redeemedAmount) {}
 
     function tokenizeYield(
-        address underlyingToken,
-        uint256 expiry,
-        uint256 amountToTokenize,
-        address to
-    ) public override returns (address ot, address xyt) {}
+        address _underlyingAsset,
+        uint256 _expiry,
+        uint256 _amountToTokenize,
+        address _to
+    ) public override returns (address ot, address xyt) {
+        IBenchmarkForge forge = IBenchmarkForge(data.getForgeFromUnderlyingAsset(_underlyingAsset));
+        (ot, xyt) = forge.tokenizeYield(_expiry, _amountToTokenize, _to);
+    }
 
     /***********
      *  MARKET *

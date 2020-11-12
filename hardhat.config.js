@@ -24,7 +24,7 @@ module.exports = {
       url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY}`,
       gas: 8000000,
       timeout: 100000,
-      accounts: [`${process.env.PRIVATE_KEYS}`]
+      accounts: [`${process.env.PRIVATE_KEYS}`],
     },
   },
   solidity: {

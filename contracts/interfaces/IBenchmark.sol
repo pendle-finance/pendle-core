@@ -91,28 +91,32 @@ interface IBenchmark {
      *  FORGE  *
      ***********/
 
+     function newYieldContracts(
+        uint256 expiry
+    ) external returns (address ot, address xyt);
+
     function redeemAfterExpiry(
-        address underlyingToken,
+        address underlyingAsset,
         uint256 expiry,
         address to
     ) external returns (uint256 redeemedAmount);
 
     function redeemUnderlying(
-        address underlyingToken,
+        address underlyingAsset,
         uint256 expiry,
         uint256 amountToRedeem,
         address to
     ) external returns (uint256 redeemedAmount);
 
     function renew(
-        address underlyingToken,
+        address underlyingAsset,
         uint256 oldExpiry,
         uint256 newExpiry,
         address to
     ) external returns (uint256 redeemedAmount);
 
     function tokenizeYield(
-        address underlyingToken,
+        address underlyingAsset,
         uint256 expiry,
         uint256 amountToTokenize,
         address to

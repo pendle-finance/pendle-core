@@ -1,3 +1,5 @@
+'use strict';
+
 const {constants, expectRevert, time} = require('@openzeppelin/test-helpers');
 const web3 = require('@openzeppelin/test-helpers/src/config/web3');
 const {BN} = require('@openzeppelin/test-helpers/src/setup');
@@ -14,41 +16,27 @@ const Helpers = require('../helpers/Helpers');
 require('chai').use(require('chai-as-promised')).use(require('chai-bn')(BN)).should();
 
 contract('BenchmarkFactory', ([deployer, governance, stub]) => {
-  describe.only('# Initialization and Constants', async () => {
-    it('test', async () => {
-      let addr = '0x2F02532c5608b5eBF536d852499Be3146c1E3c3A';
-      let usdt = '0xdac17f958d2ee523a2206206994597c13d831ec7';
-      let testUSDT = await TestToken.at(usdt);
-
-      console.log(deployer);
-      console.log(governance);
-      console.log(stub);
-      
-      console.log(testUSDT.address);
-
-      console.log((await testUSDT.balanceOf(addr)).toString());
+  describe('# Initialization and Constants', async () => {
+    before('create the factory', async () => {
+      this.benchmark = await Benchmark.new(governance, {from: deployer});
+      this.provider = await BenchmarkProvider.new(governance, {from: deployer});
+      this.treasury = await BenchmarkTreasury.new(governance, {from: deployer});
+      this.factory = await BenchmarkFactory.new(governance, this.treasury.address, this.provider.address, {
+        from: deployer,
+      });
     });
 
-    // before('create the factory', async () => {
-    //   this.benchmark = await Benchmark.new(governance, {from: deployer});
-    //   this.provider = await BenchmarkProvider.new(governance, {from: deployer});
-    //   this.treasury = await BenchmarkTreasury.new(governance, {from: deployer});
-    //   this.factory = await BenchmarkFactory.new(governance, this.treasury.address, this.provider.address, {
-    //     from: deployer,
-    //   });
-    // });
+    it('should initialize the factory', async () => {
+      await this.factory.initialize(this.benchmark.address, {from: deployer});
 
-    // it('should initialize the factory', async () => {
-    //   await this.factory.initialize(this.benchmark.address, {from: deployer});
+      const factoryCore = await this.factory.core();
+      expect(factoryCore).to.eq(this.benchmark.address);
+    });
 
-    //   const factoryCore = await this.factory.core();
-    //   expect(factoryCore).to.eq(this.benchmark.address);
-    // });
-
-    // it('should get the constants from contract creation', async () => {
-    //   const factoryGovernance = await this.factory.governance();
-    //   expect(factoryGovernance).to.eq(governance);
-    // });
+    it('should get the constants from contract creation', async () => {
+      const factoryGovernance = await this.factory.governance();
+      expect(factoryGovernance).to.eq(governance);
+    });
   });
 
   describe('# Forge Creation', async () => {

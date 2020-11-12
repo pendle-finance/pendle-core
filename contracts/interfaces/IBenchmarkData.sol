@@ -133,11 +133,11 @@ interface IBenchmarkData {
 
     /**
      * @notice Gets a reference to a specific XYT.
-     * @param _underlyingYieldToken Token address of the underlying yield token.
+     * @param _underlyingAsset Token address of the underlying asset
      * @param _expiry Yield contract expiry in epoch time.
      * @return xyt Returns the reference to an XYT.
      **/
-    function xytTokens(address _underlyingYieldToken, uint256 _expiry)
+    function xytTokens(address _underlyingAsset, uint256 _expiry)
         external
         view
         returns (IBenchmarkYieldToken xyt);

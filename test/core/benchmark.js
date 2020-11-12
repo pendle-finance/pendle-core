@@ -1,3 +1,5 @@
+'use strict';
+
 // const Benchmark = artifacts.require("Benchmark");
 
 const { deployContracts } = require('../helpers/Helpers');

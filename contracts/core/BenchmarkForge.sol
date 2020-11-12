@@ -71,6 +71,11 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         underlyingYieldToken = _underlyingYieldToken;
     }
 
+    modifier onlyCore() {
+        require(msg.sender == address(core), "Benchmark: only core");
+        _;
+    }
+
     modifier onlyXYT(uint256 _expiry) {
         IBenchmarkData data = core.data();
         require(
@@ -141,29 +146,29 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
 
     // msg.sender needs to have both OT and XYT tokens
     function redeemUnderlying(
-        uint256 expiry,
-        uint256 amountToRedeem,
-        address to
+        uint256 _expiry,
+        uint256 _amountToRedeem,
+        address _to
     ) public override returns (uint256 redeemedAmount) {
-        BenchmarkTokens memory tokens = _getTokens(expiry);
+        BenchmarkTokens memory tokens = _getTokens(_expiry);
 
-        require(tokens.ot.balanceOf(msg.sender) >= amountToRedeem, "Must have enough OT tokens");
-        require(tokens.xyt.balanceOf(msg.sender) >= amountToRedeem, "Must have enough XYT tokens");
+        require(tokens.ot.balanceOf(msg.sender) >= _amountToRedeem, "Must have enough OT tokens");
+        require(tokens.xyt.balanceOf(msg.sender) >= _amountToRedeem, "Must have enough XYT tokens");
 
-        IERC20(underlyingYieldToken).transfer(to, amountToRedeem);
-        _settleDueInterests(tokens, expiry, msg.sender);
+        IERC20(underlyingYieldToken).transfer(_to, _amountToRedeem);
+        _settleDueInterests(tokens, _expiry, msg.sender);
 
-        tokens.ot.burn(msg.sender, amountToRedeem);
-        tokens.xyt.burn(msg.sender, amountToRedeem);
+        tokens.ot.burn(msg.sender, _amountToRedeem);
+        tokens.xyt.burn(msg.sender, _amountToRedeem);
 
-        return amountToRedeem;
+        return _amountToRedeem;
     }
 
     function tokenizeYield(
         uint256 _expiry,
         uint256 _amountToTokenize,
         address _to
-    ) public override returns (address ot, address xyt) {
+    ) public override onlyCore returns (address ot, address xyt) {
         BenchmarkTokens memory tokens = _getTokens(_expiry);
 
         IERC20(underlyingYieldToken).transferFrom(msg.sender, address(this), _amountToTokenize);

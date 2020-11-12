@@ -39,6 +39,8 @@ library Factory {
 }
 
 library Utils {
+    enum Protocols {NONE, AAVE, COMPOUND}
+
     uint256 internal constant UINT_MAX_VALUE = uint256(-1);
 
     /**
