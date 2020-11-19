@@ -32,7 +32,7 @@ contract('BenchmarkForge', (accounts) => {
   let aaveContracts;
 
   const emptyAUSDT = async (account) => {
-    console.log(`\tEmptying AUSDT from ${account}`);
+    console.log(`\tEmptying AUSDT from [user account] - ${account}`);
     const balance = await aaveContracts.aUSDT.balanceOf.call(account);
     if (balance.toNumber() === 0) return;
     await aaveContracts.aUSDT.transfer(accounts[8], balance, {from: account});
@@ -64,7 +64,7 @@ contract('BenchmarkForge', (accounts) => {
         accounts[1]
       );
 
-      console.log('\n\tAfter:');
+      console.log('\n\tAfter tokenizing 1000 AUSDT via Benchmark:');
       await printBenchmarkAddressDetails(contracts, accounts[1]);
     });
   });
@@ -83,6 +83,7 @@ contract('BenchmarkForge', (accounts) => {
       await time.increase(oneMonth);
 
       console.log('\tOne month has passed ...');
+      console.log('\tUser account has called redeemUnderlying()');
 
       const aUSDTbalanceBefore = await aaveContracts.aUSDT.balanceOf.call(accounts[1]);
       await contracts.benchmarkForge.redeemUnderlying(
@@ -94,13 +95,13 @@ contract('BenchmarkForge', (accounts) => {
       );
       const aUSDTbalanceAfter = await aaveContracts.aUSDT.balanceOf.call(accounts[1]);
 
-      console.log('\n\tAfter [user account]');
+      console.log('\n\tAfter 1 month [user account]');
       await printBenchmarkAddressDetails(contracts, accounts[1]);
-      console.log('\tAfter [BenchmarkForge]');
+      console.log('\tAfter 1 month [BenchmarkForge]');
       await printBenchmarkAddressDetails(contracts, contracts.benchmarkForge.address);
 
       const interests = aUSDTbalanceAfter - aUSDTbalanceBefore - testAmount;
-      console.log(`\n\tInterest amount = ${interests}, or ${(interests / testAmount) * 100} %`);
+      console.log(`\n\tInterest amount = ${interests/1000000}, or ${(interests / testAmount) * 100} %`);
     });
   });
 
@@ -113,6 +114,9 @@ contract('BenchmarkForge', (accounts) => {
         testAmount,
         accounts[1]
       );
+
+      const balance = await contracts.benchmarkOwnershipToken.balanceOf.call(accounts[1]);
+      await contracts.benchmarkOwnershipToken.transfer(accounts[8], balance, {from: accounts[1]});
 
       console.log('\tBefore one month [user account]');
       await printBenchmarkAddressDetails(contracts, accounts[1]);
@@ -128,6 +132,7 @@ contract('BenchmarkForge', (accounts) => {
       await time.increase(oneMonth);
 
       console.log('\t1 month has passed ...');
+      console.log('\tUser account has called redeemDueInterests()');
 
       await contracts.benchmarkForge.redeemDueInterests( constants.TEST_EXPIRY, {
         from: accounts[1],
@@ -138,7 +143,7 @@ contract('BenchmarkForge', (accounts) => {
       await printBenchmarkAddressDetails(contracts, accounts[1]);
 
       const interests = aUSDTbalanceAfter - aUSDTbalanceBefore;
-      console.log(`\n\tInterest amount = ${interests}, or ${(interests / testAmount) * 100} %`);
+      console.log(`\n\tInterest amount = ${interests/1000000}, or ${(interests / testAmount) * 100} %`);
     });
   });
 
@@ -153,14 +158,14 @@ contract('BenchmarkForge', (accounts) => {
         accounts[2]
       );
       await contracts.benchmarkFutureYieldToken.transfer(accounts[8], testAmount, {from: accounts[2]});
-      console.log('\tTransfered out all XYT tokens away');
+      console.log('\tTransfered out all XYT tokens away from User account');
 
       const twoYears = 3600 * 24 * 30 * 24;
       await time.increase(twoYears);
 
       console.log('\t2 years have passed ... Its already past the expiry');
 
-      console.log('\tBefore redeeming:');
+      console.log('\tBefore calling redeemAfterExpiry():');
       await printBenchmarkAddressDetails(contracts, accounts[2]);
       const aUSDTbalanceBefore = await aaveContracts.aUSDT.balanceOf.call(accounts[2]);
 
@@ -171,7 +176,7 @@ contract('BenchmarkForge', (accounts) => {
       );
 
       const aUSDTbalanceAfter = await aaveContracts.aUSDT.balanceOf.call(accounts[2]);
-      console.log('\n\tAfter redeeming:');
+      console.log('\n\tAfter User account has called redeemAfterExpiry():');
       await printBenchmarkAddressDetails(contracts, accounts[2]);
       // expect(aUSDTbalanceBefore.add(new BN(testAmount))).to.eql(aUSDTbalanceAfter);
     });

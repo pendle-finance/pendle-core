@@ -1,4 +1,4 @@
-// const BN = web3.utils.BN;
+const BN = web3.utils.BN;
 const {time} = require('@openzeppelin/test-helpers');
 
 const BenchmarkProvider = artifacts.require('BenchmarkProvider');
@@ -139,15 +139,15 @@ async function mineBlocks(blocks) {
 async function printBenchmarkAddressDetails(contracts, address) {
   const aaveContracts = await getAaveContracts();
   console.log(`\tBenchmark balances for address ${address}:`);
-  console.log(`\t\tOT balance = ${await contracts.benchmarkOwnershipToken.balanceOf.call(address)}`);
-  console.log(`\t\tXYT balance = ${await contracts.benchmarkFutureYieldToken.balanceOf.call(address)}`);
+  console.log(`\t\tOT balance = ${(await contracts.benchmarkOwnershipToken.balanceOf.call(address)).div(new BN(1000000))}`);
+  console.log(`\t\tXYT balance = ${(await contracts.benchmarkFutureYieldToken.balanceOf.call(address)).div(new BN(1000000))}`);
   console.log(
     `\t\tlastNormalisedIncome = ${await contracts.benchmarkForge.lastNormalisedIncome.call(
       constants.TEST_EXPIRY,
       address
     )}`
   );
-  console.log(`\t\taUSDT balance = ${await aaveContracts.aUSDT.balanceOf.call(address)}`);
+  console.log(`\t\taUSDT balance = ${(await aaveContracts.aUSDT.balanceOf.call(address)) / 1000000}`);
 }
 
 function mineBlockAtTime(timestamp) {
