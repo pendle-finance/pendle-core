@@ -76,5 +76,5 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         )
     {}
 
-    function swap(uint256 srcAmount, address destination) external override {}
+    function swap(uint256 srcAmount, address destination) external override { }
 }
