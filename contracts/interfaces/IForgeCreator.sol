@@ -23,6 +23,7 @@
 
 pragma solidity ^0.7.0;
 
+import {Utils} from "../libraries/BenchmarkLibrary.sol";
 import "./IBenchmark.sol";
 import "./IBenchmarkProvider.sol";
 
@@ -30,13 +31,16 @@ import "./IBenchmarkProvider.sol";
 interface IForgeCreator {
     /**
      * @notice Creates a forge given an underlying yield token.
-     * @param _underlyingAsset Token address of the underlying asset.
-     * @param _underlyingYieldToken Token address of the underlying yield token.
+     * @param protocol The protocol of the underlying asset
+     * @param underlyingAsset Token address of the underlying asset.
+     * @param underlyingYieldToken Token address of the underlying yield token.
      * @return forge Returns the address of the newly created forge.
      **/
-    function create(address _underlyingAsset, address _underlyingYieldToken)
-        external
-        returns (address forge);
+    function create(
+        Utils.Protocols protocol,
+        address underlyingAsset,
+        address underlyingYieldToken
+    ) external returns (address forge);
 
     /**
      * @dev Returns an instance of the Benchmark core contract.

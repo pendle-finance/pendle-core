@@ -28,8 +28,7 @@ import "../periphery/Permissions.sol";
 
 
 contract BenchmarkData is IBenchmarkData, Permissions {
-    mapping(address => address) public override getForgeFromUnderlyingAsset;
-    mapping(address => address) public override getForgeFromXYT;
+    mapping(Utils.Protocols => mapping(address => address)) public override getForge;
     mapping(address => mapping(address => address)) public override getMarket;
     mapping(address => mapping(uint256 => IBenchmarkYieldToken)) public override otTokens;
     mapping(address => mapping(uint256 => IBenchmarkYieldToken)) public override xytTokens;
@@ -89,13 +88,13 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         allForges.push(_forge);
     }
 
-    function storeForge(address _underlyingAsset, address _forge)
+    function storeForge(Utils.Protocols _protocol, address _underlyingAsset, address _forge)
         external
         override
         initialized
         onlyFactory
     {
-        getForgeFromUnderlyingAsset[_underlyingAsset] = _forge;
+        getForge[_protocol][_underlyingAsset] = _forge;
         isForge[_forge] = true;
     }
 
@@ -103,10 +102,8 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         address _ot,
         address _xyt,
         address _underlyingAsset,
-        address _forge,
         uint256 _expiry
     ) external override initialized onlyForge {
-        getForgeFromXYT[_xyt] = _forge;
         otTokens[_underlyingAsset][_expiry] = IBenchmarkYieldToken(_ot);
         xytTokens[_underlyingAsset][_expiry] = IBenchmarkYieldToken(_xyt);
     }
@@ -117,6 +114,10 @@ contract BenchmarkData is IBenchmarkData, Permissions {
 
     function getAllForges() public view override returns (address[] memory) {
         return allForges;
+    }
+
+    function getForgeFromXYT(address _xyt) public view override returns (address forge) {
+        
     }
 
     /***********

@@ -2,7 +2,7 @@
 
 // const Benchmark = artifacts.require("Benchmark");
 
-const { deployContracts } = require('../helpers/Helpers');
+const {deployContracts} = require('../helpers/Helpers');
 
 contract('Benchmark', function (accounts) {
   describe('Test Benchmark protocol deployment', async function () {

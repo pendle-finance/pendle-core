@@ -28,6 +28,7 @@ import "../interfaces/IBenchmarkYieldToken.sol";
 
 
 contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
+    Utils.Protocols public override protocol;
     address public override forge;
     address public override underlyingAsset;
     address public override underlyingYieldToken;
@@ -36,6 +37,7 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
 
     constructor(
         address _ot,
+        Utils.Protocols _protocol,
         address _underlyingAsset,
         address _underlyingYieldToken,
         string memory _name,
@@ -52,6 +54,7 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
     {
         forge = msg.sender;
         ot = _ot;
+        protocol = _protocol;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;
     }

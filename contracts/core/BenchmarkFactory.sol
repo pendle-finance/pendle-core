@@ -22,6 +22,7 @@
  */
 pragma solidity ^0.7.0;
 
+
 import "./BenchmarkForge.sol";
 import "./BenchmarkMarket.sol";
 import "../interfaces/IBenchmark.sol";
@@ -56,7 +57,7 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         marketCreator = _marketCreator;
     }
 
-    function createForge(address _underlyingAsset)
+    function createForge(Utils.Protocols _protocol, address _underlyingAsset)
         external
         override
         initialized
@@ -73,12 +74,12 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         );
 
         require(
-            data.getForgeFromUnderlyingAsset(_underlyingAsset) == address(0),
+            data.getForge(_protocol, _underlyingAsset) == address(0),
             "Benchmark: forge exists"
         );
 
-        forge = IForgeCreator(forgeCreator).create(_underlyingAsset, _underlyingYieldToken);
-        data.storeForge(_underlyingAsset, forge);
+        forge = IForgeCreator(forgeCreator).create(_protocol, _underlyingAsset, _underlyingYieldToken);
+        data.storeForge(_protocol, _underlyingAsset, forge);
         data.addForge(forge);
 
         emit ForgeCreated(_underlyingAsset, _underlyingYieldToken, forge);

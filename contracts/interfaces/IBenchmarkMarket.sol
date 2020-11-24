@@ -25,6 +25,8 @@ pragma solidity ^0.7.0;
 
 import "./IBenchmarkProvider.sol";
 import "./IBenchmarkBaseToken.sol";
+import {Utils} from "../libraries/BenchmarkLibrary.sol";
+
 
 interface IBenchmarkMarket is IBenchmarkBaseToken {
     /**
@@ -63,6 +65,12 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
      * @return Returns the factory's address.
      **/
     function factory() external view returns (address);
+
+    /**
+     * @notice Gets the protocol used for this yield token.
+     * @return Retuns the protocol enum.
+     **/
+    function protocol() external view returns (Utils.Protocols);
 
     /**
      * @dev Returns an instance of the BenchmarkProvider contract.

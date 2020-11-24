@@ -31,6 +31,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     address public immutable override factory;
     address public immutable override token;
     address public immutable override xyt;
+    Utils.Protocols public immutable override protocol;
     IBenchmarkProvider public immutable override provider;
     uint256 public constant override minLiquidity = 10**3;
     string private constant _name = "Benchmark Market";
@@ -39,6 +40,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
     constructor(
         IBenchmarkProvider _provider,
+        Utils.Protocols _protocol,
         address _core,
         address _factory,
         address _xyt,
@@ -61,6 +63,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         factory = msg.sender;
         core = _core;
         provider = _provider;
+        protocol = _protocol;
         xyt = _xyt;
         token = _token;
     }
@@ -76,5 +79,5 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         )
     {}
 
-    function swap(uint256 srcAmount, address destination) external override {}
+    function swap(uint256 _srcAmount, address _destination) external override {}
 }

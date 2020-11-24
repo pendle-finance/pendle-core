@@ -23,6 +23,7 @@
 
 pragma solidity ^0.7.0;
 
+import {Utils} from "../libraries/BenchmarkLibrary.sol";
 import "./IBenchmark.sol";
 import "./IForgeCreator.sol";
 import "./IMarketCreator.sol";
@@ -64,11 +65,12 @@ interface IBenchmarkFactory {
     );
 
     /**
-     * @notice Creates a forge given an underlying yield token.
-     * @param _underlyingAsset Token address of the underlying asset
+     * @notice Creates a forge given a protocol and underlying yield token.
+     * @param protocol The protocol of the underlying asset
+     * @param underlyingAsset Token address of the underlying asset
      * @return forge Returns the address of the newly created forge.
      **/
-    function createForge(address _underlyingAsset)
+    function createForge(Utils.Protocols protocol, address underlyingAsset)
         external
         returns (address forge);
 
@@ -85,15 +87,15 @@ interface IBenchmarkFactory {
     event MarketCreated(address indexed xyt, address indexed token, address indexed market);
 
     /**
-     * @notice Creates a market given a future yield token and an ERC20 token.
-     * @param _xyt Token address of the future yield token as base asset.
-     * @param _token Token address of an ERC20 token as quote asset.
-     * @param _expiry Yield contract expiry in epoch time.
+     * @notice Creates a market given a protocol, future yield token, and an ERC20 token.
+     * @param xyt Token address of the future yield token as base asset.
+     * @param token Token address of an ERC20 token as quote asset.
+     * @param expiry Yield contract expiry in epoch time.
      * @return market Returns the address of the newly created market.
      **/
     function createMarket(
-        address _xyt,
-        address _token,
-        uint256 _expiry
+        address xyt,
+        address token,
+        uint256 expiry
     ) external returns (address market);
 }

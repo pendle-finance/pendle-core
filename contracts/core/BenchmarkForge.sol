@@ -23,6 +23,7 @@
 pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import {Factory, Utils} from "../libraries/BenchmarkLibrary.sol";
 import "../interfaces/IBenchmarkBaseToken.sol";
 import "../interfaces/IBenchmarkData.sol";
@@ -32,6 +33,7 @@ import "../tokens/BenchmarkOwnershipToken.sol";
 
 
 contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
+    using SafeMath for uint256;
     using Utils for string;
 
     struct BenchmarkTokens {
@@ -42,6 +44,7 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
     address public immutable override factory;
     address public immutable override underlyingAsset;
     address public immutable override underlyingYieldToken;
+    Utils.Protocols public immutable override protocol;
     IBenchmark public immutable override core;
     IBenchmarkProvider public immutable override provider;
 
@@ -54,6 +57,7 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
     constructor(
         IBenchmark _core,
         IBenchmarkProvider _provider,
+        Utils.Protocols _protocol,
         address _factory,
         address _underlyingAsset,
         address _underlyingYieldToken
@@ -67,6 +71,7 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         factory = msg.sender;
         core = _core;
         provider = _provider;
+        protocol = _protocol;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;
     }
@@ -85,7 +90,7 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         _;
     }
 
-    function newYieldContracts(uint256 expiry) public override returns (address ot, address xyt) {
+    function newYieldContracts(uint256 _expiry) public override returns (address ot, address xyt) {
         address aTokenAddress = provider.getATokenAddress(underlyingAsset);
         uint8 aTokenDecimals = IBenchmarkBaseToken(aTokenAddress).decimals();
 
@@ -95,52 +100,52 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         string memory xytSymbol = XYT.concat(IBenchmarkBaseToken(aTokenAddress).symbol(), "-");
 
         ot = _forgeOwnershipToken(
-            otName.concat(expiry, " "),
-            otSymbol.concat(expiry, "-"),
+            otName.concat(_expiry, " "),
+            otSymbol.concat(_expiry, "-"),
             aTokenDecimals,
-            expiry
+            _expiry
         );
         xyt = _forgeFutureYieldToken(
             ot,
-            xytName.concat(expiry, " "),
-            xytSymbol.concat(expiry, "-"),
+            xytName.concat(_expiry, " "),
+            xytSymbol.concat(_expiry, "-"),
             aTokenDecimals,
-            expiry
+            _expiry
         );
 
         IBenchmarkData data = core.data();
-        data.storeTokens(ot, xyt, underlyingAsset, address(this), expiry);
+        data.storeTokens(ot, xyt, underlyingAsset, _expiry);
 
-        emit NewYieldContracts(ot, xyt, expiry);
+        emit NewYieldContracts(ot, xyt, _expiry);
     }
 
-    function redeemDueInterests(uint256 expiry) public override returns (uint256 interests) {
-        BenchmarkTokens memory tokens = _getTokens(expiry);
-        return _settleDueInterests(tokens, expiry, msg.sender);
+    function redeemDueInterests(uint256 _expiry) public override returns (uint256 interests) {
+        BenchmarkTokens memory tokens = _getTokens(_expiry);
+        return _settleDueInterests(tokens, _expiry, msg.sender);
     }
 
-    function redeemDueInterestsBeforeTransfer(uint256 _expiry, address account)
+    function redeemDueInterestsBeforeTransfer(uint256 _expiry, address _account)
         public
         override
         onlyXYT(_expiry)
         returns (uint256 interests)
     {
         BenchmarkTokens memory tokens = _getTokens(_expiry);
-        return _settleDueInterests(tokens, _expiry, account);
+        return _settleDueInterests(tokens, _expiry, _account);
     }
 
-    function redeemAfterExpiry(uint256 expiry, address to)
+    function redeemAfterExpiry(uint256 _expiry, address _to)
         public
         override
         returns (uint256 redeemedAmount)
     {
-        BenchmarkTokens memory tokens = _getTokens(expiry);
+        BenchmarkTokens memory tokens = _getTokens(_expiry);
 
         redeemedAmount = tokens.ot.balanceOf(msg.sender);
-        require(block.timestamp > expiry, "Must be after expiry");
+        require(block.timestamp > _expiry, "Benchmark: must be after expiry");
 
-        IERC20(underlyingYieldToken).transfer(to, redeemedAmount);
-        _settleDueInterests(tokens, expiry, msg.sender);
+        IERC20(underlyingYieldToken).transfer(_to, redeemedAmount);
+        _settleDueInterests(tokens, _expiry, msg.sender);
         tokens.ot.burn(msg.sender, redeemedAmount);
     }
 
@@ -216,34 +221,35 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         );
     }
 
-    //TODO: safemath
     function _settleDueInterests(
-        BenchmarkTokens memory tokens,
-        uint256 expiry,
-        address account
+        BenchmarkTokens memory _tokens,
+        uint256 _expiry,
+        address _account
     ) internal returns (uint256) {
-        uint256 principal = tokens.xyt.balanceOf(account);
-        uint256 Ix = lastNormalisedIncome[expiry][account];
+        uint256 principal = _tokens.xyt.balanceOf(_account);
+        uint256 Ix = lastNormalisedIncome[_expiry][_account];
         uint256 In;
-        if (block.timestamp >= expiry) {
-            In = lastNormalisedIncomeBeforeExpiry[expiry];
+
+        if (block.timestamp >= _expiry) {
+            In = lastNormalisedIncomeBeforeExpiry[_expiry];
         } else {
             In = provider.getAaveNormalisedIncome(underlyingAsset);
-            lastNormalisedIncomeBeforeExpiry[expiry] = In;
+            lastNormalisedIncomeBeforeExpiry[_expiry] = In;
         }
 
-        uint256 dueInterests = (principal * In) / Ix - principal;
+        uint256 dueInterests = principal.mul(In).div(Ix.sub(principal));
 
         if (dueInterests > 0) {
-            IERC20(underlyingYieldToken).transfer(account, dueInterests);
+            IERC20(underlyingYieldToken).transfer(_account, dueInterests);
         }
 
-        lastNormalisedIncome[expiry][account] = In;
+        lastNormalisedIncome[_expiry][_account] = In;
+
         return dueInterests;
     }
 
     function _getTokens(uint256 _expiry) internal view returns (BenchmarkTokens memory _tokens) {
         IBenchmarkData data = core.data();
-        (_tokens.ot, _tokens.xyt) = data.getBenchmarkYieldTokens(underlyingAsset, _expiry);
+        (_tokens.ot, _tokens.xyt) = data.getBenchmarkYieldTokens(underlyingAsset, _expiry); // TODO: last
     }
 }

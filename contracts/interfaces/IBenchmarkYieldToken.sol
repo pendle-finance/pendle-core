@@ -24,6 +24,7 @@
 pragma solidity ^0.7.0;
 
 import "./IBenchmarkBaseToken.sol";
+import {Utils} from "../libraries/BenchmarkLibrary.sol";
 
 
 interface IBenchmarkYieldToken is IBenchmarkBaseToken {
@@ -37,7 +38,7 @@ interface IBenchmarkYieldToken is IBenchmarkBaseToken {
      * @notice Gets the protocol used for this yield token.
      * @return Retuns the protocol enum.
      **/
-    function protocol() external view returns (uint8);
+    function protocol() external view returns (Utils.Protocols);
 
     /**
      * @notice Returns the address of the underlying asset.

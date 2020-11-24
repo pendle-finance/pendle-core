@@ -57,18 +57,25 @@ contract ForgeCreator is IForgeCreator {
         provider = _provider;
     }
 
-    function create(address _underlyingAsset, address _underlyingYieldToken)
-        external
-        override
-        returns (address forge)
-    {
+    function create(
+        Utils.Protocols _protocol,
+        address _underlyingAsset,
+        address _underlyingYieldToken
+    ) external override returns (address forge) {
         require(initializer == address(0), "Benchmark: not initialized");
         require(msg.sender == factory, "Benchmark: forbidden");
 
         forge = Factory.createContract(
             type(BenchmarkForge).creationCode,
-            abi.encodePacked(core, provider, factory, _underlyingAsset, _underlyingYieldToken),
-            abi.encode(core, provider, factory, _underlyingAsset, _underlyingYieldToken)
+            abi.encodePacked(
+                core,
+                provider,
+                _protocol,
+                factory,
+                _underlyingAsset,
+                _underlyingYieldToken
+            ),
+            abi.encode(core, provider, _protocol, factory, _underlyingAsset, _underlyingYieldToken)
         );
     }
 }

@@ -25,6 +25,7 @@ pragma solidity ^0.7.0;
 
 import "./IBenchmark.sol";
 import "./IBenchmarkProvider.sol";
+import {Utils} from "../libraries/BenchmarkLibrary.sol";
 
 
 interface IBenchmarkForge {
@@ -75,6 +76,7 @@ interface IBenchmarkForge {
         address to
     ) external returns (uint256 redeemedAmount);
 
+    // TODO: to implement renew
     // function renew(
     //     ContractDurations oldContractDuration,
     //     uint256 oldExpiry,
@@ -108,7 +110,7 @@ interface IBenchmarkForge {
      * @notice Gets the protocol used for this yield token.
      * @return Retuns the protocol enum.
      **/
-    function protocol() external view returns (uint8);
+    function protocol() external view returns (Utils.Protocols);
 
     /**
      * @dev Gets an instance of the BenchmarkProvider contract.

@@ -27,13 +27,15 @@ import "../interfaces/IBenchmarkYieldToken.sol";
 
 
 contract BenchmarkOwnershipToken is BenchmarkBaseToken, IBenchmarkYieldToken {
+    Utils.Protocols public override protocol;
     address public override forge;
     address public override underlyingAsset;
     address public override underlyingYieldToken;
-    /* address public xyt; */
+    address public xyt;
 
     constructor(
-        /* address _xyt, */
+        address _xyt,
+        Utils.Protocols _protocol,
         address _underlyingAsset,
         address _underlyingYieldToken,
         string memory _name,
@@ -49,7 +51,8 @@ contract BenchmarkOwnershipToken is BenchmarkBaseToken, IBenchmarkYieldToken {
         )
     {
         forge = msg.sender;
-        /* xyt = _xyt; */
+        xyt = _xyt;
+        protocol = _protocol;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;
     }

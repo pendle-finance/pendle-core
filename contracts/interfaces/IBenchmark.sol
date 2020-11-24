@@ -23,6 +23,7 @@
 
 pragma solidity ^0.7.0;
 
+import {Utils} from "../libraries/BenchmarkLibrary.sol";
 import "./IBenchmarkData.sol";
 import "./IBenchmarkFactory.sol";
 import "./IBenchmarkProvider.sol";
@@ -92,30 +93,37 @@ interface IBenchmark {
      ***********/
 
      function newYieldContracts(
+        Utils.Protocols protocol,
+        address underlyingAsset,
         uint256 expiry
     ) external returns (address ot, address xyt);
 
     function redeemAfterExpiry(
+        Utils.Protocols _protocol,
         address underlyingAsset,
         uint256 expiry,
         address to
     ) external returns (uint256 redeemedAmount);
 
     function redeemUnderlying(
+        Utils.Protocols _protocol,
         address underlyingAsset,
         uint256 expiry,
         uint256 amountToRedeem,
         address to
     ) external returns (uint256 redeemedAmount);
 
-    function renew(
-        address underlyingAsset,
-        uint256 oldExpiry,
-        uint256 newExpiry,
-        address to
-    ) external returns (uint256 redeemedAmount);
+    // TODO: to implement renew first on forge
+    // function renew(
+    //     Utils.Protocols _protocol,
+    //     address underlyingAsset,
+    //     uint256 oldExpiry,
+    //     uint256 newExpiry,
+    //     address to
+    // ) external returns (uint256 redeemedAmount);
 
     function tokenizeYield(
+        Utils.Protocols _protocol,
         address underlyingAsset,
         uint256 expiry,
         uint256 amountToTokenize,
