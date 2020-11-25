@@ -22,6 +22,8 @@
  */
 pragma solidity ^0.7.0;
 
+import "@openzeppelin/contracts/math/SafeMath.sol";
+
 
 library Factory {
     function createContract(
@@ -39,10 +41,58 @@ library Factory {
     }
 }
 
-library Utils {
-    enum Protocols {NONE, AAVE, COMPOUND}
+library Math {
+    using SafeMath for uint256;
 
     uint256 internal constant UINT_MAX_VALUE = uint256(-1);
+    uint256 internal constant RAY = 1e27;
+    uint256 internal constant WAD = 1e18;
+
+    // This famous algorithm is called "exponentiation by squaring"
+    // and calculates x^n with x as fixed-point and n as regular unsigned.
+    //
+    // It's O(log n), instead of O(n) for naive repeated multiplication.
+    //
+    // These facts are why it works:
+    //
+    //  If n is even, then x^n = (x^2)^(n/2).
+    //  If n is odd,  then x^n = x * x^(n-1),
+    //   and applying the equation for even x gives
+    //    x^n = x * (x^2)^((n-1) / 2).
+    //
+    //  Also, EVM division is flooring and
+    //    floor[(n-1) / 2] = floor[n / 2].
+    //
+    function pow(uint256 x, uint n) internal pure returns (uint256 z) {
+        z = n % 2 != 0 ? x : RAY;
+
+        for (n /= 2; n != 0; n /= 2) {
+            x = rmul(x, x);
+
+            if (n % 2 != 0) {
+                z = rmul(z, x);
+            }
+        }
+    }
+
+    function rmul(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (RAY / 2).add(x.mul(y)).div(RAY);
+    }
+
+    function rdiv(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (y / 2).add(x.mul(RAY)).div(y);
+    }
+
+    function wmul(uint x, uint y) internal pure returns (uint256) {
+        return (WAD / 2).add(x.mul(y)).div(WAD);
+    }
+    function wdiv(uint x, uint y) internal pure returns (uint256) {
+        return (y / 2).add(x.mul(WAD)).div(y);
+    }
+}
+
+library Utils {
+    enum Protocols {NONE, AAVE, COMPOUND}    
 
     /**
      * @notice Concatenates a Benchmark token name/symbol to a yield token name/symbol

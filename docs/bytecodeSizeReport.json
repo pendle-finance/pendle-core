@@ -8,6 +8,7 @@
 	"BenchmarkProvider.sol": 1850,
 	"BenchmarkTreasury.sol": 3461,
 	"Factory.sol": 86,
+	"Math.sol": 86,
 	"Utils.sol": 86,
 	"MockBenchmark.sol": 1850,
 	"MockGovernance.sol": 11894,
