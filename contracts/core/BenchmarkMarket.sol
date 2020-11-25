@@ -77,4 +77,47 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     {}
 
     function swap(uint256 srcAmount, address destination) external override { }
+
+    function setPoolRatio(address xytToken, uint denomXYToken, address pairToken, uint denomPairToken) external override { }
+    
+    function setSwapFee(uint swapFee) external override { }
+    
+    function pausePool() external override { }
+    
+    function unpausePool() external override { }
+
+    function spotPrice(address inToken, address outToken) external view override returns (uint spotPrice)  { }
+
+    function swapAmountIn(
+        uint inAmount, 
+        address inToken, 
+        address outToken, 
+        uint minOutAmount,
+        uint maxPrice
+        ) external override returns (uint outAmount, uint spotPriceAfter) {}
+
+    function swapAmountOut(
+        address inToken,
+        uint maxInAmount,
+        address outToken,
+        uint outAmount,
+        uint maxPrice
+    ) external override returns (uint inAmount, uint spotPriceAfter) {}
+
+
+    function joinPoolLpToken(uint lpTokenOutAmount, uint[] calldata maxInAmounts) external override {}
+
+    function exitPoolLpToken(uint lpTokenInAmount, uint[] calldata minOutAmounts) external override {}
+
+    function joinPoolSingleToken(address inToken, uint inAmount, uint minLPOutAmount) external override returns (uint lpOutAmount) {}
+
+    function exitPoolSingleToken(address outToken, uint outAmount, uint maxLPinAmount) external override returns (uint lpInAmount) {}
+
+    function getSwapFee() external view override returns (uint swapFee) {}
+
+    function interestDistribute(address lp) internal returns (uint interestReturn) {}
+
+    function shiftWeight(address xytToken, address pairToken) internal {}
+    
+    function shiftCurve(address xytToken, address pairToken) internal {}
 }

@@ -41,6 +41,65 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
         address indexed destination
     );
 
+    /***********
+     * Pool mngmt *
+     ***********/
+    function setPoolRatio(address xytToken, uint denomXYToken, address pairToken, uint denomPairToken) external;
+    
+    function setSwapFee(uint swapFee) external;
+    
+    function pausePool() external;
+    
+    function unpausePool() external;
+
+    /***********
+     * Trade *
+     ***********/
+    function spotPrice(address inToken, address outToken) external view returns (uint spotPrice);
+
+    function swapAmountIn(
+        uint inAmount, 
+        address inToken, 
+        address outToken, 
+        uint minOutAmount,
+        uint maxPrice
+        ) external returns (uint outAmount, uint spotPriceAfter);
+
+    function swapAmountOut(
+        address inToken,
+        uint maxInAmount,
+        address outToken,
+        uint outAmount,
+        uint maxPrice
+    ) external returns (uint inAmount, uint spotPriceAfter);
+
+    /***********
+     * LP *
+     ***********/
+    function joinPoolLpToken(uint lpTokenOutAmount, uint[] calldata maxInAmounts) external;
+
+    function exitPoolLpToken(uint lpTokenInAmount, uint[] calldata minOutAmounts) external;
+
+    function joinPoolSingleToken(address inToken, uint inAmount, uint minLPOutAmount) external returns (uint lpOutAmount);
+
+    function exitPoolSingleToken(address outToken, uint outAmount, uint maxLPinAmount) external returns (uint lpInAmount);
+
+    //function interestDistribute(address lp)  returns (uint interestReturn);
+
+    /***********
+     * Curve shifting *
+     ***********/
+
+    //function shiftWeight(address xytToken, address pairToken) internal;
+    
+    //function shiftCurve(address xytToken, address pairToken) internal;
+
+    /***********
+     * View *
+     ***********/
+
+    function getSwapFee() external view returns (uint swapFee);
+
     function swap(uint256 srcAmount, address destination) external;
 
     function getReserves()
