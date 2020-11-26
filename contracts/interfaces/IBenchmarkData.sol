@@ -26,7 +26,6 @@ pragma solidity ^0.7.0;
 import "./IBenchmark.sol";
 import "./IBenchmarkYieldToken.sol";
 
-
 interface IBenchmarkData {
     /**
      * @notice Emitted when the Benchmark core address has been updated.
@@ -53,7 +52,7 @@ interface IBenchmarkData {
      * @return ot The OT token references.
      * @return xyt The XYT token references.
      **/
-    function getBenchmarkYieldTokens(address _underlyingYieldToken, uint256 _expiry)
+    function getBenchmarkYieldTokens(uint256 _protocol, address _underlyingYieldToken, uint256 _expiry)
         external
         view
         returns (IBenchmarkYieldToken ot, IBenchmarkYieldToken xyt);
@@ -66,28 +65,28 @@ interface IBenchmarkData {
      * @notice Store new forge.
      * @param _forge The newly created forge address.
      **/
-    function addForge (address _forge) external;
+    /* function addForge (address _forge) external; */
 
     /**
      * @notice Store new forge details.
      * @param _underlyingYieldToken Token address of the underlying yield token.
      * @param _forge The newly created forge address.
      **/
-    function storeForge(address _underlyingYieldToken, address _forge) external;
+    /* function storeForge(uint256 _protocol, address _underlyingYieldToken, address _forge) external; */
 
     /**
      * @notice Store new OT and XYT details.
      * @param _ot The address of the new XYT.
      * @param _xyt The address of the new XYT.
      * @param _underlyingYieldToken Token address of the underlying yield token.
-     * @param _forge Forge that minted the XYT.
      * @param _expiry Yield contract expiry in epoch time.
      **/
     function storeTokens(
+        uint256 _protocol,
         address _ot,
         address _xyt,
         address _underlyingYieldToken,
-        address _forge,
+        /* address _forge, */
         uint256 _expiry
     ) external;
 
@@ -95,30 +94,30 @@ interface IBenchmarkData {
      * @notice Displays the number of forges currently existing.
      * @return Returns forges length,
      **/
-    function allForgesLength() external view returns (uint256);
+    /* function allForgesLength() external view returns (uint256); */
 
     /**
      * @notice Gets all the forges.
      * @return Returns an array of all forges.
      **/
-    function getAllForges() external view returns (address[] calldata);
+    /* function getAllForges() external view returns (address[] calldata); */
 
     /**
      * @notice Gets a forge given the underlying asset and yield token.
      * @param _underlyingYieldToken Token address of the underlying yield token.
      * @return forge Returns the forge address.
      **/
-    function getForgeFromUnderlyingAsset(address _underlyingYieldToken)
+    /* function getForgeFromUnderlyingAsset(address _underlyingYieldToken)
         external
         view
-        returns (address forge);
+        returns (address forge); */
 
     /**
      * @notice Gets a forge given an XYT.
      * @param _xyt The address of XYT token.
      * @return forge Returns the forge address.
      **/
-    function getForgeFromXYT(address _xyt) external view returns (address forge);
+    /* function getForgeFromXYT(address _xyt) external view returns (address forge); */
 
     /**
      * @notice Gets a reference to a specific OT.
@@ -126,7 +125,7 @@ interface IBenchmarkData {
      * @param _expiry Yield contract expiry in epoch time.
      * @return ot Returns the reference to an OT.
      **/
-    function otTokens(address _underlyingYieldToken, uint256 _expiry)
+    function otTokens(uint256 _protocol, address _underlyingYieldToken, uint256 _expiry)
         external
         view
         returns (IBenchmarkYieldToken ot);
@@ -137,7 +136,7 @@ interface IBenchmarkData {
      * @param _expiry Yield contract expiry in epoch time.
      * @return xyt Returns the reference to an XYT.
      **/
-    function xytTokens(address _underlyingYieldToken, uint256 _expiry)
+    function xytTokens(uint256 _protocol, address _underlyingYieldToken, uint256 _expiry)
         external
         view
         returns (IBenchmarkYieldToken xyt);
@@ -152,6 +151,8 @@ interface IBenchmarkData {
      **/
      function addMarket (address _market) external;
 
+     function addProtocol (address _forge) external returns (uint256);
+
     /**
      * @notice Store new market details.
      * @param _xyt Token address of the future yield token as base asset.
@@ -159,6 +160,7 @@ interface IBenchmarkData {
      * @param _market The newly created market address.
      **/
     function storeMarket(
+        uint256 _protocol,
         address _xyt,
         address _token,
         address _market
@@ -182,5 +184,5 @@ interface IBenchmarkData {
      * @param _token Token address of an ERC20 token as quote asset.
      * @return market Returns the market address.
      **/
-    function getMarket(address _xyt, address _token) external view returns (address market);
+    function getMarket(uint256 _protocol, address _xyt, address _token) external view returns (address market);
 }

@@ -24,6 +24,7 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IBenchmark.sol";
+import "../interfaces/IBenchmarkForge.sol";
 import "../periphery/Permissions.sol";
 
 
@@ -33,6 +34,7 @@ contract Benchmark is IBenchmark, Permissions {
     IBenchmarkData public override data;
     IBenchmarkFactory public override factory;
     IBenchmarkProvider public override provider;
+
     address public immutable override weth;
     address public override treasury;
 
@@ -64,6 +66,14 @@ contract Benchmark is IBenchmark, Permissions {
         factory = _factory;
         provider = _provider;
         treasury = _treasury;
+    }
+
+    //TODO: permissions for this
+    function addProtocol(
+        IBenchmarkForge _forge
+    ) external {
+        uint256 _protocolIndex = data.addProtocol(address(_forge));
+        _forge.setProtocolIndex(_protocolIndex);
     }
 
     /**

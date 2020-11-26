@@ -24,7 +24,7 @@
 pragma solidity ^0.7.0;
 
 import "./IBenchmark.sol";
-import "./IForgeCreator.sol";
+/* import "./IForgeCreator.sol"; */
 import "./IMarketCreator.sol";
 
 
@@ -57,20 +57,20 @@ interface IBenchmarkFactory {
      * @param underlyingYieldToken The address of the underlying yield token.
      * @param forge The address of the created forge.
      **/
-    event ForgeCreated(
+    /* event ForgeCreated(
         address indexed underlyingAsset,
         address indexed underlyingYieldToken,
         address indexed forge
-    );
+    ); */
 
     /**
      * @notice Creates a forge given an underlying yield token.
      * @param _underlyingAsset Token address of the underlying asset
      * @return forge Returns the address of the newly created forge.
      **/
-    function createForge(address _underlyingAsset)
+    /* function createForge(address _underlyingAsset)
         external
-        returns (address forge);
+        returns (address forge); */
 
     /***********
      *  MARKET *
@@ -92,6 +92,7 @@ interface IBenchmarkFactory {
      * @return market Returns the address of the newly created market.
      **/
     function createMarket(
+        uint256 _protocol,
         address _xyt,
         address _token,
         uint256 _expiry

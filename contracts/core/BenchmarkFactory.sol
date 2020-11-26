@@ -22,7 +22,7 @@
  */
 pragma solidity ^0.7.0;
 
-import "./BenchmarkForge.sol";
+/* import "./BenchmarkForge.sol"; */
 import "./BenchmarkMarket.sol";
 import "../interfaces/IBenchmark.sol";
 import "../interfaces/IBenchmarkData.sol";
@@ -34,7 +34,7 @@ import "../periphery/Permissions.sol";
 
 contract BenchmarkFactory is IBenchmarkFactory, Permissions {
     IBenchmark public override core;
-    IForgeCreator public forgeCreator;
+    /* IForgeCreator public forgeCreator; */
     IMarketCreator public marketCreator;
 
     constructor(address _governance) Permissions(_governance) {
@@ -42,21 +42,21 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
 
     function initialize(
         IBenchmark _core,
-        IForgeCreator _forgeCreator,
+        /* IForgeCreator _forgeCreator, */
         IMarketCreator _marketCreator
     ) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
         require(address(_core) != address(0), "Benchmark: zero address");
-        require(address(_forgeCreator) != address(0), "Benchmark: zero address");
+        /* require(address(_forgeCreator) != address(0), "Benchmark: zero address"); */
         require(address(_marketCreator) != address(0), "Benchmark: zero address");
 
         initializer = address(0);
         core = _core;
-        forgeCreator = _forgeCreator;
+        /* forgeCreator = _forgeCreator; */
         marketCreator = _marketCreator;
     }
 
-    function createForge(address _underlyingAsset)
+    /* function createForge(address _underlyingAsset)
         external
         override
         initialized
@@ -82,9 +82,10 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
         data.addForge(forge);
 
         emit ForgeCreated(_underlyingAsset, _underlyingYieldToken, forge);
-    }
+    } */
 
     function createMarket(
+        uint256 _protocol,
         address _xyt,
         address _token,
         uint256 _expiry
@@ -94,11 +95,11 @@ contract BenchmarkFactory is IBenchmarkFactory, Permissions {
 
         IBenchmarkData data = core.data();
 
-        require(data.getMarket(_xyt, _token) == address(0), "Benchmark: market already exists");
-        require(data.getForgeFromXYT(_xyt) != address(0), "Benchmark: not xyt");
+        require(data.getMarket(_protocol, _xyt, _token) == address(0), "Benchmark: market already exists");
+        /* require(data.getForgeFromXYT(_xyt) != address(0), "Benchmark: not xyt"); */
 
         market = IMarketCreator(marketCreator).create(_xyt, _token, _expiry);
-        data.storeMarket(_xyt, _token, market);
+        data.storeMarket(_protocol, _xyt, _token, market);
         data.addMarket(market);
 
         emit MarketCreated(_xyt, _token, market);

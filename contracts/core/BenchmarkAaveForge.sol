@@ -31,7 +31,7 @@ import "../tokens/BenchmarkFutureYieldToken.sol";
 import "../tokens/BenchmarkOwnershipToken.sol";
 
 
-contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
+contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
     using Utils for string;
 
     struct BenchmarkTokens {
@@ -39,7 +39,7 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         IBenchmarkYieldToken ot;
     }
 
-    address public immutable override factory;
+    /* address public immutable override factory; */
     address public immutable override underlyingAsset;
     address public immutable override underlyingYieldToken;
     IBenchmark public immutable override core;
@@ -47,34 +47,40 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
 
     mapping(uint256 => uint256) public lastNormalisedIncomeBeforeExpiry;
     mapping(uint256 => mapping(address => uint256)) public lastNormalisedIncome;
+    uint256 public protocolIndex;
 
     string private constant OT = "OT";
     string private constant XYT = "XYT";
 
+    //TODO: automatically get underlyingYieldToken from the provider
     constructor(
         IBenchmark _core,
         IBenchmarkProvider _provider,
-        address _factory,
         address _underlyingAsset,
         address _underlyingYieldToken
     ) {
         require(address(_core) != address(0), "Benchmark: zero address");
         require(address(_provider) != address(0), "Benchmark: zero address");
-        require(_factory != address(0), "Benchmark: zero address");
         require(_underlyingAsset != address(0), "Benchmark: zero address");
         require(_underlyingYieldToken != address(0), "Benchmark: zero address");
 
-        factory = msg.sender;
         core = _core;
         provider = _provider;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;
     }
 
+    function setProtocolIndex(uint256 _protocolIndex) external override {
+        require(msg.sender == address(core), "Benchmark: Not core");
+        require(protocolIndex == 0, "Benchmark: protocol set");
+        require(_protocolIndex != 0, "Benchmark: invalid protocol");
+        protocolIndex = _protocolIndex;
+    }
+
     modifier onlyXYT(uint256 _expiry) {
         IBenchmarkData data = core.data();
         require(
-            msg.sender == address(data.xytTokens(underlyingAsset, _expiry)),
+            msg.sender == address(data.xytTokens(protocolIndex, underlyingAsset, _expiry)),
             "Benchmark: only XYT"
         );
         _;
@@ -104,7 +110,7 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         );
 
         IBenchmarkData data = core.data();
-        data.storeTokens(ot, xyt, underlyingAsset, address(this), expiry);
+        data.storeTokens(protocolIndex, ot, xyt, underlyingAsset, expiry);
 
         emit NewYieldContracts(ot, xyt, expiry);
     }
@@ -239,6 +245,6 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
 
     function _getTokens(uint256 _expiry) internal view returns (BenchmarkTokens memory _tokens) {
         IBenchmarkData data = core.data();
-        (_tokens.ot, _tokens.xyt) = data.getBenchmarkYieldTokens(underlyingAsset, _expiry);
+        (_tokens.ot, _tokens.xyt) = data.getBenchmarkYieldTokens(protocolIndex, underlyingAsset, _expiry);
     }
 }

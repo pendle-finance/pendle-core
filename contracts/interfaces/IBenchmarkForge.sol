@@ -102,7 +102,7 @@ interface IBenchmarkForge {
      * @dev Returns the address of the BenchmarkFactory contract address.
      * @return Returns the factory's address.
      **/
-    function factory() external view returns (address);
+    /* function factory() external view returns (address); */
 
     /**
      * @dev Returns an instance of the BenchmarkProvider contract.
@@ -121,4 +121,6 @@ interface IBenchmarkForge {
      * @return returns the underlying yield token address
      **/
     function underlyingYieldToken() external view returns (address);
+
+    function setProtocolIndex(uint256 _protocolIndex) external;
 }

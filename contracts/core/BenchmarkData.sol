@@ -28,26 +28,35 @@ import "../periphery/Permissions.sol";
 
 
 contract BenchmarkData is IBenchmarkData, Permissions {
-    mapping(address => address) public override getForgeFromUnderlyingAsset;
-    mapping(address => address) public override getForgeFromXYT;
-    mapping(address => mapping(address => address)) public override getMarket;
-    mapping(address => mapping(uint256 => IBenchmarkYieldToken)) public override otTokens;
-    mapping(address => mapping(uint256 => IBenchmarkYieldToken)) public override xytTokens;
+    address[] forges;
+
+    /* mapping(address => address) public override getForgeFromUnderlyingAsset; */
+    /* mapping(address => address) public override getForgeFromXYT; */
+    mapping(uint256 => mapping(address => mapping(address => address))) public override getMarket;
+    mapping(uint256 => mapping(address => mapping(uint256 => IBenchmarkYieldToken))) public override otTokens;
+    mapping(uint256 => mapping(address => mapping(uint256 => IBenchmarkYieldToken))) public override xytTokens;
     IBenchmark public override core;
     mapping(address => bool) internal isForge;
     mapping(address => bool) internal isMarket;
-    address[] private allForges;
+    /* address[] private allForges; */
     address[] private allMarkets;
 
-    constructor(address _governance) Permissions(_governance) {}
+    constructor(address _governance) Permissions(_governance) {
+        forges.push(address(0x0)); // dummy first protocol. ProtocolIndex has to start from 1
+    }
 
     modifier onlyFactory() {
         require(msg.sender == address(core.factory()), "Benchmark: only factory");
         _;
     }
 
-    modifier onlyForge() {
-        require(isForge[msg.sender], "Benchmark: only forge");
+    modifier onlyCore() {
+        require(msg.sender == address(core), "Benchmark: only core");
+        _;
+    }
+
+    modifier onlyForgeForProtocol(uint256 _protocol) {
+        require(forges[_protocol] == msg.sender, "Benchmark: only forge");
         _;
     }
 
@@ -71,25 +80,22 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         emit CoreSet(address(_core));
     }
 
-    function getBenchmarkYieldTokens(address _underlyingAsset, uint256 _expiry)
+    function getBenchmarkYieldTokens(uint256 _protocol, address _underlyingAsset, uint256 _expiry)
         external
         view
         override
         returns (IBenchmarkYieldToken ot, IBenchmarkYieldToken xyt)
     {
-        ot = otTokens[_underlyingAsset][_expiry];
-        xyt = xytTokens[_underlyingAsset][_expiry];
+        ot = otTokens[_protocol][_underlyingAsset][_expiry];
+        xyt = xytTokens[_protocol][_underlyingAsset][_expiry];
     }
 
-    /***********
-     *  FORGE  *
-     ***********/
-
-     function addForge (address _forge) external override initialized onlyFactory {
-        allForges.push(_forge);
+    function addProtocol (address _forge) external override initialized onlyCore returns (uint256 _protocolIndex){
+        forges.push(_forge);
+        _protocolIndex = forges.length - 1;
     }
 
-    function storeForge(address _underlyingAsset, address _forge)
+    /* function storeForge(address _underlyingAsset, address _forge)
         external
         override
         initialized
@@ -97,27 +103,28 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     {
         getForgeFromUnderlyingAsset[_underlyingAsset] = _forge;
         isForge[_forge] = true;
-    }
+    } */
 
     function storeTokens(
+        uint256 _protocol,
         address _ot,
         address _xyt,
         address _underlyingAsset,
-        address _forge,
+        /* address _forge, */
         uint256 _expiry
-    ) external override initialized onlyForge {
-        getForgeFromXYT[_xyt] = _forge;
-        otTokens[_underlyingAsset][_expiry] = IBenchmarkYieldToken(_ot);
-        xytTokens[_underlyingAsset][_expiry] = IBenchmarkYieldToken(_xyt);
+    ) external override initialized onlyForgeForProtocol(_protocol) {
+        /* getForgeFromXYT[_xyt] = _forge; */
+        otTokens[_protocol][_underlyingAsset][_expiry] = IBenchmarkYieldToken(_ot);
+        xytTokens[_protocol][_underlyingAsset][_expiry] = IBenchmarkYieldToken(_xyt);
     }
 
-    function allForgesLength() external view override returns (uint256) {
+    /* function allForgesLength() external view override returns (uint256) {
         return allForges.length;
-    }
+    } */
 
-    function getAllForges() public view override returns (address[] memory) {
+    /* function getAllForges() public view override returns (address[] memory) {
         return allForges;
-    }
+    } */
 
     /***********
      *  MARKET *
@@ -127,11 +134,12 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     }
 
     function storeMarket(
+        uint256 _protocol,
         address _xyt,
         address _token,
         address _market
     ) external override initialized onlyFactory {
-        getMarket[_xyt][_token] = _market;
+        getMarket[_protocol][_xyt][_token] = _market;
         isMarket[_market] = true;
     }
 
