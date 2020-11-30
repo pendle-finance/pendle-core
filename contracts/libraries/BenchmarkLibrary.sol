@@ -22,8 +22,8 @@
  */
 pragma solidity ^0.7.0;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 library Factory {
     function createContract(
@@ -63,7 +63,7 @@ library Math {
     //  Also, EVM division is flooring and
     //    floor[(n-1) / 2] = floor[n / 2].
     //
-    function pow(uint256 x, uint n) internal pure returns (uint256 z) {
+    function pow(uint256 x, uint256 n) internal pure returns (uint256 z) {
         z = n % 2 != 0 ? x : RAY;
 
         for (n /= 2; n != 0; n /= 2) {
@@ -83,16 +83,17 @@ library Math {
         return (y / 2).add(x.mul(RAY)).div(y);
     }
 
-    function wmul(uint x, uint y) internal pure returns (uint256) {
+    function wmul(uint256 x, uint256 y) internal pure returns (uint256) {
         return (WAD / 2).add(x.mul(y)).div(WAD);
     }
-    function wdiv(uint x, uint y) internal pure returns (uint256) {
+
+    function wdiv(uint256 x, uint256 y) internal pure returns (uint256) {
         return (y / 2).add(x.mul(WAD)).div(y);
     }
 }
 
 library Utils {
-    enum Protocols {NONE, AAVE, COMPOUND}    
+    enum Protocols {NONE, AAVE, COMPOUND}
 
     /**
      * @notice Concatenates a Benchmark token name/symbol to a yield token name/symbol
