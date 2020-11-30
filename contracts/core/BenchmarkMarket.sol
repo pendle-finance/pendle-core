@@ -24,9 +24,13 @@ pragma solidity ^0.7.0;
 
 import "../interfaces/IBenchmarkMarket.sol";
 import "../tokens/BenchmarkBaseToken.sol";
-
+import "../libraries/BenchmarkLibrary.sol";
+import {Math} from "../libraries/BenchmarkLibrary.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
+    using SafeMath for uint256;
+
     address public immutable override core;
     address public immutable override factory;
     address public immutable override token;
@@ -37,6 +41,14 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     string private constant _symbol = "BMK-LPT";
     uint8 private constant _decimals = 18;
 
+    struct TokenReserve {
+        uint256 weight;
+        uint256 balance;
+    }
+
+    uint256 private _swapFee; //@@XM TODO: move to benchmarkData later
+    mapping(address => TokenReserve) private _reserves;
+
     constructor(
         IBenchmarkProvider _provider,
         address _core,
@@ -44,14 +56,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address _xyt,
         address _token,
         uint256 _expiry
-    )
-        BenchmarkBaseToken(
-            _name,
-            _symbol,
-            _decimals,
-            _expiry
-        )
-    {
+    ) BenchmarkBaseToken(_name, _symbol, _decimals, _expiry) {
         require(address(_provider) != address(0), "Benchmark: zero address");
         require(_core != address(0), "Benchmark: zero address");
         require(_factory != address(0), "Benchmark: zero address");
@@ -76,48 +81,142 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         )
     {}
 
-    function swap(uint256 srcAmount, address destination) external override { }
+    function swap(uint256 srcAmount, address destination) external override {}
 
-    function setPoolRatio(address xytToken, uint denomXYToken, address pairToken, uint denomPairToken) external override { }
-    
-    function setSwapFee(uint swapFee) external override { }
-    
-    function pausePool() external override { }
-    
-    function unpausePool() external override { }
+    function setPoolRatio(
+        address xytToken,
+        uint256 denomXYToken,
+        address pairToken,
+        uint256 denomPairToken
+    ) external override {}
 
-    function spotPrice(address inToken, address outToken) external view override returns (uint spotPrice)  { }
+    function setSwapFee(uint256 swapFee) external override {}
+
+    function pausePool() external override {}
+
+    function unpausePool() external override {}
+
+    function spotPrice(address inToken, address outToken)
+        external
+        override
+        returns (uint256 spotPrice)
+    {
+        TokenReserve storage inTokenReserve = _reserves[inToken];
+        TokenReserve storage outTokenReserve = _reserves[outToken];
+
+        return
+            _calcSpotprice(
+                inTokenReserve.balance,
+                inTokenReserve.weight,
+                outTokenReserve.balance,
+                outTokenReserve.weight,
+                _swapFee
+            );
+    }
 
     function swapAmountIn(
-        uint inAmount, 
-        address inToken, 
-        address outToken, 
-        uint minOutAmount,
-        uint maxPrice
-        ) external override returns (uint outAmount, uint spotPriceAfter) {}
+        uint256 inAmount,
+        address inToken,
+        address outToken,
+        uint256 minOutAmount,
+        uint256 maxPrice
+    ) external override returns (uint256 outAmount, uint256 spotPriceAfter) {
+        TokenReserve storage inTokenReserve = _reserves[inToken];
+        TokenReserve storage outTokenReserve = _reserves[outToken];
+
+        //calc spot price
+        uint256 spotPriceBefore = _calcSpotprice(
+            inTokenReserve.balance,
+            inTokenReserve.weight,
+            outTokenReserve.balance,
+            outTokenReserve.weight,
+            _swapFee
+        );
+        require(spotPriceBefore <= maxPrice, "ERROR_BAD_PRICE");
+
+        //calc out Amount
+        uint256 weightRatio = Math.rdiv(inTokenReserve.weight, outTokenReserve.weight);
+        uint256 adjustedIn = Math.UINT_MAX_VALUE.sub(_swapFee);
+        adjustedIn = Math.rmul(inAmount, adjustedIn);
+        uint256 y = Math.rdiv(inTokenReserve.balance, inTokenReserve.balance.add(adjustedIn));
+        uint256 foo = Math.pow(y, weightRatio);
+        uint256 bar = Math.UINT_MAX_VALUE.sub(foo);
+        outAmount = Math.rmul(outTokenReserve.balance, bar);
+        require(outAmount >= minOutAmount, "ERROR_OUT_AMOUT_LOW");
+
+        inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
+        outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
+
+        spotPriceAfter = _calcSpotprice(
+            inTokenReserve.balance,
+            inTokenReserve.weight,
+            outTokenReserve.balance,
+            outTokenReserve.weight,
+            _swapFee
+        );
+
+        require(spotPriceAfter >= spotPriceBefore, "ERROR_MATH_PROBLEM");
+        require(spotPriceAfter <= maxPrice, "ERROR_BAD_PRICE");
+        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERROR_MATH_PROBLEM");
+
+        /* @@XM TODO: event + token transfer
+        emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut);
+
+        _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
+        _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);
+        */
+        return (outAmount, spotPriceAfter);
+    }
 
     function swapAmountOut(
         address inToken,
-        uint maxInAmount,
+        uint256 maxInAmount,
         address outToken,
-        uint outAmount,
-        uint maxPrice
-    ) external override returns (uint inAmount, uint spotPriceAfter) {}
+        uint256 outAmount,
+        uint256 maxPrice
+    ) external override returns (uint256 inAmount, uint256 spotPriceAfter) {}
 
+    function joinPoolLpToken(uint256 lpTokenOutAmount, uint256[] calldata maxInAmounts)
+        external
+        override
+    {}
 
-    function joinPoolLpToken(uint lpTokenOutAmount, uint[] calldata maxInAmounts) external override {}
+    function exitPoolLpToken(uint256 lpTokenInAmount, uint256[] calldata minOutAmounts)
+        external
+        override
+    {}
 
-    function exitPoolLpToken(uint lpTokenInAmount, uint[] calldata minOutAmounts) external override {}
+    function joinPoolSingleToken(
+        address inToken,
+        uint256 inAmount,
+        uint256 minLPOutAmount
+    ) external override returns (uint256 lpOutAmount) {}
 
-    function joinPoolSingleToken(address inToken, uint inAmount, uint minLPOutAmount) external override returns (uint lpOutAmount) {}
+    function exitPoolSingleToken(
+        address outToken,
+        uint256 outAmount,
+        uint256 maxLPinAmount
+    ) external override returns (uint256 lpInAmount) {}
 
-    function exitPoolSingleToken(address outToken, uint outAmount, uint maxLPinAmount) external override returns (uint lpInAmount) {}
+    function getSwapFee() external view override returns (uint256 swapFee) {}
 
-    function getSwapFee() external view override returns (uint swapFee) {}
-
-    function interestDistribute(address lp) internal returns (uint interestReturn) {}
+    function interestDistribute(address lp) internal returns (uint256 interestReturn) {}
 
     function shiftWeight(address xytToken, address pairToken) internal {}
-    
+
     function shiftCurve(address xytToken, address pairToken) internal {}
+
+    function _calcSpotprice(
+        uint256 inBalance,
+        uint256 inWeight,
+        uint256 outBalance,
+        uint256 outWeight,
+        uint256 swapFee
+    ) internal returns (uint256 spotPrice) {
+        uint256 numer = Math.rdiv(inBalance, inWeight);
+        uint256 denom = Math.rdiv(outBalance, outWeight);
+        uint256 ratio = Math.rdiv(numer, denom);
+        uint256 scale = Math.rdiv(Math.UINT_MAX_VALUE, Math.UINT_MAX_VALUE.sub(swapFee));
+        return (spotPrice = Math.rmul(ratio, scale));
+    }
 }

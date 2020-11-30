@@ -45,8 +45,8 @@ library Math {
     using SafeMath for uint256;
 
     uint256 internal constant UINT_MAX_VALUE = uint256(-1);
-    uint256 internal constant RAY = 1e27;
-    uint256 internal constant WAD = 1e18;
+    uint256 internal constant RAY = 1e27;   
+    uint256 internal constant WAD = 1e18; 
 
     // This famous algorithm is called "exponentiation by squaring"
     // and calculates x^n with x as fixed-point and n as regular unsigned.
