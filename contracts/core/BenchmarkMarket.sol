@@ -132,17 +132,17 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             outTokenReserve.weight,
             _swapFee
         );
-        require(spotPriceBefore <= maxPrice, "ERROR_BAD_PRICE");
+        require(spotPriceBefore <= maxPrice, "ERR_BAD_PRICE");
 
-        //calc out Amount
-        uint256 weightRatio = Math.rdiv(inTokenReserve.weight, outTokenReserve.weight);
-        uint256 adjustedIn = Math.UINT_MAX_VALUE.sub(_swapFee);
-        adjustedIn = Math.rmul(inAmount, adjustedIn);
-        uint256 y = Math.rdiv(inTokenReserve.balance, inTokenReserve.balance.add(adjustedIn));
-        uint256 foo = Math.pow(y, weightRatio);
-        uint256 bar = Math.UINT_MAX_VALUE.sub(foo);
-        outAmount = Math.rmul(outTokenReserve.balance, bar);
-        require(outAmount >= minOutAmount, "ERROR_OUT_AMOUT_LOW");
+        //calc out amount
+        outAmount = _calcOutAmount(
+            inTokenReserve.weight,
+            outTokenReserve.weight,
+            inTokenReserve.balance,
+            outTokenReserve.balance,
+            inAmount
+        );
+        require(outAmount >= minOutAmount, "ERR_OUT_AMOUT_LOW");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
@@ -155,16 +155,15 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             _swapFee
         );
 
-        require(spotPriceAfter >= spotPriceBefore, "ERROR_MATH_PROBLEM");
-        require(spotPriceAfter <= maxPrice, "ERROR_BAD_PRICE");
-        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERROR_MATH_PROBLEM");
+        require(spotPriceAfter >= spotPriceBefore, "ERR_MATH_PROBLEM");
+        require(spotPriceAfter <= maxPrice, "ERR_BAD_PRICE");
+        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERR_MATH_PROBLEM");
 
-        /* @@XM TODO: event + token transfer
-        emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut);
+        emit Swap(msg.sender, inAmount, outAmount, msg.sender);
 
-        _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
-        _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);
-        */
+        _pullToken(inToken, msg.sender, inAmount);
+        _pushToken(outToken, msg.sender, outAmount);
+
         return (outAmount, spotPriceAfter);
     }
 
@@ -218,5 +217,40 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 ratio = Math.rdiv(numer, denom);
         uint256 scale = Math.rdiv(Math.UINT_MAX_VALUE, Math.UINT_MAX_VALUE.sub(swapFee));
         return (spotPrice = Math.rmul(ratio, scale));
+    }
+
+    function _calcOutAmount(
+        uint256 inWeight,
+        uint256 outWeight,
+        uint256 inBalance,
+        uint256 outBalance,
+        uint256 inAmount
+    ) internal returns (uint256 outAmount) {
+        uint256 weightRatio = Math.rdiv(inWeight, outWeight);
+        uint256 adjustedIn = Math.UINT_MAX_VALUE.sub(_swapFee);
+        adjustedIn = Math.rmul(inAmount, adjustedIn);
+        uint256 y = Math.rdiv(inBalance, inBalance.add(adjustedIn));
+        uint256 foo = Math.pow(y, weightRatio);
+        uint256 bar = Math.UINT_MAX_VALUE.sub(foo);
+        outAmount = Math.rmul(outBalance, bar);
+        return outAmount;
+    }
+
+    function _pullToken(
+        address tokenAddr,
+        address fromAddr,
+        uint256 amountToPull
+    ) internal {
+        bool res = IERC20(tokenAddr).transferFrom(fromAddr, address(this), amountToPull);
+        require(res, "ERR_PULL_TOKEN_FALSE");
+    }
+
+    function _pushToken(
+        address tokenAddr,
+        address toAddr,
+        uint256 amountToPush
+    ) internal {
+        bool res = IERC20(tokenAddr).transfer(toAddr, amountToPush);
+        require(res, "ERR_PUSH_TOKEN_FALSE");
     }
 }
