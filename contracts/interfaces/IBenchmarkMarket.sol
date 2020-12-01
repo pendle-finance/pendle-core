@@ -41,7 +41,6 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
         address indexed destination
     );
 
-
     /***********
      * Pool mngmt *
      ***********/
@@ -49,9 +48,9 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     
     function setSwapFee(uint swapFee) external;
     
-    function pausePool() external;
+    //function pausePool() external;
     
-    function unpausePool() external;
+    //function unpausePool() external;
 
     /***********
      * Trade *
@@ -77,9 +76,9 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     /***********
      * LP *
      ***********/
-    function joinPoolLpToken(uint lpTokenOutAmount, uint[] calldata maxInAmounts) external;
+    function joinPoolByAll(uint lpTokenOutAmount, uint[] calldata maxInAmounts) external;
 
-    function exitPoolLpToken(uint lpTokenInAmount, uint[] calldata minOutAmounts) external;
+    function exitPoolByAll(uint lpTokenInAmount, uint[] calldata minOutAmounts) external;
 
     function joinPoolSingleToken(address inToken, uint inAmount, uint minLPOutAmount) external returns (uint lpOutAmount);
 
@@ -101,7 +100,7 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
 
     function getSwapFee() external view returns (uint swapFee);
 
-    function swap(uint256 srcAmount, address destination) external;
+    //function swap(uint256 srcAmount, address destination) external;
 
     function getReserves()
         external
