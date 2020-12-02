@@ -314,7 +314,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 maxLPinAmount
     ) external override returns (uint256 lpInAmount) {}
 
-    function getSwapFee() external view override returns (uint256 swapFee) {}
+    function getSwapFee() external view override returns (uint256 swapFee) {return _swapFee;}
+    function getExitFee() external view override returns (uint256 eixtFee) {return _exitFee;}
 
     function interestDistribute(address lp) internal returns (uint256 interestReturn) {}
 

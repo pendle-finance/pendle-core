@@ -120,6 +120,7 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     /* ========== VIEW ========== */
 
     function getSwapFee() external view returns (uint256 swapFee);
+    function getExitFee() external view returns (uint256 eixtFee);
 
     //function swap(uint256 srcAmount, address destination) external;
 
