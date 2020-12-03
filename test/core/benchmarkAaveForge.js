@@ -6,7 +6,6 @@ var RLP = require('rlp');
 
 
 const BenchmarkAaveForge = artifacts.require('BenchmarkAaveForge');
-const BenchmarkProvider = artifacts.require('BenchmarkProvider');
 
 // const MockAToken = artifacts.require('aUSDT');
 const TestToken = artifacts.require('Token');

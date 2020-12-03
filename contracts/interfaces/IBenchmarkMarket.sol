@@ -23,7 +23,6 @@
 
 pragma solidity ^0.7.0;
 
-import "./IBenchmarkProvider.sol";
 import "./IBenchmarkBaseToken.sol";
 
 interface IBenchmarkMarket is IBenchmarkBaseToken {
@@ -63,12 +62,6 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
      * @return Returns the factory's address.
      **/
     function factory() external view returns (address);
-
-    /**
-     * @dev Returns an instance of the BenchmarkProvider contract.
-     * @return Returns the provider's instance.
-     **/
-    function provider() external view returns (IBenchmarkProvider);
 
     function minLiquidity() external pure returns (uint256);
 

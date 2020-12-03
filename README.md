@@ -22,10 +22,9 @@ The tokenization of future yields also allows for the creation of products with 
 ## Scripts:
 * Run a mainnet fork on ganache: `yarn ganache`
 * Compile (both benchmark and aave): `yarn compile`
-* Deploy an instance of Aave to the network: `yarn deploy:aave` [WIP]
 * run a console for development network: `yarn console:dev`
 * run tests: `yarn test`
 
 ## Testing:
-* On one terminal: `yarn ganache`
-* On another terminal: `yarn test test/core/benchmarkForge.js`
+* In one terminal: `yarn ganache`
+* The main test for now: `yarn test test/core/benchmarkAaveForge.js`

@@ -25,7 +25,6 @@ pragma solidity ^0.7.0;
 
 import "./IBenchmarkData.sol";
 import "./IBenchmarkFactory.sol";
-import "./IBenchmarkProvider.sol";
 
 
 interface IBenchmark {
@@ -33,13 +32,11 @@ interface IBenchmark {
      * @notice Emitted when Benchmark and BenchmarkFactory addresses have been updated.
      * @param data The address of the new data contract.
      * @param factory The address of the new factory contract.
-     * @param provider The address of the new provider contract.
      * @param treasury The address of the new treasury contract.
      **/
     event ContractsSet(
         address data,
         address factory,
-        address provider,
         address treasury
     );
 
@@ -54,12 +51,6 @@ interface IBenchmark {
      * @return Returns the factory reference.
      **/
     function factory() external view returns (IBenchmarkFactory);
-
-    /**
-     * @notice Gets a reference to the BenchmarkProvider.
-     * @return Returns the provider reference.
-     **/
-    function provider() external view returns (IBenchmarkProvider);
 
     /**
      * @notice Gets the treasury contract address where fees are being sent to.
@@ -77,13 +68,11 @@ interface IBenchmark {
      * @notice Sets the Benchmark contract addresses.
      * @param _data Address of the new data contract.
      * @param _factory Address of new factory contract.
-     * @param _provider Address of new factory contract.
      * @param _treasury Address of new treasury contract.
      **/
     function setContracts(
         IBenchmarkData _data,
         IBenchmarkFactory _factory,
-        IBenchmarkProvider _provider,
         address _treasury
     ) external;
 

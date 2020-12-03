@@ -24,7 +24,6 @@
 pragma solidity ^0.7.0;
 
 import "./IBenchmark.sol";
-import "./IBenchmarkProvider.sol";
 
 
 interface IBenchmarkForge {
@@ -99,18 +98,6 @@ interface IBenchmarkForge {
     function core() external view returns (IBenchmark);
 
     /**
-     * @dev Returns the address of the BenchmarkFactory contract address.
-     * @return Returns the factory's address.
-     **/
-    /* function factory() external view returns (address); */
-
-    /**
-     * @dev Returns an instance of the BenchmarkProvider contract.
-     * @return Returns the provider's instance.
-     **/
-    function provider() external view returns (IBenchmarkProvider);
-
-    /**
      * @dev Returns the address of the underlying asset
      * @return returns the underlying asset address
      **/
@@ -122,5 +109,5 @@ interface IBenchmarkForge {
      **/
     function underlyingYieldToken() external view returns (address);
 
-    function setProtocolIndex(uint256 _protocolIndex) external;
+    function protocolId() external view returns (bytes32);
 }

@@ -31,14 +31,12 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     address public immutable override factory;
     address public immutable override token;
     address public immutable override xyt;
-    IBenchmarkProvider public immutable override provider;
     uint256 public constant override minLiquidity = 10**3;
     string private constant _name = "Benchmark Market";
     string private constant _symbol = "BMK-LPT";
     uint8 private constant _decimals = 18;
 
     constructor(
-        IBenchmarkProvider _provider,
         address _core,
         address _factory,
         address _xyt,
@@ -52,7 +50,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             _expiry
         )
     {
-        require(address(_provider) != address(0), "Benchmark: zero address");
         require(_core != address(0), "Benchmark: zero address");
         require(_factory != address(0), "Benchmark: zero address");
         require(_xyt != address(0), "Benchmark: zero address");
@@ -60,7 +57,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         factory = msg.sender;
         core = _core;
-        provider = _provider;
         xyt = _xyt;
         token = _token;
     }

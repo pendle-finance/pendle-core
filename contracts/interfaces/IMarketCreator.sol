@@ -23,9 +23,6 @@
 
 pragma solidity ^0.7.0;
 
-import "./IBenchmarkProvider.sol";
-
-
 interface IMarketCreator {
     /**
      * @notice Creates a market given a future yield token and an ERC20 token.
@@ -52,9 +49,4 @@ interface IMarketCreator {
      **/
     function factory() external view returns (address);
 
-    /**
-     * @dev Returns an instance of the BenchmarkProvider contract.
-     * @return Returns the provider's instance.
-     **/
-    function provider() external view returns (IBenchmarkProvider);
 }

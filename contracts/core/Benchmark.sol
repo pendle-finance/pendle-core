@@ -33,7 +33,6 @@ contract Benchmark is IBenchmark, Permissions {
 
     IBenchmarkData public override data;
     IBenchmarkFactory public override factory;
-    IBenchmarkProvider public override provider;
 
     address public immutable override weth;
     address public override treasury;
@@ -52,19 +51,16 @@ contract Benchmark is IBenchmark, Permissions {
     function initialize(
         IBenchmarkData _data,
         IBenchmarkFactory _factory,
-        IBenchmarkProvider _provider,
         address _treasury
     ) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
         require(address(_data) != address(0), "Benchmark: zero address");
         require(address(_factory) != address(0), "Benchmark: zero address");
-        require(address(_provider) != address(0), "Benchmark: zero address");
         require(_treasury != address(0), "Benchmark: zero address");
 
         initializer = address(0);
         data = _data;
         factory = _factory;
-        provider = _provider;
         treasury = _treasury;
     }
 
@@ -72,8 +68,9 @@ contract Benchmark is IBenchmark, Permissions {
     function addProtocol(
         IBenchmarkForge _forge
     ) external {
-        uint256 _protocolIndex = data.addProtocol(address(_forge));
-        _forge.setProtocolIndex(_protocolIndex);
+        bytes32 _protocolId = _forge.protocolId();
+        require(data.forges(_protocolId) == address(0x0), "Benchmark: existing id");
+        data.addProtocol(address(_forge), _protocolId);
     }
 
     /**
@@ -83,19 +80,16 @@ contract Benchmark is IBenchmark, Permissions {
     function setContracts(
         IBenchmarkData _data,
         IBenchmarkFactory _factory,
-        IBenchmarkProvider _provider,
         address _treasury
     ) external override initialized  onlyGovernance {
         require(address(_data) != address(0), "Benchmark: zero address");
         require(address(_factory) != address(0), "Benchmark: zero address");
-        require(address(_provider) != address(0), "Benchmark: zero address");
         require(_treasury != address(0), "Benchmark: zero address");
 
         data = _data;
         factory = _factory;
-        provider = _provider;
         treasury = _treasury;
-        emit ContractsSet(address(_data), address(_factory), address(_provider), _treasury);
+        emit ContractsSet(address(_data), address(_factory), _treasury);
     }
 
     /***********

@@ -92,7 +92,7 @@ interface IBenchmarkFactory {
      * @return market Returns the address of the newly created market.
      **/
     function createMarket(
-        uint256 _protocol,
+        bytes32 _protocol,
         address _xyt,
         address _token,
         uint256 _expiry

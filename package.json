@@ -51,6 +51,6 @@
     "ganache": "bash scripts/start_ganache.sh",
     "fork": "yarn hardhat node",
     "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c './**/*.js'",
-    "test": "yarn hardhat test"
+    "test": "yarn hardhat test test/core/benchmarkAaveForge.js"
   }
 }

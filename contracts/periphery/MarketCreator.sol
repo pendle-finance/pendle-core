@@ -24,12 +24,10 @@ pragma solidity ^0.7.0;
 
 import {Factory} from "../libraries/BenchmarkLibrary.sol";
 import "../core/BenchmarkMarket.sol";
-import "../interfaces/IBenchmarkProvider.sol";
 import "../interfaces/IMarketCreator.sol";
 
 
 contract MarketCreator is IMarketCreator {
-    IBenchmarkProvider public override provider;
     address public override core;
     address public override immutable factory;
     address private initializer;
@@ -44,17 +42,14 @@ contract MarketCreator is IMarketCreator {
     /**
      * @notice Initializes the BenchmarkFactory.
      * @dev Only called once.
-     * @param _provider The reference to the BenchmarkProvider contract.
      * @param _core The address of the Benchmark core contract.
      **/
-    function initialize(IBenchmarkProvider _provider, address _core) external {
+    function initialize(address _core) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
-        require(address(_provider) != address(0), "Benchmark: zero address");
         require(_core != address(0), "Benchmark: zero address");
 
         initializer = address(0);
-        core = _core;        
-        provider = _provider;
+        core = _core;
     }
 
     function create(
@@ -67,8 +62,8 @@ contract MarketCreator is IMarketCreator {
 
         market = Factory.createContract(
             type(BenchmarkMarket).creationCode,
-            abi.encodePacked(provider, core, factory, _xyt, _token, _expiry),
-            abi.encode(provider, core, factory, _xyt, _token, _expiry)
+            abi.encodePacked(core, factory, _xyt, _token, _expiry),
+            abi.encode(core, factory, _xyt, _token, _expiry)
         );
     }
 }

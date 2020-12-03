@@ -3362,7 +3362,7 @@
 //         address _reserve,
 //         uint256 _availableLiquidityBefore,
 //         uint256 _income,
-//         uint256 _protocolFee
+//         Fee
 //     ) external onlyLendingPool {
 //         transferFlashLoanProtocolFeeInternal(_reserve, _protocolFee);
 
@@ -5136,7 +5136,7 @@
 //         address indexed _reserve,
 //         uint256 _amount,
 //         uint256 _totalFee,
-//         uint256 _protocolFee,
+//         Fee,
 //         uint256 _timestamp
 //     );
 
