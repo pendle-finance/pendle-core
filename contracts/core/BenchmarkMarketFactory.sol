@@ -23,52 +23,59 @@
 pragma solidity ^0.7.0;
 
 import {Factory} from "../libraries/BenchmarkLibrary.sol";
-import "../core/BenchmarkMarket.sol";
-import "../interfaces/IBenchmarkProvider.sol";
-import "../interfaces/IMarketCreator.sol";
+import "./BenchmarkMarket.sol";
+import "../interfaces/IBenchmark.sol";
+import "../interfaces/IBenchmarkData.sol";
+import "../interfaces/IBenchmarkMarketFactory.sol";
+import "../interfaces/IBenchmarkYieldToken.sol";
+import "../periphery/Permissions.sol";
 
 
-contract MarketCreator is IMarketCreator {
-    IBenchmarkProvider public override provider;
-    address public override core;
-    address public override immutable factory;
-    address private initializer;
+contract BenchmarkMarketFactory is IBenchmarkFactory, Permissions {
+    IBenchmark public override core;
 
-    constructor(address _factory) {
-        require(_factory != address(0), "Benchmark: zero address");
-
-        initializer = msg.sender;
-        factory = _factory;
+    constructor(address _governance) Permissions(_governance) {
     }
 
-    /**
-     * @notice Initializes the BenchmarkFactory.
-     * @dev Only called once.
-     * @param _provider The reference to the BenchmarkProvider contract.
-     * @param _core The address of the Benchmark core contract.
-     **/
-    function initialize(IBenchmarkProvider _provider, address _core) external {
+    function initialize(
+        IBenchmark _core
+    ) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
-        require(address(_provider) != address(0), "Benchmark: zero address");
-        require(_core != address(0), "Benchmark: zero address");
+        require(address(_core) != address(0), "Benchmark: zero address");
 
         initializer = address(0);
-        core = _core;        
-        provider = _provider;
+        core = _core;
     }
 
-    function create(
+    function createMarket(
+        bytes32 _forgeId,
         address _xyt,
         address _token,
         uint256 _expiry
-    ) external override returns (address market) {
-        require(initializer == address(0), "Benchmark: not initialized");
-        require(msg.sender == factory, "Benchmark: forbidden");
+    ) external override initialized  returns (address market) {
+        require(_xyt != _token, "Benchmark: similar tokens");
+        require(_xyt != address(0) && _token != address(0), "Benchmark: zero address");
+
+        IBenchmarkData data = core.data();
+
+        require(data.getMarket(_forgeId, _xyt, _token) == address(0), "Benchmark: market already exists");
+        require(data.getForgeFromXYT(_xyt) != address(0), "Benchmark: not xyt");
 
         market = Factory.createContract(
             type(BenchmarkMarket).creationCode,
             abi.encodePacked(provider, core, factory, _xyt, _token, _expiry),
             abi.encode(provider, core, factory, _xyt, _token, _expiry)
         );
+        data.storeMarket(_forgeId, _xyt, _token, market);
+        data.addMarket(market);
+
+        emit MarketCreated(_xyt, _token, market);
+    }
+
+    function setCore(IBenchmark _core) public override onlyGovernance {
+        require(address(_core) != address(0), "Benchmark: zero address");
+
+        core = _core;
+        emit CoreSet(address(_core));
     }
 }

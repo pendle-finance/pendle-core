@@ -25,22 +25,19 @@ pragma solidity ^0.7.0;
 
 import {Utils} from "../libraries/BenchmarkLibrary.sol";
 import "./IBenchmarkData.sol";
-import "./IBenchmarkFactory.sol";
-import "./IBenchmarkProvider.sol";
+import "./IBenchmarkMarketFactory.sol";
 
 
 interface IBenchmark {
     /**
      * @notice Emitted when Benchmark and BenchmarkFactory addresses have been updated.
      * @param data The address of the new data contract.
-     * @param factory The address of the new factory contract.
-     * @param provider The address of the new provider contract.
+     * @param factory The address of the new market factory contract.
      * @param treasury The address of the new treasury contract.
      **/
     event ContractsSet(
         address data,
         address factory,
-        address provider,
         address treasury
     );
 
@@ -51,16 +48,10 @@ interface IBenchmark {
     function data() external view returns (IBenchmarkData);
 
     /**
-     * @notice Gets a reference to the BenchmarkFactory.
+     * @notice Gets a reference to the BenchmarkMarketFactory.
      * @return Returns the factory reference.
      **/
-    function factory() external view returns (IBenchmarkFactory);
-
-    /**
-     * @notice Gets a reference to the BenchmarkProvider.
-     * @return Returns the provider reference.
-     **/
-    function provider() external view returns (IBenchmarkProvider);
+    function factory() external view returns (IBenchmarkMarketFactory);
 
     /**
      * @notice Gets the treasury contract address where fees are being sent to.
@@ -78,13 +69,11 @@ interface IBenchmark {
      * @notice Sets the Benchmark contract addresses.
      * @param _data Address of the new data contract.
      * @param _factory Address of new factory contract.
-     * @param _provider Address of new factory contract.
      * @param _treasury Address of new treasury contract.
      **/
     function setContracts(
         IBenchmarkData _data,
-        IBenchmarkFactory _factory,
-        IBenchmarkProvider _provider,
+        IBenchmarkMarketFactory _factory,
         address _treasury
     ) external;
 
@@ -92,21 +81,34 @@ interface IBenchmark {
      *  FORGE  *
      ***********/
 
+     /**
+     * @notice Adds a new forge for a protocol.
+     * @param forgeId Forge and protocol identifier.
+     * @param forge The address of the added forge.
+     **/
+    function addForge(bytes32 forgeId, address forge) external;
+
+    /**
+     * @notice Removes a forge.
+     * @param forgeId Forge and protocol identifier.
+     **/
+    function removeForge(bytes32 forgeId) external;
+
      function newYieldContracts(
-        Utils.Protocols protocol,
+        bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry
     ) external returns (address ot, address xyt);
 
     function redeemAfterExpiry(
-        Utils.Protocols _protocol,
+        bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry,
         address to
     ) external returns (uint256 redeemedAmount);
 
     function redeemUnderlying(
-        Utils.Protocols _protocol,
+        bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry,
         uint256 amountToRedeem,
@@ -123,7 +125,7 @@ interface IBenchmark {
     // ) external returns (uint256 redeemedAmount);
 
     function tokenizeYield(
-        Utils.Protocols _protocol,
+        bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry,
         uint256 amountToTokenize,

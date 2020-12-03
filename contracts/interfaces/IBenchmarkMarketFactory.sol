@@ -25,16 +25,37 @@ pragma solidity ^0.7.0;
 
 import {Utils} from "../libraries/BenchmarkLibrary.sol";
 import "./IBenchmark.sol";
-import "./IForgeCreator.sol";
-import "./IMarketCreator.sol";
 
 
-interface IBenchmarkFactory {
+interface IBenchmarkMarketFactory {
     /**
      * @notice Emitted when Benchmark core contract reference is changed.
      * @param core The address of the new core contract.
      **/
     event CoreSet(address core);
+
+    /**
+     * @notice Emitted when a market for a future yield token and an ERC20 token is created.
+     * @param xyt The address of the tokenized future yield token as the base asset.
+     * @param token The address of an ERC20 token as the quote asset.
+     * @param market The address of the newly created market.
+     **/
+    event MarketCreated(address indexed xyt, address indexed token, address indexed market);
+
+    /**
+     * @notice Creates a market given a protocol ID, future yield token, and an ERC20 token.
+     * @param forgeId Protocol identifier.
+     * @param xyt Token address of the future yield token as base asset.
+     * @param token Token address of an ERC20 token as quote asset.
+     * @param expiry Yield contract expiry in epoch time.
+     * @return market Returns the address of the newly created market.
+     **/
+    function createMarket(
+        bytes32 forgeId,
+        address xyt,
+        address token,
+        uint256 expiry
+    ) external returns (address market);
 
     /**
      * @notice Sets the Benchmark core contract reference.
@@ -47,55 +68,4 @@ interface IBenchmarkFactory {
      * @return Returns the core contract reference.
      **/
     function core() external view returns (IBenchmark);
-
-    /***********
-     *  FORGE  *
-     ***********/
-
-    /**
-     * @notice Emitted when a forge for an underlying yield token is created.
-     * @param underlyingAsset The address of the underlying asset.
-     * @param underlyingYieldToken The address of the underlying yield token.
-     * @param forge The address of the created forge.
-     **/
-    event ForgeCreated(
-        address indexed underlyingAsset,
-        address indexed underlyingYieldToken,
-        address indexed forge
-    );
-
-    /**
-     * @notice Creates a forge given a protocol and underlying yield token.
-     * @param protocol The protocol of the underlying asset
-     * @param underlyingAsset Token address of the underlying asset
-     * @return forge Returns the address of the newly created forge.
-     **/
-    function createForge(Utils.Protocols protocol, address underlyingAsset)
-        external
-        returns (address forge);
-
-    /***********
-     *  MARKET *
-     ***********/
-
-    /**
-     * @notice Emitted when a market for a future yield token and an ERC20 token is created.
-     * @param xyt The address of the tokenized future yield token as the base asset.
-     * @param token The address of an ERC20 token as the quote asset.
-     * @param market The address of the newly created market.
-     **/
-    event MarketCreated(address indexed xyt, address indexed token, address indexed market);
-
-    /**
-     * @notice Creates a market given a protocol, future yield token, and an ERC20 token.
-     * @param xyt Token address of the future yield token as base asset.
-     * @param token Token address of an ERC20 token as quote asset.
-     * @param expiry Yield contract expiry in epoch time.
-     * @return market Returns the address of the newly created market.
-     **/
-    function createMarket(
-        address xyt,
-        address token,
-        uint256 expiry
-    ) external returns (address market);
 }

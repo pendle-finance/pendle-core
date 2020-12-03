@@ -1,11 +1,11 @@
-// const BN = web3.utils.BN;
+const BN = web3.utils.BN;
 const {time} = require('@openzeppelin/test-helpers');
 
 const BenchmarkProvider = artifacts.require('BenchmarkProvider');
 const Benchmark = artifacts.require('Benchmark');
 const BenchmarkFactory = artifacts.require('BenchmarkFactory');
-const BenchmarkForge = artifacts.require('BenchmarkForge');
-const ForgeCreator = artifacts.require('ForgeCreator');
+const BenchmarkAaveForge = artifacts.require('BenchmarkAaveForge');
+// const ForgeCreator = artifacts.require('ForgeCreator');
 const MarketCreator = artifacts.require('MarketCreator');
 const BenchmarkData = artifacts.require('BenchmarkData');
 const BenchmarkTreasury = artifacts.require('BenchmarkTreasury');
@@ -20,18 +20,26 @@ const {getTokenAmount} = require('./Math');
 
 async function deployTestBenchmarkTokens(contracts, constantsObject=constants) {
   console.log('\t\tDeploying test Benchmark Tokens');
-  await contracts.benchmarkFactory.createForge(constantsObject.USDT_ADDRESS);
-  const forgeAddress = await contracts.benchmarkData.getForgeFromUnderlyingAsset.call(constantsObject.USDT_ADDRESS);
-  console.log(`\t\tDeployed USDT forge contract at ${forgeAddress}`);
+  contracts.benchmarkAaveForge = await BenchmarkAaveForge.new(
+      contracts.benchmark.address,
+      contracts.benchmarkProvider.address,
+      constantsObject.USDT_ADDRESS,
+      constantsObject.AUSDT_ADDRESS
+  );
+  console.log(`\t\tDeployed USDT forge contract at ${contracts.benchmarkAaveForge.address}`);
 
-  contracts.benchmarkForge = await BenchmarkForge.at(forgeAddress);
-  await contracts.benchmarkForge.newYieldContracts(constantsObject.TEST_EXPIRY);
+  await contracts.benchmark.addProtocol(contracts.benchmarkAaveForge.address);
+  console.log(`\t\tAdded Aave protocol to Benchmark`);
+
+  await contracts.benchmarkAaveForge.newYieldContracts(constantsObject.TEST_EXPIRY);
 
   const otTokenAddress = await contracts.benchmarkData.otTokens.call(
+    constantsObject.PROTOCOL_AAVE,
     constantsObject.USDT_ADDRESS,
     constantsObject.TEST_EXPIRY
   );
   const xytTokenAddress = await contracts.benchmarkData.xytTokens.call(
+    constantsObject.PROTOCOL_AAVE,
     constantsObject.USDT_ADDRESS,
     constantsObject.TEST_EXPIRY
   );
@@ -65,18 +73,18 @@ async function deployCoreContracts(governanceAddress, constantsObject=constants)
 
   contracts.benchmarkFactory = await BenchmarkFactory.new(governanceAddress);
   console.log(`\t\tDeployed BenchmarkFactory contract at ${contracts.benchmarkFactory.address}`);
-  contracts.forgeCreator = await ForgeCreator.new(contracts.benchmarkFactory.address);
-  console.log(`\t\tDeployed ForgeCreator contract at ${contracts.forgeCreator.address}`);
+  // contracts.forgeCreator = await ForgeCreator.new(contracts.benchmarkFactory.address);
+  // console.log(`\t\tDeployed ForgeCreator contract at ${contracts.forgeCreator.address}`);
   contracts.marketCreator = await MarketCreator.new(contracts.benchmarkFactory.address);
   console.log(`\t\tDeployed MarketCreator contract at ${contracts.marketCreator.address}`);
   contracts.benchmarkData = await BenchmarkData.new(governanceAddress);
   console.log(`\t\tDeployed BenchmarkData contract at ${contracts.benchmarkData.address}`);
 
 
-  await contracts.benchmarkFactory.initialize(contracts.benchmark.address, contracts.forgeCreator.address, contracts.marketCreator.address);
+  await contracts.benchmarkFactory.initialize(contracts.benchmark.address, contracts.marketCreator.address);
   console.log(`\t\tInitialized BenchmarkFactory`);
-  await contracts.forgeCreator.initialize(contracts.benchmarkProvider.address, contracts.benchmark.address);
-  console.log(`\t\tInitialized ForgeCreator`);
+  // await contracts.forgeCreator.initialize(contracts.benchmarkProvider.address, contracts.benchmark.address);
+  // console.log(`\t\tInitialized ForgeCreator`);
   await contracts.marketCreator.initialize(contracts.benchmarkProvider.address, contracts.benchmark.address);
   console.log(`\t\tInitialized MarketCreator`);
   await contracts.benchmarkData.initialize(contracts.benchmark.address);
@@ -139,15 +147,15 @@ async function mineBlocks(blocks) {
 async function printBenchmarkAddressDetails(contracts, address) {
   const aaveContracts = await getAaveContracts();
   console.log(`\tBenchmark balances for address ${address}:`);
-  console.log(`\t\tOT balance = ${await contracts.benchmarkOwnershipToken.balanceOf.call(address)}`);
-  console.log(`\t\tXYT balance = ${await contracts.benchmarkFutureYieldToken.balanceOf.call(address)}`);
+  console.log(`\t\tOT balance = ${(await contracts.benchmarkOwnershipToken.balanceOf.call(address)).div(new BN(1000000))}`);
+  console.log(`\t\tXYT balance = ${(await contracts.benchmarkFutureYieldToken.balanceOf.call(address)).div(new BN(1000000))}`);
   console.log(
-    `\t\tlastNormalisedIncome = ${await contracts.benchmarkForge.lastNormalisedIncome.call(
+    `\t\tlastNormalisedIncome = ${await contracts.benchmarkAaveForge.lastNormalisedIncome.call(
       constants.TEST_EXPIRY,
       address
     )}`
   );
-  console.log(`\t\taUSDT balance = ${await aaveContracts.aUSDT.balanceOf.call(address)}`);
+  console.log(`\t\taUSDT balance = ${(await aaveContracts.aUSDT.balanceOf.call(address)) / 1000000}`);
 }
 
 function mineBlockAtTime(timestamp) {

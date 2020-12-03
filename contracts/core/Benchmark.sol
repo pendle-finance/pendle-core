@@ -25,6 +25,7 @@ pragma solidity ^0.7.0;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IBenchmark.sol";
 import "../interfaces/IBenchmarkForge.sol";
+import "../interfaces/IBenchmarkMarketFactory.sol";
 import "../periphery/Permissions.sol";
 
 
@@ -32,8 +33,8 @@ contract Benchmark is IBenchmark, Permissions {
     using SafeMath for uint256;
 
     IBenchmarkData public override data;
-    IBenchmarkFactory public override factory;
-    IBenchmarkProvider public override provider;
+    IBenchmarkMarketFactory public override factory;
+
     address public immutable override weth;
     address public override treasury;
 
@@ -50,43 +51,50 @@ contract Benchmark is IBenchmark, Permissions {
 
     function initialize(
         IBenchmarkData _data,
-        IBenchmarkFactory _factory,
-        IBenchmarkProvider _provider,
-        address _treasury
+        IBenchmarkMarketFactory _factory,
+        address _treasury,
+        bytes32 _forge,
+        address _forgeAddress
     ) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
         require(address(_data) != address(0), "Benchmark: zero address");
         require(address(_factory) != address(0), "Benchmark: zero address");
-        require(address(_provider) != address(0), "Benchmark: zero address");
         require(_treasury != address(0), "Benchmark: zero address");
 
         initializer = address(0);
         data = _data;
         factory = _factory;
-        provider = _provider;
         treasury = _treasury;
+
+        data.addForge(_forge, _forgeAddress);
     }
 
-    /**
-     * @notice Sets the BenchmarkTreasury contract address where fees will be sent to.
-     * @param _treasury Address of new treasury contract.
-     **/
+    function addForge(
+        bytes32 _forgeId,
+        address _forgeAddress
+    ) external override initialized onlyGovernance {
+        require(_forgeAddress != address(0), "Benchmark: zero address");
+        data.addForge(_forgeId, _forgeAddress);
+    }
+
+    function removeForge(bytes32 _forgeId) external override initialized onlyGovernance {
+        require(data.getForgeAddress(_forgeId) != address(0), "Benchmark: forge doesn't exist");
+        data.removeForge(_forgeId);
+    }
+
     function setContracts(
         IBenchmarkData _data,
-        IBenchmarkFactory _factory,
-        IBenchmarkProvider _provider,
+        IBenchmarkMarketFactory _factory,
         address _treasury
     ) external override initialized onlyGovernance {
         require(address(_data) != address(0), "Benchmark: zero address");
         require(address(_factory) != address(0), "Benchmark: zero address");
-        require(address(_provider) != address(0), "Benchmark: zero address");
         require(_treasury != address(0), "Benchmark: zero address");
 
         data = _data;
         factory = _factory;
-        provider = _provider;
         treasury = _treasury;
-        emit ContractsSet(address(_data), address(_factory), address(_provider), _treasury);
+        emit ContractsSet(address(_data), address(_factory), _treasury);
     }
 
     /***********
@@ -94,37 +102,37 @@ contract Benchmark is IBenchmark, Permissions {
      ***********/
 
     function newYieldContracts(
-        Utils.Protocols _protocol,
+        bytes32 _forge,
         address _underlyingAsset,
         uint256 _expiry
     ) public override returns (address ot, address xyt) {
         IBenchmarkForge forge = IBenchmarkForge(
-            data.getForge(_protocol, _underlyingAsset)
+            data.getForge(_forge)
         );
-        (ot, xyt) = forge.newYieldContracts(_expiry);
+        (ot, xyt) = forge.newYieldContracts(_underlyingAsset, _expiry);
     }
 
     function redeemAfterExpiry(
-        Utils.Protocols _protocol,
+        bytes32 _forge,
         address _underlyingAsset,
         uint256 _expiry,
         address _to
     ) public override returns (uint256 redeemedAmount) {
         IBenchmarkForge forge = IBenchmarkForge(
-            data.getForge(_protocol, _underlyingAsset)
+            data.getForge(_forge, _underlyingAsset)
         );
         redeemedAmount = forge.redeemAfterExpiry(_expiry, _to);
     }
 
     function redeemUnderlying(
-        Utils.Protocols _protocol,
+        bytes32 _forge,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToRedeem,
         address _to
     ) public override returns (uint256 redeemedAmount) {
         IBenchmarkForge forge = IBenchmarkForge(
-            data.getForge(_protocol, _underlyingAsset)
+            data.getForge(_forge, _underlyingAsset)
         );
         redeemedAmount = forge.redeemUnderlying(_expiry, _amountToRedeem, _to);
     }
@@ -138,14 +146,14 @@ contract Benchmark is IBenchmark, Permissions {
     // ) public override returns (uint256 redeemedAmount) {}
 
     function tokenizeYield(
-        Utils.Protocols _protocol,
+        bytes32 _forge,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToTokenize,
         address _to
     ) public override returns (address ot, address xyt) {
         IBenchmarkForge forge = IBenchmarkForge(
-            data.getForge(_protocol, _underlyingAsset)
+            data.getForge(_forge, _underlyingAsset)
         );
         (ot, xyt) = forge.tokenizeYield(_expiry, _amountToTokenize, _to);
     }

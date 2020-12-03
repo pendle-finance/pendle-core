@@ -92,8 +92,6 @@ library Math {
 }
 
 library Utils {
-    enum Protocols {NONE, AAVE, COMPOUND}    
-
     /**
      * @notice Concatenates a Benchmark token name/symbol to a yield token name/symbol
      *         using a delimiter (usually "-" or " ").

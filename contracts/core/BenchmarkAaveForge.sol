@@ -25,15 +25,16 @@ pragma solidity ^0.7.0;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import {Factory, Utils} from "../libraries/BenchmarkLibrary.sol";
+import "../interfaces/IAaveLendingPoolCore.sol";
 import "../interfaces/IBenchmarkBaseToken.sol";
 import "../interfaces/IBenchmarkData.sol";
 import "../interfaces/IBenchmarkForge.sol";
+import "../interfaces/IBenchmarkAaveProvider.sol";
 import "../tokens/BenchmarkFutureYieldToken.sol";
 import "../tokens/BenchmarkOwnershipToken.sol";
 
 
-contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
-    using SafeMath for uint256;
+contract BenchmarkAaveForge is IBenchmarkForge, IBenchmarkAaveProvider, ReentrancyGuard {
     using Utils for string;
 
     struct BenchmarkTokens {
@@ -41,12 +42,8 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         IBenchmarkYieldToken ot;
     }
 
-    address public immutable override factory;
-    address public immutable override underlyingAsset;
-    address public immutable override underlyingYieldToken;
-    Utils.Protocols public immutable override protocol;
+    address public immutable override aaveLendingPoolCore;
     IBenchmark public immutable override core;
-    IBenchmarkProvider public immutable override provider;
 
     mapping(uint256 => uint256) public lastNormalisedIncomeBeforeExpiry;
     mapping(uint256 => mapping(address => uint256)) public lastNormalisedIncome;
@@ -55,25 +52,10 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
     string private constant XYT = "XYT";
 
     constructor(
-        IBenchmark _core,
-        IBenchmarkProvider _provider,
-        Utils.Protocols _protocol,
-        address _factory,
-        address _underlyingAsset,
-        address _underlyingYieldToken
+        IBenchmark _core
     ) {
         require(address(_core) != address(0), "Benchmark: zero address");
-        require(address(_provider) != address(0), "Benchmark: zero address");
-        require(_factory != address(0), "Benchmark: zero address");
-        require(_underlyingAsset != address(0), "Benchmark: zero address");
-        require(_underlyingYieldToken != address(0), "Benchmark: zero address");
-
-        factory = msg.sender;
         core = _core;
-        provider = _provider;
-        protocol = _protocol;
-        underlyingAsset = _underlyingAsset;
-        underlyingYieldToken = _underlyingYieldToken;
     }
 
     modifier onlyCore() {
@@ -84,7 +66,7 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
     modifier onlyXYT(uint256 _expiry) {
         IBenchmarkData data = core.data();
         require(
-            msg.sender == address(data.xytTokens(underlyingAsset, _expiry)),
+            msg.sender == address(data.xytTokens(forgeId, underlyingAsset, _expiry)),
             "Benchmark: only XYT"
         );
         _;
@@ -186,6 +168,14 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         return (address(tokens.ot), address(tokens.xyt));
     }
 
+    function getAaveNormalisedIncome(address _underlyingToken) public view override returns (uint256) {
+        return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveNormalizedIncome(_underlyingToken);
+    }
+
+    function getATokenAddress(address _underlyingYieldToken) public view override returns (address) {
+        return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveATokenAddress(_underlyingYieldToken);
+    }
+
     function _forgeFutureYieldToken(
         address _ot,
         string memory _name,
@@ -248,8 +238,9 @@ contract BenchmarkForge is IBenchmarkForge, ReentrancyGuard {
         return dueInterests;
     }
 
-    function _getTokens(uint256 _expiry) internal view returns (BenchmarkTokens memory _tokens) {
+    function _getTokens(address _underlyingAsset, uint256 _expiry) internal view returns (BenchmarkTokens memory _tokens) {
         IBenchmarkData data = core.data();
-        (_tokens.ot, _tokens.xyt) = data.getBenchmarkYieldTokens(underlyingAsset, _expiry); // TODO: last
+        bytes32 forge = data.getForge(address(this));
+        (_tokens.ot, _tokens.xyt) = data.getBenchmarkYieldTokens(protocolIndex, _underlyingAsset, _expiry);
     }
 }

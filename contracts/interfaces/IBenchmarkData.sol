@@ -23,10 +23,10 @@
 
 pragma solidity ^0.7.0;
 
-
 import {Utils} from "../libraries/BenchmarkLibrary.sol";
 import "./IBenchmark.sol";
 import "./IBenchmarkYieldToken.sol";
+
 
 interface IBenchmarkData {
     /**
@@ -47,48 +47,47 @@ interface IBenchmarkData {
      **/
     function core() external view returns (IBenchmark);
 
-    /**
-     * @notice Gets the OT and XYT tokens.
-     * @param underlyingYieldToken Token address of the underlying yield token.
-     * @param expiry Yield contract expiry in epoch time.
-     * @return ot The OT token references.
-     * @return xyt The XYT token references.
-     **/
-    function getBenchmarkYieldTokens(address underlyingYieldToken, uint256 expiry)
-        external
-        view
-        returns (IBenchmarkYieldToken ot, IBenchmarkYieldToken xyt);
-
     /***********
      *  FORGE  *
      ***********/
 
     /**
-     * @notice Store new forge.
-     * @param forge The newly created forge address.
+     * @notice Emitted when a forge for a protocol is added.
+     * @param forgeId Forge and protocol identifier.
+     * @param forgeAddress The address of the added forge.
      **/
-    function addForge(address forge) external;
+    event ForgeAdded(bytes32 indexed forgeId, address indexed forgeAddress);
 
     /**
-     * @notice Store new forge details.
-     * @param protocol The protocol of the underlying asset
-     * @param underlyingYieldToken Token address of the underlying yield token.
-     * @param forge The newly created forge address.
+     * @notice Emitted when a forge for a protocol is removed.
+     * @param forgeId Forge and protocol identifier.
+     * @param forgeAddress The address of the removed forge.
      **/
-    function storeForge(
-        Utils.Protocols protocol,
-        address underlyingYieldToken,
-        address forge
-    ) external;
+    event ForgeRemoved(bytes32 indexed forgeId, address indexed forgeAddress);
+
+    /**
+     * @notice Adds a new forge for a protocol.
+     * @param forgeId Forge and protocol identifier.
+     * @param forgeAddress The address of the added forge.
+     **/
+    function addForge(bytes32 forgeId, address forgeAddress) external;
+
+    /**
+     * @notice Removes a forge.
+     * @param forgeId Forge and protocol identifier.
+     **/
+    function removeForge(bytes32 forgeId) external;
 
     /**
      * @notice Store new OT and XYT details.
+     * @param forgeId Forge and protocol identifier.
      * @param ot The address of the new XYT.
      * @param xyt The address of the new XYT.
      * @param underlyingYieldToken Token address of the underlying yield token.
      * @param expiry Yield contract expiry in epoch time.
      **/
     function storeTokens(
+        bytes32 forgeId,
         address ot,
         address xyt,
         address underlyingYieldToken,
@@ -96,56 +95,58 @@ interface IBenchmarkData {
     ) external;
 
     /**
-     * @notice Displays the number of forges currently existing.
-     * @return Returns forges length,
+     * @notice Gets the OT and XYT tokens.
+     * @param forgeId Forge and protocol identifier.
+     * @param underlyingYieldToken Token address of the underlying yield token.
+     * @param expiry Yield contract expiry in epoch time.
+     * @return ot The OT token references.
+     * @return xyt The XYT token references.
      **/
-    function allForgesLength() external view returns (uint256);
+    function getBenchmarkYieldTokens(
+        bytes32 forgeId,
+        address underlyingYieldToken,
+        uint256 expiry
+    ) external view returns (IBenchmarkYieldToken ot, IBenchmarkYieldToken xyt);
 
     /**
-     * @notice Gets all the forges.
-     * @return Returns an array of all forges.
+     * @notice Gets the identifier of the forge.
+     * @param forgeAddress The forge's address.
+     * @return forgeId Returns the forge identifier.
      **/
-    function getAllForges() external view returns (address[] calldata);
+    function getForgeId(address forgeAddress) external view returns (bytes32 forgeId);
 
     /**
-     * @notice Gets a forge given the protocol and underlying asset.
-     * @param protocol The protocol of the underlying asset
-     * @param underlyingAsset Token address of the underlying asset.
-     * @return forge Returns the forge address.
+     * @notice Gets a forge given the identifier.
+     * @param forgeId Forge and protocol identifier.
+     * @return forgeAddress Returns the forge address.
      **/
-    function getForge(Utils.Protocols protocol, address underlyingAsset)
-        external
-        view
-        returns (address forge);
-
-    /**
-     * @notice Gets a forge given an XYT.
-     * @param xyt The address of XYT token.
-     * @return forge Returns the forge address.
-     **/
-    function getForgeFromXYT(address xyt) external view returns (address forge);
+    function getForgeAddress(bytes32 forgeId) external view returns (address forgeAddress);
 
     /**
      * @notice Gets a reference to a specific OT.
+     * @param forgeId Forge and protocol identifier.
      * @param underlyingYieldToken Token address of the underlying yield token.
      * @param expiry Yield contract expiry in epoch time.
      * @return ot Returns the reference to an OT.
      **/
-    function otTokens(address underlyingYieldToken, uint256 expiry)
-        external
-        view
-        returns (IBenchmarkYieldToken ot);
+    function otTokens(
+        bytes32 forgeId,
+        address underlyingYieldToken,
+        uint256 expiry
+    ) external view returns (IBenchmarkYieldToken ot);
 
     /**
      * @notice Gets a reference to a specific XYT.
+     * @param forgeId Forge and protocol identifier.
      * @param underlyingAsset Token address of the underlying asset
      * @param expiry Yield contract expiry in epoch time.
      * @return xyt Returns the reference to an XYT.
      **/
-    function xytTokens(address underlyingAsset, uint256 expiry)
-        external
-        view
-        returns (IBenchmarkYieldToken xyt);
+    function xytTokens(
+        bytes32 forgeId,
+        address underlyingAsset,
+        uint256 expiry
+    ) external view returns (IBenchmarkYieldToken xyt);
 
     /***********
      *  MARKET *
@@ -159,11 +160,13 @@ interface IBenchmarkData {
 
     /**
      * @notice Store new market details.
+     * @param forgeId Forge and protocol identifier.
      * @param xyt Token address of the future yield token as base asset.
      * @param token Token address of an ERC20 token as quote asset.
      * @param market The newly created market address.
      **/
     function storeMarket(
+        bytes32 forgeId,
         address xyt,
         address token,
         address market
@@ -183,9 +186,14 @@ interface IBenchmarkData {
 
     /**
      * @notice Gets a market given a future yield token and an ERC20 token.
+     * @param forgeId Forge and protocol identifier.
      * @param xyt Token address of the future yield token as base asset.
      * @param token Token address of an ERC20 token as quote asset.
      * @return market Returns the market address.
      **/
-    function getMarket(address xyt, address token) external view returns (address market);
+    function getMarket(
+        bytes32 forgeId,
+        address xyt,
+        address token
+    ) external view returns (address market);
 }

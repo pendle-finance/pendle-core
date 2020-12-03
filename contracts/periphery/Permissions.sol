@@ -26,12 +26,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 abstract contract Permissions {
-    event MaintainerSet(address maintainer);
     event EtherWithdraw(uint256 amount, address sendTo);
     event TokenWithdraw(IERC20 token, uint256 amount, address sendTo);
 
     address public immutable governance;
-    address public maintainer;
     address internal initializer;
 
     constructor(address _governance) {
@@ -50,32 +48,20 @@ abstract contract Permissions {
         _;
     }
 
-    modifier onlyMaintainer() {
-        require(msg.sender == maintainer, "Benchmark: only maintainer");
-        _;
-    }
-
-    function setMaintainer(address _maintainer) public onlyGovernance {
-        require(_maintainer != address(0), "Benchmark: zero address");
-
-        maintainer = _maintainer;
-        emit MaintainerSet(_maintainer);
-    }
-
     /**
-     * @dev Allows the maintainer to withdraw Ether in a Benchmark contract
-     *      in case of accidental token transfer into the contract.
+     * @dev Allows governance to withdraw Ether in a Benchmark contract
+     *      in case of accidental ETH transfer into the contract.
      * @param amount The amount of Ether to withdraw.
      * @param sendTo The recipient address.
      */
-    function withdrawEther(uint256 amount, address payable sendTo) external onlyMaintainer {
+    function withdrawEther(uint256 amount, address payable sendTo) external onlyGovernance {
         (bool success, ) = sendTo.call{value: amount}("");
         require(success, "withdraw failed");
         emit EtherWithdraw(amount, sendTo);
     }
 
     /**
-     * @dev Allows the maintainer to withdraw all IERC20 compatible tokens in a Benchmark
+     * @dev Allows governance to withdraw all IERC20 compatible tokens in a Benchmark
      *      contract in case of accidental token transfer into the contract.
      * @param token IERC20 The address of the token contract.
      * @param amount The amount of IERC20 tokens to withdraw.
@@ -85,7 +71,7 @@ abstract contract Permissions {
         IERC20 token,
         uint256 amount,
         address sendTo
-    ) external onlyMaintainer {
+    ) external onlyGovernance {
         token.transfer(sendTo, amount);
         emit TokenWithdraw(token, amount, sendTo);
     }

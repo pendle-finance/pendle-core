@@ -23,35 +23,39 @@
 pragma solidity ^0.7.0;
 
 import "../interfaces/IBenchmarkData.sol";
-import "../interfaces/IBenchmarkFactory.sol";
+import "../interfaces/IBenchmarkMarketFactory.sol";
 import "../periphery/Permissions.sol";
 
 
 contract BenchmarkData is IBenchmarkData, Permissions {
-    mapping(Utils.Protocols => mapping(address => address)) public override getForge;
-    mapping(address => mapping(address => address)) public override getMarket;
-    mapping(address => mapping(uint256 => IBenchmarkYieldToken)) public override otTokens;
-    mapping(address => mapping(uint256 => IBenchmarkYieldToken)) public override xytTokens;
+    mapping(address => bytes32) public override getForgeId;
+    mapping(bytes32 => address) public override getForgeAddress;
+    mapping(bytes32 => mapping(address => mapping(address => address))) public override getMarket;
+    mapping(bytes32 => mapping(address => mapping(uint256 => IBenchmarkYieldToken))) public override otTokens;
+    mapping(bytes32 => mapping(address => mapping(uint256 => IBenchmarkYieldToken))) public override xytTokens;
     IBenchmark public override core;
-    mapping(address => bool) internal isForge;
     mapping(address => bool) internal isMarket;
-    address[] private allForges;
     address[] private allMarkets;
 
-    constructor(address _governance) Permissions(_governance) {}
+    constructor(address _governance, bytes32 _firstForge) Permissions(_governance) {}
 
-    modifier onlyFactory() {
-        require(msg.sender == address(core.factory()), "Benchmark: only factory");
+    modifier onlyCore() {
+        require(msg.sender == address(core), "Benchmark: only core");
         _;
     }
 
-    modifier onlyForge() {
-        require(isForge[msg.sender], "Benchmark: only forge");
+    modifier onlyForge(bytes32 _forgeId) {
+        require(getForgeAddress[_forgeId] == msg.sender, "Benchmark: only forge");
         _;
     }
 
     modifier onlyMarket() {
         require(isMarket[msg.sender], "Benchmark: only market");
+        _;
+    }
+
+    modifier onlyMarketFactory() {
+        require(msg.sender == address(core.factory()), "Benchmark: only market factory");
         _;
     }
 
@@ -67,72 +71,67 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         require(address(_core) != address(0), "Benchmark: zero address");
 
         core = _core;
+
         emit CoreSet(address(_core));
     }
 
-    function getBenchmarkYieldTokens(address _underlyingAsset, uint256 _expiry)
+    /**********
+     *  FORGE *
+     **********/
+
+    function addForge(bytes32 _forgeId, address _forgeAddress) external override initialized onlyCore {
+        getForgeId[_forgeAddress] = _forgeId;
+        getForgeAddress[_forgeId] = _forgeAddress;
+        
+        emit ForgeAdded(_forgeId, _forgeAddress);
+    }
+
+    function removeForge(bytes32 _forgeId) external override initialized onlyCore {
+        address _forgeAddress = getForgeAddress[_forgeId];
+
+        getForgeAddress[_forgeId] = address(0);
+        getForgeId[_forgeAddress] = _forgeId;
+
+        emit ForgeRemoved(_forgeId, _forgeAddress);
+    }
+
+    function storeTokens(
+        bytes32 _forgeId,
+        address _ot,
+        address _xyt,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) external override initialized onlyForge(_forgeId) {
+        otTokens[_forgeId][_underlyingAsset][_expiry] = IBenchmarkYieldToken(_ot);
+        xytTokens[_forgeId][_underlyingAsset][_expiry] = IBenchmarkYieldToken(_xyt);
+    }
+
+    function getBenchmarkYieldTokens(bytes32 _forgeId, address _underlyingAsset, uint256 _expiry)
         external
         view
         override
         returns (IBenchmarkYieldToken ot, IBenchmarkYieldToken xyt)
     {
-        ot = otTokens[_underlyingAsset][_expiry];
-        xyt = xytTokens[_underlyingAsset][_expiry];
+        ot = otTokens[_forgeId][_underlyingAsset][_expiry];
+        xyt = xytTokens[_forgeId][_underlyingAsset][_expiry];
     }
 
-    /***********
-     *  FORGE  *
-     ***********/
-
-     function addForge (address _forge) external override initialized onlyFactory {
-        allForges.push(_forge);
-    }
-
-    function storeForge(Utils.Protocols _protocol, address _underlyingAsset, address _forge)
-        external
-        override
-        initialized
-        onlyFactory
-    {
-        getForge[_protocol][_underlyingAsset] = _forge;
-        isForge[_forge] = true;
-    }
-
-    function storeTokens(
-        address _ot,
-        address _xyt,
-        address _underlyingAsset,
-        uint256 _expiry
-    ) external override initialized onlyForge {
-        otTokens[_underlyingAsset][_expiry] = IBenchmarkYieldToken(_ot);
-        xytTokens[_underlyingAsset][_expiry] = IBenchmarkYieldToken(_xyt);
-    }
-
-    function allForgesLength() external view override returns (uint256) {
-        return allForges.length;
-    }
-
-    function getAllForges() public view override returns (address[] memory) {
-        return allForges;
-    }
-
-    function getForgeFromXYT(address _xyt) public view override returns (address forge) {
-        
-    }
 
     /***********
      *  MARKET *
      ***********/
-    function addMarket (address _market) external override initialized onlyFactory {
+
+    function addMarket (address _market) external override initialized onlyMarketFactory {
         allMarkets.push(_market);
     }
 
     function storeMarket(
+        bytes32 _forgeId,
         address _xyt,
         address _token,
         address _market
-    ) external override initialized onlyFactory {
-        getMarket[_xyt][_token] = _market;
+    ) external override initialized onlyMarketFactory {
+        getMarket[_forgeId][_xyt][_token] = _market;
         isMarket[_market] = true;
     }
 

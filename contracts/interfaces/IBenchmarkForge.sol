@@ -24,7 +24,6 @@
 pragma solidity ^0.7.0;
 
 import "./IBenchmark.sol";
-import "./IBenchmarkProvider.sol";
 import {Utils} from "../libraries/BenchmarkLibrary.sol";
 
 
@@ -56,6 +55,7 @@ interface IBenchmarkForge {
     // For example: For each duration, only allow expiry at the start,
     // 1/3rd and 2/3rd of the duration
     function newYieldContracts(
+        address underlyingAsset,
         uint256 expiry
     ) external returns (address ot, address xyt);
 
@@ -101,32 +101,8 @@ interface IBenchmarkForge {
     function core() external view returns (IBenchmark);
 
     /**
-     * @dev G the address of the BenchmarkFactory contract address.
-     * @return Returns the factory's address.
+     * @notice Gets a reference to the Benchmark core contract.
+     * @return Returns the core contract reference.
      **/
-    function factory() external view returns (address);
-
-    /**
-     * @notice Gets the protocol used for this yield token.
-     * @return Retuns the protocol enum.
-     **/
-    function protocol() external view returns (Utils.Protocols);
-
-    /**
-     * @dev Gets an instance of the BenchmarkProvider contract.
-     * @return Returns the provider's instance.
-     **/
-    function provider() external view returns (IBenchmarkProvider);
-
-    /**
-     * @dev Gets the address of the underlying asset
-     * @return Returns the underlying asset address
-     **/
-    function underlyingAsset() external view returns (address);
-
-    /**
-     * @dev Gets the address of the underlying yield token
-     * @return Returns the underlying yield token address
-     **/
-    function underlyingYieldToken() external view returns (address);
+    function forgeId() external view returns (IBenchmark);
 }
