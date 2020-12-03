@@ -27,7 +27,7 @@ import "../interfaces/IBenchmarkYieldToken.sol";
 
 
 contract BenchmarkOwnershipToken is BenchmarkBaseToken, IBenchmarkYieldToken {
-    bytes32 public override forgeId;
+    address public override forge;
     address public override underlyingAsset;
     address public override underlyingYieldToken;
     address public xyt;
@@ -36,7 +36,6 @@ contract BenchmarkOwnershipToken is BenchmarkBaseToken, IBenchmarkYieldToken {
         address _xyt,
         address _underlyingAsset,
         address _underlyingYieldToken,
-        bytes32 _forgeId,
         string memory _name,
         string memory _symbol,
         uint8 _underlyingYieldTokenDecimals,
@@ -49,7 +48,7 @@ contract BenchmarkOwnershipToken is BenchmarkBaseToken, IBenchmarkYieldToken {
             _expiry
         )
     {
-        forgeId = _forgeId;
+        forge = msg.sender;
         xyt = _xyt;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;

@@ -123,6 +123,13 @@ interface IBenchmarkData {
     function getForgeAddress(bytes32 forgeId) external view returns (address forgeAddress);
 
     /**
+     * @notice Checks if an XYT token is valid.
+     * @param xyt Address of the XYT toke.
+     * @return True if valid, false otherwise.
+     **/
+    function isValidXYT(address xyt) external view returns (bool);
+
+    /**
      * @notice Gets a reference to a specific OT.
      * @param forgeId Forge and protocol identifier.
      * @param underlyingYieldToken Token address of the underlying yield token.

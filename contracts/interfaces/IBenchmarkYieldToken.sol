@@ -29,10 +29,10 @@ import {Utils} from "../libraries/BenchmarkLibrary.sol";
 
 interface IBenchmarkYieldToken is IBenchmarkBaseToken {
     /**
-     * @notice Gets the forgeId of the BenchmarkForge contract for this yield token.
-     * @return Retuns the forgeId.
+     * @notice Gets the forge address of the BenchmarkForge contract for this yield token.
+     * @return Retuns the forge address.
      **/
-    function forgeId() external view returns (bytes32);
+    function forge() external view returns (address);
 
     /**
      * @notice Returns the address of the underlying asset.

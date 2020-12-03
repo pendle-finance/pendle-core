@@ -11,8 +11,11 @@ const BenchmarkForge = artifacts.require('BenchmarkForge');
 =======
 
 const BenchmarkAaveForge = artifacts.require('BenchmarkAaveForge');
+<<<<<<< HEAD
 >>>>>>> vu-changes:test/core/benchmarkAaveForge.js
 const BenchmarkProvider = artifacts.require('BenchmarkProvider');
+=======
+>>>>>>> vu-changes
 
 // const MockAToken = artifacts.require('aUSDT');
 const TestToken = artifacts.require('Token');

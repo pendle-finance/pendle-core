@@ -53,7 +53,7 @@ contract Benchmark is IBenchmark, Permissions {
         IBenchmarkData _data,
         IBenchmarkMarketFactory _factory,
         address _treasury,
-        bytes32 _forge,
+        bytes32 _forgeId,
         address _forgeAddress
     ) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
@@ -66,14 +66,16 @@ contract Benchmark is IBenchmark, Permissions {
         factory = _factory;
         treasury = _treasury;
 
-        data.addForge(_forge, _forgeAddress);
+        data.addForge(_forgeId, _forgeAddress);
     }
 
     function addForge(
         bytes32 _forgeId,
         address _forgeAddress
     ) external override initialized onlyGovernance {
+        require(_forgeId != 0, "Benchmark: zero address");
         require(_forgeAddress != address(0), "Benchmark: zero address");
+        require(data.getForgeAddress(_forgeId) == address(0), "Benchmark: existing id");
         data.addForge(_forgeId, _forgeAddress);
     }
 
@@ -102,39 +104,39 @@ contract Benchmark is IBenchmark, Permissions {
      ***********/
 
     function newYieldContracts(
-        bytes32 _forge,
+        bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
     ) public override returns (address ot, address xyt) {
         IBenchmarkForge forge = IBenchmarkForge(
-            data.getForge(_forge)
+            data.getForgeAddress(_forgeId)
         );
         (ot, xyt) = forge.newYieldContracts(_underlyingAsset, _expiry);
     }
 
     function redeemAfterExpiry(
-        bytes32 _forge,
+        bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry,
         address _to
     ) public override returns (uint256 redeemedAmount) {
         IBenchmarkForge forge = IBenchmarkForge(
-            data.getForge(_forge, _underlyingAsset)
+            data.getForgeAddress(_forgeId)
         );
-        redeemedAmount = forge.redeemAfterExpiry(_expiry, _to);
+        redeemedAmount = forge.redeemAfterExpiry(_underlyingAsset, _expiry, _to);
     }
 
     function redeemUnderlying(
-        bytes32 _forge,
+        bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToRedeem,
         address _to
     ) public override returns (uint256 redeemedAmount) {
         IBenchmarkForge forge = IBenchmarkForge(
-            data.getForge(_forge, _underlyingAsset)
+            data.getForgeAddress(_forgeId)
         );
-        redeemedAmount = forge.redeemUnderlying(_expiry, _amountToRedeem, _to);
+        redeemedAmount = forge.redeemUnderlying(_underlyingAsset, _expiry, _amountToRedeem, _to);
     }
 
     // function renew(
@@ -146,16 +148,16 @@ contract Benchmark is IBenchmark, Permissions {
     // ) public override returns (uint256 redeemedAmount) {}
 
     function tokenizeYield(
-        bytes32 _forge,
+        bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToTokenize,
         address _to
     ) public override returns (address ot, address xyt) {
         IBenchmarkForge forge = IBenchmarkForge(
-            data.getForge(_forge, _underlyingAsset)
+            data.getForgeAddress(_forgeId)
         );
-        (ot, xyt) = forge.tokenizeYield(_expiry, _amountToTokenize, _to);
+        (ot, xyt) = forge.tokenizeYield(_underlyingAsset, _expiry, _amountToTokenize, _to);
     }
 
     /***********

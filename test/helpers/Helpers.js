@@ -1,7 +1,6 @@
 const BN = web3.utils.BN;
 const {time} = require('@openzeppelin/test-helpers');
 
-const BenchmarkProvider = artifacts.require('BenchmarkProvider');
 const Benchmark = artifacts.require('Benchmark');
 const BenchmarkFactory = artifacts.require('BenchmarkFactory');
 const BenchmarkAaveForge = artifacts.require('BenchmarkAaveForge');
@@ -17,14 +16,16 @@ const {constants} = require('./Constants');
 const {getAaveContracts, mintUSDT, mintAUSDT, printAaveAddressDetails} = require('./AaveHelpers');
 const {getTokenAmount} = require('./Math');
 
+const hre = require('hardhat');
 
 async function deployTestBenchmarkTokens(contracts, constantsObject=constants) {
   console.log('\t\tDeploying test Benchmark Tokens');
   contracts.benchmarkAaveForge = await BenchmarkAaveForge.new(
+      constantsObject.AAVE_LENDING_POOL_CORE_ADDRESS,
       contracts.benchmark.address,
-      contracts.benchmarkProvider.address,
       constantsObject.USDT_ADDRESS,
-      constantsObject.AUSDT_ADDRESS
+      constantsObject.AUSDT_ADDRESS,
+      constantsObject.PROTOCOL_AAVE
   );
   console.log(`\t\tDeployed USDT forge contract at ${contracts.benchmarkAaveForge.address}`);
 
@@ -56,14 +57,6 @@ async function deployCoreContracts(governanceAddress, constantsObject=constants)
   console.log('\tDeploying core contracts');
   const contracts = {};
 
-  contracts.benchmarkProvider = await BenchmarkProvider.new(governanceAddress);
-  // console.log(1);
-  await contracts.benchmarkProvider.setMaintainer(governanceAddress, {from: governanceAddress});
-  // console.log(1);
-
-  await contracts.benchmarkProvider.setAaveAddress(constantsObject.AAVE_LENDING_POOL_CORE_ADDRESS);
-  console.log(`\t\tDeployed and setup BenchmarkProvider contract at ${contracts.benchmarkProvider.address}`);
-
   contracts.benchmark = await Benchmark.new(governanceAddress, constantsObject.WETH_ADDRESS);
   console.log(`\t\tDeployed Benchmark contract at ${contracts.benchmark.address}`);
 
@@ -83,9 +76,7 @@ async function deployCoreContracts(governanceAddress, constantsObject=constants)
 
   await contracts.benchmarkFactory.initialize(contracts.benchmark.address, contracts.marketCreator.address);
   console.log(`\t\tInitialized BenchmarkFactory`);
-  // await contracts.forgeCreator.initialize(contracts.benchmarkProvider.address, contracts.benchmark.address);
-  // console.log(`\t\tInitialized ForgeCreator`);
-  await contracts.marketCreator.initialize(contracts.benchmarkProvider.address, contracts.benchmark.address);
+  await contracts.marketCreator.initialize(contracts.benchmark.address);
   console.log(`\t\tInitialized MarketCreator`);
   await contracts.benchmarkData.initialize(contracts.benchmark.address);
   console.log(`\t\tInitialized BenchmarkData`);
@@ -93,7 +84,6 @@ async function deployCoreContracts(governanceAddress, constantsObject=constants)
   await contracts.benchmark.initialize(
     contracts.benchmarkData.address,
     contracts.benchmarkFactory.address,
-    contracts.benchmarkProvider.address,
     contracts.benchmarkTreasury.address
   );
 
@@ -103,6 +93,14 @@ async function deployCoreContracts(governanceAddress, constantsObject=constants)
 }
 
 async function deployContracts(governance, kovan=false) {
+
+  if (hre.network.name == 'hardhat') {
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [constants.USDT_OWNER_ADDRESS]}
+    );
+  };
+
   if (kovan) {
     // TODO: use kovan addresses
   }

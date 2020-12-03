@@ -24,7 +24,6 @@
 pragma solidity ^0.7.0;
 
 import "./IBenchmark.sol";
-import {Utils} from "../libraries/BenchmarkLibrary.sol";
 
 
 interface IBenchmarkForge {
@@ -60,18 +59,21 @@ interface IBenchmarkForge {
     ) external returns (address ot, address xyt);
 
     function redeemUnderlying(
+        address underlyingAsset,
         uint256 expiry,
         uint256 amountToRedeem,
         address to
     ) external returns (uint256 redeemedAmount);
 
     function tokenizeYield(
+        address underlyingAsset,
         uint256 expiry,
         uint256 amountToTokenize,
         address to
     ) external returns (address ot, address xyt);
 
     function redeemAfterExpiry(
+        address underlyingAsset,
         uint256 expiry,
         address to
     ) external returns (uint256 redeemedAmount);
@@ -86,10 +88,12 @@ interface IBenchmarkForge {
     // ) external returns (uint256 redeemedAmount);
 
     function redeemDueInterests(
+        address underlyingAsset,
         uint256 expiry
     ) external returns (uint256 interests);
 
     function redeemDueInterestsBeforeTransfer(
+        address underlyingAsset,
         uint256 expiry,
         address account
     ) external returns (uint256 interests);
@@ -101,8 +105,8 @@ interface IBenchmarkForge {
     function core() external view returns (IBenchmark);
 
     /**
-     * @notice Gets a reference to the Benchmark core contract.
-     * @return Returns the core contract reference.
+     * @notice Gets the bytes32 ID of the forge.
+     * @return Returns the forge and protocol identifier.
      **/
-    function forgeId() external view returns (IBenchmark);
+    function forgeId() external view returns (bytes32);
 }

@@ -29,12 +29,12 @@ import "../interfaces/IAaveLendingPoolCore.sol";
 import "../interfaces/IBenchmarkBaseToken.sol";
 import "../interfaces/IBenchmarkData.sol";
 import "../interfaces/IBenchmarkForge.sol";
-import "../interfaces/IBenchmarkAaveProvider.sol";
 import "../tokens/BenchmarkFutureYieldToken.sol";
 import "../tokens/BenchmarkOwnershipToken.sol";
 
 
-contract BenchmarkAaveForge is IBenchmarkForge, IBenchmarkAaveProvider, ReentrancyGuard {
+contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
+    using SafeMath for uint256;
     using Utils for string;
 
     struct BenchmarkTokens {
@@ -42,20 +42,28 @@ contract BenchmarkAaveForge is IBenchmarkForge, IBenchmarkAaveProvider, Reentran
         IBenchmarkYieldToken ot;
     }
 
-    address public immutable override aaveLendingPoolCore;
     IBenchmark public immutable override core;
+    IAaveLendingPoolCore public immutable aaveLendingPoolCore;
+    bytes32 public immutable override forgeId;
 
     mapping(uint256 => uint256) public lastNormalisedIncomeBeforeExpiry;
     mapping(uint256 => mapping(address => uint256)) public lastNormalisedIncome;
 
-    string private constant OT = "OT";
-    string private constant XYT = "XYT";
+    string private constant OT = "OT-Aave";
+    string private constant XYT = "XYT-Aave";
 
     constructor(
-        IBenchmark _core
+        IBenchmark _core,
+        IAaveLendingPoolCore _aaveLendingPoolCore,
+        bytes32 _forgeId
     ) {
         require(address(_core) != address(0), "Benchmark: zero address");
+        require(address(_aaveLendingPoolCore) != address(0), "Benchmark: zero address");
+        require(_forgeId != 0x0, "Benchmark: zero bytes");
+
         core = _core;
+        aaveLendingPoolCore = _aaveLendingPoolCore;
+        forgeId = _forgeId;
     }
 
     modifier onlyCore() {
@@ -63,31 +71,33 @@ contract BenchmarkAaveForge is IBenchmarkForge, IBenchmarkAaveProvider, Reentran
         _;
     }
 
-    modifier onlyXYT(uint256 _expiry) {
+    modifier onlyXYT(address _underlyingAsset, uint256 _expiry) {
         IBenchmarkData data = core.data();
         require(
-            msg.sender == address(data.xytTokens(forgeId, underlyingAsset, _expiry)),
+            msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
             "Benchmark: only XYT"
         );
         _;
     }
 
-    function newYieldContracts(uint256 _expiry) public override returns (address ot, address xyt) {
-        address aTokenAddress = provider.getATokenAddress(underlyingAsset);
-        uint8 aTokenDecimals = IBenchmarkBaseToken(aTokenAddress).decimals();
+    function newYieldContracts(address _underlyingAsset, uint256 _expiry) public override returns (address ot, address xyt) {
+        address aToken = aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset);
+        uint8 aTokenDecimals = IBenchmarkBaseToken(aToken).decimals();
 
-        string memory otName = OT.concat(IBenchmarkBaseToken(aTokenAddress).name(), " ");
-        string memory otSymbol = OT.concat(IBenchmarkBaseToken(aTokenAddress).symbol(), "-");
-        string memory xytName = XYT.concat(IBenchmarkBaseToken(aTokenAddress).name(), " ");
-        string memory xytSymbol = XYT.concat(IBenchmarkBaseToken(aTokenAddress).symbol(), "-");
+        string memory otName = OT.concat(IBenchmarkBaseToken(aToken).name(), " ");
+        string memory otSymbol = OT.concat(IBenchmarkBaseToken(aToken).symbol(), "-");
+        string memory xytName = XYT.concat(IBenchmarkBaseToken(aToken).name(), " ");
+        string memory xytSymbol = XYT.concat(IBenchmarkBaseToken(aToken).symbol(), "-");
 
         ot = _forgeOwnershipToken(
+            _underlyingAsset,
             otName.concat(_expiry, " "),
             otSymbol.concat(_expiry, "-"),
             aTokenDecimals,
             _expiry
         );
         xyt = _forgeFutureYieldToken(
+            _underlyingAsset,
             ot,
             xytName.concat(_expiry, " "),
             xytSymbol.concat(_expiry, "-"),
@@ -96,54 +106,59 @@ contract BenchmarkAaveForge is IBenchmarkForge, IBenchmarkAaveProvider, Reentran
         );
 
         IBenchmarkData data = core.data();
-        data.storeTokens(ot, xyt, underlyingAsset, _expiry);
+        data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
         emit NewYieldContracts(ot, xyt, _expiry);
     }
 
-    function redeemDueInterests(uint256 _expiry) public override returns (uint256 interests) {
-        BenchmarkTokens memory tokens = _getTokens(_expiry);
-        return _settleDueInterests(tokens, _expiry, msg.sender);
+    function redeemDueInterests(address _underlyingAsset, uint256 _expiry) public override returns (uint256 interests) {
+        BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        return _settleDueInterests(tokens, _underlyingAsset, _expiry, msg.sender);
     }
 
-    function redeemDueInterestsBeforeTransfer(uint256 _expiry, address _account)
+    function redeemDueInterestsBeforeTransfer(address _underlyingAsset, uint256 _expiry, address _account)
         public
         override
-        onlyXYT(_expiry)
+        onlyXYT(_underlyingAsset, _expiry)
         returns (uint256 interests)
     {
-        BenchmarkTokens memory tokens = _getTokens(_expiry);
-        return _settleDueInterests(tokens, _expiry, _account);
+        BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
     }
 
-    function redeemAfterExpiry(uint256 _expiry, address _to)
+    function redeemAfterExpiry(address _underlyingAsset, uint256 _expiry, address _to)
         public
         override
         returns (uint256 redeemedAmount)
     {
-        BenchmarkTokens memory tokens = _getTokens(_expiry);
-
-        redeemedAmount = tokens.ot.balanceOf(msg.sender);
         require(block.timestamp > _expiry, "Benchmark: must be after expiry");
 
-        IERC20(underlyingYieldToken).transfer(_to, redeemedAmount);
-        _settleDueInterests(tokens, _expiry, msg.sender);
+        IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
+        BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        redeemedAmount = tokens.ot.balanceOf(msg.sender);
+
+        aToken.transfer(_to, redeemedAmount);
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, msg.sender);
+
         tokens.ot.burn(msg.sender, redeemedAmount);
     }
 
     // msg.sender needs to have both OT and XYT tokens
     function redeemUnderlying(
+        address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToRedeem,
         address _to
     ) public override returns (uint256 redeemedAmount) {
-        BenchmarkTokens memory tokens = _getTokens(_expiry);
+        BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
 
         require(tokens.ot.balanceOf(msg.sender) >= _amountToRedeem, "Must have enough OT tokens");
         require(tokens.xyt.balanceOf(msg.sender) >= _amountToRedeem, "Must have enough XYT tokens");
 
-        IERC20(underlyingYieldToken).transfer(_to, _amountToRedeem);
-        _settleDueInterests(tokens, _expiry, msg.sender);
+        IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
+
+        aToken.transfer(_to, _amountToRedeem);
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, msg.sender);
 
         tokens.ot.burn(msg.sender, _amountToRedeem);
         tokens.xyt.burn(msg.sender, _amountToRedeem);
@@ -152,44 +167,40 @@ contract BenchmarkAaveForge is IBenchmarkForge, IBenchmarkAaveProvider, Reentran
     }
 
     function tokenizeYield(
+        address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToTokenize,
         address _to
     ) public override onlyCore returns (address ot, address xyt) {
-        BenchmarkTokens memory tokens = _getTokens(_expiry);
+        BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
 
-        IERC20(underlyingYieldToken).transferFrom(msg.sender, address(this), _amountToTokenize);
+        IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
+        aToken.transferFrom(msg.sender, address(this), _amountToTokenize);
 
         tokens.ot.mint(_to, _amountToTokenize);
         tokens.xyt.mint(_to, _amountToTokenize);
-        lastNormalisedIncome[_expiry][_to] = provider.getAaveNormalisedIncome(
-            address(underlyingAsset)
-        );
+        lastNormalisedIncome[_expiry][_to] = aaveLendingPoolCore.getReserveNormalizedIncome(address(_underlyingAsset));
+
         return (address(tokens.ot), address(tokens.xyt));
     }
 
-    function getAaveNormalisedIncome(address _underlyingToken) public view override returns (uint256) {
-        return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveNormalizedIncome(_underlyingToken);
-    }
-
-    function getATokenAddress(address _underlyingYieldToken) public view override returns (address) {
-        return IAaveLendingPoolCore(aaveLendingPoolCore).getReserveATokenAddress(_underlyingYieldToken);
-    }
-
     function _forgeFutureYieldToken(
+        address _underlyingAsset,
         address _ot,
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
         uint256 _expiry
     ) internal nonReentrant() returns (address xyt) {
+        IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
+
         xyt = Factory.createContract(
             type(BenchmarkFutureYieldToken).creationCode,
-            abi.encodePacked(_ot, underlyingAsset, underlyingYieldToken),
+            abi.encodePacked(aToken, _underlyingAsset),
             abi.encode(
                 _ot,
-                underlyingAsset,
-                underlyingYieldToken,
+                _underlyingAsset,
+                aToken,
                 _name,
                 _symbol,
                 _decimals,
@@ -199,20 +210,24 @@ contract BenchmarkAaveForge is IBenchmarkForge, IBenchmarkAaveProvider, Reentran
     }
 
     function _forgeOwnershipToken(
+        address _underlyingAsset,
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
         uint256 _expiry
     ) internal nonReentrant() returns (address ot) {
+        IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
+
         ot = Factory.createContract(
             type(BenchmarkOwnershipToken).creationCode,
-            abi.encodePacked(underlyingAsset, underlyingYieldToken),
-            abi.encode(underlyingAsset, underlyingYieldToken, _name, _symbol, _decimals, _expiry)
+            abi.encodePacked(aToken, _underlyingAsset),
+            abi.encode(aToken, _underlyingAsset, _name, _symbol, _decimals, _expiry)
         );
     }
 
     function _settleDueInterests(
         BenchmarkTokens memory _tokens,
+        address _underlyingAsset,
         uint256 _expiry,
         address _account
     ) internal returns (uint256) {
@@ -223,14 +238,15 @@ contract BenchmarkAaveForge is IBenchmarkForge, IBenchmarkAaveProvider, Reentran
         if (block.timestamp >= _expiry) {
             In = lastNormalisedIncomeBeforeExpiry[_expiry];
         } else {
-            In = provider.getAaveNormalisedIncome(underlyingAsset);
+            In = aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
             lastNormalisedIncomeBeforeExpiry[_expiry] = In;
         }
 
         uint256 dueInterests = principal.mul(In).div(Ix.sub(principal));
 
         if (dueInterests > 0) {
-            IERC20(underlyingYieldToken).transfer(_account, dueInterests);
+            IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
+            IERC20(aToken).transfer(_account, dueInterests);
         }
 
         lastNormalisedIncome[_expiry][_account] = In;
@@ -240,7 +256,6 @@ contract BenchmarkAaveForge is IBenchmarkForge, IBenchmarkAaveProvider, Reentran
 
     function _getTokens(address _underlyingAsset, uint256 _expiry) internal view returns (BenchmarkTokens memory _tokens) {
         IBenchmarkData data = core.data();
-        bytes32 forge = data.getForge(address(this));
-        (_tokens.ot, _tokens.xyt) = data.getBenchmarkYieldTokens(protocolIndex, _underlyingAsset, _expiry);
+        (_tokens.ot, _tokens.xyt) = data.getBenchmarkYieldTokens(forgeId, _underlyingAsset, _expiry);
     }
 }

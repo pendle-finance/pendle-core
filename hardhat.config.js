@@ -42,11 +42,11 @@ module.exports = {
   },
   paths: {
     sources: './contracts',
-    tests: './test',
+    tests: './test/core/',
   },
   mocha: {
     enableTimeouts: false,
-    timeout: 100000,
+    timeout: 500000,
   },
   tenderly: {
     username: 'ayobuenavista',

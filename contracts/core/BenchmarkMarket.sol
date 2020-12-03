@@ -29,20 +29,17 @@ import "../tokens/BenchmarkBaseToken.sol";
 contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     address public immutable override core;
     address public immutable override factory;
+    address public immutable override forge;
     address public immutable override token;
     address public immutable override xyt;
-    Utils.Protocols public immutable override protocol;
-    IBenchmarkProvider public immutable override provider;
     uint256 public constant override minLiquidity = 10**3;
     string private constant _name = "Benchmark Market";
     string private constant _symbol = "BMK-LPT";
     uint8 private constant _decimals = 18;
 
     constructor(
-        IBenchmarkProvider _provider,
-        Utils.Protocols _protocol,
         address _core,
-        address _factory,
+        address _forge,
         address _xyt,
         address _token,
         uint256 _expiry
@@ -54,16 +51,14 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             _expiry
         )
     {
-        require(address(_provider) != address(0), "Benchmark: zero address");
         require(_core != address(0), "Benchmark: zero address");
-        require(_factory != address(0), "Benchmark: zero address");
+        require(_forge != address(0), "Benchmark: zero address");
         require(_xyt != address(0), "Benchmark: zero address");
         require(_token != address(0), "Benchmark: zero address");
 
         factory = msg.sender;
         core = _core;
-        provider = _provider;
-        protocol = _protocol;
+        forge = _forge;
         xyt = _xyt;
         token = _token;
     }

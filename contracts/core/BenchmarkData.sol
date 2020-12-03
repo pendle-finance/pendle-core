@@ -37,7 +37,7 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     mapping(address => bool) internal isMarket;
     address[] private allMarkets;
 
-    constructor(address _governance, bytes32 _firstForge) Permissions(_governance) {}
+    constructor(address _governance) Permissions(_governance) {}
 
     modifier onlyCore() {
         require(msg.sender == address(core), "Benchmark: only core");
@@ -114,6 +114,11 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     {
         ot = otTokens[_forgeId][_underlyingAsset][_expiry];
         xyt = xytTokens[_forgeId][_underlyingAsset][_expiry];
+    }
+
+    function isValidXYT(address _xyt) external view override returns (bool) {
+        address forge = IBenchmarkYieldToken(_xyt).forge();
+        return getForgeId[forge] != bytes32(0);
     }
 
 

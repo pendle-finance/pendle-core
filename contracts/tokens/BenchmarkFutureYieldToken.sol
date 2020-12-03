@@ -28,7 +28,7 @@ import "../interfaces/IBenchmarkYieldToken.sol";
 
 
 contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
-    bytes32 public override forgeId;
+    address public override forge;
     address public override underlyingAsset;
     address public override underlyingYieldToken;
     address public ot;
@@ -38,7 +38,6 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
         address _ot,
         address _underlyingAsset,
         address _underlyingYieldToken,
-        bytes32 _forgeId,
         string memory _name,
         string memory _symbol,
         uint8 _underlyingYieldTokenDecimals,
@@ -51,14 +50,13 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
             _expiry
         )
     {
-        forgeId = _forgeId;
+        forge = msg.sender;
         ot = _ot;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;
     }
 
-    // TODO: figure out how to call forge using ID
-    // function _beforeTokenTransfer(uint256 _expiry, address _account) internal {
-    //     IBenchmarkForge(forge).redeemDueInterestsBeforeTransfer(_expiry, _account);
-    // }
+    function _beforeTokenTransfer(uint256 _expiry, address _account) internal {
+        IBenchmarkForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, _expiry, _account);
+    }
 }

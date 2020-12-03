@@ -31,7 +31,7 @@ import "../interfaces/IBenchmarkYieldToken.sol";
 import "../periphery/Permissions.sol";
 
 
-contract BenchmarkMarketFactory is IBenchmarkFactory, Permissions {
+contract BenchmarkMarketFactory is IBenchmarkMarketFactory, Permissions {
     IBenchmark public override core;
 
     constructor(address _governance) Permissions(_governance) {
@@ -57,14 +57,15 @@ contract BenchmarkMarketFactory is IBenchmarkFactory, Permissions {
         require(_xyt != address(0) && _token != address(0), "Benchmark: zero address");
 
         IBenchmarkData data = core.data();
+        address forgeAddress = data.getForgeAddress(_forgeId);
 
         require(data.getMarket(_forgeId, _xyt, _token) == address(0), "Benchmark: market already exists");
-        require(data.getForgeFromXYT(_xyt) != address(0), "Benchmark: not xyt");
+        require(data.isValidXYT(_xyt), "Benchmark: not xyt");
 
         market = Factory.createContract(
             type(BenchmarkMarket).creationCode,
-            abi.encodePacked(provider, core, factory, _xyt, _token, _expiry),
-            abi.encode(provider, core, factory, _xyt, _token, _expiry)
+            abi.encodePacked(core, forgeAddress, _xyt, _token, _expiry),
+            abi.encode(core, forgeAddress, _xyt, _token, _expiry)
         );
         data.storeMarket(_forgeId, _xyt, _token, market);
         data.addMarket(market);

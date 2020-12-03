@@ -23,7 +23,6 @@
 
 pragma solidity ^0.7.0;
 
-import "./IBenchmarkProvider.sol";
 import "./IBenchmarkBaseToken.sol";
 import {Utils} from "../libraries/BenchmarkLibrary.sol";
 
@@ -61,22 +60,16 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     function core() external view returns (address);
 
     /**
-     * @dev Returns the address of the BenchmarkFactory contract address.
+     * @dev Returns the address of the BenchmarkMarketFactory contract address.
      * @return Returns the factory's address.
      **/
     function factory() external view returns (address);
 
     /**
-     * @notice Gets the protocol used for this yield token.
-     * @return Retuns the protocol enum.
+     * @notice Gets the forge address where the XYT was minted.
+     * @return Returns the forge address.
      **/
-    function protocol() external view returns (Utils.Protocols);
-
-    /**
-     * @dev Returns an instance of the BenchmarkProvider contract.
-     * @return Returns the provider's instance.
-     **/
-    function provider() external view returns (IBenchmarkProvider);
+    function forge() external view returns (address);
 
     function minLiquidity() external pure returns (uint256);
 
