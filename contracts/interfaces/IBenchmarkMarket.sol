@@ -100,14 +100,14 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     function joinPoolSingleToken(
         address inToken,
         uint256 inAmount,
-        uint256 minLPOutAmount
-    ) external returns (uint256 lpOutAmount);
+        uint256 minOutAmountLp
+    ) external returns (uint256 outAmountLp);
 
     function exitPoolSingleToken(
         address outToken,
-        uint256 outAmount,
-        uint256 maxLPinAmount
-    ) external returns (uint256 lpInAmount);
+        uint256 inAmountLp,
+        uint256 minOutAmountToken
+    ) external returns (uint256 outAmountToken);
 
     //function interestDistribute(address lp)  returns (uint interestReturn);
 
@@ -120,6 +120,7 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     /* ========== VIEW ========== */
 
     function getSwapFee() external view returns (uint256 swapFee);
+
     function getExitFee() external view returns (uint256 eixtFee);
 
     //function swap(uint256 srcAmount, address destination) external;
