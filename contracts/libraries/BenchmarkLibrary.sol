@@ -24,7 +24,6 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-
 library Factory {
     function createContract(
         bytes memory bytecode,
@@ -45,8 +44,9 @@ library Math {
     using SafeMath for uint256;
 
     uint256 internal constant UINT_MAX_VALUE = uint256(-1);
-    uint256 internal constant RAY = 1e27;   
-    uint256 internal constant WAD = 1e18; 
+    uint256 internal constant RAY = 1e27;
+    uint256 internal constant WAD = 1e18;
+    uint256 internal constant PRECISION = 10**8;
 
     // This famous algorithm is called "exponentiation by squaring"
     // and calculates x^n with x as fixed-point and n as regular unsigned.
@@ -63,7 +63,7 @@ library Math {
     //  Also, EVM division is flooring and
     //    floor[(n-1) / 2] = floor[n / 2].
     //
-    function pow(uint256 x, uint n) internal pure returns (uint256 z) {
+    function pow(uint256 x, uint256 n) internal pure returns (uint256 z) {
         z = n % 2 != 0 ? x : RAY;
 
         for (n /= 2; n != 0; n /= 2) {
@@ -83,16 +83,95 @@ library Math {
         return (y / 2).add(x.mul(RAY)).div(y);
     }
 
-    function wmul(uint x, uint y) internal pure returns (uint256) {
+    function wmul(uint256 x, uint256 y) internal pure returns (uint256) {
         return (WAD / 2).add(x.mul(y)).div(WAD);
     }
-    function wdiv(uint x, uint y) internal pure returns (uint256) {
+
+    function wdiv(uint256 x, uint256 y) internal pure returns (uint256) {
         return (y / 2).add(x.mul(WAD)).div(y);
+    }
+
+    function rtoi(uint256 x) internal pure returns (uint256) {
+        return x / RAY;
+    }
+
+    function rfloor(uint256 x) internal pure returns (uint256) {
+        return rtoi(x) * RAY;
+    }
+
+    function rsignSub(uint256 x, uint256 y) internal pure returns (uint256, bool) {
+        if (x >= y) {
+            return (x.sub(y), false);
+        } else {
+            return (y.sub(x), true);
+        }
+    }
+
+    function rpowi(uint256 x, uint256 n) internal pure returns (uint256) {
+        uint256 z = n % 2 != 0 ? x : RAY;
+
+        for (n /= 2; n != 0; n /= 2) {
+            x = rmul(x, x);
+
+            if (n % 2 != 0) {
+                z = rmul(z, x);
+            }
+        }
+        return z;
+    }
+
+    function rpow(uint256 base, uint256 exp) internal pure returns (uint256) {
+        uint256 whole = rfloor(exp);
+        uint256 remain = exp.sub(whole);
+
+        uint256 wholePow = rpowi(base, rtoi(whole));
+
+        if (remain == 0) {
+            return wholePow;
+        }
+
+        uint256 partialResult = rpowApprox(base, remain, PRECISION);
+        return rmul(wholePow, partialResult);
+    }
+
+    function rpowApprox(
+        uint256 base,
+        uint256 exp,
+        uint256 precision
+    ) internal pure returns (uint256) {
+        // term 0:
+        uint256 a = exp;
+        (uint256 x, bool xneg) = rsignSub(base, RAY);
+        uint256 term = RAY;
+        uint256 sum = term;
+        bool negative = false;
+
+        // term(k) = numer / denom
+        //         = (product(a - i - 1, i=1-->k) * x^k) / (k!)
+        // each iteration, multiply previous term by (a-(k-1)) * x / k
+        // continue until term is less than precision
+        for (uint256 i = 1; term >= precision; i++) {
+            uint256 bigK = i * RAY;
+            (uint256 c, bool cneg) = rsignSub(a, bigK.sub(RAY));
+            term = rmul(term, rmul(c, x));
+            term = rdiv(term, bigK);
+            if (term == 0) break;
+
+            if (xneg) negative = !negative;
+            if (cneg) negative = !negative;
+            if (negative) {
+                sum = sum.sub(term);
+            } else {
+                sum = sum.sub(term);
+            }
+        }
+
+        return sum;
     }
 }
 
 library Utils {
-    enum Protocols {NONE, AAVE, COMPOUND}    
+    enum Protocols {NONE, AAVE, COMPOUND}
 
     /**
      * @notice Concatenates a Benchmark token name/symbol to a yield token name/symbol

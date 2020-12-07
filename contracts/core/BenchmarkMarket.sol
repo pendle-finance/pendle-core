@@ -405,7 +405,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 adjustedIn = Math.RAY.sub(_swapFee);
         adjustedIn = Math.rmul(inAmount, adjustedIn);
         uint256 y = Math.rdiv(inBalance, inBalance.add(adjustedIn));
-        uint256 foo = Math.pow(y, weightRatio);
+        uint256 foo = Math.rpow(y, weightRatio);
         uint256 bar = Math.RAY.sub(foo);
         outAmount = Math.rmul(outBalance, bar);
         return outAmount;
@@ -421,7 +421,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 weightRatio = Math.rdiv(outWeight, inWeight);
         uint256 diff = outBalance.sub(outAmount);
         uint256 y = Math.rdiv(outBalance, diff);
-        uint256 foo = Math.pow(y, weightRatio);
+        uint256 foo = Math.rpow(y, weightRatio);
         foo = foo.sub(Math.RAY);
         inAmount = Math.RAY.sub(_swapFee);
         inAmount = Math.rdiv(Math.rmul(inBalance, foo), inAmount);
@@ -442,7 +442,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 inBalanceUpdated = inBalance.add(inAmoutAfterFee);
         uint256 inTokenRatio = Math.rdiv(inBalanceUpdated, inBalance);
 
-        uint256 lpTokenRatio = Math.pow(inTokenRatio, nWeight);
+        uint256 lpTokenRatio = Math.rpow(inTokenRatio, nWeight);
         uint256 totalSupplyLpUpdated = Math.rmul(lpTokenRatio, totalSupplyLp);
         outAmountLp = totalSupplyLpUpdated.sub(totalSupplyLp);
         return outAmountLp;
@@ -461,7 +461,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 totalSupplyLpUpdated = totalSupplyLp.sub(inAmountLpAfterExitFee);
         uint256 lpRatio = Math.rdiv(totalSupplyLpUpdated, totalSupplyLp);
 
-        uint256 outTokenRatio = Math.pow(lpRatio, Math.rdiv(Math.RAY, nWeight));
+        uint256 outTokenRatio = Math.rpow(lpRatio, Math.rdiv(Math.RAY, nWeight));
         uint256 outTokenBalanceUpdated = Math.rmul(outTokenRatio, outBalance);
 
         uint256 outAmountTOkenBeforeSwapFee = outBalance.sub(outTokenBalanceUpdated);
