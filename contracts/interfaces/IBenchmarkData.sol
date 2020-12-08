@@ -165,6 +165,12 @@ interface IBenchmarkData {
      **/
     function addMarket(address market) external;
 
+    function exitFee() external view returns (uint256);
+
+    function swapFee() external view returns (uint256);
+
+    function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
+
     /**
      * @notice Store new market details.
      * @param forgeId Forge and protocol identifier.
