@@ -27,6 +27,8 @@ import "./IBenchmarkProvider.sol";
 import "./IBenchmarkBaseToken.sol";
 
 interface IBenchmarkMarket is IBenchmarkBaseToken {
+    /* ========== EVENTS ========== */
+
     /**
      * @notice Emitted when a swap happens on the market.
      * @param trader The address of msg.sender.
@@ -41,9 +43,11 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
         address indexed destination
     );
 
-    /***********
-     * Pool mngmt *
-     ***********/
+    event Join(address indexed lp, address indexed token, uint256 amount);
+    event Exit(address indexed lp, address indexed token, uint256 amount);
+
+    /* ========== POOL MANAGEMENT ========== */
+
     function setPoolRatio(
         address xytToken,
         uint256 denomXYToken,
@@ -51,19 +55,9 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
         uint256 denomPairToken
     ) external;
 
-    function setSwapFee(uint256 swapFee) external;
+    /* ========== TRADE ========== */
 
-    function pausePool() external;
-
-    function unpausePool() external;
-
-    /***********
-     * Trade *
-     ***********/
-    function spotPrice(address inToken, address outToken)
-        external
-        view
-        returns (uint256);
+    function spotPrice(address inToken, address outToken) external returns (uint256 spotPrice);
 
     function swapAmountIn(
         uint256 inAmount,
@@ -81,42 +75,47 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
         uint256 maxPrice
     ) external returns (uint256 inAmount, uint256 spotPriceAfter);
 
-    /***********
-     * LP *
-     ***********/
-    function joinPoolLpToken(uint256 lpTokenOutAmount, uint256[] calldata maxInAmounts) external;
+    /* ========== LP ========== */
 
-    function exitPoolLpToken(uint256 lpTokenInAmount, uint256[] calldata minOutAmounts) external;
+    function joinPoolByAll(
+        uint256 outAmountLp,
+        uint256 maxInAmoutXyt,
+        uint256 maxInAmountPair
+    ) external;
+
+    function exitPoolByAll(
+        uint256 InAmountLp,
+        uint256 minOutAmountXyt,
+        uint256 minOutAmountPair
+    ) external;
 
     function joinPoolSingleToken(
         address inToken,
         uint256 inAmount,
-        uint256 minLPOutAmount
-    ) external returns (uint256 lpOutAmount);
+        uint256 minOutAmountLp
+    ) external returns (uint256 outAmountLp);
 
     function exitPoolSingleToken(
         address outToken,
-        uint256 outAmount,
-        uint256 maxLPinAmount
-    ) external returns (uint256 lpInAmount);
+        uint256 inAmountLp,
+        uint256 minOutAmountToken
+    ) external returns (uint256 outAmountToken);
 
     //function interestDistribute(address lp)  returns (uint interestReturn);
 
-    /***********
-     * Curve shifting *
-     ***********/
+    /* ========== CURVE SHIFTING ========== */
 
     //function shiftWeight(address xytToken, address pairToken) internal;
 
     //function shiftCurve(address xytToken, address pairToken) internal;
 
-    /***********
-     * View *
-     ***********/
+    /* ========== VIEW ========== */
 
     function getSwapFee() external view returns (uint256 swapFee);
 
-    function swap(uint256 srcAmount, address destination) external;
+    function getExitFee() external view returns (uint256 eixtFee);
+
+    //function swap(uint256 srcAmount, address destination) external;
 
     function getReserves()
         external

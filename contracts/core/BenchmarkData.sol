@@ -33,6 +33,8 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     mapping(address => mapping(address => address)) public override getMarket;
     mapping(address => mapping(uint256 => IBenchmarkYieldToken)) public override otTokens;
     mapping(address => mapping(uint256 => IBenchmarkYieldToken)) public override xytTokens;
+    uint256 public override swapFee;
+    uint256 public override exitFee;
     IBenchmark public override core;
     mapping(address => bool) internal isForge;
     mapping(address => bool) internal isMarket;
@@ -124,6 +126,11 @@ contract BenchmarkData is IBenchmarkData, Permissions {
      ***********/
     function addMarket (address _market) external override initialized onlyFactory {
         allMarkets.push(_market);
+    }
+
+    function setMarketFees(uint256 _swapFee, uint256 _exitFee) external override onlyGovernance {
+        swapFee = _swapFee;
+        exitFee = _exitFee;
     }
 
     function storeMarket(

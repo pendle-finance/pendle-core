@@ -150,7 +150,11 @@ interface IBenchmarkData {
      * @notice Store new market.
      * @param _market The newly created market address.
      **/
-     function addMarket (address _market) external;
+     function addMarket(address _market) external;
+
+     function exitFee() external view returns (uint256);
+
+     function swapFee() external view returns (uint256);
 
     /**
      * @notice Store new market details.
