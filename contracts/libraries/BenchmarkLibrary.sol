@@ -43,7 +43,133 @@ library Math {
     uint256 internal constant UINT_MAX_VALUE = uint256(-1);
     uint256 internal constant RAY = 1e27;
     uint256 internal constant WAD = 1e18;
-    uint256 internal constant PRECISION = 10**8;
+    uint256 internal constant BIG_NUMBER = (uint256(1) << uint256(200));
+    uint256 internal constant PRECISION_BITS = 40;
+    uint256 internal constant FORMULA_PRECISION = uint256(1)<<PRECISION_BITS;
+
+    function checkMultOverflow(uint256 _x, uint256 _y) public pure returns (bool) {
+        if (_y == 0) return false;
+        return (((_x * _y) / _y) != _x);
+    }
+
+    function compactFraction(
+        uint256 _p,
+        uint256 _q
+    ) public pure returns (uint256, uint256) {
+        if (_q < FORMULA_PRECISION * FORMULA_PRECISION) return (_p, _q);
+        return compactFraction(_p / FORMULA_PRECISION, _q / FORMULA_PRECISION);
+    }
+
+    function exp(
+        uint256 _p,
+        uint256 _q
+    ) public pure returns (uint256 sum) {
+        uint256 n = 0;
+        uint256 nFact = 1;
+        uint256 currentP = 1;
+        uint256 currentQ = 1;
+        uint256 prevSum = 0;
+
+        while (true) {
+            if (checkMultOverflow(currentP, FORMULA_PRECISION)) return sum;
+            if (checkMultOverflow(currentQ, nFact)) return sum;
+
+            sum += (currentP * FORMULA_PRECISION) / (currentQ * nFact);
+
+            if (sum == prevSum) return sum;
+            prevSum = sum;
+
+            n++;
+
+            if (checkMultOverflow(currentP, _p)) return sum;
+            if (checkMultOverflow(currentQ, _q)) return sum;
+            if (checkMultOverflow(nFact, n)) return sum;
+
+            currentP *= _p;
+            currentQ *= _q;
+            nFact *= n;
+
+            (currentP, currentQ) = compactFraction(currentP, currentQ);
+        }
+    }
+
+    function countLeadingZeros(uint256 _p, uint256 _q) public pure returns (uint256) {
+        uint256 denomator = (uint256(1) << 255);
+        for (int256 i = 255; i >= 0; i--) {
+            if ((_q * denomator) / denomator != _q) {
+                // overflow
+                denomator = denomator / 2;
+                continue;
+            }
+            if (_p / (_q * denomator) > 0) return uint256(i);
+            denomator = denomator / 2;
+        }
+
+        return uint256(-1);
+    }
+
+    // log2 for a number that it in [1,2)
+    function log2ForSmallNumber(uint256 _x)
+        public
+        pure
+        returns (uint256)
+    {
+        uint256 res = 0;
+        uint256 one = (uint256(1) << PRECISION_BITS);
+        uint256 two = 2 * one;
+        uint256 addition = one;
+
+        require((_x >= one) && (_x <= two));
+        require(PRECISION_BITS < 125);
+
+        for (uint256 i = PRECISION_BITS; i > 0; i--) {
+            _x = (_x * _x) / one;
+            addition = addition / 2;
+            if (_x >= two) {
+                _x = _x / 2;
+                res += addition;
+            }
+        }
+
+        return res;
+    }
+
+    function logBase2(
+        uint256 _p,
+        uint256 _q
+    ) public pure returns (uint256) {
+        uint256 n = 0;
+
+        if (_p > _q) {
+            n = countLeadingZeros(_p, _q);
+        }
+
+        require(!checkMultOverflow(_p, FORMULA_PRECISION));
+        require(!checkMultOverflow(n, FORMULA_PRECISION));
+        require(!checkMultOverflow(uint256(1) << n, _q));
+
+        uint256 y = (_p * FORMULA_PRECISION) / (_q * (uint256(1) << n));
+        uint256 log2Small = log2ForSmallNumber(y);
+
+        require(n * FORMULA_PRECISION <= BIG_NUMBER);
+        require(log2Small <= BIG_NUMBER);
+
+        return n * FORMULA_PRECISION + log2Small;
+    }
+
+    function ln(
+        uint256 p,
+        uint256 q
+    ) public pure returns (uint256) {
+        uint256 ln2Numerator = 6931471805599453094172;
+        uint256 ln2Denomerator = 10000000000000000000000;
+
+        uint256 log2x = logBase2(p, q);
+
+        require(!checkMultOverflow(ln2Numerator, log2x));
+
+        return (ln2Numerator * log2x) / ln2Denomerator;
+    }
 
     // This famous algorithm is called "exponentiation by squaring"
     // and calculates x^n with x as fixed-point and n as regular unsigned.
@@ -76,41 +202,40 @@ library Math {
         return rtoi(x) * RAY;
     }
 
-    function rpow(uint256 base, uint256 exp) internal pure returns (uint256) {
-        uint256 whole = rfloor(exp);
-        uint256 remain = exp.sub(whole);
+    function rpow(uint256 _base, uint256 _exp) internal pure returns (uint256) {
+        uint256 whole = rfloor(_exp);
+        uint256 remain = _exp.sub(whole);
 
-        uint256 wholePow = rpowi(base, rtoi(whole));
+        uint256 wholePow = rpowi(_base, rtoi(whole));
 
         if (remain == 0) {
             return wholePow;
         }
 
-        uint256 partialResult = rpowApprox(base, remain, PRECISION);
+        uint256 partialResult = rpowApprox(_base, remain);
         return rmul(wholePow, partialResult);
     }
 
-    function rpowi(uint256 x, uint256 n) internal pure returns (uint256) {
-        uint256 z = n % 2 != 0 ? x : RAY;
+    function rpowi(uint256 _x, uint256 _n) internal pure returns (uint256) {
+        uint256 z = _n % 2 != 0 ? _x : RAY;
 
-        for (n /= 2; n != 0; n /= 2) {
-            x = rmul(x, x);
+        for (_n /= 2; _n != 0; _n /= 2) {
+            _x = rmul(_x, _x);
 
-            if (n % 2 != 0) {
-                z = rmul(z, x);
+            if (_n % 2 != 0) {
+                z = rmul(z, _x);
             }
         }
         return z;
     }
 
     function rpowApprox(
-        uint256 base,
-        uint256 exp,
-        uint256 precision
+        uint256 _base,
+        uint256 _exp
     ) internal pure returns (uint256) {
         // term 0:
-        uint256 a = exp;
-        (uint256 x, bool xneg) = rsignSub(base, RAY);
+        uint256 a = _exp;
+        (uint256 x, bool xneg) = rsignSub(_base, RAY);
         uint256 term = RAY;
         uint256 sum = term;
         bool negative = false;
@@ -119,7 +244,7 @@ library Math {
         //         = (product(a - i - 1, i=1-->k) * x^k) / (k!)
         // each iteration, multiply previous term by (a-(k-1)) * x / k
         // continue until term is less than precision
-        for (uint256 i = 1; term >= precision; i++) {
+        for (uint256 i = 1; term >= FORMULA_PRECISION; i++) {
             uint256 bigK = i * RAY;
             (uint256 c, bool cneg) = rsignSub(a, bigK.sub(RAY));
             term = rmul(term, rmul(c, x));
