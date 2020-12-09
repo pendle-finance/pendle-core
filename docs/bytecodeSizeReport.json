@@ -1,20 +1,20 @@
 {
-	"Benchmark.sol": 6561,
-	"BenchmarkAaveForge.sol": 18749,
+	"Benchmark.sol": 7012,
+	"BenchmarkAaveForge.sol": 19788,
 	"BenchmarkData.sol": 4942,
 	"BenchmarkGovernance.sol": 11894,
-	"BenchmarkMarket.sol": 12532,
-	"BenchmarkMarketFactory.sol": 16932,
+	"BenchmarkMarket.sol": 12975,
+	"BenchmarkMarketFactory.sol": 17423,
 	"BenchmarkTreasury.sol": 3115,
 	"Factory.sol": 86,
 	"Math.sol": 1293,
 	"Utils.sol": 86,
-	"MockBenchmark.sol": 6561,
+	"MockBenchmark.sol": 7012,
 	"MockGovernance.sol": 11894,
 	"MockTreasury.sol": 3115,
 	"Token.sol": 2546,
 	"Timelock.sol": 6025,
 	"BMK.sol": 5975,
 	"BenchmarkFutureYieldToken.sol": 3526,
-	"BenchmarkOwnershipToken.sol": 3459
+	"BenchmarkOwnershipToken.sol": 3425
 }

@@ -3,12 +3,14 @@ const {time} = require('@openzeppelin/test-helpers');
 
 const Benchmark = artifacts.require('Benchmark');
 const BenchmarkMarketFactory = artifacts.require('BenchmarkMarketFactory');
+const BenchmarkMarket = artifacts.require('BenchmarkMarket');
 const BenchmarkAaveForge = artifacts.require('BenchmarkAaveForge');
 // const ForgeCreator = artifacts.require('ForgeCreator');
 const BenchmarkData = artifacts.require('BenchmarkData');
 const BenchmarkTreasury = artifacts.require('BenchmarkTreasury');
 const BenchmarkOwnershipToken = artifacts.require('BenchmarkOwnershipToken');
 const BenchmarkFutureYieldToken = artifacts.require('BenchmarkFutureYieldToken');
+const TetherToken = artifacts.require('IUSDT');
 
 const {constants} = require('./Constants');
 
@@ -22,22 +24,22 @@ async function deployTestBenchmarkTokens(contracts, constantsObject=constants) {
   contracts.benchmarkAaveForge = await BenchmarkAaveForge.new(
       contracts.benchmark.address,
       constantsObject.AAVE_LENDING_POOL_CORE_ADDRESS,
-      constantsObject.PROTOCOL_AAVE
+      constantsObject.FORGE_AAVE
   );
   console.log(`\t\tDeployed USDT forge contract at ${contracts.benchmarkAaveForge.address}`);
 
-  await contracts.benchmark.addForge(constantsObject.PROTOCOL_AAVE, contracts.benchmarkAaveForge.address);
+  await contracts.benchmark.addForge(constantsObject.FORGE_AAVE, contracts.benchmarkAaveForge.address);
   console.log(`\t\tAdded Aave protocol to Benchmark`);
 
   await contracts.benchmarkAaveForge.newYieldContracts(constantsObject.USDT_ADDRESS, constantsObject.TEST_EXPIRY);
 
   const otTokenAddress = await contracts.benchmarkData.otTokens.call(
-    constantsObject.PROTOCOL_AAVE,
+    constantsObject.FORGE_AAVE,
     constantsObject.USDT_ADDRESS,
     constantsObject.TEST_EXPIRY
   );
   const xytTokenAddress = await contracts.benchmarkData.xytTokens.call(
-    constantsObject.PROTOCOL_AAVE,
+    constantsObject.FORGE_AAVE,
     constantsObject.USDT_ADDRESS,
     constantsObject.TEST_EXPIRY
   );
@@ -51,7 +53,37 @@ async function deployTestBenchmarkTokens(contracts, constantsObject=constants) {
 
 async function deployTestMarketContracts(contracts, constantsObject=constants) {
   console.log('\t\tDeploying test Benchmark Market');
+  await contracts.benchmarkMarketFactory.createMarket(
+      constantsObject.FORGE_AAVE,
+      contracts.benchmarkFutureYieldToken.address,
+      constantsObject.USDT_ADDRESS,
+      constantsObject.TEST_EXPIRY
+  )
+  const benchmarkMarketAddress = await contracts.benchmarkData.getMarket.call(
+      constantsObject.FORGE_AAVE,
+      contracts.benchmarkFutureYieldToken.address,
+      constantsObject.USDT_ADDRESS
+  );
+  contracts.benchmarkMarket = BenchmarkMarket.at(benchmarkMarketAddress);
+  console.log(`\t\tDeployed BenchmarkMarket at ${benchmarkMarketAddress}`);
 
+  const usdt = await TetherToken.at(constants.USDT_ADDRESS);
+  await usdt.approve(benchmarkMarketAddress, constantsObject.MAX_ALLOWANCE);
+  await contracts.benchmarkFutureYieldToken.approve(benchmarkMarketAddress, constantsObject.MAX_ALLOWANCE);
+  // let's mint a lot of aUSDT to accounts[0]
+  const aaveContracts = await getAaveContracts();
+
+  await web3.eth.getAccounts(async function (e, accounts) {
+    console.log(accounts);
+    await mintAUSDT(accounts[0], 100000);
+    await contracts.benchmark.tokenizeYield(
+      constantsObject.FORGE_AAVE,
+      constantsObject.USDT_ADDRESS,
+      constantsObject.TEST_EXPIRY,
+      10000000,
+      accounts[0]
+    );
+  });
 }
 
 // governanceAddress should be an unlocked address
@@ -103,7 +135,7 @@ async function deployContracts(governance, kovan=false) {
     // TODO: use kovan addresses
   }
   const contracts = await deployCoreContracts(governance);
-  await deployTestBenchmarkTokens(contracts);
+  await deployTestMarketContracts(await deployTestBenchmarkTokens(contracts));
   return contracts;
 }
 
@@ -192,6 +224,7 @@ module.exports = {
   deployCoreContracts,
   deployContracts,
   deployTestBenchmarkTokens,
+  deployTestMarketContracts,
   getCreate2Address,
   getCurrentBlock,
   getCurrentBlockTime,

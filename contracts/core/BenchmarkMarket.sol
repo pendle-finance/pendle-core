@@ -42,6 +42,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     string private constant _name = "Benchmark Market";
     string private constant _symbol = "BMK-LPT";
     uint8 private constant _decimals = 18;
+    address public creator;
+    bool public bootstrapped;
 
     struct TokenReserve {
         uint256 weight;
@@ -74,6 +76,13 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         forge = _forge;
         xyt = _xyt;
         token = _token;
+        creator = msg.sender;
+        bootstrapped = false;
+    }
+
+    modifier isBootstrapped {
+        require(bootstrapped, "Benchmark: not bootstrapped");
+        _;
     }
 
     function getReserves()
@@ -86,6 +95,20 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             uint32 lastBlockTimestamp
         )
     {}
+
+    function bootstrap(
+        uint256 initialXytLiquidity,
+        uint256 initialTokenLiquidity
+    ) external {
+        require(msg.sender == creator, "Benchmark: not creator");
+        _pullToken(xyt, msg.sender, initialXytLiquidity);
+        _pullToken(token, msg.sender, initialTokenLiquidity);
+        _reserves[xyt].balance = initialXytLiquidity;
+        _reserves[xyt].weight = Math.RAY / 2;
+        _reserves[token].balance = initialTokenLiquidity;
+        _reserves[token].weight = Math.RAY / 2;
+        bootstrapped = true;
+    }
 
     function setPoolRatio(
         address xytToken,
