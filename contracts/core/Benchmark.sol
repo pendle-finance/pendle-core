@@ -52,9 +52,9 @@ contract Benchmark is IBenchmark, Permissions {
     function initialize(
         IBenchmarkData _data,
         IBenchmarkMarketFactory _factory,
-        address _treasury,
-        bytes32 _forgeId,
-        address _forgeAddress
+        address _treasury
+        /* bytes32 _forgeId,
+        address _forgeAddress */
     ) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
         require(address(_data) != address(0), "Benchmark: zero address");
@@ -66,15 +66,16 @@ contract Benchmark is IBenchmark, Permissions {
         factory = _factory;
         treasury = _treasury;
 
-        data.addForge(_forgeId, _forgeAddress);
+        /* data.addForge(_forgeId, _forgeAddress); */
     }
 
     function addForge(
         bytes32 _forgeId,
         address _forgeAddress
     ) external override initialized onlyGovernance {
-        require(_forgeId != 0, "Benchmark: zero address");
+        require(_forgeId != 0, "Benchmark: empty bytes");
         require(_forgeAddress != address(0), "Benchmark: zero address");
+        require(_forgeId == IBenchmarkForge(_forgeAddress).forgeId(), "Benchmark: wrong id");
         require(data.getForgeAddress(_forgeId) == address(0), "Benchmark: existing id");
         data.addForge(_forgeId, _forgeAddress);
     }
@@ -114,6 +115,17 @@ contract Benchmark is IBenchmark, Permissions {
         (ot, xyt) = forge.newYieldContracts(_underlyingAsset, _expiry);
     }
 
+    function redeemDueInterests(
+        bytes32 _forgeId,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) public override returns (uint256 interests) {
+        IBenchmarkForge forge = IBenchmarkForge(
+            data.getForgeAddress(_forgeId)
+        );
+        interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
+    }
+
     function redeemAfterExpiry(
         bytes32 _forgeId,
         address _underlyingAsset,
@@ -123,7 +135,7 @@ contract Benchmark is IBenchmark, Permissions {
         IBenchmarkForge forge = IBenchmarkForge(
             data.getForgeAddress(_forgeId)
         );
-        redeemedAmount = forge.redeemAfterExpiry(_underlyingAsset, _expiry, _to);
+        redeemedAmount = forge.redeemAfterExpiry(msg.sender, _underlyingAsset, _expiry, _to);
     }
 
     function redeemUnderlying(
@@ -136,7 +148,7 @@ contract Benchmark is IBenchmark, Permissions {
         IBenchmarkForge forge = IBenchmarkForge(
             data.getForgeAddress(_forgeId)
         );
-        redeemedAmount = forge.redeemUnderlying(_underlyingAsset, _expiry, _amountToRedeem, _to);
+        redeemedAmount = forge.redeemUnderlying(msg.sender, _underlyingAsset, _expiry, _amountToRedeem, _to);
     }
 
     // function renew(
@@ -157,7 +169,7 @@ contract Benchmark is IBenchmark, Permissions {
         IBenchmarkForge forge = IBenchmarkForge(
             data.getForgeAddress(_forgeId)
         );
-        (ot, xyt) = forge.tokenizeYield(_underlyingAsset, _expiry, _amountToTokenize, _to);
+        (ot, xyt) = forge.tokenizeYield(msg.sender, _underlyingAsset, _expiry, _amountToTokenize, _to);
     }
 
     /***********

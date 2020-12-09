@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity ^0.7.0;
-
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import {Factory, Utils} from "../libraries/BenchmarkLibrary.sol";
@@ -111,9 +111,9 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         emit NewYieldContracts(ot, xyt, _expiry);
     }
 
-    function redeemDueInterests(address _underlyingAsset, uint256 _expiry) public override returns (uint256 interests) {
+    function redeemDueInterests(address _msgSender, address _underlyingAsset, uint256 _expiry) public override returns (uint256 interests) {
         BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        return _settleDueInterests(tokens, _underlyingAsset, _expiry, msg.sender);
+        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
     }
 
     function redeemDueInterestsBeforeTransfer(address _underlyingAsset, uint256 _expiry, address _account)
@@ -126,7 +126,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
     }
 
-    function redeemAfterExpiry(address _underlyingAsset, uint256 _expiry, address _to)
+    function redeemAfterExpiry(address _msgSender, address _underlyingAsset, uint256 _expiry, address _to)
         public
         override
         returns (uint256 redeemedAmount)
@@ -135,16 +135,17 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
 
         IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
         BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        redeemedAmount = tokens.ot.balanceOf(msg.sender);
+        redeemedAmount = tokens.ot.balanceOf(_msgSender);
 
         aToken.transfer(_to, redeemedAmount);
-        _settleDueInterests(tokens, _underlyingAsset, _expiry, msg.sender);
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
 
-        tokens.ot.burn(msg.sender, redeemedAmount);
+        tokens.ot.burn(_msgSender, redeemedAmount);
     }
 
     // msg.sender needs to have both OT and XYT tokens
     function redeemUnderlying(
+        address _msgSender,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToRedeem,
@@ -152,30 +153,36 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
     ) public override returns (uint256 redeemedAmount) {
         BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
 
-        require(tokens.ot.balanceOf(msg.sender) >= _amountToRedeem, "Must have enough OT tokens");
-        require(tokens.xyt.balanceOf(msg.sender) >= _amountToRedeem, "Must have enough XYT tokens");
+        require(tokens.ot.balanceOf(_msgSender) >= _amountToRedeem, "Must have enough OT tokens");
+        require(tokens.xyt.balanceOf(_msgSender) >= _amountToRedeem, "Must have enough XYT tokens");
 
         IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
 
         aToken.transfer(_to, _amountToRedeem);
-        _settleDueInterests(tokens, _underlyingAsset, _expiry, msg.sender);
+        console.log("Transfered back aToken: ", _amountToRedeem, _msgSender);
 
-        tokens.ot.burn(msg.sender, _amountToRedeem);
-        tokens.xyt.burn(msg.sender, _amountToRedeem);
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
+
+
+        tokens.ot.burn(_msgSender, _amountToRedeem);
+        tokens.xyt.burn(_msgSender, _amountToRedeem);
 
         return _amountToRedeem;
     }
 
     function tokenizeYield(
+        address _msgSender,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToTokenize,
         address _to
     ) public override onlyCore returns (address ot, address xyt) {
+        console.log("Tokenizing yield");
         BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
 
         IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
-        aToken.transferFrom(msg.sender, address(this), _amountToTokenize);
+        console.log("About to transferFrom ", msg.sender, _amountToTokenize);
+        aToken.transferFrom(_msgSender, address(this), _amountToTokenize);
 
         tokens.ot.mint(_to, _amountToTokenize);
         tokens.xyt.mint(_to, _amountToTokenize);
@@ -231,6 +238,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         uint256 _expiry,
         address _account
     ) internal returns (uint256) {
+        console.log("Settling due interests for ", _account);
         uint256 principal = _tokens.xyt.balanceOf(_account);
         uint256 Ix = lastNormalisedIncome[_expiry][_account];
         uint256 In;
@@ -242,7 +250,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
             lastNormalisedIncomeBeforeExpiry[_expiry] = In;
         }
 
-        uint256 dueInterests = principal.mul(In).div(Ix.sub(principal));
+        uint256 dueInterests = principal.mul(In).div(Ix).sub(principal);
 
         if (dueInterests > 0) {
             IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));

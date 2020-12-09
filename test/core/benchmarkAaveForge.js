@@ -6,16 +6,7 @@ const {expect, assert} = require('chai');
 
 var RLP = require('rlp');
 
-<<<<<<< HEAD:test/core/benchmarkForge.js
-const BenchmarkForge = artifacts.require('BenchmarkForge');
-=======
-
 const BenchmarkAaveForge = artifacts.require('BenchmarkAaveForge');
-<<<<<<< HEAD
->>>>>>> vu-changes:test/core/benchmarkAaveForge.js
-const BenchmarkProvider = artifacts.require('BenchmarkProvider');
-=======
->>>>>>> vu-changes
 
 // const MockAToken = artifacts.require('aUSDT');
 const TestToken = artifacts.require('Token');
@@ -66,16 +57,13 @@ contract('BenchmarkAaveForge', (accounts) => {
       console.log('\tBefore:');
       await printBenchmarkAddressDetails(contracts, accounts[1]);
       const testAmount = 1000 * 1000000; // 1000 USDT
-<<<<<<< HEAD:test/core/benchmarkForge.js
-      await contracts.benchmarkForge.tokenizeYield(constants.TEST_EXPIRY, testAmount, accounts[1]);
-=======
-      await contracts.benchmarkAaveForge.tokenizeYield(
-
+      await contracts.benchmark.tokenizeYield(
+        constants.PROTOCOL_AAVE,
+        constants.USDT_ADDRESS,
         constants.TEST_EXPIRY,
         testAmount,
         accounts[1]
       );
->>>>>>> vu-changes:test/core/benchmarkAaveForge.js
 
       console.log('\n\tAfter tokenizing 1000 AUSDT via Benchmark:');
       await printBenchmarkAddressDetails(contracts, accounts[1]);
@@ -99,19 +87,15 @@ contract('BenchmarkAaveForge', (accounts) => {
       console.log('\tUser account has called redeemUnderlying()');
 
       const aUSDTbalanceBefore = await aaveContracts.aUSDT.balanceOf.call(accounts[1]);
-<<<<<<< HEAD:test/core/benchmarkForge.js
-      await contracts.benchmarkForge.redeemUnderlying(constants.TEST_EXPIRY, testAmount, accounts[1], {
-        from: accounts[1],
-      });
-=======
-      await contracts.benchmarkAaveForge.redeemUnderlying(
 
+      await contracts.benchmark.redeemUnderlying(
+        constants.PROTOCOL_AAVE,
+        constants.USDT_ADDRESS,
         constants.TEST_EXPIRY,
         testAmount,
         accounts[1],
         {from: accounts[1]}
       );
->>>>>>> vu-changes:test/core/benchmarkAaveForge.js
       const aUSDTbalanceAfter = await aaveContracts.aUSDT.balanceOf.call(accounts[1]);
 
       console.log('\n\tAfter 1 month [user account]');
@@ -127,16 +111,13 @@ contract('BenchmarkAaveForge', (accounts) => {
   describe('redeemDueInterests', async () => {
     it('After one month, should be able to ping to get due interests', async () => {
       const testAmount = 1000 * 1000000; // 1000 USDT
-<<<<<<< HEAD:test/core/benchmarkForge.js
-      await contracts.benchmarkForge.tokenizeYield(constants.TEST_EXPIRY, testAmount, accounts[1]);
-=======
-      await contracts.benchmarkAaveForge.tokenizeYield(
-
+      await contracts.benchmark.tokenizeYield(
+        constants.PROTOCOL_AAVE,
+        constants.USDT_ADDRESS,
         constants.TEST_EXPIRY,
         testAmount,
         accounts[1]
       );
->>>>>>> vu-changes:test/core/benchmarkAaveForge.js
 
       const balance = await contracts.benchmarkOwnershipToken.balanceOf.call(accounts[1]);
       await contracts.benchmarkOwnershipToken.transfer(accounts[8], balance, {from: accounts[1]});
@@ -157,13 +138,12 @@ contract('BenchmarkAaveForge', (accounts) => {
       console.log('\t1 month has passed ...');
       console.log('\tUser account has called redeemDueInterests()');
 
-<<<<<<< HEAD:test/core/benchmarkForge.js
-      await contracts.benchmarkForge.redeemDueInterests(constants.TEST_EXPIRY, {
-=======
-      await contracts.benchmarkAaveForge.redeemDueInterests( constants.TEST_EXPIRY, {
->>>>>>> vu-changes:test/core/benchmarkAaveForge.js
-        from: accounts[1],
-      });
+      await contracts.benchmark.redeemDueInterests(
+        constants.PROTOCOL_AAVE,
+        constants.USDT_ADDRESS,
+        constants.TEST_EXPIRY,
+        { from: accounts[1] }
+      );
 
       const aUSDTbalanceAfter = await aaveContracts.aUSDT.balanceOf.call(accounts[1]);
       console.log('\n\tAfter redeeming:');
@@ -178,16 +158,13 @@ contract('BenchmarkAaveForge', (accounts) => {
     it('After expiry, should be able to redeem aUSDT from OT', async () => {
       // lets use accounts[2] now
       const testAmount = 1000 * 1000000; // 1000 USDT
-<<<<<<< HEAD:test/core/benchmarkForge.js
-      await contracts.benchmarkForge.tokenizeYield(constants.TEST_EXPIRY, testAmount, accounts[2]);
-=======
-      await contracts.benchmarkAaveForge.tokenizeYield(
-
+      await contracts.benchmark.tokenizeYield(
+        constants.PROTOCOL_AAVE,
+        constants.USDT_ADDRESS,
         constants.TEST_EXPIRY,
         testAmount,
         accounts[2]
       );
->>>>>>> vu-changes:test/core/benchmarkAaveForge.js
       await contracts.benchmarkFutureYieldToken.transfer(accounts[8], testAmount, {from: accounts[2]});
       console.log('\tTransfered out all XYT tokens away from User account');
 
@@ -200,15 +177,13 @@ contract('BenchmarkAaveForge', (accounts) => {
       await printBenchmarkAddressDetails(contracts, accounts[2]);
       const aUSDTbalanceBefore = await aaveContracts.aUSDT.balanceOf.call(accounts[2]);
 
-<<<<<<< HEAD:test/core/benchmarkForge.js
-      await contracts.benchmarkForge.redeemAfterExpiry(constants.TEST_EXPIRY, accounts[2], {from: accounts[2]});
-=======
-      await contracts.benchmarkAaveForge.redeemAfterExpiry(
+      await contracts.benchmark.redeemAfterExpiry(
+        constants.PROTOCOL_AAVE,
+        constants.USDT_ADDRESS,
         constants.TEST_EXPIRY,
         accounts[2],
         {from: accounts[2]}
       );
->>>>>>> vu-changes:test/core/benchmarkAaveForge.js
 
       const aUSDTbalanceAfter = await aaveContracts.aUSDT.balanceOf.call(accounts[2]);
       console.log('\n\tAfter User account has called redeemAfterExpiry():');

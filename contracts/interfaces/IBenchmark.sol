@@ -115,6 +115,12 @@ interface IBenchmark {
         address to
     ) external returns (uint256 redeemedAmount);
 
+    function redeemDueInterests(
+        bytes32 _forgeId,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) external returns (uint256 interests);
+
     // TODO: to implement renew first on forge
     // function renew(
     //     Utils.Protocols _protocol,

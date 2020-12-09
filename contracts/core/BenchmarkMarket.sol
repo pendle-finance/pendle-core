@@ -135,13 +135,13 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         require(spotPriceBefore <= maxPrice, "ERR_BAD_PRICE");
 
         //calc out amount
-        outAmount = _calcOutAmount(
+        /* outAmount = _calcOutAmount(
             inTokenReserve.weight,
             outTokenReserve.weight,
             inTokenReserve.balance,
             outTokenReserve.balance,
             inAmount
-        );
+        ); */
         require(outAmount >= minOutAmount, "ERR_OUT_AMOUNT_LOW");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);

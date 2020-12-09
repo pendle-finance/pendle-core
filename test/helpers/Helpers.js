@@ -2,10 +2,9 @@ const BN = web3.utils.BN;
 const {time} = require('@openzeppelin/test-helpers');
 
 const Benchmark = artifacts.require('Benchmark');
-const BenchmarkFactory = artifacts.require('BenchmarkFactory');
+const BenchmarkMarketFactory = artifacts.require('BenchmarkMarketFactory');
 const BenchmarkAaveForge = artifacts.require('BenchmarkAaveForge');
 // const ForgeCreator = artifacts.require('ForgeCreator');
-const MarketCreator = artifacts.require('MarketCreator');
 const BenchmarkData = artifacts.require('BenchmarkData');
 const BenchmarkTreasury = artifacts.require('BenchmarkTreasury');
 const BenchmarkOwnershipToken = artifacts.require('BenchmarkOwnershipToken');
@@ -21,18 +20,16 @@ const hre = require('hardhat');
 async function deployTestBenchmarkTokens(contracts, constantsObject=constants) {
   console.log('\t\tDeploying test Benchmark Tokens');
   contracts.benchmarkAaveForge = await BenchmarkAaveForge.new(
-      constantsObject.AAVE_LENDING_POOL_CORE_ADDRESS,
       contracts.benchmark.address,
-      constantsObject.USDT_ADDRESS,
-      constantsObject.AUSDT_ADDRESS,
+      constantsObject.AAVE_LENDING_POOL_CORE_ADDRESS,
       constantsObject.PROTOCOL_AAVE
   );
   console.log(`\t\tDeployed USDT forge contract at ${contracts.benchmarkAaveForge.address}`);
 
-  await contracts.benchmark.addProtocol(contracts.benchmarkAaveForge.address);
+  await contracts.benchmark.addForge(constantsObject.PROTOCOL_AAVE, contracts.benchmarkAaveForge.address);
   console.log(`\t\tAdded Aave protocol to Benchmark`);
 
-  await contracts.benchmarkAaveForge.newYieldContracts(constantsObject.TEST_EXPIRY);
+  await contracts.benchmarkAaveForge.newYieldContracts(constantsObject.USDT_ADDRESS, constantsObject.TEST_EXPIRY);
 
   const otTokenAddress = await contracts.benchmarkData.otTokens.call(
     constantsObject.PROTOCOL_AAVE,
@@ -52,6 +49,11 @@ async function deployTestBenchmarkTokens(contracts, constantsObject=constants) {
   return contracts;
 }
 
+async function deployTestMarketContracts(contracts, constantsObject=constants) {
+  console.log('\t\tDeploying test Benchmark Market');
+
+}
+
 // governanceAddress should be an unlocked address
 async function deployCoreContracts(governanceAddress, constantsObject=constants) {
   console.log('\tDeploying core contracts');
@@ -64,26 +66,22 @@ async function deployCoreContracts(governanceAddress, constantsObject=constants)
 
 
 
-  contracts.benchmarkFactory = await BenchmarkFactory.new(governanceAddress);
-  console.log(`\t\tDeployed BenchmarkFactory contract at ${contracts.benchmarkFactory.address}`);
-  // contracts.forgeCreator = await ForgeCreator.new(contracts.benchmarkFactory.address);
+  contracts.benchmarkMarketFactory = await BenchmarkMarketFactory.new(governanceAddress);
+  console.log(`\t\tDeployed BenchmarkMarketFactory contract at ${contracts.benchmarkMarketFactory.address}`);
+  // contracts.forgeCreator = await ForgeCreator.new(contracts.benchmarkMarketFactory.address);
   // console.log(`\t\tDeployed ForgeCreator contract at ${contracts.forgeCreator.address}`);
-  contracts.marketCreator = await MarketCreator.new(contracts.benchmarkFactory.address);
-  console.log(`\t\tDeployed MarketCreator contract at ${contracts.marketCreator.address}`);
   contracts.benchmarkData = await BenchmarkData.new(governanceAddress);
   console.log(`\t\tDeployed BenchmarkData contract at ${contracts.benchmarkData.address}`);
 
 
-  await contracts.benchmarkFactory.initialize(contracts.benchmark.address, contracts.marketCreator.address);
-  console.log(`\t\tInitialized BenchmarkFactory`);
-  await contracts.marketCreator.initialize(contracts.benchmark.address);
-  console.log(`\t\tInitialized MarketCreator`);
+  await contracts.benchmarkMarketFactory.initialize(contracts.benchmark.address);
+  console.log(`\t\tInitialized BenchmarkMarketFactory`);
   await contracts.benchmarkData.initialize(contracts.benchmark.address);
   console.log(`\t\tInitialized BenchmarkData`);
 
   await contracts.benchmark.initialize(
     contracts.benchmarkData.address,
-    contracts.benchmarkFactory.address,
+    contracts.benchmarkMarketFactory.address,
     contracts.benchmarkTreasury.address
   );
 
