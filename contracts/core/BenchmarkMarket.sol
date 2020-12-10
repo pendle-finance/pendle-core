@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity ^0.7.0;
+import "hardhat/console.sol";
 
 import "../interfaces/IBenchmarkData.sol";
 import "../interfaces/IBenchmarkMarket.sol";
@@ -53,6 +54,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     mapping(address => TokenReserve) private _reserves;
 
     constructor(
+        address _creator,
         IBenchmark _core,
         address _forge,
         address _xyt,
@@ -76,7 +78,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         forge = _forge;
         xyt = _xyt;
         token = _token;
-        creator = msg.sender;
+        creator = _creator;
         bootstrapped = false;
     }
 
@@ -102,7 +104,10 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     ) external {
         require(msg.sender == creator, "Benchmark: not creator");
         _pullToken(xyt, msg.sender, initialXytLiquidity);
+        console.log(token, initialTokenLiquidity);
+
         _pullToken(token, msg.sender, initialTokenLiquidity);
+        /* IERC20(token).transferFrom(msg.sender, address(this), initialTokenLiquidity); */
         _reserves[xyt].balance = initialXytLiquidity;
         _reserves[xyt].weight = Math.RAY / 2;
         _reserves[token].balance = initialTokenLiquidity;

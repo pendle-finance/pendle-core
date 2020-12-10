@@ -59,12 +59,14 @@ async function deployTestMarketContracts(contracts, constantsObject=constants) {
       constantsObject.USDT_ADDRESS,
       constantsObject.TEST_EXPIRY
   )
+  console.log(`USDT address = ${constantsObject.USDT_ADDRESS}`);
+  
   const benchmarkMarketAddress = await contracts.benchmarkData.getMarket.call(
       constantsObject.FORGE_AAVE,
       contracts.benchmarkFutureYieldToken.address,
       constantsObject.USDT_ADDRESS
   );
-  contracts.benchmarkMarket = BenchmarkMarket.at(benchmarkMarketAddress);
+  contracts.benchmarkMarket = await BenchmarkMarket.at(benchmarkMarketAddress);
   console.log(`\t\tDeployed BenchmarkMarket at ${benchmarkMarketAddress}`);
 
   const usdt = await TetherToken.at(constants.USDT_ADDRESS);
