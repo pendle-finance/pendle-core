@@ -1,9 +1,15 @@
-require('dotenv').config();
-require('@nomiclabs/hardhat-truffle5');
-require('@nomiclabs/hardhat-web3');
+import * as dotenv from "dotenv";
+dotenv.config();
 
-module.exports = {
+import { HardhatUserConfig } from "hardhat/types";
+import "@nomiclabs/hardhat-waffle";
+
+const config: HardhatUserConfig = {
   defaultNetwork: 'development',
+  paths: {
+    sources: './contracts',
+    tests: './test/core/',
+  },
   networks: {
     hardhat: {
       forking: {
@@ -13,7 +19,6 @@ module.exports = {
       blockGasLimit: 12450000,
       gas: 'auto',
       gasPrice: 'auto',
-      timeout: 1800000,
     },
     development: {
       url: 'http://127.0.0.1:8545',
@@ -30,7 +35,7 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: '0.7.2',
+        version: '0.7.4',
         settings: {
           optimizer: {
             enabled: true,
@@ -40,16 +45,9 @@ module.exports = {
       },
     ],
   },
-  paths: {
-    sources: './contracts',
-    tests: './test/core/',
-  },
   mocha: {
-    enableTimeouts: false,
     timeout: 500000,
   },
-  tenderly: {
-    username: 'ayobuenavista',
-    project: 'projects',
-  },
 };
+
+export default config;

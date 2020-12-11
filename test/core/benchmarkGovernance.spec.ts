@@ -3,11 +3,10 @@ import { Contract, constants } from 'ethers'
 import { solidity, MockProvider, createFixtureLoader } from 'ethereum-waffle'
 
 import { governanceFixture } from './fixtures'
-import { DELAY } from './utils'
 
 chai.use(solidity)
 
-describe('GovernorAlpha', () => {
+describe('BenchmarkGovernance', () => {
   const provider = new MockProvider({
     ganacheOptions: {
       hardfork: 'istanbul',
@@ -18,37 +17,31 @@ describe('GovernorAlpha', () => {
   const [wallet] = provider.getWallets()
   const loadFixture = createFixtureLoader([wallet], provider)
 
-  let uni: Contract
+  let bmk: Contract
   let timelock: Contract
-  let governorAlpha: Contract
+  let bmkGovernor: Contract
   beforeEach(async () => {
     const fixture = await loadFixture(governanceFixture)
-    uni = fixture.uni
+    bmk = fixture.bmk
     timelock = fixture.timelock
-    governorAlpha = fixture.governorAlpha
-  })
-
-  it('uni', async () => {
-    const balance = await uni.balanceOf(wallet.address)
-    const totalSupply = await uni.totalSupply()
-    expect(balance).to.be.eq(totalSupply)
+    bmkGovernor = fixture.bmkGovernor
   })
 
   it('timelock', async () => {
     const admin = await timelock.admin()
-    expect(admin).to.be.eq(governorAlpha.address)
+    expect(admin).to.be.eq(wallet.address)
     const pendingAdmin = await timelock.pendingAdmin()
     expect(pendingAdmin).to.be.eq(constants.AddressZero)
     const delay = await timelock.delay()
-    expect(delay).to.be.eq(DELAY)
+    expect(delay).to.be.eq(45000)
   })
 
   it('governor', async () => {
-    const votingPeriod = await governorAlpha.votingPeriod()
-    expect(votingPeriod).to.be.eq(40320)
-    const timelockAddress = await governorAlpha.timelock()
+    const votingPeriod = await bmkGovernor.votingPeriod()
+    expect(votingPeriod).to.be.eq(17280)
+    const timelockAddress = await bmkGovernor.timelock()
     expect(timelockAddress).to.be.eq(timelock.address)
-    const uniFromGovernor = await governorAlpha.uni()
-    expect(uniFromGovernor).to.be.eq(uni.address)
+    const bmkFromGovernor = await bmkGovernor.bmk()
+    expect(bmkFromGovernor).to.be.eq(bmk.address)
   })
 })
