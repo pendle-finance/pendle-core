@@ -9,7 +9,7 @@ var RLP = require('rlp');
 const BenchmarkAaveForge = artifacts.require('BenchmarkAaveForge');
 
 // const MockAToken = artifacts.require('aUSDT');
-const TestToken = artifacts.require('Token');
+const TestToken = artifacts.require('TestToken');
 const {
   deployContracts,
   getAaveContracts,

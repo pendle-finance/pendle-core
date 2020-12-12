@@ -42,6 +42,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     uint256 public constant override minLiquidity = 10**3;
     string private constant _name = "Benchmark Market";
     string private constant _symbol = "BMK-LPT";
+    uint256 private constant INITIAL_LP_FOR_CREATOR = 10**18; // arbitrary number
     uint8 private constant _decimals = 18;
     address public creator;
     bool public bootstrapped;
@@ -104,14 +105,14 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     ) external {
         require(msg.sender == creator, "Benchmark: not creator");
         _pullToken(xyt, msg.sender, initialXytLiquidity);
-        console.log(token, initialTokenLiquidity);
 
         _pullToken(token, msg.sender, initialTokenLiquidity);
-        /* IERC20(token).transferFrom(msg.sender, address(this), initialTokenLiquidity); */
         _reserves[xyt].balance = initialXytLiquidity;
         _reserves[xyt].weight = Math.RAY / 2;
         _reserves[token].balance = initialTokenLiquidity;
         _reserves[token].weight = Math.RAY / 2;
+        _mintLpToken(INITIAL_LP_FOR_CREATOR);
+        _pushLpToken(msg.sender, INITIAL_LP_FOR_CREATOR);
         bootstrapped = true;
     }
 
