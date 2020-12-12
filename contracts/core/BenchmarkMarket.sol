@@ -28,7 +28,6 @@ import "../tokens/BenchmarkBaseToken.sol";
 import "../libraries/BenchmarkLibrary.sol";
 import {Math} from "../libraries/BenchmarkLibrary.sol";
 
-
 contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     using Math for uint256;
     using SafeMath for uint256;
@@ -45,6 +44,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     uint8 private constant _decimals = 18;
     address public creator;
     bool public bootstrapped;
+    uint256 priceLast = Math.RAY;
+    uint256 blockNumLast;
 
     struct TokenReserve {
         uint256 weight;
@@ -60,14 +61,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address _xyt,
         address _token,
         uint256 _expiry
-    )
-        BenchmarkBaseToken(
-            _name,
-            _symbol,
-            _decimals,
-            _expiry
-        )
-    {
+    ) BenchmarkBaseToken(_name, _symbol, _decimals, _expiry) {
         require(address(_core) != address(0), "Benchmark: zero address");
         require(_forge != address(0), "Benchmark: zero address");
         require(_xyt != address(0), "Benchmark: zero address");
@@ -98,10 +92,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         )
     {}
 
-    function bootstrap(
-        uint256 initialXytLiquidity,
-        uint256 initialTokenLiquidity
-    ) external {
+    function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity) external {
         require(msg.sender == creator, "Benchmark: not creator");
         _pullToken(xyt, msg.sender, initialXytLiquidity);
 
@@ -112,6 +103,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         _reserves[token].weight = Math.RAY / 2;
         _mintLpToken(INITIAL_LP_FOR_CREATOR);
         _pushLpToken(msg.sender, INITIAL_LP_FOR_CREATOR);
+        blockNumLast = block.number; //@@XM added for curve shifting
         bootstrapped = true;
     }
 
@@ -148,6 +140,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 minOutAmount,
         uint256 maxPrice
     ) external override returns (uint256 outAmount, uint256 spotPriceAfter) {
+        _curveShift();
+
         IBenchmarkData data = core.data();
         TokenReserve storage inTokenReserve = _reserves[inToken];
         TokenReserve storage outTokenReserve = _reserves[outToken];
@@ -202,6 +196,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 outAmount,
         uint256 maxPrice
     ) external override returns (uint256 inAmount, uint256 spotPriceAfter) {
+        _curveShift();
+
         IBenchmarkData data = core.data();
         TokenReserve storage inTokenReserve = _reserves[inToken];
         TokenReserve storage outTokenReserve = _reserves[outToken];
@@ -529,5 +525,49 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
     function _burnLpToken(uint256 amount) internal {
         _burn(address(this), amount);
+    }
+
+    function _updateWeight() internal {
+        uint256 currentTime = block.timestamp;
+        uint256 endTime = IBenchmarkYieldToken(xyt).expiry();
+        uint256 duration = 6 * 3600 * 24 * 30;
+
+        TokenReserve storage xytReserve = _reserves[xyt];
+        TokenReserve storage tokenReserve = _reserves[token];
+
+        uint256 xytWeight = xytReserve.weight;
+        uint256 tokenWeight = tokenReserve.weight;
+
+        require((endTime - currentTime) <= duration, "ERR_DURATION_WRONG");
+
+        uint256 timeToMature = Math.rdiv((endTime - currentTime) * Math.RAY, duration * Math.RAY);
+
+        uint256 priceNow = Math.rdiv(
+            Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RAY), Math.RAY),
+            Math.ln(Math.PIPULSONE, Math.RAY)
+        );
+        uint256 r = Math.rdiv(priceNow, priceLast);
+
+        require(Math.RAY >= r, "ERR_R_WRONG_VALUE");
+
+        uint256 thetaNorminator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RAY.sub(r));
+        uint256 thetaDenorminator = Math.rmul(r, xytWeight).add(tokenWeight);
+
+        uint256 theta = Math.rdiv(thetaNorminator, thetaDenorminator);
+
+        uint256 xytWeightUpdated = xytWeight.sub(theta);
+        uint256 tokenWeightUpdated = tokenWeight.add(theta);
+
+        _reserves[xyt].weight = xytWeightUpdated;
+        _reserves[token].weight = tokenWeightUpdated;
+
+        emit Shift(xytWeight, tokenWeight, xytWeightUpdated, tokenWeightUpdated);
+    }
+
+    function _curveShift() internal {
+        if (block.number > blockNumLast) {
+            _updateWeight();
+            blockNumLast = block.number;
+        }
     }
 }
