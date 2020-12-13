@@ -80,7 +80,22 @@ contract('BenchmarkMarket', (accounts) => {
         constants.MAX_ALLOWANCE, //maxPrice
       );
 
-      console.log("After joinPoolByAll:");
+      console.log("After swapAmountOut: (swapped 15e8, 10% of xyt out)");
+      await printAmmDetails(contracts.benchmarkMarket);
+    });
+  });
+  describe('exitPoolByAll', async () => {
+    it('should be able to exit a pool', async () => {
+      console.log("Before exitPoolByAll:");
+      await printAmmDetails(contracts.benchmarkMarket);
+
+      await contracts.benchmarkMarket.exitPoolByAll(
+        '500000000000000000', // 5e17, 1/3 of current LP pool
+        '1000000000', //small number
+        '1000000000'  //small number
+      );
+
+      console.log("After exitPoolByAll: (exited 5e17, 1/3 of current pool)");
       await printAmmDetails(contracts.benchmarkMarket);
     });
   });
