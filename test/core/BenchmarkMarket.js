@@ -16,6 +16,16 @@ const {
 
 require('chai').use(require('chai-as-promised')).use(require('chai-bn')(BN)).should();
 
+const printAmmDetails = async(amm) => {
+  const xyt = await TestToken.at(await amm.xyt.call());
+  const token = await TestToken.at(await amm.token.call());
+  console.log(`\tPrinting details for amm for xyt ${xyt.address} and token ${token.address}`);
+  console.log(`\t\tXyt bal = ${await xyt.balanceOf.call(amm.address)}`);
+  console.log(`\t\tToken bal = ${await token.balanceOf.call(amm.address)}`);
+  const totalLp = await amm.totalSupply.call();
+  console.log(`\t\tTotal Supply of LP: ${totalLp}`);
+}
+
 contract('BenchmarkMarket', (accounts) => {
   let contracts;
   let aaveContracts;
@@ -28,17 +38,50 @@ contract('BenchmarkMarket', (accounts) => {
 
   describe('bootstrap', async () => {
     it('should be able to bootstrap', async () => {
-      console.log(`\tTestToken balance of accounts[0] = ${await contracts.testToken.balanceOf.call(accounts[0])}`);
-      console.log(`\tXYT balance of accounts[0] = ${await contracts.benchmarkFutureYieldToken.balanceOf.call(accounts[0])}`);
-      console.log(`\tallowance for TestToken = ${await contracts.testToken.allowance.call(accounts[0], contracts.benchmarkMarket.address)}`);
+      console.log("Before bootstrap:");
+      await printAmmDetails(contracts.benchmarkMarket);
 
       await contracts.benchmarkMarket.bootstrap(
-          10000000000,
-          10000000000
+          1e10,
+          1e10
       );
 
-      const totalSupply = await contracts.benchmarkMarket.totalSupply.call();
-      console.log(`\t\tTotal Supply of LP: ${totalSupply}`);
+      console.log("After bootstrap:");
+      await printAmmDetails(contracts.benchmarkMarket);
+    });
+  });
+  describe('joinPoolByAll', async () => {
+    it('should be able to join a bootstrapped pool', async () => {
+      console.log("Before joinPoolByAll:");
+      await printAmmDetails(contracts.benchmarkMarket);
+
+      await contracts.benchmarkMarket.joinPoolByAll(
+        '500000000000000000', // 5e17, half of current LP pool
+        '1000000000000',
+        '1000000000000'
+      );
+
+      console.log("After joinPoolByAll:");
+      await printAmmDetails(contracts.benchmarkMarket);
+    });
+  });
+  describe('swapAmountOut', async () => {
+    it('should be able to swap amount out', async () => {
+      console.log("Before swapAmountOut:");
+      await printAmmDetails(contracts.benchmarkMarket);
+
+      // swap out 10% of the pool, 15e8 xyts
+
+      await contracts.benchmarkMarket.swapAmountOut(
+        contracts.testToken.address, //inToken
+        constants.MAX_ALLOWANCE,
+        contracts.benchmarkFutureYieldToken.address, // outToken
+        '1500000000', //outAmount, 15e8, 10% of pool
+        constants.MAX_ALLOWANCE, //maxPrice
+      );
+
+      console.log("After joinPoolByAll:");
+      await printAmmDetails(contracts.benchmarkMarket);
     });
   });
 });
