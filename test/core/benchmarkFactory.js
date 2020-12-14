@@ -11,7 +11,7 @@ const BenchmarkFactory = artifacts.require('BenchmarkFactory');
 // const BenchmarkForge = artifacts.require('BenchmarkForge');
 const BenchmarkTreasury = artifacts.require('BenchmarkTreasury');
 // const MockAToken = artifacts.require('aUSDT');
-const TestToken = artifacts.require('Token');
+const TestToken = artifacts.require('TestToken');
 const Helpers = require('../helpers/Helpers');
 require('chai').use(require('chai-as-promised')).use(require('chai-bn')(BN)).should();
 

@@ -3,13 +3,14 @@
 const {expectRevert, time} = require('@openzeppelin/test-helpers');
 const {BN} = require('@openzeppelin/test-helpers/src/setup');
 const {expect, assert} = require('chai');
+const hre = require('hardhat');
 
 var RLP = require('rlp');
 
 const BenchmarkAaveForge = artifacts.require('BenchmarkAaveForge');
 
 // const MockAToken = artifacts.require('aUSDT');
-const TestToken = artifacts.require('Token');
+const TestToken = artifacts.require('TestToken');
 const {
   deployContracts,
   getAaveContracts,
@@ -35,12 +36,13 @@ contract('BenchmarkAaveForge', (accounts) => {
     console.log(`\tEmptying AUSDT from [user account] - ${account}`);
     const balance = await aaveContracts.aUSDT.balanceOf.call(account);
     if (balance.toNumber() === 0) return;
-    await aaveContracts.aUSDT.transfer(accounts[8], balance, {from: account});
+    await aaveContracts.aUSDT.transfer(accounts[4], balance, {from: account});
     console.log(`\tEmptied AUSDT from ${account}`);
   };
 
   before(async () => {
     contracts = await deployContracts(accounts[0]);
+    console.log('hallo');
     aaveContracts = await getAaveContracts();
     await aaveContracts.aUSDT.approve(contracts.benchmarkAaveForge.address, constants.MAX_ALLOWANCE);
     // give accounts[0] 10000 AUSDT
@@ -104,7 +106,7 @@ contract('BenchmarkAaveForge', (accounts) => {
       await printBenchmarkAddressDetails(contracts, contracts.benchmarkAaveForge.address);
 
       const interests = aUSDTbalanceAfter - aUSDTbalanceBefore - testAmount;
-      console.log(`\n\tInterest amount = ${interests/1000000}, or ${(interests / testAmount) * 100} %`);
+      console.log(`\n\tInterest amount = ${interests / 1000000}, or ${(interests / testAmount) * 100} %`);
     });
   });
 
@@ -120,13 +122,15 @@ contract('BenchmarkAaveForge', (accounts) => {
       );
 
       const balance = await contracts.benchmarkOwnershipToken.balanceOf.call(accounts[1]);
-      await contracts.benchmarkOwnershipToken.transfer(accounts[8], balance, {from: accounts[1]});
+      await contracts.benchmarkOwnershipToken.transfer(accounts[4], balance, {from: accounts[1]});
 
       console.log('\tBefore one month [user account]');
       await printBenchmarkAddressDetails(contracts, accounts[1]);
       console.log('\tBefore one month [BenchmarkAaveForge]');
       await printBenchmarkAddressDetails(contracts, contracts.benchmarkAaveForge.address);
-      const lastNormalisedIncomeBeforeExpiry = await contracts.benchmarkAaveForge.lastNormalisedIncomeBeforeExpiry.call(constants.TEST_EXPIRY);
+      const lastNormalisedIncomeBeforeExpiry = await contracts.benchmarkAaveForge.lastNormalisedIncomeBeforeExpiry.call(
+        constants.TEST_EXPIRY
+      );
 
       console.log(`\tLastNormalisedIncomeBeforeExpiry = ${lastNormalisedIncomeBeforeExpiry}`);
 
@@ -142,7 +146,7 @@ contract('BenchmarkAaveForge', (accounts) => {
         constants.FORGE_AAVE,
         constants.USDT_ADDRESS,
         constants.TEST_EXPIRY,
-        { from: accounts[1] }
+        {from: accounts[1]}
       );
 
       const aUSDTbalanceAfter = await aaveContracts.aUSDT.balanceOf.call(accounts[1]);
@@ -150,7 +154,7 @@ contract('BenchmarkAaveForge', (accounts) => {
       await printBenchmarkAddressDetails(contracts, accounts[1]);
 
       const interests = aUSDTbalanceAfter - aUSDTbalanceBefore;
-      console.log(`\n\tInterest amount = ${interests/1000000}, or ${(interests / testAmount) * 100} %`);
+      console.log(`\n\tInterest amount = ${interests / 1000000}, or ${(interests / testAmount) * 100} %`);
     });
   });
 
@@ -165,7 +169,7 @@ contract('BenchmarkAaveForge', (accounts) => {
         testAmount,
         accounts[2]
       );
-      await contracts.benchmarkFutureYieldToken.transfer(accounts[8], testAmount, {from: accounts[2]});
+      await contracts.benchmarkFutureYieldToken.transfer(accounts[4], testAmount, {from: accounts[2]});
       console.log('\tTransfered out all XYT tokens away from User account');
 
       const twoYears = 3600 * 24 * 30 * 24;

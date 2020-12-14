@@ -14,7 +14,7 @@ module.exports = {
     AAVE_LENDING_POOL_CORE_ADDRESS: '0x3dfd23A6c5E8BbcFc9581d2E864a68feb6a076d3',
     AAVE_LENDING_POOL_ADDRESS: '0x398ec7346dcd622edc5ae82352f02be94c62d119',
     AAVE_DUMMY_REFERRAL_CODE: 0,
-    FORGE_AAVE: web3.utils.fromAscii("Aave"),
+    FORGE_AAVE: web3.utils.fromAscii('Aave'),
 
     MAX_ALLOWANCE: new BN(2).pow(new BN(256)).sub(new BN(1)),
     TEST_EXPIRY: 1638316800, // 1st Dec 2021, 0:00 UTC
@@ -32,6 +32,6 @@ module.exports = {
 
       MAX_ALLOWANCE: new BN(2).pow(new BN(256)).sub(new BN(1)),
       TEST_EXPIRY: 1638316800, // 1st Dec 2021, 0:00 UTC
-    }
+    },
   },
 };
