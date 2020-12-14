@@ -56,7 +56,7 @@
   },
   "scripts": {
     "deploy:aave": "yarn hardhat run scripts/deploy_aave.js",
-    "compile": "yarn  compile && yarn size",
+    "compile": "yarn hardhat compile && yarn size",
     "console:dev": "yarn hardhat console",
     "coverage": "yarn hardhat clean && yarn hardhat coverage --config ./hardhat.config.js --testfiles '' --temp ''",
     "fork": "yarn hardhat node",
