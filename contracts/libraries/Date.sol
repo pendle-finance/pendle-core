@@ -22,16 +22,7 @@ library Date {
         uint16 constant public ORIGIN_YEAR = 1970;
 
         function isLeapYear(uint16 year) public pure returns (bool) {
-                if (year % 4 != 0) {
-                        return false;
-                }
-                if (year % 100 != 0) {
-                        return true;
-                }
-                if (year % 400 != 0) {
-                        return false;
-                }
-                return true;
+                return ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
         }
 
         function leapYearsBefore(uint year) public pure returns (uint) {
@@ -54,7 +45,7 @@ library Date {
                 }
         }
 
-        function parseTimestamp(uint timestamp) internal pure returns (_Date memory d) {
+        function parseTimestamp(uint timestamp) public pure returns (_Date memory d) {
                 uint secondsAccountedFor = 0;
                 uint buf;
                 uint8 i;
@@ -111,17 +102,16 @@ library Date {
                 return year;
         }
 
-        function monthName(_Date memory d) public pure returns(string memory) {
+        function monthName(_Date memory d) private pure returns(string memory) {
           string[12] memory months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
           return months[d.month - 1];
         }
 
-        function toRFC2822String(_Date memory d) public pure returns (string memory) {
-                uint test = 12;
-                string a = stirng(test);
+        function toRFC2822String(uint timestamp) public pure returns (string memory s){
+                _Date memory d = parseTimestamp(timestamp);
                 string memory day = UIntUtils.uintToString(d.day);
                 string memory month = monthName(d); 
                 string memory year =  UIntUtils.uintToString(d.year); 
-                return string(abi.encodePacked(day, month, year));
+                s = string(abi.encodePacked(day, month, year));
         }
 }
