@@ -4,16 +4,10 @@ import { solidity, MockProvider, createFixtureLoader } from 'ethereum-waffle'
 
 import { governanceFixture } from './fixtures'
 
-chai.use(solidity)
+const { waffle } = require("hardhat");
+const provider = waffle.provider;
 
 describe('BenchmarkGovernance', () => {
-  const provider = new MockProvider({
-    ganacheOptions: {
-      hardfork: 'istanbul',
-      mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
-      gasLimit: 9999999,
-    },
-  })
   const [wallet] = provider.getWallets()
   const loadFixture = createFixtureLoader([wallet], provider)
 

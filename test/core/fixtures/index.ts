@@ -1,15 +1,12 @@
-import chai, { expect } from 'chai'
+import { expect } from 'chai'
 import { Contract, Wallet, providers } from 'ethers'
-import { solidity, deployContract } from 'ethereum-waffle'
+import Bmk from '../../../artifacts/contracts/core/Benchmark.sol/Benchmark.json'
+import Timelock from '../../../artifacts/contracts/periphery/Timelock.sol/Timelock.json'
+import BenchmarkGovernance from '../../../artifacts/contracts/core/BenchmarkGovernance.sol/BenchmarkGovernance.json'
+import WETH9 from '../../../artifacts/contracts/tokens/WETH9.sol/WETH9.json';
 
-import Bmk from '../../../build/Benchmark.json'
-import Timelock from '../../../build/Timelock.json'
-import BenchmarkGovernance from '../../../build/BenchmarkGovernance.json'
-import Weth9 from '../../../build/Weth9.json';
-
-const DELAY = 60 * 60 * 24 * 2;
-
-chai.use(solidity)
+const { waffle } = require("hardhat");
+const { deployContract } = waffle;
 
 interface GovernanceFixture {
   bmk: Contract
@@ -21,7 +18,7 @@ export async function governanceFixture(
   [wallet]: Wallet[],
   provider: providers.Web3Provider
 ): Promise<GovernanceFixture> {
-  const weth = await deployContract(wallet, Weth9, []);
+  const weth = await deployContract(wallet, WETH9, []);
   // deploy BMK, sending the total supply to the deployer.
   const timelockAddress = Contract.getContractAddress({ from: wallet.address, nonce: 2 })
   const bmk = await deployContract(wallet, Bmk, [wallet.address, weth.address])
