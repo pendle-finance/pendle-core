@@ -84,7 +84,7 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     function addForge(bytes32 _forgeId, address _forgeAddress) external override initialized onlyCore {
         getForgeId[_forgeAddress] = _forgeId;
         getForgeAddress[_forgeId] = _forgeAddress;
-        
+
         emit ForgeAdded(_forgeId, _forgeAddress);
     }
 

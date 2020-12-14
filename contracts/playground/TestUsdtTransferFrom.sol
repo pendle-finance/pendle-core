@@ -22,16 +22,11 @@
  */
 pragma solidity ^0.7.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../interfaces/IUSDT.sol";
 
+contract TestUsdtTransferFrom {
 
-contract TestToken is ERC20 {
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals
-    ) ERC20(_name, _symbol) {
-        _setupDecimals(_decimals);
-        _mint(msg.sender, 10**(21 + 24));
+    function testTransferFrom(address usdtAddress, uint256 amount) public {
+        require(IUSDT(usdtAddress).transferFrom(msg.sender, address(this), amount));
     }
 }
