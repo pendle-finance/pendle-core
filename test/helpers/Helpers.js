@@ -13,7 +13,6 @@ const BenchmarkFutureYieldToken = artifacts.require('BenchmarkFutureYieldToken')
 const TetherToken = artifacts.require('IUSDT');
 const TestToken = artifacts.require('TestToken');
 
-
 const {constants} = require('./Constants');
 
 const {getAaveContracts, mintUSDT, mintAUSDT, printAaveAddressDetails} = require('./AaveHelpers');
@@ -21,12 +20,12 @@ const {getTokenAmount} = require('./Math');
 
 const hre = require('hardhat');
 
-async function deployTestBenchmarkTokens(contracts, constantsObject=constants) {
+async function deployTestBenchmarkTokens(contracts, constantsObject = constants) {
   console.log('\t\tDeploying test Benchmark Tokens');
   contracts.benchmarkAaveForge = await BenchmarkAaveForge.new(
-      contracts.benchmark.address,
-      constantsObject.AAVE_LENDING_POOL_CORE_ADDRESS,
-      constantsObject.FORGE_AAVE
+    contracts.benchmark.address,
+    constantsObject.AAVE_LENDING_POOL_CORE_ADDRESS,
+    constantsObject.FORGE_AAVE
   );
   console.log(`\t\tDeployed USDT forge contract at ${contracts.benchmarkAaveForge.address}`);
 
@@ -53,22 +52,23 @@ async function deployTestBenchmarkTokens(contracts, constantsObject=constants) {
   return contracts;
 }
 
-async function deployTestMarketContracts(contracts, constantsObject=constants) {
+async function deployTestMarketContracts(contracts, constantsObject = constants) {
   console.log('\t\tDeploying test Benchmark Market');
-  contracts.testToken = await TestToken.new("Test Token", "TEST", 6);
+  contracts.testToken = await TestToken.new('Test Token', 'TEST', 6);
 
   await contracts.benchmarkMarketFactory.createMarket(
-      constantsObject.FORGE_AAVE,
-      contracts.benchmarkFutureYieldToken.address,
-      contracts.testToken.address,
-      constantsObject.TEST_EXPIRY
-  )
+    constantsObject.FORGE_AAVE,
+    contracts.benchmarkFutureYieldToken.address,
+    contracts.testToken.address,
+    constantsObject.TEST_EXPIRY
+  );
 
   const benchmarkMarketAddress = await contracts.benchmarkData.getMarket.call(
-      constantsObject.FORGE_AAVE,
-      contracts.benchmarkFutureYieldToken.address,
-      contracts.testToken.address
+    constantsObject.FORGE_AAVE,
+    contracts.benchmarkFutureYieldToken.address,
+    contracts.testToken.address
   );
+
   contracts.benchmarkMarket = await BenchmarkMarket.at(benchmarkMarketAddress);
   console.log(`\t\tDeployed BenchmarkMarket at ${benchmarkMarketAddress}`);
 
@@ -91,7 +91,7 @@ async function deployTestMarketContracts(contracts, constantsObject=constants) {
 }
 
 // governanceAddress should be an unlocked address
-async function deployCoreContracts(governanceAddress, constantsObject=constants) {
+async function deployCoreContracts(governanceAddress, constantsObject = constants) {
   console.log('\tDeploying core contracts');
   const contracts = {};
 
@@ -100,15 +100,12 @@ async function deployCoreContracts(governanceAddress, constantsObject=constants)
 
   contracts.benchmarkTreasury = await BenchmarkTreasury.new(governanceAddress);
 
-
-
   contracts.benchmarkMarketFactory = await BenchmarkMarketFactory.new(governanceAddress);
   console.log(`\t\tDeployed BenchmarkMarketFactory contract at ${contracts.benchmarkMarketFactory.address}`);
   // contracts.forgeCreator = await ForgeCreator.new(contracts.benchmarkMarketFactory.address);
   // console.log(`\t\tDeployed ForgeCreator contract at ${contracts.forgeCreator.address}`);
   contracts.benchmarkData = await BenchmarkData.new(governanceAddress);
   console.log(`\t\tDeployed BenchmarkData contract at ${contracts.benchmarkData.address}`);
-
 
   await contracts.benchmarkMarketFactory.initialize(contracts.benchmark.address);
   console.log(`\t\tInitialized BenchmarkMarketFactory`);
@@ -128,15 +125,15 @@ async function deployCoreContracts(governanceAddress, constantsObject=constants)
 
 async function impersonateAccounts() {
   if (hre.network.name == 'hardhat') {
+    console.log('impersonating');
     await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: [constants.USDT_OWNER_ADDRESS]}
-    );
-  };
+      method: 'hardhat_impersonateAccount',
+      params: [constants.USDT_OWNER_ADDRESS],
+    });
+  }
 }
 
-async function deployContracts(governance, kovan=false) {
-
+async function deployContracts(governance, kovan = false) {
   await impersonateAccounts();
 
   if (kovan) {
@@ -183,8 +180,12 @@ async function mineBlocks(blocks) {
 async function printBenchmarkAddressDetails(contracts, address) {
   const aaveContracts = await getAaveContracts();
   console.log(`\tBenchmark balances for address ${address}:`);
-  console.log(`\t\tOT balance = ${(await contracts.benchmarkOwnershipToken.balanceOf.call(address)).div(new BN(1000000))}`);
-  console.log(`\t\tXYT balance = ${(await contracts.benchmarkFutureYieldToken.balanceOf.call(address)).div(new BN(1000000))}`);
+  console.log(
+    `\t\tOT balance = ${(await contracts.benchmarkOwnershipToken.balanceOf.call(address)).div(new BN(1000000))}`
+  );
+  console.log(
+    `\t\tXYT balance = ${(await contracts.benchmarkFutureYieldToken.balanceOf.call(address)).div(new BN(1000000))}`
+  );
   console.log(
     `\t\tlastNormalisedIncome = ${await contracts.benchmarkAaveForge.lastNormalisedIncome.call(
       constants.TEST_EXPIRY,

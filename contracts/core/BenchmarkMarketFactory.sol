@@ -68,7 +68,6 @@ contract BenchmarkMarketFactory is IBenchmarkMarketFactory, Permissions {
             abi.encode(msg.sender, core, forgeAddress, _xyt, _token, _expiry)
         );
         data.storeMarket(_forgeId, _xyt, _token, market);
-        console.log("createMarket", _xyt, _token, market);
         data.addMarket(market);
 
         emit MarketCreated(_xyt, _token, market);

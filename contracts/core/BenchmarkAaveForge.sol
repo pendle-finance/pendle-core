@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity ^0.7.0;
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import {Factory, Utils} from "../libraries/BenchmarkLibrary.sol";
@@ -159,7 +158,6 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
 
         aToken.transfer(_to, _amountToRedeem);
-        console.log("Transfered back aToken: ", _amountToRedeem, _msgSender);
 
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
 
@@ -177,11 +175,9 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         uint256 _amountToTokenize,
         address _to
     ) public override onlyCore returns (address ot, address xyt) {
-        console.log("Tokenizing yield");
         BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
 
         IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
-        console.log("About to transferFrom ", msg.sender, _amountToTokenize);
         aToken.transferFrom(_msgSender, address(this), _amountToTokenize);
 
         tokens.ot.mint(_to, _amountToTokenize);
@@ -238,7 +234,6 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         uint256 _expiry,
         address _account
     ) internal returns (uint256) {
-        console.log("Settling due interests for ", _account);
         uint256 principal = _tokens.xyt.balanceOf(_account);
         uint256 Ix = lastNormalisedIncome[_expiry][_account];
         uint256 In;

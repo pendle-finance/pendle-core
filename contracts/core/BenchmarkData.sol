@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity ^0.7.0;
-import "hardhat/console.sol";
 
 import "../interfaces/IBenchmarkData.sol";
 import "../interfaces/IBenchmarkMarketFactory.sol";
@@ -145,8 +144,6 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         address _market
     ) external override initialized onlyMarketFactory {
         getMarket[_forgeId][_xyt][_token] = _market;
-        /* console.log(_forgeId, _xyt); */
-        console.log(_token, _market);
         isMarket[_market] = true;
     }
 
