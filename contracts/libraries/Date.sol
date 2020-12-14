@@ -1,22 +1,25 @@
 pragma solidity ^0.7.4;
 
-contract Date {
+import {UIntUtils} from "./UIntUtils.sol";
+
+pragma experimental ABIEncoderV2;
+
+library Date {
         /*
-         *  Date and Time utilities for ethereum contracts
+         *  Date utilities for ethereum contracts
          *
          */
         struct _Date {
                 uint16 year;
                 uint8 month;
                 uint8 day;
-                uint8 weekday;
         }
 
-        uint constant DAY_IN_SECONDS = 86400;
-        uint constant YEAR_IN_SECONDS = 31536000;
-        uint constant LEAP_YEAR_IN_SECONDS = 31622400;
+        uint constant public DAY_IN_SECONDS = 86400;
+        uint constant public YEAR_IN_SECONDS = 31536000;
+        uint constant public LEAP_YEAR_IN_SECONDS = 31622400;
 
-        uint16 constant ORIGIN_YEAR = 1970;
+        uint16 constant public ORIGIN_YEAR = 1970;
 
         function isLeapYear(uint16 year) public pure returns (bool) {
                 if (year % 4 != 0) {
@@ -82,9 +85,6 @@ contract Date {
                         }
                         secondsAccountedFor += DAY_IN_SECONDS;
                 }
-
-                // Day of week.
-                d.weekday = getWeekday(timestamp);
         }
 
         function getYear(uint timestamp) public pure returns (uint16) {
@@ -111,15 +111,17 @@ contract Date {
                 return year;
         }
 
-       function getMonth(uint timestamp) public pure returns (uint8) {
-                return parseTimestamp(timestamp).month;
+        function monthName(_Date memory d) public pure returns(string memory) {
+          string[12] memory months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+          return months[d.month - 1];
         }
 
-        function getDay(uint timestamp) public pure returns (uint8) {
-                return parseTimestamp(timestamp).day;
-        }
-
-         function getWeekday(uint timestamp) public pure returns (uint8) {
-                return uint8((timestamp / DAY_IN_SECONDS + 4) % 7);
+        function toRFC2822String(_Date memory d) public pure returns (string memory) {
+                uint test = 12;
+                string a = stirng(test);
+                string memory day = UIntUtils.uintToString(d.day);
+                string memory month = monthName(d); 
+                string memory year =  UIntUtils.uintToString(d.year); 
+                return string(abi.encodePacked(day, month, year));
         }
 }
