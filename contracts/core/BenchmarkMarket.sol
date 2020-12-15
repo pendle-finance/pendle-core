@@ -27,10 +27,12 @@ import "../interfaces/IBenchmarkMarket.sol";
 import "../tokens/BenchmarkBaseToken.sol";
 import "../libraries/BenchmarkLibrary.sol";
 import {Math} from "../libraries/BenchmarkLibrary.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     using Math for uint256;
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     IBenchmark public immutable override core;
     address public immutable override factory;
@@ -492,10 +494,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address fromAddr,
         uint256 amountToPull
     ) internal {
-        require(
-            IERC20(tokenAddr).transferFrom(fromAddr, address(this), amountToPull),
-            "ERR_PULL_TOKEN_FALSE"
-        );
+            IERC20(tokenAddr).safeTransferFrom(fromAddr, address(this), amountToPull);
     }
 
     function _pushToken(
@@ -503,7 +502,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address toAddr,
         uint256 amountToPush
     ) internal {
-        require(IERC20(tokenAddr).transfer(toAddr, amountToPush), "ERR_PUSH_TOKEN_FALSE");
+        IERC20(tokenAddr).safeTransfer(toAddr, amountToPush);
     }
 
     function _pullLpToken(address from, uint256 amount) internal {
