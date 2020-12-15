@@ -48,7 +48,7 @@ const config: HardhatUserConfig = {
       ],
       allowUnlimitedContractSize: false,
       blockGasLimit: 12450000,
-      gas: 'auto',
+      gas: 12450000,
       gasPrice: 'auto',
     },
     development: {

@@ -123,15 +123,6 @@ async function deployCoreContracts(governanceAddress, constantsObject = constant
   return contracts;
 }
 
-async function impersonateAccounts() {
-  if (hre.network.name == 'hardhat') {
-    console.log('impersonating');
-    await hre.network.provider.request({
-      method: 'hardhat_impersonateAccount',
-      params: [constants.USDT_OWNER_ADDRESS],
-    });
-  }
-}
 
 async function deployContracts(governance, kovan = false) {
   await impersonateAccounts();
