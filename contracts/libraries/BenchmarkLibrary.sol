@@ -33,6 +33,7 @@ library Factory {
         assembly {
             forge := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
+        require(forge != address(0), "Benchmark: failed on deploy");
     }
 }
 
