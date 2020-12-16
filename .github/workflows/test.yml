@@ -24,9 +24,9 @@ jobs:
         with:
           node-version: '14'
           check-latest: true
-        env:
-          INFURA_KEY: ${{ secrets.INFURA_KEY }}
       - run: yarn
       - run: yarn global add solc
       - run: yarn ci
+        env:
+          INFURA_KEY: ${{ secrets.INFURA_KEY }}
       - run: bash <(curl -s https://codecov.io/bash) -f coverage/coverage-final.json -t f5bbafe2-26c0-4d31-bb29-8f6ca224eb88
