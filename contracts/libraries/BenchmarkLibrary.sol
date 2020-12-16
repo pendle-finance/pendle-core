@@ -47,7 +47,7 @@ library Math {
     uint256 internal constant PRECISION_BITS = 40;
     uint256 internal constant FORMULA_PRECISION = uint256(1)<<PRECISION_BITS;
     uint256 internal constant PI = 314 * RAY / 10**2;
-    uint256 internal constant PIPULSONE = 414 * RAY / 10**2;
+    uint256 internal constant PI_PLUSONE = 414 * RAY / 10**2; 
 
     function checkMultOverflow(uint256 _x, uint256 _y) internal pure returns (bool) {
         if (_y == 0) return false;

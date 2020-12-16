@@ -46,8 +46,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     uint8 private constant _decimals = 18;
     address public creator;
     bool public bootstrapped;
-    uint256 priceLast = Math.RAY;
-    uint256 blockNumLast;
+    uint256 private priceLast = Math.RAY;
+    uint256 private blockNumLast;
 
     struct TokenReserve {
         uint256 weight;
@@ -543,16 +543,16 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         uint256 priceNow = Math.rdiv(
             Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RAY), Math.RAY),
-            Math.ln(Math.PIPULSONE, Math.RAY)
+            Math.ln(Math.PI_PLUSONE, Math.RAY)
         );
         uint256 r = Math.rdiv(priceNow, priceLast);
 
         require(Math.RAY >= r, "ERR_R_WRONG_VALUE");
 
-        uint256 thetaNorminator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RAY.sub(r));
-        uint256 thetaDenorminator = Math.rmul(r, xytWeight).add(tokenWeight);
+        uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RAY.sub(r));
+        uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight); 
 
-        uint256 theta = Math.rdiv(thetaNorminator, thetaDenorminator);
+        uint256 theta = Math.rdiv(thetaNumerator, thetaDenominator);
 
         uint256 xytWeightUpdated = xytWeight.sub(theta);
         uint256 tokenWeightUpdated = tokenWeight.add(theta);
