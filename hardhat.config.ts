@@ -51,6 +51,11 @@ const config: HardhatUserConfig = {
       gas: 'auto',
       gasPrice: 'auto',
     },
+    development: {
+      url: 'http://127.0.0.1:8545',
+      gas: 12400000,
+      timeout: 1000000,
+    },
     // kovan: {
     //   url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY}`,
     //   gas: 8000000,

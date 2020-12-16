@@ -20,7 +20,6 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-
 library Factory {
     function createContract(
         bytes memory bytecode,
@@ -45,25 +44,19 @@ library Math {
     uint256 internal constant WAD = 1e18;
     uint256 internal constant BIG_NUMBER = (uint256(1) << uint256(200));
     uint256 internal constant PRECISION_BITS = 40;
-    uint256 internal constant FORMULA_PRECISION = uint256(1)<<PRECISION_BITS;
+    uint256 internal constant FORMULA_PRECISION = uint256(1) << PRECISION_BITS;
 
     function checkMultOverflow(uint256 _x, uint256 _y) public pure returns (bool) {
         if (_y == 0) return false;
         return (((_x * _y) / _y) != _x);
     }
 
-    function compactFraction(
-        uint256 _p,
-        uint256 _q
-    ) public pure returns (uint256, uint256) {
+    function compactFraction(uint256 _p, uint256 _q) public pure returns (uint256, uint256) {
         if (_q < FORMULA_PRECISION * FORMULA_PRECISION) return (_p, _q);
         return compactFraction(_p / FORMULA_PRECISION, _q / FORMULA_PRECISION);
     }
 
-    function exp(
-        uint256 _p,
-        uint256 _q
-    ) public pure returns (uint256 sum) {
+    function exp(uint256 _p, uint256 _q) public pure returns (uint256 sum) {
         uint256 n = 0;
         uint256 nFact = 1;
         uint256 currentP = 1;
@@ -109,11 +102,7 @@ library Math {
     }
 
     // log2 for a number that it in [1,2)
-    function log2ForSmallNumber(uint256 _x)
-        public
-        pure
-        returns (uint256)
-    {
+    function log2ForSmallNumber(uint256 _x) public pure returns (uint256) {
         uint256 res = 0;
         uint256 one = (uint256(1) << PRECISION_BITS);
         uint256 two = 2 * one;
@@ -134,10 +123,7 @@ library Math {
         return res;
     }
 
-    function logBase2(
-        uint256 _p,
-        uint256 _q
-    ) public pure returns (uint256) {
+    function logBase2(uint256 _p, uint256 _q) public pure returns (uint256) {
         uint256 n = 0;
 
         if (_p > _q) {
@@ -157,10 +143,7 @@ library Math {
         return n * FORMULA_PRECISION + log2Small;
     }
 
-    function ln(
-        uint256 p,
-        uint256 q
-    ) public pure returns (uint256) {
+    function ln(uint256 p, uint256 q) public pure returns (uint256) {
         uint256 ln2Numerator = 6931471805599453094172;
         uint256 ln2Denomerator = 10000000000000000000000;
 
@@ -229,10 +212,7 @@ library Math {
         return z;
     }
 
-    function rpowApprox(
-        uint256 _base,
-        uint256 _exp
-    ) internal pure returns (uint256) {
+    function rpowApprox(uint256 _base, uint256 _exp) internal pure returns (uint256) {
         // term 0:
         uint256 a = _exp;
         (uint256 x, bool xneg) = rsignSub(_base, RAY);
@@ -403,5 +383,157 @@ library Utils {
             let destPart := and(mload(dest), mask)
             mstore(dest, or(destPart, srcPart))
         }
+    }
+}
+
+library UIntUtils {
+    function uintToString(uint256 _i) internal pure returns (string memory) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint256 j = _i;
+        uint256 len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint256 k = len - 1;
+        while (_i != 0) {
+            bstr[k--] = bytes1(uint8(48 + (_i % 10)));
+            _i /= 10;
+        }
+        return string(bstr);
+    }
+}
+
+pragma experimental ABIEncoderV2;
+
+library DateUtils {
+    /*
+     *  Date utilities for ethereum contracts
+     *
+     */
+    struct Date {
+        uint16 year;
+        uint8 month;
+        uint8 day;
+    }
+
+    uint256 public constant DAY_IN_SECONDS = 86400;
+    uint256 public constant YEAR_IN_SECONDS = 31536000;
+    uint256 public constant LEAP_YEAR_IN_SECONDS = 31622400;
+
+    uint16 public constant ORIGIN_YEAR = 1970;
+
+    function isLeapYear(uint16 _year) public pure returns (bool) {
+        return ((_year % 4 == 0) && (_year % 100 != 0)) || (_year % 400 == 0);
+    }
+
+    function leapYearsBefore(uint256 _year) public pure returns (uint256) {
+        _year -= 1;
+        return _year / 4 - _year / 100 + _year / 400;
+    }
+
+    function getDaysInMonth(uint8 _month, uint16 _year) public pure returns (uint8) {
+        if (
+            _month == 1 ||
+            _month == 3 ||
+            _month == 5 ||
+            _month == 7 ||
+            _month == 8 ||
+            _month == 10 ||
+            _month == 12
+        ) {
+            return 31;
+        } else if (_month == 4 || _month == 6 || _month == 9 || _month == 11) {
+            return 30;
+        } else if (isLeapYear(_year)) {
+            return 29;
+        } else {
+            return 28;
+        }
+    }
+
+    function parseTimestamp(uint256 _timestamp) public pure returns (Date memory d) {
+        uint256 secondsAccountedFor = 0;
+        uint256 buf;
+        uint8 i;
+
+        // Year
+        d.year = getYear(_timestamp);
+        buf = leapYearsBefore(d.year) - leapYearsBefore(ORIGIN_YEAR);
+
+        secondsAccountedFor += LEAP_YEAR_IN_SECONDS * buf;
+        secondsAccountedFor += YEAR_IN_SECONDS * (d.year - ORIGIN_YEAR - buf);
+
+        // Month
+        uint256 secondsInMonth;
+        for (i = 1; i <= 12; i++) {
+            secondsInMonth = DAY_IN_SECONDS * getDaysInMonth(i, d.year);
+            if (secondsInMonth + secondsAccountedFor > _timestamp) {
+                d.month = i;
+                break;
+            }
+            secondsAccountedFor += secondsInMonth;
+        }
+
+        // Day
+        for (i = 1; i <= getDaysInMonth(d.month, d.year); i++) {
+            if (DAY_IN_SECONDS + secondsAccountedFor > _timestamp) {
+                d.day = i;
+                break;
+            }
+            secondsAccountedFor += DAY_IN_SECONDS;
+        }
+    }
+
+    function getYear(uint256 _timestamp) public pure returns (uint16) {
+        uint256 secondsAccountedFor = 0;
+        uint16 year;
+        uint256 numLeapYears;
+
+        // Year
+        year = uint16(ORIGIN_YEAR + _timestamp / YEAR_IN_SECONDS);
+        numLeapYears = leapYearsBefore(year) - leapYearsBefore(ORIGIN_YEAR);
+
+        secondsAccountedFor += LEAP_YEAR_IN_SECONDS * numLeapYears;
+        secondsAccountedFor += YEAR_IN_SECONDS * (year - ORIGIN_YEAR - numLeapYears);
+
+        while (secondsAccountedFor > _timestamp) {
+            if (isLeapYear(uint16(year - 1))) {
+                secondsAccountedFor -= LEAP_YEAR_IN_SECONDS;
+            } else {
+                secondsAccountedFor -= YEAR_IN_SECONDS;
+            }
+            year -= 1;
+        }
+        return year;
+    }
+
+    function monthName(Date memory d) private pure returns (string memory) {
+        string[12] memory months = [
+            "JAN",
+            "FEB",
+            "MAR",
+            "APR",
+            "MAY",
+            "JUN",
+            "JUL",
+            "AUG",
+            "SEP",
+            "OCT",
+            "NOV",
+            "DEC"
+        ];
+        return months[d.month - 1];
+    }
+
+    function toRFC2822String(uint256 _timestamp) public pure returns (string memory s) {
+        Date memory d = parseTimestamp(_timestamp);
+        string memory day = UIntUtils.uintToString(d.day);
+        string memory month = monthName(d);
+        string memory year = UIntUtils.uintToString(d.year);
+        s = string(abi.encodePacked(day, month, year));
     }
 }
