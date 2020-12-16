@@ -559,6 +559,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         _reserves[xyt].weight = xytWeightUpdated;
         _reserves[token].weight = tokenWeightUpdated;
+        priceLast = priceNow;
 
         emit Shift(xytWeight, tokenWeight, xytWeightUpdated, tokenWeightUpdated);
     }
