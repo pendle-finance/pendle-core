@@ -51,7 +51,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 balance;
     }
 
-    mapping(address => TokenReserve) private _reserves;
+    mapping(address => TokenReserve) private reserves;
 
     constructor(
         address _creator,
@@ -106,21 +106,14 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         _pullToken(xyt, msg.sender, initialXytLiquidity);
 
         _pullToken(token, msg.sender, initialTokenLiquidity);
-        _reserves[xyt].balance = initialXytLiquidity;
-        _reserves[xyt].weight = Math.RAY / 2;
-        _reserves[token].balance = initialTokenLiquidity;
-        _reserves[token].weight = Math.RAY / 2;
+        reserves[xyt].balance = initialXytLiquidity;
+        reserves[xyt].weight = Math.RAY / 2;
+        reserves[token].balance = initialTokenLiquidity;
+        reserves[token].weight = Math.RAY / 2;
         _mintLpToken(INITIAL_LP_FOR_CREATOR);
         _pushLpToken(msg.sender, INITIAL_LP_FOR_CREATOR);
         bootstrapped = true;
     }
-
-    function setPoolRatio(
-        address xytToken,
-        uint256 denomXYToken,
-        address pairToken,
-        uint256 denomPairToken
-    ) external override {}
 
     function spotPrice(address inToken, address outToken)
         external
@@ -128,8 +121,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         returns (uint256 spot)
     {
         IBenchmarkData data = core.data();
-        TokenReserve storage inTokenReserve = _reserves[inToken];
-        TokenReserve storage outTokenReserve = _reserves[outToken];
+        TokenReserve storage inTokenReserve = reserves[inToken];
+        TokenReserve storage outTokenReserve = reserves[outToken];
 
         return
             _calcSpotprice(
@@ -149,8 +142,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 maxPrice
     ) external override returns (uint256 outAmount, uint256 spotPriceAfter) {
         IBenchmarkData data = core.data();
-        TokenReserve storage inTokenReserve = _reserves[inToken];
-        TokenReserve storage outTokenReserve = _reserves[outToken];
+        TokenReserve storage inTokenReserve = reserves[inToken];
+        TokenReserve storage outTokenReserve = reserves[outToken];
         uint256 swapFee = data.swapFee();
 
         uint256 spotPriceBefore = _calcSpotprice(
@@ -203,8 +196,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 maxPrice
     ) external override returns (uint256 inAmount, uint256 spotPriceAfter) {
         IBenchmarkData data = core.data();
-        TokenReserve storage inTokenReserve = _reserves[inToken];
-        TokenReserve storage outTokenReserve = _reserves[outToken];
+        TokenReserve storage inTokenReserve = reserves[inToken];
+        TokenReserve storage outTokenReserve = reserves[outToken];
         uint256 swapFee = data.swapFee();
 
         //calc spot price
@@ -265,20 +258,20 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         require(ratio != 0, "ERR_MATH_PROBLEM");
 
         //calc and inject xyt token
-        uint256 balanceToken = _reserves[xyt].balance;
+        uint256 balanceToken = reserves[xyt].balance;
         uint256 inAmount = Math.rmul(ratio, balanceToken);
         require(inAmount != 0, "ERR_MATH_PROBLEM");
         require(inAmount <= maxInAmoutXyt, "ERR_BEYOND_AMOUNT_LIMIT");
-        _reserves[xyt].balance = _reserves[xyt].balance.add(inAmount);
+        reserves[xyt].balance = reserves[xyt].balance.add(inAmount);
         emit Join(msg.sender, xyt, inAmount);
         _pullToken(xyt, msg.sender, inAmount);
 
         //calc and inject pair token
-        balanceToken = _reserves[token].balance;
+        balanceToken = reserves[token].balance;
         inAmount = Math.rmul(ratio, balanceToken);
         require(inAmount != 0, "ERR_MATH_PROBLEM");
         require(inAmount <= maxInAmountPair, "ERR_BEYOND_AMOUNT_LIMIT");
-        _reserves[token].balance = _reserves[token].balance.add(inAmount);
+        reserves[token].balance = reserves[token].balance.add(inAmount);
         emit Join(msg.sender, token, inAmount);
         _pullToken(token, msg.sender, inAmount);
 
@@ -311,20 +304,20 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         _burnLpToken(InLpAfterExitFee);
 
         //calc and withdraw xyt token
-        uint256 balanceToken = _reserves[xyt].balance;
+        uint256 balanceToken = reserves[xyt].balance;
         uint256 outAmount = Math.rmul(ratio, balanceToken);
         require(outAmount != 0, "ERR_MATH_PROBLEM");
         require(outAmount >= minOutAmountXyt, "ERR_BEYOND_AMOUNT_LIMIT");
-        _reserves[xyt].balance = _reserves[xyt].balance.sub(outAmount);
+        reserves[xyt].balance = reserves[xyt].balance.sub(outAmount);
         emit Exit(msg.sender, xyt, outAmount);
         _pushToken(xyt, msg.sender, outAmount);
 
         //calc and withdraw pair token
-        balanceToken = _reserves[token].balance;
+        balanceToken = reserves[token].balance;
         outAmount = Math.rmul(ratio, balanceToken);
         require(outAmount != 0, "ERR_MATH_PROBLEM");
         require(outAmount >= minOutAmountPair, "ERR_BEYOND_AMOUNT_LIMIT");
-        _reserves[token].balance = _reserves[token].balance.sub(outAmount);
+        reserves[token].balance = reserves[token].balance.sub(outAmount);
         emit Exit(msg.sender, token, outAmount);
         _pushToken(token, msg.sender, outAmount);
     }
@@ -334,9 +327,9 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 inAmount,
         uint256 minOutAmountLp
     ) external override returns (uint256 outAmountLp) {
-        TokenReserve storage inTokenReserve = _reserves[inToken];
+        TokenReserve storage inTokenReserve = reserves[inToken];
         uint256 totalLp = totalSupply;
-        uint256 totalWeight = _reserves[xyt].weight.add(_reserves[token].weight);
+        uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
 
         //calc out amount of lp token
         outAmountLp = _calOutAmountLp(
@@ -366,10 +359,10 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 minOutAmountToken
     ) external override returns (uint256 outAmountToken) {
         IBenchmarkData data = core.data();
-        TokenReserve storage outTokenReserve = _reserves[outToken];
+        TokenReserve storage outTokenReserve = reserves[outToken];
         uint256 exitFee = data.exitFee();
         uint256 totalLp = totalSupply;
-        uint256 totalWeight = _reserves[xyt].weight.add(_reserves[token].weight);
+        uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
 
         outAmountToken = calcOutAmountToken(
             outTokenReserve.balance,
