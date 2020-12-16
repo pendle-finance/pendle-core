@@ -30,12 +30,14 @@ provider: providers.Web3Provider
   const {lendingPoolCore} = aave;
 
   const testToken = await deployContract(wallet, TestToken, ['Test Token', 'TEST', 6]);
-  
+  let overrides = {gasLimit: 40000000};
+
   await benchmarkMarketFactory.createMarket(
       constants.FORGE_AAVE,
       benchmarkFutureYieldToken.address,
       testToken.address,
-      constants.TEST_EXPIRY
+      constants.TEST_EXPIRY,
+      overrides
     );
 
     const benchmarkMarketAddress = await benchmarkData.getMarket(
