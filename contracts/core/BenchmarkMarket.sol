@@ -41,7 +41,10 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     uint256 public constant override minLiquidity = 10**3;
     string private constant _name = "Benchmark Market";
     string private constant _symbol = "BMK-LPT";
+    uint256 private constant INITIAL_LP_FOR_CREATOR = 10**18; // arbitrary number
     uint8 private constant _decimals = 18;
+    address public creator;
+    bool public bootstrapped;
 
     struct TokenReserve {
         uint256 weight;
@@ -51,6 +54,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     mapping(address => TokenReserve) private reserves;
 
     constructor(
+        address _creator,
         IBenchmark _core,
         address _forge,
         address _xyt,
@@ -74,6 +78,13 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         forge = _forge;
         xyt = _xyt;
         token = _token;
+        creator = _creator;
+        bootstrapped = false;
+    }
+
+    modifier isBootstrapped {
+        require(bootstrapped, "Benchmark: not bootstrapped");
+        _;
     }
 
     function getReserves()
@@ -86,6 +97,23 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             uint32 lastBlockTimestamp
         )
     {}
+
+    function bootstrap(
+        uint256 initialXytLiquidity,
+        uint256 initialTokenLiquidity
+    ) external {
+        require(msg.sender == creator, "Benchmark: not creator");
+        _pullToken(xyt, msg.sender, initialXytLiquidity);
+
+        _pullToken(token, msg.sender, initialTokenLiquidity);
+        reserves[xyt].balance = initialXytLiquidity;
+        reserves[xyt].weight = Math.FP / 2;
+        reserves[token].balance = initialTokenLiquidity;
+        reserves[token].weight = Math.FP / 2;
+        _mintLpToken(INITIAL_LP_FOR_CREATOR);
+        _pushLpToken(msg.sender, INITIAL_LP_FOR_CREATOR);
+        bootstrapped = true;
+    }
 
     function spotPrice(address inToken, address outToken)
         external
@@ -128,13 +156,13 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         require(spotPriceBefore <= maxPrice, "ERR_BAD_PRICE");
 
         //calc out amount
-        outAmount = _calcOutAmount(
+        /* outAmount = _calcOutAmount(
             inTokenReserve.weight,
             outTokenReserve.weight,
             inTokenReserve.balance,
             outTokenReserve.balance,
             inAmount
-        );
+        ); */
         require(outAmount >= minOutAmount, "ERR_OUT_AMOUNT_LOW");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);

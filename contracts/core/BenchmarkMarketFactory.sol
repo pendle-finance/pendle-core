@@ -64,8 +64,8 @@ contract BenchmarkMarketFactory is IBenchmarkMarketFactory, Permissions {
 
         market = Factory.createContract(
             type(BenchmarkMarket).creationCode,
-            abi.encodePacked(core, forgeAddress, _xyt, _token, _expiry),
-            abi.encode(core, forgeAddress, _xyt, _token, _expiry)
+            abi.encodePacked(msg.sender, core, forgeAddress, _xyt, _token, _expiry),
+            abi.encode(msg.sender, core, forgeAddress, _xyt, _token, _expiry)
         );
         data.storeMarket(_forgeId, _xyt, _token, market);
         data.addMarket(market);

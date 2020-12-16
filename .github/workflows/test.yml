@@ -1,0 +1,30 @@
+name: Run tests
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+    - dev
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: module cache
+        uses: actions/cache@v1
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: '14'
+          check-latest: true
+      - run: yarn
+      - run: yarn global add solc
+      - run: yarn ci
+      - run: bash <(curl -s https://codecov.io/bash) -f coverage/coverage-final.json -t f5bbafe2-26c0-4d31-bb29-8f6ca224eb88

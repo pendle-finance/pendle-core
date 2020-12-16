@@ -59,6 +59,7 @@ interface IBenchmarkForge {
     ) external returns (address ot, address xyt);
 
     function redeemUnderlying(
+        address msgSender,
         address underlyingAsset,
         uint256 expiry,
         uint256 amountToRedeem,
@@ -66,6 +67,7 @@ interface IBenchmarkForge {
     ) external returns (uint256 redeemedAmount);
 
     function tokenizeYield(
+        address msgSender,
         address underlyingAsset,
         uint256 expiry,
         uint256 amountToTokenize,
@@ -73,6 +75,7 @@ interface IBenchmarkForge {
     ) external returns (address ot, address xyt);
 
     function redeemAfterExpiry(
+        address msgSender,
         address underlyingAsset,
         uint256 expiry,
         address to
@@ -88,6 +91,7 @@ interface IBenchmarkForge {
     // ) external returns (uint256 redeemedAmount);
 
     function redeemDueInterests(
+        address msgSender,
         address underlyingAsset,
         uint256 expiry
     ) external returns (uint256 interests);

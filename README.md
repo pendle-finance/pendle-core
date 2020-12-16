@@ -16,15 +16,18 @@ The tokenization of future yields also allows for the creation of products with 
 ## Contracts' terminologies
 * `underlyingAsset`: the token that was deposited into Aave. For example: USDT
 * `underlyingYieldToken`: the Aave aToken. For example, aUSDT
-* Each OT and XYT is uniquely identified by `(address underlyingAsset, address underlyingYieldToken uint256 expiry)`
+* Each OT and XYT is uniquely identified by `(bytes32 forgeId, address underlyingAsset, address underlyingYieldToken uint256 expiry)`
   * The `expiry` is the UNIX timestamp at 0:00 UTC of the day right after the expiry date. For example: if it expires on 3rd Oct, the `expiry` is the Unix timestamp of 4th Oct, 0:00 UTC
 
 ## Scripts:
-* Run a mainnet fork on ganache: `yarn ganache`
+* Run a mainnet fork on ganache: `INFURA_KEY=XXXX yarn ganache`
 * Compile (both benchmark and aave): `yarn compile`
 * run a console for development network: `yarn console:dev`
-* run tests: `yarn test`
 
 ## Testing:
-* In one terminal: `yarn ganache`
-* The main test for now: `yarn test test/core/benchmarkAaveForge.js`
+* Create a .env file containing the following properties:
+  ```
+  INFURA_KEY=<insert your Infura key here>
+  PRIVATE_KEYS=<insert comma delimited private keys here>
+  ```
+* The main test for now: `yarn test test/core/Benchmark.js`

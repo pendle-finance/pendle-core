@@ -30,10 +30,8 @@ contract BenchmarkOwnershipToken is BenchmarkBaseToken, IBenchmarkYieldToken {
     address public override forge;
     address public override underlyingAsset;
     address public override underlyingYieldToken;
-    address public xyt;
 
     constructor(
-        address _xyt,
         address _underlyingAsset,
         address _underlyingYieldToken,
         string memory _name,
@@ -49,7 +47,6 @@ contract BenchmarkOwnershipToken is BenchmarkBaseToken, IBenchmarkYieldToken {
         )
     {
         forge = msg.sender;
-        xyt = _xyt;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;
     }
