@@ -123,6 +123,7 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         return getForgeId[forge] != bytes32(0);
     }
 
+
     /***********
      *  MARKET *
      ***********/

@@ -48,6 +48,15 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     event Join(address indexed lp, address indexed token, uint256 amount);
     event Exit(address indexed lp, address indexed token, uint256 amount);
 
+    /* ========== POOL MANAGEMENT ========== */
+
+    function setPoolRatio(
+        address xytToken,
+        uint256 denomXYToken,
+        address pairToken,
+        uint256 denomPairToken
+    ) external;
+
     /* ========== TRADE ========== */
 
     function spotPrice(address inToken, address outToken) external returns (uint256 spot);
