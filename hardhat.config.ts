@@ -6,7 +6,7 @@ import "@nomiclabs/hardhat-waffle";
 import "solidity-coverage"
 
 const config: HardhatUserConfig = {
-  defaultNetwork: 'development',
+  defaultNetwork: 'hardhat',
   paths: {
     sources: './contracts',
     tests: './test/core/',
