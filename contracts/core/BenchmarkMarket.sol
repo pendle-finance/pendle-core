@@ -182,7 +182,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         require(spotPriceAfter >= spotPriceBefore, "ERR_MATH_PROBLEM");
         require(spotPriceAfter <= maxPrice, "ERR_BAD_PRICE");
-        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERR_MATH_PROBLEM");
+        //require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERR_MATH_PROBLEM"); @XM may not apply now
 
         emit Swap(msg.sender, inAmount, outAmount, msg.sender);
 
@@ -240,7 +240,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         require(spotPriceAfter >= spotPriceBefore, "ERR_MATH_PROBLEM");
         require(spotPriceAfter <= maxPrice, "ERR_BAD_PRICE");
-        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERR_MATH_PROBLEM");
+        //require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERR_MATH_PROBLEM"); @XM may not apply now
 
         emit Swap(msg.sender, inAmount, outAmount, msg.sender);
 
@@ -463,6 +463,10 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 diff = outBalance.sub(outAmount);
         uint256 y = Math.rdiv(outBalance, diff);
         uint256 foo = Math.rpow(y, weightRatio);
+         console.log("\tweightRatio,", weightRatio);
+         console.log("\tdiff,", diff);
+         console.log("\ty,", y);
+         console.log("\tfoo,", foo);
         foo = foo.sub(Math.RAY);
         inAmount = Math.RAY.sub(data.swapFee());
         inAmount = Math.rdiv(Math.rmul(inBalance, foo), inAmount);
@@ -586,10 +590,10 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     }
 
     function _curveShift() internal {
-        if (block.number > blockNumLast) {
+        //if (block.number > blockNumLast) {
             _updateWeight();
             blockNumLast = block.number;
-        }
+        //}
     }
 
     // sends out any due interests to msg.sender if he's an LP holder
