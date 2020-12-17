@@ -30,7 +30,7 @@ import "../interfaces/IBenchmarkData.sol";
 import "../interfaces/IBenchmarkForge.sol";
 import "../tokens/BenchmarkFutureYieldToken.sol";
 import "../tokens/BenchmarkOwnershipToken.sol";
-
+import "hardhat/console.sol";
 
 contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
     using SafeMath for uint256;
@@ -45,8 +45,8 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
     IAaveLendingPoolCore public immutable aaveLendingPoolCore;
     bytes32 public immutable override forgeId;
 
-    mapping(uint256 => uint256) public lastNormalisedIncomeBeforeExpiry;
-    mapping(uint256 => mapping(address => uint256)) public lastNormalisedIncome;
+    mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeBeforeExpiry;
+    mapping(address => mapping(uint256 => mapping(address => uint256))) public lastNormalisedIncome; //lastNormalisedIncome[underlyingAsset][expiry][account]
 
     string private constant OT = "OT-Aave";
     string private constant XYT = "XYT-Aave";
@@ -121,6 +121,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         onlyXYT(_underlyingAsset, _expiry)
         returns (uint256 interests)
     {
+        console.log("[contract] [Forge] Redeeming due interests for account ", _account);
         BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
     }
@@ -182,7 +183,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
 
         tokens.ot.mint(_to, _amountToTokenize);
         tokens.xyt.mint(_to, _amountToTokenize);
-        lastNormalisedIncome[_expiry][_to] = aaveLendingPoolCore.getReserveNormalizedIncome(address(_underlyingAsset));
+        lastNormalisedIncome[_underlyingAsset][_expiry][_to] = aaveLendingPoolCore.getReserveNormalizedIncome(address(_underlyingAsset));
 
         return (address(tokens.ot), address(tokens.xyt));
     }
@@ -235,14 +236,21 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         address _account
     ) internal returns (uint256) {
         uint256 principal = _tokens.xyt.balanceOf(_account);
-        uint256 Ix = lastNormalisedIncome[_expiry][_account];
+        uint256 Ix = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
+
         uint256 In;
 
         if (block.timestamp >= _expiry) {
-            In = lastNormalisedIncomeBeforeExpiry[_expiry];
+            In = lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
         } else {
             In = aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
-            lastNormalisedIncomeBeforeExpiry[_expiry] = In;
+            lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = In;
+        }
+
+        // first time getting XYT
+        if (Ix == 0) {
+            lastNormalisedIncome[_underlyingAsset][_expiry][_account] = In;
+            return 0;
         }
 
         uint256 dueInterests = principal.mul(In).div(Ix).sub(principal);
@@ -252,8 +260,8 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
             IERC20(aToken).transfer(_account, dueInterests);
         }
 
-        lastNormalisedIncome[_expiry][_account] = In;
-
+        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = In;
+        console.log("[contract] [Forge] in _settleDueInterests, interests = ", dueInterests);
         return dueInterests;
     }
 
