@@ -46,18 +46,20 @@ library Math {
     uint256 internal constant BIG_NUMBER = (uint256(1) << uint256(200));
     uint256 internal constant PRECISION_BITS = 40;
     uint256 internal constant FORMULA_PRECISION = uint256(1) << PRECISION_BITS;
+    uint256 internal constant PI = 314 * RAY / 10**2;
+    uint256 internal constant PI_PLUSONE = 414 * RAY / 10**2; 
 
-    function checkMultOverflow(uint256 _x, uint256 _y) public pure returns (bool) {
+    function checkMultOverflow(uint256 _x, uint256 _y) internal pure returns (bool) {
         if (_y == 0) return false;
         return (((_x * _y) / _y) != _x);
     }
 
-    function compactFraction(uint256 _p, uint256 _q) public pure returns (uint256, uint256) {
+    function compactFraction(uint256 _p, uint256 _q) internal pure returns (uint256, uint256) {
         if (_q < FORMULA_PRECISION * FORMULA_PRECISION) return (_p, _q);
         return compactFraction(_p / FORMULA_PRECISION, _q / FORMULA_PRECISION);
     }
 
-    function exp(uint256 _p, uint256 _q) public pure returns (uint256 sum) {
+    function exp(uint256 _p, uint256 _q) internal pure returns (uint256 sum) {
         uint256 n = 0;
         uint256 nFact = 1;
         uint256 currentP = 1;
@@ -87,7 +89,7 @@ library Math {
         }
     }
 
-    function countLeadingZeros(uint256 _p, uint256 _q) public pure returns (uint256) {
+    function countLeadingZeros(uint256 _p, uint256 _q) internal pure returns (uint256) {
         uint256 denomator = (uint256(1) << 255);
         for (int256 i = 255; i >= 0; i--) {
             if ((_q * denomator) / denomator != _q) {
@@ -103,7 +105,7 @@ library Math {
     }
 
     // log2 for a number that it in [1,2)
-    function log2ForSmallNumber(uint256 _x) public pure returns (uint256) {
+    function log2ForSmallNumber(uint256 _x) internal pure returns (uint256) {
         uint256 res = 0;
         uint256 one = (uint256(1) << PRECISION_BITS);
         uint256 two = 2 * one;
@@ -124,7 +126,7 @@ library Math {
         return res;
     }
 
-    function logBase2(uint256 _p, uint256 _q) public pure returns (uint256) {
+    function logBase2(uint256 _p, uint256 _q) internal pure returns (uint256) {
         uint256 n = 0;
 
         if (_p > _q) {
@@ -144,7 +146,7 @@ library Math {
         return n * FORMULA_PRECISION + log2Small;
     }
 
-    function ln(uint256 p, uint256 q) public pure returns (uint256) {
+    function ln(uint256 p, uint256 q) internal pure returns (uint256) {
         uint256 ln2Numerator = 6931471805599453094172;
         uint256 ln2Denomerator = 10000000000000000000000;
 

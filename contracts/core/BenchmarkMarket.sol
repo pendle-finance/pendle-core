@@ -27,11 +27,13 @@ import "../interfaces/IBenchmarkMarket.sol";
 import "../tokens/BenchmarkBaseToken.sol";
 import "../libraries/BenchmarkLibrary.sol";
 import {Math} from "../libraries/BenchmarkLibrary.sol";
-
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "hardhat/console.sol";
 
 contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     using Math for uint256;
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     IBenchmark public immutable override core;
     address public immutable override factory;
@@ -45,6 +47,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     uint8 private constant _decimals = 18;
     address public creator;
     bool public bootstrapped;
+    uint256 private priceLast = Math.RAY;
+    uint256 private blockNumLast;
 
     struct TokenReserve {
         uint256 weight;
@@ -60,14 +64,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address _xyt,
         address _token,
         uint256 _expiry
-    )
-        BenchmarkBaseToken(
-            _name,
-            _symbol,
-            _decimals,
-            _expiry
-        )
-    {
+    ) BenchmarkBaseToken(_name, _symbol, _decimals, _expiry) {
         require(address(_core) != address(0), "Benchmark: zero address");
         require(_forge != address(0), "Benchmark: zero address");
         require(_xyt != address(0), "Benchmark: zero address");
@@ -98,10 +95,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         )
     {}
 
-    function bootstrap(
-        uint256 initialXytLiquidity,
-        uint256 initialTokenLiquidity
-    ) external {
+    function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity) external {
         require(msg.sender == creator, "Benchmark: not creator");
         _pullToken(xyt, msg.sender, initialXytLiquidity);
 
@@ -112,6 +106,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         reserves[token].weight = Math.RAY / 2;
         _mintLpToken(INITIAL_LP_FOR_CREATOR);
         _pushLpToken(msg.sender, INITIAL_LP_FOR_CREATOR);
+        blockNumLast = block.number; //@@XM added for curve shifting
         bootstrapped = true;
     }
 
@@ -141,6 +136,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 minOutAmount,
         uint256 maxPrice
     ) external override returns (uint256 outAmount, uint256 spotPriceAfter) {
+        _curveShift();
+
         IBenchmarkData data = core.data();
         TokenReserve storage inTokenReserve = reserves[inToken];
         TokenReserve storage outTokenReserve = reserves[outToken];
@@ -195,6 +192,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 outAmount,
         uint256 maxPrice
     ) external override returns (uint256 inAmount, uint256 spotPriceAfter) {
+        _curveShift();
+
         IBenchmarkData data = core.data();
         TokenReserve storage inTokenReserve = reserves[inToken];
         TokenReserve storage outTokenReserve = reserves[outToken];
@@ -494,10 +493,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address fromAddr,
         uint256 amountToPull
     ) internal {
-        require(
-            IERC20(tokenAddr).transferFrom(fromAddr, address(this), amountToPull),
-            "ERR_PULL_TOKEN_FALSE"
-        );
+            IERC20(tokenAddr).safeTransferFrom(fromAddr, address(this), amountToPull);
     }
 
     function _pushToken(
@@ -505,7 +501,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address toAddr,
         uint256 amountToPush
     ) internal {
-        require(IERC20(tokenAddr).transfer(toAddr, amountToPush), "ERR_PUSH_TOKEN_FALSE");
+        IERC20(tokenAddr).safeTransfer(toAddr, amountToPush);
     }
 
     function _pullLpToken(address from, uint256 amount) internal {
@@ -522,5 +518,51 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
     function _burnLpToken(uint256 amount) internal {
         _burn(address(this), amount);
+    }
+
+    function _updateWeight() internal {
+        uint256 currentTime = block.timestamp;
+        uint256 endTime = IBenchmarkYieldToken(xyt).expiry();
+        uint256 duration = 6 * 3600 * 24 * 30;
+
+        TokenReserve storage xytReserve = reserves[xyt];
+        TokenReserve storage tokenReserve = reserves[token];
+
+        uint256 xytWeight = xytReserve.weight;
+        uint256 tokenWeight = tokenReserve.weight;
+        console.log("\tendTime,", endTime);
+        console.log("\tcurrentTime,", currentTime);
+        console.log("\tduration,", duration);
+
+        require((endTime - currentTime) <= duration, "ERR_DURATION_WRONG");
+
+        uint256 timeToMature = Math.rdiv((endTime - currentTime) * Math.RAY, duration * Math.RAY);
+        uint256 priceNow = Math.rdiv(
+            Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RAY), Math.RAY),
+            Math.ln(Math.PI_PLUSONE, Math.RAY)
+        );
+        uint256 r = Math.rdiv(priceNow, priceLast);
+        require(Math.RAY >= r, "ERR_R_WRONG_VALUE");
+
+        uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RAY.sub(r));
+        uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
+
+        uint256 theta = Math.rdiv(thetaNumerator, thetaDenominator);
+
+        uint256 xytWeightUpdated = xytWeight.sub(theta);
+        uint256 tokenWeightUpdated = tokenWeight.add(theta);
+
+        reserves[xyt].weight = xytWeightUpdated;
+        reserves[token].weight = tokenWeightUpdated;
+        priceLast = priceNow;
+
+        emit Shift(xytWeight, tokenWeight, xytWeightUpdated, tokenWeightUpdated);
+    }
+
+    function _curveShift() internal {
+        if (block.number > blockNumLast) {
+            _updateWeight();
+            blockNumLast = block.number;
+        }
     }
 }
