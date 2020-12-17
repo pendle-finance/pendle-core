@@ -93,18 +93,12 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         string memory xytName = XYT.concat(IBenchmarkBaseToken(aToken).name(), " ");
         string memory xytSymbol = XYT.concat(IBenchmarkBaseToken(aToken).symbol(), "-");
 
-        ot = _forgeOwnershipToken(
-            _underlyingAsset,
-            otName.concat(_expiry, " "),
-            otSymbol.concat(_expiry, "-"),
-            aTokenDecimals,
-            _expiry
-        );
+        ot = _forgeOwnershipToken(_underlyingAsset, otName, otSymbol, aTokenDecimals, _expiry);
         xyt = _forgeFutureYieldToken(
             _underlyingAsset,
             ot,
-            xytName.concat(_expiry, " "),
-            xytSymbol.concat(_expiry, "-"),
+            xytName,
+            xytSymbol,
             aTokenDecimals,
             _expiry
         );

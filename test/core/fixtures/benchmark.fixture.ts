@@ -13,10 +13,11 @@ interface BenchmarkFixture {
   }
 
 export async function benchmarkFixture(
-[wallet]: Wallet[],
+wallets: Wallet[],
 provider: providers.Web3Provider
 ): Promise<BenchmarkFixture> {
-  const core = await benchmarkcoreFixture(wallet);
+  const [wallet] = wallets;
+  const core = await benchmarkcoreFixture(wallets, provider);
   const forge = await benchmarkAaveForgeFixture(wallet, core);
   const aave = await aaveFixture(wallet);
 

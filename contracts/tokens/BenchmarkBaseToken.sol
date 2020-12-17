@@ -24,6 +24,7 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IBenchmarkBaseToken.sol";
+import {DateUtils, Utils} from "../libraries/BenchmarkLibrary.sol";
 
 /**
  *   @title BenchmarkBaseToken
@@ -36,6 +37,7 @@ import "../interfaces/IBenchmarkBaseToken.sol";
  **/
 abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
     using SafeMath for uint256;
+    using Utils for string;
 
     mapping(address => mapping(address => uint256)) public override allowance;
     mapping(address => uint256) public override balanceOf;
@@ -51,8 +53,10 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
         uint8 _decimals,
         uint256 _expiry
     ) {
-        name = _name;
-        symbol = _symbol;
+        string memory date = DateUtils.toRFC2822String(_expiry);
+
+        name = _name.concat(date, " ");
+        symbol = _symbol.concat(date, "-");
         decimals = _decimals;
         expiry = _expiry;
     }
