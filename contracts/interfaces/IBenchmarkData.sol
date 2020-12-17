@@ -27,7 +27,6 @@ import {Utils} from "../libraries/BenchmarkLibrary.sol";
 import "./IBenchmark.sol";
 import "./IBenchmarkYieldToken.sol";
 
-
 interface IBenchmarkData {
     /**
      * @notice Emitted when the Benchmark core address has been updated.

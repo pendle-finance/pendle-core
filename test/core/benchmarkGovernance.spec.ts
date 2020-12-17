@@ -1,10 +1,10 @@
-import chai, {expect} from "chai";
-import {Contract, constants} from "ethers";
-import {solidity, MockProvider, createFixtureLoader} from "ethereum-waffle";
+import chai, { expect } from "chai";
+import { Contract, constants } from "ethers";
+import { solidity, MockProvider, createFixtureLoader } from "ethereum-waffle";
 
-import {governanceFixture} from "./fixtures";
+import { governanceFixture } from "./fixtures";
 
-const {waffle} = require("hardhat");
+const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
 describe("BenchmarkGovernance", () => {

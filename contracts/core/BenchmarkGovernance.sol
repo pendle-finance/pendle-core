@@ -28,7 +28,6 @@ import "../interfaces/IBenchmarkGovernance.sol";
 import "../interfaces/IBMK.sol";
 import "../interfaces/ITimelock.sol";
 
-
 contract BenchmarkGovernance is IBenchmarkGovernance {
     using SafeMath for uint256;
 
@@ -137,9 +136,8 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
     /**
      * @notice The EIP-712 typehash for the contract's domain
      **/
-    bytes32 public constant DOMAIN_TYPEHASH = keccak256(
-        "EIP712Domain(string name,uint256 chainId,address verifyingContract)"
-    );
+    bytes32 public constant DOMAIN_TYPEHASH =
+        keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
 
     /**
      * @notice The EIP-712 typehash for the ballot struct used by the contract
@@ -209,10 +207,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
             "Benchmark: proposal function information arity mismatch"
         );
         require(targets.length != 0, "Benchmark: must provide actions");
-        require(
-            targets.length <= proposalMaxOperations(),
-            "Benchmark: too many actions"
-        );
+        require(targets.length <= proposalMaxOperations(), "Benchmark: too many actions");
 
         uint256 latestProposalId = latestProposalIds[msg.sender];
         if (latestProposalId != 0) {
@@ -327,8 +322,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
         Proposal storage proposal = proposals[proposalId];
         require(
             msg.sender == guardian ||
-                bmk.getPriorVotes(proposal.proposer, block.number.sub(1)) <
-                proposalThreshold(),
+                bmk.getPriorVotes(proposal.proposer, block.number.sub(1)) < proposalThreshold(),
             "Benchmark: proposer above threshold"
         );
 
@@ -365,10 +359,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
     }
 
     function state(uint256 proposalId) public view returns (ProposalState) {
-        require(
-            proposalCount >= proposalId && proposalId > 0,
-            "Benchmark: invalid proposal id"
-        );
+        require(proposalCount >= proposalId && proposalId > 0, "Benchmark: invalid proposal id");
         Proposal storage proposal = proposals[proposalId];
         if (proposal.canceled) {
             return ProposalState.Canceled;
@@ -402,9 +393,10 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
         bytes32 r,
         bytes32 s
     ) public {
-        bytes32 domainSeparator = keccak256(
-            abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this))
-        );
+        bytes32 domainSeparator =
+            keccak256(
+                abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this))
+            );
         bytes32 structHash = keccak256(abi.encode(BALLOT_TYPEHASH, proposalId, support));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
@@ -417,10 +409,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
         uint256 proposalId,
         bool support
     ) internal {
-        require(
-            state(proposalId) == ProposalState.Active,
-            "Benchmark: voting is closed"
-        );
+        require(state(proposalId) == ProposalState.Active, "Benchmark: voting is closed");
         Proposal storage proposal = proposals[proposalId];
         Receipt storage receipt = proposal.receipts[voter];
         require(receipt.hasVoted == false, "Benchmark::_castVote: voter already voted");
@@ -440,10 +429,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
     }
 
     function __acceptAdmin() public {
-        require(
-            msg.sender == guardian,
-            "Benchmark: sender must be gov guardian"
-        );
+        require(msg.sender == guardian, "Benchmark: sender must be gov guardian");
         timelock.acceptAdmin();
     }
 
@@ -453,10 +439,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
     }
 
     function __queueSetTimelockPendingAdmin(address newPendingAdmin, uint256 eta) public {
-        require(
-            msg.sender == guardian,
-            "Benchmark: sender must be gov guardian"
-        );
+        require(msg.sender == guardian, "Benchmark: sender must be gov guardian");
         timelock.queueTransaction(
             address(timelock),
             0,
@@ -467,10 +450,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
     }
 
     function __executeSetTimelockPendingAdmin(address newPendingAdmin, uint256 eta) public {
-        require(
-            msg.sender == guardian,
-            "Benchmark: sender must be gov guardian"
-        );
+        require(msg.sender == guardian, "Benchmark: sender must be gov guardian");
         timelock.executeTransaction(
             address(timelock),
             0,

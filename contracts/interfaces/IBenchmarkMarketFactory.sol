@@ -26,7 +26,6 @@ pragma solidity ^0.7.0;
 import {Utils} from "../libraries/BenchmarkLibrary.sol";
 import "./IBenchmark.sol";
 
-
 interface IBenchmarkMarketFactory {
     /**
      * @notice Emitted when Benchmark core contract reference is changed.

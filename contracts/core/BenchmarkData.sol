@@ -26,13 +26,16 @@ import "../interfaces/IBenchmarkData.sol";
 import "../interfaces/IBenchmarkMarketFactory.sol";
 import "../periphery/Permissions.sol";
 
-
 contract BenchmarkData is IBenchmarkData, Permissions {
     mapping(address => bytes32) public override getForgeId;
     mapping(bytes32 => address) public override getForgeAddress;
     mapping(bytes32 => mapping(address => mapping(address => address))) public override getMarket;
-    mapping(bytes32 => mapping(address => mapping(uint256 => IBenchmarkYieldToken))) public override otTokens;
-    mapping(bytes32 => mapping(address => mapping(uint256 => IBenchmarkYieldToken))) public override xytTokens;
+    mapping(bytes32 => mapping(address => mapping(uint256 => IBenchmarkYieldToken)))
+        public
+        override otTokens;
+    mapping(bytes32 => mapping(address => mapping(uint256 => IBenchmarkYieldToken)))
+        public
+        override xytTokens;
     uint256 public override swapFee;
     uint256 public override exitFee;
     IBenchmark public override core;
@@ -81,7 +84,12 @@ contract BenchmarkData is IBenchmarkData, Permissions {
      *  FORGE *
      **********/
 
-    function addForge(bytes32 _forgeId, address _forgeAddress) external override initialized onlyCore {
+    function addForge(bytes32 _forgeId, address _forgeAddress)
+        external
+        override
+        initialized
+        onlyCore
+    {
         getForgeId[_forgeAddress] = _forgeId;
         getForgeAddress[_forgeId] = _forgeAddress;
 
@@ -108,12 +116,11 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         xytTokens[_forgeId][_underlyingAsset][_expiry] = IBenchmarkYieldToken(_xyt);
     }
 
-    function getBenchmarkYieldTokens(bytes32 _forgeId, address _underlyingAsset, uint256 _expiry)
-        external
-        view
-        override
-        returns (IBenchmarkYieldToken ot, IBenchmarkYieldToken xyt)
-    {
+    function getBenchmarkYieldTokens(
+        bytes32 _forgeId,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) external view override returns (IBenchmarkYieldToken ot, IBenchmarkYieldToken xyt) {
         ot = otTokens[_forgeId][_underlyingAsset][_expiry];
         xyt = xytTokens[_forgeId][_underlyingAsset][_expiry];
     }
@@ -123,12 +130,11 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         return getForgeId[forge] != bytes32(0);
     }
 
-
     /***********
      *  MARKET *
      ***********/
 
-    function addMarket (address _market) external override initialized onlyMarketFactory {
+    function addMarket(address _market) external override initialized onlyMarketFactory {
         allMarkets.push(_market);
     }
 

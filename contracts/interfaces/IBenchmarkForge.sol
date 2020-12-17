@@ -25,7 +25,6 @@ pragma solidity ^0.7.0;
 
 import "./IBenchmark.sol";
 
-
 interface IBenchmarkForge {
     /**
      * @dev Emitted when the Forge has minted the OT and XYT tokens.
@@ -53,10 +52,9 @@ interface IBenchmarkForge {
     // for each contractDuration
     // For example: For each duration, only allow expiry at the start,
     // 1/3rd and 2/3rd of the duration
-    function newYieldContracts(
-        address underlyingAsset,
-        uint256 expiry
-    ) external returns (address ot, address xyt);
+    function newYieldContracts(address underlyingAsset, uint256 expiry)
+        external
+        returns (address ot, address xyt);
 
     function redeemUnderlying(
         address msgSender,

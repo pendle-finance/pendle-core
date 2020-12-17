@@ -24,11 +24,6 @@ pragma solidity ^0.7.0;
 
 import "../core/BenchmarkTreasury.sol";
 
-
 contract MockTreasury is BenchmarkTreasury {
-    constructor()
-        BenchmarkTreasury(
-            0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa
-        )
-    {}
+    constructor() BenchmarkTreasury(0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa) {}
 }

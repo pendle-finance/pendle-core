@@ -27,7 +27,6 @@ import {Utils} from "../libraries/BenchmarkLibrary.sol";
 import "./IBenchmarkData.sol";
 import "./IBenchmarkMarketFactory.sol";
 
-
 interface IBenchmark {
     /**
      * @notice Emitted when Benchmark and BenchmarkFactory addresses have been updated.
@@ -35,11 +34,7 @@ interface IBenchmark {
      * @param factory The address of the new market factory contract.
      * @param treasury The address of the new treasury contract.
      **/
-    event ContractsSet(
-        address data,
-        address factory,
-        address treasury
-    );
+    event ContractsSet(address data, address factory, address treasury);
 
     /**
      * @notice Gets a reference to the BenchmarkData contract.
@@ -81,7 +76,7 @@ interface IBenchmark {
      *  FORGE  *
      ***********/
 
-     /**
+    /**
      * @notice Adds a new forge for a protocol.
      * @param forgeId Forge and protocol identifier.
      * @param forge The address of the added forge.
@@ -94,7 +89,7 @@ interface IBenchmark {
      **/
     function removeForge(bytes32 forgeId) external;
 
-     function newYieldContracts(
+    function newYieldContracts(
         bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry

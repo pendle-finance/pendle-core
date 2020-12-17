@@ -24,7 +24,6 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-
 abstract contract Permissions {
     event EtherWithdraw(uint256 amount, address sendTo);
     event TokenWithdraw(IERC20 token, uint256 amount, address sendTo);

@@ -25,7 +25,6 @@ pragma solidity ^0.7.0;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IBenchmarkBaseToken.sol";
 
-
 /**
  *   @title BenchmarkBaseToken
  *   @dev The contract implements the standard ERC20 functions, plus some

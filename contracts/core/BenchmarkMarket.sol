@@ -149,13 +149,14 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         TokenReserve storage outTokenReserve = reserves[outToken];
         uint256 swapFee = data.swapFee();
 
-        uint256 spotPriceBefore = _calcSpotprice(
-            inTokenReserve.balance,
-            inTokenReserve.weight,
-            outTokenReserve.balance,
-            outTokenReserve.weight,
-            swapFee
-        );
+        uint256 spotPriceBefore =
+            _calcSpotprice(
+                inTokenReserve.balance,
+                inTokenReserve.weight,
+                outTokenReserve.balance,
+                outTokenReserve.weight,
+                swapFee
+            );
         require(spotPriceBefore <= maxPrice, "ERR_BAD_PRICE");
 
         //calc out amount
@@ -206,13 +207,14 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 swapFee = data.swapFee();
 
         //calc spot price
-        uint256 spotPriceBefore = _calcSpotprice(
-            inTokenReserve.balance,
-            inTokenReserve.weight,
-            outTokenReserve.balance,
-            outTokenReserve.weight,
-            swapFee
-        );
+        uint256 spotPriceBefore =
+            _calcSpotprice(
+                inTokenReserve.balance,
+                inTokenReserve.weight,
+                outTokenReserve.balance,
+                outTokenReserve.weight,
+                swapFee
+            );
         require(spotPriceBefore <= maxPrice, "ERR_BAD_PRICE");
 
         //calc in amount
@@ -510,7 +512,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address fromAddr,
         uint256 amountToPull
     ) internal {
-            IERC20(tokenAddr).safeTransferFrom(fromAddr, address(this), amountToPull);
+        IERC20(tokenAddr).safeTransferFrom(fromAddr, address(this), amountToPull);
     }
 
     function _pushToken(
@@ -554,10 +556,11 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         require((endTime - currentTime) <= duration, "ERR_DURATION_WRONG");
 
         uint256 timeToMature = Math.rdiv((endTime - currentTime) * Math.RAY, duration * Math.RAY);
-        uint256 priceNow = Math.rdiv(
-            Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RAY), Math.RAY),
-            Math.ln(Math.PI_PLUSONE, Math.RAY)
-        );
+        uint256 priceNow =
+            Math.rdiv(
+                Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RAY), Math.RAY),
+                Math.ln(Math.PI_PLUSONE, Math.RAY)
+            );
         uint256 r = Math.rdiv(priceNow, priceLast);
         require(Math.RAY >= r, "ERR_R_WRONG_VALUE");
 
