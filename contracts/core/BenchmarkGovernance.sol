@@ -22,6 +22,7 @@
  */
 pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 import "../interfaces/IBenchmarkGovernance.sol";
 import "../interfaces/IBMK.sol";
@@ -29,6 +30,8 @@ import "../interfaces/ITimelock.sol";
 
 
 contract BenchmarkGovernance is IBenchmarkGovernance {
+    using SafeMath for uint256;
+
     /**
      * @notice The name of this contract
      **/
@@ -196,7 +199,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
         string memory description
     ) public returns (uint256) {
         require(
-            bmk.getPriorVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold(),
+            bmk.getPriorVotes(msg.sender, block.number.sub(1)) > proposalThreshold(),
             "Benchmark: proposer votes below proposal threshold"
         );
         require(
@@ -224,8 +227,8 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
             );
         }
 
-        uint256 startBlock = add256(block.number, votingDelay());
-        uint256 endBlock = add256(startBlock, votingPeriod());
+        uint256 startBlock = block.number.add(votingDelay());
+        uint256 endBlock = startBlock.add(votingPeriod());
 
         proposalCount++;
         Proposal storage newProposal = proposals[proposalCount];
@@ -265,7 +268,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
             "Benchmark: proposal can only be queued if it is succeeded"
         );
         Proposal storage proposal = proposals[proposalId];
-        uint256 eta = add256(block.timestamp, timelock.delay());
+        uint256 eta = block.timestamp.add(timelock.delay());
         for (uint256 i = 0; i < proposal.targets.length; i++) {
             _queueOrRevert(
                 proposal.targets[i],
@@ -324,7 +327,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
         Proposal storage proposal = proposals[proposalId];
         require(
             msg.sender == guardian ||
-                bmk.getPriorVotes(proposal.proposer, sub256(block.number, 1)) <
+                bmk.getPriorVotes(proposal.proposer, block.number.sub(1)) <
                 proposalThreshold(),
             "Benchmark: proposer above threshold"
         );
@@ -381,7 +384,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
             return ProposalState.Succeeded;
         } else if (proposal.executed) {
             return ProposalState.Executed;
-        } else if (block.timestamp >= add256(proposal.eta, timelock.GRACE_PERIOD())) {
+        } else if (block.timestamp >= proposal.eta.add(timelock.GRACE_PERIOD())) {
             return ProposalState.Expired;
         } else {
             return ProposalState.Queued;
@@ -424,9 +427,9 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
         uint96 votes = bmk.getPriorVotes(voter, proposal.startBlock);
 
         if (support) {
-            proposal.forVotes = add256(proposal.forVotes, votes);
+            proposal.forVotes = proposal.forVotes.add(votes);
         } else {
-            proposal.againstVotes = add256(proposal.againstVotes, votes);
+            proposal.againstVotes = proposal.againstVotes.add(votes);
         }
 
         receipt.hasVoted = true;
@@ -475,17 +478,6 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
             abi.encode(newPendingAdmin),
             eta
         );
-    }
-
-    function add256(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a, "addition overflow");
-        return c;
-    }
-
-    function sub256(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a, "subtraction underflow");
-        return a - b;
     }
 
     function getChainId() internal pure returns (uint256) {

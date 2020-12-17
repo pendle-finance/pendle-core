@@ -24,6 +24,8 @@ jobs:
         with:
           node-version: '14'
           check-latest: true
+        env:
+          INFURA_KEY: ${{ secrets.INFURA_KEY }}
       - run: yarn
       - run: yarn global add solc
       - run: yarn ci

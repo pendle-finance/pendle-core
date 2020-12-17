@@ -52,12 +52,12 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
 
     /* ========== POOL MANAGEMENT ========== */
 
-    function setPoolRatio(
-        address xytToken,
-        uint256 denomXYToken,
-        address pairToken,
-        uint256 denomPairToken
-    ) external;
+    // function setPoolRatio(
+    //     address xytToken,
+    //     uint256 denomXYToken,
+    //     address pairToken,
+    //     uint256 denomPairToken
+    // ) external;
 
     /* ========== TRADE ========== */
 

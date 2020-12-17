@@ -6,7 +6,7 @@ import "@nomiclabs/hardhat-waffle";
 import "solidity-coverage"
 
 const config: HardhatUserConfig = {
-  defaultNetwork: 'development',
+  defaultNetwork: 'hardhat',
   paths: {
     sources: './contracts',
     tests: './test/core/',
@@ -50,6 +50,11 @@ const config: HardhatUserConfig = {
       blockGasLimit: 12450000,
       gas: 'auto',
       gasPrice: 'auto',
+    },
+    development: {
+      url: 'http://127.0.0.1:8545',
+      gas: 12400000,
+      timeout: 1000000,
     },
     // kovan: {
     //   url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY}`,
