@@ -52,7 +52,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     uint256 private blockNumLast;
     uint256 public lastUnderlyingYieldTokenBalance;
     uint256 public globalIncomeIndex;
-    uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**18;
+    uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**8;
     mapping(address => uint256) public lastGlobalIncomeIndex;
 
     struct TokenReserve {
@@ -329,6 +329,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         require(outAmount >= minOutAmountXyt, "ERR_BEYOND_AMOUNT_LIMIT");
         reserves[xyt].balance = reserves[xyt].balance.sub(outAmount);
         emit Exit(msg.sender, xyt, outAmount);
+        console.log(322);
         _pushToken(xyt, msg.sender, outAmount);
 
         //calc and withdraw pair token
@@ -339,10 +340,13 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         reserves[token].balance = reserves[token].balance.sub(outAmount);
         emit Exit(msg.sender, token, outAmount);
         _pushToken(token, msg.sender, outAmount);
+        console.log(343);
 
         //let's deal with lp last
         _pullLpToken(msg.sender, inAmountLp);
+        console.log(345);
         _pushLpToken(factory, exitFees);
+        console.log(347);
         _burnLpToken(InLpAfterExitFee);
     }
 
@@ -519,6 +523,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 amountToPull
     ) internal {
         IERC20(tokenAddr).safeTransferFrom(fromAddr, address(this), amountToPull);
+        console.log("pulling ", amountToPull);
     }
 
     function _pushToken(
@@ -527,6 +532,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 amountToPush
     ) internal {
         IERC20(tokenAddr).safeTransfer(toAddr, amountToPush);
+        console.log("pushing ", amountToPush);
     }
 
     function _pullLpToken(address from, uint256 amount) internal {
@@ -607,6 +613,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             );
         /* console.log("\t[contract] dueInterests in _settleLpInterests = ", dueInterests, account); */
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
+        if (dueInterests == 0) return;
         IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).safeTransfer(
             account,
             dueInterests
@@ -627,6 +634,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         globalIncomeIndex = globalIncomeIndex.add(
             interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(totalSupply)
         );
+        console.log("globalIncomeIndex = ", globalIncomeIndex);
     }
 
     function _beforeTokenTransfer(

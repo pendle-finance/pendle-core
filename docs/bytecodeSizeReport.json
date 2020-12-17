@@ -1,10 +1,10 @@
 {
 	"Benchmark.sol": 7012,
-	"BenchmarkAaveForge.sol": 18839,
+	"BenchmarkAaveForge.sol": 19896,
 	"BenchmarkData.sol": 4942,
 	"BenchmarkGovernance.sol": 12051,
-	"BenchmarkMarket.sol": 16130,
-	"BenchmarkMarketFactory.sol": 20815,
+	"BenchmarkMarket.sol": 17144,
+	"BenchmarkMarketFactory.sol": 21839,
 	"BenchmarkTreasury.sol": 3189,
 	"DateUtils.sol": 2372,
 	"Factory.sol": 86,
@@ -18,7 +18,7 @@
 	"Timelock.sol": 6025,
 	"TestUsdtTransferFrom.sol": 280,
 	"BMK.sol": 5975,
-	"BenchmarkFutureYieldToken.sol": 3526,
+	"BenchmarkFutureYieldToken.sol": 3814,
 	"BenchmarkOwnershipToken.sol": 3425,
 	"WETH9.sol": 1764
 }
