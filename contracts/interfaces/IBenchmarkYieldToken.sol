@@ -26,7 +26,6 @@ pragma solidity ^0.7.0;
 import "./IBenchmarkBaseToken.sol";
 import {Utils} from "../libraries/BenchmarkLibrary.sol";
 
-
 interface IBenchmarkYieldToken is IBenchmarkBaseToken {
     /**
      * @notice Gets the forge address of the BenchmarkForge contract for this yield token.

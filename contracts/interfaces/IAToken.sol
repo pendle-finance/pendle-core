@@ -23,6 +23,7 @@
 pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 /**
  * @title Aave ERC20 AToken
  *
@@ -48,26 +49,26 @@ interface IAToken is IERC20 {
     /* function balanceOf(address _user) external view returns (uint256); */
 
     /**
-    * @dev returns the last index of the user, used to calculate the balance of the user
-    * @param _user address of the user
-    * @return the last user index
-    **/
-    function getUserIndex(address _user) external view returns(uint256);
+     * @dev returns the last index of the user, used to calculate the balance of the user
+     * @param _user address of the user
+     * @return the last user index
+     **/
+    function getUserIndex(address _user) external view returns (uint256);
 
     /**
-    * @dev returns the address to which the interest is redirected
-    * @param _user address of the user
-    * @return 0 if there is no redirection, an address otherwise
-    **/
-    function getInterestRedirectionAddress(address _user) external view returns(address);
+     * @dev returns the address to which the interest is redirected
+     * @param _user address of the user
+     * @return 0 if there is no redirection, an address otherwise
+     **/
+    function getInterestRedirectionAddress(address _user) external view returns (address);
 
     /**
-    * @dev returns the redirected balance of the user. The redirected balance is the balance
-    * redirected by other accounts to the user, that is accrueing interest for him.
-    * @param _user address of the user
-    * @return the total redirected balance
-    **/
-    function getRedirectedBalance(address _user) external view returns(uint256);
+     * @dev returns the redirected balance of the user. The redirected balance is the balance
+     * redirected by other accounts to the user, that is accrueing interest for him.
+     * @param _user address of the user
+     * @return the total redirected balance
+     **/
+    function getRedirectedBalance(address _user) external view returns (uint256);
 
     /**
      * @dev returns the principal balance of the user. The principal balance is the last

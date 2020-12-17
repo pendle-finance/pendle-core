@@ -27,7 +27,6 @@ import "./IBenchmark.sol";
 import "./IBenchmarkBaseToken.sol";
 import {Utils} from "../libraries/BenchmarkLibrary.sol";
 
-
 interface IBenchmarkMarket is IBenchmarkBaseToken {
     /* ========== EVENTS ========== */
 
@@ -48,7 +47,12 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     event Join(address indexed lp, address indexed token, uint256 amount);
     event Exit(address indexed lp, address indexed token, uint256 amount);
 
-    event Shift(uint256 xytWeightOld, uint256 tokenWeightOld, uint256 xytWeightNew, uint256 tokenWeightNew);
+    event Shift(
+        uint256 xytWeightOld,
+        uint256 tokenWeightOld,
+        uint256 xytWeightNew,
+        uint256 tokenWeightNew
+    );
 
     /* ========== POOL MANAGEMENT ========== */
 

@@ -25,5 +25,5 @@ pragma solidity ^0.7.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IUSDT is IERC20 {
-    function issue(uint amount) external;
+    function issue(uint256 amount) external;
 }

@@ -25,7 +25,6 @@ pragma solidity ^0.7.0;
 import "./BenchmarkBaseToken.sol";
 import "../interfaces/IBenchmarkYieldToken.sol";
 
-
 contract BenchmarkOwnershipToken is BenchmarkBaseToken, IBenchmarkYieldToken {
     address public override forge;
     address public override underlyingAsset;
@@ -38,14 +37,7 @@ contract BenchmarkOwnershipToken is BenchmarkBaseToken, IBenchmarkYieldToken {
         string memory _symbol,
         uint8 _underlyingYieldTokenDecimals,
         uint256 _expiry
-    )
-        BenchmarkBaseToken(
-            _name,
-            _symbol,
-            _underlyingYieldTokenDecimals,
-            _expiry
-        )
-    {
+    ) BenchmarkBaseToken(_name, _symbol, _underlyingYieldTokenDecimals, _expiry) {
         forge = msg.sender;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;

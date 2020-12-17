@@ -24,7 +24,6 @@ pragma solidity ^0.7.0;
 
 import "../core/Benchmark.sol";
 
-
 contract MockBenchmark is Benchmark {
     constructor()
         Benchmark(
