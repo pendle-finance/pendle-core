@@ -51,10 +51,9 @@ contract Benchmark is IBenchmark, Permissions {
     function initialize(
         IBenchmarkData _data,
         IBenchmarkMarketFactory _factory,
-        address _treasury
-    ) external /* bytes32 _forgeId,
+        address _treasury /* bytes32 _forgeId,
         address _forgeAddress */
-    {
+    ) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
         require(address(_data) != address(0), "Benchmark: zero address");
         require(address(_factory) != address(0), "Benchmark: zero address");

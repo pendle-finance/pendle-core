@@ -53,7 +53,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     uint256 public lastUnderlyingAssetBalance;
     uint256 public globalIncomeIndex;
     uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**18;
-    mapping(address => uint256) public  lastGlobalIncomeIndex;
+    mapping(address => uint256) public lastGlobalIncomeIndex;
 
     struct TokenReserve {
         uint256 weight;
@@ -288,13 +288,21 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         printAcc(msg.sender);
     }
 
-
     function printAcc(address a) internal view {
         console.log("\t\t[contract] Details for ", a);
         console.log("\t\t\t[contract] globalIncomeIndex=", globalIncomeIndex);
-        console.log("\t\t\t[contract] underlyingYieldTokenAsset bal of account=", IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(a));
-        console.log("\t\t\t[contract] underlyingYieldToken bal of amm =", IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this)));
-        console.log("\t\t\t[contract] lastGlobalIncomeIndex of account = ", lastGlobalIncomeIndex[a]);
+        console.log(
+            "\t\t\t[contract] underlyingYieldTokenAsset bal of account=",
+            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(a)
+        );
+        console.log(
+            "\t\t\t[contract] underlyingYieldToken bal of amm =",
+            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this))
+        );
+        console.log(
+            "\t\t\t[contract] lastGlobalIncomeIndex of account = ",
+            lastGlobalIncomeIndex[a]
+        );
     }
 
     /**
@@ -313,8 +321,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 InLpAfterExitFee = inAmountLp.sub(exitFee);
         uint256 ratio = Math.rdiv(InLpAfterExitFee, totalLp);
         require(ratio != 0, "ERR_MATH_PROBLEM");
-
-
 
         //calc and withdraw xyt token
         uint256 balanceToken = reserves[xyt].balance;
@@ -595,7 +601,10 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             return;
         }
 
-        uint256 dueInterests = balanceOf[account].mul(globalIncomeIndex-lastGlobalIncomeIndex[account]).div(GLOBAL_INCOME_INDEX_MULTIPLIER);
+        uint256 dueInterests =
+            balanceOf[account].mul(globalIncomeIndex - lastGlobalIncomeIndex[account]).div(
+                GLOBAL_INCOME_INDEX_MULTIPLIER
+            );
         /* console.log("\t[contract] dueInterests in _settleLpInterests = ", dueInterests, account); */
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
         IERC20(IBenchmarkYieldToken(xyt).underlyingAsset()).safeTransfer(account, dueInterests);
@@ -606,14 +615,21 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     // this function should be called whenver the total amount of LP changes
     //
     function _updateGlobalIncomeIndex() internal {
-        uint256 currentUnderlyingAssetBalance = IERC20(IBenchmarkYieldToken(xyt).underlyingAsset()).balanceOf(address(this));
+        uint256 currentUnderlyingAssetBalance =
+            IERC20(IBenchmarkYieldToken(xyt).underlyingAsset()).balanceOf(address(this));
         uint256 interestsEarned = currentUnderlyingAssetBalance - lastUnderlyingAssetBalance;
         lastUnderlyingAssetBalance = currentUnderlyingAssetBalance;
 
-        globalIncomeIndex = globalIncomeIndex.add(interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(totalSupply));
+        globalIncomeIndex = globalIncomeIndex.add(
+            interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(totalSupply)
+        );
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override {
         _settleLpInterests(from);
         _settleLpInterests(to);
     }

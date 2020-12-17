@@ -19,12 +19,12 @@ require('chai').use(require('chai-as-promised')).use(require('chai-bn')(BN)).sho
 
 const printAmmDetails = async(amm) => {
   const xyt = await TestToken.at(await amm.xyt.call());
-  const usdt = await TestToken.at(constants.USDT_ADDRESS);
+  const ausdt = await TestToken.at(constants.AUSDT_ADDRESS);
   const token = await TestToken.at(await amm.token.call());
   console.log(`\tPrinting details for amm for xyt ${xyt.address} and token ${token.address}`);
   console.log(`\t\tXyt bal = ${await xyt.balanceOf.call(amm.address)}`);
   console.log(`\t\tToken bal = ${await token.balanceOf.call(amm.address)}`);
-  console.log(`\t\tUSDT bal = ${await usdt.balanceOf.call(amm.address)}`);
+  console.log(`\t\taUSDT bal = ${await ausdt.balanceOf.call(amm.address)}`);
   const totalLp = await amm.totalSupply.call();
   console.log(`\t\tTotal Supply of LP: ${totalLp}`);
 }
@@ -98,7 +98,7 @@ contract('BenchmarkMarket', (accounts) => {
 
       console.log("Before exitPoolByAll");
       await printBenchmarkAddressDetails(contracts, accounts[0]);
-      
+
       await contracts.benchmarkMarket.exitPoolByAll(
         '500000000000000000', // 5e17, 1/3 of current LP pool
         '1000000000', //small number

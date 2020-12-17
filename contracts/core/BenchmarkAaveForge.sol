@@ -46,7 +46,8 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
     bytes32 public immutable override forgeId;
 
     mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeBeforeExpiry;
-    mapping(address => mapping(uint256 => mapping(address => uint256))) public lastNormalisedIncome; //lastNormalisedIncome[underlyingAsset][expiry][account]
+    mapping(address => mapping(uint256 => mapping(address => uint256)))
+        public lastNormalisedIncome; //lastNormalisedIncome[underlyingAsset][expiry][account]
 
     string private constant OT = "OT-Aave";
     string private constant XYT = "XYT-Aave";
@@ -193,7 +194,8 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
 
         tokens.ot.mint(_to, _amountToTokenize);
         tokens.xyt.mint(_to, _amountToTokenize);
-        lastNormalisedIncome[_underlyingAsset][_expiry][_to] = aaveLendingPoolCore.getReserveNormalizedIncome(address(_underlyingAsset));
+        lastNormalisedIncome[_underlyingAsset][_expiry][_to] = aaveLendingPoolCore
+            .getReserveNormalizedIncome(address(_underlyingAsset));
 
         return (address(tokens.ot), address(tokens.xyt));
     }
