@@ -607,7 +607,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             );
         /* console.log("\t[contract] dueInterests in _settleLpInterests = ", dueInterests, account); */
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
-        IERC20(IBenchmarkYieldToken(xyt).underlyingAsset()).safeTransfer(account, dueInterests);
+        IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).safeTransfer(account, dueInterests);
         console.log("Settled LP interests for ", account);
         printAcc(account);
     }
