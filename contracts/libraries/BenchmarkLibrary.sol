@@ -196,9 +196,9 @@ library Math {
 
         uint256 wholePow = rpowi(_base, rtoi(whole));
 
-        //if (remain == 0) {
+        if (remain == 0) {
             return wholePow;
-        //}
+        }
 
         uint256 partialResult = rpowApprox(_base, remain);
         return rmul(wholePow, partialResult);

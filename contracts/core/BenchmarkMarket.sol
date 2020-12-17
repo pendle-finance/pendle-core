@@ -182,7 +182,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         require(spotPriceAfter >= spotPriceBefore, "ERR_MATH_PROBLEM");
         require(spotPriceAfter <= maxPrice, "ERR_BAD_PRICE");
-        //require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERR_MATH_PROBLEM"); @XM may not apply now
+        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERR_MATH_PROBLEM");
 
         emit Swap(msg.sender, inAmount, outAmount, msg.sender);
 
@@ -240,7 +240,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         require(spotPriceAfter >= spotPriceBefore, "ERR_MATH_PROBLEM");
         require(spotPriceAfter <= maxPrice, "ERR_BAD_PRICE");
-        //require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERR_MATH_PROBLEM"); @XM may not apply now
+        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERR_MATH_PROBLEM");
 
         emit Swap(msg.sender, inAmount, outAmount, msg.sender);
 
@@ -590,10 +590,10 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     }
 
     function _curveShift() internal {
-        //if (block.number > blockNumLast) {
+        if (block.number > blockNumLast) {
             _updateWeight();
             blockNumLast = block.number;
-        //}
+        }
     }
 
     // sends out any due interests to msg.sender if he's an LP holder
