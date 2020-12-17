@@ -1,10 +1,10 @@
 {
 	"Benchmark.sol": 7012,
-	"BenchmarkAaveForge.sol": 19896,
+	"BenchmarkAaveForge.sol": 19608,
 	"BenchmarkData.sol": 4942,
 	"BenchmarkGovernance.sol": 12051,
-	"BenchmarkMarket.sol": 17144,
-	"BenchmarkMarketFactory.sol": 21839,
+	"BenchmarkMarket.sol": 16470,
+	"BenchmarkMarketFactory.sol": 21155,
 	"BenchmarkTreasury.sol": 3189,
 	"DateUtils.sol": 2372,
 	"Factory.sol": 86,

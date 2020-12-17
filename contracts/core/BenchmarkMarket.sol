@@ -143,20 +143,20 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         TokenReserve memory outTokenReserve = reserves[outToken];
 
         uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
-        require(spotPriceBefore <= maxPrice, "ERR_BAD_PRICE");
+        require(spotPriceBefore <= maxPrice, "Benchmark: bad price");
 
         //calc out amount
         outAmount = _calcOutAmount(inTokenReserve, outTokenReserve, data.swapFee(), inAmount);
-        require(outAmount >= minOutAmount, "ERR_OUT_AMOUNT_LOW");
+        require(outAmount >= minOutAmount, "Benchmark: low out amount");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
 
         spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
 
-        require(spotPriceAfter >= spotPriceBefore, "ERR_MATH_PROBLEM");
-        require(spotPriceAfter <= maxPrice, "ERR_BAD_PRICE");
-        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERR_MATH_PROBLEM");
+        require(spotPriceAfter >= spotPriceBefore, "Benchmark: math problem");
+        require(spotPriceAfter <= maxPrice, "Benchmark: bad price");
+        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "Benchmark: math problem");
 
         emit Swap(msg.sender, inAmount, outAmount, msg.sender);
 
@@ -181,20 +181,20 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         //calc spot price
         uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
-        require(spotPriceBefore <= maxPrice, "ERR_BAD_PRICE");
+        require(spotPriceBefore <= maxPrice, "Benchmark: bad price");
 
         //calc in amount
         inAmount = _calcInAmount(inTokenReserve, outTokenReserve, data.swapFee(), outAmount);
-        require(inAmount <= maxInAmount, "ERR_IN_AMOUT_HIGH");
+        require(inAmount <= maxInAmount, "Benchmark: high in amount");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
 
         spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
 
-        require(spotPriceAfter >= spotPriceBefore, "ERR_MATH_PROBLEM");
-        require(spotPriceAfter <= maxPrice, "ERR_BAD_PRICE");
-        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERR_MATH_PROBLEM");
+        require(spotPriceAfter >= spotPriceBefore, "Benchmark: math problem");
+        require(spotPriceAfter <= maxPrice, "Benchmark: bad price");
+        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "Benchmark: math problem");
 
         emit Swap(msg.sender, inAmount, outAmount, msg.sender);
 
@@ -216,13 +216,13 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     ) external override {
         uint256 totalLp = totalSupply;
         uint256 ratio = Math.rdiv(outAmountLp, totalLp);
-        require(ratio != 0, "ERR_MATH_PROBLEM");
+        require(ratio != 0, "Benchmark: math problem");
 
         //calc and inject xyt token
         uint256 balanceToken = reserves[xyt].balance;
         uint256 inAmount = Math.rmul(ratio, balanceToken);
-        require(inAmount != 0, "ERR_MATH_PROBLEM");
-        require(inAmount <= maxInAmoutXyt, "ERR_BEYOND_AMOUNT_LIMIT");
+        require(inAmount != 0, "Benchmark: math problem");
+        require(inAmount <= maxInAmoutXyt, "Benchmark: beyond amount limit");
         reserves[xyt].balance = reserves[xyt].balance.add(inAmount);
         emit Join(msg.sender, xyt, inAmount);
         _pullToken(xyt, msg.sender, inAmount);
@@ -230,8 +230,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         //calc and inject pair token
         balanceToken = reserves[token].balance;
         inAmount = Math.rmul(ratio, balanceToken);
-        require(inAmount != 0, "ERR_MATH_PROBLEM");
-        require(inAmount <= maxInAmountPair, "ERR_BEYOND_AMOUNT_LIMIT");
+        require(inAmount != 0, "Benchmark: math problem");
+        require(inAmount <= maxInAmountPair, "Benchmark: beyond amount limit");
         reserves[token].balance = reserves[token].balance.add(inAmount);
         emit Join(msg.sender, token, inAmount);
         _pullToken(token, msg.sender, inAmount);
@@ -274,13 +274,13 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 exitFees = Math.rmul(inAmountLp, exitFee);
         uint256 InLpAfterExitFee = inAmountLp.sub(exitFee);
         uint256 ratio = Math.rdiv(InLpAfterExitFee, totalLp);
-        require(ratio != 0, "ERR_MATH_PROBLEM");
+        require(ratio != 0, "Benchmark: math problem");
 
         //calc and withdraw xyt token
         uint256 balanceToken = reserves[xyt].balance;
         uint256 outAmount = Math.rmul(ratio, balanceToken);
-        require(outAmount != 0, "ERR_MATH_PROBLEM");
-        require(outAmount >= minOutAmountXyt, "ERR_BEYOND_AMOUNT_LIMIT");
+        require(outAmount != 0, "Benchmark: math problem");
+        require(outAmount >= minOutAmountXyt, "Benchmark: beyond amount limit");
         reserves[xyt].balance = reserves[xyt].balance.sub(outAmount);
         emit Exit(msg.sender, xyt, outAmount);
         _pushToken(xyt, msg.sender, outAmount);
@@ -288,8 +288,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         //calc and withdraw pair token
         balanceToken = reserves[token].balance;
         outAmount = Math.rmul(ratio, balanceToken);
-        require(outAmount != 0, "ERR_MATH_PROBLEM");
-        require(outAmount >= minOutAmountPair, "ERR_BEYOND_AMOUNT_LIMIT");
+        require(outAmount != 0, "Benchmark: math problem");
+        require(outAmount >= minOutAmountPair, "Benchmark: beyond amount limit");
         reserves[token].balance = reserves[token].balance.sub(outAmount);
         emit Exit(msg.sender, token, outAmount);
         _pushToken(token, msg.sender, outAmount);
@@ -318,7 +318,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             totalLp,
             totalWeight
         );
-        require(outAmountLp >= minOutAmountLp, "ERR_LP_BAD_AMOUNT");
+        require(outAmountLp >= minOutAmountLp, "Benchmark: bad lp out amount");
 
         //update reserves and operate underlying lp and intoken
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
@@ -350,7 +350,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             totalWeight,
             inAmountLp
         );
-        require(outAmountToken >= minOutAmountToken, "ERR_TOKEN_BAD_AMOUNT");
+        require(outAmountToken >= minOutAmountToken, "Benchmark: bad token out amount");
 
         //update reserves and operate underlying lp and outtoken
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmountToken);
@@ -502,7 +502,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         console.log("\tcurrentTime,", currentTime);
         console.log("\tduration,", duration);
 
-        require((endTime - currentTime) <= duration, "ERR_WRONG_DURATION");
+        require((endTime - currentTime) <= duration, "Benchmark: wrong duration");
 
         uint256 timeToMature = Math.rdiv((endTime - currentTime) * Math.RAY, duration * Math.RAY);
         uint256 priceNow =
@@ -511,7 +511,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
                 Math.ln(Math.PI_PLUSONE, Math.RAY)
             );
         uint256 r = Math.rdiv(priceNow, priceLast);
-        require(Math.RAY >= r, "ERR_WRONG_R_VALUE");
+        require(Math.RAY >= r, "Benchmark: wrong r value");
 
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RAY.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
@@ -577,9 +577,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
     function _beforeTokenTransfer(
         address from,
-        address to,
-        uint256 amount
-    ) internal override {
+        address to
+    ) internal {
         _settleLpInterests(from);
         _settleLpInterests(to);
     }
