@@ -24,6 +24,7 @@ pragma solidity ^0.7.0;
 
 import "../interfaces/IBenchmarkData.sol";
 import "../interfaces/IBenchmarkMarket.sol";
+import "../interfaces/IBenchmarkYieldToken.sol";
 import "../tokens/BenchmarkBaseToken.sol";
 import "../libraries/BenchmarkLibrary.sol";
 import {Math} from "../libraries/BenchmarkLibrary.sol";
@@ -49,6 +50,10 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     bool public bootstrapped;
     uint256 private priceLast = Math.RAY;
     uint256 private blockNumLast;
+    uint256 public lastUnderlyingYieldTokenBalance;
+    uint256 public globalIncomeIndex;
+    uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**18;
+    mapping(address => uint256) public lastGlobalIncomeIndex;
 
     struct TokenReserve {
         uint256 weight;
@@ -77,6 +82,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         token = _token;
         creator = _creator;
         bootstrapped = false;
+        globalIncomeIndex = 1;
     }
 
     modifier isBootstrapped {
@@ -279,13 +285,30 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         //mint and push lp token
         _mintLpToken(outAmountLp);
         _pushLpToken(msg.sender, outAmountLp);
+        printAcc(msg.sender);
+    }
+
+    function printAcc(address a) internal view {
+        console.log("\t\t[contract] Details for ", a);
+        console.log("\t\t\t[contract] globalIncomeIndex=", globalIncomeIndex);
+        console.log(
+            "\t\t\t[contract] underlyingYieldTokenAsset bal of account=",
+            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(a)
+        );
+        console.log(
+            "\t\t\t[contract] underlyingYieldToken bal of amm =",
+            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this))
+        );
+        console.log(
+            "\t\t\t[contract] lastGlobalIncomeIndex of account = ",
+            lastGlobalIncomeIndex[a]
+        );
     }
 
     /**
      * @notice exit the pool by putting in desired amount of lpToken
      * and get back xytToken and pairToken
      */
-
     function exitPoolByAll(
         uint256 inAmountLp,
         uint256 minOutAmountXyt,
@@ -298,11 +321,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 InLpAfterExitFee = inAmountLp.sub(exitFee);
         uint256 ratio = Math.rdiv(InLpAfterExitFee, totalLp);
         require(ratio != 0, "ERR_MATH_PROBLEM");
-
-        //let's deal with lp first
-        _pullLpToken(msg.sender, inAmountLp);
-        _pushLpToken(factory, exitFees);
-        _burnLpToken(InLpAfterExitFee);
 
         //calc and withdraw xyt token
         uint256 balanceToken = reserves[xyt].balance;
@@ -321,6 +339,11 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         reserves[token].balance = reserves[token].balance.sub(outAmount);
         emit Exit(msg.sender, token, outAmount);
         _pushToken(token, msg.sender, outAmount);
+
+        //let's deal with lp last
+        _pullLpToken(msg.sender, inAmountLp);
+        _pushLpToken(factory, exitFees);
+        _burnLpToken(InLpAfterExitFee);
     }
 
     function joinPoolSingleToken(
@@ -567,5 +590,51 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             _updateWeight();
             blockNumLast = block.number;
         }
+    }
+
+    // sends out any due interests to msg.sender if he's an LP holder
+    // this should be called before any functions that change someone's LPs
+    function _settleLpInterests(address account) internal {
+        _updateGlobalIncomeIndex();
+        if (lastGlobalIncomeIndex[account] == 0) {
+            lastGlobalIncomeIndex[account] = globalIncomeIndex;
+            return;
+        }
+
+        uint256 dueInterests =
+            balanceOf[account].mul(globalIncomeIndex - lastGlobalIncomeIndex[account]).div(
+                GLOBAL_INCOME_INDEX_MULTIPLIER
+            );
+        /* console.log("\t[contract] dueInterests in _settleLpInterests = ", dueInterests, account); */
+        lastGlobalIncomeIndex[account] = globalIncomeIndex;
+        IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).safeTransfer(
+            account,
+            dueInterests
+        );
+        console.log("Settled LP interests for ", account);
+        printAcc(account);
+    }
+
+    // this function should be called whenver the total amount of LP changes
+    //
+    function _updateGlobalIncomeIndex() internal {
+        uint256 currentUnderlyingYieldTokenBalance =
+            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this));
+        uint256 interestsEarned =
+            currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance;
+        lastUnderlyingYieldTokenBalance = currentUnderlyingYieldTokenBalance;
+
+        globalIncomeIndex = globalIncomeIndex.add(
+            interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(totalSupply)
+        );
+    }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override {
+        _settleLpInterests(from);
+        _settleLpInterests(to);
     }
 }

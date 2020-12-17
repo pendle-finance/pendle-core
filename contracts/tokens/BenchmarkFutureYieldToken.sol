@@ -48,11 +48,12 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
         underlyingYieldToken = _underlyingYieldToken;
     }
 
-    function _beforeTokenTransfer(uint256 _expiry, address _account) internal {
-        IBenchmarkForge(forge).redeemDueInterestsBeforeTransfer(
-            underlyingAsset,
-            _expiry,
-            _account
-        );
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override {
+        IBenchmarkForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, from);
+        IBenchmarkForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, to);
     }
 }

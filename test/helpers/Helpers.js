@@ -188,6 +188,7 @@ async function printBenchmarkAddressDetails(contracts, address) {
   );
   console.log(
     `\t\tlastNormalisedIncome = ${await contracts.benchmarkAaveForge.lastNormalisedIncome.call(
+      constants.USDT_ADDRESS,
       constants.TEST_EXPIRY,
       address
     )}`
