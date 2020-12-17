@@ -617,7 +617,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     function _updateGlobalIncomeIndex() internal {
         uint256 currentUnderlyingYieldTokenBalance =
             IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this));
-        uint256 interestsEarned = currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance;
+        uint256 interestsEarned =
+            currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance;
         lastUnderlyingYieldTokenBalance = currentUnderlyingYieldTokenBalance;
 
         globalIncomeIndex = globalIncomeIndex.add(
