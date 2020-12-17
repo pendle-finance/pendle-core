@@ -26,13 +26,12 @@ import "./BenchmarkBaseToken.sol";
 import "../interfaces/IBenchmarkForge.sol";
 import "../interfaces/IBenchmarkYieldToken.sol";
 
-
 contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
     address public override forge;
     address public override underlyingAsset;
     address public override underlyingYieldToken;
     address public ot;
-    mapping (address => uint256) public lastNormalisedIncome;
+    mapping(address => uint256) public lastNormalisedIncome;
 
     constructor(
         address _ot,
@@ -42,14 +41,7 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
         string memory _symbol,
         uint8 _underlyingYieldTokenDecimals,
         uint256 _expiry
-    )
-        BenchmarkBaseToken(
-            _name,
-            _symbol,
-            _underlyingYieldTokenDecimals,
-            _expiry
-        )
-    {
+    ) BenchmarkBaseToken(_name, _symbol, _underlyingYieldTokenDecimals, _expiry) {
         forge = msg.sender;
         ot = _ot;
         underlyingAsset = _underlyingAsset;
@@ -57,6 +49,10 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
     }
 
     function _beforeTokenTransfer(uint256 _expiry, address _account) internal {
-        IBenchmarkForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, _expiry, _account);
+        IBenchmarkForge(forge).redeemDueInterestsBeforeTransfer(
+            underlyingAsset,
+            _expiry,
+            _account
+        );
     }
 }

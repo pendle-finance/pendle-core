@@ -46,8 +46,8 @@ library Math {
     uint256 internal constant BIG_NUMBER = (uint256(1) << uint256(200));
     uint256 internal constant PRECISION_BITS = 40;
     uint256 internal constant FORMULA_PRECISION = uint256(1) << PRECISION_BITS;
-    uint256 internal constant PI = 314 * RAY / 10**2;
-    uint256 internal constant PI_PLUSONE = 414 * RAY / 10**2; 
+    uint256 internal constant PI = (314 * RAY) / 10**2;
+    uint256 internal constant PI_PLUSONE = (414 * RAY) / 10**2;
 
     function checkMultOverflow(uint256 _x, uint256 _y) internal pure returns (bool) {
         if (_y == 0) return false;
@@ -515,20 +515,8 @@ library DateUtils {
     }
 
     function monthName(Date memory d) private pure returns (string memory) {
-        string[12] memory months = [
-            "JAN",
-            "FEB",
-            "MAR",
-            "APR",
-            "MAY",
-            "JUN",
-            "JUL",
-            "AUG",
-            "SEP",
-            "OCT",
-            "NOV",
-            "DEC"
-        ];
+        string[12] memory months =
+            ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
         return months[d.month - 1];
     }
 

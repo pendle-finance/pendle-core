@@ -25,7 +25,6 @@ pragma solidity ^0.7.0;
 import "../interfaces/IUSDT.sol";
 
 contract TestUsdtTransferFrom {
-
     function testTransferFrom(address usdtAddress, uint256 amount) public {
         require(IUSDT(usdtAddress).transferFrom(msg.sender, address(this), amount));
     }

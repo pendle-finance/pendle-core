@@ -27,7 +27,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IBenchmarkTreasury.sol";
 import "../periphery/Permissions.sol";
 
-
 contract BenchmarkTreasury is IBenchmarkTreasury, Permissions {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -36,7 +35,7 @@ contract BenchmarkTreasury is IBenchmarkTreasury, Permissions {
     uint256 public constant MAX_FUND_PERCENTAGE = 1500; // 15%
     uint256 public constant PERCENTAGE_PRECISION = 10000; // 100%
     uint256 public fundPercentage = 500; // 5%
-    
+
     constructor(address _governance) Permissions(_governance) {
         initializer = msg.sender;
     }
