@@ -463,10 +463,10 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 diff = outBalance.sub(outAmount);
         uint256 y = Math.rdiv(outBalance, diff);
         uint256 foo = Math.rpow(y, weightRatio);
-         console.log("\tweightRatio,", weightRatio);
-         console.log("\tdiff,", diff);
-         console.log("\ty,", y);
-         console.log("\tfoo,", foo);
+        console.log("\tweightRatio,", weightRatio);
+        console.log("\tdiff,", diff);
+        console.log("\ty,", y);
+        console.log("\tfoo,", foo);
         foo = foo.sub(Math.RAY);
         inAmount = Math.RAY.sub(data.swapFee());
         inAmount = Math.rdiv(Math.rmul(inBalance, foo), inAmount);
@@ -591,8 +591,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
     function _curveShift() internal {
         //if (block.number > blockNumLast) {
-            _updateWeight();
-            blockNumLast = block.number;
+        _updateWeight();
+        blockNumLast = block.number;
         //}
     }
 
