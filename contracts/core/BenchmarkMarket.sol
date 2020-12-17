@@ -50,7 +50,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     bool public bootstrapped;
     uint256 private priceLast = Math.RAY;
     uint256 private blockNumLast;
-    uint256 public lastUnderlyingAssetBalance;
+    uint256 public lastUnderlyingYieldTokenBalance;
     uint256 public globalIncomeIndex;
     uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**18;
     mapping(address => uint256) public lastGlobalIncomeIndex;
@@ -615,10 +615,10 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     // this function should be called whenver the total amount of LP changes
     //
     function _updateGlobalIncomeIndex() internal {
-        uint256 currentUnderlyingAssetBalance =
-            IERC20(IBenchmarkYieldToken(xyt).underlyingAsset()).balanceOf(address(this));
-        uint256 interestsEarned = currentUnderlyingAssetBalance - lastUnderlyingAssetBalance;
-        lastUnderlyingAssetBalance = currentUnderlyingAssetBalance;
+        uint256 currentUnderlyingYieldTokenBalance =
+            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this));
+        uint256 interestsEarned = currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance;
+        lastUnderlyingYieldTokenBalance = currentUnderlyingYieldTokenBalance;
 
         globalIncomeIndex = globalIncomeIndex.add(
             interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(totalSupply)
