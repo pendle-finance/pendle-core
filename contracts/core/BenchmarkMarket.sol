@@ -28,6 +28,7 @@ import "../tokens/BenchmarkBaseToken.sol";
 import "../libraries/BenchmarkLibrary.sol";
 import {Math} from "../libraries/BenchmarkLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "hardhat/console.sol";
 
 contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     using Math for uint256;
@@ -524,34 +525,35 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 endTime = IBenchmarkYieldToken(xyt).expiry();
         uint256 duration = 6 * 3600 * 24 * 30;
 
-        TokenReserve storage xytReserve = _reserves[xyt];
-        TokenReserve storage tokenReserve = _reserves[token];
+        TokenReserve storage xytReserve = reserves[xyt];
+        TokenReserve storage tokenReserve = reserves[token];
 
         uint256 xytWeight = xytReserve.weight;
         uint256 tokenWeight = tokenReserve.weight;
+        console.log("\tendTime,", endTime);
+        console.log("\tcurrentTime,", currentTime);
+        console.log("\tduration,", duration);
 
         require((endTime - currentTime) <= duration, "ERR_DURATION_WRONG");
 
         uint256 timeToMature = Math.rdiv((endTime - currentTime) * Math.RAY, duration * Math.RAY);
-
         uint256 priceNow = Math.rdiv(
             Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RAY), Math.RAY),
             Math.ln(Math.PI_PLUSONE, Math.RAY)
         );
         uint256 r = Math.rdiv(priceNow, priceLast);
-
         require(Math.RAY >= r, "ERR_R_WRONG_VALUE");
 
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RAY.sub(r));
-        uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight); 
+        uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
 
         uint256 theta = Math.rdiv(thetaNumerator, thetaDenominator);
 
         uint256 xytWeightUpdated = xytWeight.sub(theta);
         uint256 tokenWeightUpdated = tokenWeight.add(theta);
 
-        _reserves[xyt].weight = xytWeightUpdated;
-        _reserves[token].weight = tokenWeightUpdated;
+        reserves[xyt].weight = xytWeightUpdated;
+        reserves[token].weight = tokenWeightUpdated;
         priceLast = priceNow;
 
         emit Shift(xytWeight, tokenWeight, xytWeightUpdated, tokenWeightUpdated);

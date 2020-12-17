@@ -17,7 +17,7 @@ module.exports = {
     FORGE_AAVE: web3.utils.fromAscii('Aave'),
 
     MAX_ALLOWANCE: new BN(2).pow(new BN(256)).sub(new BN(1)),
-    TEST_EXPIRY: 1638316800, // 1st Dec 2021, 0:00 UTC
+    TEST_EXPIRY: 1619827200, // 1st May 2021, 0:00 UTC
 
     kovan: {
       DUMMY_GOVERNANCE_ADDRESS: '0x3Cd101E1e05DA0ade47B481189843732D1a53211',
