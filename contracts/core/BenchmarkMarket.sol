@@ -31,7 +31,6 @@ import {Math} from "../libraries/BenchmarkLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "hardhat/console.sol";
 
-
 contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     using Math for uint256;
     using SafeMath for uint256;
@@ -127,12 +126,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         TokenReserve storage inTokenReserve = reserves[inToken];
         TokenReserve storage outTokenReserve = reserves[outToken];
 
-        return
-            _calcSpotPrice(
-                inTokenReserve,
-                outTokenReserve,
-                data.swapFee()
-            );
+        return _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
     }
 
     function swapAmountIn(
@@ -148,31 +142,17 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         TokenReserve memory inTokenReserve = reserves[inToken];
         TokenReserve memory outTokenReserve = reserves[outToken];
 
-        uint256 spotPriceBefore =
-            _calcSpotPrice(
-                inTokenReserve,
-                outTokenReserve,
-                data.swapFee()
-            );
+        uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
         require(spotPriceBefore <= maxPrice, "ERR_BAD_PRICE");
 
         //calc out amount
-        outAmount = _calcOutAmount(
-            inTokenReserve,
-            outTokenReserve,
-            data.swapFee(),
-            inAmount
-        );
+        outAmount = _calcOutAmount(inTokenReserve, outTokenReserve, data.swapFee(), inAmount);
         require(outAmount >= minOutAmount, "ERR_OUT_AMOUNT_LOW");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
 
-        spotPriceAfter = _calcSpotPrice(
-            inTokenReserve,
-            outTokenReserve,
-            data.swapFee()
-        );
+        spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
 
         require(spotPriceAfter >= spotPriceBefore, "ERR_MATH_PROBLEM");
         require(spotPriceAfter <= maxPrice, "ERR_BAD_PRICE");
@@ -200,31 +180,17 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         TokenReserve storage outTokenReserve = reserves[outToken];
 
         //calc spot price
-        uint256 spotPriceBefore =
-            _calcSpotPrice(
-                inTokenReserve,
-                outTokenReserve,
-                data.swapFee()
-            );
+        uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
         require(spotPriceBefore <= maxPrice, "ERR_BAD_PRICE");
 
         //calc in amount
-        inAmount = _calcInAmount(
-            inTokenReserve,
-            outTokenReserve,
-            data.swapFee(),
-            outAmount
-        );
+        inAmount = _calcInAmount(inTokenReserve, outTokenReserve, data.swapFee(), outAmount);
         require(inAmount <= maxInAmount, "ERR_IN_AMOUT_HIGH");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
 
-        spotPriceAfter = _calcSpotPrice(
-            inTokenReserve,
-            outTokenReserve,
-            data.swapFee()
-        );
+        spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
 
         require(spotPriceAfter >= spotPriceBefore, "ERR_MATH_PROBLEM");
         require(spotPriceAfter <= maxPrice, "ERR_BAD_PRICE");
