@@ -519,7 +519,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 amountToPull
     ) internal {
         IERC20(tokenAddr).safeTransferFrom(fromAddr, address(this), amountToPull);
-        console.log("pulling ", amountToPull);
     }
 
     function _pushToken(
@@ -528,7 +527,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 amountToPush
     ) internal {
         IERC20(tokenAddr).safeTransfer(toAddr, amountToPush);
-        console.log("pushing ", amountToPush);
     }
 
     function _pullLpToken(address from, uint256 amount) internal {
@@ -630,7 +628,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         globalIncomeIndex = globalIncomeIndex.add(
             interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(totalSupply)
         );
-        console.log("globalIncomeIndex = ", globalIncomeIndex);
     }
 
     function _beforeTokenTransfer(
