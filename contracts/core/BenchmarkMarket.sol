@@ -329,7 +329,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         require(outAmount >= minOutAmountXyt, "ERR_BEYOND_AMOUNT_LIMIT");
         reserves[xyt].balance = reserves[xyt].balance.sub(outAmount);
         emit Exit(msg.sender, xyt, outAmount);
-        console.log(322);
         _pushToken(xyt, msg.sender, outAmount);
 
         //calc and withdraw pair token
@@ -340,13 +339,10 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         reserves[token].balance = reserves[token].balance.sub(outAmount);
         emit Exit(msg.sender, token, outAmount);
         _pushToken(token, msg.sender, outAmount);
-        console.log(343);
 
         //let's deal with lp last
         _pullLpToken(msg.sender, inAmountLp);
-        console.log(345);
         _pushLpToken(factory, exitFees);
-        console.log(347);
         _burnLpToken(InLpAfterExitFee);
     }
 
