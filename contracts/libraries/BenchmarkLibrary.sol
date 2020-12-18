@@ -41,13 +41,15 @@ library Math {
     using SafeMath for uint256;
 
     uint256 internal constant UINT_MAX_VALUE = uint256(-1);
-    uint256 internal constant RAY = 1e27;
+    //uint256 internal constant RAY = 1e27;
     uint256 internal constant WAD = 1e18;
     uint256 internal constant BIG_NUMBER = (uint256(1) << uint256(200));
     uint256 internal constant PRECISION_BITS = 40;
     uint256 internal constant FORMULA_PRECISION = uint256(1) << PRECISION_BITS;
     uint256 internal constant PI = (314 * RAY) / 10**2;
     uint256 internal constant PI_PLUSONE = (414 * RAY) / 10**2;
+    uint256 internal constant RAY = FORMULA_PRECISION;
+    uint256 internal constant PRECISION_POW = 1e2;
 
     function checkMultOverflow(uint256 _x, uint256 _y) internal pure returns (bool) {
         if (_y == 0) return false;
@@ -227,7 +229,7 @@ library Math {
         //         = (product(a - i - 1, i=1-->k) * x^k) / (k!)
         // each iteration, multiply previous term by (a-(k-1)) * x / k
         // continue until term is less than precision
-        for (uint256 i = 1; term >= FORMULA_PRECISION; i++) {
+        for (uint256 i = 1; term >= PRECISION_POW; i++) {
             uint256 bigK = i * RAY;
             (uint256 c, bool cneg) = rsignSub(a, bigK.sub(RAY));
             term = rmul(term, rmul(c, x));
@@ -239,7 +241,7 @@ library Math {
             if (negative) {
                 sum = sum.sub(term);
             } else {
-                sum = sum.sub(term);
+                sum = sum.add(term);
             }
         }
 

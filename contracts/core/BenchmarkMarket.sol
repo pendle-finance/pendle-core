@@ -408,6 +408,10 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 diff = outTokenReserve.balance.sub(outAmount);
         uint256 y = Math.rdiv(outTokenReserve.balance, diff);
         uint256 foo = Math.rpow(y, weightRatio);
+        console.log("\tweightRatio,", weightRatio);
+        console.log("\tdiff,", diff);
+        console.log("\ty,", y);
+        console.log("\tfoo,", foo);
         foo = foo.sub(Math.RAY);
         inAmount = Math.RAY.sub(swapFee);
         inAmount = Math.rdiv(Math.rmul(inTokenReserve.balance, foo), inAmount);
