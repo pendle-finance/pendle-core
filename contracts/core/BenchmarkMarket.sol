@@ -52,7 +52,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     uint256 private blockNumLast;
     uint256 public lastUnderlyingYieldTokenBalance;
     uint256 public globalIncomeIndex;
-    uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**18;
+    uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**8;
     mapping(address => uint256) public lastGlobalIncomeIndex;
 
     struct TokenReserve {
@@ -549,6 +549,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             );
         /* console.log("\t[contract] dueInterests in _settleLpInterests = ", dueInterests, account); */
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
+        if (dueInterests == 0) return;
         IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).safeTransfer(
             account,
             dueInterests

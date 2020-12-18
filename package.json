@@ -63,7 +63,7 @@
     "fork": "yarn hardhat node",
     "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c './**/*.js'",
     "size": "yarn ts-node scripts/contractBytecodeSize.js",
-    "test": "yarn hardhat test --network hardhat \"test/**/*.ts\"",
+    "test": "yarn hardhat test test/core/BenchmarkMarket.js --network hardhat",
     "ci": "yarn hardhat compile && yarn hardhat coverage --network hardhat --testfiles \"test/**/*.spec.ts\"",
     "format": "yarn prettier --write contracts/**/*.sol && yarn prettier --write test/**/*.ts"
   }
