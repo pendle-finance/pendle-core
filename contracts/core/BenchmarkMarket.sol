@@ -403,7 +403,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         TokenReserve memory outTokenReserve,
         uint256 swapFee,
         uint256 outAmount
-    ) internal returns (uint256 inAmount) {
+    ) internal pure returns (uint256 inAmount) {
         uint256 weightRatio = Math.rdiv(outTokenReserve.weight, inTokenReserve.weight);
         uint256 diff = outTokenReserve.balance.sub(outAmount);
         uint256 y = Math.rdiv(outTokenReserve.balance, diff);
