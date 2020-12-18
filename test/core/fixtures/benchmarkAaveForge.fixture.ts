@@ -37,7 +37,7 @@ export async function benchmarkAaveForgeFixture(
     );
 
     const benchmarkOwnershipToken = new Contract(otTokenAddress, BenchmarkOwnershipToken.abi, wallet);
-    const benchmarkFutureYieldToken = new Contract(otTokenAddress, BenchmarkFutureYieldToken.abi, wallet);
+    const benchmarkFutureYieldToken = new Contract(xytTokenAddress, BenchmarkFutureYieldToken.abi, wallet);
 
     return {benchmarkAaveForge, benchmarkOwnershipToken, benchmarkFutureYieldToken, };
   }
