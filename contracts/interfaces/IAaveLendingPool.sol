@@ -28,4 +28,23 @@ interface IAaveLendingPool {
         uint256 _amount,
         uint16 _referralCode
     ) external;
+
+    function getReserveData(address _reserve)
+        external
+        view
+        returns (
+            uint256 totalLiquidity,
+            uint256 availableLiquidity,
+            uint256 totalBorrowsFixed,
+            uint256 totalBorrowsVariable,
+            uint256 liquidityRate,
+            uint256 variableBorrowRate,
+            uint256 fixedBorrowRate,
+            uint256 averageFixedBorrowRate,
+            uint256 utilizationRate,
+            uint256 liquidityIndex,
+            uint256 variableBorrowIndex,
+            address aTokenAddress,
+            uint40 lastUpdateTimestamp
+        );
 }

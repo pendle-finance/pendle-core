@@ -408,10 +408,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 diff = outTokenReserve.balance.sub(outAmount);
         uint256 y = Math.rdiv(outTokenReserve.balance, diff);
         uint256 foo = Math.rpow(y, weightRatio);
-        console.log("\tweightRatio,", weightRatio);
-        console.log("\tdiff,", diff);
-        console.log("\ty,", y);
-        console.log("\tfoo,", foo);
+
         foo = foo.sub(Math.RAY);
         inAmount = Math.RAY.sub(swapFee);
         inAmount = Math.rdiv(Math.rmul(inTokenReserve.balance, foo), inAmount);
@@ -505,7 +502,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         console.log("\tcurrentTime,", currentTime);
         console.log("\tduration,", duration);
 
-        require((endTime - currentTime) <= duration, "ERR_DURATION_WRONG");
+        require((endTime - currentTime) <= duration, "ERR_WRONG_DURATION");
 
         uint256 timeToMature = Math.rdiv((endTime - currentTime) * Math.RAY, duration * Math.RAY);
         uint256 priceNow =
@@ -514,7 +511,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
                 Math.ln(Math.PI_PLUSONE, Math.RAY)
             );
         uint256 r = Math.rdiv(priceNow, priceLast);
-        require(Math.RAY >= r, "ERR_R_WRONG_VALUE");
+        require(Math.RAY >= r, "ERR_WRONG_R_VALUE");
 
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RAY.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
@@ -552,12 +549,14 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
                 GLOBAL_INCOME_INDEX_MULTIPLIER
             );
         /* console.log("\t[contract] dueInterests in _settleLpInterests = ", dueInterests, account); */
+
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
         if (dueInterests == 0) return;
         IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).safeTransfer(
             account,
             dueInterests
         );
+
         console.log("Settled LP interests for ", account);
         printAcc(account);
     }

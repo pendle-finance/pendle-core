@@ -29,7 +29,6 @@
     "eslint-plugin-prettier": "^3.3.0",
     "ethereum-waffle": "^3.2.1",
     "ethers": "^5.0.0",
-    "ganache-cli": "^6.12.1",
     "got": "^11.8.1",
     "hardhat": "^2.0.5",
     "hardhat-typechain": "^0.3.3",
@@ -59,12 +58,13 @@
     "deploy:aave": "yarn hardhat run scripts/deploy_aave.js",
     "compile": "yarn hardhat compile && yarn size",
     "console:dev": "yarn hardhat console",
-    "coverage": "yarn hardhat clean && yarn hardhat coverage --config ./hardhat.config.js --testfiles '' --temp ''",
+    "coverage": "yarn hardhat coverage --network hardhat --testfiles \"test/**/*.spec.ts\"",
     "fork": "yarn hardhat node",
     "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c './**/*.js'",
     "size": "yarn ts-node scripts/contractBytecodeSize.js",
-    "test": "yarn hardhat test test/core/BenchmarkMarket.js --network hardhat",
-    "ci": "yarn hardhat compile && yarn hardhat coverage --network hardhat --testfiles \"test/**/*.spec.ts\"",
+    "test": "yarn hardhat test --network hardhat",
+    "test:all": "yarn test test/**/*.spec.ts",
+    "ci": "yarn hardhat compile && yarn coverage",
     "format": "yarn prettier --write contracts/**/*.sol && yarn prettier --write test/**/*.ts"
   }
 }
