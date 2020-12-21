@@ -26,7 +26,6 @@ import "./BenchmarkBaseToken.sol";
 import "../interfaces/IBenchmarkForge.sol";
 import "../interfaces/IBenchmarkYieldToken.sol";
 
-
 contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
     address public override forge;
     address public override underlyingAsset;

@@ -207,8 +207,5 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
         emit Transfer(sender, recipient, amount);
     }
 
-    function _beforeTokenTransfer(
-        address from,
-        address to
-    ) internal virtual {}
+    function _beforeTokenTransfer(address from, address to) internal virtual {}
 }
