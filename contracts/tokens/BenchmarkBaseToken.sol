@@ -197,7 +197,7 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
         require(sender != address(0), "BenchmarkToken: transfer from the zero address");
         require(recipient != address(0), "BenchmarkToken: transfer to the zero address");
 
-        _beforeTokenTransfer(sender, recipient, amount);
+        _beforeTokenTransfer(sender, recipient);
 
         balanceOf[sender] = balanceOf[sender].sub(
             amount,
@@ -209,7 +209,6 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
 
     function _beforeTokenTransfer(
         address from,
-        address to,
-        uint256 amount
+        address to
     ) internal virtual {}
 }

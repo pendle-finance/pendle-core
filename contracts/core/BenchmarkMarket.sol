@@ -575,7 +575,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         );
     }
 
-    function _beforeTokenTransfer(address from, address to) internal {
+    function _beforeTokenTransfer(address from, address to) internal override {
         _settleLpInterests(from);
         _settleLpInterests(to);
     }
