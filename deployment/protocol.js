@@ -3,6 +3,7 @@ require('@nomiclabs/hardhat-ethers');
 const AAVE = '0x3dfd23A6c5E8BbcFc9581d2E864a68feb6a076d3';
 const WETH9 = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
 const USDT = '0xdac17f958d2ee523a2206206994597c13d831ec7';
+const TEST_EXPIRY = 1619827200; // 1st May 2021, 0:00 UTC
 
 function printInfo(tx) {
   console.log(`   > tx hash:\t${tx.hash}`);
@@ -11,6 +12,8 @@ function printInfo(tx) {
 }
 
 task('deploy', 'Deploys the core contracts').setAction(async () => {
+  const FORGE_AAVE = ethers.utils.formatBytes32String('Aave');
+
   const [deployer, governance] = await ethers.getSigners();
   const deployerAddress = await deployer.getAddress();
   const governanceAddress = await governance.getAddress();
@@ -47,11 +50,7 @@ task('deploy', 'Deploys the core contracts').setAction(async () => {
   console.log('   ------------------------------------');
 
   const BenchmarkAaveForge = await ethers.getContractFactory('BenchmarkAaveForge');
-  const benchmarkAaveForge = await BenchmarkAaveForge.deploy(
-    benchmark.address,
-    AAVE,
-    ethers.utils.formatBytes32String('Aave')
-  );
+  const benchmarkAaveForge = await BenchmarkAaveForge.deploy(benchmark.address, AAVE, FORGE_AAVE);
   tx = await benchmarkAaveForge.deployed();
   printInfo(tx.deployTransaction);
   console.log(`   > address:\t${benchmarkAaveForge.address}\n\n`);
@@ -110,13 +109,18 @@ task('deploy', 'Deploys the core contracts').setAction(async () => {
 
   console.log("   9. Adding 'BenchmarkAaveForge'");
   console.log('   -----------------------------');
-  tx = await benchmark
-    .connect(governance)
-    .addForge(ethers.utils.formatBytes32String('Aave'), benchmarkAaveForge.address, {
-      gasLimit: 50000,
-    });
+  tx = await benchmark.connect(governance).addForge(FORGE_AAVE, benchmarkAaveForge.address, {
+    gasLimit: 50000,
+  });
   printInfo(tx);
   console.log('\n');
+
+  console.log('Creating Test markets');
+  console.log('=====================\n');
+
+  await benchmarkAaveForge.newYieldContracts(USDT, TEST_EXPIRY);
+  console.log('Created new newYieldContract');
+  // tx = await benchmarkMarketFactory.createMarket(FORGE_AAVE);
 
   // Summary
 
@@ -124,9 +128,12 @@ task('deploy', 'Deploys the core contracts').setAction(async () => {
   console.log('=======\n');
   console.log(`   > Benchmark:\t\t\t${benchmark.address}`);
   console.log(`   > BenchmarkTreasury:\t\t${benchmarkTreasury.address}`);
-  console.log(`   > BenchmarkAaveForge:\t\t${benchmarkAaveForge.address}`);
+  console.log(`   > BenchmarkAaveForge:\t${benchmarkAaveForge.address}`);
   console.log(`   > BenchmarkMarketFactory:\t${benchmarkMarketFactory.address}`);
   console.log(`   > BenchmarkData:\t\t${benchmarkData.address}`);
+  console.log('\n');
+  console.log(`   > Test XYT Token:\t${await benchmarkData.xytTokens(FORGE_AAVE, USDT, TEST_EXPIRY)}`);
+  console.log(`   > Test OT Token:\t${await benchmarkData.otTokens(FORGE_AAVE, USDT, TEST_EXPIRY)}`);
 
   console.log('\nDeployment complete!');
 });
