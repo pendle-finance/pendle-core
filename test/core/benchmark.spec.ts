@@ -194,7 +194,10 @@ describe("Benchmark", async () => {
       wallet.address
     );
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
-    expect(finalAUSDTbalance.toNumber()).to.be.approximately(initialAUSDTbalance.toNumber(), 5);
+    expect(finalAUSDTbalance.toNumber()).to.be.approximately(
+      initialAUSDTbalance.toNumber(),
+      5
+    );
   });
 
   it("One month after expiry, should be able to redeem aUSDT with intrest", async () => {
@@ -234,12 +237,15 @@ describe("Benchmark", async () => {
       token.address,
       constants.TEST_EXPIRY,
       wallet.address
-      );
+    );
 
     const rate = await getLiquidityRate(wallet, token);
     const gain = getGain(amountToTokenize, rate, constants.ONE_MOUNTH);
 
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
-    expect(finalAUSDTbalance.toNumber()).to.be.approximately(initialAUSDTbalance.add(gain).toNumber(), 20000);
+    expect(finalAUSDTbalance.toNumber()).to.be.approximately(
+      initialAUSDTbalance.add(gain).toNumber(),
+      20000
+    );
   });
 });
