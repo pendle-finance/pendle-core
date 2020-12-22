@@ -147,8 +147,14 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         redeemedAmount = tokens.ot.balanceOf(_msgSender);
 
         aToken.transfer(_to, redeemedAmount);
-        _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
+        uint256 currentNormalizedIncome = aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
 
+        // interests from the timestamp of the last XYT transfer (before expiry) to now is entitled to the OT holders
+        // this means that the OT holders are getting some extra interests, at the expense of XYT holders
+        uint256 interestsAfterExpiry = currentNormalizedIncome.mul(redeemedAmount).div(lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry]).sub(redeemedAmount);
+        aToken.transfer(_to, interestsAfterExpiry);
+
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
         tokens.ot.burn(_msgSender, redeemedAmount);
     }
 
