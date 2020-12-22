@@ -197,10 +197,12 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERR_MATH_PROBLEM");
 
         emit Swap(msg.sender, inAmount, outAmount, msg.sender);
-
+        console.log("before _pullToken, %s %s %s", inToken, msg.sender, inAmount);
         _pullToken(inToken, msg.sender, inAmount);
+        console.log("before _pushToken %s %s %s", outToken, msg.sender, outAmount);
         _pushToken(outToken, msg.sender, outAmount);
-
+        console.log("DONE");
+        
         return (inAmount, spotPriceAfter);
     }
 

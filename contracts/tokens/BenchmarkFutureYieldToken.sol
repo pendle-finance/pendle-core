@@ -25,6 +25,7 @@ pragma solidity ^0.7.0;
 import "./BenchmarkBaseToken.sol";
 import "../interfaces/IBenchmarkForge.sol";
 import "../interfaces/IBenchmarkYieldToken.sol";
+import "hardhat/console.sol";
 
 contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
     address public override forge;
@@ -53,7 +54,9 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
         address to,
         uint256 amount
     ) internal override {
+        console.log("redeemDueInterestsBeforeTransfer");
         IBenchmarkForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, from);
+        console.log("redeemDueInterestsBeforeTransfer");
         IBenchmarkForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, to);
     }
 }
