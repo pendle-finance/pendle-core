@@ -14,15 +14,6 @@ function printInfo(tx) {
   console.log(`   > gas used:\t${tx.gasLimit.toString()}`);
 }
 
-function getTokenAmount(tokenSymbol, amount) {
-  const multipliers = {
-    USDT: ethers.BigNumber.from(1000000),
-  };
-
-  // console.log(`multiplier = ${multipliers[tokenSymbol]}, amount = ${amount}`);
-  return multipliers[tokenSymbol].mul(ethers.BigNumber.from(amount));
-}
-
 task('deploy', 'Deploys the core contracts')
   .addParam('account', "The account's address")
   .setAction(async (taskArgs) => {
@@ -32,6 +23,11 @@ task('deploy', 'Deploys the core contracts')
 
     const account = taskArgs.account;
     console.log('account', account);
+
+    function amountToWei({decimal}, amount) {
+      console.log('decimal', decimal);
+      return ethers.BigNumber.from(10 ** decimal).mul(amount);
+    }
 
     // console.log('getSigners', await ethers.getSigners());
     async function getAaveContracts() {
@@ -54,22 +50,23 @@ task('deploy', 'Deploys the core contracts')
       const TetherToken = await ethers.getContractAt('IUSDT');
       const usdt = await TetherToken.attach(USDT, usdtOwner_Signer);
 
+      console.log('\n');
       console.log('impersonating USDT_OWNER_ADDRESS:', USDT_OWNER_ADDRESS);
       // Let's use USDT_OWNER_ADDRESS as the address to deposit USDT to Aave to get aUSDT
       const lendingPoolCoreAllowance = await usdt.allowance(USDT_OWNER_ADDRESS, AAVE_LENDING_POOL_CORE_ADDRESS);
       console.log(`\t\tAllowance for aave lending pool = ${lendingPoolCoreAllowance}`);
-      if (lendingPoolCoreAllowance < 1) {
-        await usdt.approve(AAVE_LENDING_POOL_CORE_ADDRESS, MAX_ALLOWANCE.toString());
-      }
+      // if (lendingPoolCoreAllowance < 1) {
+      //   await usdt.approve(AAVE_LENDING_POOL_CORE_ADDRESS, MAX_ALLOWANCE.toString());
+      // }
 
-      const tokenAmount = getTokenAmount('USDT', amount);
+      const tokenAmount = amountToWei({decimal: 6}, amount);
       console.log('tokenAmount', tokenAmount);
       // await usdt.issue(tokenAmount);
 
       console.log(`\t\tUSDT balance of USDT_OWNER_ADDRESS = ${await usdt.balanceOf(USDT_OWNER_ADDRESS)}`);
 
-      await aaveContracts.lendingPool.deposit(USDT, tokenAmount.toString(), 0);
-      await aaveContracts.aUSDT.transfer(receiver, tokenAmount);
+      await aaveContracts.lendingPool.connect(usdtOwner_Signer).deposit(USDT, tokenAmount, 0);
+      // await aaveContracts.aUSDT.connect(usdtOwner_Signer).transfer(receiver, tokenAmount);
 
       console.log('impersonating stopped\n');
 
@@ -150,9 +147,7 @@ task('deploy', 'Deploys the core contracts')
 
     console.log("   6. Initializing 'Benchmark'");
     console.log('   --------------------------');
-    tx = await benchmark.initialize(benchmarkData.address, benchmarkMarketFactory.address, benchmarkTreasury.address, {
-      gasLimit: 50000,
-    });
+    tx = await benchmark.initialize(benchmarkData.address, benchmarkMarketFactory.address, benchmarkTreasury.address);
     printInfo(tx);
     console.log('\n');
 
@@ -175,9 +170,7 @@ task('deploy', 'Deploys the core contracts')
 
     console.log("   9. Adding 'BenchmarkAaveForge'");
     console.log('   -----------------------------');
-    tx = await benchmark.connect(governance).addForge(FORGE_AAVE, benchmarkAaveForge.address, {
-      gasLimit: 50000,
-    });
+    tx = await benchmark.connect(governance).addForge(FORGE_AAVE, benchmarkAaveForge.address);
     printInfo(tx);
     console.log('\n');
 
@@ -228,7 +221,7 @@ task('deploy', 'Deploys the core contracts')
     const aaveContracts = await getAaveContracts();
     console.log('fetched aaveContracts');
 
-    await mintAUSDT(account, 100000, aaveContracts);
+    await mintAUSDT(account, ethers.BigNumber.from(1000), aaveContracts);
     // await aaveContracts.aUSDT.approve(benchmarkAaveForge.address, MAX_ALLOWANCE);
     // await benchmark.tokenizeYield(FORGE_AAVE, USDT, TEST_EXPIRY, 50000 * 1000000, account);
 
