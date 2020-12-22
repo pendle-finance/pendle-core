@@ -199,7 +199,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         _pullToken(inToken, msg.sender, inAmount);
         _pushToken(outToken, msg.sender, outAmount);
-        
+
         return (inAmount, spotPriceAfter);
     }
 
@@ -546,10 +546,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
         if (dueInterests == 0) return;
-        IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).transfer(
-            account,
-            dueInterests
-        );
+        IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).transfer(account, dueInterests);
 
         //printAcc(account);
     }

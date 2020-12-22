@@ -67,8 +67,10 @@ describe("BenchmarkMarket", async () => {
       amountToTokenize,
       overrides
     );
-    let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(benchmarkMarket.address);
-    let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address)
+    let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
+      benchmarkMarket.address
+    );
+    let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address);
     let totalSupply = await benchmarkMarket.totalSupply();
 
     expect(yieldTokenBalance).to.be.equal(amountToTokenize);
@@ -94,36 +96,45 @@ describe("BenchmarkMarket", async () => {
       .connect(wallet1)
       .joinPoolByAll(totalSupply, amountToTokenize, amountToTokenize);
 
-      let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(benchmarkMarket.address);
-      let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address)
-      let totalSupplyBalance = await benchmarkMarket.totalSupply();
+    let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
+      benchmarkMarket.address
+    );
+    let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address);
+    let totalSupplyBalance = await benchmarkMarket.totalSupply();
 
-      expect(yieldTokenBalance).to.be.equal(amountToTokenize.mul(2));
-      expect(testTokenBalance).to.be.equal(amountToTokenize.mul(2));
-      expect(totalSupplyBalance).to.be.equal(totalSupply.mul(2));
+    expect(yieldTokenBalance).to.be.equal(amountToTokenize.mul(2));
+    expect(testTokenBalance).to.be.equal(amountToTokenize.mul(2));
+    expect(totalSupplyBalance).to.be.equal(totalSupply.mul(2));
   });
 
   it("should be able to swap amount out", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
     let overrides = { gasLimit: 40000000 };
-    let benchmarkMarketWallet1 = benchmarkMarket.connect(wallet1)
-    await benchmarkMarket.bootstrap(amountToTokenize, amountToTokenize, overrides);
+    let benchmarkMarketWallet1 = benchmarkMarket.connect(wallet1);
+    await benchmarkMarket.bootstrap(
+      amountToTokenize,
+      amountToTokenize,
+      overrides
+    );
 
-    await benchmarkMarketWallet1 
-      .swapAmountOut(
-        testToken.address,
-        constants.MAX_ALLOWANCE,
-        benchmarkFutureYieldToken.address,
-        amountToTokenize.div(10),
-        constants.MAX_ALLOWANCE
-      );
+    await benchmarkMarketWallet1.swapAmountOut(
+      testToken.address,
+      constants.MAX_ALLOWANCE,
+      benchmarkFutureYieldToken.address,
+      amountToTokenize.div(10),
+      constants.MAX_ALLOWANCE
+    );
 
-      let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(benchmarkMarket.address);
-      let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address)
+    let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
+      benchmarkMarket.address
+    );
+    let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address);
 
-      expect(yieldTokenBalance).to.be.equal(amountToTokenize.sub(amountToTokenize.div(10)));
-      expect(testTokenBalance.toNumber()).to.be.approximately(111111080, 20);
+    expect(yieldTokenBalance).to.be.equal(
+      amountToTokenize.sub(amountToTokenize.div(10))
+    );
+    expect(testTokenBalance.toNumber()).to.be.approximately(111111080, 20);
   });
 
   it("should be able to exit a pool", async () => {
@@ -140,11 +151,16 @@ describe("BenchmarkMarket", async () => {
       amountToTokenize.div(10)
     );
 
+    let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
+      benchmarkMarket.address
+    );
+    let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address);
 
-    let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(benchmarkMarket.address);
-    let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address)
-
-    expect(yieldTokenBalance).to.be.equal(amountToTokenize.sub(amountToTokenize.div(10)));
-    expect(testTokenBalance).to.be.equal(amountToTokenize.sub(amountToTokenize.div(10)));
+    expect(yieldTokenBalance).to.be.equal(
+      amountToTokenize.sub(amountToTokenize.div(10))
+    );
+    expect(testTokenBalance).to.be.equal(
+      amountToTokenize.sub(amountToTokenize.div(10))
+    );
   });
 });
