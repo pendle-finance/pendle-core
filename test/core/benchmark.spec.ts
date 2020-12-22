@@ -149,7 +149,7 @@ describe("Benchmark", async () => {
     );
   });
 
-  it("After expiry, should be able to redeem aUSDT from OT", async () => {
+  it("Short after expiry, should be able to redeem aUSDT from OT", async () => {
     const token = tokens.USDT;
     const aUSDT = await getAContract(wallet, lendingPoolCore, token);
 
@@ -167,7 +167,7 @@ describe("Benchmark", async () => {
     await benchmarkFutureYieldToken.transfer(wallet1.address, amountToTokenize);
     const duration = constants.TEST_EXPIRY.sub(
       Math.round(Date.now() / 1000)
-    ).sub(constants.ONE_DAY);
+    ).sub(10);
 
     await advanceTime(provider, duration);
 
@@ -185,7 +185,7 @@ describe("Benchmark", async () => {
 
     expect(wallet1Gain.toNumber()).to.be.approximately(gain.toNumber(), 10);
 
-    await advanceTime(provider, BigNumber.from(constants.ONE_DAY.mul(2)));
+    await advanceTime(provider, BigNumber.from(20));
 
     await benchmark.redeemAfterExpiry(
       constants.FORGE_AAVE,
@@ -194,7 +194,52 @@ describe("Benchmark", async () => {
       wallet.address
     );
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    expect(finalAUSDTbalance.toNumber()).to.be.approximately(initialAUSDTbalance.toNumber(), 5);
+  });
 
-    expect(finalAUSDTbalance).to.be.equal(initialAUSDTbalance);
+  it("One month after expiry, should be able to redeem aUSDT with intrest", async () => {
+    const token = tokens.USDT;
+    const aUSDT = await getAContract(wallet, lendingPoolCore, token);
+
+    const amountToTokenize = amountToWei(token, BigNumber.from(100));
+    const wallet1 = wallets[1];
+    const initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+
+    await benchmark.tokenizeYield(
+      constants.FORGE_AAVE,
+      token.address,
+      constants.TEST_EXPIRY,
+      amountToTokenize,
+      wallet.address
+    );
+    await benchmarkFutureYieldToken.transfer(wallet1.address, amountToTokenize);
+    const duration = constants.TEST_EXPIRY.sub(
+      Math.round(Date.now() / 1000)
+    ).sub(10);
+
+    await advanceTime(provider, duration);
+
+    const wallet1Benchmark = benchmark.connect(wallet1);
+
+    await wallet1Benchmark.redeemDueInterests(
+      constants.FORGE_AAVE,
+      token.address,
+      constants.TEST_EXPIRY
+    );
+
+    await advanceTime(provider, constants.ONE_MOUNTH);
+
+    await benchmark.redeemAfterExpiry(
+      constants.FORGE_AAVE,
+      token.address,
+      constants.TEST_EXPIRY,
+      wallet.address
+      );
+
+    const rate = await getLiquidityRate(wallet, token);
+    const gain = getGain(amountToTokenize, rate, constants.ONE_MOUNTH);
+
+    const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    expect(finalAUSDTbalance.toNumber()).to.be.approximately(initialAUSDTbalance.add(gain).toNumber(), 20000);
   });
 });
