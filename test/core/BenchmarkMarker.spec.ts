@@ -117,7 +117,8 @@ describe("BenchmarkMarket", async () => {
         constants.MAX_ALLOWANCE,
         benchmarkFutureYieldToken.address,
         amountToTokenize.div(10),
-        constants.MAX_ALLOWANCE
+        constants.MAX_ALLOWANCE,
+        overrides
       );
 
       let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(benchmarkMarket.address);
