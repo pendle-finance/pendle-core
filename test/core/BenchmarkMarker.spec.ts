@@ -107,11 +107,10 @@ describe("BenchmarkMarket", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
     let overrides = { gasLimit: 40000000 };
-
+    let benchmarkMarketWallet1 = benchmarkMarket.connect(wallet1)
     await benchmarkMarket.bootstrap(amountToTokenize, amountToTokenize, overrides);
 
-    await benchmarkMarket
-      .connect(wallet1)
+    await benchmarkMarketWallet1 
       .swapAmountOut(
         testToken.address,
         constants.MAX_ALLOWANCE,

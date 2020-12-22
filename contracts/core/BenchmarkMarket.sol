@@ -28,13 +28,12 @@ import "../interfaces/IBenchmarkYieldToken.sol";
 import "../tokens/BenchmarkBaseToken.sol";
 import "../libraries/BenchmarkLibrary.sol";
 import {Math} from "../libraries/BenchmarkLibrary.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "hardhat/console.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     using Math for uint256;
     using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    // using SafeERC20 for IERC20;
 
     IBenchmark public immutable override core;
     address public immutable override factory;
@@ -197,11 +196,9 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "ERR_MATH_PROBLEM");
 
         emit Swap(msg.sender, inAmount, outAmount, msg.sender);
-        console.log("before _pullToken, %s %s %s", inToken, msg.sender, inAmount);
+
         _pullToken(inToken, msg.sender, inAmount);
-        console.log("before _pushToken %s %s %s", outToken, msg.sender, outAmount);
         _pushToken(outToken, msg.sender, outAmount);
-        console.log("DONE");
         
         return (inAmount, spotPriceAfter);
     }
@@ -241,25 +238,25 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         //mint and push lp token
         _mintLpToken(outAmountLp);
         _pushLpToken(msg.sender, outAmountLp);
-        printAcc(msg.sender);
+        // printAcc(msg.sender);
     }
 
-    function printAcc(address a) internal view {
-        console.log("\t\t[contract] Details for ", a);
-        console.log("\t\t\t[contract] globalIncomeIndex=", globalIncomeIndex);
-        console.log(
-            "\t\t\t[contract] underlyingYieldTokenAsset bal of account=",
-            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(a)
-        );
-        console.log(
-            "\t\t\t[contract] underlyingYieldToken bal of amm =",
-            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this))
-        );
-        console.log(
-            "\t\t\t[contract] lastGlobalIncomeIndex of account = ",
-            lastGlobalIncomeIndex[a]
-        );
-    }
+    // function printAcc(address a) internal view {
+    //     console.log("\t\t[contract] Details for ", a);
+    //     console.log("\t\t\t[contract] globalIncomeIndex=", globalIncomeIndex);
+    //     console.log(
+    //         "\t\t\t[contract] underlyingYieldTokenAsset bal of account=",
+    //         IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(a)
+    //     );
+    //     console.log(
+    //         "\t\t\t[contract] underlyingYieldToken bal of amm =",
+    //         IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this))
+    //     );
+    //     console.log(
+    //         "\t\t\t[contract] lastGlobalIncomeIndex of account = ",
+    //         lastGlobalIncomeIndex[a]
+    //     );
+    // }
 
     /**
      * @notice exit the pool by putting in desired amount of lpToken
@@ -463,7 +460,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address fromAddr,
         uint256 amountToPull
     ) internal {
-        IERC20(tokenAddr).safeTransferFrom(fromAddr, address(this), amountToPull);
+        IERC20(tokenAddr).transferFrom(fromAddr, address(this), amountToPull);
     }
 
     function _pushToken(
@@ -471,7 +468,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address toAddr,
         uint256 amountToPush
     ) internal {
-        IERC20(tokenAddr).safeTransfer(toAddr, amountToPush);
+        IERC20(tokenAddr).transfer(toAddr, amountToPush);
     }
 
     function _pullLpToken(address from, uint256 amount) internal {
@@ -500,10 +497,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         uint256 xytWeight = xytReserve.weight;
         uint256 tokenWeight = tokenReserve.weight;
-        console.log("\tendTime,", endTime);
-        console.log("\tcurrentTime,", currentTime);
-        console.log("\tduration,", duration);
-
         require((endTime - currentTime) <= duration, "ERR_WRONG_DURATION");
 
         uint256 timeToMature = Math.rdiv((endTime - currentTime) * Math.RAY, duration * Math.RAY);
@@ -550,17 +543,15 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             balanceOf[account].mul(globalIncomeIndex - lastGlobalIncomeIndex[account]).div(
                 GLOBAL_INCOME_INDEX_MULTIPLIER
             );
-        /* console.log("\t[contract] dueInterests in _settleLpInterests = ", dueInterests, account); */
 
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
         if (dueInterests == 0) return;
-        IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).safeTransfer(
+        IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).transfer(
             account,
             dueInterests
         );
 
-        console.log("Settled LP interests for ", account);
-        printAcc(account);
+        //printAcc(account);
     }
 
     // this function should be called whenver the total amount of LP changes
