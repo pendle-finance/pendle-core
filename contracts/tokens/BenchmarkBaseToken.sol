@@ -93,7 +93,7 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
             spender,
             allowance[msg.sender][spender].sub(
                 subtractedValue,
-                "BenchmarkToken: decreased allowance below zero"
+                "Benchmark: allowance < 0"
             )
         );
         return true;
@@ -152,7 +152,7 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
             msg.sender,
             allowance[sender][msg.sender].sub(
                 amount,
-                "BenchmarkToken: transfer amount exceeds allowance"
+                "Benchmark: transfer > allowance"
             )
         );
         return true;
@@ -163,15 +163,15 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
         address spender,
         uint256 amount
     ) internal virtual {
-        require(owner != address(0), "BenchmarkToken: approve from the zero address");
-        require(spender != address(0), "BenchmarkToken: approve to the zero address");
+        require(owner != address(0), "Benchmark: owner zero address");
+        require(spender != address(0), "Benchmark: spender zero address");
 
         allowance[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
 
     function _mint(address account, uint256 amount) internal {
-        require(account != address(0), "BenchmarkToken: mint to the zero address");
+        require(account != address(0), "Benchmark: mint to zero address");
 
         totalSupply = totalSupply.add(amount);
         balanceOf[account] = balanceOf[account].add(amount);
@@ -179,11 +179,11 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
     }
 
     function _burn(address account, uint256 amount) internal {
-        require(account != address(0), "BenchmarkToken: burn from the zero address");
+        require(account != address(0), "Benchmark: burn to zero address");
 
         balanceOf[account] = balanceOf[account].sub(
             amount,
-            "BenchmarkToken: burn amount exceeds balance"
+            "Benchmark: burn > balance"
         );
         totalSupply = totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
@@ -191,20 +191,20 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
 
     function _transfer(
         address sender,
-        address recipient,
+        address receiver,
         uint256 amount
     ) internal {
-        require(sender != address(0), "BenchmarkToken: transfer from the zero address");
-        require(recipient != address(0), "BenchmarkToken: transfer to the zero address");
+        require(sender != address(0), "Benchmark: sender zero address");
+        require(receiver != address(0), "Benchmark: receiver zero address");
 
-        _beforeTokenTransfer(sender, recipient);
+        _beforeTokenTransfer(sender, receiver);
 
         balanceOf[sender] = balanceOf[sender].sub(
             amount,
-            "BenchmarkToken: transfer amount exceeds balance"
+            "Benchmark: transfer > balance"
         );
-        balanceOf[recipient] = balanceOf[recipient].add(amount);
-        emit Transfer(sender, recipient, amount);
+        balanceOf[receiver] = balanceOf[receiver].add(amount);
+        emit Transfer(sender, receiver, amount);
     }
 
     function _beforeTokenTransfer(address from, address to) internal virtual {}
