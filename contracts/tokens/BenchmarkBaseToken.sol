@@ -91,10 +91,7 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
         _approve(
             msg.sender,
             spender,
-            allowance[msg.sender][spender].sub(
-                subtractedValue,
-                "Benchmark: allowance < 0"
-            )
+            allowance[msg.sender][spender].sub(subtractedValue, "Benchmark: allowance < 0")
         );
         return true;
     }
@@ -150,10 +147,7 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
         _approve(
             sender,
             msg.sender,
-            allowance[sender][msg.sender].sub(
-                amount,
-                "Benchmark: transfer > allowance"
-            )
+            allowance[sender][msg.sender].sub(amount, "Benchmark: transfer > allowance")
         );
         return true;
     }
@@ -181,10 +175,7 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
     function _burn(address account, uint256 amount) internal {
         require(account != address(0), "Benchmark: burn to zero address");
 
-        balanceOf[account] = balanceOf[account].sub(
-            amount,
-            "Benchmark: burn > balance"
-        );
+        balanceOf[account] = balanceOf[account].sub(amount, "Benchmark: burn > balance");
         totalSupply = totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
     }
@@ -199,10 +190,7 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
 
         _beforeTokenTransfer(sender, receiver);
 
-        balanceOf[sender] = balanceOf[sender].sub(
-            amount,
-            "Benchmark: transfer > balance"
-        );
+        balanceOf[sender] = balanceOf[sender].sub(amount, "Benchmark: transfer > balance");
         balanceOf[receiver] = balanceOf[receiver].add(amount);
         emit Transfer(sender, receiver, amount);
     }
