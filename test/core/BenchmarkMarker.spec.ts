@@ -1,3 +1,4 @@
+import { expect } from "chai";
 import { Contract, BigNumber } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
 
@@ -32,26 +33,6 @@ describe("BenchmarkMarket", async () => {
   let aUSDT: Contract;
   let snapshotId: string;
 
-  const printAmmDetails = async () => {
-    console.log(
-      `\tPrinting details for amm for xyt ${benchmarkOwnershipToken.address} and token ${testToken.address}`
-    );
-    console.log(
-      `\t\tXyt bal = ${await benchmarkOwnershipToken.balanceOf(
-        benchmarkMarket.address
-      )}`
-    );
-    console.log(
-      `\t\tToken bal = ${await testToken.balanceOf(benchmarkMarket.address)}`
-    );
-    console.log(
-      `\t\taUSDT bal = ${await aUSDT.balanceOf(benchmarkMarket.address)}`
-    );
-    console.log(
-      `\t\tTotal Supply of LP= ${await benchmarkMarket.totalSupply()}`
-    );
-  };
-
   before(async () => {
     await resetChain();
 
@@ -76,49 +57,58 @@ describe("BenchmarkMarket", async () => {
   });
 
   it("should be able to bootstrap", async () => {
-    console.log("Before bootstrap:");
-    await printAmmDetails();
-
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
 
-    await printAmmDetails();
+    let overrides = { gasLimit: 40000000 };
 
-    await benchmarkMarket.bootstrap(amountToTokenize, amountToTokenize);
+    await benchmarkMarket.bootstrap(
+      amountToTokenize,
+      amountToTokenize,
+      overrides
+    );
+    let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(benchmarkMarket.address);
+    let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address)
+    let totalSupply = await benchmarkMarket.totalSupply();
 
-    console.log("After bootstrap:");
-    await printAmmDetails();
+    expect(yieldTokenBalance).to.be.equal(amountToTokenize);
+    expect(testTokenBalance).to.be.equal(amountToTokenize);
   });
 
   it("should be able to join a bootstrapped pool", async () => {
-    console.log("Before bootstrap:");
-    await printAmmDetails();
-
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(10));
-    await benchmarkMarket.bootstrap(amountToTokenize, amountToTokenize);
+    let overrides = { gasLimit: 40000000 };
+
+    await benchmarkMarket.bootstrap(
+      amountToTokenize,
+      amountToTokenize,
+      overrides
+    );
 
     await testToken.approve(benchmarkMarket.address, constants.MAX_ALLOWANCE);
 
-    console.log("Before joinPoolByAll:");
-    await printAmmDetails();
-    const totalSuply = await benchmarkMarket.totalSupply();
+    const totalSupply = await benchmarkMarket.totalSupply();
 
     await benchmarkMarket
       .connect(wallet1)
-      .joinPoolByAll(totalSuply.div(2), amountToTokenize, amountToTokenize);
+      .joinPoolByAll(totalSupply, amountToTokenize, amountToTokenize);
 
-    console.log("After joinPoolByAll:");
-    await printAmmDetails();
+      let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(benchmarkMarket.address);
+      let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address)
+      let totalSupplyBalance = await benchmarkMarket.totalSupply();
+
+      expect(yieldTokenBalance).to.be.equal(amountToTokenize.mul(2));
+      expect(testTokenBalance).to.be.equal(amountToTokenize.mul(2));
+      expect(totalSupplyBalance).to.be.equal(totalSupply.mul(2));
   });
 
   it("should be able to swap amount out", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
-    await benchmarkMarket.bootstrap(amountToTokenize, amountToTokenize);
+    let overrides = { gasLimit: 40000000 };
 
-    console.log("Before swapAmountOut:");
-    await printAmmDetails();
+    await benchmarkMarket.bootstrap(amountToTokenize, amountToTokenize, overrides);
 
     await benchmarkMarket
       .connect(wallet1)
@@ -130,8 +120,11 @@ describe("BenchmarkMarket", async () => {
         constants.MAX_ALLOWANCE
       );
 
-    console.log("After swapAmountOut: (swapped 15e8, 10% of xyt out)");
-    await printAmmDetails();
+      let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(benchmarkMarket.address);
+      let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address)
+
+      expect(yieldTokenBalance).to.be.equal(amountToTokenize.sub(amountToTokenize.div(10)));
+      expect(testTokenBalance.toNumber()).to.be.approximately(111111080, 20);
   });
 
   it("should be able to exit a pool", async () => {
@@ -139,12 +132,7 @@ describe("BenchmarkMarket", async () => {
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
     await benchmarkMarket.bootstrap(amountToTokenize, amountToTokenize);
 
-    console.log("Before exitPoolByAll:");
-    await printAmmDetails();
-
     await advanceTime(provider, constants.ONE_MOUNTH);
-    console.log("one month has passed");
-    console.log("Before exitPoolByAll");
     const totalSuply = await benchmarkMarket.totalSupply();
 
     await benchmarkMarket.exitPoolByAll(
@@ -153,7 +141,11 @@ describe("BenchmarkMarket", async () => {
       amountToTokenize.div(10)
     );
 
-    console.log("After exitPoolByAll: (exited 1/10 of current pool)");
-    await printAmmDetails();
+
+    let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(benchmarkMarket.address);
+    let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address)
+
+    expect(yieldTokenBalance).to.be.equal(amountToTokenize.sub(amountToTokenize.div(10)));
+    expect(testTokenBalance).to.be.equal(amountToTokenize.sub(amountToTokenize.div(10)));
   });
 });
