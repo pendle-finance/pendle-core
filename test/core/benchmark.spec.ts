@@ -249,4 +249,9 @@ describe("Benchmark", async () => {
       20000
     );
   });
-});
+  it("Should be able to remove a forge", async () => {
+    await benchmark.removeForge(constants.FORGE_AAVE);
+    let deleted = await benchmarkData.getForgeAddress(constants.FORGE_AAVE)
+    expect(deleted).to.be.equal("0x0000000000000000000000000000000000000000");
+  })
+ });
