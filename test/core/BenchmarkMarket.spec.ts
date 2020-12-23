@@ -64,12 +64,10 @@ describe("BenchmarkMarket", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
 
-    let overrides = { gasLimit: 40000000 };
-
     await benchmarkMarket.bootstrap(
       amountToTokenize,
       amountToTokenize,
-      overrides
+      constants.HIGH_GAS_OVERRIDE
     );
     let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
       benchmarkMarket.address
@@ -84,12 +82,11 @@ describe("BenchmarkMarket", async () => {
   it("should be able to join a bootstrapped pool", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(10));
-    let overrides = { gasLimit: 40000000 };
 
     await benchmarkMarket.bootstrap(
       amountToTokenize,
       amountToTokenize,
-      overrides
+      constants.HIGH_GAS_OVERRIDE
     );
 
     await testToken.approve(benchmarkMarket.address, constants.MAX_ALLOWANCE);
@@ -114,12 +111,11 @@ describe("BenchmarkMarket", async () => {
   it("should be able to swap amount out", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
-    let overrides = { gasLimit: 40000000 };
 
     await benchmarkMarket.bootstrap(
       amountToTokenize,
       amountToTokenize,
-      overrides
+      constants.HIGH_GAS_OVERRIDE
     );
 
     await benchmarkMarket
@@ -130,7 +126,7 @@ describe("BenchmarkMarket", async () => {
         benchmarkFutureYieldToken.address,
         amountToTokenize.div(10),
         constants.MAX_ALLOWANCE,
-        overrides
+        constants.HIGH_GAS_OVERRIDE
       );
 
     let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
@@ -155,7 +151,8 @@ describe("BenchmarkMarket", async () => {
     await benchmarkMarket.exitPoolByAll(
       totalSuply.div(10),
       amountToTokenize.div(10),
-      amountToTokenize.div(10)
+      amountToTokenize.div(10),
+      constants.HIGH_GAS_OVERRIDE
     );
 
     let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(

@@ -32,7 +32,6 @@ provider: providers.Web3Provider
   await mintAproveTokenizeYield(provider, token, wallet, amount, benchmark, benchmarkAaveForge);
   await mintAproveTokenizeYield(provider, token, wallet1, amount, benchmark, benchmarkAaveForge);
 
-  let overrides = {gasLimit: 40000000};
                              
   const testToken = await deployContract(wallet, TestToken, ['Test Token', 'TEST', 6]);
   const totalSupply = await testToken.totalSupply();
@@ -43,7 +42,7 @@ provider: providers.Web3Provider
       benchmarkFutureYieldToken.address,
       testToken.address,
       constants.TEST_EXPIRY,
-      overrides
+      constants.HIGH_GAS_OVERRIDE
     );
 
     const benchmarkMarketAddress = await benchmarkData.getMarket(
