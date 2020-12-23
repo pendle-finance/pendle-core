@@ -1,6 +1,6 @@
 import chai, { expect } from 'chai'
 import { Wallet, providers, BigNumber } from 'ethers'
-import { benchmarkcoreFixture, BenchmarkCoreFixture } from './benchmarkCore.fixture';
+import { benchmarkCoreFixture, BenchmarkCoreFixture } from './benchmarkCore.fixture';
 import {benchmarkAaveForgeFixture, BenchmarkAaveFixture} from './benchmarkAaveForge.fixture'
 import {aaveFixture, AaveFixture} from './aave.fixture';
 import {constants, tokens} from "../../helpers/Constants"
@@ -13,10 +13,11 @@ interface BenchmarkFixture {
   }
 
 export async function benchmarkFixture(
-[wallet]: Wallet[],
-provider: providers.Web3Provider
+  wallets: Wallet[],
+  provider: providers.Web3Provider
 ): Promise<BenchmarkFixture> {
-  const core = await benchmarkcoreFixture(wallet);
+  const [wallet] = wallets;
+  const core = await benchmarkCoreFixture(wallets, provider);
   const forge = await benchmarkAaveForgeFixture(wallet, core);
   const aave = await aaveFixture(wallet);
 

@@ -54,11 +54,6 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         _;
     }
 
-    modifier onlyMarket() {
-        require(isMarket[msg.sender], "Benchmark: only market");
-        _;
-    }
-
     modifier onlyMarketFactory() {
         require(msg.sender == address(core.factory()), "Benchmark: only market factory");
         _;

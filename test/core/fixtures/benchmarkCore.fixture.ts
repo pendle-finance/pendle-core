@@ -1,4 +1,4 @@
-import { Contract, Wallet } from 'ethers'
+import { Contract, Wallet, providers } from 'ethers'
 import Benchmark from '../../../build/artifacts/contracts/core/Benchmark.sol/Benchmark.json'
 import BenchmarkTreasury from '../../../build/artifacts/contracts/core/BenchmarkTreasury.sol/BenchmarkTreasury.json'
 import BenchmarkMarketFactory from "../../../build/artifacts/contracts/core/BenchmarkMarketFactory.sol/BenchmarkMarketFactory.json"
@@ -15,8 +15,9 @@ export interface BenchmarkCoreFixture {
   benchmarkData: Contract
 }
 
-  export async function benchmarkcoreFixture(
-    wallet: Wallet,
+  export async function benchmarkCoreFixture(
+    [wallet]: Wallet[],
+    provider: providers.Web3Provider
   ): Promise<BenchmarkCoreFixture> {
     const benchmark = await deployContract(wallet, Benchmark, [wallet.address, tokens.WETH.address]);
     const benchmarkTreasury = await deployContract(wallet, BenchmarkTreasury, [wallet.address]);
