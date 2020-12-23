@@ -1,7 +1,7 @@
 import { Contract, Wallet, providers } from 'ethers'
-import Bmk from '../../../artifacts/contracts/core/Benchmark.sol/Benchmark.json'
-import Timelock from '../../../artifacts/contracts/periphery/Timelock.sol/Timelock.json'
-import BenchmarkGovernance from '../../../artifacts/contracts/core/BenchmarkGovernance.sol/BenchmarkGovernance.json'
+import Bmk from '../../../build/artifacts/contracts/core/Benchmark.sol/Benchmark.json'
+import Timelock from '../../../build/artifacts/contracts/periphery/Timelock.sol/Timelock.json'
+import BenchmarkGovernance from '../../../build/artifacts/contracts/core/BenchmarkGovernance.sol/BenchmarkGovernance.json'
 import {tokens} from "../../helpers/Constants"
 
 const { waffle } = require("hardhat");

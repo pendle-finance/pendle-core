@@ -23,6 +23,7 @@ export const constants = {
   ONE_MOUNTH: BigNumber.from(2592000),
   TEST_EXPIRY: BigNumber.from(Math.round(Date.now() / 1000)).add(2592000 * 6),
   ONE_YEAR: BigNumber.from(31536000),
+  HIGH_GAS_OVERRIDE: { gasLimit: 40000000 },
 };
 
 export const tokens: TokenMap = {

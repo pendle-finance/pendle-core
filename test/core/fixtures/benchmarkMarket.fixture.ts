@@ -3,8 +3,8 @@ import { benchmarkcoreFixture, BenchmarkCoreFixture } from './benchmarkCore.fixt
 import {benchmarkAaveForgeFixture, BenchmarkAaveFixture} from './benchmarkAaveForge.fixture'
 import {aaveFixture, AaveFixture} from './aave.fixture';
 import {constants, tokens, mintAproveTokenizeYield, amountToWei} from "../../helpers";
-import TestToken from "../../../artifacts/contracts/mock/TestToken.sol/TestToken.json";
-import BenchmarkMarket from "../../../artifacts/contracts/core/BenchmarkMarket.sol/BenchmarkMarket.json"
+import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
+import BenchmarkMarket from "../../../build/artifacts/contracts/core/BenchmarkMarket.sol/BenchmarkMarket.json"
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;
 

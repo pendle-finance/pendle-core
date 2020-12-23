@@ -3,14 +3,16 @@ dotenv.config();
 
 import { HardhatUserConfig } from "hardhat/types";
 import "@nomiclabs/hardhat-waffle";
-import "solidity-coverage"
+import "solidity-coverage";
+import "hardhat-typechain";
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   paths: {
     sources: './contracts',
     tests: './test/core/',
-    artifacts: "./artifacts",
+    artifacts: "./build/artifacts",
+    cache: "./build/cache"
   },
   networks: {
     hardhat: {

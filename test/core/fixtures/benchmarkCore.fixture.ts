@@ -1,8 +1,8 @@
 import { Contract, Wallet } from 'ethers'
-import Benchmark from '../../../artifacts/contracts/core/Benchmark.sol/Benchmark.json'
-import BenchmarkTreasury from '../../../artifacts/contracts/core/BenchmarkTreasury.sol/BenchmarkTreasury.json'
-import BenchmarkMarketFactory from "../../../artifacts/contracts/core/BenchmarkMarketFactory.sol/BenchmarkMarketFactory.json"
-import BenchmarkData from "../../../artifacts/contracts/core/BenchmarkData.sol/BenchmarkData.json"
+import Benchmark from '../../../build/artifacts/contracts/core/Benchmark.sol/Benchmark.json'
+import BenchmarkTreasury from '../../../build/artifacts/contracts/core/BenchmarkTreasury.sol/BenchmarkTreasury.json'
+import BenchmarkMarketFactory from "../../../build/artifacts/contracts/core/BenchmarkMarketFactory.sol/BenchmarkMarketFactory.json"
+import BenchmarkData from "../../../build/artifacts/contracts/core/BenchmarkData.sol/BenchmarkData.json"
 import {tokens} from "../../helpers/Constants"
 
 const { waffle } = require("hardhat");

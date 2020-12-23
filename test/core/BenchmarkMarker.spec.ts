@@ -8,7 +8,6 @@ import {
   tokens,
   amountToWei,
   getAContract,
-  resetChain,
   evm_snapshot,
   evm_revert,
   advanceTime,
@@ -32,9 +31,10 @@ describe("BenchmarkMarket", async () => {
   let testToken: Contract;
   let aUSDT: Contract;
   let snapshotId: string;
+  let globalSnapshotId: string;
 
   before(async () => {
-    await resetChain();
+    globalSnapshotId = await evm_snapshot();
 
     const fixture = await loadFixture(benchmarkMarketFixture);
     benchmark = fixture.core.benchmark;
@@ -49,6 +49,10 @@ describe("BenchmarkMarket", async () => {
     benchmarkMarket = fixture.benchmarkMarket;
     aUSDT = await getAContract(wallet, lendingPoolCore, tokens.USDT);
     snapshotId = await evm_snapshot();
+  });
+
+  after(async () => {
+    await evm_revert(globalSnapshotId);
   });
 
   beforeEach(async () => {
