@@ -140,6 +140,38 @@ describe("BenchmarkMarket", async () => {
     expect(testTokenBalance.toNumber()).to.be.approximately(111111080, 20);
   });
 
+  it("should be able to swap amount in", async () => {
+    const token = tokens.USDT;
+    const amountToTokenize = amountToWei(token, BigNumber.from(100));
+
+    await benchmarkMarket.bootstrap(
+      amountToTokenize,
+      amountToTokenize,
+      constants.HIGH_GAS_OVERRIDE
+    );
+
+    await benchmarkMarket
+      .connect(wallet1)
+      .swapAmountIn(
+        amountToTokenize.div(10),
+        testToken.address,
+        benchmarkFutureYieldToken.address,
+        BigNumber.from(0),
+        constants.MAX_ALLOWANCE,
+        constants.HIGH_GAS_OVERRIDE
+      );
+
+    let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
+      benchmarkMarket.address
+    );
+    let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address);
+
+    expect(yieldTokenBalance.toNumber()).to.be.approximately(
+      amountToTokenize.sub(amountToTokenize.div(10)).toNumber(), amountToTokenize.div(100).toNumber()
+    );
+    expect(testTokenBalance.toNumber()).to.be.eq(amountToTokenize.add(amountToTokenize.div(10)))
+  });
+
   it("should be able to exit a pool", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
