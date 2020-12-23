@@ -1,7 +1,7 @@
 const shell = require('shelljs');
 
 module.exports = {
-  skipFiles: ['core/BenchmarkTreasury.sol', 'core/BenchmarkGovernance.sol', 'periphery/Timelock.sol'],
+  skipFiles: ['core/BenchmarkTreasury.sol', 'core/BenchmarkGovernance.sol', 'periphery/Timelock.sol', "tokens/BMK.sol"],
   onCompileComplete: async function (_config) {
     await run("typechain");
   },
