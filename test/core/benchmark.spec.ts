@@ -1,4 +1,4 @@
-import chai, { assert, expect } from "chai";
+import { expect } from "chai";
 import { Contract, BigNumber } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
 
@@ -11,7 +11,6 @@ import {
   advanceTime,
   getLiquidityRate,
   getGain,
-  resetChain,
   evm_revert,
   evm_snapshot,
 } from "../helpers";
@@ -34,12 +33,10 @@ describe("Benchmark", async () => {
   let lendingPoolCore: Contract;
   let benchmarkAaveForge: Contract;
   let snapshotId: string;
-  before(async () => {
-    await resetChain();
-  });
+  let globalSnapshotId:string
 
   before(async () => {
-    await resetChain();
+    globalSnapshotId = await evm_snapshot();
 
     const fixture = await loadFixture(benchmarkFixture);
     benchmark = fixture.core.benchmark;
@@ -52,6 +49,10 @@ describe("Benchmark", async () => {
     lendingPoolCore = fixture.aave.lendingPoolCore;
     snapshotId = await evm_snapshot();
   });
+
+  after(async() => {
+    await evm_revert(globalSnapshotId);
+  })
 
   beforeEach(async () => {
     await evm_revert(snapshotId);
@@ -185,7 +186,7 @@ describe("Benchmark", async () => {
 
     expect(wallet1Gain.toNumber()).to.be.approximately(gain.toNumber(), 10);
 
-    await advanceTime(provider, BigNumber.from(20));
+    await advanceTime(provider, BigNumber.from(60));
 
     await benchmark.redeemAfterExpiry(
       constants.FORGE_AAVE,
@@ -196,7 +197,7 @@ describe("Benchmark", async () => {
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.toNumber(),
-      5
+      10
     );
   });
 

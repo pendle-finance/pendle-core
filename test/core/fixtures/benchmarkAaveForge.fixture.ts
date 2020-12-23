@@ -1,8 +1,8 @@
 
 import { Contract, Wallet } from 'ethers'
-import BenchmarkAaveForge from '../../../artifacts/contracts/core/BenchmarkAaveForge.sol/BenchmarkAaveForge.json'
-import BenchmarkOwnershipToken from '../../../artifacts/contracts/tokens/BenchmarkOwnershipToken.sol/BenchmarkOwnershipToken.json'
-import BenchmarkFutureYieldToken from "../../../artifacts/contracts/tokens/BenchmarkFutureYieldToken.sol/BenchmarkFutureYieldToken.json"
+import BenchmarkAaveForge from '../../../build/artifacts/contracts/core/BenchmarkAaveForge.sol/BenchmarkAaveForge.json'
+import BenchmarkOwnershipToken from '../../../build/artifacts/contracts/tokens/BenchmarkOwnershipToken.sol/BenchmarkOwnershipToken.json'
+import BenchmarkFutureYieldToken from "../../../build/artifacts/contracts/tokens/BenchmarkFutureYieldToken.sol/BenchmarkFutureYieldToken.json"
 import {constants, tokens} from "../../helpers/Constants"
 import {BenchmarkCoreFixture} from "./benchmarkCore.fixture"
 

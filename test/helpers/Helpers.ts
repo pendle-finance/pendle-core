@@ -1,8 +1,8 @@
 import { Contract, Wallet, providers, BigNumber } from "ethers";
-import TetherToken from "../../artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json";
-import ERC20 from "../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
+import TetherToken from "../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json";
+import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
 import { aaveFixture } from "../core/fixtures/aave.fixture";
-import AToken from "../../artifacts/contracts/interfaces/IAToken.sol/IAToken.json";
+import AToken from "../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json";
 import * as config from "../../hardhat.config";
 
 const hre = require("hardhat");
@@ -15,13 +15,6 @@ export async function impersonateAccount(address: String) {
   await hre.network.provider.request({
     method: "hardhat_impersonateAccount",
     params: [address],
-  });
-}
-export async function resetChain() {
-  let networkConfig = config.default.networks!.hardhat!;
-  await hre.network.provider.request({
-    method: "hardhat_reset",
-    params: [{ forking: { jsonRpcUrl: networkConfig.forking!.url } }],
   });
 }
 
