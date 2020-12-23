@@ -5592,7 +5592,7 @@ hardhat-typechain@^0.3.3:
   resolved "https://registry.yarnpkg.com/hardhat-typechain/-/hardhat-typechain-0.3.4.tgz#6d7d86184152b5a3c83bde0fbbb26224b6fbfd70"
   integrity sha512-oI9YSutDfZnRlAV1bYTpLkBHw4rkhz9JDWAEXz2PR34ylpgLWxPFbPiHT5QXadGTlBqJUAT6JSTxCK1kADMkjA==
 
-hardhat@^2.0.5:
+hardhat@^2.0.6:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/hardhat/-/hardhat-2.0.6.tgz#51f161e00b3c03f03fbf32027009d0ca50ad56db"
   integrity sha512-wFTamcSUBMGwpgFxWu7ptg5o07FQyr8Ce8072rzE+QjpwM0uD3GRdhlqn+O1w+awQZ7AhK44njpAoRPUelOf/Q==

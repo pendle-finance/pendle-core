@@ -33,7 +33,7 @@ describe("Benchmark", async () => {
   let lendingPoolCore: Contract;
   let benchmarkAaveForge: Contract;
   let snapshotId: string;
-  let globalSnapshotId:string
+  let globalSnapshotId: string;
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
@@ -50,9 +50,9 @@ describe("Benchmark", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  after(async() => {
+  after(async () => {
     await evm_revert(globalSnapshotId);
-  })
+  });
 
   beforeEach(async () => {
     await evm_revert(snapshotId);

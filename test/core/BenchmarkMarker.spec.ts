@@ -31,7 +31,7 @@ describe("BenchmarkMarket", async () => {
   let testToken: Contract;
   let aUSDT: Contract;
   let snapshotId: string;
-  let globalSnapshotId:string
+  let globalSnapshotId: string;
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
@@ -51,9 +51,9 @@ describe("BenchmarkMarket", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  after(async() => {
+  after(async () => {
     await evm_revert(globalSnapshotId);
-  })
+  });
 
   beforeEach(async () => {
     await evm_revert(snapshotId);
