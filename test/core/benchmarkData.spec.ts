@@ -3,10 +3,7 @@ import { Contract } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
 
 import { benchmarkCoreFixture } from "./fixtures";
-import {
-  evm_revert,
-  evm_snapshot,
-} from "../helpers";
+import { evm_revert, evm_snapshot } from "../helpers";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
@@ -52,6 +49,6 @@ describe("BenchmarkData", async () => {
 
   it("getAllMarkets", async () => {
     let getAllMarkets = await benchmarkData.getAllMarkets();
-    assert(Array.isArray(getAllMarkets))
+    assert(Array.isArray(getAllMarkets));
   });
 });
