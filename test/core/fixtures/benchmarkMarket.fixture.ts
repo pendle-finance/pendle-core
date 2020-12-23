@@ -1,5 +1,5 @@
 import { Wallet, providers, BigNumber, Contract } from 'ethers'
-import { benchmarkcoreFixture, BenchmarkCoreFixture } from './benchmarkCore.fixture';
+import { benchmarkCoreFixture, BenchmarkCoreFixture } from './benchmarkCore.fixture';
 import {benchmarkAaveForgeFixture, BenchmarkAaveFixture} from './benchmarkAaveForge.fixture'
 import {aaveFixture, AaveFixture} from './aave.fixture';
 import {constants, tokens, mintAproveTokenizeYield, amountToWei} from "../../helpers";
@@ -17,10 +17,11 @@ interface BenchmarkMarketFixture {
   }
 
 export async function benchmarkMarketFixture(
-[wallet, wallet1]: Wallet[],
+  wallets: Wallet[],
 provider: providers.Web3Provider
 ): Promise<BenchmarkMarketFixture> {
-  const core = await benchmarkcoreFixture(wallet);
+  const [wallet, wallet1] = wallets
+  const core = await benchmarkCoreFixture(wallets, provider);
   const forge = await benchmarkAaveForgeFixture(wallet, core);
   const aave = await aaveFixture(wallet);
   const {benchmark, benchmarkMarketFactory, benchmarkData} = core;
