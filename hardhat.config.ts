@@ -58,7 +58,7 @@ const config: HardhatUserConfig = {
       gasPrice: "auto",
     },
     development: {
-      url: "http://127.0.0.1:8545",
+      url: 'http://127.0.0.1:8545',
       gas: 12400000,
       timeout: 1000000,
     },
