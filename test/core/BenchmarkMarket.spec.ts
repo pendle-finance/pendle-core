@@ -167,9 +167,12 @@ describe("BenchmarkMarket", async () => {
     let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address);
 
     expect(yieldTokenBalance.toNumber()).to.be.approximately(
-      amountToTokenize.sub(amountToTokenize.div(10)).toNumber(), amountToTokenize.div(100).toNumber()
+      amountToTokenize.sub(amountToTokenize.div(10)).toNumber(),
+      amountToTokenize.div(100).toNumber()
     );
-    expect(testTokenBalance.toNumber()).to.be.eq(amountToTokenize.add(amountToTokenize.div(10)))
+    expect(testTokenBalance.toNumber()).to.be.eq(
+      amountToTokenize.add(amountToTokenize.div(10))
+    );
   });
 
   it("should be able to exit a pool", async () => {
