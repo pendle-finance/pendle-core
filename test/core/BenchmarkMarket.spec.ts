@@ -73,7 +73,6 @@ describe("BenchmarkMarket", async () => {
       benchmarkMarket.address
     );
     let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address);
-    let totalSupply = await benchmarkMarket.totalSupply();
 
     expect(yieldTokenBalance).to.be.equal(amountToTokenize);
     expect(testTokenBalance).to.be.equal(amountToTokenize);
@@ -175,6 +174,25 @@ describe("BenchmarkMarket", async () => {
     );
   });
 
+  it("should be able to get spot price", async () => {
+    const token = tokens.USDT;
+    const amountToTokenize = amountToWei(token, BigNumber.from(100));
+
+    await benchmarkMarket.bootstrap(
+      amountToTokenize,
+      amountToTokenize,
+      constants.HIGH_GAS_OVERRIDE
+    );
+
+    let spotPrice = await benchmarkMarket
+      .spotPrice(
+        testToken.address,
+        benchmarkFutureYieldToken.address,
+      );
+
+      expect(spotPrice.toNumber()).to.be.approximately(1000000000000, 100000000000);
+  });
+
   it("should be able to exit a pool", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
@@ -202,4 +220,26 @@ describe("BenchmarkMarket", async () => {
       amountToTokenize.sub(amountToTokenize.div(10))
     );
   });
+
+  it("should be able to exit a pool with a single token", async () => {
+    const token = tokens.USDT;
+    const amountToTokenize = amountToWei(token, BigNumber.from(100));
+    await benchmarkMarket.bootstrap(amountToTokenize, amountToTokenize);
+
+    await advanceTime(provider, constants.ONE_MOUNTH);
+
+    const totalSupply = await benchmarkMarket.totalSupply();
+
+    await benchmarkMarket.exitPoolSingleToken(
+      benchmarkFutureYieldToken.address,
+      totalSupply.div(4),
+      amountToTokenize.div(6),
+      constants.HIGH_GAS_OVERRIDE
+    );
+
+    let benchmarkFutureYieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(wallet.address);
+
+    expect(benchmarkFutureYieldTokenBalance).to.be.equal(43750000);
+  });
+  
 });

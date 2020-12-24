@@ -32,7 +32,6 @@ provider: providers.Web3Provider
 
   await mintAproveTokenizeYield(provider, token, wallet, amount, benchmark, benchmarkAaveForge);
   await mintAproveTokenizeYield(provider, token, wallet1, amount, benchmark, benchmarkAaveForge);
-
                              
   const testToken = await deployContract(wallet, TestToken, ['Test Token', 'TEST', 6]);
   const totalSupply = await testToken.totalSupply();
