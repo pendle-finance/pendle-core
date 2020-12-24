@@ -24,6 +24,9 @@ const AAVE_LENDING_POOL_ADDRESS = '0x398ec7346dcd622edc5ae82352f02be94c62d119';
 
 const FORGE_AAVE = ethers.utils.formatBytes32String('Aave');
 const TEST_EXPIRY = 1619827200; // 1st May 2021, 0:00 UTC
+const MAX_ALLOWANCE = ethers.BigNumber.from(2)
+  .pow(ethers.BigNumber.from(256))
+  .sub(ethers.BigNumber.from(1))
 
 function printInfo(tx) {
   console.log(`   > tx hash:\t${tx.hash}`);
@@ -205,14 +208,22 @@ function initializeTestMarkets({ contracts, signer }) {
   })
 }
 
-function getAaveContracts({ provider }) {
+function getAaveContracts({ provider, coreContracts, signer }) {
   return new Promise(async (resolve) => {
     console.log('Getting Aave Contracts');
     console.log('======================\n');
     const lendingPoolCore = new ethers.Contract(AAVE_LENDING_POOL_CORE_ADDRESS, IAaveLendingPoolCoreArtifact.abi, provider)
     const lendingPool = new ethers.Contract(AAVE_LENDING_POOL_ADDRESS, IAaveLendingPoolArtifact.abi, provider)
     const aUSDTAddress = await lendingPoolCore.getReserveATokenAddress(USDT);
-    const aUSDT = new ethers.Contract(aUSDTAddress, IATokenArtifact.abi, provider)
+    const aUSDT = new ethers.Contract(aUSDTAddress, IATokenArtifact.abi, signer)
+    await aUSDT.approve(coreContracts.benchmarkAaveForge.address, MAX_ALLOWANCE);
+
+    console.log("   10. Aave Contracts");
+    console.log('   -----------------------------');
+    console.log(`   > lendingPoolCore: ${lendingPoolCore.address}`)
+    console.log(`   > lendingPool: ${lendingPool.address}`)
+    console.log(`   > aUSDT: ${aUSDT.address}`)
+    console.log('\n');
 
     resolve({
       lendingPoolCore,
@@ -229,6 +240,7 @@ function mintAUSDT({ receiver, amount, aaveContracts, usdtOwner_Signer, provider
     console.log('======================\n');
     // await ethers.getContractAt('IUSDT', USDT);
     const aUSDTToken = new web3.eth.Contract(IATokenArtifact.abi, aaveContracts.aUSDTAddress)
+    // const aUSDTToken = new web3.eth.Contract(IUSDTArtifact.abi, USDT)
 
     // new ethers.Contract(USDT, IUSDTArtifact.abi, provider)
     // const MAX_ALLOWANCE = ethers.BigNumber.from(2).pow(ethers.BigNumber.from(128));
@@ -242,6 +254,28 @@ function mintAUSDT({ receiver, amount, aaveContracts, usdtOwner_Signer, provider
     console.log('Receiver Balance: ', await aUSDTToken.methods.balanceOf(receiver).call())
 
     console.log(`\tMinted ${amount.toString()} aUSDT to ${receiver}`);
+
+  })
+}
+function mintUSDT({ receiver, amount, aaveContracts, usdtOwner_Signer, provider, web3 }) {
+  return new Promise(async (resolve) => {
+    console.log('Minting USDT');
+    console.log('======================\n');
+    // await ethers.getContractAt('IUSDT', USDT);
+    const USDTToken = new web3.eth.Contract(IUSDTArtifact.abi, USDT)
+
+    // new ethers.Contract(USDT, IUSDTArtifact.abi, provider)
+    // const MAX_ALLOWANCE = ethers.BigNumber.from(2).pow(ethers.BigNumber.from(128));
+
+    console.log('Owner Balance: ', await USDTToken.methods.balanceOf(USDT_OWNER_ADDRESS).call())
+    console.log('Receiver Balance: ', await USDTToken.methods.balanceOf(receiver).call())
+
+    await USDTToken.methods.transfer(receiver, amount).send({ from: USDT_OWNER_ADDRESS, gas: 900000 })
+
+    console.log('Owner Balance: ', await USDTToken.methods.balanceOf(USDT_OWNER_ADDRESS).call())
+    console.log('Receiver Balance: ', await USDTToken.methods.balanceOf(receiver).call())
+
+    console.log(`\tMinted ${amount.toString()} USDT to ${receiver}`);
 
   })
 }
@@ -260,16 +294,32 @@ async function main() {
   console.log('\n\t========= Core Contracts Initialized =========\n\n')
   await initializeTestMarkets({ contracts: coreContracts, signer })
   console.log('\n\t========= Test Markets Initialized =========\n\n')
-  const aaveContracts = await getAaveContracts({ provider })
+  const aaveContracts = await getAaveContracts({ provider, coreContracts, signer })
   console.log('\n\t========= Fetched Aave Contracts =========\n\n')
   await mintAUSDT({
-    receiver: governanceAddress,
-    amount: ethers.BigNumber.from(1000),
+    receiver: "0x431558Be27E744616F7805Db0a857A12c1f7030C",
+    amount: ethers.utils.parseUnits('10000', 'mwei'),
     aaveContracts,
     // usdtOwner_Signer,
     provider,
     web3
   });
+
+  // await mintUSDT({
+  //   receiver: "0x9F20fDb6dDd41D38061A50bfDe72f3c707b77C5D",
+  //   amount: ethers.utils.parseUnits('10000', 'mwei'),
+  //   aaveContracts,
+  //   // usdtOwner_Signer,
+  //   provider,
+  //   web3
+  // });
+
+
+  console.log('Summary');
+  console.log('=======\n');
+
+
+  console.log('\nDeployment complete!');
 
   console.log('benchmarkData.getAllMarkets()', await coreContracts.benchmarkData.getAllMarkets())
 
