@@ -186,18 +186,10 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 lpAmountDesired,
         uint256 xytAmountMax,
         uint256 tokenAmountMax
-    )
-        public
-        override
-    {
+    ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
-        market.joinPoolByAll(
-            lpAmountDesired,
-            xytAmountMax,
-            tokenAmountMax
-        );
+        market.joinPoolByAll(lpAmountDesired, xytAmountMax, tokenAmountMax);
     }
-
 
     function addMarketLiquidityXyt(
         bytes32 _forgeId,
@@ -205,16 +197,9 @@ contract Benchmark is IBenchmark, Permissions {
         address token,
         uint256 xytAmountDesired,
         uint256 lpAmountMin
-    )
-        public
-        override
-    {
+    ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
-        market.joinPoolSingleToken(
-            xyt,
-            xytAmountDesired,
-            lpAmountMin
-        );
+        market.joinPoolSingleToken(xyt, xytAmountDesired, lpAmountMin);
     }
 
     function addMarketLiquidityToken(
@@ -223,16 +208,9 @@ contract Benchmark is IBenchmark, Permissions {
         address token,
         uint256 tokenAmountDesired,
         uint256 lpAmountMin
-    )
-        public
-        override
-    {
+    ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
-        market.joinPoolSingleToken(
-            token,
-            tokenAmountDesired,
-            lpAmountMin
-        );
+        market.joinPoolSingleToken(token, tokenAmountDesired, lpAmountMin);
     }
 
     function removeMarketLiquidity(
@@ -244,11 +222,7 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 tokenAmountMin
     ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
-        market.exitPoolByAll(
-            lpAmountDesired,
-            xytAmountMin,
-            tokenAmountMin
-        );
+        market.exitPoolByAll(lpAmountDesired, xytAmountMin, tokenAmountMin);
     }
 
     function removeMarketLiquidityXyt(
@@ -259,11 +233,7 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 xytAmountMin
     ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
-        market.exitPoolSingleToken(
-            xyt,
-            lpAmountDesired,
-            xytAmountMin
-        );
+        market.exitPoolSingleToken(xyt, lpAmountDesired, xytAmountMin);
     }
 
     function removeMarketLiquidityToken(
@@ -274,11 +244,7 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 tokenAmountMin
     ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
-        market.exitPoolSingleToken(
-            token,
-            lpAmountDesired,
-            tokenAmountMin
-        );
+        market.exitPoolSingleToken(token, lpAmountDesired, tokenAmountMin);
     }
 
     function swapXytToToken(
@@ -288,7 +254,7 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 xytAmountDesired,
         uint256 tokenAmountMin,
         uint256 maxPrice
-    ) public override returns (uint256 amount, uint256 priceAfter)  {
+    ) public override returns (uint256 amount, uint256 priceAfter) {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
         (amount, priceAfter) = market.swapAmountIn(
             xytAmountDesired,
@@ -296,7 +262,7 @@ contract Benchmark is IBenchmark, Permissions {
             token,
             tokenAmountMin,
             maxPrice
-        ); 
+        );
     }
 
     function swapTokenToXyt(
@@ -306,7 +272,7 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 tokenAmountDesired,
         uint256 xytAmountMin,
         uint256 maxPrice
-    ) public override returns (uint256 amount, uint256 priceAfter)  {
+    ) public override returns (uint256 amount, uint256 priceAfter) {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
         (amount, priceAfter) = market.swapAmountIn(
             tokenAmountDesired,
@@ -314,7 +280,7 @@ contract Benchmark is IBenchmark, Permissions {
             xyt,
             xytAmountMin,
             maxPrice
-        ); 
+        );
     }
 
     function swapXytFromToken(
@@ -342,7 +308,7 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 tokenAmountDesired,
         uint256 xytAmountMax,
         uint256 maxPrice
-    ) public override returns (uint256 amount, uint256 priceAfter)  {
+    ) public override returns (uint256 amount, uint256 priceAfter) {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
         (amount, priceAfter) = market.swapAmountOut(
             xyt,
@@ -357,7 +323,16 @@ contract Benchmark is IBenchmark, Permissions {
         bytes32 _forgeId,
         address xyt,
         address token
-    ) public view override returns (uint256 xytAmount, uint256 tokenAmount, uint256 currentTime) {
+    )
+        public
+        view
+        override
+        returns (
+            uint256 xytAmount,
+            uint256 tokenAmount,
+            uint256 currentTime
+        )
+    {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
         (xytAmount, tokenAmount, currentTime) = market.getReserves();
     }
@@ -385,31 +360,22 @@ contract Benchmark is IBenchmark, Permissions {
         address xyt,
         address token,
         uint256 expiry
-    ) public override returns (address market){
-        market = factory.createMarket(
-            _forgeId,
-            xyt,
-            token,
-            expiry
-        );
+    ) public override returns (address market) {
+        market = factory.createMarket(_forgeId, xyt, token, expiry);
     }
 
     function bootStrapMarket(
         bytes32 _forgeId,
         address xyt,
         address token,
-        uint256 initialXytLiquidity, 
+        uint256 initialXytLiquidity,
         uint256 initialTokenLiquidity
-    ) public override{
+    ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
-        market.bootstrap(
-            initialXytLiquidity,
-            initialTokenLiquidity
-        );
+        market.bootstrap(initialXytLiquidity, initialTokenLiquidity);
     }
 
-
-/*
+    /*
     function addMarketLiquidity(
         address xyt,
         address token,
