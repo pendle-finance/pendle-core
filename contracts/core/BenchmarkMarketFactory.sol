@@ -33,7 +33,7 @@ import "../periphery/Permissions.sol";
 contract BenchmarkMarketFactory is IBenchmarkMarketFactory, Permissions {
     IBenchmark public override core;
 
-    constructor(address _governance) Permissions(_governance) {}
+    constructor(address _governance, address _initializer) Permissions(_governance, _initializer) {}
 
     function initialize(IBenchmark _core) external {
         require(msg.sender == initializer, "Benchmark: forbidden");

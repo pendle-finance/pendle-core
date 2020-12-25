@@ -4,7 +4,7 @@ const {
   deployTestBenchmarkTokens,
   constants
 } = require('../test/helpers/Helpers');
-
+const web3 = require("@nomiclabs/hardhat-web3");
 // const hre = require("hardhat");
 
 async function main() {
@@ -13,7 +13,7 @@ async function main() {
     const contracts = await deployCoreContracts(accounts[0], constants.kovan);
     console.log('\tDone deploying core contracts');
 
-    await deployTestBenchmarkTokens(contracts, constants.kovan);
+    await deployTestBenchmarkTokens(contracts, constants);
     console.log('\tDone deploying Test XYT and OT contracts');
   });
 }

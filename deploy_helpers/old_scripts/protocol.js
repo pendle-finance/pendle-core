@@ -35,7 +35,7 @@ function printInfo(tx) {
   console.log(`   > gas used:\t${tx.gasLimit.toString()}`);
 }
 
-task('deploy', 'Deploys the core contracts').setAction(async () => {
+task('deploy_', 'Deploys the core contracts').setAction(async () => {
   const FORGE_AAVE = ethers.utils.formatBytes32String('Aave');
   const [deployer, governance] = await ethers.getSigners();
   const deployerAddress = await deployer.getAddress();

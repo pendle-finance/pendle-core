@@ -29,11 +29,11 @@ abstract contract Permissions {
     event TokenWithdraw(IERC20 token, uint256 amount, address sendTo);
 
     address public immutable governance;
-    address internal initializer;
+    address public initializer;
 
-    constructor(address _governance) {
+    constructor(address _governance, address _initializer) {
         require(_governance != address(0), "Benchmark: zero address");
-        initializer = msg.sender;
+        initializer = _initializer;
         governance = _governance;
     }
 

@@ -42,7 +42,7 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     mapping(address => bool) internal isMarket;
     address[] private allMarkets;
 
-    constructor(address _governance) Permissions(_governance) {}
+    constructor(address _governance, address _initializer) Permissions(_governance, _initializer) {}
 
     modifier onlyCore() {
         require(msg.sender == address(core), "Benchmark: only core");
@@ -51,11 +51,6 @@ contract BenchmarkData is IBenchmarkData, Permissions {
 
     modifier onlyForge(bytes32 _forgeId) {
         require(getForgeAddress[_forgeId] == msg.sender, "Benchmark: only forge");
-        _;
-    }
-
-    modifier onlyMarket() {
-        require(isMarket[msg.sender], "Benchmark: only market");
         _;
     }
 

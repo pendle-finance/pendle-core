@@ -1,0 +1,913 @@
+{
+  "address": "0xBe8932C3d51af69E9e9e7cBE898954F44c9362D9",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_governance",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_initializer",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "core",
+          "type": "address"
+        }
+      ],
+      "name": "CoreSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "sendTo",
+          "type": "address"
+        }
+      ],
+      "name": "EtherWithdraw",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "forgeId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "forgeAddress",
+          "type": "address"
+        }
+      ],
+      "name": "ForgeAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "forgeId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "forgeAddress",
+          "type": "address"
+        }
+      ],
+      "name": "ForgeRemoved",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "contract IERC20",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "sendTo",
+          "type": "address"
+        }
+      ],
+      "name": "TokenWithdraw",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_forgeId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "_forgeAddress",
+          "type": "address"
+        }
+      ],
+      "name": "addForge",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_market",
+          "type": "address"
+        }
+      ],
+      "name": "addMarket",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "allMarketsLength",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "core",
+      "outputs": [
+        {
+          "internalType": "contract IBenchmark",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "exitFee",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getAllMarkets",
+      "outputs": [
+        {
+          "internalType": "address[]",
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_forgeId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "_underlyingAsset",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_expiry",
+          "type": "uint256"
+        }
+      ],
+      "name": "getBenchmarkYieldTokens",
+      "outputs": [
+        {
+          "internalType": "contract IBenchmarkYieldToken",
+          "name": "ot",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IBenchmarkYieldToken",
+          "name": "xyt",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getForgeAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "getForgeId",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "getMarket",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "governance",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IBenchmark",
+          "name": "_core",
+          "type": "address"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "initializer",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_xyt",
+          "type": "address"
+        }
+      ],
+      "name": "isValidXYT",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "otTokens",
+      "outputs": [
+        {
+          "internalType": "contract IBenchmarkYieldToken",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_forgeId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "removeForge",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IBenchmark",
+          "name": "_core",
+          "type": "address"
+        }
+      ],
+      "name": "setCore",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_swapFee",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_exitFee",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMarketFees",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_forgeId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "_xyt",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_token",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_market",
+          "type": "address"
+        }
+      ],
+      "name": "storeMarket",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_forgeId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "_ot",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_xyt",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_underlyingAsset",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_expiry",
+          "type": "uint256"
+        }
+      ],
+      "name": "storeTokens",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "swapFee",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address payable",
+          "name": "sendTo",
+          "type": "address"
+        }
+      ],
+      "name": "withdrawEther",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "sendTo",
+          "type": "address"
+        }
+      ],
+      "name": "withdrawToken",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "xytTokens",
+      "outputs": [
+        {
+          "internalType": "contract IBenchmarkYieldToken",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x93068d4b29e0e09ba2ad708bc6558744eb2daf146321e199979934e8a97a48c8",
+  "receipt": {
+    "to": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+    "from": "0x3Cd101E1e05DA0ade47B481189843732D1a53211",
+    "contractAddress": null,
+    "transactionIndex": 0,
+    "gasUsed": "1153648",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x98402879d286de009711f83e5f0532c2147ff9e9b07f819070cb58412e6912ac",
+    "transactionHash": "0x93068d4b29e0e09ba2ad708bc6558744eb2daf146321e199979934e8a97a48c8",
+    "logs": [],
+    "blockNumber": 22754268,
+    "cumulativeGasUsed": "1153648",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0x3Cd101E1e05DA0ade47B481189843732D1a53211",
+    "0x3Cd101E1e05DA0ade47B481189843732D1a53211"
+  ],
+  "solcInputHash": "3b3b27935d15a82806e22f94dc2b0c54",
+  "metadata": "{\"compiler\":{\"version\":\"0.7.5+commit.eb77ed08\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_governance\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_initializer\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"core\",\"type\":\"address\"}],\"name\":\"CoreSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"sendTo\",\"type\":\"address\"}],\"name\":\"EtherWithdraw\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"forgeId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"forgeAddress\",\"type\":\"address\"}],\"name\":\"ForgeAdded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"forgeId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"forgeAddress\",\"type\":\"address\"}],\"name\":\"ForgeRemoved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"contract IERC20\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"sendTo\",\"type\":\"address\"}],\"name\":\"TokenWithdraw\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_forgeId\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"_forgeAddress\",\"type\":\"address\"}],\"name\":\"addForge\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_market\",\"type\":\"address\"}],\"name\":\"addMarket\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"allMarketsLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"core\",\"outputs\":[{\"internalType\":\"contract IBenchmark\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"exitFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getAllMarkets\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_forgeId\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"_underlyingAsset\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_expiry\",\"type\":\"uint256\"}],\"name\":\"getBenchmarkYieldTokens\",\"outputs\":[{\"internalType\":\"contract IBenchmarkYieldToken\",\"name\":\"ot\",\"type\":\"address\"},{\"internalType\":\"contract IBenchmarkYieldToken\",\"name\":\"xyt\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"getForgeAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"getForgeId\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"getMarket\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"governance\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contract IBenchmark\",\"name\":\"_core\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initializer\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_xyt\",\"type\":\"address\"}],\"name\":\"isValidXYT\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"otTokens\",\"outputs\":[{\"internalType\":\"contract IBenchmarkYieldToken\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_forgeId\",\"type\":\"bytes32\"}],\"name\":\"removeForge\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contract IBenchmark\",\"name\":\"_core\",\"type\":\"address\"}],\"name\":\"setCore\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_swapFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_exitFee\",\"type\":\"uint256\"}],\"name\":\"setMarketFees\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_forgeId\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"_xyt\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_market\",\"type\":\"address\"}],\"name\":\"storeMarket\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_forgeId\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"_ot\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_xyt\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_underlyingAsset\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_expiry\",\"type\":\"uint256\"}],\"name\":\"storeTokens\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"swapFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address payable\",\"name\":\"sendTo\",\"type\":\"address\"}],\"name\":\"withdrawEther\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contract IERC20\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"sendTo\",\"type\":\"address\"}],\"name\":\"withdrawToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"xytTokens\",\"outputs\":[{\"internalType\":\"contract IBenchmarkYieldToken\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"allMarketsLength()\":{\"returns\":{\"_0\":\"Returns markets length,*\"}},\"getAllMarkets()\":{\"returns\":{\"_0\":\"Returns an array of all markets.*\"}},\"setCore(address)\":{\"params\":{\"_core\":\"Address of the new core contract.*\"}},\"withdrawEther(uint256,address)\":{\"details\":\"Allows governance to withdraw Ether in a Benchmark contract      in case of accidental ETH transfer into the contract.\",\"params\":{\"amount\":\"The amount of Ether to withdraw.\",\"sendTo\":\"The recipient address.\"}},\"withdrawToken(address,uint256,address)\":{\"details\":\"Allows governance to withdraw all IERC20 compatible tokens in a Benchmark      contract in case of accidental token transfer into the contract.\",\"params\":{\"amount\":\"The amount of IERC20 tokens to withdraw.\",\"sendTo\":\"The recipient address.\",\"token\":\"IERC20 The address of the token contract.\"}}},\"stateVariables\":{\"core\":{\"return\":\"Returns the core contract reference.*\"},\"getForgeAddress\":{\"params\":{\"forgeId\":\"Forge and protocol identifier.\"},\"return\":\"forgeAddress Returns the forge address.*\"},\"getForgeId\":{\"params\":{\"forgeAddress\":\"The forge's address.\"},\"return\":\"forgeId Returns the forge identifier.*\"},\"getMarket\":{\"params\":{\"forgeId\":\"Forge and protocol identifier.\",\"token\":\"Token address of an ERC20 token as quote asset.\",\"xyt\":\"Token address of the future yield token as base asset.\"},\"return\":\"market Returns the market address.*\"},\"otTokens\":{\"params\":{\"expiry\":\"Yield contract expiry in epoch time.\",\"forgeId\":\"Forge and protocol identifier.\",\"underlyingYieldToken\":\"Token address of the underlying yield token.\"},\"return\":\"ot Returns the reference to an OT.*\"},\"xytTokens\":{\"params\":{\"expiry\":\"Yield contract expiry in epoch time.\",\"forgeId\":\"Forge and protocol identifier.\",\"underlyingAsset\":\"Token address of the underlying asset\"},\"return\":\"xyt Returns the reference to an XYT.*\"}},\"version\":1},\"userdoc\":{\"events\":{\"CoreSet(address)\":{\"notice\":\"Emitted when the Benchmark core address has been updated.\"},\"ForgeAdded(bytes32,address)\":{\"notice\":\"Emitted when a forge for a protocol is added.\"},\"ForgeRemoved(bytes32,address)\":{\"notice\":\"Emitted when a forge for a protocol is removed.\"}},\"kind\":\"user\",\"methods\":{\"allMarketsLength()\":{\"notice\":\"Displays the number of markets currently existing.\"},\"core()\":{\"notice\":\"Gets a reference to the Benchmark core contract.\"},\"getAllMarkets()\":{\"notice\":\"Gets all the markets.\"},\"getForgeAddress(bytes32)\":{\"notice\":\"Gets a forge given the identifier.\"},\"getForgeId(address)\":{\"notice\":\"Gets the identifier of the forge.\"},\"getMarket(bytes32,address,address)\":{\"notice\":\"Gets a market given a future yield token and an ERC20 token.\"},\"otTokens(bytes32,address,uint256)\":{\"notice\":\"Gets a reference to a specific OT.\"},\"setCore(address)\":{\"notice\":\"Sets the Benchmark core contract address.\"},\"xytTokens(bytes32,address,uint256)\":{\"notice\":\"Gets a reference to a specific XYT.\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/core/BenchmarkData.sol\":\"BenchmarkData\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/math/SafeMath.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.6.0 <0.8.0;\\n\\n/**\\n * @dev Wrappers over Solidity's arithmetic operations with added overflow\\n * checks.\\n *\\n * Arithmetic operations in Solidity wrap on overflow. This can easily result\\n * in bugs, because programmers usually assume that an overflow raises an\\n * error, which is the standard behavior in high level programming languages.\\n * `SafeMath` restores this intuition by reverting the transaction when an\\n * operation overflows.\\n *\\n * Using this library instead of the unchecked operations eliminates an entire\\n * class of bugs, so it's recommended to use it always.\\n */\\nlibrary SafeMath {\\n    /**\\n     * @dev Returns the addition of two unsigned integers, reverting on\\n     * overflow.\\n     *\\n     * Counterpart to Solidity's `+` operator.\\n     *\\n     * Requirements:\\n     *\\n     * - Addition cannot overflow.\\n     */\\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\\n        uint256 c = a + b;\\n        require(c >= a, \\\"SafeMath: addition overflow\\\");\\n\\n        return c;\\n    }\\n\\n    /**\\n     * @dev Returns the subtraction of two unsigned integers, reverting on\\n     * overflow (when the result is negative).\\n     *\\n     * Counterpart to Solidity's `-` operator.\\n     *\\n     * Requirements:\\n     *\\n     * - Subtraction cannot overflow.\\n     */\\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\\n        return sub(a, b, \\\"SafeMath: subtraction overflow\\\");\\n    }\\n\\n    /**\\n     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on\\n     * overflow (when the result is negative).\\n     *\\n     * Counterpart to Solidity's `-` operator.\\n     *\\n     * Requirements:\\n     *\\n     * - Subtraction cannot overflow.\\n     */\\n    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\\n        require(b <= a, errorMessage);\\n        uint256 c = a - b;\\n\\n        return c;\\n    }\\n\\n    /**\\n     * @dev Returns the multiplication of two unsigned integers, reverting on\\n     * overflow.\\n     *\\n     * Counterpart to Solidity's `*` operator.\\n     *\\n     * Requirements:\\n     *\\n     * - Multiplication cannot overflow.\\n     */\\n    function mul(uint256 a, uint256 b) internal pure returns (uint256) {\\n        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the\\n        // benefit is lost if 'b' is also tested.\\n        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522\\n        if (a == 0) {\\n            return 0;\\n        }\\n\\n        uint256 c = a * b;\\n        require(c / a == b, \\\"SafeMath: multiplication overflow\\\");\\n\\n        return c;\\n    }\\n\\n    /**\\n     * @dev Returns the integer division of two unsigned integers. Reverts on\\n     * division by zero. The result is rounded towards zero.\\n     *\\n     * Counterpart to Solidity's `/` operator. Note: this function uses a\\n     * `revert` opcode (which leaves remaining gas untouched) while Solidity\\n     * uses an invalid opcode to revert (consuming all remaining gas).\\n     *\\n     * Requirements:\\n     *\\n     * - The divisor cannot be zero.\\n     */\\n    function div(uint256 a, uint256 b) internal pure returns (uint256) {\\n        return div(a, b, \\\"SafeMath: division by zero\\\");\\n    }\\n\\n    /**\\n     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on\\n     * division by zero. The result is rounded towards zero.\\n     *\\n     * Counterpart to Solidity's `/` operator. Note: this function uses a\\n     * `revert` opcode (which leaves remaining gas untouched) while Solidity\\n     * uses an invalid opcode to revert (consuming all remaining gas).\\n     *\\n     * Requirements:\\n     *\\n     * - The divisor cannot be zero.\\n     */\\n    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\\n        require(b > 0, errorMessage);\\n        uint256 c = a / b;\\n        // assert(a == b * c + a % b); // There is no case in which this doesn't hold\\n\\n        return c;\\n    }\\n\\n    /**\\n     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),\\n     * Reverts when dividing by zero.\\n     *\\n     * Counterpart to Solidity's `%` operator. This function uses a `revert`\\n     * opcode (which leaves remaining gas untouched) while Solidity uses an\\n     * invalid opcode to revert (consuming all remaining gas).\\n     *\\n     * Requirements:\\n     *\\n     * - The divisor cannot be zero.\\n     */\\n    function mod(uint256 a, uint256 b) internal pure returns (uint256) {\\n        return mod(a, b, \\\"SafeMath: modulo by zero\\\");\\n    }\\n\\n    /**\\n     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),\\n     * Reverts with custom message when dividing by zero.\\n     *\\n     * Counterpart to Solidity's `%` operator. This function uses a `revert`\\n     * opcode (which leaves remaining gas untouched) while Solidity uses an\\n     * invalid opcode to revert (consuming all remaining gas).\\n     *\\n     * Requirements:\\n     *\\n     * - The divisor cannot be zero.\\n     */\\n    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\\n        require(b != 0, errorMessage);\\n        return a % b;\\n    }\\n}\\n\",\"keccak256\":\"0x3b21f2c8d626de3b9925ae33e972d8bf5c8b1bffb3f4ee94daeed7d0679036e6\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC20/IERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.6.0 <0.8.0;\\n\\n/**\\n * @dev Interface of the ERC20 standard as defined in the EIP.\\n */\\ninterface IERC20 {\\n    /**\\n     * @dev Returns the amount of tokens in existence.\\n     */\\n    function totalSupply() external view returns (uint256);\\n\\n    /**\\n     * @dev Returns the amount of tokens owned by `account`.\\n     */\\n    function balanceOf(address account) external view returns (uint256);\\n\\n    /**\\n     * @dev Moves `amount` tokens from the caller's account to `recipient`.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transfer(address recipient, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Returns the remaining number of tokens that `spender` will be\\n     * allowed to spend on behalf of `owner` through {transferFrom}. This is\\n     * zero by default.\\n     *\\n     * This value changes when {approve} or {transferFrom} are called.\\n     */\\n    function allowance(address owner, address spender) external view returns (uint256);\\n\\n    /**\\n     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * IMPORTANT: Beware that changing an allowance with this method brings the risk\\n     * that someone may use both the old and the new allowance by unfortunate\\n     * transaction ordering. One possible solution to mitigate this race\\n     * condition is to first reduce the spender's allowance to 0 and set the\\n     * desired value afterwards:\\n     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729\\n     *\\n     * Emits an {Approval} event.\\n     */\\n    function approve(address spender, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Moves `amount` tokens from `sender` to `recipient` using the\\n     * allowance mechanism. `amount` is then deducted from the caller's\\n     * allowance.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Emitted when `value` tokens are moved from one account (`from`) to\\n     * another (`to`).\\n     *\\n     * Note that `value` may be zero.\\n     */\\n    event Transfer(address indexed from, address indexed to, uint256 value);\\n\\n    /**\\n     * @dev Emitted when the allowance of a `spender` for an `owner` is set by\\n     * a call to {approve}. `value` is the new allowance.\\n     */\\n    event Approval(address indexed owner, address indexed spender, uint256 value);\\n}\\n\",\"keccak256\":\"0x5f02220344881ce43204ae4a6281145a67bc52c2bb1290a791857df3d19d78f5\",\"license\":\"MIT\"},\"contracts/core/BenchmarkData.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n/*\\n * MIT License\\n * ===========\\n *\\n * Permission is hereby granted, free of charge, to any person obtaining a copy\\n * of this software and associated documentation files (the \\\"Software\\\"), to deal\\n * in the Software without restriction, including without limitation the rights\\n * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\\n * copies of the Software, and to permit persons to whom the Software is\\n * furnished to do so, subject to the following conditions:\\n *\\n * The above copyright notice and this permission notice shall be included in all\\n * copies or substantial portions of the Software.\\n *\\n * THE SOFTWARE IS PROVIDED \\\"AS IS\\\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\\n * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\\n * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\\n * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\\n * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\\n * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\\n */\\npragma solidity ^0.7.0;\\n\\nimport \\\"../interfaces/IBenchmarkData.sol\\\";\\nimport \\\"../interfaces/IBenchmarkMarketFactory.sol\\\";\\nimport \\\"../periphery/Permissions.sol\\\";\\n\\ncontract BenchmarkData is IBenchmarkData, Permissions {\\n    mapping(address => bytes32) public override getForgeId;\\n    mapping(bytes32 => address) public override getForgeAddress;\\n    mapping(bytes32 => mapping(address => mapping(address => address))) public override getMarket;\\n    mapping(bytes32 => mapping(address => mapping(uint256 => IBenchmarkYieldToken)))\\n        public\\n        override otTokens;\\n    mapping(bytes32 => mapping(address => mapping(uint256 => IBenchmarkYieldToken)))\\n        public\\n        override xytTokens;\\n    uint256 public override swapFee;\\n    uint256 public override exitFee;\\n    IBenchmark public override core;\\n    mapping(address => bool) internal isMarket;\\n    address[] private allMarkets;\\n\\n    constructor(address _governance, address _initializer) Permissions(_governance, _initializer) {}\\n\\n    modifier onlyCore() {\\n        require(msg.sender == address(core), \\\"Benchmark: only core\\\");\\n        _;\\n    }\\n\\n    modifier onlyForge(bytes32 _forgeId) {\\n        require(getForgeAddress[_forgeId] == msg.sender, \\\"Benchmark: only forge\\\");\\n        _;\\n    }\\n\\n    modifier onlyMarketFactory() {\\n        require(msg.sender == address(core.factory()), \\\"Benchmark: only market factory\\\");\\n        _;\\n    }\\n\\n    function initialize(IBenchmark _core) external {\\n        require(msg.sender == initializer, \\\"Benchmark: forbidden\\\");\\n        require(address(_core) != address(0), \\\"Benchmark: zero address\\\");\\n\\n        initializer = address(0);\\n        core = _core;\\n    }\\n\\n    function setCore(IBenchmark _core) external override initialized onlyGovernance {\\n        require(address(_core) != address(0), \\\"Benchmark: zero address\\\");\\n\\n        core = _core;\\n\\n        emit CoreSet(address(_core));\\n    }\\n\\n    /**********\\n     *  FORGE *\\n     **********/\\n\\n    function addForge(bytes32 _forgeId, address _forgeAddress)\\n        external\\n        override\\n        initialized\\n        onlyCore\\n    {\\n        getForgeId[_forgeAddress] = _forgeId;\\n        getForgeAddress[_forgeId] = _forgeAddress;\\n\\n        emit ForgeAdded(_forgeId, _forgeAddress);\\n    }\\n\\n    function removeForge(bytes32 _forgeId) external override initialized onlyCore {\\n        address _forgeAddress = getForgeAddress[_forgeId];\\n\\n        getForgeAddress[_forgeId] = address(0);\\n        getForgeId[_forgeAddress] = _forgeId;\\n\\n        emit ForgeRemoved(_forgeId, _forgeAddress);\\n    }\\n\\n    function storeTokens(\\n        bytes32 _forgeId,\\n        address _ot,\\n        address _xyt,\\n        address _underlyingAsset,\\n        uint256 _expiry\\n    ) external override initialized onlyForge(_forgeId) {\\n        otTokens[_forgeId][_underlyingAsset][_expiry] = IBenchmarkYieldToken(_ot);\\n        xytTokens[_forgeId][_underlyingAsset][_expiry] = IBenchmarkYieldToken(_xyt);\\n    }\\n\\n    function getBenchmarkYieldTokens(\\n        bytes32 _forgeId,\\n        address _underlyingAsset,\\n        uint256 _expiry\\n    ) external view override returns (IBenchmarkYieldToken ot, IBenchmarkYieldToken xyt) {\\n        ot = otTokens[_forgeId][_underlyingAsset][_expiry];\\n        xyt = xytTokens[_forgeId][_underlyingAsset][_expiry];\\n    }\\n\\n    function isValidXYT(address _xyt) external view override returns (bool) {\\n        address forge = IBenchmarkYieldToken(_xyt).forge();\\n        return getForgeId[forge] != bytes32(0);\\n    }\\n\\n    /***********\\n     *  MARKET *\\n     ***********/\\n\\n    function addMarket(address _market) external override initialized onlyMarketFactory {\\n        allMarkets.push(_market);\\n    }\\n\\n    function setMarketFees(uint256 _swapFee, uint256 _exitFee) external override onlyGovernance {\\n        swapFee = _swapFee;\\n        exitFee = _exitFee;\\n    }\\n\\n    function storeMarket(\\n        bytes32 _forgeId,\\n        address _xyt,\\n        address _token,\\n        address _market\\n    ) external override initialized onlyMarketFactory {\\n        getMarket[_forgeId][_xyt][_token] = _market;\\n        isMarket[_market] = true;\\n    }\\n\\n    function allMarketsLength() external view override returns (uint256) {\\n        return allMarkets.length;\\n    }\\n\\n    function getAllMarkets() public view override returns (address[] memory) {\\n        return allMarkets;\\n    }\\n}\\n\",\"keccak256\":\"0xc594aaa8b943ae80db3c145e3193531727b1f7ecfcc6e330664ff9ddc2e74aa5\",\"license\":\"MIT\"},\"contracts/interfaces/IBenchmark.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n/*\\n * MIT License\\n * ===========\\n *\\n * Permission is hereby granted, free of charge, to any person obtaining a copy\\n * of this software and associated documentation files (the \\\"Software\\\"), to deal\\n * in the Software without restriction, including without limitation the rights\\n * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\\n * copies of the Software, and to permit persons to whom the Software is\\n * furnished to do so, subject to the following conditions:\\n *\\n * The above copyright notice and this permission notice shall be included in all\\n * copies or substantial portions of the Software.\\n *\\n * THE SOFTWARE IS PROVIDED \\\"AS IS\\\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\\n * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\\n * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\\n * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\\n * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\\n * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\\n */\\n\\npragma solidity ^0.7.0;\\n\\nimport {Utils} from \\\"../libraries/BenchmarkLibrary.sol\\\";\\nimport \\\"./IBenchmarkData.sol\\\";\\nimport \\\"./IBenchmarkMarketFactory.sol\\\";\\n\\ninterface IBenchmark {\\n    /**\\n     * @notice Emitted when Benchmark and BenchmarkFactory addresses have been updated.\\n     * @param data The address of the new data contract.\\n     * @param factory The address of the new market factory contract.\\n     * @param treasury The address of the new treasury contract.\\n     **/\\n    event ContractsSet(address data, address factory, address treasury);\\n\\n    /**\\n     * @notice Gets a reference to the BenchmarkData contract.\\n     * @return Returns the data contract reference.\\n     **/\\n    function data() external view returns (IBenchmarkData);\\n\\n    /**\\n     * @notice Gets a reference to the BenchmarkMarketFactory.\\n     * @return Returns the factory reference.\\n     **/\\n    function factory() external view returns (IBenchmarkMarketFactory);\\n\\n    /**\\n     * @notice Gets the treasury contract address where fees are being sent to.\\n     * @return Address of the treasury contract.\\n     **/\\n    function treasury() external view returns (address);\\n\\n    /**\\n     * @notice Gets the address of the WETH9 token contract address.\\n     * @return WETH token address.\\n     **/\\n    function weth() external view returns (address);\\n\\n    /**\\n     * @notice Sets the Benchmark contract addresses.\\n     * @param _data Address of the new data contract.\\n     * @param _factory Address of new factory contract.\\n     * @param _treasury Address of new treasury contract.\\n     **/\\n    function setContracts(\\n        IBenchmarkData _data,\\n        IBenchmarkMarketFactory _factory,\\n        address _treasury\\n    ) external;\\n\\n    /***********\\n     *  FORGE  *\\n     ***********/\\n\\n    /**\\n     * @notice Adds a new forge for a protocol.\\n     * @param forgeId Forge and protocol identifier.\\n     * @param forge The address of the added forge.\\n     **/\\n    function addForge(bytes32 forgeId, address forge) external;\\n\\n    /**\\n     * @notice Removes a forge.\\n     * @param forgeId Forge and protocol identifier.\\n     **/\\n    function removeForge(bytes32 forgeId) external;\\n\\n    function newYieldContracts(\\n        bytes32 forgeId,\\n        address underlyingAsset,\\n        uint256 expiry\\n    ) external returns (address ot, address xyt);\\n\\n    function redeemAfterExpiry(\\n        bytes32 forgeId,\\n        address underlyingAsset,\\n        uint256 expiry,\\n        address to\\n    ) external returns (uint256 redeemedAmount);\\n\\n    function redeemUnderlying(\\n        bytes32 forgeId,\\n        address underlyingAsset,\\n        uint256 expiry,\\n        uint256 amountToRedeem,\\n        address to\\n    ) external returns (uint256 redeemedAmount);\\n\\n    function redeemDueInterests(\\n        bytes32 _forgeId,\\n        address _underlyingAsset,\\n        uint256 _expiry\\n    ) external returns (uint256 interests);\\n\\n    // TODO: to implement renew first on forge\\n    // function renew(\\n    //     Utils.Protocols _protocol,\\n    //     address underlyingAsset,\\n    //     uint256 oldExpiry,\\n    //     uint256 newExpiry,\\n    //     address to\\n    // ) external returns (uint256 redeemedAmount);\\n\\n    function tokenizeYield(\\n        bytes32 forgeId,\\n        address underlyingAsset,\\n        uint256 expiry,\\n        uint256 amountToTokenize,\\n        address to\\n    ) external returns (address ot, address xyt);\\n\\n    /***********\\n     *  MARKET *\\n     ***********/\\n\\n    function addMarketLiquidity(\\n        address xyt,\\n        address token,\\n        uint256 xytAmountDesired,\\n        uint256 tokenAmountDesired,\\n        uint256 xytAmountMin,\\n        uint256 tokenAmountMin,\\n        address to\\n    )\\n        external\\n        returns (\\n            uint256 xytAmount,\\n            uint256 tokenAmount,\\n            uint256 liquidity\\n        );\\n\\n    function addMarketLiquidityETH(\\n        address xyt,\\n        uint256 xytAmountDesired,\\n        uint256 xytAmountMin,\\n        uint256 ethAmountMin,\\n        address to\\n    )\\n        external\\n        payable\\n        returns (\\n            uint256 amountToken,\\n            uint256 amountETH,\\n            uint256 liquidity\\n        );\\n\\n    function removeMarketLiquidity(\\n        address xyt,\\n        address token,\\n        uint256 liquidity,\\n        uint256 xytAmountMin,\\n        uint256 tokenAmountMin,\\n        address to\\n    ) external returns (uint256 xytAmount, uint256 tokenAmount);\\n\\n    function removeMarketLiquidityETH(\\n        address token,\\n        uint256 liquidity,\\n        uint256 tokenAmountMin,\\n        uint256 ethAmountMin,\\n        address to\\n    ) external returns (uint256 tokenAmount, uint256 ethAmount);\\n\\n    function swapTokenToToken(\\n        uint256 amountIn,\\n        uint256 amountOutMin,\\n        address[] calldata path,\\n        address to,\\n        uint256 deadline\\n    ) external returns (uint256[] memory amounts);\\n\\n    function swapEthToToken(\\n        uint256 amountOutMin,\\n        address[] calldata path,\\n        address to,\\n        uint256 deadline\\n    ) external payable returns (uint256[] memory amounts);\\n\\n    function swapTokenToEth(\\n        uint256 amountIn,\\n        uint256 amountOutMin,\\n        address[] calldata path,\\n        address to,\\n        uint256 deadline\\n    ) external returns (uint256[] memory amounts);\\n\\n    function getDestAmount(\\n        uint256 srcAmount,\\n        uint256 srcMarket,\\n        uint256 destMarket\\n    ) external pure returns (uint256 destAmount);\\n\\n    function getSrcAmount(\\n        uint256 destAmount,\\n        uint256 srcMarket,\\n        uint256 destMarket\\n    ) external pure returns (uint256 srcAmount);\\n\\n    function getDestAmounts(uint256 srcAmount, address[] calldata path)\\n        external\\n        view\\n        returns (uint256[] memory destAmounts);\\n\\n    function getSrcAmounts(uint256 destAmount, address[] calldata path)\\n        external\\n        view\\n        returns (uint256[] memory srcAmounts);\\n\\n    function getMarketRate(\\n        uint256 srcAmount,\\n        uint256 marketA,\\n        uint256 marketB\\n    ) external pure returns (uint256 destAmount);\\n}\\n\",\"keccak256\":\"0x2283799e43708a5dd57684fb5af6a28761ec50ea59ecd7761ae5f1cde221516a\",\"license\":\"MIT\"},\"contracts/interfaces/IBenchmarkBaseToken.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n/*\\n * MIT License\\n * ===========\\n *\\n * Permission is hereby granted, free of charge, to any person obtaining a copy\\n * of this software and associated documentation files (the \\\"Software\\\"), to deal\\n * in the Software without restriction, including without limitation the rights\\n * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\\n * copies of the Software, and to permit persons to whom the Software is\\n * furnished to do so, subject to the following conditions:\\n *\\n * The above copyright notice and this permission notice shall be included in all\\n * copies or substantial portions of the Software.\\n *\\n * THE SOFTWARE IS PROVIDED \\\"AS IS\\\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\\n * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\\n * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\\n * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\\n * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\\n * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\\n */\\n\\npragma solidity ^0.7.0;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\n\\ninterface IBenchmarkBaseToken is IERC20 {\\n    /**\\n     * @notice Emitted when burning OT or XYT tokens.\\n     * @param account The address performing the burn.\\n     * @param amount The amount to be burned.\\n     **/\\n    event Burn(address indexed account, uint256 amount);\\n\\n    /**\\n     * @notice Emitted when minting OT or XYT tokens.\\n     * @param account The address performing the mint.\\n     * @param amount The amount to be minted.\\n     **/\\n    event Mint(address indexed account, uint256 amount);\\n\\n    /**\\n     * @notice Burns OT or XYT tokens from account, reducing the total supply.\\n     * @param account The address performing the burn.\\n     * @param amount The amount to be burned.\\n     **/\\n    function burn(address account, uint256 amount) external;\\n\\n    /**\\n     * @notice Decreases the allowance granted to spender by the caller.\\n     * @param spender The address to reduce the allowance from.\\n     * @param subtractedValue The amount allowance to subtract.\\n     * @return Returns true if allowance has decreased, otherwise false.\\n     **/\\n    function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);\\n\\n    /**\\n     * @notice The yield contract expiry in epoch time.\\n     * @return Returns the yield expiry date.\\n     **/\\n    function expiry() external returns (uint256);\\n\\n    /**\\n     * @notice Increases the allowance granted to spender by the caller.\\n     * @param spender The address to increase the allowance from.\\n     * @param addedValue The amount allowance to add.\\n     * @return Returns true if allowance has increased, otherwise false\\n     **/\\n    function increaseAllowance(address spender, uint256 addedValue) external returns (bool);\\n\\n    /**\\n     * @notice Mints new OT or XYT tokens for account, increasing the total supply.\\n     * @param account The address to send the minted tokens.\\n     * @param amount The amount to be minted.\\n     **/\\n    function mint(address account, uint256 amount) external;\\n\\n    /**\\n     * @notice Returns the number of decimals the token uses.\\n     * @return Returns the token's decimals.\\n     **/\\n    function decimals() external view returns (uint8);\\n\\n    /**\\n     * @notice Returns the name of the token.\\n     * @return Returns the token's name.\\n     **/\\n    function name() external view returns (string memory);\\n\\n    /**\\n     * @notice Returns the symbol of the token.\\n     * @return Returns the token's symbol.\\n     **/\\n    function symbol() external view returns (string memory);\\n}\\n\",\"keccak256\":\"0x77e41e4c11ab8652e0ddad0d0f2e2dadbc5fa530ac6a1e06ec6e9e44d71a1cdf\",\"license\":\"MIT\"},\"contracts/interfaces/IBenchmarkData.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n/*\\n * MIT License\\n * ===========\\n *\\n * Permission is hereby granted, free of charge, to any person obtaining a copy\\n * of this software and associated documentation files (the \\\"Software\\\"), to deal\\n * in the Software without restriction, including without limitation the rights\\n * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\\n * copies of the Software, and to permit persons to whom the Software is\\n * furnished to do so, subject to the following conditions:\\n *\\n * The above copyright notice and this permission notice shall be included in all\\n * copies or substantial portions of the Software.\\n *\\n * THE SOFTWARE IS PROVIDED \\\"AS IS\\\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\\n * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\\n * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\\n * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\\n * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\\n * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\\n */\\n\\npragma solidity ^0.7.0;\\n\\nimport {Utils} from \\\"../libraries/BenchmarkLibrary.sol\\\";\\nimport \\\"./IBenchmark.sol\\\";\\nimport \\\"./IBenchmarkYieldToken.sol\\\";\\n\\ninterface IBenchmarkData {\\n    /**\\n     * @notice Emitted when the Benchmark core address has been updated.\\n     * @param core The address of the new core contract.\\n     **/\\n    event CoreSet(address core);\\n\\n    /**\\n     * @notice Sets the Benchmark core contract address.\\n     * @param _core Address of the new core contract.\\n     **/\\n    function setCore(IBenchmark _core) external;\\n\\n    /**\\n     * @notice Gets a reference to the Benchmark core contract.\\n     * @return Returns the core contract reference.\\n     **/\\n    function core() external view returns (IBenchmark);\\n\\n    /***********\\n     *  FORGE  *\\n     ***********/\\n\\n    /**\\n     * @notice Emitted when a forge for a protocol is added.\\n     * @param forgeId Forge and protocol identifier.\\n     * @param forgeAddress The address of the added forge.\\n     **/\\n    event ForgeAdded(bytes32 indexed forgeId, address indexed forgeAddress);\\n\\n    /**\\n     * @notice Emitted when a forge for a protocol is removed.\\n     * @param forgeId Forge and protocol identifier.\\n     * @param forgeAddress The address of the removed forge.\\n     **/\\n    event ForgeRemoved(bytes32 indexed forgeId, address indexed forgeAddress);\\n\\n    /**\\n     * @notice Adds a new forge for a protocol.\\n     * @param forgeId Forge and protocol identifier.\\n     * @param forgeAddress The address of the added forge.\\n     **/\\n    function addForge(bytes32 forgeId, address forgeAddress) external;\\n\\n    /**\\n     * @notice Removes a forge.\\n     * @param forgeId Forge and protocol identifier.\\n     **/\\n    function removeForge(bytes32 forgeId) external;\\n\\n    /**\\n     * @notice Store new OT and XYT details.\\n     * @param forgeId Forge and protocol identifier.\\n     * @param ot The address of the new XYT.\\n     * @param xyt The address of the new XYT.\\n     * @param underlyingYieldToken Token address of the underlying yield token.\\n     * @param expiry Yield contract expiry in epoch time.\\n     **/\\n    function storeTokens(\\n        bytes32 forgeId,\\n        address ot,\\n        address xyt,\\n        address underlyingYieldToken,\\n        uint256 expiry\\n    ) external;\\n\\n    /**\\n     * @notice Gets the OT and XYT tokens.\\n     * @param forgeId Forge and protocol identifier.\\n     * @param underlyingYieldToken Token address of the underlying yield token.\\n     * @param expiry Yield contract expiry in epoch time.\\n     * @return ot The OT token references.\\n     * @return xyt The XYT token references.\\n     **/\\n    function getBenchmarkYieldTokens(\\n        bytes32 forgeId,\\n        address underlyingYieldToken,\\n        uint256 expiry\\n    ) external view returns (IBenchmarkYieldToken ot, IBenchmarkYieldToken xyt);\\n\\n    /**\\n     * @notice Gets the identifier of the forge.\\n     * @param forgeAddress The forge's address.\\n     * @return forgeId Returns the forge identifier.\\n     **/\\n    function getForgeId(address forgeAddress) external view returns (bytes32 forgeId);\\n\\n    /**\\n     * @notice Gets a forge given the identifier.\\n     * @param forgeId Forge and protocol identifier.\\n     * @return forgeAddress Returns the forge address.\\n     **/\\n    function getForgeAddress(bytes32 forgeId) external view returns (address forgeAddress);\\n\\n    /**\\n     * @notice Checks if an XYT token is valid.\\n     * @param xyt Address of the XYT toke.\\n     * @return True if valid, false otherwise.\\n     **/\\n    function isValidXYT(address xyt) external view returns (bool);\\n\\n    /**\\n     * @notice Gets a reference to a specific OT.\\n     * @param forgeId Forge and protocol identifier.\\n     * @param underlyingYieldToken Token address of the underlying yield token.\\n     * @param expiry Yield contract expiry in epoch time.\\n     * @return ot Returns the reference to an OT.\\n     **/\\n    function otTokens(\\n        bytes32 forgeId,\\n        address underlyingYieldToken,\\n        uint256 expiry\\n    ) external view returns (IBenchmarkYieldToken ot);\\n\\n    /**\\n     * @notice Gets a reference to a specific XYT.\\n     * @param forgeId Forge and protocol identifier.\\n     * @param underlyingAsset Token address of the underlying asset\\n     * @param expiry Yield contract expiry in epoch time.\\n     * @return xyt Returns the reference to an XYT.\\n     **/\\n    function xytTokens(\\n        bytes32 forgeId,\\n        address underlyingAsset,\\n        uint256 expiry\\n    ) external view returns (IBenchmarkYieldToken xyt);\\n\\n    /***********\\n     *  MARKET *\\n     ***********/\\n\\n    /**\\n     * @notice Store new market.\\n     * @param market The newly created market address.\\n     **/\\n    function addMarket(address market) external;\\n\\n    function exitFee() external view returns (uint256);\\n\\n    function swapFee() external view returns (uint256);\\n\\n    function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;\\n\\n    /**\\n     * @notice Store new market details.\\n     * @param forgeId Forge and protocol identifier.\\n     * @param xyt Token address of the future yield token as base asset.\\n     * @param token Token address of an ERC20 token as quote asset.\\n     * @param market The newly created market address.\\n     **/\\n    function storeMarket(\\n        bytes32 forgeId,\\n        address xyt,\\n        address token,\\n        address market\\n    ) external;\\n\\n    /**\\n     * @notice Displays the number of markets currently existing.\\n     * @return Returns markets length,\\n     **/\\n    function allMarketsLength() external view returns (uint256);\\n\\n    /**\\n     * @notice Gets all the markets.\\n     * @return Returns an array of all markets.\\n     **/\\n    function getAllMarkets() external view returns (address[] calldata);\\n\\n    /**\\n     * @notice Gets a market given a future yield token and an ERC20 token.\\n     * @param forgeId Forge and protocol identifier.\\n     * @param xyt Token address of the future yield token as base asset.\\n     * @param token Token address of an ERC20 token as quote asset.\\n     * @return market Returns the market address.\\n     **/\\n    function getMarket(\\n        bytes32 forgeId,\\n        address xyt,\\n        address token\\n    ) external view returns (address market);\\n}\\n\",\"keccak256\":\"0x6c0817ea9e355dea68814c09028dc9ca27fa66d3f5e8d72d816ca0f72ce1b043\",\"license\":\"MIT\"},\"contracts/interfaces/IBenchmarkMarketFactory.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n/*\\n * MIT License\\n * ===========\\n *\\n * Permission is hereby granted, free of charge, to any person obtaining a copy\\n * of this software and associated documentation files (the \\\"Software\\\"), to deal\\n * in the Software without restriction, including without limitation the rights\\n * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\\n * copies of the Software, and to permit persons to whom the Software is\\n * furnished to do so, subject to the following conditions:\\n *\\n * The above copyright notice and this permission notice shall be included in all\\n * copies or substantial portions of the Software.\\n *\\n * THE SOFTWARE IS PROVIDED \\\"AS IS\\\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\\n * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\\n * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\\n * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\\n * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\\n * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\\n */\\n\\npragma solidity ^0.7.0;\\n\\nimport {Utils} from \\\"../libraries/BenchmarkLibrary.sol\\\";\\nimport \\\"./IBenchmark.sol\\\";\\n\\ninterface IBenchmarkMarketFactory {\\n    /**\\n     * @notice Emitted when Benchmark core contract reference is changed.\\n     * @param core The address of the new core contract.\\n     **/\\n    event CoreSet(address core);\\n\\n    /**\\n     * @notice Emitted when a market for a future yield token and an ERC20 token is created.\\n     * @param xyt The address of the tokenized future yield token as the base asset.\\n     * @param token The address of an ERC20 token as the quote asset.\\n     * @param market The address of the newly created market.\\n     **/\\n    event MarketCreated(address indexed xyt, address indexed token, address indexed market);\\n\\n    /**\\n     * @notice Creates a market given a protocol ID, future yield token, and an ERC20 token.\\n     * @param forgeId Protocol identifier.\\n     * @param xyt Token address of the future yield token as base asset.\\n     * @param token Token address of an ERC20 token as quote asset.\\n     * @param expiry Yield contract expiry in epoch time.\\n     * @return market Returns the address of the newly created market.\\n     **/\\n    function createMarket(\\n        bytes32 forgeId,\\n        address xyt,\\n        address token,\\n        uint256 expiry\\n    ) external returns (address market);\\n\\n    /**\\n     * @notice Sets the Benchmark core contract reference.\\n     * @param _core Address of the new core contract.\\n     **/\\n    function setCore(IBenchmark _core) external;\\n\\n    /**\\n     * @notice Gets a reference to the Benchmark core contract.\\n     * @return Returns the core contract reference.\\n     **/\\n    function core() external view returns (IBenchmark);\\n}\\n\",\"keccak256\":\"0x177f1ad8f63a72b2cfd379133ff998cd240854b1438a5c354149f6265335a601\",\"license\":\"MIT\"},\"contracts/interfaces/IBenchmarkYieldToken.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n/*\\n * MIT License\\n * ===========\\n *\\n * Permission is hereby granted, free of charge, to any person obtaining a copy\\n * of this software and associated documentation files (the \\\"Software\\\"), to deal\\n * in the Software without restriction, including without limitation the rights\\n * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\\n * copies of the Software, and to permit persons to whom the Software is\\n * furnished to do so, subject to the following conditions:\\n *\\n * The above copyright notice and this permission notice shall be included in all\\n * copies or substantial portions of the Software.\\n *\\n * THE SOFTWARE IS PROVIDED \\\"AS IS\\\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\\n * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\\n * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\\n * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\\n * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\\n * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\\n */\\n\\npragma solidity ^0.7.0;\\n\\nimport \\\"./IBenchmarkBaseToken.sol\\\";\\nimport {Utils} from \\\"../libraries/BenchmarkLibrary.sol\\\";\\n\\ninterface IBenchmarkYieldToken is IBenchmarkBaseToken {\\n    /**\\n     * @notice Gets the forge address of the BenchmarkForge contract for this yield token.\\n     * @return Retuns the forge address.\\n     **/\\n    function forge() external view returns (address);\\n\\n    /**\\n     * @notice Returns the address of the underlying asset.\\n     * @return Returns the underlying asset address.\\n     **/\\n    function underlyingAsset() external view returns (address);\\n\\n    /**\\n     * @notice Returns the address of the underlying yield token.\\n     * @return Returns the underlying yield token address.\\n     **/\\n    function underlyingYieldToken() external view returns (address);\\n}\\n\",\"keccak256\":\"0x47a5f5586b1204b34e21feb16f104bb49d9f9ebaaba193d8f14bab005c2cbdaa\",\"license\":\"MIT\"},\"contracts/libraries/BenchmarkLibrary.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-or-later\\n/*\\n * GNU General Public License v3.0 or later\\n * ========================================\\n *\\n * This program is free software: you can redistribute it and/or modify\\n * it under the terms of the GNU General Public License as published by\\n * the Free Software Foundation, either version 3 of the License, or\\n * (at your option) any later version.\\n *\\n * This program is distributed in the hope that it will be useful,\\n * but WITHOUT ANY WARRANTY; without even the implied warranty of\\n * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\\n * GNU General Public License for more details.\\n *\\n * You should have received a copy of the GNU General Public License\\n * along with this program.  If not, see <http://www.gnu.org/licenses/>.\\n */\\npragma solidity ^0.7.0;\\n\\nimport \\\"@openzeppelin/contracts/math/SafeMath.sol\\\";\\n\\nlibrary Factory {\\n    function createContract(\\n        bytes memory bytecode,\\n        bytes memory salting,\\n        bytes memory ctor\\n    ) internal returns (address forge) {\\n        bytes32 salt = keccak256(salting);\\n\\n        bytecode = abi.encodePacked(bytecode, ctor);\\n\\n        assembly {\\n            forge := create2(0, add(bytecode, 32), mload(bytecode), salt)\\n        }\\n        require(forge != address(0), \\\"Benchmark: failed on deploy\\\");\\n    }\\n}\\n\\nlibrary Math {\\n    using SafeMath for uint256;\\n\\n    uint256 internal constant UINT_MAX_VALUE = uint256(-1);\\n    //uint256 internal constant RAY = 1e27;\\n    uint256 internal constant WAD = 1e18;\\n    uint256 internal constant BIG_NUMBER = (uint256(1) << uint256(200));\\n    uint256 internal constant PRECISION_BITS = 40;\\n    uint256 internal constant FORMULA_PRECISION = uint256(1) << PRECISION_BITS;\\n    uint256 internal constant PI = (314 * RAY) / 10**2;\\n    uint256 internal constant PI_PLUSONE = (414 * RAY) / 10**2;\\n    uint256 internal constant RAY = FORMULA_PRECISION;\\n    uint256 internal constant PRECISION_POW = 1e2;\\n\\n    function checkMultOverflow(uint256 _x, uint256 _y) internal pure returns (bool) {\\n        if (_y == 0) return false;\\n        return (((_x * _y) / _y) != _x);\\n    }\\n\\n    function compactFraction(uint256 _p, uint256 _q) internal pure returns (uint256, uint256) {\\n        if (_q < FORMULA_PRECISION * FORMULA_PRECISION) return (_p, _q);\\n        return compactFraction(_p / FORMULA_PRECISION, _q / FORMULA_PRECISION);\\n    }\\n\\n    function exp(uint256 _p, uint256 _q) internal pure returns (uint256 sum) {\\n        uint256 n = 0;\\n        uint256 nFact = 1;\\n        uint256 currentP = 1;\\n        uint256 currentQ = 1;\\n        uint256 prevSum = 0;\\n\\n        while (true) {\\n            if (checkMultOverflow(currentP, FORMULA_PRECISION)) return sum;\\n            if (checkMultOverflow(currentQ, nFact)) return sum;\\n\\n            sum += (currentP * FORMULA_PRECISION) / (currentQ * nFact);\\n\\n            if (sum == prevSum) return sum;\\n            prevSum = sum;\\n\\n            n++;\\n\\n            if (checkMultOverflow(currentP, _p)) return sum;\\n            if (checkMultOverflow(currentQ, _q)) return sum;\\n            if (checkMultOverflow(nFact, n)) return sum;\\n\\n            currentP *= _p;\\n            currentQ *= _q;\\n            nFact *= n;\\n\\n            (currentP, currentQ) = compactFraction(currentP, currentQ);\\n        }\\n    }\\n\\n    function countLeadingZeros(uint256 _p, uint256 _q) internal pure returns (uint256) {\\n        uint256 denomator = (uint256(1) << 255);\\n        for (int256 i = 255; i >= 0; i--) {\\n            if ((_q * denomator) / denomator != _q) {\\n                // overflow\\n                denomator = denomator / 2;\\n                continue;\\n            }\\n            if (_p / (_q * denomator) > 0) return uint256(i);\\n            denomator = denomator / 2;\\n        }\\n\\n        return uint256(-1);\\n    }\\n\\n    // log2 for a number that it in [1,2)\\n    function log2ForSmallNumber(uint256 _x) internal pure returns (uint256) {\\n        uint256 res = 0;\\n        uint256 one = (uint256(1) << PRECISION_BITS);\\n        uint256 two = 2 * one;\\n        uint256 addition = one;\\n\\n        require((_x >= one) && (_x <= two));\\n        require(PRECISION_BITS < 125);\\n\\n        for (uint256 i = PRECISION_BITS; i > 0; i--) {\\n            _x = (_x * _x) / one;\\n            addition = addition / 2;\\n            if (_x >= two) {\\n                _x = _x / 2;\\n                res += addition;\\n            }\\n        }\\n\\n        return res;\\n    }\\n\\n    function logBase2(uint256 _p, uint256 _q) internal pure returns (uint256) {\\n        uint256 n = 0;\\n\\n        if (_p > _q) {\\n            n = countLeadingZeros(_p, _q);\\n        }\\n\\n        require(!checkMultOverflow(_p, FORMULA_PRECISION));\\n        require(!checkMultOverflow(n, FORMULA_PRECISION));\\n        require(!checkMultOverflow(uint256(1) << n, _q));\\n\\n        uint256 y = (_p * FORMULA_PRECISION) / (_q * (uint256(1) << n));\\n        uint256 log2Small = log2ForSmallNumber(y);\\n\\n        require(n * FORMULA_PRECISION <= BIG_NUMBER);\\n        require(log2Small <= BIG_NUMBER);\\n\\n        return n * FORMULA_PRECISION + log2Small;\\n    }\\n\\n    function ln(uint256 p, uint256 q) internal pure returns (uint256) {\\n        uint256 ln2Numerator = 6931471805599453094172;\\n        uint256 ln2Denomerator = 10000000000000000000000;\\n\\n        uint256 log2x = logBase2(p, q);\\n\\n        require(!checkMultOverflow(ln2Numerator, log2x));\\n\\n        return (ln2Numerator * log2x) / ln2Denomerator;\\n    }\\n\\n    // This famous algorithm is called \\\"exponentiation by squaring\\\"\\n    // and calculates x^n with x as fixed-point and n as regular unsigned.\\n    //\\n    // It's O(log n), instead of O(n) for naive repeated multiplication.\\n    //\\n    // These facts are why it works:\\n    //\\n    //  If n is even, then x^n = (x^2)^(n/2).\\n    //  If n is odd,  then x^n = x * x^(n-1),\\n    //   and applying the equation for even x gives\\n    //    x^n = x * (x^2)^((n-1) / 2).\\n    //\\n    //  Also, EVM division is flooring and\\n    //    floor[(n-1) / 2] = floor[n / 2].\\n    //\\n    function pow(uint256 x, uint256 n) internal pure returns (uint256 z) {\\n        z = n % 2 != 0 ? x : RAY;\\n\\n        for (n /= 2; n != 0; n /= 2) {\\n            x = rmul(x, x);\\n\\n            if (n % 2 != 0) {\\n                z = rmul(z, x);\\n            }\\n        }\\n    }\\n\\n    function rfloor(uint256 x) internal pure returns (uint256) {\\n        return rtoi(x) * RAY;\\n    }\\n\\n    function rpow(uint256 _base, uint256 _exp) internal pure returns (uint256) {\\n        uint256 whole = rfloor(_exp);\\n        uint256 remain = _exp.sub(whole);\\n\\n        uint256 wholePow = rpowi(_base, rtoi(whole));\\n\\n        if (remain == 0) {\\n            return wholePow;\\n        }\\n\\n        uint256 partialResult = rpowApprox(_base, remain);\\n        return rmul(wholePow, partialResult);\\n    }\\n\\n    function rpowi(uint256 _x, uint256 _n) internal pure returns (uint256) {\\n        uint256 z = _n % 2 != 0 ? _x : RAY;\\n\\n        for (_n /= 2; _n != 0; _n /= 2) {\\n            _x = rmul(_x, _x);\\n\\n            if (_n % 2 != 0) {\\n                z = rmul(z, _x);\\n            }\\n        }\\n        return z;\\n    }\\n\\n    function rpowApprox(uint256 _base, uint256 _exp) internal pure returns (uint256) {\\n        // term 0:\\n        uint256 a = _exp;\\n        (uint256 x, bool xneg) = rsignSub(_base, RAY);\\n        uint256 term = RAY;\\n        uint256 sum = term;\\n        bool negative = false;\\n\\n        // term(k) = numer / denom\\n        //         = (product(a - i - 1, i=1-->k) * x^k) / (k!)\\n        // each iteration, multiply previous term by (a-(k-1)) * x / k\\n        // continue until term is less than precision\\n        for (uint256 i = 1; term >= PRECISION_POW; i++) {\\n            uint256 bigK = i * RAY;\\n            (uint256 c, bool cneg) = rsignSub(a, bigK.sub(RAY));\\n            term = rmul(term, rmul(c, x));\\n            term = rdiv(term, bigK);\\n            if (term == 0) break;\\n\\n            if (xneg) negative = !negative;\\n            if (cneg) negative = !negative;\\n            if (negative) {\\n                sum = sum.sub(term);\\n            } else {\\n                sum = sum.add(term);\\n            }\\n        }\\n\\n        return sum;\\n    }\\n\\n    function rsignSub(uint256 x, uint256 y) internal pure returns (uint256, bool) {\\n        if (x >= y) {\\n            return (x.sub(y), false);\\n        } else {\\n            return (y.sub(x), true);\\n        }\\n    }\\n\\n    function rdiv(uint256 x, uint256 y) internal pure returns (uint256) {\\n        return (y / 2).add(x.mul(RAY)).div(y);\\n    }\\n\\n    function rmul(uint256 x, uint256 y) internal pure returns (uint256) {\\n        return (RAY / 2).add(x.mul(y)).div(RAY);\\n    }\\n\\n    function rtoi(uint256 x) internal pure returns (uint256) {\\n        return x / RAY;\\n    }\\n\\n    function wdiv(uint256 x, uint256 y) internal pure returns (uint256) {\\n        return (y / 2).add(x.mul(WAD)).div(y);\\n    }\\n\\n    function wmul(uint256 x, uint256 y) internal pure returns (uint256) {\\n        return (WAD / 2).add(x.mul(y)).div(WAD);\\n    }\\n}\\n\\nlibrary Utils {\\n    /**\\n     * @notice Concatenates a Benchmark token name/symbol to a yield token name/symbol\\n     *         using a delimiter (usually \\\"-\\\" or \\\" \\\").\\n     * @param _bt The Benchmark token name/symbol.\\n     * @param _yt The yield token name/symbol.\\n     * @param _delimiter Can be any delimiter, but usually \\\"-\\\" or \\\" \\\".\\n     * @return result Returns the concatenated string.\\n     **/\\n    function concat(\\n        string memory _bt,\\n        string memory _yt,\\n        string memory _delimiter\\n    ) internal pure returns (string memory result) {\\n        uint256 btPart;\\n        uint256 ytPart;\\n        uint256 delimiterPart;\\n        uint256 resultPart;\\n\\n        result = new string(\\n            bytes(_bt).length + bytes(_yt).length + (bytes(_delimiter).length * 2)\\n        );\\n\\n        assembly {\\n            btPart := add(_bt, 0x20)\\n            ytPart := add(_yt, 0x20)\\n            delimiterPart := add(_delimiter, 0x20)\\n            resultPart := add(result, 32)\\n        }\\n\\n        memcpy(btPart, resultPart, bytes(_bt).length);\\n        memcpy(delimiterPart, resultPart + bytes(_bt).length, bytes(_delimiter).length);\\n        memcpy(\\n            ytPart,\\n            resultPart + bytes(_bt).length + bytes(_delimiter).length,\\n            bytes(_yt).length\\n        );\\n    }\\n\\n    /**\\n     * @notice Concatenates a OT/XYT token name/symbol to an expiry\\n     *         using a delimiter (usually \\\"-\\\" or \\\" \\\").\\n     * @param _name The OT/XYT token name/symbol.\\n     * @param _expiry The expiry in epoch time.\\n     * @param _delimiter Can be any delimiter, but usually \\\"-\\\" or \\\" \\\".\\n     * @return result Returns the concatenated string.\\n     **/\\n    function concat(\\n        string memory _name,\\n        uint256 _expiry,\\n        string memory _delimiter\\n    ) internal pure returns (string memory result) {\\n        uint256 namePart;\\n        uint256 expiryPart;\\n        uint256 delimiterPart;\\n        uint256 resultPart;\\n        uint256 length;\\n        uint256 i = _expiry;\\n\\n        while (i != 0) {\\n            length++;\\n            i /= 10;\\n        }\\n\\n        bytes memory expiryBytes = new bytes(length);\\n        uint256 j = length - 1;\\n\\n        while (_expiry != 0) {\\n            expiryBytes[j--] = bytes1(uint8(48 + (_expiry % 10)));\\n            _expiry /= 10;\\n        }\\n\\n        string memory expiry = string(expiryBytes);\\n        result = new string(bytes(_name).length + bytes(expiry).length + bytes(_delimiter).length);\\n\\n        assembly {\\n            namePart := add(_name, 0x20)\\n            expiryPart := add(expiry, 0x20)\\n            delimiterPart := add(_delimiter, 0x20)\\n            resultPart := add(result, 32)\\n        }\\n\\n        memcpy(namePart, resultPart, bytes(_name).length);\\n        memcpy(delimiterPart, resultPart + bytes(_name).length, bytes(_delimiter).length);\\n        memcpy(\\n            expiryPart,\\n            resultPart + bytes(_name).length + bytes(_delimiter).length,\\n            bytes(expiry).length\\n        );\\n    }\\n\\n    function memcpy(\\n        uint256 src,\\n        uint256 dest,\\n        uint256 length\\n    ) private pure {\\n        for (; length >= 32; length -= 32) {\\n            assembly {\\n                mstore(dest, mload(src))\\n            }\\n            src += 32;\\n            dest += 32;\\n        }\\n\\n        uint256 mask = 256**(32 - length) - 1;\\n\\n        assembly {\\n            let srcPart := and(mload(src), not(mask))\\n            let destPart := and(mload(dest), mask)\\n            mstore(dest, or(destPart, srcPart))\\n        }\\n    }\\n}\\n\\nlibrary UIntUtils {\\n    function uintToString(uint256 _i) internal pure returns (string memory) {\\n        if (_i == 0) {\\n            return \\\"0\\\";\\n        }\\n        uint256 j = _i;\\n        uint256 len;\\n        while (j != 0) {\\n            len++;\\n            j /= 10;\\n        }\\n        bytes memory bstr = new bytes(len);\\n        uint256 k = len - 1;\\n        while (_i != 0) {\\n            bstr[k--] = bytes1(uint8(48 + (_i % 10)));\\n            _i /= 10;\\n        }\\n        return string(bstr);\\n    }\\n}\\n\\npragma experimental ABIEncoderV2;\\n\\nlibrary DateUtils {\\n    /*\\n     *  Date utilities for ethereum contracts\\n     *\\n     */\\n    struct Date {\\n        uint16 year;\\n        uint8 month;\\n        uint8 day;\\n    }\\n\\n    uint256 public constant DAY_IN_SECONDS = 86400;\\n    uint256 public constant YEAR_IN_SECONDS = 31536000;\\n    uint256 public constant LEAP_YEAR_IN_SECONDS = 31622400;\\n\\n    uint16 public constant ORIGIN_YEAR = 1970;\\n\\n    function isLeapYear(uint16 _year) public pure returns (bool) {\\n        return ((_year % 4 == 0) && (_year % 100 != 0)) || (_year % 400 == 0);\\n    }\\n\\n    function leapYearsBefore(uint256 _year) public pure returns (uint256) {\\n        _year -= 1;\\n        return _year / 4 - _year / 100 + _year / 400;\\n    }\\n\\n    function getDaysInMonth(uint8 _month, uint16 _year) public pure returns (uint8) {\\n        if (\\n            _month == 1 ||\\n            _month == 3 ||\\n            _month == 5 ||\\n            _month == 7 ||\\n            _month == 8 ||\\n            _month == 10 ||\\n            _month == 12\\n        ) {\\n            return 31;\\n        } else if (_month == 4 || _month == 6 || _month == 9 || _month == 11) {\\n            return 30;\\n        } else if (isLeapYear(_year)) {\\n            return 29;\\n        } else {\\n            return 28;\\n        }\\n    }\\n\\n    function parseTimestamp(uint256 _timestamp) public pure returns (Date memory d) {\\n        uint256 secondsAccountedFor = 0;\\n        uint256 buf;\\n        uint8 i;\\n\\n        // Year\\n        d.year = getYear(_timestamp);\\n        buf = leapYearsBefore(d.year) - leapYearsBefore(ORIGIN_YEAR);\\n\\n        secondsAccountedFor += LEAP_YEAR_IN_SECONDS * buf;\\n        secondsAccountedFor += YEAR_IN_SECONDS * (d.year - ORIGIN_YEAR - buf);\\n\\n        // Month\\n        uint256 secondsInMonth;\\n        for (i = 1; i <= 12; i++) {\\n            secondsInMonth = DAY_IN_SECONDS * getDaysInMonth(i, d.year);\\n            if (secondsInMonth + secondsAccountedFor > _timestamp) {\\n                d.month = i;\\n                break;\\n            }\\n            secondsAccountedFor += secondsInMonth;\\n        }\\n\\n        // Day\\n        for (i = 1; i <= getDaysInMonth(d.month, d.year); i++) {\\n            if (DAY_IN_SECONDS + secondsAccountedFor > _timestamp) {\\n                d.day = i;\\n                break;\\n            }\\n            secondsAccountedFor += DAY_IN_SECONDS;\\n        }\\n    }\\n\\n    function getYear(uint256 _timestamp) public pure returns (uint16) {\\n        uint256 secondsAccountedFor = 0;\\n        uint16 year;\\n        uint256 numLeapYears;\\n\\n        // Year\\n        year = uint16(ORIGIN_YEAR + _timestamp / YEAR_IN_SECONDS);\\n        numLeapYears = leapYearsBefore(year) - leapYearsBefore(ORIGIN_YEAR);\\n\\n        secondsAccountedFor += LEAP_YEAR_IN_SECONDS * numLeapYears;\\n        secondsAccountedFor += YEAR_IN_SECONDS * (year - ORIGIN_YEAR - numLeapYears);\\n\\n        while (secondsAccountedFor > _timestamp) {\\n            if (isLeapYear(uint16(year - 1))) {\\n                secondsAccountedFor -= LEAP_YEAR_IN_SECONDS;\\n            } else {\\n                secondsAccountedFor -= YEAR_IN_SECONDS;\\n            }\\n            year -= 1;\\n        }\\n        return year;\\n    }\\n\\n    function monthName(Date memory d) private pure returns (string memory) {\\n        string[12] memory months =\\n            [\\\"JAN\\\", \\\"FEB\\\", \\\"MAR\\\", \\\"APR\\\", \\\"MAY\\\", \\\"JUN\\\", \\\"JUL\\\", \\\"AUG\\\", \\\"SEP\\\", \\\"OCT\\\", \\\"NOV\\\", \\\"DEC\\\"];\\n        return months[d.month - 1];\\n    }\\n\\n    function toRFC2822String(uint256 _timestamp) public pure returns (string memory s) {\\n        Date memory d = parseTimestamp(_timestamp);\\n        string memory day = UIntUtils.uintToString(d.day);\\n        string memory month = monthName(d);\\n        string memory year = UIntUtils.uintToString(d.year);\\n        s = string(abi.encodePacked(day, month, year));\\n    }\\n}\\n\",\"keccak256\":\"0xd17b0879781acf52c4415e0d12c11d204d62870146188a7b06c8b39d6ca4ffb3\",\"license\":\"GPL-3.0-or-later\"},\"contracts/periphery/Permissions.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n/*\\n * MIT License\\n * ===========\\n *\\n * Permission is hereby granted, free of charge, to any person obtaining a copy\\n * of this software and associated documentation files (the \\\"Software\\\"), to deal\\n * in the Software without restriction, including without limitation the rights\\n * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\\n * copies of the Software, and to permit persons to whom the Software is\\n * furnished to do so, subject to the following conditions:\\n *\\n * The above copyright notice and this permission notice shall be included in all\\n * copies or substantial portions of the Software.\\n *\\n * THE SOFTWARE IS PROVIDED \\\"AS IS\\\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\\n * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\\n * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\\n * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\\n * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\\n * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\\n */\\npragma solidity ^0.7.0;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\n\\nabstract contract Permissions {\\n    event EtherWithdraw(uint256 amount, address sendTo);\\n    event TokenWithdraw(IERC20 token, uint256 amount, address sendTo);\\n\\n    address public immutable governance;\\n    address public initializer;\\n\\n    constructor(address _governance, address _initializer) {\\n        require(_governance != address(0), \\\"Benchmark: zero address\\\");\\n        initializer = _initializer;\\n        governance = _governance;\\n    }\\n\\n    modifier initialized() {\\n        require(initializer == address(0), \\\"Benchmark: not initialized\\\");\\n        _;\\n    }\\n\\n    modifier onlyGovernance() {\\n        require(msg.sender == governance, \\\"Benchmark: only governance\\\");\\n        _;\\n    }\\n\\n    /**\\n     * @dev Allows governance to withdraw Ether in a Benchmark contract\\n     *      in case of accidental ETH transfer into the contract.\\n     * @param amount The amount of Ether to withdraw.\\n     * @param sendTo The recipient address.\\n     */\\n    function withdrawEther(uint256 amount, address payable sendTo) external onlyGovernance {\\n        (bool success, ) = sendTo.call{value: amount}(\\\"\\\");\\n        require(success, \\\"withdraw failed\\\");\\n        emit EtherWithdraw(amount, sendTo);\\n    }\\n\\n    /**\\n     * @dev Allows governance to withdraw all IERC20 compatible tokens in a Benchmark\\n     *      contract in case of accidental token transfer into the contract.\\n     * @param token IERC20 The address of the token contract.\\n     * @param amount The amount of IERC20 tokens to withdraw.\\n     * @param sendTo The recipient address.\\n     */\\n    function withdrawToken(\\n        IERC20 token,\\n        uint256 amount,\\n        address sendTo\\n    ) external onlyGovernance {\\n        token.transfer(sendTo, amount);\\n        emit TokenWithdraw(token, amount, sendTo);\\n    }\\n}\\n\",\"keccak256\":\"0xaeabbc8e185784f58cb393b8a4c283bbdce7bc43636617ee0a921572bcac66ff\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x60a060405234801561001057600080fd5b506040516114673803806114678339818101604052604081101561003357600080fd5b50805160209091015181816001600160a01b038216610099576040805162461bcd60e51b815260206004820152601760248201527f42656e63686d61726b3a207a65726f2061646472657373000000000000000000604482015290519081900360640190fd5b600080546001600160a01b0319166001600160a01b03928316178155606083901b6001600160601b0319166080529116925061137091506100f79039806106f1528061083a528061096e5280610ea15280610f2652506113706000f3fe608060405234801561001057600080fd5b50600436106101585760003560e01c806393e30633116100c3578063cbdfe7cc1161007c578063cbdfe7cc14610473578063ce56c45414610496578063eda15513146104c2578063f2f4eb26146104e8578063f8eebe03146104f0578063fd9c69981461050d57610158565b806393e306331461037e5780639ce110d7146103a4578063a22d8024146103ac578063b0772d0b146103c9578063b8b265de14610421578063c4d66de81461044d57610158565b80635b6ac1a6116101155780635b6ac1a6146102a85780635dc65934146102e25780636284ae4114610314578063800096301461031c57806388dd46a1146103425780638e7cf7661461034a57610158565b80630c3b41ca1461015d5780631f019ead146101a15780632fe9949e146101ef5780633ccdbb281461025057806354cf2aeb146102865780635aa6e675146102a0575b600080fd5b61019f600480360360a081101561017357600080fd5b508035906001600160a01b0360208201358116916040810135821691606082013516906080013561054b565b005b6101d3600480360360608110156101b757600080fd5b508035906001600160a01b036020820135169060400135610669565b604080516001600160a01b039092168252519081900360200190f35b6102216004803603606081101561020557600080fd5b508035906001600160a01b036020820135169060400135610695565b60405180836001600160a01b03168152602001826001600160a01b031681526020019250505060405180910390f35b61019f6004803603606081101561026657600080fd5b506001600160a01b038135811691602081013591604090910135166106e6565b61028e610832565b60408051918252519081900360200190f35b6101d3610838565b6102ce600480360360208110156102be57600080fd5b50356001600160a01b031661085c565b604080519115158252519081900360200190f35b6101d3600480360360608110156102f857600080fd5b508035906001600160a01b0360208201351690604001356108e5565b61028e610911565b61019f6004803603602081101561033257600080fd5b50356001600160a01b0316610917565b61028e610a86565b6101d36004803603606081101561036057600080fd5b508035906001600160a01b0360208201358116916040013516610a8c565b61019f6004803603602081101561039457600080fd5b50356001600160a01b0316610ab8565b6101d3610c2c565b6101d3600480360360208110156103c257600080fd5b5035610c3b565b6103d1610c56565b60408051602080825283518183015283519192839290830191858101910280838360005b8381101561040d5781810151838201526020016103f5565b505050509050019250505060405180910390f35b61019f6004803603604081101561043757600080fd5b50803590602001356001600160a01b0316610cb8565b61019f6004803603602081101561046357600080fd5b50356001600160a01b0316610dbd565b61019f6004803603604081101561048957600080fd5b5080359060200135610e96565b61019f600480360360408110156104ac57600080fd5b50803590602001356001600160a01b0316610f1b565b61028e600480360360208110156104d857600080fd5b50356001600160a01b0316611075565b6101d3611087565b61019f6004803603602081101561050657600080fd5b5035611096565b61019f6004803603608081101561052357600080fd5b508035906001600160a01b03602082013581169160408101358216916060909101351661119e565b6000546001600160a01b031615610597576040805162461bcd60e51b815260206004820152601a602482015260008051602061131b833981519152604482015290519081900360640190fd5b60008581526002602052604090205485906001600160a01b031633146105fc576040805162461bcd60e51b815260206004820152601560248201527442656e63686d61726b3a206f6e6c7920666f72676560581b604482015290519081900360640190fd5b5060008581526004602090815260408083206001600160a01b03958616808552908352818420858552835281842080549887166001600160a01b0319998a161790559783526005825280832097835296815286822092825291909152939093208054919093169116179055565b60046020908152600093845260408085208252928452828420905282529020546001600160a01b031681565b60008381526004602090815260408083206001600160a01b03958616808552908352818420858552835281842054968452600583528184209084528252808320938352929052205491811692911690565b336001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001614610760576040805162461bcd60e51b815260206004820152601a60248201527942656e63686d61726b3a206f6e6c7920676f7665726e616e636560301b604482015290519081900360640190fd5b826001600160a01b031663a9059cbb82846040518363ffffffff1660e01b815260040180836001600160a01b0316815260200182815260200192505050602060405180830381600087803b1580156107b757600080fd5b505af11580156107cb573d6000803e3d6000fd5b505050506040513d60208110156107e157600080fd5b5050604080516001600160a01b0380861682526020820185905283168183015290517f72cb8a894ddb372ceec3d2a7648d86f17d5a15caae0e986c53109b8a9a9385e69181900360600190a1505050565b60065481565b7f000000000000000000000000000000000000000000000000000000000000000081565b600080826001600160a01b0316636c6f42396040518163ffffffff1660e01b815260040160206040518083038186803b15801561089857600080fd5b505afa1580156108ac573d6000803e3d6000fd5b505050506040513d60208110156108c257600080fd5b50516001600160a01b031660009081526001602052604090205415159392505050565b60056020908152600093845260408085208252928452828420905282529020546001600160a01b031681565b60075481565b6000546001600160a01b031615610963576040805162461bcd60e51b815260206004820152601a602482015260008051602061131b833981519152604482015290519081900360640190fd5b336001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016146109dd576040805162461bcd60e51b815260206004820152601a60248201527942656e63686d61726b3a206f6e6c7920676f7665726e616e636560301b604482015290519081900360640190fd5b6001600160a01b038116610a32576040805162461bcd60e51b815260206004820152601760248201527642656e63686d61726b3a207a65726f206164647265737360481b604482015290519081900360640190fd5b600880546001600160a01b0383166001600160a01b0319909116811790915560408051918252517f90db982ad7e7c631cc388cc3f76688bf08ffe8a87e161db50887cf7ef4194dee9181900360200190a150565b600a5490565b60036020908152600093845260408085208252928452828420905282529020546001600160a01b031681565b6000546001600160a01b031615610b04576040805162461bcd60e51b815260206004820152601a602482015260008051602061131b833981519152604482015290519081900360640190fd5b600860009054906101000a90046001600160a01b03166001600160a01b031663c45a01556040518163ffffffff1660e01b815260040160206040518083038186803b158015610b5257600080fd5b505afa158015610b66573d6000803e3d6000fd5b505050506040513d6020811015610b7c57600080fd5b50516001600160a01b03163314610bda576040805162461bcd60e51b815260206004820152601e60248201527f42656e63686d61726b3a206f6e6c79206d61726b657420666163746f72790000604482015290519081900360640190fd5b600a80546001810182556000919091527fc65a7bb8d6351c1cf70c95a316cc6a92839c986682d98bc35f958f4883f9d2a80180546001600160a01b0319166001600160a01b0392909216919091179055565b6000546001600160a01b031681565b6002602052600090815260409020546001600160a01b031681565b6060600a805480602002602001604051908101604052809291908181526020018280548015610cae57602002820191906000526020600020905b81546001600160a01b03168152600190910190602001808311610c90575b5050505050905090565b6000546001600160a01b031615610d04576040805162461bcd60e51b815260206004820152601a602482015260008051602061131b833981519152604482015290519081900360640190fd5b6008546001600160a01b03163314610d5a576040805162461bcd60e51b815260206004820152601460248201527342656e63686d61726b3a206f6e6c7920636f726560601b604482015290519081900360640190fd5b6001600160a01b0381166000818152600160209081526040808320869055858352600290915280822080546001600160a01b031916841790555184917f69055c715401f521099c448934ded38665f743c00f6c38849feef24404adc8e591a35050565b6000546001600160a01b03163314610e13576040805162461bcd60e51b81526020600482015260146024820152732132b731b436b0b9359d103337b93134b23232b760611b604482015290519081900360640190fd5b6001600160a01b038116610e68576040805162461bcd60e51b815260206004820152601760248201527642656e63686d61726b3a207a65726f206164647265737360481b604482015290519081900360640190fd5b600080546001600160a01b0319908116909155600880549091166001600160a01b0392909216919091179055565b336001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001614610f10576040805162461bcd60e51b815260206004820152601a60248201527942656e63686d61726b3a206f6e6c7920676f7665726e616e636560301b604482015290519081900360640190fd5b600691909155600755565b336001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001614610f95576040805162461bcd60e51b815260206004820152601a60248201527942656e63686d61726b3a206f6e6c7920676f7665726e616e636560301b604482015290519081900360640190fd5b6040516000906001600160a01b0383169084908381818185875af1925050503d8060008114610fe0576040519150601f19603f3d011682016040523d82523d6000602084013e610fe5565b606091505b505090508061102d576040805162461bcd60e51b815260206004820152600f60248201526e1dda5d1a191c985dc819985a5b1959608a1b604482015290519081900360640190fd5b604080518481526001600160a01b038416602082015281517fec47e7ed86c86774d1a72c19f35c639911393fe7c1a34031fdbd260890da90de929181900390910190a1505050565b60016020526000908152604090205481565b6008546001600160a01b031681565b6000546001600160a01b0316156110e2576040805162461bcd60e51b815260206004820152601a602482015260008051602061131b833981519152604482015290519081900360640190fd5b6008546001600160a01b03163314611138576040805162461bcd60e51b815260206004820152601460248201527342656e63686d61726b3a206f6e6c7920636f726560601b604482015290519081900360640190fd5b600081815260026020908152604080832080546001600160a01b031981169091556001600160a01b03168084526001909252808320849055519091829184917f92063d41ec6dbeae87df43b06ca7ee7c3ea274719cfb36ac26d94835afe3d04e91a35050565b6000546001600160a01b0316156111ea576040805162461bcd60e51b815260206004820152601a602482015260008051602061131b833981519152604482015290519081900360640190fd5b600860009054906101000a90046001600160a01b03166001600160a01b031663c45a01556040518163ffffffff1660e01b815260040160206040518083038186803b15801561123857600080fd5b505afa15801561124c573d6000803e3d6000fd5b505050506040513d602081101561126257600080fd5b50516001600160a01b031633146112c0576040805162461bcd60e51b815260206004820152601e60248201527f42656e63686d61726b3a206f6e6c79206d61726b657420666163746f72790000604482015290519081900360640190fd5b60009384526003602090815260408086206001600160a01b0395861687528252808620938516865292815282852080546001600160a01b03191692909416918217909355835260099091529020805460ff1916600117905556fe42656e63686d61726b3a206e6f7420696e697469616c697a6564000000000000a2646970667358221220cea3c921dfc9dfee7eec91cc57c737adeed4874067d967fa70cb6f4147d5faaa64736f6c63430007050033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106101585760003560e01c806393e30633116100c3578063cbdfe7cc1161007c578063cbdfe7cc14610473578063ce56c45414610496578063eda15513146104c2578063f2f4eb26146104e8578063f8eebe03146104f0578063fd9c69981461050d57610158565b806393e306331461037e5780639ce110d7146103a4578063a22d8024146103ac578063b0772d0b146103c9578063b8b265de14610421578063c4d66de81461044d57610158565b80635b6ac1a6116101155780635b6ac1a6146102a85780635dc65934146102e25780636284ae4114610314578063800096301461031c57806388dd46a1146103425780638e7cf7661461034a57610158565b80630c3b41ca1461015d5780631f019ead146101a15780632fe9949e146101ef5780633ccdbb281461025057806354cf2aeb146102865780635aa6e675146102a0575b600080fd5b61019f600480360360a081101561017357600080fd5b508035906001600160a01b0360208201358116916040810135821691606082013516906080013561054b565b005b6101d3600480360360608110156101b757600080fd5b508035906001600160a01b036020820135169060400135610669565b604080516001600160a01b039092168252519081900360200190f35b6102216004803603606081101561020557600080fd5b508035906001600160a01b036020820135169060400135610695565b60405180836001600160a01b03168152602001826001600160a01b031681526020019250505060405180910390f35b61019f6004803603606081101561026657600080fd5b506001600160a01b038135811691602081013591604090910135166106e6565b61028e610832565b60408051918252519081900360200190f35b6101d3610838565b6102ce600480360360208110156102be57600080fd5b50356001600160a01b031661085c565b604080519115158252519081900360200190f35b6101d3600480360360608110156102f857600080fd5b508035906001600160a01b0360208201351690604001356108e5565b61028e610911565b61019f6004803603602081101561033257600080fd5b50356001600160a01b0316610917565b61028e610a86565b6101d36004803603606081101561036057600080fd5b508035906001600160a01b0360208201358116916040013516610a8c565b61019f6004803603602081101561039457600080fd5b50356001600160a01b0316610ab8565b6101d3610c2c565b6101d3600480360360208110156103c257600080fd5b5035610c3b565b6103d1610c56565b60408051602080825283518183015283519192839290830191858101910280838360005b8381101561040d5781810151838201526020016103f5565b505050509050019250505060405180910390f35b61019f6004803603604081101561043757600080fd5b50803590602001356001600160a01b0316610cb8565b61019f6004803603602081101561046357600080fd5b50356001600160a01b0316610dbd565b61019f6004803603604081101561048957600080fd5b5080359060200135610e96565b61019f600480360360408110156104ac57600080fd5b50803590602001356001600160a01b0316610f1b565b61028e600480360360208110156104d857600080fd5b50356001600160a01b0316611075565b6101d3611087565b61019f6004803603602081101561050657600080fd5b5035611096565b61019f6004803603608081101561052357600080fd5b508035906001600160a01b03602082013581169160408101358216916060909101351661119e565b6000546001600160a01b031615610597576040805162461bcd60e51b815260206004820152601a602482015260008051602061131b833981519152604482015290519081900360640190fd5b60008581526002602052604090205485906001600160a01b031633146105fc576040805162461bcd60e51b815260206004820152601560248201527442656e63686d61726b3a206f6e6c7920666f72676560581b604482015290519081900360640190fd5b5060008581526004602090815260408083206001600160a01b03958616808552908352818420858552835281842080549887166001600160a01b0319998a161790559783526005825280832097835296815286822092825291909152939093208054919093169116179055565b60046020908152600093845260408085208252928452828420905282529020546001600160a01b031681565b60008381526004602090815260408083206001600160a01b03958616808552908352818420858552835281842054968452600583528184209084528252808320938352929052205491811692911690565b336001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001614610760576040805162461bcd60e51b815260206004820152601a60248201527942656e63686d61726b3a206f6e6c7920676f7665726e616e636560301b604482015290519081900360640190fd5b826001600160a01b031663a9059cbb82846040518363ffffffff1660e01b815260040180836001600160a01b0316815260200182815260200192505050602060405180830381600087803b1580156107b757600080fd5b505af11580156107cb573d6000803e3d6000fd5b505050506040513d60208110156107e157600080fd5b5050604080516001600160a01b0380861682526020820185905283168183015290517f72cb8a894ddb372ceec3d2a7648d86f17d5a15caae0e986c53109b8a9a9385e69181900360600190a1505050565b60065481565b7f000000000000000000000000000000000000000000000000000000000000000081565b600080826001600160a01b0316636c6f42396040518163ffffffff1660e01b815260040160206040518083038186803b15801561089857600080fd5b505afa1580156108ac573d6000803e3d6000fd5b505050506040513d60208110156108c257600080fd5b50516001600160a01b031660009081526001602052604090205415159392505050565b60056020908152600093845260408085208252928452828420905282529020546001600160a01b031681565b60075481565b6000546001600160a01b031615610963576040805162461bcd60e51b815260206004820152601a602482015260008051602061131b833981519152604482015290519081900360640190fd5b336001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016146109dd576040805162461bcd60e51b815260206004820152601a60248201527942656e63686d61726b3a206f6e6c7920676f7665726e616e636560301b604482015290519081900360640190fd5b6001600160a01b038116610a32576040805162461bcd60e51b815260206004820152601760248201527642656e63686d61726b3a207a65726f206164647265737360481b604482015290519081900360640190fd5b600880546001600160a01b0383166001600160a01b0319909116811790915560408051918252517f90db982ad7e7c631cc388cc3f76688bf08ffe8a87e161db50887cf7ef4194dee9181900360200190a150565b600a5490565b60036020908152600093845260408085208252928452828420905282529020546001600160a01b031681565b6000546001600160a01b031615610b04576040805162461bcd60e51b815260206004820152601a602482015260008051602061131b833981519152604482015290519081900360640190fd5b600860009054906101000a90046001600160a01b03166001600160a01b031663c45a01556040518163ffffffff1660e01b815260040160206040518083038186803b158015610b5257600080fd5b505afa158015610b66573d6000803e3d6000fd5b505050506040513d6020811015610b7c57600080fd5b50516001600160a01b03163314610bda576040805162461bcd60e51b815260206004820152601e60248201527f42656e63686d61726b3a206f6e6c79206d61726b657420666163746f72790000604482015290519081900360640190fd5b600a80546001810182556000919091527fc65a7bb8d6351c1cf70c95a316cc6a92839c986682d98bc35f958f4883f9d2a80180546001600160a01b0319166001600160a01b0392909216919091179055565b6000546001600160a01b031681565b6002602052600090815260409020546001600160a01b031681565b6060600a805480602002602001604051908101604052809291908181526020018280548015610cae57602002820191906000526020600020905b81546001600160a01b03168152600190910190602001808311610c90575b5050505050905090565b6000546001600160a01b031615610d04576040805162461bcd60e51b815260206004820152601a602482015260008051602061131b833981519152604482015290519081900360640190fd5b6008546001600160a01b03163314610d5a576040805162461bcd60e51b815260206004820152601460248201527342656e63686d61726b3a206f6e6c7920636f726560601b604482015290519081900360640190fd5b6001600160a01b0381166000818152600160209081526040808320869055858352600290915280822080546001600160a01b031916841790555184917f69055c715401f521099c448934ded38665f743c00f6c38849feef24404adc8e591a35050565b6000546001600160a01b03163314610e13576040805162461bcd60e51b81526020600482015260146024820152732132b731b436b0b9359d103337b93134b23232b760611b604482015290519081900360640190fd5b6001600160a01b038116610e68576040805162461bcd60e51b815260206004820152601760248201527642656e63686d61726b3a207a65726f206164647265737360481b604482015290519081900360640190fd5b600080546001600160a01b0319908116909155600880549091166001600160a01b0392909216919091179055565b336001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001614610f10576040805162461bcd60e51b815260206004820152601a60248201527942656e63686d61726b3a206f6e6c7920676f7665726e616e636560301b604482015290519081900360640190fd5b600691909155600755565b336001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001614610f95576040805162461bcd60e51b815260206004820152601a60248201527942656e63686d61726b3a206f6e6c7920676f7665726e616e636560301b604482015290519081900360640190fd5b6040516000906001600160a01b0383169084908381818185875af1925050503d8060008114610fe0576040519150601f19603f3d011682016040523d82523d6000602084013e610fe5565b606091505b505090508061102d576040805162461bcd60e51b815260206004820152600f60248201526e1dda5d1a191c985dc819985a5b1959608a1b604482015290519081900360640190fd5b604080518481526001600160a01b038416602082015281517fec47e7ed86c86774d1a72c19f35c639911393fe7c1a34031fdbd260890da90de929181900390910190a1505050565b60016020526000908152604090205481565b6008546001600160a01b031681565b6000546001600160a01b0316156110e2576040805162461bcd60e51b815260206004820152601a602482015260008051602061131b833981519152604482015290519081900360640190fd5b6008546001600160a01b03163314611138576040805162461bcd60e51b815260206004820152601460248201527342656e63686d61726b3a206f6e6c7920636f726560601b604482015290519081900360640190fd5b600081815260026020908152604080832080546001600160a01b031981169091556001600160a01b03168084526001909252808320849055519091829184917f92063d41ec6dbeae87df43b06ca7ee7c3ea274719cfb36ac26d94835afe3d04e91a35050565b6000546001600160a01b0316156111ea576040805162461bcd60e51b815260206004820152601a602482015260008051602061131b833981519152604482015290519081900360640190fd5b600860009054906101000a90046001600160a01b03166001600160a01b031663c45a01556040518163ffffffff1660e01b815260040160206040518083038186803b15801561123857600080fd5b505afa15801561124c573d6000803e3d6000fd5b505050506040513d602081101561126257600080fd5b50516001600160a01b031633146112c0576040805162461bcd60e51b815260206004820152601e60248201527f42656e63686d61726b3a206f6e6c79206d61726b657420666163746f72790000604482015290519081900360640190fd5b60009384526003602090815260408086206001600160a01b0395861687528252808620938516865292815282852080546001600160a01b03191692909416918217909355835260099091529020805460ff1916600117905556fe42656e63686d61726b3a206e6f7420696e697469616c697a6564000000000000a2646970667358221220cea3c921dfc9dfee7eec91cc57c737adeed4874067d967fa70cb6f4147d5faaa64736f6c63430007050033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "allMarketsLength()": {
+        "returns": {
+          "_0": "Returns markets length,*"
+        }
+      },
+      "getAllMarkets()": {
+        "returns": {
+          "_0": "Returns an array of all markets.*"
+        }
+      },
+      "setCore(address)": {
+        "params": {
+          "_core": "Address of the new core contract.*"
+        }
+      },
+      "withdrawEther(uint256,address)": {
+        "details": "Allows governance to withdraw Ether in a Benchmark contract      in case of accidental ETH transfer into the contract.",
+        "params": {
+          "amount": "The amount of Ether to withdraw.",
+          "sendTo": "The recipient address."
+        }
+      },
+      "withdrawToken(address,uint256,address)": {
+        "details": "Allows governance to withdraw all IERC20 compatible tokens in a Benchmark      contract in case of accidental token transfer into the contract.",
+        "params": {
+          "amount": "The amount of IERC20 tokens to withdraw.",
+          "sendTo": "The recipient address.",
+          "token": "IERC20 The address of the token contract."
+        }
+      }
+    },
+    "stateVariables": {
+      "core": {
+        "return": "Returns the core contract reference.*"
+      },
+      "getForgeAddress": {
+        "params": {
+          "forgeId": "Forge and protocol identifier."
+        },
+        "return": "forgeAddress Returns the forge address.*"
+      },
+      "getForgeId": {
+        "params": {
+          "forgeAddress": "The forge's address."
+        },
+        "return": "forgeId Returns the forge identifier.*"
+      },
+      "getMarket": {
+        "params": {
+          "forgeId": "Forge and protocol identifier.",
+          "token": "Token address of an ERC20 token as quote asset.",
+          "xyt": "Token address of the future yield token as base asset."
+        },
+        "return": "market Returns the market address.*"
+      },
+      "otTokens": {
+        "params": {
+          "expiry": "Yield contract expiry in epoch time.",
+          "forgeId": "Forge and protocol identifier.",
+          "underlyingYieldToken": "Token address of the underlying yield token."
+        },
+        "return": "ot Returns the reference to an OT.*"
+      },
+      "xytTokens": {
+        "params": {
+          "expiry": "Yield contract expiry in epoch time.",
+          "forgeId": "Forge and protocol identifier.",
+          "underlyingAsset": "Token address of the underlying asset"
+        },
+        "return": "xyt Returns the reference to an XYT.*"
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "events": {
+      "CoreSet(address)": {
+        "notice": "Emitted when the Benchmark core address has been updated."
+      },
+      "ForgeAdded(bytes32,address)": {
+        "notice": "Emitted when a forge for a protocol is added."
+      },
+      "ForgeRemoved(bytes32,address)": {
+        "notice": "Emitted when a forge for a protocol is removed."
+      }
+    },
+    "kind": "user",
+    "methods": {
+      "allMarketsLength()": {
+        "notice": "Displays the number of markets currently existing."
+      },
+      "core()": {
+        "notice": "Gets a reference to the Benchmark core contract."
+      },
+      "getAllMarkets()": {
+        "notice": "Gets all the markets."
+      },
+      "getForgeAddress(bytes32)": {
+        "notice": "Gets a forge given the identifier."
+      },
+      "getForgeId(address)": {
+        "notice": "Gets the identifier of the forge."
+      },
+      "getMarket(bytes32,address,address)": {
+        "notice": "Gets a market given a future yield token and an ERC20 token."
+      },
+      "otTokens(bytes32,address,uint256)": {
+        "notice": "Gets a reference to a specific OT."
+      },
+      "setCore(address)": {
+        "notice": "Sets the Benchmark core contract address."
+      },
+      "xytTokens(bytes32,address,uint256)": {
+        "notice": "Gets a reference to a specific XYT."
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 10235,
+        "contract": "contracts/core/BenchmarkData.sol:BenchmarkData",
+        "label": "initializer",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_address"
+      },
+      {
+        "astId": 2908,
+        "contract": "contracts/core/BenchmarkData.sol:BenchmarkData",
+        "label": "getForgeId",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_mapping(t_address,t_bytes32)"
+      },
+      {
+        "astId": 2913,
+        "contract": "contracts/core/BenchmarkData.sol:BenchmarkData",
+        "label": "getForgeAddress",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_mapping(t_bytes32,t_address)"
+      },
+      {
+        "astId": 2922,
+        "contract": "contracts/core/BenchmarkData.sol:BenchmarkData",
+        "label": "getMarket",
+        "offset": 0,
+        "slot": "3",
+        "type": "t_mapping(t_bytes32,t_mapping(t_address,t_mapping(t_address,t_address)))"
+      },
+      {
+        "astId": 2931,
+        "contract": "contracts/core/BenchmarkData.sol:BenchmarkData",
+        "label": "otTokens",
+        "offset": 0,
+        "slot": "4",
+        "type": "t_mapping(t_bytes32,t_mapping(t_address,t_mapping(t_uint256,t_contract(IBenchmarkYieldToken)8198)))"
+      },
+      {
+        "astId": 2940,
+        "contract": "contracts/core/BenchmarkData.sol:BenchmarkData",
+        "label": "xytTokens",
+        "offset": 0,
+        "slot": "5",
+        "type": "t_mapping(t_bytes32,t_mapping(t_address,t_mapping(t_uint256,t_contract(IBenchmarkYieldToken)8198)))"
+      },
+      {
+        "astId": 2943,
+        "contract": "contracts/core/BenchmarkData.sol:BenchmarkData",
+        "label": "swapFee",
+        "offset": 0,
+        "slot": "6",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 2946,
+        "contract": "contracts/core/BenchmarkData.sol:BenchmarkData",
+        "label": "exitFee",
+        "offset": 0,
+        "slot": "7",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 2949,
+        "contract": "contracts/core/BenchmarkData.sol:BenchmarkData",
+        "label": "core",
+        "offset": 0,
+        "slot": "8",
+        "type": "t_contract(IBenchmark)7532"
+      },
+      {
+        "astId": 2953,
+        "contract": "contracts/core/BenchmarkData.sol:BenchmarkData",
+        "label": "isMarket",
+        "offset": 0,
+        "slot": "9",
+        "type": "t_mapping(t_address,t_bool)"
+      },
+      {
+        "astId": 2956,
+        "contract": "contracts/core/BenchmarkData.sol:BenchmarkData",
+        "label": "allMarkets",
+        "offset": 0,
+        "slot": "10",
+        "type": "t_array(t_address)dyn_storage"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_array(t_address)dyn_storage": {
+        "base": "t_address",
+        "encoding": "dynamic_array",
+        "label": "address[]",
+        "numberOfBytes": "32"
+      },
+      "t_bool": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      },
+      "t_bytes32": {
+        "encoding": "inplace",
+        "label": "bytes32",
+        "numberOfBytes": "32"
+      },
+      "t_contract(IBenchmark)7532": {
+        "encoding": "inplace",
+        "label": "contract IBenchmark",
+        "numberOfBytes": "20"
+      },
+      "t_contract(IBenchmarkYieldToken)8198": {
+        "encoding": "inplace",
+        "label": "contract IBenchmarkYieldToken",
+        "numberOfBytes": "20"
+      },
+      "t_mapping(t_address,t_address)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => address)",
+        "numberOfBytes": "32",
+        "value": "t_address"
+      },
+      "t_mapping(t_address,t_bool)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => bool)",
+        "numberOfBytes": "32",
+        "value": "t_bool"
+      },
+      "t_mapping(t_address,t_bytes32)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => bytes32)",
+        "numberOfBytes": "32",
+        "value": "t_bytes32"
+      },
+      "t_mapping(t_address,t_mapping(t_address,t_address))": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => mapping(address => address))",
+        "numberOfBytes": "32",
+        "value": "t_mapping(t_address,t_address)"
+      },
+      "t_mapping(t_address,t_mapping(t_uint256,t_contract(IBenchmarkYieldToken)8198))": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => mapping(uint256 => contract IBenchmarkYieldToken))",
+        "numberOfBytes": "32",
+        "value": "t_mapping(t_uint256,t_contract(IBenchmarkYieldToken)8198)"
+      },
+      "t_mapping(t_bytes32,t_address)": {
+        "encoding": "mapping",
+        "key": "t_bytes32",
+        "label": "mapping(bytes32 => address)",
+        "numberOfBytes": "32",
+        "value": "t_address"
+      },
+      "t_mapping(t_bytes32,t_mapping(t_address,t_mapping(t_address,t_address)))": {
+        "encoding": "mapping",
+        "key": "t_bytes32",
+        "label": "mapping(bytes32 => mapping(address => mapping(address => address)))",
+        "numberOfBytes": "32",
+        "value": "t_mapping(t_address,t_mapping(t_address,t_address))"
+      },
+      "t_mapping(t_bytes32,t_mapping(t_address,t_mapping(t_uint256,t_contract(IBenchmarkYieldToken)8198)))": {
+        "encoding": "mapping",
+        "key": "t_bytes32",
+        "label": "mapping(bytes32 => mapping(address => mapping(uint256 => contract IBenchmarkYieldToken)))",
+        "numberOfBytes": "32",
+        "value": "t_mapping(t_address,t_mapping(t_uint256,t_contract(IBenchmarkYieldToken)8198))"
+      },
+      "t_mapping(t_uint256,t_contract(IBenchmarkYieldToken)8198)": {
+        "encoding": "mapping",
+        "key": "t_uint256",
+        "label": "mapping(uint256 => contract IBenchmarkYieldToken)",
+        "numberOfBytes": "32",
+        "value": "t_contract(IBenchmarkYieldToken)8198"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  }
+}

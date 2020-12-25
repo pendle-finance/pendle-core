@@ -28,7 +28,8 @@ contract MockBenchmark is Benchmark {
     constructor()
         Benchmark(
             0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa,
-            0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB
+            0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB,
+            0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa
         )
     {}
 }

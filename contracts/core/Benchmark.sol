@@ -27,6 +27,8 @@ import "../interfaces/IBenchmark.sol";
 import "../interfaces/IBenchmarkForge.sol";
 import "../interfaces/IBenchmarkMarketFactory.sol";
 import "../periphery/Permissions.sol";
+import "hardhat/console.sol";
+
 
 contract Benchmark is IBenchmark, Permissions {
     using SafeMath for uint256;
@@ -37,7 +39,7 @@ contract Benchmark is IBenchmark, Permissions {
     address public immutable override weth;
     address public override treasury;
 
-    constructor(address _governance, address _weth) Permissions(_governance) {
+    constructor(address _governance, address _weth, address _initializer) Permissions(_governance, _initializer) {
         weth = _weth;
     }
 

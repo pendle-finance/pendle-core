@@ -4,10 +4,14 @@ dotenv.config();
 import { HardhatUserConfig } from "hardhat/types";
 import "@nomiclabs/hardhat-waffle";
 import "solidity-coverage";
-import "./deployment/protocol";
+import 'hardhat-deploy';
+// import "./deployment/protocol";
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "hardhat",
+  defaultNetwork: "development",
+  namedAccounts: {
+    deployer: 0,
+  },
   paths: {
     sources: "./contracts",
     tests: "./test/core/",
@@ -62,17 +66,17 @@ const config: HardhatUserConfig = {
       gas: 12400000,
       timeout: 1000000,
     },
-    // kovan: {
-    //   url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY}`,
-    //   gas: 8000000,
-    //   timeout: 100000,
-    //   accounts: [`${process.env.PRIVATE_KEYS}`],
-    // },
+    kovan: {
+      url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY}`,
+      gas: 12400000,
+      timeout: 1000000,
+      accounts: [`${process.env.PRIVATE_KEYS}`],
+    },
   },
   solidity: {
     compilers: [
       {
-        version: "0.7.6",
+        version: "0.7.5",
         settings: {
           optimizer: {
             enabled: true,

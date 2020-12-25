@@ -36,7 +36,7 @@ contract BenchmarkTreasury is IBenchmarkTreasury, Permissions {
     uint256 public constant PERCENTAGE_PRECISION = 10000; // 100%
     uint256 public fundPercentage = 500; // 5%
 
-    constructor(address _governance) Permissions(_governance) {
+    constructor(address _governance, address _initializer) Permissions(_governance, _initializer) {
         initializer = msg.sender;
     }
 
