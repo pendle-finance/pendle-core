@@ -123,10 +123,12 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
         external
         view
         returns (
-            uint112 xytReserves,
-            uint112 tokenReserves,
-            uint32 lastBlockTimestamp
+            uint256 xytReserves,
+            uint256 tokenReserves,
+            uint256 lastBlockTimestamp
         );
+
+    function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity) external;
 
     /**
      * @notice Gets a reference to the Benchmark core contract.
