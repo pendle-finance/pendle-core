@@ -191,6 +191,7 @@ contract Benchmark is IBenchmark, Permissions {
         override
     {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
+        require(address(market) != address(0), "Benchmark: market not found");
         market.joinPoolByAll(
             lpAmountDesired,
             xytAmountMax,
@@ -210,6 +211,7 @@ contract Benchmark is IBenchmark, Permissions {
         override
     {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
+        require(address(market) != address(0), "Benchmark: market not found");
         market.joinPoolSingleToken(
             xyt,
             xytAmountDesired,
@@ -228,6 +230,7 @@ contract Benchmark is IBenchmark, Permissions {
         override
     {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
+        require(address(market) != address(0), "Benchmark: market not found");
         market.joinPoolSingleToken(
             token,
             tokenAmountDesired,
@@ -244,6 +247,7 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 tokenAmountMin
     ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
+        require(address(market) != address(0), "Benchmark: market not found");
         market.exitPoolByAll(
             lpAmountDesired,
             xytAmountMin,
@@ -259,6 +263,7 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 xytAmountMin
     ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
+        require(address(market) != address(0), "Benchmark: market not found");
         market.exitPoolSingleToken(
             xyt,
             lpAmountDesired,
@@ -274,6 +279,7 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 tokenAmountMin
     ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
+        require(address(market) != address(0), "Benchmark: market not found");
         market.exitPoolSingleToken(
             token,
             lpAmountDesired,
@@ -290,6 +296,7 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 maxPrice
     ) public override returns (uint256 amount, uint256 priceAfter)  {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
+        require(address(market) != address(0), "Benchmark: market not found");
         (amount, priceAfter) = market.swapAmountIn(
             xytAmountDesired,
             xyt,
@@ -308,6 +315,7 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 maxPrice
     ) public override returns (uint256 amount, uint256 priceAfter)  {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
+        require(address(market) != address(0), "Benchmark: market not found");
         (amount, priceAfter) = market.swapAmountIn(
             tokenAmountDesired,
             token,
@@ -326,6 +334,7 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 maxPrice
     ) public override returns (uint256 amount, uint256 priceAfter) {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
+        require(address(market) != address(0), "Benchmark: market not found");
         (amount, priceAfter) = market.swapAmountOut(
             token,
             tokenAmountMax,
@@ -344,6 +353,7 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 maxPrice
     ) public override returns (uint256 amount, uint256 priceAfter)  {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
+        require(address(market) != address(0), "Benchmark: market not found");
         (amount, priceAfter) = market.swapAmountOut(
             xyt,
             xytAmountMax,
@@ -359,6 +369,7 @@ contract Benchmark is IBenchmark, Permissions {
         address token
     ) public view override returns (uint256 xytAmount, uint256 tokenAmount, uint256 currentTime) {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
+        require(address(market) != address(0), "Benchmark: market not found");
         (xytAmount, tokenAmount, currentTime) = market.getReserves();
     }
 
@@ -368,6 +379,7 @@ contract Benchmark is IBenchmark, Permissions {
         address token
     ) public override returns (uint256 price) {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
+        if(address(market) == address(0)) return 0;
         price = market.spotPrice(xyt, token);
     }
 
@@ -377,6 +389,7 @@ contract Benchmark is IBenchmark, Permissions {
         address token
     ) public override returns (uint256 price) {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
+        if(address(market) == address(0)) return 0;
         price = market.spotPrice(token, xyt);
     }
 
@@ -402,6 +415,7 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 initialTokenLiquidity
     ) public override{
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
+        require(address(market) != address(0), "Benchmark: market not found");
         market.bootstrap(
             initialXytLiquidity,
             initialTokenLiquidity
