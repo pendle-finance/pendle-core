@@ -189,11 +189,7 @@ contract Benchmark is IBenchmark, Permissions {
     ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
         require(address(market) != address(0), "Benchmark: market not found");
-        market.joinPoolByAll(
-            lpAmountDesired,
-            xytAmountMax,
-            tokenAmountMax
-        );
+        market.joinPoolByAll(lpAmountDesired, xytAmountMax, tokenAmountMax);
     }
 
     function addMarketLiquidityXyt(
@@ -205,11 +201,7 @@ contract Benchmark is IBenchmark, Permissions {
     ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
         require(address(market) != address(0), "Benchmark: market not found");
-        market.joinPoolSingleToken(
-            xyt,
-            xytAmountDesired,
-            lpAmountMin
-        );
+        market.joinPoolSingleToken(xyt, xytAmountDesired, lpAmountMin);
     }
 
     function addMarketLiquidityToken(
@@ -221,11 +213,7 @@ contract Benchmark is IBenchmark, Permissions {
     ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
         require(address(market) != address(0), "Benchmark: market not found");
-        market.joinPoolSingleToken(
-            token,
-            tokenAmountDesired,
-            lpAmountMin
-        );
+        market.joinPoolSingleToken(token, tokenAmountDesired, lpAmountMin);
     }
 
     function removeMarketLiquidity(
@@ -238,11 +226,7 @@ contract Benchmark is IBenchmark, Permissions {
     ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
         require(address(market) != address(0), "Benchmark: market not found");
-        market.exitPoolByAll(
-            lpAmountDesired,
-            xytAmountMin,
-            tokenAmountMin
-        );
+        market.exitPoolByAll(lpAmountDesired, xytAmountMin, tokenAmountMin);
     }
 
     function removeMarketLiquidityXyt(
@@ -254,11 +238,7 @@ contract Benchmark is IBenchmark, Permissions {
     ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
         require(address(market) != address(0), "Benchmark: market not found");
-        market.exitPoolSingleToken(
-            xyt,
-            lpAmountDesired,
-            xytAmountMin
-        );
+        market.exitPoolSingleToken(xyt, lpAmountDesired, xytAmountMin);
     }
 
     function removeMarketLiquidityToken(
@@ -270,11 +250,7 @@ contract Benchmark is IBenchmark, Permissions {
     ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
         require(address(market) != address(0), "Benchmark: market not found");
-        market.exitPoolSingleToken(
-            token,
-            lpAmountDesired,
-            tokenAmountMin
-        );
+        market.exitPoolSingleToken(token, lpAmountDesired, tokenAmountMin);
     }
 
     function swapXytToToken(
@@ -378,7 +354,7 @@ contract Benchmark is IBenchmark, Permissions {
         address token
     ) public override returns (uint256 price) {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
-        if(address(market) == address(0)) return 0;
+        if (address(market) == address(0)) return 0;
         price = market.spotPrice(xyt, token);
     }
 
@@ -388,7 +364,7 @@ contract Benchmark is IBenchmark, Permissions {
         address token
     ) public override returns (uint256 price) {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
-        if(address(market) == address(0)) return 0;
+        if (address(market) == address(0)) return 0;
         price = market.spotPrice(token, xyt);
     }
 
@@ -410,10 +386,7 @@ contract Benchmark is IBenchmark, Permissions {
     ) public override {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
         require(address(market) != address(0), "Benchmark: market not found");
-        market.bootstrap(
-            initialXytLiquidity,
-            initialTokenLiquidity
-        );
+        market.bootstrap(initialXytLiquidity, initialTokenLiquidity);
     }
 
     /*
