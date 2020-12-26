@@ -138,6 +138,132 @@ interface IBenchmark {
      ***********/
 
     function addMarketLiquidity(
+        bytes32 _forgeId,
+        address xyt,
+        address token,
+        uint256 lpAmountDesired,
+        uint256 xytAmountMax,
+        uint256 tokenAmountMax
+    ) external;
+
+    function addMarketLiquidityXyt(
+        bytes32 _forgeId,
+        address xyt,
+        address token,
+        uint256 xytAmountDesired,
+        uint256 lpAmountMin
+    ) external;
+
+    function addMarketLiquidityToken(
+        bytes32 _forgeId,
+        address xyt,
+        address token,
+        uint256 tokenAmountDesired,
+        uint256 lpAmountMin
+    ) external;
+
+    function removeMarketLiquidity(
+        bytes32 _forgeId,
+        address xyt,
+        address token,
+        uint256 lpAmountDesired,
+        uint256 xytAmountMin,
+        uint256 tokenAmountMin
+    ) external;
+
+    function removeMarketLiquidityXyt(
+        bytes32 _forgeId,
+        address xyt,
+        address token,
+        uint256 lpAmountDesired,
+        uint256 xytAmountMin
+    ) external;
+
+    function removeMarketLiquidityToken(
+        bytes32 _forgeId,
+        address xyt,
+        address token,
+        uint256 lpAmountDesired,
+        uint256 tokenAmountMin
+    ) external;
+
+    function swapXytToToken(
+        bytes32 _forgeId,
+        address xyt,
+        address token,
+        uint256 xytAmountDesired,
+        uint256 tokenAmountMin,
+        uint256 maxPrice
+    ) external returns (uint256 amount, uint256 priceAfter);
+
+    function swapTokenToXyt(
+        bytes32 _forgeId,
+        address xyt,
+        address token,
+        uint256 tokenAmountDesired,
+        uint256 xytAmountMin,
+        uint256 maxPrice
+    ) external returns (uint256 amount, uint256 priceAfter);
+
+    function swapXytFromToken(
+        bytes32 _forgeId,
+        address xyt,
+        address token,
+        uint256 xytAmountDesired,
+        uint256 tokenAmountMax,
+        uint256 maxPrice
+    ) external returns (uint256 amount, uint256 priceAfter);
+
+    function swapTokenFromXyt(
+        bytes32 _forgeId,
+        address xyt,
+        address token,
+        uint256 tokenAmountDesired,
+        uint256 xytAmountMax,
+        uint256 maxPrice
+    ) external returns (uint256 amount, uint256 priceAfter);
+
+    function getMarketReserves(
+        bytes32 _forgeId,
+        address xyt,
+        address token
+    )
+        external
+        view
+        returns (
+            uint256 xytAmount,
+            uint256 tokenAmount,
+            uint256 currentTime
+        );
+
+    function getMarketRateXyt(
+        bytes32 _forgeId,
+        address xyt,
+        address token
+    ) external returns (uint256 price);
+
+    function getMarketRateToken(
+        bytes32 _forgeId,
+        address xyt,
+        address token
+    ) external returns (uint256 price);
+
+    function createMarket(
+        bytes32 _forgeId,
+        address xyt,
+        address token,
+        uint256 expiry
+    ) external returns (address market);
+
+    function bootStrapMarket(
+        bytes32 _forgeId,
+        address xyt,
+        address token,
+        uint256 initialXytLiquidity,
+        uint256 initialTokenLiquidity
+    ) external;
+    /*
+    function addMarketLiquidity(
         address xyt,
         address token,
         uint256 xytAmountDesired,
@@ -235,4 +361,5 @@ interface IBenchmark {
         uint256 marketA,
         uint256 marketB
     ) external pure returns (uint256 destAmount);
+    */
 }

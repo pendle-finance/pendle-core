@@ -95,14 +95,18 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         view
         override
         returns (
-            uint112 xytReserves,
-            uint112 tokenReserves,
-            uint32 lastBlockTimestamp
+            uint256 xytReserves,
+            uint256 tokenReserves,
+            uint256 lastBlockTimestamp
         )
-    {}
+    {
+        return (reserves[xyt].balance, reserves[token].balance, block.timestamp);
+    }
 
-    function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity) external {
-        require(msg.sender == creator, "Benchmark: not creator");
+    function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
+        external
+        override
+    {
         _pullToken(xyt, msg.sender, initialXytLiquidity);
 
         _pullToken(token, msg.sender, initialTokenLiquidity);
