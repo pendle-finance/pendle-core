@@ -146,7 +146,6 @@ interface IBenchmark {
         uint256 tokenAmountMax
     ) external;
 
-
     function addMarketLiquidityXyt(
         bytes32 _forgeId,
         address xyt,
@@ -228,7 +227,14 @@ interface IBenchmark {
         bytes32 _forgeId,
         address xyt,
         address token
-    ) external view returns (uint256 xytAmount, uint256 tokenAmount, uint256 currentTime);
+    )
+        external
+        view
+        returns (
+            uint256 xytAmount,
+            uint256 tokenAmount,
+            uint256 currentTime
+        );
 
     function getMarketRateXyt(
         bytes32 _forgeId,
@@ -253,10 +259,10 @@ interface IBenchmark {
         bytes32 _forgeId,
         address xyt,
         address token,
-        uint256 initialXytLiquidity, 
+        uint256 initialXytLiquidity,
         uint256 initialTokenLiquidity
     ) external;
-/*
+    /*
     function addMarketLiquidity(
         address xyt,
         address token,
