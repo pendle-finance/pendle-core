@@ -22,11 +22,29 @@
  */
 pragma solidity ^0.7.0;
 
+
+import "@openzeppelin/contracts/math/Math.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "../interfaces/IBenchmarkData.sol";
 import "../interfaces/IBenchmarkMarketFactory.sol";
 import "../periphery/Permissions.sol";
 
 contract BenchmarkData is IBenchmarkData, Permissions {
+    using SafeMath for uint256;
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    struct MarketInfo {
+        uint80 xytWeight;
+        uint80 tokenWeight;
+        uint256 liquidity;
+    }
+
+    struct SortedMarkets {
+        EnumerableSet.AddressSet markets;
+        bytes32 indices;
+    }
+
     mapping(address => bytes32) public override getForgeId;
     mapping(bytes32 => mapping(bytes32 => address)) public override getMarketFactoryAddress;
     mapping(bytes32 => address) public override getForgeAddress;
@@ -45,6 +63,8 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     uint256 public override exitFee;
     IBenchmark public override core;
     mapping(address => bool) internal isMarket;
+    mapping(bytes32 => SortedMarkets) private markets;
+    mapping(address => mapping(bytes32 => MarketInfo)) private infos;
     address[] private allMarkets;
 
     constructor(address _governance) Permissions(_governance) {}
@@ -147,14 +167,43 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     function addMarket(
         bytes32 forgeId,
         bytes32 marketFactoryId,
-        address _market
+        address _market,
+        address _xyt,
+        address _token
     ) external override initialized onlyMarketFactory(forgeId, marketFactoryId) {
         allMarkets.push(_market);
+
+        bytes32 key = _createKey(_xyt, _token);
+        markets[key].markets.add(_market);
+
+        infos[_market][key] = MarketInfo({
+            xytWeight: uint80(IBenchmarkMarket(_market).getDenormalizedWeight(_xyt)),
+            tokenWeight: uint80(IBenchmarkMarket(_market).getDenormalizedWeight(_token)),
+            liq: uint256(0)
+        });
+
+        emit MarketPairAdded(_market, _xyt, _token);
     }
 
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external override onlyGovernance {
         swapFee = _swapFee;
         exitFee = _exitFee;
+    }
+
+     function sortMarkets(address[] calldata xyts, address[] calldata tokens, uint256 lengthLimit) external {
+        for (uint i = 0; i < xyts.length; i++) {
+            for (uint j = 0; j < tokens.length; j++) {
+
+            }
+        }
+    }
+
+    function sortMarketsWithPurge(address[] calldata xyts, address[] calldata tokens, uint256 lengthLimit) external {
+        for (uint i = 0; i < xyts.length; i++) {
+            for (uint j = 0; j < tokens.length; j++) {
+
+            }
+        }
     }
 
     function storeMarket(
@@ -174,5 +223,55 @@ contract BenchmarkData is IBenchmarkData, Permissions {
 
     function getAllMarkets() public view override returns (address[] memory) {
         return allMarkets;
+    }
+
+    function getMarketInfo(address market, address source, address destination)
+        external view returns(uint256 xytWeight, uint256 tokenWeight)
+    {
+        bytes32 key = _createKey(source, destination);
+        MarketInfo memory info = infos[market][key];
+        return (info.xytWeight, info.tokenWeight);
+    }
+
+    function getMarketsWithLimit(address source, address destination, uint256 offset, uint256 limit)
+        public view returns(address[] memory result)
+    {
+        bytes32 key = _createKey(source, destination);
+        result = new address[](Math.min(limit, allMarkets[key].markets.values.length - offset));
+        for (uint i = 0; i < result.length; i++) {
+            result[i] = allMarkets[key].markets.values[offset + i];
+        }
+    }
+
+    function getBestMarkets(address source, address destination)
+        external view returns(address[] memory markets)
+    {
+        return getBestMarketsWithLimit(source, destination, 32);
+    }
+
+    function getBestMarketsWithLimit(address source, address destination, uint256 limit)
+        public view returns(address[] memory markets)
+    {
+        bytes32 key = _createKey(source, destination);
+        bytes32 indices = allMarkets[key].indices;
+        uint256 len = 0;
+        while (indices[len] > 0 && len < Math.min(limit, indices.length)) {
+            len++;
+        }
+
+        markets = new address[](len);
+        for (uint i = 0; i < len; i++) {
+            uint256 index = uint256(uint8(indices[i])).sub(1);
+            markets[i] = allMarkets[key].pools.values[index];
+        }
+    }
+
+    function _createKey(address xyt, address token)
+        internal pure returns(bytes32)
+    {
+        return bytes32(
+            (uint256(uint128((xyt < token) ? xyt : token)) << 128) |
+            (uint256(uint128((xyt < token) ? token : xyt)))
+        );
     }
 }

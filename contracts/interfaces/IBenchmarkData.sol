@@ -82,14 +82,14 @@ interface IBenchmarkData {
      * @param forgeId Forge and protocol identifier.
      * @param ot The address of the new XYT.
      * @param xyt The address of the new XYT.
-     * @param underlyingYieldToken Token address of the underlying yield token.
+     * @param underlyingAsset Token address of the underlying asset.
      * @param expiry Yield contract expiry in epoch time.
      **/
     function storeTokens(
         bytes32 forgeId,
         address ot,
         address xyt,
-        address underlyingYieldToken,
+        address underlyingAsset,
         uint256 expiry
     ) external;
 
@@ -157,6 +157,8 @@ interface IBenchmarkData {
     /***********
      *  MARKET *
      ***********/
+
+    event MarketPairAdded(address indexed market, address indexed xyt, address indexed token);
 
     function addMarketFactory(
         bytes32 forgeId,
