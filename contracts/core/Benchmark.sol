@@ -175,6 +175,20 @@ contract Benchmark is IBenchmark, Permissions {
         );
     }
 
+    function renewYield(
+        bytes32 _forgeId,
+        uint256 _oldExpiry,
+        address _redeemTo,
+        address _underlyingAsset,
+        uint256 _newExpiry,
+        uint256 _amountToTokenize,
+        address _yieldTo
+    ) public override returns (uint256 redeemedAmount, address ot, address xyt) {
+        redeemedAmount = redeemAfterExpiry(_forgeId, _underlyingAsset, _oldExpiry, _redeemTo);
+        (ot, xyt) = tokenizeYield(_forgeId, _underlyingAsset, _newExpiry, _amountToTokenize, _yieldTo);
+
+    }
+
     /***********
      *  MARKET *
      ***********/
@@ -352,7 +366,7 @@ contract Benchmark is IBenchmark, Permissions {
         bytes32 _forgeId,
         address xyt,
         address token
-    ) public override returns (uint256 price) {
+    ) public view override returns (uint256 price) {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
         if (address(market) == address(0)) return 0;
         price = market.spotPrice(xyt, token);
@@ -362,7 +376,7 @@ contract Benchmark is IBenchmark, Permissions {
         bytes32 _forgeId,
         address xyt,
         address token
-    ) public override returns (uint256 price) {
+    ) public view override returns (uint256 price) {
         IBenchmarkMarket market = IBenchmarkMarket(data.getMarket(_forgeId, xyt, token));
         if (address(market) == address(0)) return 0;
         price = market.spotPrice(token, xyt);

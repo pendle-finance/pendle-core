@@ -65,7 +65,7 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
 
     /* ========== TRADE ========== */
 
-    function spotPrice(address inToken, address outToken) external returns (uint256 spot);
+    function spotPrice(address inToken, address outToken) external view returns (uint256 spot);
 
     function swapAmountIn(
         uint256 inAmount,

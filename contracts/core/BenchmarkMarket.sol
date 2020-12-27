@@ -143,8 +143,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         _curveShift();
 
         IBenchmarkData data = core.data();
-        TokenReserve memory inTokenReserve = reserves[inToken];
-        TokenReserve memory outTokenReserve = reserves[outToken];
+        TokenReserve storage inTokenReserve = reserves[inToken];
+        TokenReserve storage outTokenReserve = reserves[outToken];
 
         uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
         require(spotPriceBefore <= maxPrice, "Benchmark: bad price");

@@ -133,6 +133,16 @@ interface IBenchmark {
         address to
     ) external returns (address ot, address xyt);
 
+    function renewYield(
+        bytes32 _forgeId,
+        uint256 _oldExpiry,
+        address _redeemTo,
+        address _underlyingAsset,
+        uint256 _newExpiry,
+        uint256 _amountToTokenize,
+        address _yieldTo
+    ) external returns (uint256 redeemedAmount, address ot, address xyt);
+
     /***********
      *  MARKET *
      ***********/
@@ -240,13 +250,13 @@ interface IBenchmark {
         bytes32 _forgeId,
         address xyt,
         address token
-    ) external returns (uint256 price);
+    ) external view returns (uint256 price);
 
     function getMarketRateToken(
         bytes32 _forgeId,
         address xyt,
         address token
-    ) external returns (uint256 price);
+    ) external view returns (uint256 price);
 
     function createMarket(
         bytes32 _forgeId,
