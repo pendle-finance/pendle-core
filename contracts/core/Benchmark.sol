@@ -403,6 +403,30 @@ contract Benchmark is IBenchmark, Permissions {
         market.bootstrap(initialXytLiquidity, initialTokenLiquidity);
     }
 
+    function getAllMarkets(
+    ) public view override returns (address[] memory) {
+        return (data.getAllMarkets());
+    }
+
+    function getMarketByUnderlyingToken(
+        bytes32 _forgeId,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) public view override returns (address market) {
+        (IBenchmarkYieldToken xyt, IBenchmarkYieldToken token) = data.getBenchmarkYieldTokens(_forgeId, _underlyingAsset, _expiry);
+        market = data.getMarket(_forgeId, address(xyt), address(token));
+    }
+
+    function getMarketTokenAddresses(
+        address market
+    ) public view override returns(address token, address xyt) {
+        require(address(market) != address(0), "Benchmark: market not exist");
+        IBenchmarkMarket benmarkMarket  = IBenchmarkMarket(market);
+        token = benmarkMarket.token();
+        xyt = benmarkMarket.xyt();
+    }
+
+
     /*
     function addMarketLiquidity(
         address xyt,
