@@ -183,10 +183,23 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 _newExpiry,
         uint256 _amountToTokenize,
         address _yieldTo
-    ) public override returns (uint256 redeemedAmount, address ot, address xyt) {
+    )
+        public
+        override
+        returns (
+            uint256 redeemedAmount,
+            address ot,
+            address xyt
+        )
+    {
         redeemedAmount = redeemAfterExpiry(_forgeId, _underlyingAsset, _oldExpiry, _redeemTo);
-        (ot, xyt) = tokenizeYield(_forgeId, _underlyingAsset, _newExpiry, _amountToTokenize, _yieldTo);
-
+        (ot, xyt) = tokenizeYield(
+            _forgeId,
+            _underlyingAsset,
+            _newExpiry,
+            _amountToTokenize,
+            _yieldTo
+        );
     }
 
     /***********

@@ -141,7 +141,13 @@ interface IBenchmark {
         uint256 _newExpiry,
         uint256 _amountToTokenize,
         address _yieldTo
-    ) external returns (uint256 redeemedAmount, address ot, address xyt);
+    )
+        external
+        returns (
+            uint256 redeemedAmount,
+            address ot,
+            address xyt
+        );
 
     /***********
      *  MARKET *
