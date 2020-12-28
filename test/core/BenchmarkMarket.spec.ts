@@ -122,9 +122,13 @@ describe("BenchmarkMarket", async () => {
 
     await benchmarkMarket
       .connect(wallet1)
-      .joinPoolSingleToken(testToken.address, amountToTokenize.div(10), totalSupplyBalance.div(21));
+      .joinPoolSingleToken(
+        testToken.address,
+        amountToTokenize.div(10),
+        totalSupplyBalance.div(21)
+      );
     let wallet1Balance = await benchmarkMarket.balanceOf(wallet1.address);
-    assert(BigNumber.from(wallet1Balance).gt(0))
+    assert(BigNumber.from(wallet1Balance).gt(0));
   });
 
   it("should be able to swap amount out", async () => {
@@ -204,13 +208,15 @@ describe("BenchmarkMarket", async () => {
       constants.HIGH_GAS_OVERRIDE
     );
 
-    let spotPrice = await benchmarkMarket
-      .spotPrice(
-        testToken.address,
-        benchmarkFutureYieldToken.address,
-      );
+    let spotPrice = await benchmarkMarket.spotPrice(
+      testToken.address,
+      benchmarkFutureYieldToken.address
+    );
 
-      expect(spotPrice.toNumber()).to.be.approximately(1000000000000, 100000000000);
+    expect(spotPrice.toNumber()).to.be.approximately(
+      1000000000000,
+      100000000000
+    );
   });
 
   it("should be able to exit a pool", async () => {
@@ -257,9 +263,10 @@ describe("BenchmarkMarket", async () => {
       constants.HIGH_GAS_OVERRIDE
     );
 
-    let benchmarkFutureYieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(wallet.address);
+    let benchmarkFutureYieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
+      wallet.address
+    );
 
     expect(benchmarkFutureYieldTokenBalance).to.be.equal(43750000);
   });
-  
 });
