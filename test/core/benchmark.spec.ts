@@ -99,7 +99,8 @@ describe("Benchmark", async () => {
       token.address,
       constants.TEST_EXPIRY,
       amountToTokenize,
-      wallet.address
+      wallet.address,
+      constants.HIGH_GAS_OVERRIDE
     );
 
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
@@ -107,7 +108,7 @@ describe("Benchmark", async () => {
     const gain = getGain(amountToTokenize, rate, constants.ONE_MOUNTH);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.add(gain).toNumber(),
-      10
+      20
     );
   });
 
@@ -197,7 +198,7 @@ describe("Benchmark", async () => {
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.toNumber(),
-      10
+      20
     );
   });
 
