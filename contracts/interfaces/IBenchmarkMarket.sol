@@ -68,6 +68,7 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     function spotPrice(address inToken, address outToken) external view returns (uint256 spot);
 
     function swapAmountIn(
+        address _msgSender,
         uint256 inAmount,
         address inToken,
         address outToken,
@@ -76,6 +77,7 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     ) external returns (uint256 outAmount, uint256 spotPriceAfter);
 
     function swapAmountOut(
+        address _msgSender,
         address inToken,
         uint256 maxInAmount,
         address outToken,
@@ -86,24 +88,28 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     /* ========== LP ========== */
 
     function joinPoolByAll(
+        address _msgSender,
         uint256 outAmountLp,
         uint256 maxInAmoutXyt,
         uint256 maxInAmountPair
     ) external;
 
     function exitPoolByAll(
+        address _msgSender,
         uint256 inAmountLp,
         uint256 minOutAmountXyt,
         uint256 minOutAmountPair
     ) external;
 
     function joinPoolSingleToken(
+        address _msgSender,
         address inToken,
         uint256 inAmount,
         uint256 minOutAmountLp
     ) external returns (uint256 outAmountLp);
 
     function exitPoolSingleToken(
+        address _msgSender,
         address outToken,
         uint256 inAmountLp,
         uint256 minOutAmountToken
@@ -128,7 +134,7 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
             uint256 lastBlockTimestamp
         );
 
-    function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity) external;
+    function bootstrap(address _msgSender, uint256 initialXytLiquidity, uint256 initialTokenLiquidity) external;
 
     /**
      * @notice Gets a reference to the Benchmark core contract.
