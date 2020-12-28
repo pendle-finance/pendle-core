@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { assert, expect } from "chai";
 import { Contract, BigNumber } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
 
@@ -107,6 +107,26 @@ describe("BenchmarkMarket", async () => {
     expect(totalSupplyBalance).to.be.equal(totalSupply.mul(2));
   });
 
+  it("should be able to join a bootstrapped pool with a single token", async () => {
+    const token = tokens.USDT;
+    const amountToTokenize = amountToWei(token, BigNumber.from(10));
+
+    await benchmarkMarket.bootstrap(
+      amountToTokenize,
+      amountToTokenize,
+      constants.HIGH_GAS_OVERRIDE
+    );
+
+    await testToken.approve(benchmarkMarket.address, constants.MAX_ALLOWANCE);
+    let totalSupplyBalance = await benchmarkMarket.totalSupply();
+
+    await benchmarkMarket
+      .connect(wallet1)
+      .joinPoolSingleToken(testToken.address, amountToTokenize.div(10), totalSupplyBalance.div(21));
+    let wallet1Balance = await benchmarkMarket.balanceOf(wallet1.address);
+    assert(BigNumber.from(wallet1Balance).gt(0))
+  });
+
   it("should be able to swap amount out", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
@@ -136,7 +156,7 @@ describe("BenchmarkMarket", async () => {
     expect(yieldTokenBalance).to.be.equal(
       amountToTokenize.sub(amountToTokenize.div(10))
     );
-    expect(testTokenBalance.toNumber()).to.be.approximately(111111080, 20);
+    expect(testTokenBalance.toNumber()).to.be.approximately(111111080, 100);
   });
 
   it("should be able to swap amount in", async () => {
