@@ -279,8 +279,7 @@ interface IBenchmark {
         uint256 initialTokenLiquidity
     ) external;
 
-    function getAllMarkets(
-    ) external view returns (address[] memory);
+    function getAllMarkets() external view returns (address[] memory);
 
     function getMarketByUnderlyingToken(
         bytes32 _forgeId,
@@ -288,9 +287,10 @@ interface IBenchmark {
         uint256 _expiry
     ) external view returns (address market);
 
-    function getMarketTokenAddresses(
-        address market
-    ) external view returns(address token, address xyt);
+    function getMarketTokenAddresses(address market)
+        external
+        view
+        returns (address token, address xyt);
 
     /*
     function addMarketLiquidity(

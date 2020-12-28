@@ -134,7 +134,11 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
             uint256 lastBlockTimestamp
         );
 
-    function bootstrap(address _msgSender, uint256 initialXytLiquidity, uint256 initialTokenLiquidity) external;
+    function bootstrap(
+        address _msgSender,
+        uint256 initialXytLiquidity,
+        uint256 initialTokenLiquidity
+    ) external;
 
     /**
      * @notice Gets a reference to the Benchmark core contract.

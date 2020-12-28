@@ -103,10 +103,11 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         return (reserves[xyt].balance, reserves[token].balance, block.timestamp);
     }
 
-    function bootstrap(address _msgSender, uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
-        external
-        override
-    {
+    function bootstrap(
+        address _msgSender,
+        uint256 initialXytLiquidity,
+        uint256 initialTokenLiquidity
+    ) external override {
         _pullToken(xyt, _msgSender, initialXytLiquidity);
 
         _pullToken(token, _msgSender, initialTokenLiquidity);
