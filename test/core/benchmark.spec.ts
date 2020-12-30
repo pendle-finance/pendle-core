@@ -90,7 +90,8 @@ describe("Benchmark", async () => {
       token.address,
       constants.TEST_EXPIRY,
       amountToTokenize,
-      wallet.address
+      wallet.address,
+      constants.HIGH_GAS_OVERRIDE
     );
     await advanceTime(provider, constants.ONE_MOUNTH);
 
@@ -99,7 +100,8 @@ describe("Benchmark", async () => {
       token.address,
       constants.TEST_EXPIRY,
       amountToTokenize,
-      wallet.address
+      wallet.address,
+      constants.HIGH_GAS_OVERRIDE
     );
 
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
