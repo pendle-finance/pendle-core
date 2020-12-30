@@ -21,7 +21,7 @@ describe("BenchmarkMarket", async () => {
   const [wallet, wallet1] = wallets;
   let benchmark: Contract;
   let benchmarkTreasury: Contract;
-  let benchmarkMarketFactory: Contract;
+  let benchmarkAaveMarketFactory: Contract;
   let benchmarkData: Contract;
   let benchmarkOwnershipToken: Contract;
   let benchmarkFutureYieldToken: Contract;
@@ -39,7 +39,7 @@ describe("BenchmarkMarket", async () => {
     const fixture = await loadFixture(benchmarkMarketFixture);
     benchmark = fixture.core.benchmark;
     benchmarkTreasury = fixture.core.benchmarkTreasury;
-    benchmarkMarketFactory = fixture.core.benchmarkMarketFactory;
+    benchmarkAaveMarketFactory = fixture.core.benchmarkAaveMarketFactory;
     benchmarkData = fixture.core.benchmarkData;
     benchmarkOwnershipToken = fixture.forge.benchmarkOwnershipToken;
     benchmarkFutureYieldToken = fixture.forge.benchmarkFutureYieldToken;
@@ -66,6 +66,7 @@ describe("BenchmarkMarket", async () => {
 
     await benchmark.bootStrapMarket(
       constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
       benchmarkFutureYieldToken.address,
       testToken.address,
       amountToTokenize,
@@ -88,6 +89,7 @@ describe("BenchmarkMarket", async () => {
 
     await benchmark.bootStrapMarket(
       constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
       benchmarkFutureYieldToken.address,
       testToken.address,
       amountToTokenize,
@@ -103,9 +105,11 @@ describe("BenchmarkMarket", async () => {
       .connect(wallet1)
       .addMarketLiquidity(
         constants.FORGE_AAVE,
+        constants.MARKET_FACTORY_AAVE,
         benchmarkFutureYieldToken.address,
         testToken.address,
-        totalSupply, amountToTokenize, amountToTokenize
+        totalSupply, amountToTokenize, amountToTokenize,
+        constants.HIGH_GAS_OVERRIDE
       );
 
     let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
@@ -125,6 +129,7 @@ describe("BenchmarkMarket", async () => {
 
     await benchmark.bootStrapMarket(
       constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
       benchmarkFutureYieldToken.address,
       testToken.address,
       amountToTokenize,
@@ -136,6 +141,7 @@ describe("BenchmarkMarket", async () => {
       .connect(wallet1)
       .swapXytFromToken(
         constants.FORGE_AAVE,
+        constants.MARKET_FACTORY_AAVE,
         benchmarkFutureYieldToken.address,
         testToken.address,
         amountToTokenize.div(10),
@@ -161,6 +167,7 @@ describe("BenchmarkMarket", async () => {
 
     await benchmark.bootStrapMarket(
       constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
       benchmarkFutureYieldToken.address,
       testToken.address,
       amountToTokenize,
@@ -172,6 +179,7 @@ describe("BenchmarkMarket", async () => {
       .connect(wallet1)
       .swapXytToToken(
         constants.FORGE_AAVE,
+        constants.MARKET_FACTORY_AAVE,
         benchmarkFutureYieldToken.address,
         testToken.address,
         amountToTokenize.div(10),
@@ -202,6 +210,7 @@ describe("BenchmarkMarket", async () => {
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
     await benchmark.bootStrapMarket(
       constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
       benchmarkFutureYieldToken.address,
       testToken.address,
       amountToTokenize,
@@ -213,6 +222,7 @@ describe("BenchmarkMarket", async () => {
 
     await benchmark.removeMarketLiquidity(
       constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
       benchmarkFutureYieldToken.address,
       testToken.address,
       totalSuply.div(10),

@@ -15,6 +15,7 @@ export const constants = {
   AAVE_LENDING_POOL_ADDRESS: "0x398ec7346dcd622edc5ae82352f02be94c62d119",
   AAVE_DUMMY_REFERRAL_CODE: 0,
   FORGE_AAVE: utils.formatBytes32String("Aave"),
+  MARKET_FACTORY_AAVE: utils.formatBytes32String("Aave"),
   ZERO_ADDRESS: "0x0000000000000000000000000000000000000000",
   MAX_ALLOWANCE: BigNumber.from(2)
     .pow(BigNumber.from(256))

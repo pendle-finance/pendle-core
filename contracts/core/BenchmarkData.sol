@@ -28,8 +28,11 @@ import "../periphery/Permissions.sol";
 
 contract BenchmarkData is IBenchmarkData, Permissions {
     mapping(address => bytes32) public override getForgeId;
+    mapping(bytes32 => mapping(bytes32 => address)) public override getMarketFactoryAddress;
     mapping(bytes32 => address) public override getForgeAddress;
-    mapping(bytes32 => mapping(address => mapping(address => address))) public override getMarket;
+
+    // getMarket[forgeId][marketFactoryId][xyt][token]
+    mapping(bytes32 => mapping(bytes32 => mapping(address => mapping(address => address)))) public override getMarket;
     mapping(bytes32 => mapping(address => mapping(uint256 => IBenchmarkYieldToken)))
         public
         override otTokens;
@@ -54,8 +57,8 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         _;
     }
 
-    modifier onlyMarketFactory() {
-        require(msg.sender == address(core.factory()), "Benchmark: only market factory");
+    modifier onlyMarketFactory(bytes32 _forgeId, bytes32 _marketFactoryId) {
+        require(msg.sender == getMarketFactoryAddress[_forgeId][_marketFactoryId], "Benchmark: only market factory");
         _;
     }
 
@@ -128,8 +131,11 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     /***********
      *  MARKET *
      ***********/
+    function addMarketFactory(bytes32 forgeId, bytes32 marketFactoryId, address _marketFactoryAddress) external override initialized onlyCore {
+        getMarketFactoryAddress[forgeId][marketFactoryId] = _marketFactoryAddress;
+    }
 
-    function addMarket(address _market) external override initialized onlyMarketFactory {
+    function addMarket(bytes32 forgeId, bytes32 marketFactoryId, address _market) external override initialized onlyMarketFactory(forgeId, marketFactoryId) {
         allMarkets.push(_market);
     }
 
@@ -140,11 +146,12 @@ contract BenchmarkData is IBenchmarkData, Permissions {
 
     function storeMarket(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address _xyt,
         address _token,
         address _market
-    ) external override initialized onlyMarketFactory {
-        getMarket[_forgeId][_xyt][_token] = _market;
+    ) external override initialized onlyMarketFactory(_forgeId, _marketFactoryId) {
+        getMarket[_forgeId][_marketFactoryId][_xyt][_token] = _market;
         isMarket[_market] = true;
     }
 

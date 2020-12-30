@@ -26,7 +26,7 @@ describe("Benchmark", async () => {
 
   let benchmark: Contract;
   let benchmarkTreasury: Contract;
-  let benchmarkMarketFactory: Contract;
+  let benchmarkAaveMarketFactory: Contract;
   let benchmarkData: Contract;
   let benchmarkOwnershipToken: Contract;
   let benchmarkFutureYieldToken: Contract;
@@ -41,7 +41,7 @@ describe("Benchmark", async () => {
     const fixture = await loadFixture(benchmarkFixture);
     benchmark = fixture.core.benchmark;
     benchmarkTreasury = fixture.core.benchmarkTreasury;
-    benchmarkMarketFactory = fixture.core.benchmarkMarketFactory;
+    benchmarkAaveMarketFactory = fixture.core.benchmarkAaveMarketFactory;
     benchmarkData = fixture.core.benchmarkData;
     benchmarkOwnershipToken = fixture.forge.benchmarkOwnershipToken;
     benchmarkFutureYieldToken = fixture.forge.benchmarkFutureYieldToken;
@@ -246,7 +246,7 @@ describe("Benchmark", async () => {
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.add(gain).toNumber(),
-      20000
+      30000
     );
   });
   it("Should be able to remove a forge", async () => {
