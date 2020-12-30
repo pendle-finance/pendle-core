@@ -105,7 +105,9 @@ describe("BenchmarkMarket", async () => {
         constants.FORGE_AAVE,
         benchmarkFutureYieldToken.address,
         testToken.address,
-        totalSupply, amountToTokenize, amountToTokenize
+        totalSupply,
+        amountToTokenize,
+        amountToTokenize
       );
 
     let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
