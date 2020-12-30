@@ -178,7 +178,6 @@ contract Benchmark is IBenchmark, Permissions {
     function renewYield(
         bytes32 _forgeId,
         uint256 _oldExpiry,
-        address _redeemTo,
         address _underlyingAsset,
         uint256 _newExpiry,
         uint256 _amountToTokenize,
@@ -192,7 +191,7 @@ contract Benchmark is IBenchmark, Permissions {
             address xyt
         )
     {
-        redeemedAmount = redeemAfterExpiry(_forgeId, _underlyingAsset, _oldExpiry, _redeemTo);
+        redeemedAmount = redeemAfterExpiry(_forgeId, _underlyingAsset, _oldExpiry, msg.sender);
         (ot, xyt) = tokenizeYield(
             _forgeId,
             _underlyingAsset,

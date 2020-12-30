@@ -136,7 +136,6 @@ interface IBenchmark {
     function renewYield(
         bytes32 _forgeId,
         uint256 _oldExpiry,
-        address _redeemTo,
         address _underlyingAsset,
         uint256 _newExpiry,
         uint256 _amountToTokenize,
