@@ -404,7 +404,7 @@ contract Benchmark is IBenchmark, Permissions {
         address token,
         uint256 expiry
     ) public override returns (address market) {
-        market = factory.createMarket(_forgeId, xyt, token, expiry);    //@@XM should use forge directly? otherwise need to add in msg.sender here
+        market = factory.createMarket(_forgeId, xyt, token, expiry); //@@XM should use forge directly? otherwise need to add in msg.sender here
     }
 
     function bootStrapMarket(
@@ -419,8 +419,7 @@ contract Benchmark is IBenchmark, Permissions {
         market.bootstrap(msg.sender, initialXytLiquidity, initialTokenLiquidity);
     }
 
-    function getAllMarkets(
-    ) public view override returns (address[] memory) {
+    function getAllMarkets() public view override returns (address[] memory) {
         return (data.getAllMarkets());
     }
 
@@ -429,19 +428,22 @@ contract Benchmark is IBenchmark, Permissions {
         address _underlyingAsset,
         uint256 _expiry
     ) public view override returns (address market) {
-        (IBenchmarkYieldToken xyt, IBenchmarkYieldToken token) = data.getBenchmarkYieldTokens(_forgeId, _underlyingAsset, _expiry);
+        (IBenchmarkYieldToken xyt, IBenchmarkYieldToken token) =
+            data.getBenchmarkYieldTokens(_forgeId, _underlyingAsset, _expiry);
         market = data.getMarket(_forgeId, address(xyt), address(token));
     }
 
-    function getMarketTokenAddresses(
-        address market
-    ) public view override returns(address token, address xyt) {
+    function getMarketTokenAddresses(address market)
+        public
+        view
+        override
+        returns (address token, address xyt)
+    {
         require(address(market) != address(0), "Benchmark: market not exist");
-        IBenchmarkMarket benmarkMarket  = IBenchmarkMarket(market);
+        IBenchmarkMarket benmarkMarket = IBenchmarkMarket(market);
         token = benmarkMarket.token();
         xyt = benmarkMarket.xyt();
     }
-
 
     /*
     function addMarketLiquidity(
