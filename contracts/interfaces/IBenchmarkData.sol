@@ -158,9 +158,17 @@ interface IBenchmarkData {
      *  MARKET *
      ***********/
 
-    function addMarketFactory(bytes32 forgeId, bytes32 marketFactoryId, address _marketFactoryAddress) external;
+    function addMarketFactory(
+        bytes32 forgeId,
+        bytes32 marketFactoryId,
+        address _marketFactoryAddress
+    ) external;
 
-    function addMarket(bytes32 forgeId, bytes32 marketFactoryId, address _market) external;
+    function addMarket(
+        bytes32 forgeId,
+        bytes32 marketFactoryId,
+        address _market
+    ) external;
 
     function exitFee() external view returns (uint256);
 

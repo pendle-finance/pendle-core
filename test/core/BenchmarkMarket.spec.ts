@@ -108,7 +108,9 @@ describe("BenchmarkMarket", async () => {
         constants.MARKET_FACTORY_AAVE,
         benchmarkFutureYieldToken.address,
         testToken.address,
-        totalSupply, amountToTokenize, amountToTokenize,
+        totalSupply,
+        amountToTokenize,
+        amountToTokenize,
         constants.HIGH_GAS_OVERRIDE
       );
 

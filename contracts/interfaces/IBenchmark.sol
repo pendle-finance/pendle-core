@@ -58,10 +58,7 @@ interface IBenchmark {
      * @param _data Address of the new data contract.
      * @param _treasury Address of new treasury contract.
      **/
-    function setContracts(
-        IBenchmarkData _data,
-        address _treasury
-    ) external;
+    function setContracts(IBenchmarkData _data, address _treasury) external;
 
     /***********
      *  FORGE  *
@@ -133,7 +130,11 @@ interface IBenchmark {
     /***********
      *  MARKET *
      ***********/
-    function addMarketFactory(bytes32 _forgeId, bytes32 _marketFactoryId, address _marketFactoryAddress) external;
+    function addMarketFactory(
+        bytes32 _forgeId,
+        bytes32 _marketFactoryId,
+        address _marketFactoryAddress
+    ) external;
 
     function addMarketLiquidity(
         bytes32 _forgeId,

@@ -32,7 +32,9 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     mapping(bytes32 => address) public override getForgeAddress;
 
     // getMarket[forgeId][marketFactoryId][xyt][token]
-    mapping(bytes32 => mapping(bytes32 => mapping(address => mapping(address => address)))) public override getMarket;
+    mapping(bytes32 => mapping(bytes32 => mapping(address => mapping(address => address))))
+        public
+        override getMarket;
     mapping(bytes32 => mapping(address => mapping(uint256 => IBenchmarkYieldToken)))
         public
         override otTokens;
@@ -58,7 +60,10 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     }
 
     modifier onlyMarketFactory(bytes32 _forgeId, bytes32 _marketFactoryId) {
-        require(msg.sender == getMarketFactoryAddress[_forgeId][_marketFactoryId], "Benchmark: only market factory");
+        require(
+            msg.sender == getMarketFactoryAddress[_forgeId][_marketFactoryId],
+            "Benchmark: only market factory"
+        );
         _;
     }
 
@@ -131,11 +136,19 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     /***********
      *  MARKET *
      ***********/
-    function addMarketFactory(bytes32 forgeId, bytes32 marketFactoryId, address _marketFactoryAddress) external override initialized onlyCore {
+    function addMarketFactory(
+        bytes32 forgeId,
+        bytes32 marketFactoryId,
+        address _marketFactoryAddress
+    ) external override initialized onlyCore {
         getMarketFactoryAddress[forgeId][marketFactoryId] = _marketFactoryAddress;
     }
 
-    function addMarket(bytes32 forgeId, bytes32 marketFactoryId, address _market) external override initialized onlyMarketFactory(forgeId, marketFactoryId) {
+    function addMarket(
+        bytes32 forgeId,
+        bytes32 marketFactoryId,
+        address _market
+    ) external override initialized onlyMarketFactory(forgeId, marketFactoryId) {
         allMarkets.push(_market);
     }
 
