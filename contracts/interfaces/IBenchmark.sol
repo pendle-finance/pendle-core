@@ -31,22 +31,15 @@ interface IBenchmark {
     /**
      * @notice Emitted when Benchmark and BenchmarkFactory addresses have been updated.
      * @param data The address of the new data contract.
-     * @param factory The address of the new market factory contract.
      * @param treasury The address of the new treasury contract.
      **/
-    event ContractsSet(address data, address factory, address treasury);
+    event ContractsSet(address data, address treasury);
 
     /**
      * @notice Gets a reference to the BenchmarkData contract.
      * @return Returns the data contract reference.
      **/
     function data() external view returns (IBenchmarkData);
-
-    /**
-     * @notice Gets a reference to the BenchmarkMarketFactory.
-     * @return Returns the factory reference.
-     **/
-    function factory() external view returns (IBenchmarkMarketFactory);
 
     /**
      * @notice Gets the treasury contract address where fees are being sent to.
@@ -63,14 +56,9 @@ interface IBenchmark {
     /**
      * @notice Sets the Benchmark contract addresses.
      * @param _data Address of the new data contract.
-     * @param _factory Address of new factory contract.
      * @param _treasury Address of new treasury contract.
      **/
-    function setContracts(
-        IBenchmarkData _data,
-        IBenchmarkMarketFactory _factory,
-        address _treasury
-    ) external;
+    function setContracts(IBenchmarkData _data, address _treasury) external;
 
     /***********
      *  FORGE  *
@@ -116,15 +104,6 @@ interface IBenchmark {
         uint256 _expiry
     ) external returns (uint256 interests);
 
-    // TODO: to implement renew first on forge
-    // function renew(
-    //     Utils.Protocols _protocol,
-    //     address underlyingAsset,
-    //     uint256 oldExpiry,
-    //     uint256 newExpiry,
-    //     address to
-    // ) external returns (uint256 redeemedAmount);
-
     function tokenizeYield(
         bytes32 forgeId,
         address underlyingAsset,
@@ -151,9 +130,15 @@ interface IBenchmark {
     /***********
      *  MARKET *
      ***********/
+    function addMarketFactory(
+        bytes32 _forgeId,
+        bytes32 _marketFactoryId,
+        address _marketFactoryAddress
+    ) external;
 
     function addMarketLiquidity(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token,
         uint256 lpAmountDesired,
@@ -163,6 +148,7 @@ interface IBenchmark {
 
     function addMarketLiquidityXyt(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token,
         uint256 xytAmountDesired,
@@ -171,6 +157,7 @@ interface IBenchmark {
 
     function addMarketLiquidityToken(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token,
         uint256 tokenAmountDesired,
@@ -179,6 +166,7 @@ interface IBenchmark {
 
     function removeMarketLiquidity(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token,
         uint256 lpAmountDesired,
@@ -188,6 +176,7 @@ interface IBenchmark {
 
     function removeMarketLiquidityXyt(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token,
         uint256 lpAmountDesired,
@@ -196,6 +185,7 @@ interface IBenchmark {
 
     function removeMarketLiquidityToken(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token,
         uint256 lpAmountDesired,
@@ -204,6 +194,7 @@ interface IBenchmark {
 
     function swapXytToToken(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token,
         uint256 xytAmountDesired,
@@ -213,6 +204,7 @@ interface IBenchmark {
 
     function swapTokenToXyt(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token,
         uint256 tokenAmountDesired,
@@ -222,6 +214,7 @@ interface IBenchmark {
 
     function swapXytFromToken(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token,
         uint256 xytAmountDesired,
@@ -231,6 +224,7 @@ interface IBenchmark {
 
     function swapTokenFromXyt(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token,
         uint256 tokenAmountDesired,
@@ -240,6 +234,7 @@ interface IBenchmark {
 
     function getMarketReserves(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token
     )
@@ -253,18 +248,21 @@ interface IBenchmark {
 
     function getMarketRateXyt(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token
     ) external view returns (uint256 price);
 
     function getMarketRateToken(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token
     ) external view returns (uint256 price);
 
     function createMarket(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token,
         uint256 expiry
@@ -272,6 +270,7 @@ interface IBenchmark {
 
     function bootStrapMarket(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address xyt,
         address token,
         uint256 initialXytLiquidity,
@@ -282,6 +281,7 @@ interface IBenchmark {
 
     function getMarketByUnderlyingToken(
         bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address _underlyingAsset,
         uint256 _expiry
     ) external view returns (address market);

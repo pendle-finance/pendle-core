@@ -1,9 +1,10 @@
 import { Contract, Wallet, providers } from 'ethers'
 import Benchmark from '../../../build/artifacts/contracts/core/Benchmark.sol/Benchmark.json'
 import BenchmarkTreasury from '../../../build/artifacts/contracts/core/BenchmarkTreasury.sol/BenchmarkTreasury.json'
-import BenchmarkMarketFactory from "../../../build/artifacts/contracts/core/BenchmarkMarketFactory.sol/BenchmarkMarketFactory.json"
+import BenchmarkAaveMarketFactory from "../../../build/artifacts/contracts/core/BenchmarkAaveMarketFactory.sol/BenchmarkAaveMarketFactory.json"
 import BenchmarkData from "../../../build/artifacts/contracts/core/BenchmarkData.sol/BenchmarkData.json"
-import {tokens} from "../../helpers/Constants"
+import {constants, tokens} from "../../helpers/Constants"
+
 
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;
@@ -11,7 +12,7 @@ const { deployContract } = waffle;
 export interface BenchmarkCoreFixture {
   benchmark: Contract
   benchmarkTreasury: Contract
-  benchmarkMarketFactory: Contract
+  benchmarkAaveMarketFactory: Contract
   benchmarkData: Contract
 }
 
@@ -21,12 +22,12 @@ export interface BenchmarkCoreFixture {
   ): Promise<BenchmarkCoreFixture> {
     const benchmark = await deployContract(wallet, Benchmark, [wallet.address, tokens.WETH.address]);
     const benchmarkTreasury = await deployContract(wallet, BenchmarkTreasury, [wallet.address]);
-    const benchmarkMarketFactory = await deployContract(wallet, BenchmarkMarketFactory, [wallet.address]);
+    const benchmarkAaveMarketFactory = await deployContract(wallet, BenchmarkAaveMarketFactory, [wallet.address, constants.MARKET_FACTORY_AAVE]);
     const benchmarkData = await deployContract(wallet, BenchmarkData, [wallet.address]);
 
-    await benchmarkMarketFactory.initialize(benchmark.address);
+    await benchmarkAaveMarketFactory.initialize(benchmark.address);
     await benchmarkData.initialize(benchmark.address);
-    await benchmark.initialize(benchmarkData.address, benchmarkMarketFactory.address, benchmarkTreasury.address);
+    await benchmark.initialize(benchmarkData.address, benchmarkTreasury.address);
 
-    return {benchmark, benchmarkTreasury, benchmarkMarketFactory, benchmarkData}
+    return {benchmark, benchmarkTreasury, benchmarkAaveMarketFactory, benchmarkData}
   }

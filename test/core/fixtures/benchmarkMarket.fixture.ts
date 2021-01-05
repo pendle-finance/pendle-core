@@ -24,7 +24,7 @@ provider: providers.Web3Provider
   const core = await benchmarkCoreFixture(wallets, provider);
   const forge = await benchmarkAaveForgeFixture(wallet, core);
   const aave = await aaveFixture(wallet);
-  const {benchmark, benchmarkMarketFactory, benchmarkData} = core;
+  const {benchmark, benchmarkAaveMarketFactory, benchmarkData} = core;
   const {benchmarkAaveForge, benchmarkFutureYieldToken} = forge;
   const token = tokens.USDT
 
@@ -33,12 +33,14 @@ provider: providers.Web3Provider
   await mintAproveTokenizeYield(provider, token, wallet, amount, benchmark, benchmarkAaveForge);
   await mintAproveTokenizeYield(provider, token, wallet1, amount, benchmark, benchmarkAaveForge);
 
-                             
+
   const testToken = await deployContract(wallet, TestToken, ['Test Token', 'TEST', 6]);
   const totalSupply = await testToken.totalSupply();
   await testToken.transfer(wallet1.address, totalSupply.div(2))
 
-  await benchmarkMarketFactory.createMarket(
+  await benchmark.addMarketFactory(constants.FORGE_AAVE, constants.MARKET_FACTORY_AAVE, benchmarkAaveMarketFactory.address);
+
+  await benchmarkAaveMarketFactory.createMarket(
       constants.FORGE_AAVE,
       benchmarkFutureYieldToken.address,
       testToken.address,
@@ -48,10 +50,11 @@ provider: providers.Web3Provider
 
     const benchmarkMarketAddress = await benchmarkData.getMarket(
       constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
       benchmarkFutureYieldToken.address,
       testToken.address
     );
-    
+
     const benchmarkMarket = new Contract(benchmarkMarketAddress, BenchmarkMarket.abi, wallet)
     await testToken.approve(benchmarkMarketAddress, totalSupply);
     await testToken.connect(wallet1).approve(benchmarkMarketAddress, totalSupply);

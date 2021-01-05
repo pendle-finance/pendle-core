@@ -67,4 +67,6 @@ interface IBenchmarkMarketFactory {
      * @return Returns the core contract reference.
      **/
     function core() external view returns (IBenchmark);
+
+    function marketFactoryId() external view returns (bytes32);
 }
