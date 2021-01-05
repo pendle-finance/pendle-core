@@ -184,7 +184,7 @@ describe("Benchmark", async () => {
     const rate = await getLiquidityRate(wallet, token);
     const gain = getGain(amountToTokenize, rate, duration);
 
-    expect(wallet1Gain.toNumber()).to.be.approximately(gain.toNumber(), 10);
+    expect(wallet1Gain.toNumber()).to.be.approximately(gain.toNumber(), 20);
 
     await advanceTime(provider, BigNumber.from(60));
 
@@ -197,7 +197,7 @@ describe("Benchmark", async () => {
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.toNumber(),
-      10
+      20
     );
   });
 

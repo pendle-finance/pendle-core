@@ -512,6 +512,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         console.log("\tendTime,", endTime);
         console.log("\tcurrentTime,", currentTime);
         console.log("\tduration,", duration);
+        console.log("\tWeights before shifting,", xytWeight, tokenWeight);
 
         require((endTime - currentTime) <= duration, "Benchmark: wrong duration");
 
@@ -535,7 +536,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         reserves[xyt].weight = xytWeightUpdated;
         reserves[token].weight = tokenWeightUpdated;
         priceLast = priceNow;
-
+        console.log("\tNew weights: ", xytWeightUpdated, tokenWeightUpdated);
         emit Shift(xytWeight, tokenWeight, xytWeightUpdated, tokenWeightUpdated);
     }
 
