@@ -69,7 +69,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address _xyt,
         address _token,
         uint256 _expiry
-    ) BenchmarkBaseToken(_name, _symbol, _decimals, _expiry) {
+    ) BenchmarkBaseToken(_name, _symbol, _decimals, block.timestamp, _expiry) {
         require(address(_core) != address(0), "Benchmark: zero address");
         require(_forge != address(0), "Benchmark: zero address");
         require(_xyt != address(0), "Benchmark: zero address");
@@ -502,7 +502,9 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     function _updateWeight() internal {
         uint256 currentTime = block.timestamp;
         uint256 endTime = IBenchmarkYieldToken(xyt).expiry();
-        uint256 duration = 6 * 3600 * 24 * 30;
+        uint256 startTime = IBenchmarkYieldToken(xyt).start();
+        //uint256 duration = 6 * 3600 * 24 * 30;
+        uint256 duration  = endTime - startTime;
 
         TokenReserve storage xytReserve = reserves[xyt];
         TokenReserve storage tokenReserve = reserves[token];

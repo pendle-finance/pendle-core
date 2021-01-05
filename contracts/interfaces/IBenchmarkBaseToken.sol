@@ -56,6 +56,12 @@ interface IBenchmarkBaseToken is IERC20 {
     function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
 
     /**
+     * @notice The yield contract start in epoch time.
+     * @return Returns the yield start date.
+     **/
+    function start() external returns (uint256);
+
+    /**
      * @notice The yield contract expiry in epoch time.
      * @return Returns the yield expiry date.
      **/
