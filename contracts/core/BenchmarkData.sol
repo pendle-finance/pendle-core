@@ -22,13 +22,14 @@
  */
 pragma solidity ^0.7.0;
 
-
-import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import {Math} from "../libraries/BenchmarkLibrary.sol";
 import "../interfaces/IBenchmarkData.sol";
+import "../interfaces/IBenchmarkMarket.sol";
 import "../interfaces/IBenchmarkMarketFactory.sol";
 import "../periphery/Permissions.sol";
+
 
 contract BenchmarkData is IBenchmarkData, Permissions {
     using SafeMath for uint256;
@@ -64,7 +65,7 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     IBenchmark public override core;
     mapping(address => bool) internal isMarket;
     mapping(bytes32 => SortedMarkets) private markets;
-    mapping(address => mapping(bytes32 => MarketInfo)) private infos;
+    mapping(bytes32 => mapping(bytes32 => MarketInfo)) private infos;
     address[] private allMarkets;
 
     constructor(address _governance) Permissions(_governance) {}
@@ -177,9 +178,9 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         markets[key].markets.add(_market);
 
         infos[_market][key] = MarketInfo({
-            xytWeight: uint80(IBenchmarkMarket(_market).getDenormalizedWeight(_xyt)),
-            tokenWeight: uint80(IBenchmarkMarket(_market).getDenormalizedWeight(_token)),
-            liq: uint256(0)
+            xytWeight: uint80(IBenchmarkMarket(_market).getWeight(_xyt)),
+            tokenWeight: uint80(IBenchmarkMarket(_market).getWeight(_token)),
+            liquidity: uint256(0)
         });
 
         emit MarketPairAdded(_market, _xyt, _token);
@@ -190,18 +191,62 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         exitFee = _exitFee;
     }
 
-     function sortMarkets(address[] calldata xyts, address[] calldata tokens, uint256 lengthLimit) external {
-        for (uint i = 0; i < xyts.length; i++) {
-            for (uint j = 0; j < tokens.length; j++) {
+    function sortMarkets(
+        address[] calldata xyts,
+        address[] calldata tokens,
+        uint256 lengthLimit
+    ) external {
+        bytes32 key;
+        bytes32 indices;
+        address[] memory fetchedMarkets;
+        uint256[] memory effectiveLiquidity;
 
+        for (uint256 i = 0; i < xyts.length; i++) {
+            for (uint256 j = 0; j < tokens.length; j++) {
+                key = _createKey(tokens[i], tokens[j]);
+                fetchedMarkets = getMarketsWithLimit(
+                    xyts[i],
+                    tokens[j],
+                    0,
+                    Math.min(256, lengthLimit)
+                );
+                effectiveLiquidity = getEffectiveLiquidityForMarkets(
+                    xyts[i],
+                    tokens[j],
+                    fetchedMarkets
+                );
+                indices = _buildSortIndices(effectiveLiquidity);
+                if (indices != markets[key].indices) markets[key].indices = indices;
             }
         }
     }
 
-    function sortMarketsWithPurge(address[] calldata xyts, address[] calldata tokens, uint256 lengthLimit) external {
-        for (uint i = 0; i < xyts.length; i++) {
-            for (uint j = 0; j < tokens.length; j++) {
+    function sortMarketsWithPurge(
+        address[] calldata xyts,
+        address[] calldata tokens,
+        uint256 lengthLimit
+    ) external {
+        bytes32 key;
+        address[] memory fetchedMarkets;
+        uint256[] memory effectiveLiquidity;
+        bytes32 indices;
 
+        for (uint256 i = 0; i < xyts.length; i++) {
+            for (uint256 j = 0; j < tokens.length; j++) {
+                key = _createKey(tokens[i], tokens[j]);
+                fetchedMarkets = getMarketsWithLimit(
+                    xyts[i],
+                    tokens[j],
+                    0,
+                    Math.min(256, lengthLimit)
+                );
+                effectiveLiquidity = calcMarketsEffectiveLiquidity(
+                    xyts[i],
+                    tokens[j],
+                    fetchedMarkets
+                );
+                indices = _buildSortIndices(effectiveLiquidity);
+                if (indices != markets[key].indices) markets[key].indices = indices;
             }
         }
     }
@@ -217,6 +262,43 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         isMarket[_market] = true;
     }
 
+    function calcMarketsEffectiveLiquidity(
+        address _xyt,
+        address _token,
+        address[] memory _markets
+    ) public returns (uint256[] memory effectiveLiquidity) {
+        uint256 totalLiq = 0;
+        bytes32 key = _createKey(_xyt, _token);
+
+        for (uint256 i = 0; i < _markets.length; i++) {
+            MarketInfo memory info = infos[_markets[i]][key];
+
+            infos[_markets[i]][key].liquidity = Math.rdiv(
+                uint256(info.xytWeight),
+                uint256(info.xytWeight).add(uint256(info.tokenWeight))
+            );
+            infos[_markets[i]][key].liquidity = infos[_markets[i]][key].liquidity.mul(
+                IBenchmarkMarket(_markets[i]).getBalance(_token)
+            );
+            totalLiq = totalLiq.add(infos[_markets[i]][key].liquidity);
+        }
+
+        uint256 threshold = Math.rmul(totalLiq, ((10 * Math.FORMULA_PRECISION) / 100));
+
+        // Delete any market that aren't greater than threshold (10% of total)
+        for (uint256 i = 0; i < markets[key].markets.length(); i++) {
+            if (infos[markets[key].markets._inner._values[i]][key].liquidity < threshold) {
+                markets[key].markets.remove(markets[key].markets._inner._values[i]);
+            }
+        }
+
+        effectiveLiquidity = new uint256[](_markets[key].markets.length());
+
+        for (uint256 i = 0; i < markets[key].markets.length(); i++) {
+            effectiveLiquidity[i] = infos[markets[key].markets._inner._values[i]][key].liquidity;
+        }
+    }
+
     function allMarketsLength() external view override returns (uint256) {
         return allMarkets.length;
     }
@@ -225,33 +307,61 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         return allMarkets;
     }
 
-    function getMarketInfo(address market, address source, address destination)
-        external view returns(uint256 xytWeight, uint256 tokenWeight)
-    {
+    function getEffectiveLiquidityForMarkets(
+        address _xyt,
+        address _token,
+        address[] memory _markets
+    ) internal view returns (uint256[] memory effectiveLiquidity) {
+        effectiveLiquidity = new uint256[](_markets.length);
+        for (uint256 i = 0; i < _markets.length; i++) {
+            bytes32 key = _createKey(_xyt, _token);
+            MarketInfo memory info = infos[_markets[i]][key];
+            effectiveLiquidity[i] = Math.rdiv(
+                uint256(info.xytWeight),
+                uint256(info.xytWeight).add(uint256(info.tokenWeight))
+            );
+            effectiveLiquidity[i] = effectiveLiquidity[i].mul(
+                IBenchmarkMarket(_markets[i]).getBalance(_token)
+            );
+        }
+    }
+
+    function getMarketInfo(
+        address market,
+        address source,
+        address destination
+    ) external view returns (uint256 xytWeight, uint256 tokenWeight) {
         bytes32 key = _createKey(source, destination);
         MarketInfo memory info = infos[market][key];
         return (info.xytWeight, info.tokenWeight);
     }
 
-    function getMarketsWithLimit(address source, address destination, uint256 offset, uint256 limit)
-        public view returns(address[] memory result)
-    {
+    function getMarketsWithLimit(
+        address source,
+        address destination,
+        uint256 offset,
+        uint256 limit
+    ) public view returns (address[] memory result) {
         bytes32 key = _createKey(source, destination);
-        result = new address[](Math.min(limit, allMarkets[key].markets.values.length - offset));
-        for (uint i = 0; i < result.length; i++) {
-            result[i] = allMarkets[key].markets.values[offset + i];
+        result = new address[](Math.min(limit, markets[key].markets.values.length - offset));
+        for (uint256 i = 0; i < result.length; i++) {
+            result[i] = markets[key].markets.values[offset + i];
         }
     }
 
     function getBestMarkets(address source, address destination)
-        external view returns(address[] memory markets)
+        external
+        view
+        returns (address[] memory bestMarkets)
     {
         return getBestMarketsWithLimit(source, destination, 32);
     }
 
-    function getBestMarketsWithLimit(address source, address destination, uint256 limit)
-        public view returns(address[] memory markets)
-    {
+    function getBestMarketsWithLimit(
+        address source,
+        address destination,
+        uint256 limit
+    ) public view returns (address[] memory bestMarkets) {
         bytes32 key = _createKey(source, destination);
         bytes32 indices = allMarkets[key].indices;
         uint256 len = 0;
@@ -259,19 +369,44 @@ contract BenchmarkData is IBenchmarkData, Permissions {
             len++;
         }
 
-        markets = new address[](len);
-        for (uint i = 0; i < len; i++) {
+        bestMarkets = new address[](len);
+        for (uint256 i = 0; i < len; i++) {
             uint256 index = uint256(uint8(indices[i])).sub(1);
-            markets[i] = allMarkets[key].pools.values[index];
+            bestMarkets[i] = markets[key].markets.values[index];
         }
     }
 
-    function _createKey(address xyt, address token)
-        internal pure returns(bytes32)
+    function _buildSortIndices(uint256[] memory effectiveLiquidity)
+        internal
+        pure
+        returns (bytes32)
     {
-        return bytes32(
-            (uint256(uint128((xyt < token) ? xyt : token)) << 128) |
-            (uint256(uint128((xyt < token) ? token : xyt)))
-        );
+        uint256 bestIndex;
+        uint256 result = 0;
+        uint256 prevEffectiveLiquidity = uint256(-1);
+        for (uint256 i = 0; i < Math.min(effectiveLiquidity.length, 32); i++) {
+            bestIndex = 0;
+            for (uint256 j = 0; j < effectiveLiquidity.length; j++) {
+                if (
+                    (effectiveLiquidity[j] > effectiveLiquidity[bestIndex] &&
+                        effectiveLiquidity[j] < prevEffectiveLiquidity) ||
+                    effectiveLiquidity[bestIndex] >= prevEffectiveLiquidity
+                ) {
+                    bestIndex = j;
+                }
+            }
+            prevEffectiveLiquidity = effectiveLiquidity[bestIndex];
+            result |= (bestIndex + 1) << (248 - i * 8);
+        }
+
+        return bytes32(result);
+    }
+
+    function _createKey(address xyt, address token) internal pure returns (bytes32) {
+        return
+            bytes32(
+                (uint256(uint128((xyt < token) ? xyt : token)) << 128) |
+                    (uint256(uint128((xyt < token) ? token : xyt)))
+            );
     }
 }

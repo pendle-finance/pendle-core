@@ -27,6 +27,7 @@ import "./IBenchmark.sol";
 import "./IBenchmarkBaseToken.sol";
 import {Utils} from "../libraries/BenchmarkLibrary.sol";
 
+
 interface IBenchmarkMarket is IBenchmarkBaseToken {
     /* ========== EVENTS ========== */
 
@@ -133,6 +134,10 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
             uint256 tokenReserves,
             uint256 lastBlockTimestamp
         );
+
+    function getBalance(address asset) external view returns (uint256);
+
+    function getWeight(address asset) external view returns (uint256);
 
     function bootstrap(
         address _msgSender,

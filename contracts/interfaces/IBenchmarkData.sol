@@ -169,7 +169,9 @@ interface IBenchmarkData {
     function addMarket(
         bytes32 forgeId,
         bytes32 marketFactoryId,
-        address _market
+        address market,
+        address xyt,
+        address token
     ) external;
 
     function exitFee() external view returns (uint256);

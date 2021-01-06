@@ -41,6 +41,7 @@ library Math {
     using SafeMath for uint256;
 
     uint256 internal constant UINT_MAX_VALUE = uint256(-1);
+    uint256 internal constant WAD = 1e18;
     uint256 internal constant BIG_NUMBER = (uint256(1) << uint256(200));
     uint256 internal constant PRECISION_BITS = 40;
     uint256 internal constant FORMULA_PRECISION = uint256(1) << PRECISION_BITS;
@@ -154,6 +155,14 @@ library Math {
         require(!checkMultOverflow(ln2Numerator, log2x));
 
         return (ln2Numerator * log2x) / ln2Denomerator;
+    }
+
+    function max(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a >= b ? a : b;
+    }
+
+    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a < b ? a : b;
     }
 
     // This famous algorithm is called "exponentiation by squaring"

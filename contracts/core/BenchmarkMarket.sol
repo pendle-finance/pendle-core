@@ -31,6 +31,7 @@ import {Math} from "../libraries/BenchmarkLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "hardhat/console.sol";
 
+
 contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     using Math for uint256;
     using SafeMath for uint256;
@@ -378,7 +379,15 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         return outAmountToken;
     }
 
-    function interestDistribute(address lp) internal returns (uint256 interestReturn) {}
+    function getBalance(address asset) external view override returns (uint256) {
+        return reserves[asset].balance;
+    }
+
+    function getWeight(address asset) external view override returns (uint256) {
+        return reserves[asset].weight;
+    }
+
+    function _interestDistribute(address lp) internal returns (uint256 interestReturn) {}
 
     function _calcSpotPrice(
         TokenReserve memory inTokenReserve,

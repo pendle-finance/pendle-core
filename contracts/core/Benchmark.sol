@@ -23,6 +23,7 @@
 pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import {Math} from "../libraries/BenchmarkLibrary.sol";
 import "../interfaces/IBenchmark.sol";
 import "../interfaces/IBenchmarkForge.sol";
 import "../interfaces/IBenchmarkMarketFactory.sol";
@@ -77,7 +78,6 @@ contract Benchmark is IBenchmark, Permissions {
     address public immutable override weth;
     address public override treasury;
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
-    uint256 private constant WAD = 10**18;
 
     constructor(address _governance, address _weth) Permissions(_governance) {
         weth = _weth;
@@ -868,12 +868,11 @@ contract Benchmark is IBenchmark, Permissions {
         uint256 tokenBalanceOut,
         uint256 tokenWeightOut
     ) internal pure returns (uint256 effectiveLiquidity) {
-        // Bo * wi/(wi+wo)
         effectiveLiquidity = tokenWeightIn
-            .mul(WAD)
+            .mul(Math.WAD)
             .div(tokenWeightOut.add(tokenWeightIn))
             .mul(tokenBalanceOut)
-            .div(WAD);
+            .div(Math.WAD);
 
         return effectiveLiquidity;
     }
