@@ -453,7 +453,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 inAmountLp
     ) internal view returns (uint256 outAmountToken) {
         uint256 nWeight = Math.rdiv(outTokenReserve.weight, totalWeight);
-        uint256 inAmountLpAfterExitFee = Math.rmul(inAmountLp, Math.FORMULA_PRECISION.sub(data.exitFee()));
+        uint256 inAmountLpAfterExitFee =
+            Math.rmul(inAmountLp, Math.FORMULA_PRECISION.sub(data.exitFee()));
         uint256 totalSupplyLpUpdated = totalSupplyLp.sub(inAmountLpAfterExitFee);
         uint256 lpRatio = Math.rdiv(totalSupplyLpUpdated, totalSupplyLp);
 
@@ -463,7 +464,10 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 outAmountTOkenBeforeSwapFee = outTokenReserve.balance.sub(outTokenBalanceUpdated);
 
         uint256 feePortion = Math.rmul(Math.FORMULA_PRECISION.sub(nWeight), data.swapFee());
-        outAmountToken = Math.rmul(outAmountTOkenBeforeSwapFee, Math.FORMULA_PRECISION.sub(feePortion));
+        outAmountToken = Math.rmul(
+            outAmountTOkenBeforeSwapFee,
+            Math.FORMULA_PRECISION.sub(feePortion)
+        );
         return outAmountToken;
     }
 
@@ -504,7 +508,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 endTime = IBenchmarkYieldToken(xyt).expiry();
         uint256 startTime = IBenchmarkYieldToken(xyt).start();
         //uint256 duration = 6 * 3600 * 24 * 30;
-        uint256 duration  = endTime - startTime;
+        uint256 duration = endTime - startTime;
 
         TokenReserve storage xytReserve = reserves[xyt];
         TokenReserve storage tokenReserve = reserves[token];
@@ -518,16 +522,24 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         require((endTime - currentTime) <= duration, "Benchmark: wrong duration");
 
-        uint256 timeToMature = Math.rdiv((endTime - currentTime) * Math.FORMULA_PRECISION, duration * Math.FORMULA_PRECISION);
+        uint256 timeToMature =
+            Math.rdiv(
+                (endTime - currentTime) * Math.FORMULA_PRECISION,
+                duration * Math.FORMULA_PRECISION
+            );
         uint256 priceNow =
             Math.rdiv(
-                Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.FORMULA_PRECISION), Math.FORMULA_PRECISION),
+                Math.ln(
+                    Math.rmul(Math.PI, timeToMature).add(Math.FORMULA_PRECISION),
+                    Math.FORMULA_PRECISION
+                ),
                 Math.ln(Math.PI_PLUSONE, Math.FORMULA_PRECISION)
             );
         uint256 r = Math.rdiv(priceNow, priceLast);
         require(Math.FORMULA_PRECISION >= r, "Benchmark: wrong r value");
 
-        uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.FORMULA_PRECISION.sub(r));
+        uint256 thetaNumerator =
+            Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.FORMULA_PRECISION.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
 
         uint256 theta = Math.rdiv(thetaNumerator, thetaDenominator);
