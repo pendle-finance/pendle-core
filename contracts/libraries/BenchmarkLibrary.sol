@@ -41,14 +41,11 @@ library Math {
     using SafeMath for uint256;
 
     uint256 internal constant UINT_MAX_VALUE = uint256(-1);
-    //uint256 internal constant RAY = 1e27;
-    uint256 internal constant WAD = 1e18;
     uint256 internal constant BIG_NUMBER = (uint256(1) << uint256(200));
     uint256 internal constant PRECISION_BITS = 40;
     uint256 internal constant FORMULA_PRECISION = uint256(1) << PRECISION_BITS;
-    uint256 internal constant PI = (314 * RAY) / 10**2;
-    uint256 internal constant PI_PLUSONE = (414 * RAY) / 10**2;
-    uint256 internal constant RAY = FORMULA_PRECISION;
+    uint256 internal constant PI = (314 * FORMULA_PRECISION) / 10**2;
+    uint256 internal constant PI_PLUSONE = (414 * FORMULA_PRECISION) / 10**2;
     uint256 internal constant PRECISION_POW = 1e2;
 
     function checkMultOverflow(uint256 _x, uint256 _y) internal pure returns (bool) {
@@ -175,7 +172,7 @@ library Math {
     //    floor[(n-1) / 2] = floor[n / 2].
     //
     function pow(uint256 x, uint256 n) internal pure returns (uint256 z) {
-        z = n % 2 != 0 ? x : RAY;
+        z = n % 2 != 0 ? x : FORMULA_PRECISION;
 
         for (n /= 2; n != 0; n /= 2) {
             x = rmul(x, x);
@@ -187,7 +184,7 @@ library Math {
     }
 
     function rfloor(uint256 x) internal pure returns (uint256) {
-        return rtoi(x) * RAY;
+        return rtoi(x) * FORMULA_PRECISION;
     }
 
     function rpow(uint256 _base, uint256 _exp) internal pure returns (uint256) {
@@ -205,7 +202,7 @@ library Math {
     }
 
     function rpowi(uint256 _x, uint256 _n) internal pure returns (uint256) {
-        uint256 z = _n % 2 != 0 ? _x : RAY;
+        uint256 z = _n % 2 != 0 ? _x : FORMULA_PRECISION;
 
         for (_n /= 2; _n != 0; _n /= 2) {
             _x = rmul(_x, _x);
@@ -220,8 +217,8 @@ library Math {
     function rpowApprox(uint256 _base, uint256 _exp) internal pure returns (uint256) {
         // term 0:
         uint256 a = _exp;
-        (uint256 x, bool xneg) = rsignSub(_base, RAY);
-        uint256 term = RAY;
+        (uint256 x, bool xneg) = rsignSub(_base, FORMULA_PRECISION);
+        uint256 term = FORMULA_PRECISION;
         uint256 sum = term;
         bool negative = false;
 
@@ -230,8 +227,8 @@ library Math {
         // each iteration, multiply previous term by (a-(k-1)) * x / k
         // continue until term is less than precision
         for (uint256 i = 1; term >= PRECISION_POW; i++) {
-            uint256 bigK = i * RAY;
-            (uint256 c, bool cneg) = rsignSub(a, bigK.sub(RAY));
+            uint256 bigK = i * FORMULA_PRECISION;
+            (uint256 c, bool cneg) = rsignSub(a, bigK.sub(FORMULA_PRECISION));
             term = rmul(term, rmul(c, x));
             term = rdiv(term, bigK);
             if (term == 0) break;
@@ -257,23 +254,15 @@ library Math {
     }
 
     function rdiv(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (y / 2).add(x.mul(RAY)).div(y);
+        return (y / 2).add(x.mul(FORMULA_PRECISION)).div(y);
     }
 
     function rmul(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (RAY / 2).add(x.mul(y)).div(RAY);
+        return (FORMULA_PRECISION / 2).add(x.mul(y)).div(FORMULA_PRECISION);
     }
 
     function rtoi(uint256 x) internal pure returns (uint256) {
-        return x / RAY;
-    }
-
-    function wdiv(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (y / 2).add(x.mul(WAD)).div(y);
-    }
-
-    function wmul(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (WAD / 2).add(x.mul(y)).div(WAD);
+        return x / FORMULA_PRECISION;
     }
 }
 

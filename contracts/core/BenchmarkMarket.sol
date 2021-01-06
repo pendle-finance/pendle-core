@@ -48,7 +48,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     uint8 private constant _decimals = 18;
     address public creator;
     bool public bootstrapped;
-    uint256 private priceLast = Math.RAY;
+    uint256 private priceLast = Math.FORMULA_PRECISION;
     uint256 private blockNumLast;
     uint256 public lastUnderlyingYieldTokenBalance;
     uint256 public globalIncomeIndex;
@@ -112,9 +112,9 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         _pullToken(token, _msgSender, initialTokenLiquidity);
         reserves[xyt].balance = initialXytLiquidity;
-        reserves[xyt].weight = Math.RAY / 2;
+        reserves[xyt].weight = Math.FORMULA_PRECISION / 2;
         reserves[token].balance = initialTokenLiquidity;
-        reserves[token].weight = Math.RAY / 2;
+        reserves[token].weight = Math.FORMULA_PRECISION / 2;
         _mintLpToken(INITIAL_LP_FOR_CREATOR);
         _pushLpToken(_msgSender, INITIAL_LP_FOR_CREATOR);
         blockNumLast = block.number; //@@XM added for curve shifting
@@ -388,7 +388,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 numer = Math.rdiv(inTokenReserve.balance, inTokenReserve.weight);
         uint256 denom = Math.rdiv(outTokenReserve.balance, outTokenReserve.weight);
         uint256 ratio = Math.rdiv(numer, denom);
-        uint256 scale = Math.rdiv(Math.RAY, Math.RAY.sub(swapFee));
+        uint256 scale = Math.rdiv(Math.FORMULA_PRECISION, Math.FORMULA_PRECISION.sub(swapFee));
 
         spot = Math.rmul(ratio, scale);
     }
@@ -400,11 +400,11 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 inAmount
     ) internal pure returns (uint256 outAmount) {
         uint256 weightRatio = Math.rdiv(inTokenReserve.weight, outTokenReserve.weight);
-        uint256 adjustedIn = Math.RAY.sub(swapFee);
+        uint256 adjustedIn = Math.FORMULA_PRECISION.sub(swapFee);
         adjustedIn = Math.rmul(inAmount, adjustedIn);
         uint256 y = Math.rdiv(inTokenReserve.balance, inTokenReserve.balance.add(adjustedIn));
         uint256 foo = Math.rpow(y, weightRatio);
-        uint256 bar = Math.RAY.sub(foo);
+        uint256 bar = Math.FORMULA_PRECISION.sub(foo);
 
         outAmount = Math.rmul(outTokenReserve.balance, bar);
     }
@@ -420,8 +420,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 y = Math.rdiv(outTokenReserve.balance, diff);
         uint256 foo = Math.rpow(y, weightRatio);
 
-        foo = foo.sub(Math.RAY);
-        inAmount = Math.RAY.sub(swapFee);
+        foo = foo.sub(Math.FORMULA_PRECISION);
+        inAmount = Math.FORMULA_PRECISION.sub(swapFee);
         inAmount = Math.rdiv(Math.rmul(inTokenReserve.balance, foo), inAmount);
     }
 
@@ -433,8 +433,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 totalWeight
     ) internal pure returns (uint256 outAmountLp) {
         uint256 nWeight = Math.rdiv(inTokenReserve.weight, totalWeight);
-        uint256 feePortion = Math.rmul(Math.RAY.sub(nWeight), swapFee);
-        uint256 inAmoutAfterFee = Math.rmul(inAmount, Math.RAY.sub(feePortion));
+        uint256 feePortion = Math.rmul(Math.FORMULA_PRECISION.sub(nWeight), swapFee);
+        uint256 inAmoutAfterFee = Math.rmul(inAmount, Math.FORMULA_PRECISION.sub(feePortion));
 
         uint256 inBalanceUpdated = inTokenReserve.balance.add(inAmoutAfterFee);
         uint256 inTokenRatio = Math.rdiv(inBalanceUpdated, inTokenReserve.balance);
@@ -453,17 +453,17 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 inAmountLp
     ) internal view returns (uint256 outAmountToken) {
         uint256 nWeight = Math.rdiv(outTokenReserve.weight, totalWeight);
-        uint256 inAmountLpAfterExitFee = Math.rmul(inAmountLp, Math.RAY.sub(data.exitFee()));
+        uint256 inAmountLpAfterExitFee = Math.rmul(inAmountLp, Math.FORMULA_PRECISION.sub(data.exitFee()));
         uint256 totalSupplyLpUpdated = totalSupplyLp.sub(inAmountLpAfterExitFee);
         uint256 lpRatio = Math.rdiv(totalSupplyLpUpdated, totalSupplyLp);
 
-        uint256 outTokenRatio = Math.rpow(lpRatio, Math.rdiv(Math.RAY, nWeight));
+        uint256 outTokenRatio = Math.rpow(lpRatio, Math.rdiv(Math.FORMULA_PRECISION, nWeight));
         uint256 outTokenBalanceUpdated = Math.rmul(outTokenRatio, outTokenReserve.balance);
 
         uint256 outAmountTOkenBeforeSwapFee = outTokenReserve.balance.sub(outTokenBalanceUpdated);
 
-        uint256 feePortion = Math.rmul(Math.RAY.sub(nWeight), data.swapFee());
-        outAmountToken = Math.rmul(outAmountTOkenBeforeSwapFee, Math.RAY.sub(feePortion));
+        uint256 feePortion = Math.rmul(Math.FORMULA_PRECISION.sub(nWeight), data.swapFee());
+        outAmountToken = Math.rmul(outAmountTOkenBeforeSwapFee, Math.FORMULA_PRECISION.sub(feePortion));
         return outAmountToken;
     }
 
@@ -518,16 +518,16 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         require((endTime - currentTime) <= duration, "Benchmark: wrong duration");
 
-        uint256 timeToMature = Math.rdiv((endTime - currentTime) * Math.RAY, duration * Math.RAY);
+        uint256 timeToMature = Math.rdiv((endTime - currentTime) * Math.FORMULA_PRECISION, duration * Math.FORMULA_PRECISION);
         uint256 priceNow =
             Math.rdiv(
-                Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RAY), Math.RAY),
-                Math.ln(Math.PI_PLUSONE, Math.RAY)
+                Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.FORMULA_PRECISION), Math.FORMULA_PRECISION),
+                Math.ln(Math.PI_PLUSONE, Math.FORMULA_PRECISION)
             );
         uint256 r = Math.rdiv(priceNow, priceLast);
-        require(Math.RAY >= r, "Benchmark: wrong r value");
+        require(Math.FORMULA_PRECISION >= r, "Benchmark: wrong r value");
 
-        uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RAY.sub(r));
+        uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.FORMULA_PRECISION.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
 
         uint256 theta = Math.rdiv(thetaNumerator, thetaDenominator);
