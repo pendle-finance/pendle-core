@@ -36,8 +36,9 @@ contract BenchmarkOwnershipToken is BenchmarkBaseToken, IBenchmarkYieldToken {
         string memory _name,
         string memory _symbol,
         uint8 _underlyingYieldTokenDecimals,
+        uint256 _start,
         uint256 _expiry
-    ) BenchmarkBaseToken(_name, _symbol, _underlyingYieldTokenDecimals, _expiry) {
+    ) BenchmarkBaseToken(_name, _symbol, _underlyingYieldTokenDecimals, _start, _expiry) {
         forge = msg.sender;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;

@@ -42,6 +42,7 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
     string public override name;
     string public override symbol;
     uint8 public override decimals;
+    uint256 public override start;
     uint256 public override expiry;
     uint256 public override totalSupply;
 
@@ -49,11 +50,13 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
+        uint256 _start,
         uint256 _expiry
     ) {
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
+        start = _start;
         expiry = _expiry;
     }
 
