@@ -224,7 +224,16 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         xyt = Factory.createContract(
             type(BenchmarkFutureYieldToken).creationCode,
             abi.encodePacked(aToken, _underlyingAsset),
-            abi.encode(_ot, _underlyingAsset, aToken, _name, _symbol, _decimals, _expiry)
+            abi.encode(
+                _ot,
+                _underlyingAsset,
+                aToken,
+                _name,
+                _symbol,
+                _decimals,
+                block.timestamp,
+                _expiry
+            )
         );
     }
 
@@ -240,7 +249,15 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         ot = Factory.createContract(
             type(BenchmarkOwnershipToken).creationCode,
             abi.encodePacked(aToken, _underlyingAsset),
-            abi.encode(aToken, _underlyingAsset, _name, _symbol, _decimals, _expiry)
+            abi.encode(
+                aToken,
+                _underlyingAsset,
+                _name,
+                _symbol,
+                _decimals,
+                block.timestamp,
+                _expiry
+            )
         );
     }
 

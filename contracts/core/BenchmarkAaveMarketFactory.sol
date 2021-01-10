@@ -30,10 +30,13 @@ import "../interfaces/IBenchmarkMarketFactory.sol";
 import "../interfaces/IBenchmarkYieldToken.sol";
 import "../periphery/Permissions.sol";
 
-contract BenchmarkMarketFactory is IBenchmarkMarketFactory, Permissions {
+contract BenchmarkAaveMarketFactory is IBenchmarkMarketFactory, Permissions {
     IBenchmark public override core;
+    bytes32 public immutable override marketFactoryId;
 
-    constructor(address _governance) Permissions(_governance) {}
+    constructor(address _governance, bytes32 _marketFactoryId) Permissions(_governance) {
+        marketFactoryId = _marketFactoryId;
+    }
 
     function initialize(IBenchmark _core) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
@@ -56,7 +59,7 @@ contract BenchmarkMarketFactory is IBenchmarkMarketFactory, Permissions {
         address forgeAddress = data.getForgeAddress(_forgeId);
 
         require(
-            data.getMarket(_forgeId, _xyt, _token) == address(0),
+            data.getMarket(_forgeId, marketFactoryId, _xyt, _token) == address(0),
             "Benchmark: market already exists"
         );
         require(data.isValidXYT(_xyt), "Benchmark: not xyt");
@@ -66,9 +69,11 @@ contract BenchmarkMarketFactory is IBenchmarkMarketFactory, Permissions {
             abi.encodePacked(msg.sender, core, forgeAddress, _xyt, _token, _expiry),
             abi.encode(msg.sender, core, forgeAddress, _xyt, _token, _expiry)
         );
-        data.storeMarket(_forgeId, _xyt, _token, market);
-        data.addMarket(market);
+        data.storeMarket(_forgeId, marketFactoryId, _xyt, _token, market);
+        data.addMarket(_forgeId, marketFactoryId, market);
+        //@@Vu TODO: we might want to merge data.storeMarket and data.addMarket to one function?
 
+        //@@Vu TODO: fix events to add marketFactoryId
         emit MarketCreated(_xyt, _token, market);
     }
 

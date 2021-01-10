@@ -158,17 +158,25 @@ interface IBenchmarkData {
      *  MARKET *
      ***********/
 
-    /**
-     * @notice Store new market.
-     * @param market The newly created market address.
-     **/
-    function addMarket(address market) external;
+    function addMarketFactory(
+        bytes32 forgeId,
+        bytes32 marketFactoryId,
+        address _marketFactoryAddress
+    ) external;
+
+    function addMarket(
+        bytes32 forgeId,
+        bytes32 marketFactoryId,
+        address _market
+    ) external;
 
     function exitFee() external view returns (uint256);
 
     function swapFee() external view returns (uint256);
 
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
+
+    function getMarketFactoryAddress(bytes32, bytes32) external view returns (address);
 
     /**
      * @notice Store new market details.
@@ -179,6 +187,7 @@ interface IBenchmarkData {
      **/
     function storeMarket(
         bytes32 forgeId,
+        bytes32 marketFactoryId,
         address xyt,
         address token,
         address market
@@ -205,6 +214,7 @@ interface IBenchmarkData {
      **/
     function getMarket(
         bytes32 forgeId,
+        bytes32 marketFactoryId,
         address xyt,
         address token
     ) external view returns (address market);
