@@ -263,7 +263,7 @@ describe("BenchmarkMarket", async () => {
       amountToTokenize,
       constants.HIGH_GAS_OVERRIDE
     );
-    await advanceTime(provider, constants.ONE_MOUNTH);
+    await advanceTime(provider, constants.ONE_MONTH);
     const totalSuply = await benchmarkMarket.totalSupply();
 
     await benchmark.removeMarketLiquidity(
@@ -295,7 +295,7 @@ describe("BenchmarkMarket", async () => {
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
     await benchmarkMarket.bootstrap(amountToTokenize, amountToTokenize);
 
-    await advanceTime(provider, constants.ONE_MOUNTH);
+    await advanceTime(provider, constants.ONE_MONTH);
 
     const totalSupply = await benchmarkMarket.totalSupply();
 

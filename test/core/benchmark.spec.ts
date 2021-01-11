@@ -93,7 +93,7 @@ describe("Benchmark", async () => {
       wallet.address,
       constants.HIGH_GAS_OVERRIDE
     );
-    await advanceTime(provider, constants.ONE_MOUNTH);
+    await advanceTime(provider, constants.ONE_MONTH);
 
     await benchmark.redeemUnderlying(
       constants.FORGE_AAVE,
@@ -106,7 +106,7 @@ describe("Benchmark", async () => {
 
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     const rate = await getLiquidityRate(wallet, token);
-    const gain = getGain(amountToTokenize, rate, constants.ONE_MOUNTH);
+    const gain = getGain(amountToTokenize, rate, constants.ONE_MONTH);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.add(gain).toNumber(),
       20
@@ -132,7 +132,7 @@ describe("Benchmark", async () => {
     await benchmarkOwnershipToken.transfer(wallet1.address, balance);
 
     const afterLendingAUSDTbalance = await aUSDT.balanceOf(wallet.address);
-    await advanceTime(provider, constants.ONE_MOUNTH);
+    await advanceTime(provider, constants.ONE_MONTH);
 
     await benchmark.redeemDueInterests(
       constants.FORGE_AAVE,
@@ -141,7 +141,7 @@ describe("Benchmark", async () => {
     );
 
     const rate = await getLiquidityRate(wallet, token);
-    const gain = getGain(amountToTokenize, rate, constants.ONE_MOUNTH);
+    const gain = getGain(amountToTokenize, rate, constants.ONE_MONTH);
 
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
 
@@ -233,7 +233,7 @@ describe("Benchmark", async () => {
       constants.TEST_EXPIRY
     );
 
-    await advanceTime(provider, constants.ONE_MOUNTH);
+    await advanceTime(provider, constants.ONE_MONTH);
 
     await benchmark.redeemAfterExpiry(
       constants.FORGE_AAVE,
@@ -243,7 +243,7 @@ describe("Benchmark", async () => {
     );
 
     const rate = await getLiquidityRate(wallet, token);
-    const gain = getGain(amountToTokenize, rate, constants.ONE_MOUNTH);
+    const gain = getGain(amountToTokenize, rate, constants.ONE_MONTH);
 
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
