@@ -20,6 +20,87 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
+library Enumerable {
+
+    struct AddressSet {
+        mapping (address => uint256) index;
+        address[] values;
+    }
+
+    function add(AddressSet storage set, address value)
+        internal
+        returns (bool)
+    {
+        if (!contains(set, value)){
+            set.values.push(value);
+            set.index[value] = set.values.length;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function remove(AddressSet storage set, address value)
+        internal
+        returns (bool)
+    {
+        if (contains(set, value)){
+            uint256 toDeleteIndex = set.index[value] - 1;
+            uint256 lastIndex = set.values.length - 1;
+
+            if (lastIndex != toDeleteIndex) {
+                address lastValue = set.values[lastIndex];
+
+                set.values[toDeleteIndex] = lastValue;
+                set.index[lastValue] = toDeleteIndex + 1;
+            }
+
+            delete set.index[value];
+            set.values.pop();
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function contains(AddressSet storage set, address value)
+        internal
+        view
+        returns (bool)
+    {
+        return set.index[value] != 0;
+    }
+
+    function enumerate(AddressSet storage set)
+        internal
+        view
+        returns (address[] memory)
+    {
+        address[] memory output = new address[](set.values.length);
+        for (uint256 i; i < set.values.length; i++){
+            output[i] = set.values[i];
+        }
+        return output;
+    }
+
+    function length(AddressSet storage set)
+        internal
+        view
+        returns (uint256)
+    {
+        return set.values.length;
+    }
+
+    function get(AddressSet storage set, uint256 index)
+        internal
+        view
+        returns (address)
+    {
+        return set.values[index];
+    }
+}
+
 library Factory {
     function createContract(
         bytes memory bytecode,

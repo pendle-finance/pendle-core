@@ -23,8 +23,7 @@
 pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-import {Math} from "../libraries/BenchmarkLibrary.sol";
+import {Enumerable, Math} from "../libraries/BenchmarkLibrary.sol";
 import "../interfaces/IBenchmarkData.sol";
 import "../interfaces/IBenchmarkMarket.sol";
 import "../interfaces/IBenchmarkMarketFactory.sol";
@@ -33,7 +32,7 @@ import "../periphery/Permissions.sol";
 
 contract BenchmarkData is IBenchmarkData, Permissions {
     using SafeMath for uint256;
-    using EnumerableSet for EnumerableSet.AddressSet;
+    using Enumerable for Enumerable.AddressSet;
 
     struct MarketInfo {
         uint80 xytWeight;
@@ -42,7 +41,7 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     }
 
     struct SortedMarkets {
-        EnumerableSet.AddressSet markets;
+        Enumerable.AddressSet markets;
         bytes32 indices;
     }
 
@@ -65,7 +64,7 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     IBenchmark public override core;
     mapping(address => bool) internal isMarket;
     mapping(bytes32 => SortedMarkets) private markets;
-    mapping(bytes32 => mapping(bytes32 => MarketInfo)) private infos;
+    mapping(address => mapping(bytes32 => MarketInfo)) private infos;
     address[] private allMarkets;
 
     constructor(address _governance) Permissions(_governance) {}
@@ -287,15 +286,15 @@ contract BenchmarkData is IBenchmarkData, Permissions {
 
         // Delete any market that aren't greater than threshold (10% of total)
         for (uint256 i = 0; i < markets[key].markets.length(); i++) {
-            if (infos[markets[key].markets._inner._values[i]][key].liquidity < threshold) {
-                markets[key].markets.remove(markets[key].markets._inner._values[i]);
+            if (infos[markets[key].markets.values[i]][key].liquidity < threshold) {
+                markets[key].markets.remove(markets[key].markets.values[i]);
             }
         }
 
-        effectiveLiquidity = new uint256[](_markets[key].markets.length());
+        effectiveLiquidity = new uint256[](markets[key].markets.length());
 
         for (uint256 i = 0; i < markets[key].markets.length(); i++) {
-            effectiveLiquidity[i] = infos[markets[key].markets._inner._values[i]][key].liquidity;
+            effectiveLiquidity[i] = infos[markets[key].markets.values[i]][key].liquidity;
         }
     }
 
@@ -363,7 +362,7 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         uint256 limit
     ) public view returns (address[] memory bestMarkets) {
         bytes32 key = _createKey(source, destination);
-        bytes32 indices = allMarkets[key].indices;
+        bytes32 indices = markets[key].indices;
         uint256 len = 0;
         while (indices[len] > 0 && len < Math.min(limit, indices.length)) {
             len++;
