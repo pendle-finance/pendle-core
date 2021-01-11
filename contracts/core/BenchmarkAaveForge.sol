@@ -268,30 +268,30 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         address _account
     ) internal returns (uint256) {
         uint256 principal = _tokens.xyt.balanceOf(_account);
-        uint256 Ix = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
+        uint256 ix = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
 
-        uint256 In;
+        uint256 normalizedIncome;
 
         if (block.timestamp >= _expiry) {
-            In = lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
+            normalizedIncome = lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
         } else {
-            In = aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
-            lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = In;
+            normalizedIncome = aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
+            lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = normalizedIncome;
         }
         // first time getting XYT
-        if (Ix == 0) {
-            lastNormalisedIncome[_underlyingAsset][_expiry][_account] = In;
+        if (ix == 0) {
+            lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
             return 0;
         }
+        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
 
-        uint256 dueInterests = principal.mul(In).div(Ix).sub(principal);
+        uint256 dueInterests = principal.mul(normalizedIncome).div(ix).sub(principal);
 
         if (dueInterests > 0) {
             IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
             IERC20(aToken).transfer(_account, dueInterests);
         }
 
-        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = In;
         // console.log("[contract] [Forge] in _settleDueInterests, interests = ", dueInterests);
         return dueInterests;
     }

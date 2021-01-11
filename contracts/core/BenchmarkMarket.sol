@@ -42,10 +42,10 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     address public immutable override token;
     address public immutable override xyt;
     uint256 public constant override minLiquidity = 10**3;
-    string private constant _name = "Benchmark Market";
-    string private constant _symbol = "BMK-LPT";
+    string private constant NAME = "Benchmark Market";
+    string private constant SYMBOL = "BMK-LPT";
     uint256 private constant INITIAL_LP_FOR_CREATOR = 10**18; // arbitrary number
-    uint8 private constant _decimals = 18;
+    uint8 private constant DECIMALS = 18;
     address public creator;
     bool public bootstrapped;
     uint256 private priceLast = Math.FORMULA_PRECISION;
@@ -69,7 +69,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address _xyt,
         address _token,
         uint256 _expiry
-    ) BenchmarkBaseToken(_name, _symbol, _decimals, block.timestamp, _expiry) {
+    ) BenchmarkBaseToken(NAME, SYMBOL, DECIMALS, block.timestamp, _expiry) {
         require(address(_core) != address(0), "Benchmark: zero address");
         require(_forge != address(0), "Benchmark: zero address");
         require(_xyt != address(0), "Benchmark: zero address");
@@ -281,8 +281,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 exitFee = data.exitFee();
         uint256 totalLp = totalSupply;
         uint256 exitFees = Math.rmul(inAmountLp, exitFee);
-        uint256 InLpAfterExitFee = inAmountLp.sub(exitFee);
-        uint256 ratio = Math.rdiv(InLpAfterExitFee, totalLp);
+        uint256 inLpAfterExitFee = inAmountLp.sub(exitFee);
+        uint256 ratio = Math.rdiv(inLpAfterExitFee, totalLp);
         require(ratio != 0, "Benchmark: math problem");
 
         //calc and withdraw xyt token
@@ -306,7 +306,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         //let's deal with lp last
         _pullLpToken(_msgSender, inAmountLp);
         _pushLpToken(factory, exitFees);
-        _burnLpToken(InLpAfterExitFee);
+        _burnLpToken(inLpAfterExitFee);
     }
 
     function joinPoolSingleToken(

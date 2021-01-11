@@ -24,8 +24,6 @@
 pragma solidity ^0.7.0;
 
 interface ITimelock {
-    function GRACE_PERIOD() external view returns (uint256);
-
     function acceptAdmin() external;
 
     function cancelTransaction(
@@ -55,4 +53,6 @@ interface ITimelock {
     ) external returns (bytes32);
 
     function queuedTransactions(bytes32 txn) external returns (bool);
+
+    function gracePeriod() external view returns (uint256);
 }

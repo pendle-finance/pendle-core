@@ -25,11 +25,12 @@ pragma solidity ^0.7.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 abstract contract Permissions {
-    event EtherWithdraw(uint256 amount, address sendTo);
-    event TokenWithdraw(IERC20 token, uint256 amount, address sendTo);
 
     address public immutable governance;
     address internal initializer;
+
+    event EtherWithdraw(uint256 amount, address sendTo);
+    event TokenWithdraw(IERC20 token, uint256 amount, address sendTo);
 
     constructor(address _governance) {
         require(_governance != address(0), "Benchmark: zero address");

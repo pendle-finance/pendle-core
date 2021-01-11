@@ -21,7 +21,7 @@ export const constants = {
     .pow(BigNumber.from(256))
     .sub(BigNumber.from(1)),
   ONE_DAY: BigNumber.from(86400),
-  ONE_MOUNTH: BigNumber.from(2592000),
+  ONE_MONTH: BigNumber.from(2592000),
   TEST_EXPIRY: BigNumber.from(Math.round(Date.now() / 1000)).add(2592000 * 6),
   ONE_YEAR: BigNumber.from(31536000),
   HIGH_GAS_OVERRIDE: { gasLimit: 40000000 },

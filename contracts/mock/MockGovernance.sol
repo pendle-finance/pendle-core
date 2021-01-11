@@ -21,9 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity ^0.7.0;
+pragma experimental ABIEncoderV2;
 
 import "../core/BenchmarkGovernance.sol";
-pragma experimental ABIEncoderV2;
 
 contract MockGovernance is BenchmarkGovernance {
     constructor(

@@ -20,17 +20,16 @@
 pragma solidity ^0.7.4;
 
 contract WETH9 {
-    string public name = "Wrapped Ether";
-    string public symbol = "WETH";
-    uint8 public decimals = 18;
+    string public constant NAME = "Wrapped Ether";
+    string public constant SYMBOL = "WETH";
+    uint8 public constant DECIMALS = 18;
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
 
     event Approval(address indexed src, address indexed guy, uint256 wad);
     event Transfer(address indexed src, address indexed dst, uint256 wad);
     event Deposit(address indexed dst, uint256 wad);
     event Withdrawal(address indexed src, uint256 wad);
-
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
 
     fallback() external payable {
         deposit();
@@ -46,10 +45,6 @@ contract WETH9 {
         balanceOf[msg.sender] -= wad;
         msg.sender.transfer(wad);
         emit Withdrawal(msg.sender, wad);
-    }
-
-    function totalSupply() public view returns (uint256) {
-        return address(this).balance;
     }
 
     function approve(address guy, uint256 wad) public returns (bool) {
@@ -80,6 +75,10 @@ contract WETH9 {
         emit Transfer(src, dst, wad);
 
         return true;
+    }
+
+    function totalSupply() public view returns (uint256) {
+        return address(this).balance;
     }
 }
 

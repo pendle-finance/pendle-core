@@ -26,19 +26,20 @@ pragma experimental ABIEncoderV2;
 import "../interfaces/IBMK.sol";
 
 contract BMK is IBMK {
-    string public constant name = "Benchmark";
-    string public constant symbol = "BMK";
-    uint8 public constant decimals = 18;
-    uint256 public constant totalSupply = 10000000e18; // 10 million Comp
-    mapping(address => mapping(address => uint96)) internal allowances;
-    mapping(address => uint96) internal balances;
-    mapping(address => address) public delegates;
 
     /// @notice A checkpoint for marking number of votes from a given block
     struct Checkpoint {
         uint32 fromBlock;
         uint96 votes;
     }
+
+    string public constant NAME = "Benchmark";
+    string public constant SYMBOL = "BMK";
+    uint8 public constant DECIMALS = 18;
+    uint256 public constant TOTAL_SUPPLY = 10000000e18; // 10 million Comp
+    mapping(address => mapping(address => uint96)) internal allowances;
+    mapping(address => uint96) internal balances;
+    mapping(address => address) public delegates;
 
     /// @notice A record of votes checkpoints for each account, by index
     mapping(address => mapping(uint32 => Checkpoint)) public checkpoints;
@@ -82,18 +83,8 @@ contract BMK is IBMK {
      * @param account The initial account to grant all the tokens
      */
     constructor(address account) {
-        balances[account] = uint96(totalSupply);
-        emit Transfer(address(0), account, totalSupply);
-    }
-
-    /**
-     * @notice Get the number of tokens `spender` is approved to spend on behalf of `account`
-     * @param account The address of the account holding the funds
-     * @param spender The address of the account spending the funds
-     * @return The number of tokens approved
-     **/
-    function allowance(address account, address spender) external view returns (uint256) {
-        return allowances[account][spender];
+        balances[account] = uint96(TOTAL_SUPPLY);
+        emit Transfer(address(0), account, TOTAL_SUPPLY);
     }
 
     /**
@@ -116,15 +107,6 @@ contract BMK is IBMK {
 
         emit Approval(msg.sender, spender, amount);
         return true;
-    }
-
-    /**
-     * @notice Get the number of tokens held by the `account`
-     * @param account The address of the account to get the balance of
-     * @return The number of tokens held
-     */
-    function balanceOf(address account) external view returns (uint256) {
-        return balances[account];
     }
 
     /**
@@ -172,6 +154,35 @@ contract BMK is IBMK {
     }
 
     /**
+     * @notice Get the number of tokens `spender` is approved to spend on behalf of `account`
+     * @param account The address of the account holding the funds
+     * @param spender The address of the account spending the funds
+     * @return The number of tokens approved
+     **/
+    function allowance(address account, address spender) external view returns (uint256) {
+        return allowances[account][spender];
+    }
+
+    /**
+     * @notice Get the number of tokens held by the `account`
+     * @param account The address of the account to get the balance of
+     * @return The number of tokens held
+     */
+    function balanceOf(address account) external view returns (uint256) {
+        return balances[account];
+    }
+
+    /**
+     * @notice Gets the current votes balance for `account`
+     * @param account The address to get votes balance
+     * @return The number of current votes for `account`
+     */
+    function getCurrentVotes(address account) external view returns (uint96) {
+        uint32 nCheckpoints = numCheckpoints[account];
+        return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
+    }
+
+    /**
      * @notice Delegate votes from `msg.sender` to `delegatee`
      * @param delegatee The address to delegate votes to
      */
@@ -198,7 +209,7 @@ contract BMK is IBMK {
     ) public {
         bytes32 domainSeparator =
             keccak256(
-                abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this))
+                abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(NAME)), getChainId(), address(this))
             );
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
@@ -207,16 +218,6 @@ contract BMK is IBMK {
         require(nonce == nonces[signatory]++, "Benchmark: invalid nonce");
         require(block.timestamp <= expiry, "Benchmark: signature expired");
         return _delegate(signatory, delegatee);
-    }
-
-    /**
-     * @notice Gets the current votes balance for `account`
-     * @param account The address to get votes balance
-     * @return The number of current votes for `account`
-     */
-    function getCurrentVotes(address account) external view returns (uint96) {
-        uint32 nCheckpoints = numCheckpoints[account];
-        return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
 
     /**
