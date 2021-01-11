@@ -60,6 +60,32 @@ describe("BenchmarkMarket", async () => {
     snapshotId = await evm_snapshot();
   });
 
+  it("should be able to join a bootstrapped pool with a single token", async () => {
+    const token = tokens.USDT;
+    const amountToTokenize = amountToWei(token, BigNumber.from(10));
+
+    await benchmarkMarket.bootstrap(
+      wallet1.address,
+      amountToTokenize,
+      amountToTokenize,
+      constants.HIGH_GAS_OVERRIDE
+    );
+
+    await testToken.approve(benchmarkMarket.address, constants.MAX_ALLOWANCE);
+    let totalSupplyBalance = await benchmarkMarket.totalSupply();
+
+    await benchmarkMarket
+      .connect(wallet1)
+      .joinPoolSingleToken(
+        wallet1.address,
+        testToken.address,
+        amountToTokenize.div(10),
+        totalSupplyBalance.div(21)
+      );
+    let wallet1Balance = await benchmarkMarket.balanceOf(wallet1.address);
+    assert(BigNumber.from(wallet1Balance).gt(0));
+  });
+
   it("should be able to bootstrap", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
@@ -122,30 +148,6 @@ describe("BenchmarkMarket", async () => {
     expect(yieldTokenBalance).to.be.equal(amountToTokenize.mul(2));
     expect(testTokenBalance).to.be.equal(amountToTokenize.mul(2));
     expect(totalSupplyBalance).to.be.equal(totalSupply.mul(2));
-  });
-
-  it("should be able to join a bootstrapped pool with a single token", async () => {
-    const token = tokens.USDT;
-    const amountToTokenize = amountToWei(token, BigNumber.from(10));
-
-    await benchmarkMarket.bootstrap(
-      amountToTokenize,
-      amountToTokenize,
-      constants.HIGH_GAS_OVERRIDE
-    );
-
-    await testToken.approve(benchmarkMarket.address, constants.MAX_ALLOWANCE);
-    let totalSupplyBalance = await benchmarkMarket.totalSupply();
-
-    await benchmarkMarket
-      .connect(wallet1)
-      .joinPoolSingleToken(
-        testToken.address,
-        amountToTokenize.div(10),
-        totalSupplyBalance.div(21)
-      );
-    let wallet1Balance = await benchmarkMarket.balanceOf(wallet1.address);
-    assert(BigNumber.from(wallet1Balance).gt(0));
   });
 
   it("should be able to swap amount out", async () => {
@@ -235,6 +237,7 @@ describe("BenchmarkMarket", async () => {
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
 
     await benchmarkMarket.bootstrap(
+      wallet1.address,
       amountToTokenize,
       amountToTokenize,
       constants.HIGH_GAS_OVERRIDE
@@ -293,13 +296,19 @@ describe("BenchmarkMarket", async () => {
   it("should be able to exit a pool with a single token", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
-    await benchmarkMarket.bootstrap(amountToTokenize, amountToTokenize);
+    await benchmarkMarket.bootstrap(
+      wallet.address,
+      amountToTokenize,
+      amountToTokenize,
+      constants.HIGH_GAS_OVERRIDE
+    );
 
     await advanceTime(provider, constants.ONE_MONTH);
 
     const totalSupply = await benchmarkMarket.totalSupply();
 
     await benchmarkMarket.exitPoolSingleToken(
+      wallet.address,
       benchmarkFutureYieldToken.address,
       totalSupply.div(4),
       amountToTokenize.div(6),
