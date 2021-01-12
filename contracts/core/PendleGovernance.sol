@@ -314,10 +314,7 @@ contract PendleGovernance is IPendleGovernance {
 
     function cancel(uint256 proposalId) public {
         ProposalState currentState = state(proposalId);
-        require(
-            currentState != ProposalState.Executed,
-            "Pendle: cannot cancel executed proposal"
-        );
+        require(currentState != ProposalState.Executed, "Pendle: cannot cancel executed proposal");
 
         Proposal storage proposal = proposals[proposalId];
         require(

@@ -302,10 +302,6 @@ contract PendleAaveForge is IPendleForge, ReentrancyGuard {
         returns (PendleTokens memory _tokens)
     {
         IPendleData data = core.data();
-        (_tokens.ot, _tokens.xyt) = data.getPendleYieldTokens(
-            forgeId,
-            _underlyingAsset,
-            _expiry
-        );
+        (_tokens.ot, _tokens.xyt) = data.getPendleYieldTokens(forgeId, _underlyingAsset, _expiry);
     }
 }
