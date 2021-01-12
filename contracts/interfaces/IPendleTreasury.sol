@@ -23,25 +23,16 @@
 
 pragma solidity ^0.7.0;
 
-import "./IBenchmarkBaseToken.sol";
-import {Utils} from "../libraries/BenchmarkLibrary.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IBenchmarkYieldToken is IBenchmarkBaseToken {
-    /**
-     * @notice Gets the forge address of the BenchmarkForge contract for this yield token.
-     * @return Retuns the forge address.
-     **/
-    function forge() external view returns (address);
+interface IPendleTreasury {
+    function setFundPercentage(uint256 _fundPercentage) external;
 
-    /**
-     * @notice Returns the address of the underlying asset.
-     * @return Returns the underlying asset address.
-     **/
-    function underlyingAsset() external view returns (address);
+    function deposit(IERC20 token, uint256 amount) external;
 
-    /**
-     * @notice Returns the address of the underlying yield token.
-     * @return Returns the underlying yield token address.
-     **/
-    function underlyingYieldToken() external view returns (address);
+    function withdraw(uint256 amount, address withdrawAddress) external;
+
+    function balanceOf(IERC20 token) external view returns (uint256);
+
+    function fundToken() external view returns (IERC20);
 }

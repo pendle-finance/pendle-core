@@ -23,4 +23,25 @@
 
 pragma solidity ^0.7.0;
 
-interface IBenchmarkGovernance {}
+import "./IPendleBaseToken.sol";
+import {Utils} from "../libraries/PendleLibrary.sol";
+
+interface IPendleYieldToken is IPendleBaseToken {
+    /**
+     * @notice Gets the forge address of the PendleForge contract for this yield token.
+     * @return Retuns the forge address.
+     **/
+    function forge() external view returns (address);
+
+    /**
+     * @notice Returns the address of the underlying asset.
+     * @return Returns the underlying asset address.
+     **/
+    function underlyingAsset() external view returns (address);
+
+    /**
+     * @notice Returns the address of the underlying yield token.
+     * @return Returns the underlying yield token address.
+     **/
+    function underlyingYieldToken() external view returns (address);
+}

@@ -22,11 +22,11 @@
  */
 pragma solidity ^0.7.0;
 
-import "./BenchmarkBaseToken.sol";
-import "../interfaces/IBenchmarkForge.sol";
-import "../interfaces/IBenchmarkYieldToken.sol";
+import "./PendleBaseToken.sol";
+import "../interfaces/IPendleForge.sol";
+import "../interfaces/IPendleYieldToken.sol";
 
-contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
+contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldToken {
     address public override forge;
     address public override underlyingAsset;
     address public override underlyingYieldToken;
@@ -42,7 +42,7 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
         uint8 _underlyingYieldTokenDecimals,
         uint256 _start,
         uint256 _expiry
-    ) BenchmarkBaseToken(_name, _symbol, _underlyingYieldTokenDecimals, _start, _expiry) {
+    ) PendleBaseToken(_name, _symbol, _underlyingYieldTokenDecimals, _start, _expiry) {
         forge = msg.sender;
         ot = _ot;
         underlyingAsset = _underlyingAsset;
@@ -50,7 +50,7 @@ contract BenchmarkFutureYieldToken is BenchmarkBaseToken, IBenchmarkYieldToken {
     }
 
     function _beforeTokenTransfer(address from, address to) internal override {
-        IBenchmarkForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, from);
-        IBenchmarkForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, to);
+        IPendleForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, from);
+        IPendleForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, to);
     }
 }

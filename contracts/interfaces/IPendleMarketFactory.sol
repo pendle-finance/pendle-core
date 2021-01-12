@@ -23,12 +23,12 @@
 
 pragma solidity ^0.7.0;
 
-import {Utils} from "../libraries/BenchmarkLibrary.sol";
-import "./IBenchmark.sol";
+import {Utils} from "../libraries/PendleLibrary.sol";
+import "./IPendle.sol";
 
-interface IBenchmarkMarketFactory {
+interface IPendleMarketFactory {
     /**
-     * @notice Emitted when Benchmark core contract reference is changed.
+     * @notice Emitted when Pendle core contract reference is changed.
      * @param core The address of the new core contract.
      **/
     event CoreSet(address core);
@@ -57,16 +57,16 @@ interface IBenchmarkMarketFactory {
     ) external returns (address market);
 
     /**
-     * @notice Sets the Benchmark core contract reference.
+     * @notice Sets the Pendle core contract reference.
      * @param _core Address of the new core contract.
      **/
-    function setCore(IBenchmark _core) external;
+    function setCore(IPendle _core) external;
 
     /**
-     * @notice Gets a reference to the Benchmark core contract.
+     * @notice Gets a reference to the Pendle core contract.
      * @return Returns the core contract reference.
      **/
-    function core() external view returns (IBenchmark);
+    function core() external view returns (IPendle);
 
     function marketFactoryId() external view returns (bytes32);
 }

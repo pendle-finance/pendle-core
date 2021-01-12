@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { Contract, BigNumber } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
 
-import { benchmarkFixture } from "./fixtures";
+import { pendleFixture } from "./fixtures";
 import {
   constants,
   tokens,
@@ -19,33 +19,33 @@ import { toUtf8CodePoints } from "ethers/lib/utils";
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
-describe("Benchmark", async () => {
+describe("Pendle", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [wallet] = wallets;
 
-  let benchmark: Contract;
-  let benchmarkTreasury: Contract;
-  let benchmarkAaveMarketFactory: Contract;
-  let benchmarkData: Contract;
-  let benchmarkOwnershipToken: Contract;
-  let benchmarkFutureYieldToken: Contract;
+  let pendle: Contract;
+  let pendleTreasury: Contract;
+  let pendleAaveMarketFactory: Contract;
+  let pendleData: Contract;
+  let pendleOwnershipToken: Contract;
+  let pendleFutureYieldToken: Contract;
   let lendingPoolCore: Contract;
-  let benchmarkAaveForge: Contract;
+  let pendleAaveForge: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
-    const fixture = await loadFixture(benchmarkFixture);
-    benchmark = fixture.core.benchmark;
-    benchmarkTreasury = fixture.core.benchmarkTreasury;
-    benchmarkAaveMarketFactory = fixture.core.benchmarkAaveMarketFactory;
-    benchmarkData = fixture.core.benchmarkData;
-    benchmarkOwnershipToken = fixture.forge.benchmarkOwnershipToken;
-    benchmarkFutureYieldToken = fixture.forge.benchmarkFutureYieldToken;
-    benchmarkAaveForge = fixture.forge.benchmarkAaveForge;
+    const fixture = await loadFixture(pendleFixture);
+    pendle = fixture.core.pendle;
+    pendleTreasury = fixture.core.pendleTreasury;
+    pendleAaveMarketFactory = fixture.core.pendleAaveMarketFactory;
+    pendleData = fixture.core.pendleData;
+    pendleOwnershipToken = fixture.forge.pendleOwnershipToken;
+    pendleFutureYieldToken = fixture.forge.pendleFutureYieldToken;
+    pendleAaveForge = fixture.forge.pendleAaveForge;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     snapshotId = await evm_snapshot();
   });
@@ -62,17 +62,17 @@ describe("Benchmark", async () => {
   it("should be able to deposit aUSDT to get back OT and XYT", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
-    await benchmark.tokenizeYield(
+    await pendle.tokenizeYield(
       constants.FORGE_AAVE,
       token.address,
       constants.TEST_EXPIRY,
       amountToTokenize,
       wallet.address
     );
-    const balanceOwnershipToken = await benchmarkOwnershipToken.balanceOf(
+    const balanceOwnershipToken = await pendleOwnershipToken.balanceOf(
       wallet.address
     );
-    const balanceFutureYieldToken = await benchmarkFutureYieldToken.balanceOf(
+    const balanceFutureYieldToken = await pendleFutureYieldToken.balanceOf(
       wallet.address
     );
     expect(balanceOwnershipToken).to.be.eq(amountToTokenize);
@@ -85,7 +85,7 @@ describe("Benchmark", async () => {
 
     const initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
-    await benchmark.tokenizeYield(
+    await pendle.tokenizeYield(
       constants.FORGE_AAVE,
       token.address,
       constants.TEST_EXPIRY,
@@ -95,7 +95,7 @@ describe("Benchmark", async () => {
     );
     await advanceTime(provider, constants.ONE_MONTH);
 
-    await benchmark.redeemUnderlying(
+    await pendle.redeemUnderlying(
       constants.FORGE_AAVE,
       token.address,
       constants.TEST_EXPIRY,
@@ -120,7 +120,7 @@ describe("Benchmark", async () => {
     const wallet1 = wallets[1];
     const initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
 
-    await benchmark.tokenizeYield(
+    await pendle.tokenizeYield(
       constants.FORGE_AAVE,
       token.address,
       constants.TEST_EXPIRY,
@@ -128,13 +128,13 @@ describe("Benchmark", async () => {
       wallet.address
     );
 
-    const balance = await benchmarkOwnershipToken.balanceOf(wallet.address);
-    await benchmarkOwnershipToken.transfer(wallet1.address, balance);
+    const balance = await pendleOwnershipToken.balanceOf(wallet.address);
+    await pendleOwnershipToken.transfer(wallet1.address, balance);
 
     const afterLendingAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     await advanceTime(provider, constants.ONE_MONTH);
 
-    await benchmark.redeemDueInterests(
+    await pendle.redeemDueInterests(
       constants.FORGE_AAVE,
       token.address,
       constants.TEST_EXPIRY
@@ -160,23 +160,23 @@ describe("Benchmark", async () => {
     const wallet1 = wallets[1];
     const initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
 
-    await benchmark.tokenizeYield(
+    await pendle.tokenizeYield(
       constants.FORGE_AAVE,
       token.address,
       constants.TEST_EXPIRY,
       amountToTokenize,
       wallet.address
     );
-    await benchmarkFutureYieldToken.transfer(wallet1.address, amountToTokenize);
+    await pendleFutureYieldToken.transfer(wallet1.address, amountToTokenize);
     const duration = constants.TEST_EXPIRY.sub(
       Math.round(Date.now() / 1000)
     ).sub(10);
 
     await advanceTime(provider, duration);
 
-    const wallet1Benchmark = benchmark.connect(wallet1);
+    const wallet1Pendle = pendle.connect(wallet1);
 
-    await wallet1Benchmark.redeemDueInterests(
+    await wallet1Pendle.redeemDueInterests(
       constants.FORGE_AAVE,
       token.address,
       constants.TEST_EXPIRY
@@ -190,7 +190,7 @@ describe("Benchmark", async () => {
 
     await advanceTime(provider, BigNumber.from(60));
 
-    await benchmark.redeemAfterExpiry(
+    await pendle.redeemAfterExpiry(
       constants.FORGE_AAVE,
       token.address,
       constants.TEST_EXPIRY,
@@ -211,23 +211,23 @@ describe("Benchmark", async () => {
     const wallet1 = wallets[1];
     const initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
 
-    await benchmark.tokenizeYield(
+    await pendle.tokenizeYield(
       constants.FORGE_AAVE,
       token.address,
       constants.TEST_EXPIRY,
       amountToTokenize,
       wallet.address
     );
-    await benchmarkFutureYieldToken.transfer(wallet1.address, amountToTokenize);
+    await pendleFutureYieldToken.transfer(wallet1.address, amountToTokenize);
     const duration = constants.TEST_EXPIRY.sub(
       Math.round(Date.now() / 1000)
     ).sub(10);
 
     await advanceTime(provider, duration);
 
-    const wallet1Benchmark = benchmark.connect(wallet1);
+    const wallet1Pendle = pendle.connect(wallet1);
 
-    await wallet1Benchmark.redeemDueInterests(
+    await wallet1Pendle.redeemDueInterests(
       constants.FORGE_AAVE,
       token.address,
       constants.TEST_EXPIRY
@@ -235,7 +235,7 @@ describe("Benchmark", async () => {
 
     await advanceTime(provider, constants.ONE_MONTH);
 
-    await benchmark.redeemAfterExpiry(
+    await pendle.redeemAfterExpiry(
       constants.FORGE_AAVE,
       token.address,
       constants.TEST_EXPIRY,
@@ -252,8 +252,8 @@ describe("Benchmark", async () => {
     );
   });
   it("Should be able to remove a forge", async () => {
-    await benchmark.removeForge(constants.FORGE_AAVE);
-    let deleted = await benchmarkData.getForgeAddress(constants.FORGE_AAVE);
+    await pendle.removeForge(constants.FORGE_AAVE);
+    let deleted = await pendleData.getForgeAddress(constants.FORGE_AAVE);
     expect(deleted).to.be.equal("0x0000000000000000000000000000000000000000");
   });
 });

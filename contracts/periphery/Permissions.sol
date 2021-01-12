@@ -32,23 +32,23 @@ abstract contract Permissions {
     event TokenWithdraw(IERC20 token, uint256 amount, address sendTo);
 
     constructor(address _governance) {
-        require(_governance != address(0), "Benchmark: zero address");
+        require(_governance != address(0), "Pendle: zero address");
         initializer = msg.sender;
         governance = _governance;
     }
 
     modifier initialized() {
-        require(initializer == address(0), "Benchmark: not initialized");
+        require(initializer == address(0), "Pendle: not initialized");
         _;
     }
 
     modifier onlyGovernance() {
-        require(msg.sender == governance, "Benchmark: only governance");
+        require(msg.sender == governance, "Pendle: only governance");
         _;
     }
 
     /**
-     * @dev Allows governance to withdraw Ether in a Benchmark contract
+     * @dev Allows governance to withdraw Ether in a Pendle contract
      *      in case of accidental ETH transfer into the contract.
      * @param amount The amount of Ether to withdraw.
      * @param sendTo The recipient address.
@@ -60,7 +60,7 @@ abstract contract Permissions {
     }
 
     /**
-     * @dev Allows governance to withdraw all IERC20 compatible tokens in a Benchmark
+     * @dev Allows governance to withdraw all IERC20 compatible tokens in a Pendle
      *      contract in case of accidental token transfer into the contract.
      * @param token IERC20 The address of the token contract.
      * @param amount The amount of IERC20 tokens to withdraw.

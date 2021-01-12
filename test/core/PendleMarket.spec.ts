@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { Contract, BigNumber } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
 
-import { benchmarkMarketFixture } from "./fixtures";
+import { pendleMarketFixture } from "./fixtures";
 import {
   constants,
   tokens,
@@ -15,19 +15,19 @@ import {
 const { waffle } = require("hardhat");
 const { deployContract, provider } = waffle;
 
-describe("BenchmarkMarket", async () => {
+describe("PendleMarket", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [wallet, wallet1] = wallets;
-  let benchmark: Contract;
-  let benchmarkTreasury: Contract;
-  let benchmarkAaveMarketFactory: Contract;
-  let benchmarkData: Contract;
-  let benchmarkOwnershipToken: Contract;
-  let benchmarkFutureYieldToken: Contract;
+  let pendle: Contract;
+  let pendleTreasury: Contract;
+  let pendleAaveMarketFactory: Contract;
+  let pendleData: Contract;
+  let pendleOwnershipToken: Contract;
+  let pendleFutureYieldToken: Contract;
   let lendingPoolCore: Contract;
-  let benchmarkAaveForge: Contract;
-  let benchmarkMarket: Contract;
+  let pendleAaveForge: Contract;
+  let pendleMarket: Contract;
   let testToken: Contract;
   let aUSDT: Contract;
   let snapshotId: string;
@@ -36,17 +36,17 @@ describe("BenchmarkMarket", async () => {
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
-    const fixture = await loadFixture(benchmarkMarketFixture);
-    benchmark = fixture.core.benchmark;
-    benchmarkTreasury = fixture.core.benchmarkTreasury;
-    benchmarkAaveMarketFactory = fixture.core.benchmarkAaveMarketFactory;
-    benchmarkData = fixture.core.benchmarkData;
-    benchmarkOwnershipToken = fixture.forge.benchmarkOwnershipToken;
-    benchmarkFutureYieldToken = fixture.forge.benchmarkFutureYieldToken;
-    benchmarkAaveForge = fixture.forge.benchmarkAaveForge;
+    const fixture = await loadFixture(pendleMarketFixture);
+    pendle = fixture.core.pendle;
+    pendleTreasury = fixture.core.pendleTreasury;
+    pendleAaveMarketFactory = fixture.core.pendleAaveMarketFactory;
+    pendleData = fixture.core.pendleData;
+    pendleOwnershipToken = fixture.forge.pendleOwnershipToken;
+    pendleFutureYieldToken = fixture.forge.pendleFutureYieldToken;
+    pendleAaveForge = fixture.forge.pendleAaveForge;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     testToken = fixture.testToken;
-    benchmarkMarket = fixture.benchmarkMarket;
+    pendleMarket = fixture.pendleMarket;
     aUSDT = await getAContract(wallet, lendingPoolCore, tokens.USDT);
     snapshotId = await evm_snapshot();
   });
@@ -64,20 +64,20 @@ describe("BenchmarkMarket", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
 
-    await benchmark.bootStrapMarket(
+    await pendle.bootStrapMarket(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
-      benchmarkFutureYieldToken.address,
+      pendleFutureYieldToken.address,
       testToken.address,
       amountToTokenize,
       amountToTokenize,
       constants.HIGH_GAS_OVERRIDE
     );
-    let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
-      benchmarkMarket.address
+    let yieldTokenBalance = await pendleFutureYieldToken.balanceOf(
+      pendleMarket.address
     );
-    let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address);
-    let totalSupply = await benchmarkMarket.totalSupply();
+    let testTokenBalance = await testToken.balanceOf(pendleMarket.address);
+    let totalSupply = await pendleMarket.totalSupply();
 
     expect(yieldTokenBalance).to.be.equal(amountToTokenize);
     expect(testTokenBalance).to.be.equal(amountToTokenize);
@@ -87,26 +87,26 @@ describe("BenchmarkMarket", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(10));
 
-    await benchmark.bootStrapMarket(
+    await pendle.bootStrapMarket(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
-      benchmarkFutureYieldToken.address,
+      pendleFutureYieldToken.address,
       testToken.address,
       amountToTokenize,
       amountToTokenize,
       constants.HIGH_GAS_OVERRIDE
     );
 
-    await testToken.approve(benchmarkMarket.address, constants.MAX_ALLOWANCE);
+    await testToken.approve(pendleMarket.address, constants.MAX_ALLOWANCE);
 
-    const totalSupply = await benchmarkMarket.totalSupply();
+    const totalSupply = await pendleMarket.totalSupply();
 
-    await benchmark
+    await pendle
       .connect(wallet1)
       .addMarketLiquidity(
         constants.FORGE_AAVE,
         constants.MARKET_FACTORY_AAVE,
-        benchmarkFutureYieldToken.address,
+        pendleFutureYieldToken.address,
         testToken.address,
         totalSupply,
         amountToTokenize,
@@ -114,11 +114,11 @@ describe("BenchmarkMarket", async () => {
         constants.HIGH_GAS_OVERRIDE
       );
 
-    let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
-      benchmarkMarket.address
+    let yieldTokenBalance = await pendleFutureYieldToken.balanceOf(
+      pendleMarket.address
     );
-    let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address);
-    let totalSupplyBalance = await benchmarkMarket.totalSupply();
+    let testTokenBalance = await testToken.balanceOf(pendleMarket.address);
+    let totalSupplyBalance = await pendleMarket.totalSupply();
 
     expect(yieldTokenBalance).to.be.equal(amountToTokenize.mul(2));
     expect(testTokenBalance).to.be.equal(amountToTokenize.mul(2));
@@ -129,22 +129,22 @@ describe("BenchmarkMarket", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
 
-    await benchmark.bootStrapMarket(
+    await pendle.bootStrapMarket(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
-      benchmarkFutureYieldToken.address,
+      pendleFutureYieldToken.address,
       testToken.address,
       amountToTokenize,
       amountToTokenize,
       constants.HIGH_GAS_OVERRIDE
     );
 
-    await benchmark
+    await pendle
       .connect(wallet1)
       .swapXytFromToken(
         constants.FORGE_AAVE,
         constants.MARKET_FACTORY_AAVE,
-        benchmarkFutureYieldToken.address,
+        pendleFutureYieldToken.address,
         testToken.address,
         amountToTokenize.div(10),
         constants.MAX_ALLOWANCE,
@@ -152,10 +152,10 @@ describe("BenchmarkMarket", async () => {
         constants.HIGH_GAS_OVERRIDE
       );
 
-    let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
-      benchmarkMarket.address
+    let yieldTokenBalance = await pendleFutureYieldToken.balanceOf(
+      pendleMarket.address
     );
-    let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address);
+    let testTokenBalance = await testToken.balanceOf(pendleMarket.address);
 
     expect(yieldTokenBalance).to.be.equal(
       amountToTokenize.sub(amountToTokenize.div(10))
@@ -167,22 +167,22 @@ describe("BenchmarkMarket", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
 
-    await benchmark.bootStrapMarket(
+    await pendle.bootStrapMarket(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
-      benchmarkFutureYieldToken.address,
+      pendleFutureYieldToken.address,
       testToken.address,
       amountToTokenize,
       amountToTokenize,
       constants.HIGH_GAS_OVERRIDE
     );
 
-    await benchmark
+    await pendle
       .connect(wallet1)
       .swapXytToToken(
         constants.FORGE_AAVE,
         constants.MARKET_FACTORY_AAVE,
-        benchmarkFutureYieldToken.address,
+        pendleFutureYieldToken.address,
         testToken.address,
         amountToTokenize.div(10),
         BigNumber.from(0),
@@ -190,10 +190,10 @@ describe("BenchmarkMarket", async () => {
         constants.HIGH_GAS_OVERRIDE
       );
 
-    let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
-      benchmarkMarket.address
+    let yieldTokenBalance = await pendleFutureYieldToken.balanceOf(
+      pendleMarket.address
     );
-    let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address);
+    let testTokenBalance = await testToken.balanceOf(pendleMarket.address);
 
     expect(yieldTokenBalance.toNumber()).to.be.approximately(
       amountToTokenize.add(amountToTokenize.div(10)).toNumber(),
@@ -210,22 +210,22 @@ describe("BenchmarkMarket", async () => {
   it("should be able to exit a pool", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(100));
-    await benchmark.bootStrapMarket(
+    await pendle.bootStrapMarket(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
-      benchmarkFutureYieldToken.address,
+      pendleFutureYieldToken.address,
       testToken.address,
       amountToTokenize,
       amountToTokenize,
       constants.HIGH_GAS_OVERRIDE
     );
     await advanceTime(provider, constants.ONE_MONTH);
-    const totalSuply = await benchmarkMarket.totalSupply();
+    const totalSuply = await pendleMarket.totalSupply();
 
-    await benchmark.removeMarketLiquidity(
+    await pendle.removeMarketLiquidity(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
-      benchmarkFutureYieldToken.address,
+      pendleFutureYieldToken.address,
       testToken.address,
       totalSuply.div(10),
       amountToTokenize.div(10),
@@ -233,10 +233,10 @@ describe("BenchmarkMarket", async () => {
       constants.HIGH_GAS_OVERRIDE
     );
 
-    let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
-      benchmarkMarket.address
+    let yieldTokenBalance = await pendleFutureYieldToken.balanceOf(
+      pendleMarket.address
     );
-    let testTokenBalance = await testToken.balanceOf(benchmarkMarket.address);
+    let testTokenBalance = await testToken.balanceOf(pendleMarket.address);
 
     expect(yieldTokenBalance).to.be.equal(
       amountToTokenize.sub(amountToTokenize.div(10))

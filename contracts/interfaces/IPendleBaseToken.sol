@@ -25,7 +25,7 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IBenchmarkBaseToken is IERC20 {
+interface IPendleBaseToken is IERC20 {
     /**
      * @notice Emitted when burning OT or XYT tokens.
      * @param account The address performing the burn.

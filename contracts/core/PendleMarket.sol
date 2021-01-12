@@ -22,27 +22,27 @@
  */
 pragma solidity ^0.7.0;
 
-import "../interfaces/IBenchmarkData.sol";
-import "../interfaces/IBenchmarkMarket.sol";
-import "../interfaces/IBenchmarkYieldToken.sol";
-import "../tokens/BenchmarkBaseToken.sol";
-import "../libraries/BenchmarkLibrary.sol";
-import {Math} from "../libraries/BenchmarkLibrary.sol";
+import "../interfaces/IPendleData.sol";
+import "../interfaces/IPendleMarket.sol";
+import "../interfaces/IPendleYieldToken.sol";
+import "../tokens/PendleBaseToken.sol";
+import "../libraries/PendleLibrary.sol";
+import {Math} from "../libraries/PendleLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "hardhat/console.sol";
 
-contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
+contract PendleMarket is IPendleMarket, PendleBaseToken {
     using Math for uint256;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IBenchmark public immutable override core;
+    IPendle public immutable override core;
     address public immutable override factory;
     address public immutable override forge;
     address public immutable override token;
     address public immutable override xyt;
     uint256 public constant override minLiquidity = 10**3;
-    string private constant NAME = "Benchmark Market";
+    string private constant NAME = "Pendle Market";
     string private constant SYMBOL = "BMK-LPT";
     uint256 private constant INITIAL_LP_FOR_CREATOR = 10**18; // arbitrary number
     uint8 private constant DECIMALS = 18;
@@ -64,16 +64,16 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
     constructor(
         address _creator,
-        IBenchmark _core,
+        IPendle _core,
         address _forge,
         address _xyt,
         address _token,
         uint256 _expiry
-    ) BenchmarkBaseToken(NAME, SYMBOL, DECIMALS, block.timestamp, _expiry) {
-        require(address(_core) != address(0), "Benchmark: zero address");
-        require(_forge != address(0), "Benchmark: zero address");
-        require(_xyt != address(0), "Benchmark: zero address");
-        require(_token != address(0), "Benchmark: zero address");
+    ) PendleBaseToken(NAME, SYMBOL, DECIMALS, block.timestamp, _expiry) {
+        require(address(_core) != address(0), "Pendle: zero address");
+        require(_forge != address(0), "Pendle: zero address");
+        require(_xyt != address(0), "Pendle: zero address");
+        require(_token != address(0), "Pendle: zero address");
 
         factory = msg.sender;
         core = _core;
@@ -86,7 +86,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     }
 
     modifier isBootstrapped {
-        require(bootstrapped, "Benchmark: not bootstrapped");
+        require(bootstrapped, "Pendle: not bootstrapped");
         _;
     }
 
@@ -127,7 +127,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         override
         returns (uint256 spot)
     {
-        IBenchmarkData data = core.data();
+        IPendleData data = core.data();
         TokenReserve storage inTokenReserve = reserves[inToken];
         TokenReserve storage outTokenReserve = reserves[outToken];
 
@@ -144,25 +144,25 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     ) external override returns (uint256 outAmount, uint256 spotPriceAfter) {
         _curveShift();
 
-        IBenchmarkData data = core.data();
+        IPendleData data = core.data();
         TokenReserve storage inTokenReserve = reserves[inToken];
         TokenReserve storage outTokenReserve = reserves[outToken];
 
         uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
-        require(spotPriceBefore <= maxPrice, "Benchmark: bad price");
+        require(spotPriceBefore <= maxPrice, "Pendle: bad price");
 
         //calc out amount
         outAmount = _calcOutAmount(inTokenReserve, outTokenReserve, data.swapFee(), inAmount);
-        require(outAmount >= minOutAmount, "Benchmark: low out amount");
+        require(outAmount >= minOutAmount, "Pendle: low out amount");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
 
         spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
 
-        require(spotPriceAfter >= spotPriceBefore, "Benchmark: math problem");
-        require(spotPriceAfter <= maxPrice, "Benchmark: bad price");
-        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "Benchmark: math problem");
+        require(spotPriceAfter >= spotPriceBefore, "Pendle: math problem");
+        require(spotPriceAfter <= maxPrice, "Pendle: bad price");
+        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "Pendle: math problem");
 
         emit Swap(_msgSender, inAmount, outAmount, _msgSender);
 
@@ -182,26 +182,26 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     ) external override returns (uint256 inAmount, uint256 spotPriceAfter) {
         _curveShift();
 
-        IBenchmarkData data = core.data();
+        IPendleData data = core.data();
         TokenReserve storage inTokenReserve = reserves[inToken];
         TokenReserve storage outTokenReserve = reserves[outToken];
 
         //calc spot price
         uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
-        require(spotPriceBefore <= maxPrice, "Benchmark: bad price");
+        require(spotPriceBefore <= maxPrice, "Pendle: bad price");
 
         //calc in amount
         inAmount = _calcInAmount(inTokenReserve, outTokenReserve, data.swapFee(), outAmount);
-        require(inAmount <= maxInAmount, "Benchmark: high in amount");
+        require(inAmount <= maxInAmount, "Pendle: high in amount");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
 
         spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
 
-        require(spotPriceAfter >= spotPriceBefore, "Benchmark: math problem");
-        require(spotPriceAfter <= maxPrice, "Benchmark: bad price");
-        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "Benchmark: math problem");
+        require(spotPriceAfter >= spotPriceBefore, "Pendle: math problem");
+        require(spotPriceAfter <= maxPrice, "Pendle: bad price");
+        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "Pendle: math problem");
 
         emit Swap(_msgSender, inAmount, outAmount, _msgSender);
 
@@ -224,13 +224,13 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     ) external override {
         uint256 totalLp = totalSupply;
         uint256 ratio = Math.rdiv(outAmountLp, totalLp);
-        require(ratio != 0, "Benchmark: math problem");
+        require(ratio != 0, "Pendle: math problem");
 
         //calc and inject xyt token
         uint256 balanceToken = reserves[xyt].balance;
         uint256 inAmount = Math.rmul(ratio, balanceToken);
-        require(inAmount != 0, "Benchmark: math problem");
-        require(inAmount <= maxInAmoutXyt, "Benchmark: beyond amount limit");
+        require(inAmount != 0, "Pendle: math problem");
+        require(inAmount <= maxInAmoutXyt, "Pendle: beyond amount limit");
         reserves[xyt].balance = reserves[xyt].balance.add(inAmount);
         emit Join(_msgSender, xyt, inAmount);
         _pullToken(xyt, _msgSender, inAmount);
@@ -238,8 +238,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         //calc and inject pair token
         balanceToken = reserves[token].balance;
         inAmount = Math.rmul(ratio, balanceToken);
-        require(inAmount != 0, "Benchmark: math problem");
-        require(inAmount <= maxInAmountPair, "Benchmark: beyond amount limit");
+        require(inAmount != 0, "Pendle: math problem");
+        require(inAmount <= maxInAmountPair, "Pendle: beyond amount limit");
         reserves[token].balance = reserves[token].balance.add(inAmount);
         emit Join(_msgSender, token, inAmount);
         _pullToken(token, _msgSender, inAmount);
@@ -255,11 +255,11 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         console.log("\t\t\t[contract] globalIncomeIndex=", globalIncomeIndex);
         console.log(
             "\t\t\t[contract] underlyingYieldTokenAsset bal of account=",
-            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(a)
+            IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).balanceOf(a)
         );
         console.log(
             "\t\t\t[contract] underlyingYieldToken bal of amm =",
-            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this))
+            IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this))
         );
         console.log(
             "\t\t\t[contract] lastGlobalIncomeIndex of account = ",
@@ -277,19 +277,19 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 minOutAmountXyt,
         uint256 minOutAmountPair
     ) external override {
-        IBenchmarkData data = core.data();
+        IPendleData data = core.data();
         uint256 exitFee = data.exitFee();
         uint256 totalLp = totalSupply;
         uint256 exitFees = Math.rmul(inAmountLp, exitFee);
         uint256 inLpAfterExitFee = inAmountLp.sub(exitFee);
         uint256 ratio = Math.rdiv(inLpAfterExitFee, totalLp);
-        require(ratio != 0, "Benchmark: math problem");
+        require(ratio != 0, "Pendle: math problem");
 
         //calc and withdraw xyt token
         uint256 balanceToken = reserves[xyt].balance;
         uint256 outAmount = Math.rmul(ratio, balanceToken);
-        require(outAmount != 0, "Benchmark: math problem");
-        require(outAmount >= minOutAmountXyt, "Benchmark: beyond amount limit");
+        require(outAmount != 0, "Pendle: math problem");
+        require(outAmount >= minOutAmountXyt, "Pendle: beyond amount limit");
         reserves[xyt].balance = reserves[xyt].balance.sub(outAmount);
         emit Exit(_msgSender, xyt, outAmount);
         _pushToken(xyt, _msgSender, outAmount);
@@ -297,8 +297,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         //calc and withdraw pair token
         balanceToken = reserves[token].balance;
         outAmount = Math.rmul(ratio, balanceToken);
-        require(outAmount != 0, "Benchmark: math problem");
-        require(outAmount >= minOutAmountPair, "Benchmark: beyond amount limit");
+        require(outAmount != 0, "Pendle: math problem");
+        require(outAmount >= minOutAmountPair, "Pendle: beyond amount limit");
         reserves[token].balance = reserves[token].balance.sub(outAmount);
         emit Exit(_msgSender, token, outAmount);
         _pushToken(token, _msgSender, outAmount);
@@ -315,7 +315,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 inAmount,
         uint256 minOutAmountLp
     ) external override returns (uint256 outAmountLp) {
-        IBenchmarkData data = core.data();
+        IPendleData data = core.data();
         TokenReserve storage inTokenReserve = reserves[inToken];
         uint256 totalLp = totalSupply;
         uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
@@ -328,7 +328,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             totalLp,
             totalWeight
         );
-        require(outAmountLp >= minOutAmountLp, "Benchmark: bad lp out amount");
+        require(outAmountLp >= minOutAmountLp, "Pendle: bad lp out amount");
 
         //update reserves and operate underlying lp and intoken
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
@@ -348,7 +348,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 inAmountLp,
         uint256 minOutAmountToken
     ) external override returns (uint256 outAmountToken) {
-        IBenchmarkData data = core.data();
+        IPendleData data = core.data();
         TokenReserve storage outTokenReserve = reserves[outToken];
         uint256 exitFee = data.exitFee();
         uint256 totalLp = totalSupply;
@@ -361,7 +361,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             totalWeight,
             inAmountLp
         );
-        require(outAmountToken >= minOutAmountToken, "Benchmark: bad token out amount");
+        require(outAmountToken >= minOutAmountToken, "Pendle: bad token out amount");
 
         //update reserves and operate underlying lp and outtoken
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmountToken);
@@ -446,7 +446,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     }
 
     function _calcOutAmountToken(
-        IBenchmarkData data,
+        IPendleData data,
         TokenReserve memory outTokenReserve,
         uint256 totalSupplyLp,
         uint256 totalWeight,
@@ -505,8 +505,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
     function _updateWeight() internal {
         uint256 currentTime = block.timestamp;
-        uint256 endTime = IBenchmarkYieldToken(xyt).expiry();
-        uint256 startTime = IBenchmarkYieldToken(xyt).start();
+        uint256 endTime = IPendleYieldToken(xyt).expiry();
+        uint256 startTime = IPendleYieldToken(xyt).start();
         //uint256 duration = 6 * 3600 * 24 * 30;
         uint256 duration = endTime - startTime;
 
@@ -520,7 +520,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         console.log("\tduration,", duration);
         console.log("\tWeights before shifting,", xytWeight, tokenWeight);
 
-        require((endTime - currentTime) <= duration, "Benchmark: wrong duration");
+        require((endTime - currentTime) <= duration, "Pendle: wrong duration");
 
         uint256 timeToMature =
             Math.rdiv(
@@ -536,7 +536,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
                 Math.ln(Math.PI_PLUSONE, Math.FORMULA_PRECISION)
             );
         uint256 r = Math.rdiv(priceNow, priceLast);
-        require(Math.FORMULA_PRECISION >= r, "Benchmark: wrong r value");
+        require(Math.FORMULA_PRECISION >= r, "Pendle: wrong r value");
 
         uint256 thetaNumerator =
             Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.FORMULA_PRECISION.sub(r));
@@ -578,7 +578,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
         if (dueInterests == 0) return;
-        IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).safeTransfer(
+        IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).safeTransfer(
             account,
             dueInterests
         );
@@ -591,7 +591,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     //
     function _updateGlobalIncomeIndex() internal {
         uint256 currentUnderlyingYieldTokenBalance =
-            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this));
+            IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this));
         uint256 interestsEarned =
             currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance;
         lastUnderlyingYieldTokenBalance = currentUnderlyingYieldTokenBalance;

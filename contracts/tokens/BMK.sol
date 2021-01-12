@@ -32,7 +32,7 @@ contract BMK is IBMK {
         uint96 votes;
     }
 
-    string public constant NAME = "Benchmark";
+    string public constant NAME = "Pendle";
     string public constant SYMBOL = "BMK";
     uint8 public constant DECIMALS = 18;
     uint256 public constant TOTAL_SUPPLY = 10000000e18; // 10 million Comp
@@ -99,7 +99,7 @@ contract BMK is IBMK {
         if (rawAmount == uint256(-1)) {
             amount = uint96(-1);
         } else {
-            amount = safe96(rawAmount, "Benchmark: amount exceeds 96 bits");
+            amount = safe96(rawAmount, "Pendle: amount exceeds 96 bits");
         }
 
         allowances[msg.sender][spender] = amount;
@@ -115,7 +115,7 @@ contract BMK is IBMK {
      * @return Whether or not the transfer succeeded
      */
     function transfer(address dst, uint256 rawAmount) external returns (bool) {
-        uint96 amount = safe96(rawAmount, "Benchmark::transfer: amount exceeds 96 bits");
+        uint96 amount = safe96(rawAmount, "Pendle::transfer: amount exceeds 96 bits");
         _transferTokens(msg.sender, dst, amount);
         return true;
     }
@@ -134,14 +134,14 @@ contract BMK is IBMK {
     ) external returns (bool) {
         address spender = msg.sender;
         uint96 spenderAllowance = allowances[src][spender];
-        uint96 amount = safe96(rawAmount, "Benchmark::approve: amount exceeds 96 bits");
+        uint96 amount = safe96(rawAmount, "Pendle::approve: amount exceeds 96 bits");
 
         if (spender != src && spenderAllowance != uint96(-1)) {
             uint96 newAllowance =
                 sub96(
                     spenderAllowance,
                     amount,
-                    "Benchmark::transferFrom: transfer amount exceeds spender allowance"
+                    "Pendle::transferFrom: transfer amount exceeds spender allowance"
                 );
             allowances[src][spender] = newAllowance;
 
@@ -213,9 +213,9 @@ contract BMK is IBMK {
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), "Benchmark: invalid signature");
-        require(nonce == nonces[signatory]++, "Benchmark: invalid nonce");
-        require(block.timestamp <= expiry, "Benchmark: signature expired");
+        require(signatory != address(0), "Pendle: invalid signature");
+        require(nonce == nonces[signatory]++, "Pendle: invalid nonce");
+        require(block.timestamp <= expiry, "Pendle: signature expired");
         return _delegate(signatory, delegatee);
     }
 
@@ -232,7 +232,7 @@ contract BMK is IBMK {
         override
         returns (uint96)
     {
-        require(blockNumber < block.number, "Benchmark: not yet determined");
+        require(blockNumber < block.number, "Pendle: not yet determined");
 
         uint32 nCheckpoints = numCheckpoints[account];
         if (nCheckpoints == 0) {
@@ -280,11 +280,11 @@ contract BMK is IBMK {
         address dst,
         uint96 amount
     ) internal {
-        require(src != address(0), "Benchmark: cannot transfer from the zero address");
-        require(dst != address(0), "Benchmark: cannot transfer to the zero address");
+        require(src != address(0), "Pendle: cannot transfer from the zero address");
+        require(dst != address(0), "Pendle: cannot transfer to the zero address");
 
-        balances[src] = sub96(balances[src], amount, "Benchmark: transfer amount exceeds balance");
-        balances[dst] = add96(balances[dst], amount, "Benchmark: transfer amount overflows");
+        balances[src] = sub96(balances[src], amount, "Pendle: transfer amount exceeds balance");
+        balances[dst] = add96(balances[dst], amount, "Pendle: transfer amount overflows");
         emit Transfer(src, dst, amount);
 
         _moveDelegates(delegates[src], delegates[dst], amount);
@@ -299,14 +299,14 @@ contract BMK is IBMK {
             if (srcRep != address(0)) {
                 uint32 srcRepNum = numCheckpoints[srcRep];
                 uint96 srcRepOld = srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
-                uint96 srcRepNew = sub96(srcRepOld, amount, "Benchmark: vote amount underflows");
+                uint96 srcRepNew = sub96(srcRepOld, amount, "Pendle: vote amount underflows");
                 _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
             }
 
             if (dstRep != address(0)) {
                 uint32 dstRepNum = numCheckpoints[dstRep];
                 uint96 dstRepOld = dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;
-                uint96 dstRepNew = add96(dstRepOld, amount, "Benchmark: vote amount overflows");
+                uint96 dstRepNew = add96(dstRepOld, amount, "Pendle: vote amount overflows");
                 _writeCheckpoint(dstRep, dstRepNum, dstRepOld, dstRepNew);
             }
         }
@@ -318,7 +318,7 @@ contract BMK is IBMK {
         uint96 oldVotes,
         uint96 newVotes
     ) internal {
-        uint32 blockNumber = safe32(block.number, "Benchmark: block number exceeds 32 bits");
+        uint32 blockNumber = safe32(block.number, "Pendle: block number exceeds 32 bits");
 
         if (
             nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber

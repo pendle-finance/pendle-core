@@ -23,25 +23,25 @@
 pragma solidity ^0.7.0;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import {Factory, Utils} from "../libraries/BenchmarkLibrary.sol";
+import {Factory, Utils} from "../libraries/PendleLibrary.sol";
 import "../interfaces/IAaveLendingPoolCore.sol";
-import "../interfaces/IBenchmarkBaseToken.sol";
-import "../interfaces/IBenchmarkData.sol";
-import "../interfaces/IBenchmarkForge.sol";
-import "../tokens/BenchmarkFutureYieldToken.sol";
-import "../tokens/BenchmarkOwnershipToken.sol";
+import "../interfaces/IPendleBaseToken.sol";
+import "../interfaces/IPendleData.sol";
+import "../interfaces/IPendleForge.sol";
+import "../tokens/PendleFutureYieldToken.sol";
+import "../tokens/PendleOwnershipToken.sol";
 import "hardhat/console.sol";
 
-contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
+contract PendleAaveForge is IPendleForge, ReentrancyGuard {
     using SafeMath for uint256;
     using Utils for string;
 
-    struct BenchmarkTokens {
-        IBenchmarkYieldToken xyt;
-        IBenchmarkYieldToken ot;
+    struct PendleTokens {
+        IPendleYieldToken xyt;
+        IPendleYieldToken ot;
     }
 
-    IBenchmark public immutable override core;
+    IPendle public immutable override core;
     IAaveLendingPoolCore public immutable aaveLendingPoolCore;
     bytes32 public immutable override forgeId;
 
@@ -53,13 +53,13 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
     string private constant XYT = "XYT-Aave";
 
     constructor(
-        IBenchmark _core,
+        IPendle _core,
         IAaveLendingPoolCore _aaveLendingPoolCore,
         bytes32 _forgeId
     ) {
-        require(address(_core) != address(0), "Benchmark: zero address");
-        require(address(_aaveLendingPoolCore) != address(0), "Benchmark: zero address");
-        require(_forgeId != 0x0, "Benchmark: zero bytes");
+        require(address(_core) != address(0), "Pendle: zero address");
+        require(address(_aaveLendingPoolCore) != address(0), "Pendle: zero address");
+        require(_forgeId != 0x0, "Pendle: zero bytes");
 
         core = _core;
         aaveLendingPoolCore = _aaveLendingPoolCore;
@@ -67,15 +67,15 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
     }
 
     modifier onlyCore() {
-        require(msg.sender == address(core), "Benchmark: only core");
+        require(msg.sender == address(core), "Pendle: only core");
         _;
     }
 
     modifier onlyXYT(address _underlyingAsset, uint256 _expiry) {
-        IBenchmarkData data = core.data();
+        IPendleData data = core.data();
         require(
             msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
-            "Benchmark: only XYT"
+            "Pendle: only XYT"
         );
         _;
     }
@@ -86,12 +86,12 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         returns (address ot, address xyt)
     {
         address aToken = aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset);
-        uint8 aTokenDecimals = IBenchmarkBaseToken(aToken).decimals();
+        uint8 aTokenDecimals = IPendleBaseToken(aToken).decimals();
 
-        string memory otName = OT.concat(IBenchmarkBaseToken(aToken).name(), " ");
-        string memory otSymbol = OT.concat(IBenchmarkBaseToken(aToken).symbol(), "-");
-        string memory xytName = XYT.concat(IBenchmarkBaseToken(aToken).name(), " ");
-        string memory xytSymbol = XYT.concat(IBenchmarkBaseToken(aToken).symbol(), "-");
+        string memory otName = OT.concat(IPendleBaseToken(aToken).name(), " ");
+        string memory otSymbol = OT.concat(IPendleBaseToken(aToken).symbol(), "-");
+        string memory xytName = XYT.concat(IPendleBaseToken(aToken).name(), " ");
+        string memory xytSymbol = XYT.concat(IPendleBaseToken(aToken).symbol(), "-");
 
         ot = _forgeOwnershipToken(
             _underlyingAsset,
@@ -109,7 +109,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
             _expiry
         );
 
-        IBenchmarkData data = core.data();
+        IPendleData data = core.data();
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
         emit NewYieldContracts(ot, xyt, _expiry);
@@ -120,7 +120,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         address _underlyingAsset,
         uint256 _expiry
     ) public override returns (uint256 interests) {
-        BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         return _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
     }
 
@@ -130,7 +130,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         address _account
     ) public override onlyXYT(_underlyingAsset, _expiry) returns (uint256 interests) {
         // console.log("[contract] [Forge] Redeeming due interests for account ", _account);
-        BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
     }
 
@@ -140,10 +140,10 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         uint256 _expiry,
         address _to
     ) public override returns (uint256 redeemedAmount) {
-        require(block.timestamp > _expiry, "Benchmark: must be after expiry");
+        require(block.timestamp > _expiry, "Pendle: must be after expiry");
 
         IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
-        BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         redeemedAmount = tokens.ot.balanceOf(_msgSender);
 
         aToken.transfer(_to, redeemedAmount);
@@ -171,7 +171,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         uint256 _amountToRedeem,
         address _to
     ) public override returns (uint256 redeemedAmount) {
-        BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
 
         require(tokens.ot.balanceOf(_msgSender) >= _amountToRedeem, "Must have enough OT tokens");
         require(
@@ -198,7 +198,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         uint256 _amountToTokenize,
         address _to
     ) public override onlyCore returns (address ot, address xyt) {
-        BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
 
         IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
         aToken.transferFrom(_msgSender, address(this), _amountToTokenize);
@@ -222,7 +222,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
 
         xyt = Factory.createContract(
-            type(BenchmarkFutureYieldToken).creationCode,
+            type(PendleFutureYieldToken).creationCode,
             abi.encodePacked(aToken, _underlyingAsset),
             abi.encode(
                 _ot,
@@ -247,7 +247,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
 
         ot = Factory.createContract(
-            type(BenchmarkOwnershipToken).creationCode,
+            type(PendleOwnershipToken).creationCode,
             abi.encodePacked(aToken, _underlyingAsset),
             abi.encode(
                 aToken,
@@ -262,7 +262,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
     }
 
     function _settleDueInterests(
-        BenchmarkTokens memory _tokens,
+        PendleTokens memory _tokens,
         address _underlyingAsset,
         uint256 _expiry,
         address _account
@@ -299,10 +299,10 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
     function _getTokens(address _underlyingAsset, uint256 _expiry)
         internal
         view
-        returns (BenchmarkTokens memory _tokens)
+        returns (PendleTokens memory _tokens)
     {
-        IBenchmarkData data = core.data();
-        (_tokens.ot, _tokens.xyt) = data.getBenchmarkYieldTokens(
+        IPendleData data = core.data();
+        (_tokens.ot, _tokens.xyt) = data.getPendleYieldTokens(
             forgeId,
             _underlyingAsset,
             _expiry

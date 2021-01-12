@@ -20,19 +20,15 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-
 pragma solidity ^0.7.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../core/Pendle.sol";
 
-interface IBenchmarkTreasury {
-    function setFundPercentage(uint256 _fundPercentage) external;
-
-    function deposit(IERC20 token, uint256 amount) external;
-
-    function withdraw(uint256 amount, address withdrawAddress) external;
-
-    function balanceOf(IERC20 token) external view returns (uint256);
-
-    function fundToken() external view returns (IERC20);
+contract MockPendle is Pendle {
+    constructor()
+        Pendle(
+            0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa,
+            0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB
+        )
+    {}
 }

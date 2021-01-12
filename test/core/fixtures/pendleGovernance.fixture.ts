@@ -1,7 +1,7 @@
 import { Contract, Wallet, providers } from 'ethers'
-import Bmk from '../../../build/artifacts/contracts/core/Benchmark.sol/Benchmark.json'
+import Bmk from '../../../build/artifacts/contracts/core/Pendle.sol/Pendle.json'
 import Timelock from '../../../build/artifacts/contracts/periphery/Timelock.sol/Timelock.json'
-import BenchmarkGovernance from '../../../build/artifacts/contracts/core/BenchmarkGovernance.sol/BenchmarkGovernance.json'
+import PendleGovernance from '../../../build/artifacts/contracts/core/PendleGovernance.sol/PendleGovernance.json'
 import {tokens} from "../../helpers/Constants"
 
 const { waffle } = require("hardhat");
@@ -24,7 +24,7 @@ export async function governanceFixture(
   const timelock = await deployContract(wallet, Timelock, [])
 
   // deploy bmkGovernor
-  const bmkGovernor = await deployContract(wallet, BenchmarkGovernance, [bmk.address, timelock.address, wallet.address])
+  const bmkGovernor = await deployContract(wallet, PendleGovernance, [bmk.address, timelock.address, wallet.address])
 
   return { bmk, timelock, bmkGovernor }
 }

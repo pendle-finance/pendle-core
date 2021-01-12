@@ -22,25 +22,25 @@
  */
 pragma solidity ^0.7.0;
 
-import {Factory} from "../libraries/BenchmarkLibrary.sol";
-import "./BenchmarkMarket.sol";
-import "../interfaces/IBenchmark.sol";
-import "../interfaces/IBenchmarkData.sol";
-import "../interfaces/IBenchmarkMarketFactory.sol";
-import "../interfaces/IBenchmarkYieldToken.sol";
+import {Factory} from "../libraries/PendleLibrary.sol";
+import "./PendleMarket.sol";
+import "../interfaces/IPendle.sol";
+import "../interfaces/IPendleData.sol";
+import "../interfaces/IPendleMarketFactory.sol";
+import "../interfaces/IPendleYieldToken.sol";
 import "../periphery/Permissions.sol";
 
-contract BenchmarkAaveMarketFactory is IBenchmarkMarketFactory, Permissions {
-    IBenchmark public override core;
+contract PendleAaveMarketFactory is IPendleMarketFactory, Permissions {
+    IPendle public override core;
     bytes32 public immutable override marketFactoryId;
 
     constructor(address _governance, bytes32 _marketFactoryId) Permissions(_governance) {
         marketFactoryId = _marketFactoryId;
     }
 
-    function initialize(IBenchmark _core) external {
-        require(msg.sender == initializer, "Benchmark: forbidden");
-        require(address(_core) != address(0), "Benchmark: zero address");
+    function initialize(IPendle _core) external {
+        require(msg.sender == initializer, "Pendle: forbidden");
+        require(address(_core) != address(0), "Pendle: zero address");
 
         initializer = address(0);
         core = _core;
@@ -52,20 +52,20 @@ contract BenchmarkAaveMarketFactory is IBenchmarkMarketFactory, Permissions {
         address _token,
         uint256 _expiry
     ) external override initialized returns (address market) {
-        require(_xyt != _token, "Benchmark: similar tokens");
-        require(_xyt != address(0) && _token != address(0), "Benchmark: zero address");
+        require(_xyt != _token, "Pendle: similar tokens");
+        require(_xyt != address(0) && _token != address(0), "Pendle: zero address");
 
-        IBenchmarkData data = core.data();
+        IPendleData data = core.data();
         address forgeAddress = data.getForgeAddress(_forgeId);
 
         require(
             data.getMarket(_forgeId, marketFactoryId, _xyt, _token) == address(0),
-            "Benchmark: market already exists"
+            "Pendle: market already exists"
         );
-        require(data.isValidXYT(_xyt), "Benchmark: not xyt");
+        require(data.isValidXYT(_xyt), "Pendle: not xyt");
 
         market = Factory.createContract(
-            type(BenchmarkMarket).creationCode,
+            type(PendleMarket).creationCode,
             abi.encodePacked(msg.sender, core, forgeAddress, _xyt, _token, _expiry),
             abi.encode(msg.sender, core, forgeAddress, _xyt, _token, _expiry)
         );
@@ -77,8 +77,8 @@ contract BenchmarkAaveMarketFactory is IBenchmarkMarketFactory, Permissions {
         emit MarketCreated(_xyt, _token, market);
     }
 
-    function setCore(IBenchmark _core) public override onlyGovernance {
-        require(address(_core) != address(0), "Benchmark: zero address");
+    function setCore(IPendle _core) public override onlyGovernance {
+        require(address(_core) != address(0), "Pendle: zero address");
 
         core = _core;
         emit CoreSet(address(_core));

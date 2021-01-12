@@ -2,25 +2,25 @@ import { expect, assert } from "chai";
 import { Contract } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
 
-import { benchmarkCoreFixture } from "./fixtures";
+import { pendleCoreFixture } from "./fixtures";
 import { evm_revert, evm_snapshot } from "../helpers";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
-describe("BenchmarkData", async () => {
+describe("PendleData", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
 
-  let benchmarkData: Contract;
+  let pendleData: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
-    const fixture = await loadFixture(benchmarkCoreFixture);
-    benchmarkData = fixture.benchmarkData;
+    const fixture = await loadFixture(pendleCoreFixture);
+    pendleData = fixture.pendleData;
 
     snapshotId = await evm_snapshot();
   });
@@ -35,20 +35,20 @@ describe("BenchmarkData", async () => {
   });
 
   it("should be able to setMarketFees", async () => {
-    await benchmarkData.setMarketFees(10, 100);
-    let swapFee = await benchmarkData.swapFee();
-    let exitFee = await benchmarkData.exitFee();
+    await pendleData.setMarketFees(10, 100);
+    let swapFee = await pendleData.swapFee();
+    let exitFee = await pendleData.exitFee();
     expect(swapFee).to.be.eq(10);
     expect(exitFee).to.be.eq(100);
   });
 
   it("allMarketsLength", async () => {
-    let allMarketsLength = await benchmarkData.allMarketsLength();
+    let allMarketsLength = await pendleData.allMarketsLength();
     expect(allMarketsLength).to.be.eq(0);
   });
 
   it("getAllMarkets", async () => {
-    let getAllMarkets = await benchmarkData.getAllMarkets();
+    let getAllMarkets = await pendleData.getAllMarkets();
     assert(Array.isArray(getAllMarkets));
   });
 });

@@ -1,7 +1,7 @@
 const {
   deployContracts,
   deployCoreContracts,
-  deployTestBenchmarkTokens,
+  deployTestPendleTokens,
   constants
 } = require('../test/helpers/Helpers');
 
@@ -13,7 +13,7 @@ async function main() {
     const contracts = await deployCoreContracts(accounts[0], constants.kovan);
     console.log('\tDone deploying core contracts');
 
-    await deployTestBenchmarkTokens(contracts, constants.kovan);
+    await deployTestPendleTokens(contracts, constants.kovan);
     console.log('\tDone deploying Test XYT and OT contracts');
   });
 }

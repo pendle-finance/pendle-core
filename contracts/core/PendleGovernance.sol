@@ -24,17 +24,17 @@ pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-import "../interfaces/IBenchmarkGovernance.sol";
+import "../interfaces/IPendleGovernance.sol";
 import "../interfaces/IBMK.sol";
 import "../interfaces/ITimelock.sol";
 
-contract BenchmarkGovernance is IBenchmarkGovernance {
+contract PendleGovernance is IPendleGovernance {
     using SafeMath for uint256;
 
     /**
      * @notice The name of this contract
      **/
-    string public constant NAME = "Benchmark Governance";
+    string public constant NAME = "Pendle Governance";
 
     /**
      * @notice The number of votes in support of a proposal required in order
@@ -78,7 +78,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
     ITimelock public timelock;
 
     /**
-     * @notice The address of the Benchmark governance token
+     * @notice The address of the Pendle governance token
      */
     IBMK public bmk;
 
@@ -198,27 +198,27 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
     ) public returns (uint256) {
         require(
             bmk.getPriorVotes(msg.sender, block.number.sub(1)) > proposalThreshold(),
-            "Benchmark: proposer votes below proposal threshold"
+            "Pendle: proposer votes below proposal threshold"
         );
         require(
             targets.length == values.length &&
                 targets.length == signatures.length &&
                 targets.length == calldatas.length,
-            "Benchmark: proposal function information arity mismatch"
+            "Pendle: proposal function information arity mismatch"
         );
-        require(targets.length != 0, "Benchmark: must provide actions");
-        require(targets.length <= proposalMaxOperations(), "Benchmark: too many actions");
+        require(targets.length != 0, "Pendle: must provide actions");
+        require(targets.length <= proposalMaxOperations(), "Pendle: too many actions");
 
         uint256 latestProposalId = latestProposalIds[msg.sender];
         if (latestProposalId != 0) {
             ProposalState proposersLatestProposalState = state(latestProposalId);
             require(
                 proposersLatestProposalState != ProposalState.Active,
-                "Benchmark: one live proposal per proposer, found an already active proposal"
+                "Pendle: one live proposal per proposer, found an already active proposal"
             );
             require(
                 proposersLatestProposalState != ProposalState.Pending,
-                "Benchmark: one live proposal per proposer, found an already pending proposal"
+                "Pendle: one live proposal per proposer, found an already pending proposal"
             );
         }
 
@@ -260,7 +260,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
     function queue(uint256 proposalId) public {
         require(
             state(proposalId) == ProposalState.Succeeded,
-            "Benchmark: proposal can only be queued if it is succeeded"
+            "Pendle: proposal can only be queued if it is succeeded"
         );
         Proposal storage proposal = proposals[proposalId];
         uint256 eta = block.timestamp.add(timelock.delay());
@@ -288,7 +288,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
             !timelock.queuedTransactions(
                 keccak256(abi.encode(target, value, signature, data, eta))
             ),
-            "Benchmark: proposal action already queued at eta"
+            "Pendle: proposal action already queued at eta"
         );
         timelock.queueTransaction(target, value, signature, data, eta);
     }
@@ -296,7 +296,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
     function execute(uint256 proposalId) public payable {
         require(
             state(proposalId) == ProposalState.Queued,
-            "Benchmark: proposal can only be executed if it is queued"
+            "Pendle: proposal can only be executed if it is queued"
         );
         Proposal storage proposal = proposals[proposalId];
         proposal.executed = true;
@@ -316,14 +316,14 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
         ProposalState currentState = state(proposalId);
         require(
             currentState != ProposalState.Executed,
-            "Benchmark: cannot cancel executed proposal"
+            "Pendle: cannot cancel executed proposal"
         );
 
         Proposal storage proposal = proposals[proposalId];
         require(
             msg.sender == guardian ||
                 bmk.getPriorVotes(proposal.proposer, block.number.sub(1)) < proposalThreshold(),
-            "Benchmark: proposer above threshold"
+            "Pendle: proposer above threshold"
         );
 
         proposal.canceled = true;
@@ -359,7 +359,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
     }
 
     function state(uint256 proposalId) public view returns (ProposalState) {
-        require(proposalCount >= proposalId && proposalId > 0, "Benchmark: invalid proposal id");
+        require(proposalCount >= proposalId && proposalId > 0, "Pendle: invalid proposal id");
         Proposal storage proposal = proposals[proposalId];
         if (proposal.canceled) {
             return ProposalState.Canceled;
@@ -400,7 +400,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
         bytes32 structHash = keccak256(abi.encode(BALLOT_TYPEHASH, proposalId, support));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), "Benchmark: invalid signature");
+        require(signatory != address(0), "Pendle: invalid signature");
         return _castVote(signatory, proposalId, support);
     }
 
@@ -409,10 +409,10 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
         uint256 proposalId,
         bool support
     ) internal {
-        require(state(proposalId) == ProposalState.Active, "Benchmark: voting is closed");
+        require(state(proposalId) == ProposalState.Active, "Pendle: voting is closed");
         Proposal storage proposal = proposals[proposalId];
         Receipt storage receipt = proposal.receipts[voter];
-        require(receipt.hasVoted == false, "Benchmark::_castVote: voter already voted");
+        require(receipt.hasVoted == false, "Pendle::_castVote: voter already voted");
         uint96 votes = bmk.getPriorVotes(voter, proposal.startBlock);
 
         if (support) {
@@ -429,17 +429,17 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
     }
 
     function __acceptAdmin() public {
-        require(msg.sender == guardian, "Benchmark: sender must be gov guardian");
+        require(msg.sender == guardian, "Pendle: sender must be gov guardian");
         timelock.acceptAdmin();
     }
 
     function __abdicate() public {
-        require(msg.sender == guardian, "Benchmark: sender must be gov guardian");
+        require(msg.sender == guardian, "Pendle: sender must be gov guardian");
         guardian = address(0);
     }
 
     function __queueSetTimelockPendingAdmin(address newPendingAdmin, uint256 eta) public {
-        require(msg.sender == guardian, "Benchmark: sender must be gov guardian");
+        require(msg.sender == guardian, "Pendle: sender must be gov guardian");
         timelock.queueTransaction(
             address(timelock),
             0,
@@ -450,7 +450,7 @@ contract BenchmarkGovernance is IBenchmarkGovernance {
     }
 
     function __executeSetTimelockPendingAdmin(address newPendingAdmin, uint256 eta) public {
-        require(msg.sender == guardian, "Benchmark: sender must be gov guardian");
+        require(msg.sender == guardian, "Pendle: sender must be gov guardian");
         timelock.executeTransaction(
             address(timelock),
             0,

@@ -22,10 +22,10 @@
  */
 pragma solidity ^0.7.0;
 
-import "./BenchmarkBaseToken.sol";
-import "../interfaces/IBenchmarkYieldToken.sol";
+import "./PendleBaseToken.sol";
+import "../interfaces/IPendleYieldToken.sol";
 
-contract BenchmarkOwnershipToken is BenchmarkBaseToken, IBenchmarkYieldToken {
+contract PendleOwnershipToken is PendleBaseToken, IPendleYieldToken {
     address public override forge;
     address public override underlyingAsset;
     address public override underlyingYieldToken;
@@ -38,7 +38,7 @@ contract BenchmarkOwnershipToken is BenchmarkBaseToken, IBenchmarkYieldToken {
         uint8 _underlyingYieldTokenDecimals,
         uint256 _start,
         uint256 _expiry
-    ) BenchmarkBaseToken(_name, _symbol, _underlyingYieldTokenDecimals, _start, _expiry) {
+    ) PendleBaseToken(_name, _symbol, _underlyingYieldTokenDecimals, _start, _expiry) {
         forge = msg.sender;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;

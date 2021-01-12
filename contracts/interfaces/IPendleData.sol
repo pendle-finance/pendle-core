@@ -23,28 +23,28 @@
 
 pragma solidity ^0.7.0;
 
-import {Utils} from "../libraries/BenchmarkLibrary.sol";
-import "./IBenchmark.sol";
-import "./IBenchmarkYieldToken.sol";
+import {Utils} from "../libraries/PendleLibrary.sol";
+import "./IPendle.sol";
+import "./IPendleYieldToken.sol";
 
-interface IBenchmarkData {
+interface IPendleData {
     /**
-     * @notice Emitted when the Benchmark core address has been updated.
+     * @notice Emitted when the Pendle core address has been updated.
      * @param core The address of the new core contract.
      **/
     event CoreSet(address core);
 
     /**
-     * @notice Sets the Benchmark core contract address.
+     * @notice Sets the Pendle core contract address.
      * @param _core Address of the new core contract.
      **/
-    function setCore(IBenchmark _core) external;
+    function setCore(IPendle _core) external;
 
     /**
-     * @notice Gets a reference to the Benchmark core contract.
+     * @notice Gets a reference to the Pendle core contract.
      * @return Returns the core contract reference.
      **/
-    function core() external view returns (IBenchmark);
+    function core() external view returns (IPendle);
 
     /***********
      *  FORGE  *
@@ -101,11 +101,11 @@ interface IBenchmarkData {
      * @return ot The OT token references.
      * @return xyt The XYT token references.
      **/
-    function getBenchmarkYieldTokens(
+    function getPendleYieldTokens(
         bytes32 forgeId,
         address underlyingYieldToken,
         uint256 expiry
-    ) external view returns (IBenchmarkYieldToken ot, IBenchmarkYieldToken xyt);
+    ) external view returns (IPendleYieldToken ot, IPendleYieldToken xyt);
 
     /**
      * @notice Gets the identifier of the forge.
@@ -139,7 +139,7 @@ interface IBenchmarkData {
         bytes32 forgeId,
         address underlyingYieldToken,
         uint256 expiry
-    ) external view returns (IBenchmarkYieldToken ot);
+    ) external view returns (IPendleYieldToken ot);
 
     /**
      * @notice Gets a reference to a specific XYT.
@@ -152,7 +152,7 @@ interface IBenchmarkData {
         bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry
-    ) external view returns (IBenchmarkYieldToken xyt);
+    ) external view returns (IPendleYieldToken xyt);
 
     /***********
      *  MARKET *

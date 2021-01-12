@@ -23,9 +23,9 @@
 
 pragma solidity ^0.7.0;
 
-import "./IBenchmark.sol";
+import "./IPendle.sol";
 
-interface IBenchmarkForge {
+interface IPendleForge {
     /**
      * @dev Emitted when the Forge has minted the OT and XYT tokens.
      * @param underlyingYieldToken The address of the underlying yield token.
@@ -101,10 +101,10 @@ interface IBenchmarkForge {
     ) external returns (uint256 interests);
 
     /**
-     * @notice Gets a reference to the Benchmark core contract.
+     * @notice Gets a reference to the Pendle core contract.
      * @return Returns the core contract reference.
      **/
-    function core() external view returns (IBenchmark);
+    function core() external view returns (IPendle);
 
     /**
      * @notice Gets the bytes32 ID of the forge.

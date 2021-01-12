@@ -1,4 +1,4 @@
-@startuml "Benchmark Protocol"
+@startuml "Pendle Protocol"
 ' -- for auto-render install: https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml
 ' -- options --
 
@@ -6,18 +6,18 @@
 
 package "User Facing" <<Folder>>  {
 
-	class Benchmark {
+	class Pendle {
 		' -- inheritance --
-		{abstract}IBenchmark
+		{abstract}IPendle
 		{abstract}Permissions
 
 		' -- usingFor --
 		{abstract}📚SafeMath for [[uint256]]
 
 		' -- vars --
-		+[[IBenchmarkData]] data
-		+[[IBenchmarkFactory]] factory
-		+[[IBenchmarkProvider]] provider
+		+[[IPendleData]] data
+		+[[IPendleFactory]] factory
+		+[[IPendleProvider]] provider
 		+[[address]] weth
 		+[[address]] treasury
 		-[[address]] initializer
@@ -45,15 +45,15 @@ package "User Facing" <<Folder>>  {
 
 	}
 
-	class BenchmarkFactory {
+	class PendleFactory {
     ' -- inheritance --
-		{abstract}IBenchmarkFactory
+		{abstract}IPendleFactory
 		{abstract}Permissions
 
 			' -- usingFor --
 
 			' -- vars --
-		+[[IBenchmark]] core
+		+[[IPendle]] core
 		+[[IForgeCreator]] forgeCreator
 		+[[IMarketCreator]] marketCreator
 		-[[address]] allForges
@@ -73,9 +73,9 @@ package "User Facing" <<Folder>>  {
 	}
 }
 
-class BenchmarkData {
+class PendleData {
 	' -- inheritance --
-	{abstract}IBenchmarkData
+	{abstract}IPendleData
 	{abstract}Permissions
 
 	' -- vars --
@@ -92,9 +92,9 @@ class BenchmarkData {
 	+addMarket()
 }
 
-class BenchmarkProvider {
+class PendleProvider {
 	' -- inheritance --
-	{abstract}IBenchmarkProvider
+	{abstract}IPendleProvider
 	{abstract}Permissions
 
 	' -- vars --
@@ -106,9 +106,9 @@ class BenchmarkProvider {
 	+🔍getATokenAddress()
 }
 
-class BenchmarkForge {
+class PendleForge {
     ' -- inheritance --
-	{abstract}IBenchmarkForge
+	{abstract}IPendleForge
 	{abstract}ReentrancyGuard
 
     ' -- usingFor --
@@ -118,7 +118,7 @@ class BenchmarkForge {
 	+[[address]] factory
 	+[[address]] underlyingAsset
 	+[[address]] underlyingYieldToken
-	+[[IBenchmarkProvider]] provider
+	+[[IPendleProvider]] provider
 	+[[mapping uint256=>address ]] otTokens
 	+[[mapping uint256=>address ]] xytTokens
 	+[[mapping uint256=>uint256 ]] lastNormalisedIncomeBeforeExpiry
@@ -140,10 +140,10 @@ class BenchmarkForge {
 	#_forgeOwnershipToken()
 }
 
-class BenchmarkMarket {
+class PendleMarket {
     ' -- inheritance --
-	{abstract}IBenchmarkMarket
-	{abstract}BenchmarkBaseToken
+	{abstract}IPendleMarket
+	{abstract}PendleBaseToken
 
     ' -- usingFor --
 
@@ -152,7 +152,7 @@ class BenchmarkMarket {
 	+[[address]] factory
 	+[[address]] token
 	+[[address]] xyt
-	+[[IBenchmarkProvider]] provider
+	+[[IPendleProvider]] provider
 	+{static}[[uint256]] minLiquidity
 	-{static}[[string]] _name
 	-{static}[[string]] _symbol
@@ -171,7 +171,7 @@ class ForgeCreator {
     ' -- usingFor --
 
     ' -- vars --
-	+[[IBenchmarkProvider]] provider
+	+[[IPendleProvider]] provider
 	+[[address]] core
 	+[[address]] factory
 	-[[address]] initializer
@@ -189,7 +189,7 @@ class MarketCreator {
     ' -- usingFor --
 
     ' -- vars --
-	+[[IBenchmarkProvider]] provider
+	+[[IPendleProvider]] provider
 	+[[address]] core
 	+[[address]] factory
 	-[[address]] initializer
@@ -201,9 +201,9 @@ class MarketCreator {
 }
 
 package "Yield Tokens" {
-	class BenchmarkOwnershipToken {
+	class PendleOwnershipToken {
 		' -- inheritance --
-		{abstract}BenchmarkBaseToken
+		{abstract}PendleBaseToken
 
 		' -- usingFor --
 
@@ -222,9 +222,9 @@ package "Yield Tokens" {
 
 	}
 
-	class BenchmarkFutureYieldToken {
+	class PendleFutureYieldToken {
 		' -- inheritance --
-		{abstract}BenchmarkBaseToken
+		{abstract}PendleBaseToken
 
 		' -- usingFor --
 
@@ -245,14 +245,14 @@ package "Yield Tokens" {
 }
 
 package "Governance" {
-	class BenchmarkGovernance {
+	class PendleGovernance {
 		' -- inheritance --
 		' -- usingFor --
 		' -- vars --
 		' -- methods --
 	}
 
-	class BenchmarkTreasury {
+	class PendleTreasury {
 		' -- inheritance --
 		' -- usingFor --
 		' -- vars --
@@ -269,7 +269,7 @@ package "Governance" {
 
 
 ' -- interfaces --
-' interface IBenchmarkData {
+' interface IPendleData {
 ' 	' -- methods --
 ' 	+🔍core()
 ' 	+setCore()
@@ -280,58 +280,58 @@ package "Governance" {
 ' }
 
 ' -- inheritance --
-' IBenchmark --[#DarkGoldenRod]|> Benchmark
-' Permissions --[#DarkGoldenRod]|> Benchmark
-' SafeMath ..[#DarkOliveGreen]|> Benchmark : //for uint256//
+' IPendle --[#DarkGoldenRod]|> Pendle
+' Permissions --[#DarkGoldenRod]|> Pendle
+' SafeMath ..[#DarkOliveGreen]|> Pendle : //for uint256//
 
-' IBenchmarkFactory --[#DarkGoldenRod]|> BenchmarkFactory
-' Permissions --[#DarkGoldenRod]|> BenchmarkFactory
+' IPendleFactory --[#DarkGoldenRod]|> PendleFactory
+' Permissions --[#DarkGoldenRod]|> PendleFactory
 
-' IBenchmarkData --[#DarkGoldenRod]|> BenchmarkData
-' Permissions --[#DarkGoldenRod]|> BenchmarkData
+' IPendleData --[#DarkGoldenRod]|> PendleData
+' Permissions --[#DarkGoldenRod]|> PendleData
 
-' IBenchmarkProvider --[#DarkGoldenRod]|> BenchmarkProvider
-' Permissions --[#DarkGoldenRod]|> BenchmarkProvider
+' IPendleProvider --[#DarkGoldenRod]|> PendleProvider
+' Permissions --[#DarkGoldenRod]|> PendleProvider
 
-' IBenchmarkForge --[#DarkGoldenRod]|> BenchmarkForge
-' ReentrancyGuard --[#DarkGoldenRod]|> BenchmarkForge
+' IPendleForge --[#DarkGoldenRod]|> PendleForge
+' ReentrancyGuard --[#DarkGoldenRod]|> PendleForge
 
-' IBenchmarkMarket --[#DarkGoldenRod]|> BenchmarkMarket
+' IPendleMarket --[#DarkGoldenRod]|> PendleMarket
 
-' BenchmarkBaseToken --[#DarkGoldenRod]|> BenchmarkOwnershipToken
-' BenchmarkBaseToken --[#DarkGoldenRod]|> BenchmarkFutureYieldToken
+' PendleBaseToken --[#DarkGoldenRod]|> PendleOwnershipToken
+' PendleBaseToken --[#DarkGoldenRod]|> PendleFutureYieldToken
 
 
 ' -- creation --
-BenchmarkFactory *--[#Red]|> ForgeCreator
-BenchmarkFactory *--[#Red]|> MarketCreator
-ForgeCreator *--[#Red]|> BenchmarkForge : creates
-MarketCreator *--[#Red]|> BenchmarkMarket : creates
+PendleFactory *--[#Red]|> ForgeCreator
+PendleFactory *--[#Red]|> MarketCreator
+ForgeCreator *--[#Red]|> PendleForge : creates
+MarketCreator *--[#Red]|> PendleMarket : creates
 
 ' -- data --
-BenchmarkData <--[#Magenta]--> Benchmark : read/write
-BenchmarkData <--[#Magenta]--> BenchmarkFactory : read/write
+PendleData <--[#Magenta]--> Pendle : read/write
+PendleData <--[#Magenta]--> PendleFactory : read/write
 
 ' -- provider --
-BenchmarkProvider --[#Magenta]--> BenchmarkFactory : reads
-BenchmarkProvider --[#Magenta]--> BenchmarkForge : reads
-BenchmarkProvider --[#Magenta]--> BenchmarkMarket : reads
+PendleProvider --[#Magenta]--> PendleFactory : reads
+PendleProvider --[#Magenta]--> PendleForge : reads
+PendleProvider --[#Magenta]--> PendleMarket : reads
 
 ' -- tokenization --
-Benchmark <--[#Blue]--> BenchmarkForge : "tokenize/redeem"
-BenchmarkForge *--[#Blue]|> BenchmarkOwnershipToken : tokenizes
-BenchmarkForge *--[#Blue]|> BenchmarkFutureYieldToken : tokenizes
+Pendle <--[#Blue]--> PendleForge : "tokenize/redeem"
+PendleForge *--[#Blue]|> PendleOwnershipToken : tokenizes
+PendleForge *--[#Blue]|> PendleFutureYieldToken : tokenizes
 
 ' -- trading --
-Benchmark <--[#Blue]--> BenchmarkMarket : "trading"
-BenchmarkMarket --[#Blue]--> BenchmarkTreasury : "fees"
+Pendle <--[#Blue]--> PendleMarket : "trading"
+PendleMarket --[#Blue]--> PendleTreasury : "fees"
 
 ' -- governance --
-BMK ..[#Green]..> BenchmarkGovernance : voting
-BenchmarkGovernance ..[#GreenYellow]..> Benchmark : governs
-BenchmarkGovernance ..[#GreenYellow]..> BenchmarkData : governs
-BenchmarkGovernance ..[#GreenYellow]..> BenchmarkFactory : governs
-BenchmarkGovernance ..[#GreenYellow]..> BenchmarkProvider : governs
-BenchmarkGovernance ..[#GreenYellow]..> BenchmarkTreasury : governs
+BMK ..[#Green]..> PendleGovernance : voting
+PendleGovernance ..[#GreenYellow]..> Pendle : governs
+PendleGovernance ..[#GreenYellow]..> PendleData : governs
+PendleGovernance ..[#GreenYellow]..> PendleFactory : governs
+PendleGovernance ..[#GreenYellow]..> PendleProvider : governs
+PendleGovernance ..[#GreenYellow]..> PendleTreasury : governs
 
 @enduml

@@ -24,10 +24,10 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../interfaces/IBenchmarkTreasury.sol";
+import "../interfaces/IPendleTreasury.sol";
 import "../periphery/Permissions.sol";
 
-contract BenchmarkTreasury is IBenchmarkTreasury, Permissions {
+contract PendleTreasury is IPendleTreasury, Permissions {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -41,15 +41,15 @@ contract BenchmarkTreasury is IBenchmarkTreasury, Permissions {
     }
 
     function initialize(IERC20 _fundToken) external {
-        require(msg.sender == initializer, "Benchmark: forbidden");
-        require(address(_fundToken) != address(0), "Benchmark: zero address");
+        require(msg.sender == initializer, "Pendle: forbidden");
+        require(address(_fundToken) != address(0), "Pendle: zero address");
 
         initializer = address(0);
         fundToken = _fundToken;
     }
 
     function setFundPercentage(uint256 _fundPercentage) external override onlyGovernance {
-        require(_fundPercentage <= MAX_FUND_PERCENTAGE, "Benchmark: exceeded max%");
+        require(_fundPercentage <= MAX_FUND_PERCENTAGE, "Pendle: exceeded max%");
         fundPercentage = _fundPercentage;
     }
 
@@ -58,7 +58,7 @@ contract BenchmarkTreasury is IBenchmarkTreasury, Permissions {
     }
 
     function withdraw(uint256 amount, address withdrawAddress) external override onlyGovernance {
-        require(balanceOf(fundToken) >= amount, "Benchmark: insufficient funds");
+        require(balanceOf(fundToken) >= amount, "Pendle: insufficient funds");
         fundToken.safeTransfer(withdrawAddress, amount);
     }
 

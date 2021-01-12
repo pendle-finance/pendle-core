@@ -34,7 +34,7 @@ library Factory {
         assembly {
             forge := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
-        require(forge != address(0), "Benchmark: failed on deploy");
+        require(forge != address(0), "Pendle: failed on deploy");
     }
 }
 
@@ -269,9 +269,9 @@ library Math {
 
 library Utils {
     /**
-     * @notice Concatenates a Benchmark token name/symbol to a yield token name/symbol
+     * @notice Concatenates a Pendle token name/symbol to a yield token name/symbol
      *         using a delimiter (usually "-" or " ").
-     * @param _bt The Benchmark token name/symbol.
+     * @param _bt The Pendle token name/symbol.
      * @param _yt The yield token name/symbol.
      * @param _delimiter Can be any delimiter, but usually "-" or " ".
      * @return result Returns the concatenated string.

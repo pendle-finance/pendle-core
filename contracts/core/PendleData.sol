@@ -22,11 +22,11 @@
  */
 pragma solidity ^0.7.0;
 
-import "../interfaces/IBenchmarkData.sol";
-import "../interfaces/IBenchmarkMarketFactory.sol";
+import "../interfaces/IPendleData.sol";
+import "../interfaces/IPendleMarketFactory.sol";
 import "../periphery/Permissions.sol";
 
-contract BenchmarkData is IBenchmarkData, Permissions {
+contract PendleData is IPendleData, Permissions {
     mapping(address => bytes32) public override getForgeId;
     mapping(bytes32 => mapping(bytes32 => address)) public override getMarketFactoryAddress;
     mapping(bytes32 => address) public override getForgeAddress;
@@ -35,48 +35,48 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     mapping(bytes32 => mapping(bytes32 => mapping(address => mapping(address => address))))
         public
         override getMarket;
-    mapping(bytes32 => mapping(address => mapping(uint256 => IBenchmarkYieldToken)))
+    mapping(bytes32 => mapping(address => mapping(uint256 => IPendleYieldToken)))
         public
         override otTokens;
-    mapping(bytes32 => mapping(address => mapping(uint256 => IBenchmarkYieldToken)))
+    mapping(bytes32 => mapping(address => mapping(uint256 => IPendleYieldToken)))
         public
         override xytTokens;
     uint256 public override swapFee;
     uint256 public override exitFee;
-    IBenchmark public override core;
+    IPendle public override core;
     mapping(address => bool) internal isMarket;
     address[] private allMarkets;
 
     constructor(address _governance) Permissions(_governance) {}
 
     modifier onlyCore() {
-        require(msg.sender == address(core), "Benchmark: only core");
+        require(msg.sender == address(core), "Pendle: only core");
         _;
     }
 
     modifier onlyForge(bytes32 _forgeId) {
-        require(getForgeAddress[_forgeId] == msg.sender, "Benchmark: only forge");
+        require(getForgeAddress[_forgeId] == msg.sender, "Pendle: only forge");
         _;
     }
 
     modifier onlyMarketFactory(bytes32 _forgeId, bytes32 _marketFactoryId) {
         require(
             msg.sender == getMarketFactoryAddress[_forgeId][_marketFactoryId],
-            "Benchmark: only market factory"
+            "Pendle: only market factory"
         );
         _;
     }
 
-    function initialize(IBenchmark _core) external {
-        require(msg.sender == initializer, "Benchmark: forbidden");
-        require(address(_core) != address(0), "Benchmark: zero address");
+    function initialize(IPendle _core) external {
+        require(msg.sender == initializer, "Pendle: forbidden");
+        require(address(_core) != address(0), "Pendle: zero address");
 
         initializer = address(0);
         core = _core;
     }
 
-    function setCore(IBenchmark _core) external override initialized onlyGovernance {
-        require(address(_core) != address(0), "Benchmark: zero address");
+    function setCore(IPendle _core) external override initialized onlyGovernance {
+        require(address(_core) != address(0), "Pendle: zero address");
 
         core = _core;
 
@@ -115,21 +115,21 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         address _underlyingAsset,
         uint256 _expiry
     ) external override initialized onlyForge(_forgeId) {
-        otTokens[_forgeId][_underlyingAsset][_expiry] = IBenchmarkYieldToken(_ot);
-        xytTokens[_forgeId][_underlyingAsset][_expiry] = IBenchmarkYieldToken(_xyt);
+        otTokens[_forgeId][_underlyingAsset][_expiry] = IPendleYieldToken(_ot);
+        xytTokens[_forgeId][_underlyingAsset][_expiry] = IPendleYieldToken(_xyt);
     }
 
-    function getBenchmarkYieldTokens(
+    function getPendleYieldTokens(
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) external view override returns (IBenchmarkYieldToken ot, IBenchmarkYieldToken xyt) {
+    ) external view override returns (IPendleYieldToken ot, IPendleYieldToken xyt) {
         ot = otTokens[_forgeId][_underlyingAsset][_expiry];
         xyt = xytTokens[_forgeId][_underlyingAsset][_expiry];
     }
 
     function isValidXYT(address _xyt) external view override returns (bool) {
-        address forge = IBenchmarkYieldToken(_xyt).forge();
+        address forge = IPendleYieldToken(_xyt).forge();
         return getForgeId[forge] != bytes32(0);
     }
 

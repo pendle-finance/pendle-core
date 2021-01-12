@@ -23,11 +23,11 @@
 
 pragma solidity ^0.7.0;
 
-import "./IBenchmark.sol";
-import "./IBenchmarkBaseToken.sol";
-import {Utils} from "../libraries/BenchmarkLibrary.sol";
+import "./IPendle.sol";
+import "./IPendleBaseToken.sol";
+import {Utils} from "../libraries/PendleLibrary.sol";
 
-interface IBenchmarkMarket is IBenchmarkBaseToken {
+interface IPendleMarket is IPendleBaseToken {
     /* ========== EVENTS ========== */
 
     /**
@@ -141,13 +141,13 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     ) external;
 
     /**
-     * @notice Gets a reference to the Benchmark core contract.
+     * @notice Gets a reference to the Pendle core contract.
      * @return Returns the core contract reference.
      **/
-    function core() external view returns (IBenchmark);
+    function core() external view returns (IPendle);
 
     /**
-     * @dev Returns the address of the BenchmarkMarketFactory contract address.
+     * @dev Returns the address of the PendleMarketFactory contract address.
      * @return Returns the factory's address.
      **/
     function factory() external view returns (address);

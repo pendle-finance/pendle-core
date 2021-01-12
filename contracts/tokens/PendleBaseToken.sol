@@ -23,18 +23,18 @@
 pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../interfaces/IBenchmarkBaseToken.sol";
+import "../interfaces/IPendleBaseToken.sol";
 
 /**
- *   @title BenchmarkBaseToken
+ *   @title PendleBaseToken
  *   @dev The contract implements the standard ERC20 functions, plus some
- *        Benchmark specific fields and functions, namely:
+ *        Pendle specific fields and functions, namely:
  *          - expiry
  *
- *        This abstract contract is inherited by BenchmarkFutureYieldToken
- *        and BenchmarkOwnershipToken contracts.
+ *        This abstract contract is inherited by PendleFutureYieldToken
+ *        and PendleOwnershipToken contracts.
  **/
-abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
+abstract contract PendleBaseToken is IPendleBaseToken {
     using SafeMath for uint256;
 
     mapping(address => mapping(address => uint256)) public override allowance;
@@ -94,7 +94,7 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
         _approve(
             msg.sender,
             spender,
-            allowance[msg.sender][spender].sub(subtractedValue, "Benchmark: allowance < 0")
+            allowance[msg.sender][spender].sub(subtractedValue, "Pendle: allowance < 0")
         );
         return true;
     }
@@ -150,7 +150,7 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
         _approve(
             sender,
             msg.sender,
-            allowance[sender][msg.sender].sub(amount, "Benchmark: transfer > allowance")
+            allowance[sender][msg.sender].sub(amount, "Pendle: transfer > allowance")
         );
         return true;
     }
@@ -160,15 +160,15 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
         address spender,
         uint256 amount
     ) internal virtual {
-        require(owner != address(0), "Benchmark: owner zero address");
-        require(spender != address(0), "Benchmark: spender zero address");
+        require(owner != address(0), "Pendle: owner zero address");
+        require(spender != address(0), "Pendle: spender zero address");
 
         allowance[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
 
     function _mint(address account, uint256 amount) internal {
-        require(account != address(0), "Benchmark: mint to zero address");
+        require(account != address(0), "Pendle: mint to zero address");
 
         totalSupply = totalSupply.add(amount);
         balanceOf[account] = balanceOf[account].add(amount);
@@ -176,9 +176,9 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
     }
 
     function _burn(address account, uint256 amount) internal {
-        require(account != address(0), "Benchmark: burn to zero address");
+        require(account != address(0), "Pendle: burn to zero address");
 
-        balanceOf[account] = balanceOf[account].sub(amount, "Benchmark: burn > balance");
+        balanceOf[account] = balanceOf[account].sub(amount, "Pendle: burn > balance");
         totalSupply = totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
     }
@@ -188,12 +188,12 @@ abstract contract BenchmarkBaseToken is IBenchmarkBaseToken {
         address receiver,
         uint256 amount
     ) internal {
-        require(sender != address(0), "Benchmark: sender zero address");
-        require(receiver != address(0), "Benchmark: receiver zero address");
+        require(sender != address(0), "Pendle: sender zero address");
+        require(receiver != address(0), "Pendle: receiver zero address");
 
         _beforeTokenTransfer(sender, receiver);
 
-        balanceOf[sender] = balanceOf[sender].sub(amount, "Benchmark: transfer > balance");
+        balanceOf[sender] = balanceOf[sender].sub(amount, "Pendle: transfer > balance");
         balanceOf[receiver] = balanceOf[receiver].add(amount);
         emit Transfer(sender, receiver, amount);
     }

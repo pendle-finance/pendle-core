@@ -6,7 +6,7 @@ import { governanceFixture } from "./fixtures";
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
-describe("BenchmarkGovernance", () => {
+describe("PendleGovernance", () => {
   const [wallet] = provider.getWallets();
   const loadFixture = createFixtureLoader([wallet], provider);
 

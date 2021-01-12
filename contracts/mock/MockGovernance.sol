@@ -23,12 +23,12 @@
 pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
-import "../core/BenchmarkGovernance.sol";
+import "../core/PendleGovernance.sol";
 
-contract MockGovernance is BenchmarkGovernance {
+contract MockGovernance is PendleGovernance {
     constructor(
         IBMK _bmk,
         ITimelock _timelock,
         address _guardian
-    ) BenchmarkGovernance(_bmk, _timelock, _guardian) {}
+    ) PendleGovernance(_bmk, _timelock, _guardian) {}
 }

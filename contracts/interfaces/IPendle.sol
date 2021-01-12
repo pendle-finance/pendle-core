@@ -23,23 +23,23 @@
 
 pragma solidity ^0.7.0;
 
-import {Utils} from "../libraries/BenchmarkLibrary.sol";
-import "./IBenchmarkData.sol";
-import "./IBenchmarkMarketFactory.sol";
+import {Utils} from "../libraries/PendleLibrary.sol";
+import "./IPendleData.sol";
+import "./IPendleMarketFactory.sol";
 
-interface IBenchmark {
+interface IPendle {
     /**
-     * @notice Emitted when Benchmark and BenchmarkFactory addresses have been updated.
+     * @notice Emitted when Pendle and PendleFactory addresses have been updated.
      * @param data The address of the new data contract.
      * @param treasury The address of the new treasury contract.
      **/
     event ContractsSet(address data, address treasury);
 
     /**
-     * @notice Gets a reference to the BenchmarkData contract.
+     * @notice Gets a reference to the PendleData contract.
      * @return Returns the data contract reference.
      **/
-    function data() external view returns (IBenchmarkData);
+    function data() external view returns (IPendleData);
 
     /**
      * @notice Gets the treasury contract address where fees are being sent to.
@@ -54,11 +54,11 @@ interface IBenchmark {
     function weth() external view returns (address);
 
     /**
-     * @notice Sets the Benchmark contract addresses.
+     * @notice Sets the Pendle contract addresses.
      * @param _data Address of the new data contract.
      * @param _treasury Address of new treasury contract.
      **/
-    function setContracts(IBenchmarkData _data, address _treasury) external;
+    function setContracts(IPendleData _data, address _treasury) external;
 
     /***********
      *  FORGE  *
