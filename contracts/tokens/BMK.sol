@@ -26,7 +26,6 @@ pragma experimental ABIEncoderV2;
 import "../interfaces/IBMK.sol";
 
 contract BMK is IBMK {
-
     /// @notice A checkpoint for marking number of votes from a given block
     struct Checkpoint {
         uint32 fromBlock;
