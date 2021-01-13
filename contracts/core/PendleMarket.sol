@@ -578,10 +578,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
         if (dueInterests == 0) return;
-        IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).safeTransfer(
-            account,
-            dueInterests
-        );
+        IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).safeTransfer(account, dueInterests);
 
         console.log("Settled LP interests for ", account);
         printAcc(account);
