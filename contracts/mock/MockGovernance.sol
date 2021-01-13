@@ -27,8 +27,8 @@ import "../core/PendleGovernance.sol";
 
 contract MockGovernance is PendleGovernance {
     constructor(
-        IBMK _bmk,
+        IPDL _pdl,
         ITimelock _timelock,
         address _guardian
-    ) PendleGovernance(_bmk, _timelock, _guardian) {}
+    ) PendleGovernance(_pdl, _timelock, _guardian) {}
 }

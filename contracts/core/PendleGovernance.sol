@@ -25,7 +25,7 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
 import "../interfaces/IPendleGovernance.sol";
-import "../interfaces/IBMK.sol";
+import "../interfaces/IPDL.sol";
 import "../interfaces/ITimelock.sol";
 
 contract PendleGovernance is IPendleGovernance {
@@ -80,7 +80,7 @@ contract PendleGovernance is IPendleGovernance {
     /**
      * @notice The address of the Pendle governance token
      */
-    IBMK public bmk;
+    IPDL public pdl;
 
     /**
      * @notice The address of the Governor Guardian
@@ -180,11 +180,11 @@ contract PendleGovernance is IPendleGovernance {
     event ProposalExecuted(uint256 id);
 
     constructor(
-        IBMK _bmk,
+        IPDL _pdl,
         ITimelock _timelock,
         address _guardian
     ) {
-        bmk = _bmk;
+        pdl = _pdl;
         timelock = _timelock;
         guardian = _guardian;
     }
@@ -197,7 +197,7 @@ contract PendleGovernance is IPendleGovernance {
         string memory description
     ) public returns (uint256) {
         require(
-            bmk.getPriorVotes(msg.sender, block.number.sub(1)) > proposalThreshold(),
+            pdl.getPriorVotes(msg.sender, block.number.sub(1)) > proposalThreshold(),
             "Pendle: proposer votes below proposal threshold"
         );
         require(
@@ -319,7 +319,7 @@ contract PendleGovernance is IPendleGovernance {
         Proposal storage proposal = proposals[proposalId];
         require(
             msg.sender == guardian ||
-                bmk.getPriorVotes(proposal.proposer, block.number.sub(1)) < proposalThreshold(),
+                pdl.getPriorVotes(proposal.proposer, block.number.sub(1)) < proposalThreshold(),
             "Pendle: proposer above threshold"
         );
 
@@ -410,7 +410,7 @@ contract PendleGovernance is IPendleGovernance {
         Proposal storage proposal = proposals[proposalId];
         Receipt storage receipt = proposal.receipts[voter];
         require(receipt.hasVoted == false, "Pendle::_castVote: voter already voted");
-        uint96 votes = bmk.getPriorVotes(voter, proposal.startBlock);
+        uint96 votes = pdl.getPriorVotes(voter, proposal.startBlock);
 
         if (support) {
             proposal.forVotes = proposal.forVotes.add(votes);

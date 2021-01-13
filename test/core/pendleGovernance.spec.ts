@@ -10,14 +10,14 @@ describe("PendleGovernance", () => {
   const [wallet] = provider.getWallets();
   const loadFixture = createFixtureLoader([wallet], provider);
 
-  let bmk: Contract;
+  let pdl: Contract;
   let timelock: Contract;
-  let bmkGovernor: Contract;
+  let pdlGovernor: Contract;
   beforeEach(async () => {
     const fixture = await loadFixture(governanceFixture);
-    bmk = fixture.bmk;
+    pdl = fixture.pdl;
     timelock = fixture.timelock;
-    bmkGovernor = fixture.bmkGovernor;
+    pdlGovernor = fixture.pdlGovernor;
   });
 
   it("timelock", async () => {
@@ -30,11 +30,11 @@ describe("PendleGovernance", () => {
   });
 
   it("governor", async () => {
-    const votingPeriod = await bmkGovernor.votingPeriod();
+    const votingPeriod = await pdlGovernor.votingPeriod();
     expect(votingPeriod).to.be.eq(17280);
-    const timelockAddress = await bmkGovernor.timelock();
+    const timelockAddress = await pdlGovernor.timelock();
     expect(timelockAddress).to.be.eq(timelock.address);
-    const bmkFromGovernor = await bmkGovernor.bmk();
-    expect(bmkFromGovernor).to.be.eq(bmk.address);
+    const pdlFromGovernor = await pdlGovernor.pdl();
+    expect(pdlFromGovernor).to.be.eq(pdl.address);
   });
 });

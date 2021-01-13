@@ -23,9 +23,9 @@
 pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
-import "../interfaces/IBMK.sol";
+import "../interfaces/IPDL.sol";
 
-contract BMK is IBMK {
+contract PDL is IPDL {
     /// @notice A checkpoint for marking number of votes from a given block
     struct Checkpoint {
         uint32 fromBlock;
@@ -33,7 +33,7 @@ contract BMK is IBMK {
     }
 
     string public constant NAME = "Pendle";
-    string public constant SYMBOL = "BMK";
+    string public constant SYMBOL = "PDL";
     uint8 public constant DECIMALS = 18;
     uint256 public constant TOTAL_SUPPLY = 10000000e18; // 10 million Comp
     mapping(address => mapping(address => uint96)) internal allowances;

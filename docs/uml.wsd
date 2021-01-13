@@ -259,7 +259,7 @@ package "Governance" {
 		' -- methods --
 	}
 
-	class BMK {
+	class PDL {
 		' -- inheritance --
 		' -- usingFor --
 		' -- vars --
@@ -327,7 +327,7 @@ Pendle <--[#Blue]--> PendleMarket : "trading"
 PendleMarket --[#Blue]--> PendleTreasury : "fees"
 
 ' -- governance --
-BMK ..[#Green]..> PendleGovernance : voting
+PDL ..[#Green]..> PendleGovernance : voting
 PendleGovernance ..[#GreenYellow]..> Pendle : governs
 PendleGovernance ..[#GreenYellow]..> PendleData : governs
 PendleGovernance ..[#GreenYellow]..> PendleFactory : governs
