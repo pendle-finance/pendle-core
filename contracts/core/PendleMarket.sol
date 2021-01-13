@@ -149,7 +149,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         TokenReserve storage outTokenReserve = reserves[outToken];
 
         uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
-        require(spotPriceBefore <= maxPrice, "Pendle: bad price");
+        require(spotPriceBefore <= maxPrice, "Pendle: high before spotprice");
 
         //calc out amount
         outAmount = _calcOutAmount(inTokenReserve, outTokenReserve, data.swapFee(), inAmount);
@@ -160,8 +160,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
 
-        require(spotPriceAfter >= spotPriceBefore, "Pendle: math problem");
-        require(spotPriceAfter <= maxPrice, "Pendle: bad price");
+        require(spotPriceAfter >= spotPriceBefore, "Pendle: small after spotprice");
+        require(spotPriceAfter <= maxPrice, "Pendle: high after spotprice");
         require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "Pendle: math problem");
 
         emit Swap(_msgSender, inAmount, outAmount, _msgSender);
@@ -188,7 +188,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         //calc spot price
         uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
-        require(spotPriceBefore <= maxPrice, "Pendle: bad price");
+        require(spotPriceBefore <= maxPrice, "Pendle: high before spotprice");
 
         //calc in amount
         inAmount = _calcInAmount(inTokenReserve, outTokenReserve, data.swapFee(), outAmount);
@@ -199,8 +199,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
 
-        require(spotPriceAfter >= spotPriceBefore, "Pendle: math problem");
-        require(spotPriceAfter <= maxPrice, "Pendle: bad price");
+        require(spotPriceAfter >= spotPriceBefore, "Pendle: small after spotprice");
+        require(spotPriceAfter <= maxPrice, "Pendle: high after spotprice");
         require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "Pendle: math problem");
 
         emit Swap(_msgSender, inAmount, outAmount, _msgSender);
@@ -224,13 +224,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     ) external override {
         uint256 totalLp = totalSupply;
         uint256 ratio = Math.rdiv(outAmountLp, totalLp);
-        require(ratio != 0, "Pendle: math problem");
+        require(ratio != 0, "Pendle: zero ratio");
 
         //calc and inject xyt token
         uint256 balanceToken = reserves[xyt].balance;
         uint256 inAmount = Math.rmul(ratio, balanceToken);
-        require(inAmount != 0, "Pendle: math problem");
-        require(inAmount <= maxInAmoutXyt, "Pendle: beyond amount limit");
+        require(inAmount != 0, "Pendle: zero xyt in amount");
+        require(inAmount <= maxInAmoutXyt, "Pendle: high xyt in amount");
         reserves[xyt].balance = reserves[xyt].balance.add(inAmount);
         emit Join(_msgSender, xyt, inAmount);
         _pullToken(xyt, _msgSender, inAmount);
@@ -238,8 +238,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         //calc and inject pair token
         balanceToken = reserves[token].balance;
         inAmount = Math.rmul(ratio, balanceToken);
-        require(inAmount != 0, "Pendle: math problem");
-        require(inAmount <= maxInAmountPair, "Pendle: beyond amount limit");
+        require(inAmount != 0, "Pendle: zero token in amount");
+        require(inAmount <= maxInAmountPair, "Pendle: high token in amount");
         reserves[token].balance = reserves[token].balance.add(inAmount);
         emit Join(_msgSender, token, inAmount);
         _pullToken(token, _msgSender, inAmount);
@@ -283,13 +283,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 exitFees = Math.rmul(inAmountLp, exitFee);
         uint256 inLpAfterExitFee = inAmountLp.sub(exitFee);
         uint256 ratio = Math.rdiv(inLpAfterExitFee, totalLp);
-        require(ratio != 0, "Pendle: math problem");
+        require(ratio != 0, "Pendle: zero ratio");
 
         //calc and withdraw xyt token
         uint256 balanceToken = reserves[xyt].balance;
         uint256 outAmount = Math.rmul(ratio, balanceToken);
-        require(outAmount != 0, "Pendle: math problem");
-        require(outAmount >= minOutAmountXyt, "Pendle: beyond amount limit");
+        require(outAmount != 0, "Pendle: zero xyt out amount");
+        require(outAmount >= minOutAmountXyt, "Pendle: low xyt out amount");
         reserves[xyt].balance = reserves[xyt].balance.sub(outAmount);
         emit Exit(_msgSender, xyt, outAmount);
         _pushToken(xyt, _msgSender, outAmount);
@@ -297,8 +297,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         //calc and withdraw pair token
         balanceToken = reserves[token].balance;
         outAmount = Math.rmul(ratio, balanceToken);
-        require(outAmount != 0, "Pendle: math problem");
-        require(outAmount >= minOutAmountPair, "Pendle: beyond amount limit");
+        require(outAmount != 0, "Pendle: zero token out amount");
+        require(outAmount >= minOutAmountPair, "Pendle: low token out amount");
         reserves[token].balance = reserves[token].balance.sub(outAmount);
         emit Exit(_msgSender, token, outAmount);
         _pushToken(token, _msgSender, outAmount);
