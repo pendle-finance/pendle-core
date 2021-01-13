@@ -108,6 +108,22 @@ describe("BenchmarkMarket", async () => {
     expect(testTokenBalance).to.be.equal(amountToTokenize);
   });
 
+  it("should return correct reserves after bootstraping", async () => {
+    const token = tokens.USDT;
+    const amountToTokenize = amountToWei(token, BigNumber.from(100));
+
+    await benchmarkMarket.bootstrap(
+      wallet1.address,
+      amountToTokenize,
+      amountToTokenize,
+      constants.HIGH_GAS_OVERRIDE
+    );
+    let [xytReserve, tokenReserve, blockTimestamp] = await benchmarkMarket.getReserves();
+    expect(xytReserve).to.be.equal(amountToTokenize);
+    expect(tokenReserve).to.be.equal(amountToTokenize);
+    // TODO: add expect for blockTimestamp @Long
+  });
+
   it("should be able to join a bootstrapped pool", async () => {
     const token = tokens.USDT;
     const amountToTokenize = amountToWei(token, BigNumber.from(10));

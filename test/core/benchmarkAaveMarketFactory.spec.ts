@@ -8,12 +8,12 @@ import { evm_revert, evm_snapshot } from "../helpers";
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
-describe("BenchmarkData", async () => {
+describe("benchmarkAaveMarketFactory", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
 
+  let benchmarkAaveMarketFactory: Contract;
   let benchmark: Contract;
-  let benchmarkData: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
 
@@ -21,9 +21,8 @@ describe("BenchmarkData", async () => {
     globalSnapshotId = await evm_snapshot();
 
     const fixture = await loadFixture(benchmarkCoreFixture);
+    benchmarkAaveMarketFactory = fixture.benchmarkAaveMarketFactory;
     benchmark = fixture.benchmark;
-    benchmarkData = fixture.benchmarkData;
-
     snapshotId = await evm_snapshot();
   });
 
@@ -36,27 +35,9 @@ describe("BenchmarkData", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  it("should be able to setMarketFees", async () => {
-    await benchmarkData.setMarketFees(10, 100);
-    let swapFee = await benchmarkData.swapFee();
-    let exitFee = await benchmarkData.exitFee();
-    expect(swapFee).to.be.eq(10);
-    expect(exitFee).to.be.eq(100);
-  });
-
-  it("allMarketsLength", async () => {
-    let allMarketsLength = await benchmarkData.allMarketsLength();
-    expect(allMarketsLength).to.be.eq(0);
-  });
-
-  it("getAllMarkets", async () => {
-    let getAllMarkets = await benchmarkData.getAllMarkets();
-    assert(Array.isArray(getAllMarkets));
-  });
-
   it("should be able to setCore", async () => {
-    await expect(benchmarkData.setCore(benchmark.address))
-      .to.emit(benchmarkData, 'CoreSet')
+    await expect((benchmarkAaveMarketFactory.setCore(benchmark.address)))
+      .to.emit(benchmarkAaveMarketFactory, 'CoreSet')
       .withArgs(benchmark.address);
   });
 });

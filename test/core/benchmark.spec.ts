@@ -248,7 +248,7 @@ describe("Benchmark", async () => {
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.add(gain).toNumber(),
-      30000
+      40000
     );
   });
   it("Should be able to remove a forge", async () => {
