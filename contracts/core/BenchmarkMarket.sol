@@ -141,7 +141,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address outToken,
         uint256 minOutAmount,
         uint256 maxPrice
-    ) external override returns (uint256 outAmount, uint256 spotPriceAfter) {
+    ) external override isBootstrapped returns (uint256 outAmount, uint256 spotPriceAfter) {
         _curveShift();
 
         IBenchmarkData data = core.data();
@@ -179,7 +179,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address outToken,
         uint256 outAmount,
         uint256 maxPrice
-    ) external override returns (uint256 inAmount, uint256 spotPriceAfter) {
+    ) external override isBootstrapped returns (uint256 inAmount, uint256 spotPriceAfter) {
         _curveShift();
 
         IBenchmarkData data = core.data();
@@ -221,7 +221,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 outAmountLp,
         uint256 maxInAmoutXyt,
         uint256 maxInAmountPair
-    ) external override {
+    ) external override isBootstrapped {
         uint256 totalLp = totalSupply;
         uint256 ratio = Math.rdiv(outAmountLp, totalLp);
         require(ratio != 0, "Benchmark: math problem");
@@ -276,7 +276,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 inAmountLp,
         uint256 minOutAmountXyt,
         uint256 minOutAmountPair
-    ) external override {
+    ) external override isBootstrapped {
         IBenchmarkData data = core.data();
         uint256 exitFee = data.exitFee();
         uint256 totalLp = totalSupply;
@@ -314,7 +314,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address inToken,
         uint256 inAmount,
         uint256 minOutAmountLp
-    ) external override returns (uint256 outAmountLp) {
+    ) external override isBootstrapped returns (uint256 outAmountLp) {
         IBenchmarkData data = core.data();
         TokenReserve storage inTokenReserve = reserves[inToken];
         uint256 totalLp = totalSupply;
@@ -347,7 +347,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address outToken,
         uint256 inAmountLp,
         uint256 minOutAmountToken
-    ) external override returns (uint256 outAmountToken) {
+    ) external override isBootstrapped returns (uint256 outAmountToken) {
         IBenchmarkData data = core.data();
         TokenReserve storage outTokenReserve = reserves[outToken];
         uint256 exitFee = data.exitFee();
