@@ -23,36 +23,25 @@
 
 pragma solidity ^0.7.0;
 
-interface ITimelock {
-    function acceptAdmin() external;
+import "./IPendleBaseToken.sol";
+import {Utils} from "../libraries/PendleLibrary.sol";
 
-    function cancelTransaction(
-        address target,
-        uint256 value,
-        string memory signature,
-        bytes memory data,
-        uint256 eta
-    ) external;
+interface IPendleYieldToken is IPendleBaseToken {
+    /**
+     * @notice Gets the forge address of the PendleForge contract for this yield token.
+     * @return Retuns the forge address.
+     **/
+    function forge() external view returns (address);
 
-    function delay() external returns (uint256);
+    /**
+     * @notice Returns the address of the underlying asset.
+     * @return Returns the underlying asset address.
+     **/
+    function underlyingAsset() external view returns (address);
 
-    function executeTransaction(
-        address target,
-        uint256 value,
-        string memory signature,
-        bytes memory data,
-        uint256 eta
-    ) external payable returns (bytes calldata);
-
-    function queueTransaction(
-        address target,
-        uint256 value,
-        string memory signature,
-        bytes memory data,
-        uint256 eta
-    ) external returns (bytes32);
-
-    function queuedTransactions(bytes32 txn) external returns (bool);
-
-    function gracePeriod() external view returns (uint256);
+    /**
+     * @notice Returns the address of the underlying yield token.
+     * @return Returns the underlying yield token address.
+     **/
+    function underlyingYieldToken() external view returns (address);
 }

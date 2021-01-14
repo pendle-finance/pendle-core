@@ -70,7 +70,7 @@ contract Timelock {
     address public admin;
     address public pendingAdmin;
     uint256 public delay;
-    bool public admin_initialized;
+    bool public adminInitialized;
 
     mapping(bytes32 => bool) public queuedTransactions;
 
@@ -80,7 +80,7 @@ contract Timelock {
 
         admin = msg.sender;
         delay = MINIMUM_DELAY;
-        admin_initialized = false;
+        adminInitialized = false;
     }
 
     receive() external payable {}
@@ -119,13 +119,13 @@ contract Timelock {
      */
     function setPendingAdmin(address pendingAdmin_) public {
         // allows one time setting of admin for deployment purposes
-        if (admin_initialized) {
+        if (adminInitialized) {
             require(
                 msg.sender == address(this),
                 "Timelock::setPendingAdmin: Call must come from Timelock."
             );
         } else {
-            admin_initialized = true;
+            adminInitialized = true;
         }
         pendingAdmin = pendingAdmin_;
 
@@ -179,7 +179,7 @@ contract Timelock {
         // timelock not enforced prior to updating the admin. This should occur on
         // deployment.
         bytes32 txHash = keccak256(abi.encode(target, value, signature, data, eta));
-        if (admin_initialized) {
+        if (adminInitialized) {
             require(
                 queuedTransactions[txHash],
                 "Timelock::executeTransaction: Transaction hasn't been queued."

@@ -23,36 +23,6 @@
 
 pragma solidity ^0.7.0;
 
-interface ITimelock {
-    function acceptAdmin() external;
-
-    function cancelTransaction(
-        address target,
-        uint256 value,
-        string memory signature,
-        bytes memory data,
-        uint256 eta
-    ) external;
-
-    function delay() external returns (uint256);
-
-    function executeTransaction(
-        address target,
-        uint256 value,
-        string memory signature,
-        bytes memory data,
-        uint256 eta
-    ) external payable returns (bytes calldata);
-
-    function queueTransaction(
-        address target,
-        uint256 value,
-        string memory signature,
-        bytes memory data,
-        uint256 eta
-    ) external returns (bytes32);
-
-    function queuedTransactions(bytes32 txn) external returns (bool);
-
-    function gracePeriod() external view returns (uint256);
+interface IPDL {
+    function getPriorVotes(address account, uint256 blockNumber) external view returns (uint96);
 }
