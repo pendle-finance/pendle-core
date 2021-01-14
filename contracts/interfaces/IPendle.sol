@@ -141,9 +141,9 @@ interface IPendle {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 lpAmountDesired,
-        uint256 xytAmountMax,
-        uint256 tokenAmountMax
+        uint256 exactOutLp,
+        uint256 maxInXyt,
+        uint256 maxInToken
     ) external;
 
     function addMarketLiquidityXyt(
@@ -151,8 +151,8 @@ interface IPendle {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 xytAmountDesired,
-        uint256 lpAmountMin
+        uint256 exactInXyt,
+        uint256 minOutLp
     ) external;
 
     function addMarketLiquidityToken(
@@ -160,8 +160,8 @@ interface IPendle {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 tokenAmountDesired,
-        uint256 lpAmountMin
+        uint256 exactInToken,
+        uint256 minOutLp
     ) external;
 
     function removeMarketLiquidity(
@@ -169,9 +169,9 @@ interface IPendle {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 lpAmountDesired,
-        uint256 xytAmountMin,
-        uint256 tokenAmountMin
+        uint256 exactInLp,
+        uint256 minOutXyt,
+        uint256 minOutToken
     ) external;
 
     function removeMarketLiquidityXyt(
@@ -179,8 +179,8 @@ interface IPendle {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 lpAmountDesired,
-        uint256 xytAmountMin
+        uint256 exactInLp,
+        uint256 minOutXyt
     ) external;
 
     function removeMarketLiquidityToken(
@@ -188,8 +188,8 @@ interface IPendle {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 lpAmountDesired,
-        uint256 tokenAmountMin
+        uint256 exactInLp,
+        uint256 minOutToken
     ) external;
 
     function swapXytToToken(
@@ -197,8 +197,8 @@ interface IPendle {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 xytAmountDesired,
-        uint256 tokenAmountMin,
+        uint256 exactInXyt,
+        uint256 minOutToken,
         uint256 maxPrice
     ) external returns (uint256 amount, uint256 priceAfter);
 
@@ -207,8 +207,8 @@ interface IPendle {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 tokenAmountDesired,
-        uint256 xytAmountMin,
+        uint256 exactInToken,
+        uint256 minOutXyt,
         uint256 maxPrice
     ) external returns (uint256 amount, uint256 priceAfter);
 
@@ -217,8 +217,8 @@ interface IPendle {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 xytAmountDesired,
-        uint256 tokenAmountMax,
+        uint256 exactOutXyt,
+        uint256 maxInToken,
         uint256 maxPrice
     ) external returns (uint256 amount, uint256 priceAfter);
 
@@ -227,8 +227,8 @@ interface IPendle {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 tokenAmountDesired,
-        uint256 xytAmountMax,
+        uint256 exactOutToken,
+        uint256 maxInXyt,
         uint256 maxPrice
     ) external returns (uint256 amount, uint256 priceAfter);
 

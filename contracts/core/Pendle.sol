@@ -220,14 +220,14 @@ contract Pendle is IPendle, Permissions {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 lpAmountDesired,
-        uint256 xytAmountMax,
-        uint256 tokenAmountMax
+        uint256 exactOutLp,
+        uint256 maxInXyt,
+        uint256 maxInToken
     ) public override {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
         require(address(market) != address(0), "Pendle: market not found");
-        market.joinPoolByAll(msg.sender, lpAmountDesired, xytAmountMax, tokenAmountMax);
+        market.joinPoolByAll(msg.sender, exactOutLp, maxInXyt, maxInToken);
     }
 
     function addMarketLiquidityXyt(
@@ -235,13 +235,13 @@ contract Pendle is IPendle, Permissions {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 xytAmountDesired,
-        uint256 lpAmountMin
+        uint256 exactInXyt,
+        uint256 minOutLp
     ) public override {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
         require(address(market) != address(0), "Pendle: market not found");
-        market.joinPoolSingleToken(msg.sender, xyt, xytAmountDesired, lpAmountMin);
+        market.joinPoolSingleToken(msg.sender, xyt, exactInXyt, minOutLp);
     }
 
     function addMarketLiquidityToken(
@@ -249,13 +249,13 @@ contract Pendle is IPendle, Permissions {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 tokenAmountDesired,
-        uint256 lpAmountMin
+        uint256 exactInToken,
+        uint256 minOutLp
     ) public override {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
         require(address(market) != address(0), "Pendle: market not found");
-        market.joinPoolSingleToken(msg.sender, token, tokenAmountDesired, lpAmountMin);
+        market.joinPoolSingleToken(msg.sender, token, exactInToken, minOutLp);
     }
 
     function removeMarketLiquidity(
@@ -263,14 +263,14 @@ contract Pendle is IPendle, Permissions {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 lpAmountDesired,
-        uint256 xytAmountMin,
-        uint256 tokenAmountMin
+        uint256 exactInLp,
+        uint256 minOutXyt,
+        uint256 minOutToken
     ) public override {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
         require(address(market) != address(0), "Pendle: market not found");
-        market.exitPoolByAll(msg.sender, lpAmountDesired, xytAmountMin, tokenAmountMin);
+        market.exitPoolByAll(msg.sender, exactInLp, minOutXyt, minOutToken);
     }
 
     function removeMarketLiquidityXyt(
@@ -278,13 +278,13 @@ contract Pendle is IPendle, Permissions {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 lpAmountDesired,
-        uint256 xytAmountMin
+        uint256 exactInLp,
+        uint256 minOutXyt
     ) public override {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
         require(address(market) != address(0), "Pendle: market not found");
-        market.exitPoolSingleToken(msg.sender, xyt, lpAmountDesired, xytAmountMin);
+        market.exitPoolSingleToken(msg.sender, xyt, exactInLp, minOutXyt);
     }
 
     function removeMarketLiquidityToken(
@@ -292,13 +292,13 @@ contract Pendle is IPendle, Permissions {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 lpAmountDesired,
-        uint256 tokenAmountMin
+        uint256 exactInLp,
+        uint256 minOutToken
     ) public override {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
         require(address(market) != address(0), "Pendle: market not found");
-        market.exitPoolSingleToken(msg.sender, token, lpAmountDesired, tokenAmountMin);
+        market.exitPoolSingleToken(msg.sender, token, exactInLp, minOutToken);
     }
 
     function swapXytToToken(
@@ -306,8 +306,8 @@ contract Pendle is IPendle, Permissions {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 xytAmountDesired,
-        uint256 tokenAmountMin,
+        uint256 exactInXyt,
+        uint256 minOutToken,
         uint256 maxPrice
     ) public override returns (uint256 amount, uint256 priceAfter) {
         IPendleMarket market =
@@ -315,10 +315,10 @@ contract Pendle is IPendle, Permissions {
         require(address(market) != address(0), "Pendle: market not found");
         (amount, priceAfter) = market.swapAmountIn(
             msg.sender,
-            xytAmountDesired,
+            exactInXyt,
             xyt,
             token,
-            tokenAmountMin,
+            minOutToken,
             maxPrice
         );
     }
@@ -328,8 +328,8 @@ contract Pendle is IPendle, Permissions {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 tokenAmountDesired,
-        uint256 xytAmountMin,
+        uint256 exactInToken,
+        uint256 minOutXyt,
         uint256 maxPrice
     ) public override returns (uint256 amount, uint256 priceAfter) {
         IPendleMarket market =
@@ -337,10 +337,10 @@ contract Pendle is IPendle, Permissions {
         require(address(market) != address(0), "Pendle: market not found");
         (amount, priceAfter) = market.swapAmountIn(
             msg.sender,
-            tokenAmountDesired,
+            exactInToken,
             token,
             xyt,
-            xytAmountMin,
+            minOutXyt,
             maxPrice
         );
     }
@@ -350,8 +350,8 @@ contract Pendle is IPendle, Permissions {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 xytAmountDesired,
-        uint256 tokenAmountMax,
+        uint256 exactOutXyt,
+        uint256 maxInToken,
         uint256 maxPrice
     ) public override returns (uint256 amount, uint256 priceAfter) {
         IPendleMarket market =
@@ -360,9 +360,9 @@ contract Pendle is IPendle, Permissions {
         (amount, priceAfter) = market.swapAmountOut(
             msg.sender,
             token,
-            tokenAmountMax,
+            maxInToken,
             xyt,
-            xytAmountDesired,
+            exactOutXyt,
             maxPrice
         );
     }
@@ -372,8 +372,8 @@ contract Pendle is IPendle, Permissions {
         bytes32 _marketFactoryId,
         address xyt,
         address token,
-        uint256 tokenAmountDesired,
-        uint256 xytAmountMax,
+        uint256 exactOutToken,
+        uint256 maxInXyt,
         uint256 maxPrice
     ) public override returns (uint256 amount, uint256 priceAfter) {
         IPendleMarket market =
@@ -382,9 +382,9 @@ contract Pendle is IPendle, Permissions {
         (amount, priceAfter) = market.swapAmountOut(
             msg.sender,
             xyt,
-            xytAmountMax,
+            maxInXyt,
             token,
-            tokenAmountDesired,
+            exactOutToken,
             maxPrice
         );
     }
