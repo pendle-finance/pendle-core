@@ -32,10 +32,10 @@ contract PDL is IPDL {
         uint96 votes;
     }
 
-    string public constant NAME = "Pendle";
-    string public constant SYMBOL = "PDL";
-    uint8 public constant DECIMALS = 18;
-    uint256 public constant TOTAL_SUPPLY = 10000000e18; // 10 million Comp
+    string public constant name = "Pendle";
+    string public constant symbol = "PDL";
+    uint8 public constant decimals = 18;
+    uint256 public constant totalSupply = 10000000e18; // 10 million Comp
     mapping(address => mapping(address => uint96)) internal allowances;
     mapping(address => uint96) internal balances;
     mapping(address => address) public delegates;
@@ -82,8 +82,8 @@ contract PDL is IPDL {
      * @param account The initial account to grant all the tokens
      */
     constructor(address account) {
-        balances[account] = uint96(TOTAL_SUPPLY);
-        emit Transfer(address(0), account, TOTAL_SUPPLY);
+        balances[account] = uint96(totalSupply);
+        emit Transfer(address(0), account, totalSupply);
     }
 
     /**
@@ -208,7 +208,7 @@ contract PDL is IPDL {
     ) public {
         bytes32 domainSeparator =
             keccak256(
-                abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(NAME)), getChainId(), address(this))
+                abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this))
             );
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
