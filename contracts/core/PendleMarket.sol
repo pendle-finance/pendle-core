@@ -43,7 +43,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     address public immutable override xyt;
     uint256 public constant override minLiquidity = 10**3;
     string private constant NAME = "Pendle Market";
-    string private constant SYMBOL = "PDL-LPT";
+    string private constant SYMBOL = "PENDLE-LPT";
     uint256 private constant INITIAL_LP_FOR_CREATOR = 10**18; // arbitrary number
     uint8 private constant DECIMALS = 18;
     address public creator;
