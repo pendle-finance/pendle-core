@@ -43,7 +43,7 @@ export async function benchmarkMarketFixture(
     constants.FORGE_AAVE,
     benchmarkFutureYieldToken.address,
     testToken.address,
-    constants.TEST_EXPIRY,
+    constants.SIX_MONTH_FROM_NOW,
     constants.HIGH_GAS_OVERRIDE
   );
 

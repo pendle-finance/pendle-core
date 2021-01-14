@@ -11,6 +11,7 @@ import {
   evm_snapshot,
   evm_revert,
   advanceTime,
+  Token,
 } from "../helpers";
 const { waffle } = require("hardhat");
 const { deployContract, provider } = waffle;
@@ -32,7 +33,7 @@ describe("BenchmarkMarket", async () => {
   let aUSDT: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
-
+  let tokenUSDT: Token;
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
@@ -47,7 +48,8 @@ describe("BenchmarkMarket", async () => {
     lendingPoolCore = fixture.aave.lendingPoolCore;
     testToken = fixture.testToken;
     benchmarkMarket = fixture.benchmarkMarket;
-    aUSDT = await getAContract(wallet, lendingPoolCore, tokens.USDT);
+    tokenUSDT = tokens.USDT;
+    aUSDT = await getAContract(wallet, lendingPoolCore, tokenUSDT);
     snapshotId = await evm_snapshot();
   });
 
@@ -60,45 +62,51 @@ describe("BenchmarkMarket", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  it("should be able to join a bootstrapped pool with a single token", async () => {
-    const token = tokens.USDT;
-    const amountToTokenize = amountToWei(token, BigNumber.from(10));
+  async function bootstrapSampleMarket(amountToTokenize: BigNumber, lowLevelCall: boolean = true) {
+    if (lowLevelCall == true) {
+      await benchmarkMarket.bootstrap(
+        wallet.address,
+        amountToTokenize,
+        amountToTokenize,
+        constants.HIGH_GAS_OVERRIDE
+      );
+    } else {
+      await benchmark.bootStrapMarket(
+        constants.FORGE_AAVE,
+        constants.MARKET_FACTORY_AAVE,
+        benchmarkFutureYieldToken.address,
+        testToken.address,
+        amountToTokenize,
+        amountToTokenize,
+        constants.HIGH_GAS_OVERRIDE
+      );
+    }
 
-    await benchmarkMarket.bootstrap(
-      wallet1.address,
-      amountToTokenize,
-      amountToTokenize,
-      constants.HIGH_GAS_OVERRIDE
-    );
+  }
+
+  it("should be able to join a bootstrapped pool with a single tokenUSDT", async () => {
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(10));
+
+    await bootstrapSampleMarket(amountToTokenize);
 
     await testToken.approve(benchmarkMarket.address, constants.MAX_ALLOWANCE);
-    let totalSupplyBalance = await benchmarkMarket.totalSupply();
-
+    let totalSupply = await benchmarkMarket.totalSupply();
+    let initalWalletBalance = await benchmarkMarket.balanceOf(wallet.address);
     await benchmarkMarket
-      .connect(wallet1)
       .joinPoolSingleToken(
-        wallet1.address,
+        wallet.address,
         testToken.address,
         amountToTokenize.div(10),
-        totalSupplyBalance.div(21)
+        totalSupply.div(21)
       );
-    let wallet1Balance = await benchmarkMarket.balanceOf(wallet1.address);
-    assert(BigNumber.from(wallet1Balance).gt(0));
+    let currentWalletBalance = await benchmarkMarket.balanceOf(wallet.address);
+    expect(currentWalletBalance).to.be.gt(initalWalletBalance);
   });
 
   it("should be able to bootstrap", async () => {
-    const token = tokens.USDT;
-    const amountToTokenize = amountToWei(token, BigNumber.from(100));
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
 
-    await benchmark.bootStrapMarket(
-      constants.FORGE_AAVE,
-      constants.MARKET_FACTORY_AAVE,
-      benchmarkFutureYieldToken.address,
-      testToken.address,
-      amountToTokenize,
-      amountToTokenize,
-      constants.HIGH_GAS_OVERRIDE
-    );
+    await bootstrapSampleMarket(amountToTokenize);
     let yieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
       benchmarkMarket.address
     );
@@ -108,35 +116,10 @@ describe("BenchmarkMarket", async () => {
     expect(testTokenBalance).to.be.equal(amountToTokenize);
   });
 
-  it("should return correct reserves after bootstraping", async () => {
-    const token = tokens.USDT;
-    const amountToTokenize = amountToWei(token, BigNumber.from(100));
-
-    await benchmarkMarket.bootstrap(
-      wallet1.address,
-      amountToTokenize,
-      amountToTokenize,
-      constants.HIGH_GAS_OVERRIDE
-    );
-    let [xytReserve, tokenReserve, blockTimestamp] = await benchmarkMarket.getReserves();
-    expect(xytReserve).to.be.equal(amountToTokenize);
-    expect(tokenReserve).to.be.equal(amountToTokenize);
-    // TODO: add expect for blockTimestamp @Long
-  });
-
   it("should be able to join a bootstrapped pool", async () => {
-    const token = tokens.USDT;
-    const amountToTokenize = amountToWei(token, BigNumber.from(10));
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(10));
 
-    await benchmark.bootStrapMarket(
-      constants.FORGE_AAVE,
-      constants.MARKET_FACTORY_AAVE,
-      benchmarkFutureYieldToken.address,
-      testToken.address,
-      amountToTokenize,
-      amountToTokenize,
-      constants.HIGH_GAS_OVERRIDE
-    );
+    await bootstrapSampleMarket(amountToTokenize);
 
     await testToken.approve(benchmarkMarket.address, constants.MAX_ALLOWANCE);
 
@@ -167,18 +150,9 @@ describe("BenchmarkMarket", async () => {
   });
 
   it("should be able to swap amount out", async () => {
-    const token = tokens.USDT;
-    const amountToTokenize = amountToWei(token, BigNumber.from(100));
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
 
-    await benchmark.bootStrapMarket(
-      constants.FORGE_AAVE,
-      constants.MARKET_FACTORY_AAVE,
-      benchmarkFutureYieldToken.address,
-      testToken.address,
-      amountToTokenize,
-      amountToTokenize,
-      constants.HIGH_GAS_OVERRIDE
-    );
+    await bootstrapSampleMarket(amountToTokenize);
 
     await benchmark
       .connect(wallet1)
@@ -205,18 +179,9 @@ describe("BenchmarkMarket", async () => {
   });
 
   it("should be able to swap amount in", async () => {
-    const token = tokens.USDT;
-    const amountToTokenize = amountToWei(token, BigNumber.from(100));
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
 
-    await benchmark.bootStrapMarket(
-      constants.FORGE_AAVE,
-      constants.MARKET_FACTORY_AAVE,
-      benchmarkFutureYieldToken.address,
-      testToken.address,
-      amountToTokenize,
-      amountToTokenize,
-      constants.HIGH_GAS_OVERRIDE
-    );
+    await bootstrapSampleMarket(amountToTokenize);
 
     await benchmark
       .connect(wallet1)
@@ -249,8 +214,7 @@ describe("BenchmarkMarket", async () => {
   });
 
   it("should be able to get spot price", async () => {
-    const token = tokens.USDT;
-    const amountToTokenize = amountToWei(token, BigNumber.from(100));
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
 
     await benchmarkMarket.bootstrap(
       wallet1.address,
@@ -271,17 +235,8 @@ describe("BenchmarkMarket", async () => {
   });
 
   it("should be able to exit a pool", async () => {
-    const token = tokens.USDT;
-    const amountToTokenize = amountToWei(token, BigNumber.from(100));
-    await benchmark.bootStrapMarket(
-      constants.FORGE_AAVE,
-      constants.MARKET_FACTORY_AAVE,
-      benchmarkFutureYieldToken.address,
-      testToken.address,
-      amountToTokenize,
-      amountToTokenize,
-      constants.HIGH_GAS_OVERRIDE
-    );
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
+    await bootstrapSampleMarket(amountToTokenize);
     await advanceTime(provider, constants.ONE_MONTH);
     const totalSuply = await benchmarkMarket.totalSupply();
 
@@ -309,9 +264,8 @@ describe("BenchmarkMarket", async () => {
     );
   });
 
-  it("should be able to exit a pool with a single token", async () => {
-    const token = tokens.USDT;
-    const amountToTokenize = amountToWei(token, BigNumber.from(100));
+  it("should be able to exit a pool with a single xyt token", async () => {
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
     await benchmarkMarket.bootstrap(
       wallet.address,
       amountToTokenize,
@@ -319,9 +273,12 @@ describe("BenchmarkMarket", async () => {
       constants.HIGH_GAS_OVERRIDE
     );
 
-    await advanceTime(provider, constants.ONE_MONTH);
-
+    const initialFutureYieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
+      wallet.address
+    );
     const totalSupply = await benchmarkMarket.totalSupply();
+
+    await advanceTime(provider, constants.ONE_MONTH);
 
     await benchmarkMarket.exitPoolSingleToken(
       wallet.address,
@@ -331,10 +288,191 @@ describe("BenchmarkMarket", async () => {
       constants.HIGH_GAS_OVERRIDE
     );
 
-    let benchmarkFutureYieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
+    const currentFutureYieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
       wallet.address
     );
+    const expectedDifference = 43750000;
 
-    expect(benchmarkFutureYieldTokenBalance).to.be.equal(43750000);
+    expect(currentFutureYieldTokenBalance.sub(initialFutureYieldTokenBalance)).to.be.equal(expectedDifference);
   });
+
+  it("should return correct reserves after bootstraping", async () => {
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
+
+    await benchmarkMarket.bootstrap(
+      wallet.address,
+      amountToTokenize,
+      amountToTokenize,
+      constants.HIGH_GAS_OVERRIDE
+    );
+    let [xytReserve, tokenReserve, blockTimestamp] = await benchmarkMarket.getReserves();
+    expect(xytReserve).to.be.equal(amountToTokenize);
+    expect(tokenReserve).to.be.equal(amountToTokenize);
+    // TODO: add expect for blockTimestamp @Long
+  });
+
+  it("should be able to getMarketReserve", async () => {
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
+
+    await bootstrapSampleMarket(amountToTokenize);
+
+    let [xytReserve, tokenReserve, currentTime] = await benchmark.getMarketReserves(
+      constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
+      benchmarkFutureYieldToken.address,
+      testToken.address);
+    expect(xytReserve).to.be.equal(amountToTokenize);
+    expect(tokenReserve).to.be.equal(amountToTokenize);
+    // TODO: add expect for currentTIme @Long
+  });
+
+  it("should be able to getMarketRateToken", async () => {
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
+
+    await bootstrapSampleMarket(amountToTokenize);
+
+    let marketRate = await benchmark.getMarketRateToken(
+      constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
+      benchmarkFutureYieldToken.address,
+      testToken.address);
+    expect(marketRate.toNumber()).to.be.approximately(
+      1000000000000,
+      100000000000
+    );
+  });
+
+  it("should be able to getMarketRateXyt", async () => {
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
+
+    await bootstrapSampleMarket(amountToTokenize);
+
+    let marketRate = await benchmark.getMarketRateXyt(
+      constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
+      benchmarkFutureYieldToken.address,
+      testToken.address);
+    expect(marketRate.toNumber()).to.be.approximately(
+      1000000000000,
+      100000000000
+    );
+  });
+
+  it("should be able to removeMarketLiquidityXyt", async () => { // correct but strange
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
+    await bootstrapSampleMarket(amountToTokenize);
+
+    const initialFutureYieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
+      wallet.address
+    );
+    const totalSupply = await benchmarkMarket.totalSupply();
+
+    await advanceTime(provider, constants.ONE_MONTH);
+
+    await benchmark.removeMarketLiquidityXyt(
+      constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
+      benchmarkFutureYieldToken.address,
+      testToken.address,
+      totalSupply.div(4),
+      amountToTokenize.div(6),
+      constants.HIGH_GAS_OVERRIDE);
+
+    const currentFutureYieldTokenBalance = await benchmarkFutureYieldToken.balanceOf(
+      wallet.address
+    );
+    const expectedDifference = 43750000;
+
+    expect(currentFutureYieldTokenBalance.sub(initialFutureYieldTokenBalance)).to.be.equal(expectedDifference);
+  });
+
+  it("should be able to removeMarketLiquidityToken", async () => { // maybe correct but wrong name
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
+
+    await bootstrapSampleMarket(amountToTokenize);
+
+    const initialTestTokenBalance = await testToken.balanceOf(
+      wallet.address
+    );
+    const totalSupply = await benchmarkMarket.totalSupply();
+
+    await advanceTime(provider, constants.ONE_MONTH);
+
+    await benchmark.removeMarketLiquidityToken(
+      constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
+      benchmarkFutureYieldToken.address,
+      testToken.address,
+      totalSupply.div(4),
+      amountToTokenize.div(6),
+      constants.HIGH_GAS_OVERRIDE);
+
+    const currentTestTokenBalance = await testToken.balanceOf(
+      wallet.address
+    );
+    const expectedDifference = 43750000;
+
+    expect(currentTestTokenBalance.sub(initialTestTokenBalance)).to.be.equal(expectedDifference);
+  });
+
+  it("should be able to addMarketLiquidityToken", async () => {
+    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(10));
+
+    await bootstrapSampleMarket(amountToTokenize);
+
+    await testToken.approve(benchmarkMarket.address, constants.MAX_ALLOWANCE);
+    let totalSupply = await benchmarkMarket.totalSupply();
+    let initalWalletBalance = await benchmarkMarket.balanceOf(wallet.address);
+    await benchmark.addMarketLiquidityToken(
+      constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
+      benchmarkFutureYieldToken.address,
+      testToken.address,
+      amountToTokenize.div(10),
+      totalSupply.div(21)
+    );
+    let currentWalletBalance = await benchmarkMarket.balanceOf(wallet.address);
+    expect(currentWalletBalance).to.be.gt(initalWalletBalance);
+    // TODO: change gt to approximate or equal @Long
+  });
+
+  it("should be able to getMarketTokenAddresses", async () => {
+    let { token, xyt } = await benchmark.getMarketTokenAddresses(benchmarkMarket.address);
+    expect(token).to.be.equal(testToken.address);
+    expect(xyt).to.be.equal(benchmarkFutureYieldToken.address);
+  });
+
+  it("should be able to getAllMarkets", async () => {
+    let filter = benchmarkAaveMarketFactory.filters.MarketCreated();
+    let tx = await benchmark.createMarket(
+      constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
+      benchmarkFutureYieldToken.address,
+      tokenUSDT.address,
+      constants.THREE_MONTH_FROM_NOW,
+      constants.HIGH_GAS_OVERRIDE
+    );
+    let allEvents = await benchmarkAaveMarketFactory.queryFilter(filter, tx.blockHash);
+    let expectedMarkets: string[] = [];
+    allEvents.forEach(event => {
+      expectedMarkets.push((event.args!).market);
+    });
+    let allMarkets = await benchmark.getAllMarkets();
+    expect(allMarkets).to.have.members(expectedMarkets);
+  });
+
+  it("shouldn't be able to create duplicated markets", async () => {
+    await expect(benchmarkAaveMarketFactory.createMarket(
+      constants.FORGE_AAVE,
+      benchmarkFutureYieldToken.address,
+      testToken.address,
+      constants.THREE_MONTH_FROM_NOW,
+      constants.HIGH_GAS_OVERRIDE
+    ))
+      .to.be.revertedWith('Benchmark: market already exists');
+  });
+
+  // it.only("should be able to getMarketByUnderlyingToken", async () => {
+  // place holder only since the original function is not complete
+  // });
 });

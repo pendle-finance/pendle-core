@@ -65,7 +65,7 @@ describe("Benchmark", async () => {
     await benchmark.tokenizeYield(
       constants.FORGE_AAVE,
       token.address,
-      constants.TEST_EXPIRY,
+      constants.SIX_MONTH_FROM_NOW,
       amountToTokenize,
       wallet.address
     );
@@ -88,7 +88,7 @@ describe("Benchmark", async () => {
     await benchmark.tokenizeYield(
       constants.FORGE_AAVE,
       token.address,
-      constants.TEST_EXPIRY,
+      constants.SIX_MONTH_FROM_NOW,
       amountToTokenize,
       wallet.address,
       constants.HIGH_GAS_OVERRIDE
@@ -98,7 +98,7 @@ describe("Benchmark", async () => {
     await benchmark.redeemUnderlying(
       constants.FORGE_AAVE,
       token.address,
-      constants.TEST_EXPIRY,
+      constants.SIX_MONTH_FROM_NOW,
       amountToTokenize,
       wallet.address,
       constants.HIGH_GAS_OVERRIDE
@@ -123,7 +123,7 @@ describe("Benchmark", async () => {
     await benchmark.tokenizeYield(
       constants.FORGE_AAVE,
       token.address,
-      constants.TEST_EXPIRY,
+      constants.SIX_MONTH_FROM_NOW,
       amountToTokenize,
       wallet.address
     );
@@ -137,7 +137,7 @@ describe("Benchmark", async () => {
     await benchmark.redeemDueInterests(
       constants.FORGE_AAVE,
       token.address,
-      constants.TEST_EXPIRY
+      constants.SIX_MONTH_FROM_NOW
     );
 
     const rate = await getLiquidityRate(wallet, token);
@@ -163,12 +163,12 @@ describe("Benchmark", async () => {
     await benchmark.tokenizeYield(
       constants.FORGE_AAVE,
       token.address,
-      constants.TEST_EXPIRY,
+      constants.SIX_MONTH_FROM_NOW,
       amountToTokenize,
       wallet.address
     );
     await benchmarkFutureYieldToken.transfer(wallet1.address, amountToTokenize);
-    const duration = constants.TEST_EXPIRY.sub(
+    const duration = constants.SIX_MONTH_FROM_NOW.sub(
       Math.round(Date.now() / 1000)
     ).sub(10);
 
@@ -179,7 +179,7 @@ describe("Benchmark", async () => {
     await wallet1Benchmark.redeemDueInterests(
       constants.FORGE_AAVE,
       token.address,
-      constants.TEST_EXPIRY
+      constants.SIX_MONTH_FROM_NOW
     );
 
     const wallet1Gain = await aUSDT.balanceOf(wallet1.address);
@@ -193,7 +193,7 @@ describe("Benchmark", async () => {
     await benchmark.redeemAfterExpiry(
       constants.FORGE_AAVE,
       token.address,
-      constants.TEST_EXPIRY,
+      constants.SIX_MONTH_FROM_NOW,
       wallet.address
     );
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
@@ -214,12 +214,12 @@ describe("Benchmark", async () => {
     await benchmark.tokenizeYield(
       constants.FORGE_AAVE,
       token.address,
-      constants.TEST_EXPIRY,
+      constants.SIX_MONTH_FROM_NOW,
       amountToTokenize,
       wallet.address
     );
     await benchmarkFutureYieldToken.transfer(wallet1.address, amountToTokenize);
-    const duration = constants.TEST_EXPIRY.sub(
+    const duration = constants.SIX_MONTH_FROM_NOW.sub(
       Math.round(Date.now() / 1000)
     ).sub(10);
 
@@ -230,7 +230,7 @@ describe("Benchmark", async () => {
     await wallet1Benchmark.redeemDueInterests(
       constants.FORGE_AAVE,
       token.address,
-      constants.TEST_EXPIRY
+      constants.SIX_MONTH_FROM_NOW
     );
 
     await advanceTime(provider, constants.ONE_MONTH);
@@ -238,7 +238,7 @@ describe("Benchmark", async () => {
     await benchmark.redeemAfterExpiry(
       constants.FORGE_AAVE,
       token.address,
-      constants.TEST_EXPIRY,
+      constants.SIX_MONTH_FROM_NOW,
       wallet.address
     );
 
@@ -251,9 +251,38 @@ describe("Benchmark", async () => {
       40000
     );
   });
+
   it("Should be able to remove a forge", async () => {
     await benchmark.removeForge(constants.FORGE_AAVE);
     let deleted = await benchmarkData.getForgeAddress(constants.FORGE_AAVE);
     expect(deleted).to.be.equal("0x0000000000000000000000000000000000000000");
   });
+
+  it("Should be able to create a new yield contract", async () => {
+    const token = tokens.USDT;
+    let { otAddress, xytAddress } = await benchmark
+      .newYieldContracts(constants.FORGE_AAVE, token.address, constants.SIX_MONTH_FROM_NOW);
+
+    expect(otAddress).to.not.eq(0);
+    expect(xytAddress).to.not.eq(0);
+    // TODO: check for event emit @Long
+    // await evm_revert(snapshotId);
+
+    // await expect(benchmark
+    //   .newYieldContracts(constants.FORGE_AAVE, token.address, constants.SIX_MONTH_FROM_NOW))
+    //   .to.emit(benchmarkAaveForge, 'NewYieldContracts').withArgs(otAddress, xytAddress, constants.SIX_MONTH_FROM_NOW);
+  });
+
+  // it("Should be able to get market reserve", async () => {
+
+  //   let [otAddress, xytAddress] = await benchmark
+  //     .newYieldContracts(constants.FORGE_AAVE, tokens.address, constants.SIX_MONTH_FROM_NOW);
+
+  //   expect(otAddress).to.not.eq(0);
+  //   expect(xytAddress).to.not.eq(0);
+
+  //   await expect(benchmark
+  //     .newYieldContracts(constants.FORGE_AAVE, tokens.address, constants.SIX_MONTH_FROM_NOW))
+  //     .to.emit(benchmarkAaveForge, 'NewYieldContracts').withArgs(otAddress, xytAddress, constants.SIX_MONTH_FROM_NOW);
+  // });
 });
