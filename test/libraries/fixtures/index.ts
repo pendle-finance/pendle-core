@@ -1,5 +1,5 @@
 import { Contract, Wallet, providers } from 'ethers'
-import DateUtils from '../../../build/artifacts/contracts/libraries/BenchmarkLibrary.sol/DateUtils.json'
+import DateUtils from '../../../build/artifacts/contracts/libraries/PendleLibrary.sol/DateUtils.json'
 
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;

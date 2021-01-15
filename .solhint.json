@@ -9,13 +9,22 @@
     "avoid-throw": "error",
     "avoid-tx-origin": "off",
     "check-send-result": "error",
-    "compiler-version": ["error","^0.7.0"],
+    "compiler-version": [
+      "error",
+      "^0.7.0"
+    ],
     "const-name-snakecase": "error",
     "func-name-mixedcase": "error",
     "imports-on-top": "error",
     "mark-callable-contracts": "off",
-    "max-line-length": ["error", 99],
-    "max-states-count": ["error", 20],
+    "max-line-length": [
+      "error",
+      99
+    ],
+    "max-states-count": [
+      "error",
+      20
+    ],
     "multiple-sends": "error",
     "no-complex-fallback": "error",
     "no-empty-blocks": "off",
@@ -25,10 +34,18 @@
     "not-rely-on-time": "off",
     "ordering": "error",
     "payable-fallback": "error",
-    "quotes": ["error","double"],
+    "quotes": [
+      "error",
+      "double"
+    ],
     "reason-string": "error",
     "reentrancy": "error",
-    "state-visibility": "error",
+    "func-visibility": [
+      "warn",
+      {
+        "ignoreConstructors": true
+      }
+    ],
     "use-forbidden-name": "error",
     "var-name-mixedcase": "error",
     "visibility-modifier-order": "error"

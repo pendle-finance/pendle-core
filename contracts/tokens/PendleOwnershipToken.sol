@@ -20,39 +20,27 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-
 pragma solidity ^0.7.0;
 
-interface ITimelock {
-    function acceptAdmin() external;
+import "./PendleBaseToken.sol";
+import "../interfaces/IPendleYieldToken.sol";
 
-    function cancelTransaction(
-        address target,
-        uint256 value,
-        string memory signature,
-        bytes memory data,
-        uint256 eta
-    ) external;
+contract PendleOwnershipToken is PendleBaseToken, IPendleYieldToken {
+    address public override forge;
+    address public override underlyingAsset;
+    address public override underlyingYieldToken;
 
-    function delay() external returns (uint256);
-
-    function executeTransaction(
-        address target,
-        uint256 value,
-        string memory signature,
-        bytes memory data,
-        uint256 eta
-    ) external payable returns (bytes calldata);
-
-    function queueTransaction(
-        address target,
-        uint256 value,
-        string memory signature,
-        bytes memory data,
-        uint256 eta
-    ) external returns (bytes32);
-
-    function queuedTransactions(bytes32 txn) external returns (bool);
-
-    function gracePeriod() external view returns (uint256);
+    constructor(
+        address _underlyingAsset,
+        address _underlyingYieldToken,
+        string memory _name,
+        string memory _symbol,
+        uint8 _underlyingYieldTokenDecimals,
+        uint256 _start,
+        uint256 _expiry
+    ) PendleBaseToken(_name, _symbol, _underlyingYieldTokenDecimals, _start, _expiry) {
+        forge = msg.sender;
+        underlyingAsset = _underlyingAsset;
+        underlyingYieldToken = _underlyingYieldToken;
+    }
 }

@@ -21,14 +21,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity ^0.7.0;
-pragma experimental ABIEncoderV2;
 
-import "../core/PendleGovernance.sol";
+import "./PendleBaseToken.sol";
+import "../interfaces/IPendleForge.sol";
+import "../interfaces/IPendleYieldToken.sol";
 
-contract MockGovernance is PendleGovernance {
+contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldToken {
+    address public override forge;
+    address public override underlyingAsset;
+    address public override underlyingYieldToken;
+    address public ot;
+    mapping(address => uint256) public lastNormalisedIncome;
+
     constructor(
-        IPDL _pdl,
-        ITimelock _timelock,
-        address _guardian
-    ) PendleGovernance(_pdl, _timelock, _guardian) {}
+        address _ot,
+        address _underlyingAsset,
+        address _underlyingYieldToken,
+        string memory _name,
+        string memory _symbol,
+        uint8 _underlyingYieldTokenDecimals,
+        uint256 _start,
+        uint256 _expiry
+    ) PendleBaseToken(_name, _symbol, _underlyingYieldTokenDecimals, _start, _expiry) {
+        forge = msg.sender;
+        ot = _ot;
+        underlyingAsset = _underlyingAsset;
+        underlyingYieldToken = _underlyingYieldToken;
+    }
+
+    function _beforeTokenTransfer(address from, address to) internal override {
+        IPendleForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, from);
+        IPendleForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, to);
+    }
 }
