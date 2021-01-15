@@ -33,7 +33,7 @@ contract PDL is IPDL {
     }
 
     string public constant name = "Pendle";
-    string public constant symbol = "PDL";
+    string public constant symbol = "PENDLE";
     uint8 public constant decimals = 18;
     uint256 public constant totalSupply = 10000000e18; // 10 million Comp
     mapping(address => mapping(address => uint96)) internal allowances;

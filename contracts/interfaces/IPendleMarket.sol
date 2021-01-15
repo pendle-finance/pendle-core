@@ -69,51 +69,51 @@ interface IPendleMarket is IPendleBaseToken {
 
     function swapAmountIn(
         address _msgSender,
-        uint256 inAmount,
+        uint256 exactIn,
         address inToken,
         address outToken,
-        uint256 minOutAmount,
+        uint256 minOut,
         uint256 maxPrice
-    ) external returns (uint256 outAmount, uint256 spotPriceAfter);
+    ) external returns (uint256 exactOut, uint256 spotPriceAfter);
 
     function swapAmountOut(
         address _msgSender,
         address inToken,
-        uint256 maxInAmount,
+        uint256 maxIn,
         address outToken,
-        uint256 outAmount,
+        uint256 exactOut,
         uint256 maxPrice
-    ) external returns (uint256 inAmount, uint256 spotPriceAfter);
+    ) external returns (uint256 exactIn, uint256 spotPriceAfter);
 
     /* ========== LP ========== */
 
     function joinPoolByAll(
         address _msgSender,
-        uint256 outAmountLp,
-        uint256 maxInAmoutXyt,
-        uint256 maxInAmountPair
+        uint256 exactOutLp,
+        uint256 maxInXyt,
+        uint256 maxInPair
     ) external;
 
     function exitPoolByAll(
         address _msgSender,
-        uint256 inAmountLp,
-        uint256 minOutAmountXyt,
-        uint256 minOutAmountPair
+        uint256 exactInLp,
+        uint256 minOutXyt,
+        uint256 minOutPair
     ) external;
 
     function joinPoolSingleToken(
         address _msgSender,
         address inToken,
-        uint256 inAmount,
-        uint256 minOutAmountLp
-    ) external returns (uint256 outAmountLp);
+        uint256 exactIn,
+        uint256 minOutLp
+    ) external returns (uint256 exactOutLp);
 
     function exitPoolSingleToken(
         address _msgSender,
         address outToken,
-        uint256 inAmountLp,
-        uint256 minOutAmountToken
-    ) external returns (uint256 outAmountToken);
+        uint256 exactInLp,
+        uint256 minOutToken
+    ) external returns (uint256 exactOutToken);
 
     //function interestDistribute(address lp)  returns (uint interestReturn);
 
