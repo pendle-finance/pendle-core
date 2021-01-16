@@ -62,7 +62,7 @@ describe("PendleMarket", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  async function bootstrapSampleMarket(amountToTokenize: BigNumber, lowLevelCall: boolean = true) {
+  async function bootstrapSampleMarket(amountToTokenize: BigNumber, lowLevelCall: boolean = false) {
     if (lowLevelCall == true) {
       await pendleMarket.bootstrap(
         wallet.address,
