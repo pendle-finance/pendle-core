@@ -157,6 +157,10 @@ library Math {
         return (ln2Numerator * log2x) / ln2Denomerator;
     }
 
+    function rfloor(uint256 x) internal pure returns (uint256) {
+        return rtoi(x) * FORMULA_PRECISION;
+    }
+
     // This famous algorithm is called "exponentiation by squaring"
     // and calculates x^n with x as fixed-point and n as regular unsigned.
     //
@@ -172,22 +176,6 @@ library Math {
     //  Also, EVM division is flooring and
     //    floor[(n-1) / 2] = floor[n / 2].
     //
-    function pow(uint256 x, uint256 n) internal pure returns (uint256 z) {
-        z = n % 2 != 0 ? x : FORMULA_PRECISION;
-
-        for (n /= 2; n != 0; n /= 2) {
-            x = rmul(x, x);
-
-            if (n % 2 != 0) {
-                z = rmul(z, x);
-            }
-        }
-    }
-
-    function rfloor(uint256 x) internal pure returns (uint256) {
-        return rtoi(x) * FORMULA_PRECISION;
-    }
-
     function rpow(uint256 _base, uint256 _exp) internal pure returns (uint256) {
         uint256 whole = rfloor(_exp);
         uint256 remain = _exp.sub(whole);
