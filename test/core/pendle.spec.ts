@@ -170,7 +170,7 @@ describe("Pendle", async () => {
     await pendleFutureYieldToken.transfer(wallet1.address, amountToTokenize);
     const duration = constants.SIX_MONTH_FROM_NOW.sub(
       Math.round(Date.now() / 1000)
-    ).sub(10);
+    ).sub(180);
 
     await advanceTime(provider, duration);
 
@@ -188,7 +188,7 @@ describe("Pendle", async () => {
 
     expect(wallet1Gain.toNumber()).to.be.approximately(gain.toNumber(), 20);
 
-    await advanceTime(provider, BigNumber.from(60));
+    await advanceTime(provider, BigNumber.from(180));
 
     await pendle.redeemAfterExpiry(
       constants.FORGE_AAVE,
@@ -199,7 +199,7 @@ describe("Pendle", async () => {
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.toNumber(),
-      20
+      50
     );
   });
 
@@ -221,7 +221,7 @@ describe("Pendle", async () => {
     await pendleFutureYieldToken.transfer(wallet1.address, amountToTokenize);
     const duration = constants.SIX_MONTH_FROM_NOW.sub(
       Math.round(Date.now() / 1000)
-    ).sub(10);
+    ).sub(180);
 
     await advanceTime(provider, duration);
 
