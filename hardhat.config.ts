@@ -5,6 +5,7 @@ import { HardhatUserConfig } from "hardhat/types";
 import "@nomiclabs/hardhat-waffle";
 import "solidity-coverage";
 import "hardhat-typechain";
+import "@nomiclabs/hardhat-truffle5";
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
