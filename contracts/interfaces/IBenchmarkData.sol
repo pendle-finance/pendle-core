@@ -58,24 +58,11 @@ interface IBenchmarkData {
     event ForgeAdded(bytes32 indexed forgeId, address indexed forgeAddress);
 
     /**
-     * @notice Emitted when a forge for a protocol is removed.
-     * @param forgeId Forge and protocol identifier.
-     * @param forgeAddress The address of the removed forge.
-     **/
-    event ForgeRemoved(bytes32 indexed forgeId, address indexed forgeAddress);
-
-    /**
      * @notice Adds a new forge for a protocol.
      * @param forgeId Forge and protocol identifier.
      * @param forgeAddress The address of the added forge.
      **/
     function addForge(bytes32 forgeId, address forgeAddress) external;
-
-    /**
-     * @notice Removes a forge.
-     * @param forgeId Forge and protocol identifier.
-     **/
-    function removeForge(bytes32 forgeId) external;
 
     /**
      * @notice Store new OT and XYT details.
@@ -169,32 +156,29 @@ interface IBenchmarkData {
     function addMarket(
         bytes32 forgeId,
         bytes32 marketFactoryId,
-        address market,
-        address xyt,
-        address token
-    ) external;
-
-    function exitFee() external view returns (uint256);
-
-    function swapFee() external view returns (uint256);
-
-    function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
-
-    function getMarketFactoryAddress(bytes32, bytes32) external view returns (address);
-
-    /**
-     * @notice Store new market details.
-     * @param forgeId Forge and protocol identifier.
-     * @param xyt Token address of the future yield token as base asset.
-     * @param token Token address of an ERC20 token as quote asset.
-     * @param market The newly created market address.
-     **/
-    function storeMarket(
-        bytes32 forgeId,
-        bytes32 marketFactoryId,
         address xyt,
         address token,
         address market
+    ) external;
+
+    function calcMarketsEffectiveLiquidity(
+        address xyt,
+        address token,
+        address[] memory markets
+    ) external returns (uint256[] memory effectiveLiquidity);
+
+    function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
+
+    function sortMarkets(
+        address[] calldata xyts,
+        address[] calldata tokens,
+        uint256 lengthLimit
+    ) external;
+
+    function sortMarketsWithPurge(
+        address[] calldata xyts,
+        address[] calldata tokens,
+        uint256 lengthLimit
     ) external;
 
     /**
@@ -203,11 +187,24 @@ interface IBenchmarkData {
      **/
     function allMarketsLength() external view returns (uint256);
 
+    function exitFee() external view returns (uint256);
+
     /**
      * @notice Gets all the markets.
      * @return Returns an array of all markets.
      **/
     function getAllMarkets() external view returns (address[] calldata);
+
+    function getBestMarkets(address source, address destination)
+        external
+        view
+        returns (address[] memory bestMarkets);
+
+    function getBestMarketsWithLimit(
+        address source,
+        address destination,
+        uint256 limit
+    ) external view returns (address[] memory bestMarkets);
 
     /**
      * @notice Gets a market given a future yield token and an ERC20 token.
@@ -222,4 +219,22 @@ interface IBenchmarkData {
         address xyt,
         address token
     ) external view returns (address market);
+
+    function getMarketFactoryAddress(bytes32, bytes32) external view returns (address);
+
+    function getMarketInfo(
+        address market,
+        address source,
+        address destination
+    ) external view returns (uint256 xytWeight, uint256 tokenWeight);
+    
+
+    function getMarketsWithLimit(
+        address source,
+        address destination,
+        uint256 offset,
+        uint256 limit
+    ) external view returns (address[] memory result);
+
+    function swapFee() external view returns (uint256);
 }

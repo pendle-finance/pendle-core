@@ -21,14 +21,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity ^0.7.0;
+pragma experimental ABIEncoderV2;
 
 import "../core/Benchmark.sol";
+import "../interfaces/IWETH.sol";
 
 contract MockBenchmark is Benchmark {
     constructor()
         Benchmark(
             0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa,
-            0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB
+            IWETH(0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB)
         )
     {}
 }

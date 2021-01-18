@@ -19,6 +19,7 @@
 pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+pragma experimental ABIEncoderV2;
 
 library Enumerable {
 
@@ -491,8 +492,6 @@ library UIntUtils {
     }
 }
 
-pragma experimental ABIEncoderV2;
-
 library DateUtils {
     /*
      *  Date utilities for ethereum contracts
@@ -595,17 +594,17 @@ library DateUtils {
         return year;
     }
 
-    function monthName(Date memory d) private pure returns (string memory) {
-        string[12] memory months =
-            ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-        return months[d.month - 1];
-    }
-
     function toRFC2822String(uint256 _timestamp) public pure returns (string memory s) {
         Date memory d = parseTimestamp(_timestamp);
         string memory day = UIntUtils.uintToString(d.day);
         string memory month = monthName(d);
         string memory year = UIntUtils.uintToString(d.year);
         s = string(abi.encodePacked(day, month, year));
+    }
+
+    function monthName(Date memory d) private pure returns (string memory) {
+        string[12] memory months =
+            ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+        return months[d.month - 1];
     }
 }

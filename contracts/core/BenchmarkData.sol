@@ -119,15 +119,6 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         emit ForgeAdded(_forgeId, _forgeAddress);
     }
 
-    function removeForge(bytes32 _forgeId) external override initialized onlyCore {
-        address _forgeAddress = getForgeAddress[_forgeId];
-
-        getForgeAddress[_forgeId] = address(0);
-        getForgeId[_forgeAddress] = _forgeId;
-
-        emit ForgeRemoved(_forgeId, _forgeAddress);
-    }
-
     function storeTokens(
         bytes32 _forgeId,
         address _ot,
@@ -165,12 +156,12 @@ contract BenchmarkData is IBenchmarkData, Permissions {
     }
 
     function addMarket(
-        bytes32 forgeId,
-        bytes32 marketFactoryId,
-        address _market,
+        bytes32 _forgeId,
+        bytes32 _marketFactoryId,
         address _xyt,
-        address _token
-    ) external override initialized onlyMarketFactory(forgeId, marketFactoryId) {
+        address _token,
+        address _market
+    ) external override initialized onlyMarketFactory(_forgeId, _marketFactoryId) {
         allMarkets.push(_market);
 
         bytes32 key = _createKey(_xyt, _token);
@@ -181,6 +172,9 @@ contract BenchmarkData is IBenchmarkData, Permissions {
             tokenWeight: uint80(IBenchmarkMarket(_market).getWeight(_token)),
             liquidity: uint256(0)
         });
+
+        getMarket[_forgeId][_marketFactoryId][_xyt][_token] = _market;
+        isMarket[_market] = true;
 
         emit MarketPairAdded(_market, _xyt, _token);
     }
@@ -194,7 +188,7 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         address[] calldata xyts,
         address[] calldata tokens,
         uint256 lengthLimit
-    ) external {
+    ) external override {
         bytes32 key;
         bytes32 indices;
         address[] memory fetchedMarkets;
@@ -209,7 +203,7 @@ contract BenchmarkData is IBenchmarkData, Permissions {
                     0,
                     Math.min(256, lengthLimit)
                 );
-                effectiveLiquidity = getEffectiveLiquidityForMarkets(
+                effectiveLiquidity = _getEffectiveLiquidityForMarkets(
                     xyts[i],
                     tokens[j],
                     fetchedMarkets
@@ -224,7 +218,7 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         address[] calldata xyts,
         address[] calldata tokens,
         uint256 lengthLimit
-    ) external {
+    ) external override {
         bytes32 key;
         address[] memory fetchedMarkets;
         uint256[] memory effectiveLiquidity;
@@ -250,22 +244,11 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         }
     }
 
-    function storeMarket(
-        bytes32 _forgeId,
-        bytes32 _marketFactoryId,
-        address _xyt,
-        address _token,
-        address _market
-    ) external override initialized onlyMarketFactory(_forgeId, _marketFactoryId) {
-        getMarket[_forgeId][_marketFactoryId][_xyt][_token] = _market;
-        isMarket[_market] = true;
-    }
-
     function calcMarketsEffectiveLiquidity(
         address _xyt,
         address _token,
         address[] memory _markets
-    ) public returns (uint256[] memory effectiveLiquidity) {
+    ) public override returns (uint256[] memory effectiveLiquidity) {
         uint256 totalLiq = 0;
         bytes32 key = _createKey(_xyt, _token);
 
@@ -302,65 +285,34 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         return allMarkets.length;
     }
 
-    function getAllMarkets() public view override returns (address[] memory) {
+    function getAllMarkets() external view override returns (address[] memory) {
         return allMarkets;
     }
 
-    function getEffectiveLiquidityForMarkets(
-        address _xyt,
-        address _token,
-        address[] memory _markets
-    ) internal view returns (uint256[] memory effectiveLiquidity) {
-        effectiveLiquidity = new uint256[](_markets.length);
-        for (uint256 i = 0; i < _markets.length; i++) {
-            bytes32 key = _createKey(_xyt, _token);
-            MarketInfo memory info = infos[_markets[i]][key];
-            effectiveLiquidity[i] = Math.rdiv(
-                uint256(info.xytWeight),
-                uint256(info.xytWeight).add(uint256(info.tokenWeight))
-            );
-            effectiveLiquidity[i] = effectiveLiquidity[i].mul(
-                IBenchmarkMarket(_markets[i]).getBalance(_token)
-            );
-        }
+    function getBestMarkets(address source, address destination)
+        external
+        view
+        override
+        returns (address[] memory bestMarkets)
+    {
+        return getBestMarketsWithLimit(source, destination, 32);
     }
 
     function getMarketInfo(
         address market,
         address source,
         address destination
-    ) external view returns (uint256 xytWeight, uint256 tokenWeight) {
+    ) external view override returns (uint256 xytWeight, uint256 tokenWeight) {
         bytes32 key = _createKey(source, destination);
         MarketInfo memory info = infos[market][key];
         return (info.xytWeight, info.tokenWeight);
-    }
-
-    function getMarketsWithLimit(
-        address source,
-        address destination,
-        uint256 offset,
-        uint256 limit
-    ) public view returns (address[] memory result) {
-        bytes32 key = _createKey(source, destination);
-        result = new address[](Math.min(limit, markets[key].markets.values.length - offset));
-        for (uint256 i = 0; i < result.length; i++) {
-            result[i] = markets[key].markets.values[offset + i];
-        }
-    }
-
-    function getBestMarkets(address source, address destination)
-        external
-        view
-        returns (address[] memory bestMarkets)
-    {
-        return getBestMarketsWithLimit(source, destination, 32);
     }
 
     function getBestMarketsWithLimit(
         address source,
         address destination,
         uint256 limit
-    ) public view returns (address[] memory bestMarkets) {
+    ) public view override returns (address[] memory bestMarkets) {
         bytes32 key = _createKey(source, destination);
         bytes32 indices = markets[key].indices;
         uint256 len = 0;
@@ -372,6 +324,19 @@ contract BenchmarkData is IBenchmarkData, Permissions {
         for (uint256 i = 0; i < len; i++) {
             uint256 index = uint256(uint8(indices[i])).sub(1);
             bestMarkets[i] = markets[key].markets.values[index];
+        }
+    }
+
+    function getMarketsWithLimit(
+        address source,
+        address destination,
+        uint256 offset,
+        uint256 limit
+    ) public view override returns (address[] memory result) {
+        bytes32 key = _createKey(source, destination);
+        result = new address[](Math.min(limit, markets[key].markets.values.length - offset));
+        for (uint256 i = 0; i < result.length; i++) {
+            result[i] = markets[key].markets.values[offset + i];
         }
     }
 
@@ -407,5 +372,24 @@ contract BenchmarkData is IBenchmarkData, Permissions {
                 (uint256(uint128((xyt < token) ? xyt : token)) << 128) |
                     (uint256(uint128((xyt < token) ? token : xyt)))
             );
+    }
+
+    function _getEffectiveLiquidityForMarkets(
+        address _xyt,
+        address _token,
+        address[] memory _markets
+    ) internal view returns (uint256[] memory effectiveLiquidity) {
+        effectiveLiquidity = new uint256[](_markets.length);
+        for (uint256 i = 0; i < _markets.length; i++) {
+            bytes32 key = _createKey(_xyt, _token);
+            MarketInfo memory info = infos[_markets[i]][key];
+            effectiveLiquidity[i] = Math.rdiv(
+                uint256(info.xytWeight),
+                uint256(info.xytWeight).add(uint256(info.tokenWeight))
+            );
+            effectiveLiquidity[i] = effectiveLiquidity[i].mul(
+                IBenchmarkMarket(_markets[i]).getBalance(_token)
+            );
+        }
     }
 }

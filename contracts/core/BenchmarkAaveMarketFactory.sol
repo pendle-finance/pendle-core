@@ -46,6 +46,21 @@ contract BenchmarkAaveMarketFactory is IBenchmarkMarketFactory, Permissions {
         core = _core;
     }
 
+    function bootStrapMarket(
+        bytes32 _forgeId,
+        address _xyt,
+        address _token,
+        uint256 _initialXytLiquidity,
+        uint256 _initialTokenLiquidity
+    ) public override {
+        IBenchmarkData data = core.data();
+        IBenchmarkMarket market =
+            IBenchmarkMarket(data.getMarket(_forgeId, marketFactoryId, _xyt, _token));
+        require(address(market) != address(0), "Benchmark: market not found");
+        market.bootstrap(msg.sender, _initialXytLiquidity, _initialTokenLiquidity);
+    }
+
+
     function createMarket(
         bytes32 _forgeId,
         address _xyt,
@@ -69,12 +84,9 @@ contract BenchmarkAaveMarketFactory is IBenchmarkMarketFactory, Permissions {
             abi.encodePacked(msg.sender, core, forgeAddress, _xyt, _token, _expiry),
             abi.encode(msg.sender, core, forgeAddress, _xyt, _token, _expiry)
         );
-        data.storeMarket(_forgeId, marketFactoryId, _xyt, _token, market);
-        data.addMarket(_forgeId, marketFactoryId, market);
-        //@@Vu TODO: we might want to merge data.storeMarket and data.addMarket to one function?
+        data.addMarket(_forgeId, marketFactoryId, _xyt, _token, market);
 
-        //@@Vu TODO: fix events to add marketFactoryId
-        emit MarketCreated(_xyt, _token, market);
+        emit MarketCreated(marketFactoryId, _xyt, _token, market);
     }
 
     function setCore(IBenchmark _core) public override onlyGovernance {

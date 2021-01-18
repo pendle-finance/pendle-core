@@ -22,6 +22,7 @@
  */
 
 pragma solidity ^0.7.0;
+pragma experimental ABIEncoderV2;
 
 import "./IBenchmark.sol";
 import "./IBenchmarkBaseToken.sol";
@@ -29,20 +30,23 @@ import {Utils} from "../libraries/BenchmarkLibrary.sol";
 
 
 interface IBenchmarkMarket is IBenchmarkBaseToken {
+    struct TokenReserve {
+        uint256 weight;
+        uint256 balance;
+    }
+
     /* ========== EVENTS ========== */
 
     /**
      * @notice Emitted when a swap happens on the market.
-     * @param trader The address of msg.sender.
+     * @param trader The address of the trader.
      * @param srcAmount The source amount being traded.
      * @param destAmount The destination amount received.
-     * @param destination The destination addressed where the swap funds is sent to.
      **/
     event Swap(
         address indexed trader,
         uint256 srcAmount,
-        uint256 destAmount,
-        address indexed destination
+        uint256 destAmount
     );
 
     event Join(address indexed lp, address indexed token, uint256 amount);
@@ -64,14 +68,12 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     //     uint256 denomPairToken
     // ) external;
 
-    /* ========== TRADE ========== */
-
-    function spotPrice(address inToken, address outToken) external view returns (uint256 spot);
+    /* ========== SWAP ========== */
 
     function swapAmountIn(
         address _msgSender,
-        uint256 inAmount,
         address inToken,
+        uint256 inAmount,
         address outToken,
         uint256 minOutAmount,
         uint256 maxPrice
@@ -87,6 +89,12 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     ) external returns (uint256 inAmount, uint256 spotPriceAfter);
 
     /* ========== LP ========== */
+
+    function bootstrap(
+        address _msgSender,
+        uint256 initialXytLiquidity,
+        uint256 initialTokenLiquidity
+    ) external;
 
     function joinPoolByAll(
         address _msgSender,
@@ -116,15 +124,23 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
         uint256 minOutAmountToken
     ) external returns (uint256 outAmountToken);
 
-    //function interestDistribute(address lp)  returns (uint interestReturn);
-
-    /* ========== CURVE SHIFTING ========== */
-
-    //function shiftWeight(address xytToken, address pairToken) internal;
-
-    //function shiftCurve(address xytToken, address pairToken) internal;
+    //function interestDistribute(address lp) returns (uint interestReturn);
 
     /* ========== VIEW ========== */
+
+    function calcInAmount(
+        TokenReserve memory inTokenReserve,
+        TokenReserve memory outTokenReserve,
+        uint256 swapFee,
+        uint256 outAmount
+    ) external pure returns (uint256 inAmount);
+
+    function calcOutAmount(
+        TokenReserve memory inTokenReserve,
+        TokenReserve memory outTokenReserve,
+        uint256 swapFee,
+        uint256 inAmount
+    ) external pure returns (uint256 outAmount);
 
     function getReserves()
         external
@@ -139,11 +155,7 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
 
     function getWeight(address asset) external view returns (uint256);
 
-    function bootstrap(
-        address _msgSender,
-        uint256 initialXytLiquidity,
-        uint256 initialTokenLiquidity
-    ) external;
+    function spotPrice(address inToken, address outToken) external view returns (uint256 spot);
 
     /**
      * @notice Gets a reference to the Benchmark core contract.
@@ -162,8 +174,6 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
      * @return Returns the forge address.
      **/
     function forge() external view returns (address);
-
-    function minLiquidity() external pure returns (uint256);
 
     function token() external view returns (address);
 

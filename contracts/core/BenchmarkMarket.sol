@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity ^0.7.0;
+pragma experimental ABIEncoderV2;
 
 import "../interfaces/IBenchmarkData.sol";
 import "../interfaces/IBenchmarkMarket.sol";
@@ -42,11 +43,11 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     address public immutable override forge;
     address public immutable override token;
     address public immutable override xyt;
-    uint256 public constant override minLiquidity = 10**3;
-    string private constant _name = "Benchmark Market";
-    string private constant _symbol = "BMK-LPT";
+    uint256 public constant MIN_LIQUIDITY = 10**3;
+    string private constant NAME = "Benchmark Market";
+    string private constant SYMBOL = "BMK-LPT";
     uint256 private constant INITIAL_LP_FOR_CREATOR = 10**18; // arbitrary number
-    uint8 private constant _decimals = 18;
+    uint8 private constant DECIMALS = 18;
     address public creator;
     bool public bootstrapped;
     uint256 private priceLast = Math.FORMULA_PRECISION;
@@ -55,12 +56,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     uint256 public globalIncomeIndex;
     uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**8;
     mapping(address => uint256) public lastGlobalIncomeIndex;
-
-    struct TokenReserve {
-        uint256 weight;
-        uint256 balance;
-    }
-
     mapping(address => TokenReserve) private reserves;
 
     constructor(
@@ -70,7 +65,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         address _xyt,
         address _token,
         uint256 _expiry
-    ) BenchmarkBaseToken(_name, _symbol, _decimals, block.timestamp, _expiry) {
+    ) BenchmarkBaseToken(NAME, SYMBOL, DECIMALS, block.timestamp, _expiry) {
         require(address(_core) != address(0), "Benchmark: zero address");
         require(_forge != address(0), "Benchmark: zero address");
         require(_xyt != address(0), "Benchmark: zero address");
@@ -110,162 +105,17 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 initialTokenLiquidity
     ) external override {
         _pullToken(xyt, _msgSender, initialXytLiquidity);
-
         _pullToken(token, _msgSender, initialTokenLiquidity);
+
         reserves[xyt].balance = initialXytLiquidity;
         reserves[xyt].weight = Math.FORMULA_PRECISION / 2;
         reserves[token].balance = initialTokenLiquidity;
         reserves[token].weight = Math.FORMULA_PRECISION / 2;
+
         _mintLpToken(INITIAL_LP_FOR_CREATOR);
         _pushLpToken(_msgSender, INITIAL_LP_FOR_CREATOR);
-        blockNumLast = block.number; //@@XM added for curve shifting
+        blockNumLast = block.number;
         bootstrapped = true;
-    }
-
-    function spotPrice(address inToken, address outToken)
-        external
-        view
-        override
-        returns (uint256 spot)
-    {
-        IBenchmarkData data = core.data();
-        TokenReserve storage inTokenReserve = reserves[inToken];
-        TokenReserve storage outTokenReserve = reserves[outToken];
-
-        return _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
-    }
-
-    function swapAmountIn(
-        address _msgSender,
-        uint256 inAmount,
-        address inToken,
-        address outToken,
-        uint256 minOutAmount,
-        uint256 maxPrice
-    ) external override returns (uint256 outAmount, uint256 spotPriceAfter) {
-        _curveShift();
-
-        IBenchmarkData data = core.data();
-        TokenReserve storage inTokenReserve = reserves[inToken];
-        TokenReserve storage outTokenReserve = reserves[outToken];
-
-        uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
-        require(spotPriceBefore <= maxPrice, "Benchmark: bad price");
-
-        //calc out amount
-        outAmount = _calcOutAmount(inTokenReserve, outTokenReserve, data.swapFee(), inAmount);
-        require(outAmount >= minOutAmount, "Benchmark: low out amount");
-
-        inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
-        outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
-
-        spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
-
-        require(spotPriceAfter >= spotPriceBefore, "Benchmark: math problem");
-        require(spotPriceAfter <= maxPrice, "Benchmark: bad price");
-        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "Benchmark: math problem");
-
-        emit Swap(_msgSender, inAmount, outAmount, _msgSender);
-
-        _pullToken(inToken, _msgSender, inAmount);
-        _pushToken(outToken, _msgSender, outAmount);
-
-        return (outAmount, spotPriceAfter);
-    }
-
-    function swapAmountOut(
-        address _msgSender,
-        address inToken,
-        uint256 maxInAmount,
-        address outToken,
-        uint256 outAmount,
-        uint256 maxPrice
-    ) external override returns (uint256 inAmount, uint256 spotPriceAfter) {
-        _curveShift();
-
-        IBenchmarkData data = core.data();
-        TokenReserve storage inTokenReserve = reserves[inToken];
-        TokenReserve storage outTokenReserve = reserves[outToken];
-
-        //calc spot price
-        uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
-        require(spotPriceBefore <= maxPrice, "Benchmark: bad price");
-
-        //calc in amount
-        inAmount = _calcInAmount(inTokenReserve, outTokenReserve, data.swapFee(), outAmount);
-        require(inAmount <= maxInAmount, "Benchmark: high in amount");
-
-        inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
-        outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
-
-        spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
-
-        require(spotPriceAfter >= spotPriceBefore, "Benchmark: math problem");
-        require(spotPriceAfter <= maxPrice, "Benchmark: bad price");
-        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "Benchmark: math problem");
-
-        emit Swap(_msgSender, inAmount, outAmount, _msgSender);
-
-        _pullToken(inToken, _msgSender, inAmount);
-        _pushToken(outToken, _msgSender, outAmount);
-
-        return (inAmount, spotPriceAfter);
-    }
-
-    /**
-     * @notice join the pool by putting in xytToken and pairTokens
-     * and get back desired amount of lpToken
-     */
-
-    function joinPoolByAll(
-        address _msgSender,
-        uint256 outAmountLp,
-        uint256 maxInAmoutXyt,
-        uint256 maxInAmountPair
-    ) external override {
-        uint256 totalLp = totalSupply;
-        uint256 ratio = Math.rdiv(outAmountLp, totalLp);
-        require(ratio != 0, "Benchmark: math problem");
-
-        //calc and inject xyt token
-        uint256 balanceToken = reserves[xyt].balance;
-        uint256 inAmount = Math.rmul(ratio, balanceToken);
-        require(inAmount != 0, "Benchmark: math problem");
-        require(inAmount <= maxInAmoutXyt, "Benchmark: beyond amount limit");
-        reserves[xyt].balance = reserves[xyt].balance.add(inAmount);
-        emit Join(_msgSender, xyt, inAmount);
-        _pullToken(xyt, _msgSender, inAmount);
-
-        //calc and inject pair token
-        balanceToken = reserves[token].balance;
-        inAmount = Math.rmul(ratio, balanceToken);
-        require(inAmount != 0, "Benchmark: math problem");
-        require(inAmount <= maxInAmountPair, "Benchmark: beyond amount limit");
-        reserves[token].balance = reserves[token].balance.add(inAmount);
-        emit Join(_msgSender, token, inAmount);
-        _pullToken(token, _msgSender, inAmount);
-
-        //mint and push lp token
-        _mintLpToken(outAmountLp);
-        _pushLpToken(_msgSender, outAmountLp);
-        printAcc(_msgSender);
-    }
-
-    function printAcc(address a) internal view {
-        console.log("\t\t[contract] Details for ", a);
-        console.log("\t\t\t[contract] globalIncomeIndex=", globalIncomeIndex);
-        console.log(
-            "\t\t\t[contract] underlyingYieldTokenAsset bal of account=",
-            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(a)
-        );
-        console.log(
-            "\t\t\t[contract] underlyingYieldToken bal of amm =",
-            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this))
-        );
-        console.log(
-            "\t\t\t[contract] lastGlobalIncomeIndex of account = ",
-            lastGlobalIncomeIndex[a]
-        );
     }
 
     /**
@@ -282,8 +132,8 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 exitFee = data.exitFee();
         uint256 totalLp = totalSupply;
         uint256 exitFees = Math.rmul(inAmountLp, exitFee);
-        uint256 InLpAfterExitFee = inAmountLp.sub(exitFee);
-        uint256 ratio = Math.rdiv(InLpAfterExitFee, totalLp);
+        uint256 inLpAfterExitFee = inAmountLp.sub(exitFee);
+        uint256 ratio = Math.rdiv(inLpAfterExitFee, totalLp);
         require(ratio != 0, "Benchmark: math problem");
 
         //calc and withdraw xyt token
@@ -307,40 +157,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         //let's deal with lp last
         _pullLpToken(_msgSender, inAmountLp);
         _pushLpToken(factory, exitFees);
-        _burnLpToken(InLpAfterExitFee);
-    }
-
-    function joinPoolSingleToken(
-        address _msgSender,
-        address inToken,
-        uint256 inAmount,
-        uint256 minOutAmountLp
-    ) external override returns (uint256 outAmountLp) {
-        IBenchmarkData data = core.data();
-        TokenReserve storage inTokenReserve = reserves[inToken];
-        uint256 totalLp = totalSupply;
-        uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
-
-        //calc out amount of lp token
-        outAmountLp = _calcOutAmountLp(
-            inAmount,
-            inTokenReserve,
-            data.swapFee(),
-            totalLp,
-            totalWeight
-        );
-        require(outAmountLp >= minOutAmountLp, "Benchmark: bad lp out amount");
-
-        //update reserves and operate underlying lp and intoken
-        inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
-
-        emit Join(_msgSender, inToken, inAmount);
-
-        _mintLpToken(outAmountLp);
-        _pushLpToken(_msgSender, outAmountLp);
-        _pullToken(inToken, _msgSender, inAmount);
-
-        return outAmountLp;
+        _burnLpToken(inLpAfterExitFee);
     }
 
     function exitPoolSingleToken(
@@ -379,12 +196,222 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         return outAmountToken;
     }
 
+    /**
+     * @notice join the pool by putting in xytToken and pairTokens
+     * and get back desired amount of lpToken
+     */
+    function joinPoolByAll(
+        address _msgSender,
+        uint256 outAmountLp,
+        uint256 maxInAmoutXyt,
+        uint256 maxInAmountPair
+    ) external override {
+        uint256 totalLp = totalSupply;
+        uint256 ratio = Math.rdiv(outAmountLp, totalLp);
+        require(ratio != 0, "Benchmark: math problem");
+
+        //calc and inject xyt token
+        uint256 balanceToken = reserves[xyt].balance;
+        uint256 inAmount = Math.rmul(ratio, balanceToken);
+        require(inAmount != 0, "Benchmark: math problem");
+        require(inAmount <= maxInAmoutXyt, "Benchmark: beyond amount limit");
+        reserves[xyt].balance = reserves[xyt].balance.add(inAmount);
+        emit Join(_msgSender, xyt, inAmount);
+        _pullToken(xyt, _msgSender, inAmount);
+
+        //calc and inject pair token
+        balanceToken = reserves[token].balance;
+        inAmount = Math.rmul(ratio, balanceToken);
+        require(inAmount != 0, "Benchmark: math problem");
+        require(inAmount <= maxInAmountPair, "Benchmark: beyond amount limit");
+        reserves[token].balance = reserves[token].balance.add(inAmount);
+        emit Join(_msgSender, token, inAmount);
+        _pullToken(token, _msgSender, inAmount);
+
+        //mint and push lp token
+        _mintLpToken(outAmountLp);
+        _pushLpToken(_msgSender, outAmountLp);
+        printAcc(_msgSender);
+    }
+
+    function joinPoolSingleToken(
+        address _msgSender,
+        address inToken,
+        uint256 inAmount,
+        uint256 minOutAmountLp
+    ) external override returns (uint256 outAmountLp) {
+        IBenchmarkData data = core.data();
+        TokenReserve storage inTokenReserve = reserves[inToken];
+        uint256 totalLp = totalSupply;
+        uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
+
+        //calc out amount of lp token
+        outAmountLp = _calcOutAmountLp(
+            inAmount,
+            inTokenReserve,
+            data.swapFee(),
+            totalLp,
+            totalWeight
+        );
+        require(outAmountLp >= minOutAmountLp, "Benchmark: bad lp out amount");
+
+        //update reserves and operate underlying lp and intoken
+        inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
+
+        emit Join(_msgSender, inToken, inAmount);
+
+        _mintLpToken(outAmountLp);
+        _pushLpToken(_msgSender, outAmountLp);
+        _pullToken(inToken, _msgSender, inAmount);
+
+        return outAmountLp;
+    }
+
+    function swapAmountIn(
+        address _trader,
+        address inToken,
+        uint256 inAmount,
+        address outToken,
+        uint256 minOutAmount,
+        uint256 maxPrice
+    ) external override returns (uint256 outAmount, uint256 spotPriceAfter) {
+        _curveShift();
+
+        IBenchmarkData data = core.data();
+        TokenReserve storage inTokenReserve = reserves[inToken];
+        TokenReserve storage outTokenReserve = reserves[outToken];
+
+        uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
+        require(spotPriceBefore <= maxPrice, "Benchmark: bad price");
+
+        //calc out amount
+        outAmount = calcOutAmount(inTokenReserve, outTokenReserve, inAmount, data.swapFee());
+        require(outAmount >= minOutAmount, "Benchmark: low out amount");
+
+        inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
+        outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
+
+        spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
+
+        require(spotPriceAfter >= spotPriceBefore, "Benchmark: math problem");
+        require(spotPriceAfter <= maxPrice, "Benchmark: bad price");
+        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "Benchmark: math problem");
+
+        emit Swap(_trader, inAmount, outAmount);
+
+        _pullToken(inToken, msg.sender, inAmount);
+        _pushToken(outToken, msg.sender, outAmount);
+
+        return (outAmount, spotPriceAfter);
+    }
+
+    function swapAmountOut(
+        address _trader,
+        address inToken,
+        uint256 maxInAmount,
+        address outToken,
+        uint256 outAmount,
+        uint256 maxPrice
+    ) external override returns (uint256 inAmount, uint256 spotPriceAfter) {
+        _curveShift();
+
+        IBenchmarkData data = core.data();
+        TokenReserve storage inTokenReserve = reserves[inToken];
+        TokenReserve storage outTokenReserve = reserves[outToken];
+
+        //calc spot price
+        uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
+        require(spotPriceBefore <= maxPrice, "Benchmark: bad price");
+
+        //calc in amount
+        inAmount = calcInAmount(inTokenReserve, outTokenReserve, data.swapFee(), outAmount);
+        require(inAmount <= maxInAmount, "Benchmark: high in amount");
+
+        inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
+        outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
+
+        spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
+
+        require(spotPriceAfter >= spotPriceBefore, "Benchmark: math problem");
+        require(spotPriceAfter <= maxPrice, "Benchmark: bad price");
+        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "Benchmark: math problem");
+
+        emit Swap(_trader, inAmount, outAmount);
+
+        _pullToken(inToken, msg.sender, inAmount);
+        _pushToken(outToken, msg.sender, outAmount);
+
+        return (inAmount, spotPriceAfter);
+    }
+
+    function printAcc(address a) internal view {
+        console.log("\t\t[contract] Details for ", a);
+        console.log("\t\t\t[contract] globalIncomeIndex=", globalIncomeIndex);
+        console.log(
+            "\t\t\t[contract] underlyingYieldTokenAsset bal of account=",
+            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(a)
+        );
+        console.log(
+            "\t\t\t[contract] underlyingYieldToken bal of amm =",
+            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this))
+        );
+        console.log(
+            "\t\t\t[contract] lastGlobalIncomeIndex of account = ",
+            lastGlobalIncomeIndex[a]
+        );
+    }
+
+    function calcInAmount(
+        TokenReserve memory inTokenReserve,
+        TokenReserve memory outTokenReserve,
+        uint256 swapFee,
+        uint256 outAmount
+    ) public pure override returns (uint256 inAmount) {
+        uint256 weightRatio = Math.rdiv(outTokenReserve.weight, inTokenReserve.weight);
+        uint256 diff = outTokenReserve.balance.sub(outAmount);
+        uint256 y = Math.rdiv(outTokenReserve.balance, diff);
+        uint256 foo = Math.rpow(y, weightRatio);
+
+        foo = foo.sub(Math.FORMULA_PRECISION);
+        inAmount = Math.FORMULA_PRECISION.sub(swapFee);
+        inAmount = Math.rdiv(Math.rmul(inTokenReserve.balance, foo), inAmount);
+    }
+
+    function calcOutAmount(
+        TokenReserve memory inTokenReserve,
+        TokenReserve memory outTokenReserve,
+        uint256 inAmount,
+        uint256 swapFee
+    ) public pure override returns (uint256 outAmount) {
+        uint256 weightRatio = Math.rdiv(inTokenReserve.weight, outTokenReserve.weight);
+        uint256 adjustedIn = Math.FORMULA_PRECISION.sub(swapFee);
+        adjustedIn = Math.rmul(inAmount, adjustedIn);
+        uint256 y = Math.rdiv(inTokenReserve.balance, inTokenReserve.balance.add(adjustedIn));
+        uint256 foo = Math.rpow(y, weightRatio);
+        uint256 bar = Math.FORMULA_PRECISION.sub(foo);
+
+        outAmount = Math.rmul(outTokenReserve.balance, bar);
+    }
+
     function getBalance(address asset) external view override returns (uint256) {
         return reserves[asset].balance;
     }
 
     function getWeight(address asset) external view override returns (uint256) {
         return reserves[asset].weight;
+    }
+
+    function spotPrice(address inToken, address outToken)
+        external
+        view
+        override
+        returns (uint256 spot)
+    {
+        IBenchmarkData data = core.data();
+        TokenReserve storage inTokenReserve = reserves[inToken];
+        TokenReserve storage outTokenReserve = reserves[outToken];
+
+        return _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
     }
 
     function _interestDistribute(address lp) internal returns (uint256 interestReturn) {}
@@ -400,38 +427,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 scale = Math.rdiv(Math.FORMULA_PRECISION, Math.FORMULA_PRECISION.sub(swapFee));
 
         spot = Math.rmul(ratio, scale);
-    }
-
-    function _calcOutAmount(
-        TokenReserve memory inTokenReserve,
-        TokenReserve memory outTokenReserve,
-        uint256 swapFee,
-        uint256 inAmount
-    ) internal pure returns (uint256 outAmount) {
-        uint256 weightRatio = Math.rdiv(inTokenReserve.weight, outTokenReserve.weight);
-        uint256 adjustedIn = Math.FORMULA_PRECISION.sub(swapFee);
-        adjustedIn = Math.rmul(inAmount, adjustedIn);
-        uint256 y = Math.rdiv(inTokenReserve.balance, inTokenReserve.balance.add(adjustedIn));
-        uint256 foo = Math.rpow(y, weightRatio);
-        uint256 bar = Math.FORMULA_PRECISION.sub(foo);
-
-        outAmount = Math.rmul(outTokenReserve.balance, bar);
-    }
-
-    function _calcInAmount(
-        TokenReserve memory inTokenReserve,
-        TokenReserve memory outTokenReserve,
-        uint256 swapFee,
-        uint256 outAmount
-    ) internal pure returns (uint256 inAmount) {
-        uint256 weightRatio = Math.rdiv(outTokenReserve.weight, inTokenReserve.weight);
-        uint256 diff = outTokenReserve.balance.sub(outAmount);
-        uint256 y = Math.rdiv(outTokenReserve.balance, diff);
-        uint256 foo = Math.rpow(y, weightRatio);
-
-        foo = foo.sub(Math.FORMULA_PRECISION);
-        inAmount = Math.FORMULA_PRECISION.sub(swapFee);
-        inAmount = Math.rdiv(Math.rmul(inTokenReserve.balance, foo), inAmount);
     }
 
     function _calcOutAmountLp(
@@ -583,7 +578,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             balanceOf[account].mul(globalIncomeIndex - lastGlobalIncomeIndex[account]).div(
                 GLOBAL_INCOME_INDEX_MULTIPLIER
             );
-        /* console.log("\t[contract] dueInterests in _settleLpInterests = ", dueInterests, account); */
 
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
         if (dueInterests == 0) return;
