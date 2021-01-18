@@ -16,6 +16,8 @@ export const constants = {
   AAVE_DUMMY_REFERRAL_CODE: 0,
   FORGE_AAVE: utils.formatBytes32String("Aave"),
   MARKET_FACTORY_AAVE: utils.formatBytes32String("Aave"),
+  ZERO_BYTES: utils.formatBytes32String(""),
+  RANDOM_BYTES: utils.formatBytes32String("ZpTw6Y3Ft4ruk7pmwTJF"),
   ZERO_ADDRESS: "0x0000000000000000000000000000000000000000",
   MAX_ALLOWANCE: BigNumber.from(2)
     .pow(BigNumber.from(256))

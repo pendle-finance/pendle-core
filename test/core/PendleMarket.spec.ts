@@ -216,12 +216,7 @@ describe("PendleMarket", async () => {
   it("should be able to get spot price", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
 
-    await pendleMarket.bootstrap(
-      wallet1.address,
-      amountToTokenize,
-      amountToTokenize,
-      constants.HIGH_GAS_OVERRIDE
-    );
+    await bootstrapSampleMarket(amountToTokenize);
 
     let spotPrice = await pendleMarket.spotPrice(
       testToken.address,
@@ -299,12 +294,8 @@ describe("PendleMarket", async () => {
   it("should be able to getReserves", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
 
-    await pendleMarket.bootstrap(
-      wallet.address,
-      amountToTokenize,
-      amountToTokenize,
-      constants.HIGH_GAS_OVERRIDE
-    );
+    await bootstrapSampleMarket(amountToTokenize);
+
     let [xytReserve, tokenReserve, blockTimestamp] = await pendleMarket.getReserves();
     expect(xytReserve).to.be.equal(amountToTokenize);
     expect(tokenReserve).to.be.equal(amountToTokenize);
