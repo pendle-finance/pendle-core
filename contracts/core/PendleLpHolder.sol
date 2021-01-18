@@ -26,7 +26,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../interfaces/IPendleLpHolder.sol";
 
-
 contract PendleLpHolder is IPendleLpHolder {
     using SafeERC20 for IERC20;
 
@@ -40,12 +39,12 @@ contract PendleLpHolder is IPendleLpHolder {
         underlyingYieldToken = _underlyingYieldToken;
     }
 
-    function sendLp(address user, uint256 amount) override public {
+    function sendLp(address user, uint256 amount) public override {
         require(msg.sender == pendleLiquidityMining, "Pendle: not authorized");
         IERC20(pendleMarket).safeTransfer(user, amount);
     }
 
-    function sendInterests(address user, uint256 amount) override public {
+    function sendInterests(address user, uint256 amount) public override {
         require(msg.sender == pendleLiquidityMining, "Pendle: not authorized");
         IERC20(underlyingYieldToken).safeTransfer(user, amount);
     }

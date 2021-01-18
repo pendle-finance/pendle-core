@@ -25,5 +25,6 @@ pragma solidity ^0.7.0;
 
 interface IPendleLiquidityMining {
     function stake(uint256 expiry, uint256 amount) external returns (address);
+
     function withdraw(uint256 expiry, uint256 amount) external;
 }

@@ -1,8 +1,8 @@
 import { expect } from "chai";
 import { Contract, BigNumber } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
-import PendleLiquidityMining from "../../build/artifacts/contracts/core/PendleLiquidityMining.sol/PendleLiquidityMining.json"
-import PDL from "../../build/artifacts/contracts/tokens/PDL.sol/PDL.json"
+import PendleLiquidityMining from "../../build/artifacts/contracts/core/PendleLiquidityMining.sol/PendleLiquidityMining.json";
+import PDL from "../../build/artifacts/contracts/tokens/PDL.sol/PDL.json";
 
 import { pendleMarketFixture } from "./fixtures";
 import {
@@ -41,8 +41,8 @@ describe("PendleLiquidityMining", async () => {
     epochDuration: BigNumber.from(3600 * 24 * 10), //10 days
     rewardsPerEpoch: BigNumber.from("10000000000"), // 1e10
     numberOfEpochs: BigNumber.from(20),
-    vestingEpochs: BigNumber.from(4)
-  }
+    vestingEpochs: BigNumber.from(4),
+  };
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
@@ -78,7 +78,8 @@ describe("PendleLiquidityMining", async () => {
 
     pendleLiquidityMining = await deployContract(
       wallet,
-      PendleLiquidityMining, [
+      PendleLiquidityMining,
+      [
         wallet.address,
         pdl.address,
         pendleAaveMarketFactory.address,
@@ -88,14 +89,19 @@ describe("PendleLiquidityMining", async () => {
         liquidityMiningParameters.epochDuration,
         liquidityMiningParameters.rewardsPerEpoch,
         liquidityMiningParameters.numberOfEpochs,
-        liquidityMiningParameters.vestingEpochs
+        liquidityMiningParameters.vestingEpochs,
       ]
     );
     console.log("deployed liquidity mining contract");
 
     await pdl.approve(pendleLiquidityMining.address, constants.MAX_ALLOWANCE);
-    await pendleMarket.approve(pendleLiquidityMining.address, constants.MAX_ALLOWANCE);
-    await pendleMarket.connect(wallet1).approve(pendleLiquidityMining.address, constants.MAX_ALLOWANCE);
+    await pendleMarket.approve(
+      pendleLiquidityMining.address,
+      constants.MAX_ALLOWANCE
+    );
+    await pendleMarket
+      .connect(wallet1)
+      .approve(pendleLiquidityMining.address, constants.MAX_ALLOWANCE);
     // wallet has some LP now
     await pendleLiquidityMining.fund();
 
@@ -119,32 +125,65 @@ describe("PendleLiquidityMining", async () => {
     const amountToStake = BigNumber.from("100000000000000000"); //1e17 LP = 0.1 LP
 
     await pendleMarket.transfer(wallet1.address, amountToStake);
-    const pdlBalanceOfContract = await pdl.balanceOf(pendleLiquidityMining.address);
+    const pdlBalanceOfContract = await pdl.balanceOf(
+      pendleLiquidityMining.address
+    );
     const pdlBalanceOfUser = await pdl.balanceOf(wallet1.address);
     const lpBalanceOfUser = await pendleMarket.balanceOf(wallet1.address);
 
-    console.log(`\tPDL balance of PendleLiquidityMining contract before: ${pdlBalanceOfContract}`);
+    console.log(
+      `\tPDL balance of PendleLiquidityMining contract before: ${pdlBalanceOfContract}`
+    );
     console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
     console.log(`\tLP balance of user before: ${pdlBalanceOfUser}`);
 
-    await advanceTime(provider, liquidityMiningParameters.startTime.sub( BigNumber.from(Math.round(Date.now() / 1000)) ));
-    await pendleLiquidityMining.connect(wallet1).stake(constants.TEST_EXPIRY, amountToStake, constants.HIGH_GAS_OVERRIDE);
+    await advanceTime(
+      provider,
+      liquidityMiningParameters.startTime.sub(
+        BigNumber.from(Math.round(Date.now() / 1000))
+      )
+    );
+    await pendleLiquidityMining
+      .connect(wallet1)
+      .stake(constants.TEST_EXPIRY, amountToStake, constants.HIGH_GAS_OVERRIDE);
     console.log("\tStaked");
-    const lpHolderContract = await pendleLiquidityMining.lpHolderForExpiry(constants.TEST_EXPIRY);
-    const aTokenBalanceOfLpHolderContract = await aUSDT.balanceOf(lpHolderContract);
+    const lpHolderContract = await pendleLiquidityMining.lpHolderForExpiry(
+      constants.TEST_EXPIRY
+    );
+    const aTokenBalanceOfLpHolderContract = await aUSDT.balanceOf(
+      lpHolderContract
+    );
     const aTokenBalanceOfUser = await aUSDT.balanceOf(wallet1.address);
-    console.log(`\t[LP interests] aUSDT balance of LpHolder after first staking = ${aTokenBalanceOfLpHolderContract}`);
-    console.log(`\t[LP interests] aUSDT balance of User after first staking = ${aTokenBalanceOfUser}`);
+    console.log(
+      `\t[LP interests] aUSDT balance of LpHolder after first staking = ${aTokenBalanceOfLpHolderContract}`
+    );
+    console.log(
+      `\t[LP interests] aUSDT balance of User after first staking = ${aTokenBalanceOfUser}`
+    );
 
     await advanceTime(provider, FIFTEEN_DAYS);
-    await pendleLiquidityMining.connect(wallet1).withdraw(constants.TEST_EXPIRY, amountToStake.div(BigNumber.from(2)), constants.HIGH_GAS_OVERRIDE);
+    await pendleLiquidityMining
+      .connect(wallet1)
+      .withdraw(
+        constants.TEST_EXPIRY,
+        amountToStake.div(BigNumber.from(2)),
+        constants.HIGH_GAS_OVERRIDE
+      );
 
-    const pdlBalanceOfContractAfter = await pdl.balanceOf(pendleLiquidityMining.address);
+    const pdlBalanceOfContractAfter = await pdl.balanceOf(
+      pendleLiquidityMining.address
+    );
     const pdlBalanceOfUserAfter = await pdl.balanceOf(wallet1.address);
-    const expectedPdlBalanceOfUserAfter = liquidityMiningParameters.rewardsPerEpoch.div(BigNumber.from(4))
-    console.log(`\tPDL balance of PendleLiquidityMining contract after: ${pdlBalanceOfContractAfter}`);
+    const expectedPdlBalanceOfUserAfter = liquidityMiningParameters.rewardsPerEpoch.div(
+      BigNumber.from(4)
+    );
+    console.log(
+      `\tPDL balance of PendleLiquidityMining contract after: ${pdlBalanceOfContractAfter}`
+    );
     console.log(`\tPDL balance of user after: ${pdlBalanceOfUserAfter}`);
-    console.log(`\tExpected PDL balance of user after: ${expectedPdlBalanceOfUserAfter}`);
+    console.log(
+      `\tExpected PDL balance of user after: ${expectedPdlBalanceOfUserAfter}`
+    );
 
     // we need to do this properly
     expect(pdlBalanceOfUserAfter.toNumber()).to.be.approximately(
@@ -153,7 +192,11 @@ describe("PendleLiquidityMining", async () => {
     );
 
     //stake using another user - wallet, for the same amount as wallet1's stake now (amountToStake/2)
-    await pendleLiquidityMining.stake(constants.TEST_EXPIRY, amountToStake.div(2), constants.HIGH_GAS_OVERRIDE);
+    await pendleLiquidityMining.stake(
+      constants.TEST_EXPIRY,
+      amountToStake.div(2),
+      constants.HIGH_GAS_OVERRIDE
+    );
 
     // Now we wait for another 15 days to withdraw (at the very start of epoch 4), then the rewards to be withdrawn for wallet1 should be:
     // From epoch 1: rewardsPerEpoch * 2/4    ( 1/4 is released at start of epoch 3, 1/4 is released at start of epoch 4)
@@ -164,25 +207,45 @@ describe("PendleLiquidityMining", async () => {
 
     await pendleLiquidityMining.calculateEpochData(BigNumber.from(2)); // Although its already epoch 4, we still need to call this transaction
 
-    await pendleLiquidityMining.connect(wallet1).withdraw(constants.TEST_EXPIRY, amountToStake.div(BigNumber.from(2)), constants.HIGH_GAS_OVERRIDE);
+    await pendleLiquidityMining
+      .connect(wallet1)
+      .withdraw(
+        constants.TEST_EXPIRY,
+        amountToStake.div(BigNumber.from(2)),
+        constants.HIGH_GAS_OVERRIDE
+      );
     const pdlBalanceOfUserAfter2ndTnx = await pdl.balanceOf(wallet1.address);
     const expectedPdlBalanceOfUsersAfter2ndTnx = expectedPdlBalanceOfUserAfter.add(
       liquidityMiningParameters.rewardsPerEpoch
     );
-    console.log(`\tPDL balance of user after 2nd withdraw: ${pdlBalanceOfUserAfter2ndTnx}`);
-    console.log(`\tExpected PDL balance of user after 2nd withdraw: ${expectedPdlBalanceOfUsersAfter2ndTnx}`);
+    console.log(
+      `\tPDL balance of user after 2nd withdraw: ${pdlBalanceOfUserAfter2ndTnx}`
+    );
+    console.log(
+      `\tExpected PDL balance of user after 2nd withdraw: ${expectedPdlBalanceOfUsersAfter2ndTnx}`
+    );
 
     expect(pdlBalanceOfUserAfter2ndTnx.toNumber()).to.be.approximately(
       expectedPdlBalanceOfUsersAfter2ndTnx.toNumber(),
       expectedPdlBalanceOfUsersAfter2ndTnx.toNumber() / 1000
     );
 
-    await pendleLiquidityMining.withdraw(constants.TEST_EXPIRY, amountToStake.div(2), constants.HIGH_GAS_OVERRIDE);
-    const aTokenBalanceOfLpHolderContractAfter = await aUSDT.balanceOf(lpHolderContract);
+    await pendleLiquidityMining.withdraw(
+      constants.TEST_EXPIRY,
+      amountToStake.div(2),
+      constants.HIGH_GAS_OVERRIDE
+    );
+    const aTokenBalanceOfLpHolderContractAfter = await aUSDT.balanceOf(
+      lpHolderContract
+    );
     const aTokenBalanceOfUserAfter = await aUSDT.balanceOf(wallet1.address);
 
     //now, the LP holding contract should hold almost 0 aUSDT. This means that we have calculated and gave the Lp interests back to the users properly
-    console.log(`\t[LP interests] aUSDT balance of LpHolder after withdrawing all = ${aTokenBalanceOfLpHolderContractAfter}`);
-    console.log(`\t[LP interests] aUSDT balance of user after withdrawing all = ${aTokenBalanceOfUserAfter}`);
+    console.log(
+      `\t[LP interests] aUSDT balance of LpHolder after withdrawing all = ${aTokenBalanceOfLpHolderContractAfter}`
+    );
+    console.log(
+      `\t[LP interests] aUSDT balance of user after withdrawing all = ${aTokenBalanceOfUserAfter}`
+    );
   });
 });
