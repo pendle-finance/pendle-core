@@ -182,7 +182,7 @@ describe("Pendle", async () => {
 
     expect(wallet1Gain.toNumber()).to.be.approximately(gain.toNumber(), 20);
 
-    await advanceTime(provider, BigNumber.from(180));
+    await advanceTime(provider, BigNumber.from(360));
 
     await pendle.redeemAfterExpiry(
       constants.FORGE_AAVE,
@@ -194,7 +194,7 @@ describe("Pendle", async () => {
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.toNumber(),
-      50
+      150
     );
   });
 
