@@ -41,7 +41,6 @@ provider: providers.Web3Provider
   await pendle.addMarketFactory(constants.FORGE_AAVE, constants.MARKET_FACTORY_AAVE, pendleAaveMarketFactory.address);
 
   await pendleAaveMarketFactory.createMarket(
-      constants.FORGE_AAVE,
       pendleFutureYieldToken.address,
       testToken.address,
       constants.TEST_EXPIRY,

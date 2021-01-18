@@ -443,7 +443,7 @@ contract Pendle is IPendle, Permissions {
     ) public override returns (address market) {
         IPendleMarketFactory factory =
             IPendleMarketFactory(data.getMarketFactoryAddress(_forgeId, _marketFactoryId));
-        market = factory.createMarket(_forgeId, xyt, token, expiry); //@@XM should use forge directly? otherwise need to add in msg.sender here
+        market = factory.createMarket(xyt, token, expiry); //@@XM should use forge directly? otherwise need to add in msg.sender here
     }
 
     function bootStrapMarket(

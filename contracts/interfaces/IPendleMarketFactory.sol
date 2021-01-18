@@ -43,14 +43,12 @@ interface IPendleMarketFactory {
 
     /**
      * @notice Creates a market given a protocol ID, future yield token, and an ERC20 token.
-     * @param forgeId Protocol identifier.
      * @param xyt Token address of the future yield token as base asset.
      * @param token Token address of an ERC20 token as quote asset.
      * @param expiry Yield contract expiry in epoch time.
      * @return market Returns the address of the newly created market.
      **/
     function createMarket(
-        bytes32 forgeId,
         address xyt,
         address token,
         uint256 expiry
@@ -69,4 +67,6 @@ interface IPendleMarketFactory {
     function core() external view returns (IPendle);
 
     function marketFactoryId() external view returns (bytes32);
+
+    function forgeId() external view returns (bytes32);
 }

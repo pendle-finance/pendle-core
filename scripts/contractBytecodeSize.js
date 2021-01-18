@@ -6,7 +6,7 @@ const {resolve} = require('path');
 const fs = require('fs');
 
 const EIP170 = 24576;
-const CONTRACTS = `${__dirname}/../artifacts/contracts`;
+const CONTRACTS = `${__dirname}/../build/artifacts/contracts`;
 const DOCS = `${__dirname}/../docs`;
 const LIST = `${__dirname}/contractBytecodeSizeList.json`;
 const REPORT = `${DOCS}/bytecodeSizeReport.json`;
