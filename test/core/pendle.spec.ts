@@ -72,12 +72,8 @@ describe("Pendle", async () => {
       amountToTokenize,
       wallet.address
     );
-    const balanceOwnershipToken = await pendleOt.balanceOf(
-      wallet.address
-    );
-    const balanceFutureYieldToken = await pendleXyt.balanceOf(
-      wallet.address
-    );
+    const balanceOwnershipToken = await pendleOt.balanceOf(wallet.address);
+    const balanceFutureYieldToken = await pendleXyt.balanceOf(wallet.address);
     expect(balanceOwnershipToken).to.be.eq(amountToTokenize);
     expect(balanceFutureYieldToken).to.be.eq(amountToTokenize);
   });
@@ -150,7 +146,6 @@ describe("Pendle", async () => {
   });
 
   it("Short after expiry, should be able to redeem aUSDT from OT", async () => {
-
     const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
     const initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
 
@@ -255,20 +250,26 @@ describe("Pendle", async () => {
   });
 
   it("Should be able to setContracts", async () => {
-    await expect(pendle.setContracts(pendleData.address, pendleTreasury.address))
-      .to.emit(pendle, "ContractsSet").withArgs(pendleData.address, pendleTreasury.address);
+    await expect(
+      pendle.setContracts(pendleData.address, pendleTreasury.address)
+    )
+      .to.emit(pendle, "ContractsSet")
+      .withArgs(pendleData.address, pendleTreasury.address);
   });
 
   it("Should be able to newYieldContracts", async () => {
     let futureTime = constants.SIX_MONTH_FROM_NOW.add(constants.ONE_DAY);
     let filter = pendleAaveForge.filters.NewYieldContracts();
-    let tx = await pendle
-      .newYieldContracts(constants.FORGE_AAVE, tokenUSDT.address, futureTime);
+    let tx = await pendle.newYieldContracts(
+      constants.FORGE_AAVE,
+      tokenUSDT.address,
+      futureTime
+    );
 
     let allEvents = await pendleAaveForge.queryFilter(filter, tx.blockHash);
     expect(allEvents.length).to.be.eq(2); // there is only one event of the same type before this event
-    expect((allEvents[1].args!).ot).to.not.eq(0);
-    expect((allEvents[1].args!).xyt).to.not.eq(0);
-    expect((allEvents[1].args!).expiry).to.eq(futureTime);
+    expect(allEvents[1].args!.ot).to.not.eq(0);
+    expect(allEvents[1].args!.xyt).to.not.eq(0);
+    expect(allEvents[1].args!.expiry).to.eq(futureTime);
   });
 });
