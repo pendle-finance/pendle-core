@@ -40,7 +40,6 @@ export async function pendleMarketFixture(
   await pendle.addMarketFactory(constants.FORGE_AAVE, constants.MARKET_FACTORY_AAVE, pendleAaveMarketFactory.address);
 
   await pendleAaveMarketFactory.createMarket(
-    constants.FORGE_AAVE,
     pendleFutureYieldToken.address,
     testToken.address,
     constants.SIX_MONTH_FROM_NOW,

@@ -551,7 +551,7 @@ contract Pendle is IPendle, Permissions {
         IPendleMarketFactory factory =
             IPendleMarketFactory(data.getMarketFactoryAddress(_forgeId, _marketFactoryId));
         require(address(factory) != address(0), "Pendle: Factory not found");
-        market = factory.createMarket(_forgeId, xyt, token, expiry); //@@XM should use forge directly? otherwise need to add in msg.sender here
+        market = factory.createMarket(xyt, token, expiry); //@@XM should use forge directly? otherwise need to add in msg.sender here
     }
 
     /**

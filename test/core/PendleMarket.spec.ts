@@ -493,7 +493,6 @@ describe("PendleMarket", async () => {
 
   it("shouldn't be able to create duplicated markets", async () => {
     await expect(pendleAaveMarketFactory.createMarket(
-      constants.FORGE_AAVE,
       pendleXyt.address,
       testToken.address,
       constants.THREE_MONTH_FROM_NOW,

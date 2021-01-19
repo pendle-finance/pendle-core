@@ -33,9 +33,12 @@ import "../periphery/Permissions.sol";
 contract PendleAaveMarketFactory is IPendleMarketFactory, Permissions {
     IPendle public override core;
     bytes32 public immutable override marketFactoryId;
+    bytes32 public immutable override forgeId;
 
     constructor(address _governance, bytes32 _marketFactoryId) Permissions(_governance) {
         marketFactoryId = _marketFactoryId;
+        //@@Vu TODO: put this as a constructor argument
+        forgeId = "Aave";
     }
 
     function initialize(IPendle _core) external {
@@ -47,7 +50,6 @@ contract PendleAaveMarketFactory is IPendleMarketFactory, Permissions {
     }
 
     function createMarket(
-        bytes32 _forgeId,
         address _xyt,
         address _token,
         uint256 _expiry
@@ -56,10 +58,10 @@ contract PendleAaveMarketFactory is IPendleMarketFactory, Permissions {
         require(_xyt != address(0) && _token != address(0), "Pendle: zero address");
 
         IPendleData data = core.data();
-        address forgeAddress = data.getForgeAddress(_forgeId);
+        address forgeAddress = data.getForgeAddress(forgeId);
 
         require(
-            data.getMarket(_forgeId, marketFactoryId, _xyt, _token) == address(0),
+            data.getMarket(forgeId, marketFactoryId, _xyt, _token) == address(0),
             "Pendle: market already exists"
         );
         require(data.isValidXYT(_xyt), "Pendle: not xyt");
@@ -69,8 +71,8 @@ contract PendleAaveMarketFactory is IPendleMarketFactory, Permissions {
             abi.encodePacked(msg.sender, core, forgeAddress, _xyt, _token, _expiry),
             abi.encode(msg.sender, core, forgeAddress, _xyt, _token, _expiry)
         );
-        data.storeMarket(_forgeId, marketFactoryId, _xyt, _token, market);
-        data.addMarket(_forgeId, marketFactoryId, market);
+        data.storeMarket(forgeId, marketFactoryId, _xyt, _token, market);
+        data.addMarket(forgeId, marketFactoryId, market);
         //@@Vu TODO: we might want to merge data.storeMarket and data.addMarket to one function?
 
         //@@Vu TODO: fix events to add marketFactoryId
