@@ -5,6 +5,7 @@ import { HardhatUserConfig } from "hardhat/types";
 import "@nomiclabs/hardhat-waffle";
 import "solidity-coverage";
 import "hardhat-typechain";
+import "@nomiclabs/hardhat-truffle5";
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -19,7 +20,7 @@ const config: HardhatUserConfig = {
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
         // url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-        blockNumber: 11647664 // any block is good
+        blockNumber: 11647664
       },
       accounts: [
         // 5 accounts with 10^14 ETH each

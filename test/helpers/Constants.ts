@@ -16,13 +16,21 @@ export const constants = {
   AAVE_DUMMY_REFERRAL_CODE: 0,
   FORGE_AAVE: utils.formatBytes32String("Aave"),
   MARKET_FACTORY_AAVE: utils.formatBytes32String("Aave"),
+  ZERO_BYTES: utils.formatBytes32String(""),
+  RANDOM_BYTES: utils.formatBytes32String("ZpTw6Y3Ft4ruk7pmwTJF"),
   ZERO_ADDRESS: "0x0000000000000000000000000000000000000000",
   MAX_ALLOWANCE: BigNumber.from(2)
     .pow(BigNumber.from(256))
     .sub(BigNumber.from(1)),
   ONE_DAY: BigNumber.from(86400),
   ONE_MONTH: BigNumber.from(2592000),
-  TEST_EXPIRY: BigNumber.from(Math.round(Date.now() / 1000)).add(2592000 * 6),
+  RIGHT_NOW: BigNumber.from(Math.round(Date.now() / 1000)),
+  THREE_MONTH_FROM_NOW: BigNumber.from(Math.round(Date.now() / 1000)).add(
+    2592000 * 3
+  ),
+  SIX_MONTH_FROM_NOW: BigNumber.from(Math.round(Date.now() / 1000)).add(
+    2592000 * 6
+  ),
   ONE_YEAR: BigNumber.from(31536000),
   HIGH_GAS_OVERRIDE: { gasLimit: 40000000 },
 };

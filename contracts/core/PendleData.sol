@@ -44,7 +44,7 @@ contract PendleData is IPendleData, Permissions {
     uint256 public override swapFee;
     uint256 public override exitFee;
     IPendle public override core;
-    mapping(address => bool) internal isMarket;
+    mapping(address => bool) public override isMarket;
     address[] private allMarkets;
 
     constructor(address _governance) Permissions(_governance) {}

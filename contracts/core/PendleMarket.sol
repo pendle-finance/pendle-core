@@ -141,7 +141,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address outToken,
         uint256 minOut,
         uint256 maxPrice
-    ) external override returns (uint256 exactOut, uint256 spotPriceAfter) {
+    ) external override isBootstrapped returns (uint256 exactOut, uint256 spotPriceAfter) {
         _curveShift();
 
         IPendleData data = core.data();
@@ -179,7 +179,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address outToken,
         uint256 exactOut,
         uint256 maxPrice
-    ) external override returns (uint256 exactIn, uint256 spotPriceAfter) {
+    ) external override isBootstrapped returns (uint256 exactIn, uint256 spotPriceAfter) {
         _curveShift();
 
         IPendleData data = core.data();
@@ -221,7 +221,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 exactOutLp,
         uint256 maxInXyt,
         uint256 maxInPair
-    ) external override {
+    ) external override isBootstrapped {
         uint256 totalLp = totalSupply;
         uint256 ratio = Math.rdiv(exactOutLp, totalLp);
         require(ratio != 0, "Pendle: zero ratio");
@@ -276,7 +276,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 exactInLp,
         uint256 minOutXyt,
         uint256 minOutPair
-    ) external override {
+    ) external override isBootstrapped {
         IPendleData data = core.data();
         uint256 exitFee = data.exitFee();
         uint256 totalLp = totalSupply;
@@ -314,7 +314,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address inToken,
         uint256 exactIn,
         uint256 minOutLp
-    ) external override returns (uint256 exactOutLp) {
+    ) external override isBootstrapped returns (uint256 exactOutLp) {
         IPendleData data = core.data();
         TokenReserve storage inTokenReserve = reserves[inToken];
         uint256 totalLp = totalSupply;
@@ -347,7 +347,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address outToken,
         uint256 exactInLp,
         uint256 minOutToken
-    ) external override returns (uint256 exactOutToken) {
+    ) external override isBootstrapped returns (uint256 exactOutToken) {
         IPendleData data = core.data();
         TokenReserve storage outTokenReserve = reserves[outToken];
         uint256 exitFee = data.exitFee();
