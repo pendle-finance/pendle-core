@@ -131,7 +131,12 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         pendleData = IPendleData(IPendle(pendleMarketFactory.core()).data());
     }
 
-    function readUserExpiries(address user) public override view returns (uint256[] memory _expiries) {
+    function readUserExpiries(address user)
+        public
+        view
+        override
+        returns (uint256[] memory _expiries)
+    {
         _expiries = userExpiries[user].expiries;
     }
 
@@ -202,8 +207,10 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     }
 
     function claimLpInterests() public override nonReentrant returns (uint256 _interests) {
-        for (uint256 i=0;i<userExpiries[msg.sender].expiries.length;i++) {
-            _interests = _interests.add(_settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender));
+        for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
+            _interests = _interests.add(
+                _settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender)
+            );
         }
     }
 
@@ -480,7 +487,11 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         );
     }
 
-    function _addNewExpiry(uint256 expiry, address xyt, address marketAddress) internal returns (address newLpHoldingContract) {
+    function _addNewExpiry(
+        uint256 expiry,
+        address xyt,
+        address marketAddress
+    ) internal returns (address newLpHoldingContract) {
         expiries.push(expiry);
         hasExpiry[expiry] = true;
         newLpHoldingContract = Factory.createContract(
