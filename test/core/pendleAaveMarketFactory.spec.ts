@@ -36,8 +36,8 @@ describe("pendleAaveMarketFactory", async () => {
   });
 
   it("should be able to setCore", async () => {
-    await expect((pendleAaveMarketFactory.setCore(pendle.address)))
-      .to.emit(pendleAaveMarketFactory, 'CoreSet')
+    await expect(pendleAaveMarketFactory.setCore(pendle.address))
+      .to.emit(pendleAaveMarketFactory, "CoreSet")
       .withArgs(pendle.address);
   });
 });

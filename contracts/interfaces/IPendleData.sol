@@ -164,9 +164,7 @@ interface IPendleData {
         address _marketFactoryAddress
     ) external;
 
-    function isMarket(
-        address _addr
-    ) external view returns (bool result);
+    function isMarket(address _addr) external view returns (bool result);
 
     function addMarket(
         bytes32 forgeId,

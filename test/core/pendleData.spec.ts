@@ -56,7 +56,7 @@ describe("PendleData", async () => {
 
   it("should be able to setCore", async () => {
     await expect(pendleData.setCore(pendle.address))
-      .to.emit(pendleData, 'CoreSet')
+      .to.emit(pendleData, "CoreSet")
       .withArgs(pendle.address);
   });
 });

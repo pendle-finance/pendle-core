@@ -25,8 +25,12 @@ export const constants = {
   ONE_DAY: BigNumber.from(86400),
   ONE_MONTH: BigNumber.from(2592000),
   RIGHT_NOW: BigNumber.from(Math.round(Date.now() / 1000)),
-  THREE_MONTH_FROM_NOW: BigNumber.from(Math.round(Date.now() / 1000)).add(2592000 * 3),
-  SIX_MONTH_FROM_NOW: BigNumber.from(Math.round(Date.now() / 1000)).add(2592000 * 6),
+  THREE_MONTH_FROM_NOW: BigNumber.from(Math.round(Date.now() / 1000)).add(
+    2592000 * 3
+  ),
+  SIX_MONTH_FROM_NOW: BigNumber.from(Math.round(Date.now() / 1000)).add(
+    2592000 * 6
+  ),
   ONE_YEAR: BigNumber.from(31536000),
   HIGH_GAS_OVERRIDE: { gasLimit: 40000000 },
 };

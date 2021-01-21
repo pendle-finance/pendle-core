@@ -45,7 +45,7 @@ contract MockPendleOwnershipToken is PendleOwnershipToken {
             _expiry
         )
     {
-      _mint(initialAccount, initialBalance);
+        _mint(initialAccount, initialBalance);
     }
 
     /**
