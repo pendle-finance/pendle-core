@@ -54,40 +54,40 @@ library Math {
         return (((_x * _y) / _y) != _x);
     }
 
-    function compactFraction(uint256 _p, uint256 _q) internal pure returns (uint256, uint256) {
-        if (_q < FORMULA_PRECISION * FORMULA_PRECISION) return (_p, _q);
-        return compactFraction(_p / FORMULA_PRECISION, _q / FORMULA_PRECISION);
-    }
+    // function compactFraction(uint256 _p, uint256 _q) internal pure returns (uint256, uint256) {
+    //     if (_q < FORMULA_PRECISION * FORMULA_PRECISION) return (_p, _q);
+    //     return compactFraction(_p / FORMULA_PRECISION, _q / FORMULA_PRECISION);
+    // }
 
-    function exp(uint256 _p, uint256 _q) internal pure returns (uint256 sum) {
-        uint256 n = 0;
-        uint256 nFact = 1;
-        uint256 currentP = 1;
-        uint256 currentQ = 1;
-        uint256 prevSum = 0;
+    // function exp(uint256 _p, uint256 _q) internal pure returns (uint256 sum) {
+    //     uint256 n = 0;
+    //     uint256 nFact = 1;
+    //     uint256 currentP = 1;
+    //     uint256 currentQ = 1;
+    //     uint256 prevSum = 0;
 
-        while (true) {
-            if (checkMultOverflow(currentP, FORMULA_PRECISION)) return sum;
-            if (checkMultOverflow(currentQ, nFact)) return sum;
+    //     while (true) {
+    //         if (checkMultOverflow(currentP, FORMULA_PRECISION)) return sum;
+    //         if (checkMultOverflow(currentQ, nFact)) return sum;
 
-            sum += (currentP * FORMULA_PRECISION) / (currentQ * nFact);
+    //         sum += (currentP * FORMULA_PRECISION) / (currentQ * nFact);
 
-            if (sum == prevSum) return sum;
-            prevSum = sum;
+    //         if (sum == prevSum) return sum;
+    //         prevSum = sum;
 
-            n++;
+    //         n++;
 
-            if (checkMultOverflow(currentP, _p)) return sum;
-            if (checkMultOverflow(currentQ, _q)) return sum;
-            if (checkMultOverflow(nFact, n)) return sum;
+    //         if (checkMultOverflow(currentP, _p)) return sum;
+    //         if (checkMultOverflow(currentQ, _q)) return sum;
+    //         if (checkMultOverflow(nFact, n)) return sum;
 
-            currentP *= _p;
-            currentQ *= _q;
-            nFact *= n;
+    //         currentP *= _p;
+    //         currentQ *= _q;
+    //         nFact *= n;
 
-            (currentP, currentQ) = compactFraction(currentP, currentQ);
-        }
-    }
+    //         (currentP, currentQ) = compactFraction(currentP, currentQ);
+    //     }
+    // }
 
     function countLeadingZeros(uint256 _p, uint256 _q) internal pure returns (uint256) {
         uint256 denomator = (uint256(1) << 255);
@@ -157,6 +157,10 @@ library Math {
         return (ln2Numerator * log2x) / ln2Denomerator;
     }
 
+    function rfloor(uint256 x) internal pure returns (uint256) {
+        return rtoi(x) * FORMULA_PRECISION;
+    }
+
     // This famous algorithm is called "exponentiation by squaring"
     // and calculates x^n with x as fixed-point and n as regular unsigned.
     //
@@ -172,22 +176,6 @@ library Math {
     //  Also, EVM division is flooring and
     //    floor[(n-1) / 2] = floor[n / 2].
     //
-    function pow(uint256 x, uint256 n) internal pure returns (uint256 z) {
-        z = n % 2 != 0 ? x : FORMULA_PRECISION;
-
-        for (n /= 2; n != 0; n /= 2) {
-            x = rmul(x, x);
-
-            if (n % 2 != 0) {
-                z = rmul(z, x);
-            }
-        }
-    }
-
-    function rfloor(uint256 x) internal pure returns (uint256) {
-        return rtoi(x) * FORMULA_PRECISION;
-    }
-
     function rpow(uint256 _base, uint256 _exp) internal pure returns (uint256) {
         uint256 whole = rfloor(_exp);
         uint256 remain = _exp.sub(whole);
