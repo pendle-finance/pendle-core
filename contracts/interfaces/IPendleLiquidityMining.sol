@@ -36,16 +36,15 @@ interface IPendleLiquidityMining {
 
     /**
      * @notice Get the pending rewards for a user
-     * @return Returns rewards[0] as the rewards available now, as well as rewards that
-     * can be claimed for subsequent epochs (size of rewards array is numberOfEpochs)
+     * @return rewards Returns rewards[0] as the rewards available now, as well as rewards that can be claimed for subsequent epochs (size of rewards array is numberOfEpochs)
      **/
-    function getRewards() external returns (uint256[] memory rewards);
+    function claimRewards() external returns (uint256[] memory rewards);
 
     /**
      * @notice Get the pending LP interests for a staker
-     * @return Returns the interest amount
+     * @return _interests Returns the interest amount
      **/
-    function getLpInterests() external returns (uint256 interests);
+    function claimLpInterests() external returns (uint256 _interests);
 
     /**
      * @notice calculate global data for an epoch. To be called by admins or anyone when necessary

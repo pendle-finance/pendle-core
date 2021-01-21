@@ -33,15 +33,30 @@ import "../interfaces/IPendleLpHolder.sol";
 import "../core/PendleLpHolder.sol";
 import "../interfaces/IPendleLiquidityMining.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../periphery/Permissions.sol";
 import "hardhat/console.sol";
 
 // Things that must hold in this contract:
 //      - If an account's stake information is updated (hence lastTimeUserStakeUpdated is changed),
 //        then his pending rewards are calculated as well (and saved in availableRewardsForEpoch[user][epochId])
-contract PendleLiquidityMining is IPendleLiquidityMining, Permissions {
+contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+
+    struct UserExpiries {
+        uint256[] expiries;
+        mapping(uint256 => bool) hasExpiry;
+    }
+
+    struct EpochData {
+        mapping(uint256 => uint256) totalStakeSecondsForExpiry;
+        mapping(uint256 => uint256) lastTimeStakeSecondsUpdatedForExpiry;
+        mapping(address => mapping(uint256 => uint256)) userStakeSeconds; // userStakeSeconds[user][expiry] = the stake * seconds for the user for LP_expiry
+        mapping(uint256 => uint256) baseTokenReserve; // baseTokenReserve[expiry] = baseToken reserve of the market for LP_expiry
+        uint256 totalBaseTokenReserve; // sum of all baseTokenReserve
+        bool calculated;
+    }
 
     /* IPendleData public pendleData; */
     address public pdlAddress;
@@ -80,20 +95,6 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions {
     mapping(uint256 => uint256) public currentTotalStakeForExpiry;
     mapping(address => UserExpiries) private userExpiries;
 
-    struct UserExpiries {
-        uint256[] expiries;
-        mapping(uint256 => bool) hasExpiry;
-    }
-
-    struct EpochData {
-        mapping(uint256 => uint256) totalStakeSecondsForExpiry;
-        mapping(uint256 => uint256) lastTimeStakeSecondsUpdatedForExpiry;
-        mapping(address => mapping(uint256 => uint256)) userStakeSeconds; // userStakeSeconds[user][expiry] = the stake * seconds for the user for LP_expiry
-        mapping(uint256 => uint256) baseTokenReserve; // baseTokenReserve[expiry] = baseToken reserve of the market for LP_expiry
-        uint256 totalBaseTokenReserve; // sum of all baseTokenReserve
-        bool calculated;
-    }
-
     modifier isFunded() {
         require(funded, "Pendle: not funded");
         _;
@@ -130,13 +131,8 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions {
         pendleData = IPendleData(IPendle(pendleMarketFactory.core()).data());
     }
 
-    function readUserExpiries(address user)
-        public
-        view
-        override
-        returns (uint256[] memory expiries)
-    {
-        expiries = userExpiries[user].expiries;
+    function readUserExpiries(address user) public override view returns (uint256[] memory _expiries) {
+        _expiries = userExpiries[user].expiries;
     }
 
     function fund() public {
@@ -153,6 +149,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions {
         public
         override
         isFunded
+        nonReentrant
         returns (address newLpHoldingContract)
     {
         uint256 _epoch = _currentEpoch();
@@ -164,16 +161,10 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions {
         currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].add(amount);
         address xyt = address(pendleData.xytTokens(forgeId, underlyingAsset, expiry));
         address marketAddress = pendleData.getMarket(forgeId, marketFactoryId, xyt, baseToken);
+        require(xyt != address(0), "Pendle: xyt not found");
+        require(marketAddress != address(0), "Pendle: market not found");
         if (!hasExpiry[expiry]) {
-            expiries.push(expiry);
-            hasExpiry[expiry] = true;
-            newLpHoldingContract = Factory.createContract(
-                type(PendleLpHolder).creationCode,
-                abi.encodePacked(marketAddress, xyt),
-                abi.encode(marketAddress, xyt)
-            );
-            lpHolderForExpiry[expiry] = newLpHoldingContract;
-            globalIncomeIndexForExpiry[expiry] = 1; //aribitrary non-zero initial income index for LP_expiry
+            newLpHoldingContract = _addNewExpiry(expiry, xyt, marketAddress);
         }
 
         if (!userExpiries[msg.sender].hasExpiry[expiry]) {
@@ -185,7 +176,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions {
         _pullLpToken(marketAddress, expiry, amount);
     }
 
-    function withdraw(uint256 expiry, uint256 amount) public override isFunded {
+    function withdraw(uint256 expiry, uint256 amount) public override nonReentrant isFunded {
         uint256 _epoch = _currentEpoch();
         /* console.log("Balance, amount = ", balances[msg.sender][expiry], amount); */
         require(balances[msg.sender][expiry] >= amount, "Pendle: insufficient balance");
@@ -197,7 +188,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions {
         currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].sub(amount);
     }
 
-    function getRewards() public override returns (uint256[] memory rewards) {
+    function claimRewards() public override nonReentrant returns (uint256[] memory rewards) {
         uint256 _epoch = _currentEpoch();
         _makeSureEpochIsCalculated(_epoch.sub(1));
         rewards = new uint256[](vestingEpochs);
@@ -210,21 +201,19 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions {
         }
     }
 
-    function getLpInterests() public override returns (uint256 _interests) {
-        for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
-            _interests = _interests.add(
-                _settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender)
-            );
+    function claimLpInterests() public override nonReentrant returns (uint256 _interests) {
+        for (uint256 i=0;i<userExpiries[msg.sender].expiries.length;i++) {
+            _interests = _interests.add(_settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender));
         }
     }
 
     // this must be called as the very first function when a new epoch starts
     // It will snapshot and save the base token reserves of the Markets that participated in the liq mining programme
     function calculateEpochData(uint256 epochId) public override {
-        require(_currentEpoch() > epochId, "Pendle: wrong epochId");
-        require(epochId <= numberOfEpochs, "Pendle: wrong epochId");
-        require(epochId > 0, "Pendle: wrong epochId");
-        require(!epoches[epochId].calculated, "Pendle: already calculated");
+        require(_currentEpoch() > epochId, "Pendle: invalid epochId");
+        require(epochId <= numberOfEpochs, "Pendle: invalid epochId");
+        require(epochId > 0, "Pendle: invalid epochId");
+        require(!epoches[epochId].calculated, "Pendle: epoch already calculated");
 
         // The previous epochId (more than 10 days ago) must have been calculated first.
         // By right every epoch must be calculated very soon after it ends, so this should never happens.
@@ -489,5 +478,17 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions {
                 currentTotalStakeForExpiry[expiry]
             )
         );
+    }
+
+    function _addNewExpiry(uint256 expiry, address xyt, address marketAddress) internal returns (address newLpHoldingContract) {
+        expiries.push(expiry);
+        hasExpiry[expiry] = true;
+        newLpHoldingContract = Factory.createContract(
+            type(PendleLpHolder).creationCode,
+            abi.encodePacked(marketAddress, xyt),
+            abi.encode(marketAddress, xyt)
+        );
+        lpHolderForExpiry[expiry] = newLpHoldingContract;
+        globalIncomeIndexForExpiry[expiry] = 1; //aribitrary non-zero initial income index for LP_expiry
     }
 }
