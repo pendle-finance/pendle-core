@@ -146,7 +146,11 @@ describe("PendleLiquidityMining", async () => {
     );
     await pendleLiquidityMining
       .connect(wallet1)
-      .stake(constants.SIX_MONTH_FROM_NOW, amountToStake, constants.HIGH_GAS_OVERRIDE);
+      .stake(
+        constants.SIX_MONTH_FROM_NOW,
+        amountToStake,
+        constants.HIGH_GAS_OVERRIDE
+      );
     console.log("\tStaked");
     const lpHolderContract = await pendleLiquidityMining.lpHolderForExpiry(
       constants.SIX_MONTH_FROM_NOW

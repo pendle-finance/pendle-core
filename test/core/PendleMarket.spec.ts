@@ -505,13 +505,14 @@ describe("PendleMarket", async () => {
   });
 
   it("shouldn't be able to create duplicated markets", async () => {
-    await expect(pendleAaveMarketFactory.createMarket(
-      pendleXyt.address,
-      testToken.address,
-      constants.THREE_MONTH_FROM_NOW,
-      constants.HIGH_GAS_OVERRIDE
-    ))
-      .to.be.revertedWith('Pendle: market already exists');
+    await expect(
+      pendleAaveMarketFactory.createMarket(
+        pendleXyt.address,
+        testToken.address,
+        constants.THREE_MONTH_FROM_NOW,
+        constants.HIGH_GAS_OVERRIDE
+      )
+    ).to.be.revertedWith("Pendle: market already exists");
   });
 
   // it.only("should be able to getMarketByUnderlyingToken", async () => {
