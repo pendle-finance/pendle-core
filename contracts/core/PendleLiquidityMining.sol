@@ -70,7 +70,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions {
     uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**8;
 
     // balances[account][expiry] is the amount of LP_expiry that the account has staked
-    mapping(address => mapping(uint256 => uint256)) override public balances;
+    mapping(address => mapping(uint256 => uint256)) public override balances;
     mapping(address => mapping(uint256 => uint256)) public lastTimeUserStakeUpdated;
 
     // availableRewardsForEpoch[account][epochId] is the amount of PDLs the account can withdraw at the beginning of epochId
@@ -130,7 +130,12 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions {
         pendleData = IPendleData(IPendle(pendleMarketFactory.core()).data());
     }
 
-    function readUserExpiries(address user) public override view returns (uint256[] memory expiries) {
+    function readUserExpiries(address user)
+        public
+        view
+        override
+        returns (uint256[] memory expiries)
+    {
         expiries = userExpiries[user].expiries;
     }
 
@@ -196,18 +201,20 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions {
         uint256 _epoch = _currentEpoch();
         _makeSureEpochIsCalculated(_epoch.sub(1));
         rewards = new uint256[](vestingEpochs);
-        for (uint256 i=0;i<userExpiries[msg.sender].expiries.length;i++) {
+        for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
             uint256 expiry = userExpiries[msg.sender].expiries[i];
             rewards[0] = _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, _epoch);
         }
-        for (uint256 e=1;e<vestingEpochs;e++) {
+        for (uint256 e = 1; e < vestingEpochs; e++) {
             rewards[e] = rewards[e].add(availableRewardsForEpoch[msg.sender][_epoch.add(e)]);
         }
     }
 
     function getLpInterests() public override returns (uint256 _interests) {
-        for (uint256 i=0;i<userExpiries[msg.sender].expiries.length;i++) {
-            _interests = _interests.add(_settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender));
+        for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
+            _interests = _interests.add(
+                _settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender)
+            );
         }
     }
 
@@ -442,20 +449,20 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions {
         PendleLpHolder(lpHolderForExpiry[expiry]).sendLp(msg.sender, amount);
     }
 
-    function _settleLpInterests(uint256 expiry, address account) internal returns (uint256 dueInterests) {
+    function _settleLpInterests(uint256 expiry, address account)
+        internal
+        returns (uint256 dueInterests)
+    {
         _updateGlobalIncomeIndex(expiry);
         if (lastGlobalIncomeIndexForExpiry[expiry][account] == 0) {
             lastGlobalIncomeIndexForExpiry[expiry][account] = globalIncomeIndexForExpiry[expiry];
             return 0;
         }
-        dueInterests =
-            balances[account][expiry]
-                .mul(
-                globalIncomeIndexForExpiry[expiry].sub(
-                    lastGlobalIncomeIndexForExpiry[expiry][account]
-                )
-            )
-                .div(GLOBAL_INCOME_INDEX_MULTIPLIER);
+        dueInterests = balances[account][expiry]
+            .mul(
+            globalIncomeIndexForExpiry[expiry].sub(lastGlobalIncomeIndexForExpiry[expiry][account])
+        )
+            .div(GLOBAL_INCOME_INDEX_MULTIPLIER);
 
         lastGlobalIncomeIndexForExpiry[expiry][account] = globalIncomeIndexForExpiry[expiry];
         if (dueInterests == 0) return 0;

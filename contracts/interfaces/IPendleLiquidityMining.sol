@@ -62,13 +62,21 @@ interface IPendleLiquidityMining {
      **/
     function balances(address user, uint256 expiry) external returns (uint256);
 
-    function startTime() external returns(uint256);
-    function epochDuration() external returns(uint256);
-    function rewardsPerEpoch() external returns(uint256);
-    function numberOfEpochs() external returns(uint256);
-    function vestingEpochs() external returns(uint256);
-    function baseToken() external returns(address);
-    function underlyingAsset() external returns(address);
-    function marketFactoryId() external returns(bytes32);
-    function forgeId() external returns(bytes32);
+    function startTime() external returns (uint256);
+
+    function epochDuration() external returns (uint256);
+
+    function rewardsPerEpoch() external returns (uint256);
+
+    function numberOfEpochs() external returns (uint256);
+
+    function vestingEpochs() external returns (uint256);
+
+    function baseToken() external returns (address);
+
+    function underlyingAsset() external returns (address);
+
+    function marketFactoryId() external returns (bytes32);
+
+    function forgeId() external returns (bytes32);
 }

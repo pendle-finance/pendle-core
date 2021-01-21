@@ -210,12 +210,18 @@ describe("PendleLiquidityMining", async () => {
     // console.log(pendleLiquidityMining);
     await pendleLiquidityMining.calculateEpochData(BigNumber.from(2)); // Although its already epoch 4, we still need to call this transaction
 
-    const pendleLiquidityMiningWeb3 = new hre.web3.eth.Contract(PendleLiquidityMining.abi, pendleLiquidityMining.address);
-    const rewardsData = await pendleLiquidityMiningWeb3.methods.getRewards().call({from: wallet.address });
-    const interestsData = await pendleLiquidityMiningWeb3.methods.getLpInterests().call({from: wallet.address});
+    const pendleLiquidityMiningWeb3 = new hre.web3.eth.Contract(
+      PendleLiquidityMining.abi,
+      pendleLiquidityMining.address
+    );
+    const rewardsData = await pendleLiquidityMiningWeb3.methods
+      .getRewards()
+      .call({ from: wallet.address });
+    const interestsData = await pendleLiquidityMiningWeb3.methods
+      .getLpInterests()
+      .call({ from: wallet.address });
     console.log(`\tInterests for wallet = ${interestsData}`);
     console.log(`\tRewards available for epoches from now: ${rewardsData}`);
-
 
     await pendleLiquidityMining
       .connect(wallet1)
