@@ -20,7 +20,11 @@ const config: HardhatUserConfig = {
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
         // url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+<<<<<<< HEAD
         blockNumber: 11647664
+=======
+        blockNumber: 11647664 // any block is good
+>>>>>>> origin/master
       },
       accounts: [
         // 5 accounts with 10^14 ETH each
