@@ -62,7 +62,10 @@ describe("PendleMarket", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  async function bootstrapSampleMarket(amountToTokenize: BigNumber, lowLevelCall: boolean = false) {
+  async function bootstrapSampleMarket(
+    amountToTokenize: BigNumber,
+    lowLevelCall: boolean = false
+  ) {
     if (lowLevelCall == true) {
       await pendleMarket.bootstrap(
         wallet.address,
@@ -81,7 +84,6 @@ describe("PendleMarket", async () => {
         constants.HIGH_GAS_OVERRIDE
       );
     }
-
   }
 
   it("should be able to join a bootstrapped pool with a single tokenUSDT", async () => {
@@ -92,13 +94,12 @@ describe("PendleMarket", async () => {
     await testToken.approve(pendleMarket.address, constants.MAX_ALLOWANCE);
     let totalSupply = await pendleMarket.totalSupply();
     let initalWalletBalance = await pendleMarket.balanceOf(wallet.address);
-    await pendleMarket
-      .joinPoolSingleToken(
-        wallet.address,
-        testToken.address,
-        amountToTokenize.div(10),
-        totalSupply.div(21)
-      );
+    await pendleMarket.joinPoolSingleToken(
+      wallet.address,
+      testToken.address,
+      amountToTokenize.div(10),
+      totalSupply.div(21)
+    );
     let currentWalletBalance = await pendleMarket.balanceOf(wallet.address);
     expect(currentWalletBalance).to.be.gt(initalWalletBalance);
   });
@@ -107,9 +108,7 @@ describe("PendleMarket", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
 
     await bootstrapSampleMarket(amountToTokenize);
-    let yieldTokenBalance = await pendleXyt.balanceOf(
-      pendleMarket.address
-    );
+    let yieldTokenBalance = await pendleXyt.balanceOf(pendleMarket.address);
     let testTokenBalance = await testToken.balanceOf(pendleMarket.address);
 
     expect(yieldTokenBalance).to.be.equal(amountToTokenize);
@@ -138,9 +137,7 @@ describe("PendleMarket", async () => {
         constants.HIGH_GAS_OVERRIDE
       );
 
-    let yieldTokenBalance = await pendleXyt.balanceOf(
-      pendleMarket.address
-    );
+    let yieldTokenBalance = await pendleXyt.balanceOf(pendleMarket.address);
     let testTokenBalance = await testToken.balanceOf(pendleMarket.address);
     let totalSupplyBalance = await pendleMarket.totalSupply();
 
@@ -167,9 +164,7 @@ describe("PendleMarket", async () => {
         constants.HIGH_GAS_OVERRIDE
       );
 
-    let yieldTokenBalance = await pendleXyt.balanceOf(
-      pendleMarket.address
-    );
+    let yieldTokenBalance = await pendleXyt.balanceOf(pendleMarket.address);
     let testTokenBalance = await testToken.balanceOf(pendleMarket.address);
 
     expect(yieldTokenBalance).to.be.equal(
@@ -196,9 +191,7 @@ describe("PendleMarket", async () => {
         constants.HIGH_GAS_OVERRIDE
       );
 
-    let yieldTokenBalance = await pendleXyt.balanceOf(
-      pendleMarket.address
-    );
+    let yieldTokenBalance = await pendleXyt.balanceOf(pendleMarket.address);
     let testTokenBalance = await testToken.balanceOf(pendleMarket.address);
 
     expect(yieldTokenBalance.toNumber()).to.be.approximately(
@@ -246,9 +239,7 @@ describe("PendleMarket", async () => {
       constants.HIGH_GAS_OVERRIDE
     );
 
-    let yieldTokenBalance = await pendleXyt.balanceOf(
-      pendleMarket.address
-    );
+    let yieldTokenBalance = await pendleXyt.balanceOf(pendleMarket.address);
     let testTokenBalance = await testToken.balanceOf(pendleMarket.address);
 
     expect(yieldTokenBalance).to.be.equal(
@@ -288,7 +279,9 @@ describe("PendleMarket", async () => {
     );
     const expectedDifference = 43750000;
 
-    expect(currentFutureYieldTokenBalance.sub(initialFutureYieldTokenBalance)).to.be.equal(expectedDifference);
+    expect(
+      currentFutureYieldTokenBalance.sub(initialFutureYieldTokenBalance)
+    ).to.be.equal(expectedDifference);
   });
 
   it("should be able to getReserves", async () => {
@@ -296,7 +289,11 @@ describe("PendleMarket", async () => {
 
     await bootstrapSampleMarket(amountToTokenize);
 
-    let [xytReserve, tokenReserve, blockTimestamp] = await pendleMarket.getReserves();
+    let [
+      xytReserve,
+      tokenReserve,
+      blockTimestamp,
+    ] = await pendleMarket.getReserves();
     expect(xytReserve).to.be.equal(amountToTokenize);
     expect(tokenReserve).to.be.equal(amountToTokenize);
     // TODO: add expect for blockTimestamp @Long
@@ -307,11 +304,16 @@ describe("PendleMarket", async () => {
 
     await bootstrapSampleMarket(amountToTokenize);
 
-    let [xytReserve, tokenReserve, currentTime] = await pendle.getMarketReserves(
+    let [
+      xytReserve,
+      tokenReserve,
+      currentTime,
+    ] = await pendle.getMarketReserves(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
       pendleXyt.address,
-      testToken.address);
+      testToken.address
+    );
     expect(xytReserve).to.be.equal(amountToTokenize);
     expect(tokenReserve).to.be.equal(amountToTokenize);
     // TODO: add expect for currentTIme @Long
@@ -326,7 +328,8 @@ describe("PendleMarket", async () => {
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
       pendleXyt.address,
-      testToken.address);
+      testToken.address
+    );
     expect(marketRate.toNumber()).to.be.approximately(
       1000000000000,
       100000000000
@@ -342,14 +345,16 @@ describe("PendleMarket", async () => {
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
       pendleXyt.address,
-      testToken.address);
+      testToken.address
+    );
     expect(marketRate.toNumber()).to.be.approximately(
       1000000000000,
       100000000000
     );
   });
 
-  it("should be able to removeMarketLiquidityXyt", async () => { // correct but strange
+  it("should be able to removeMarketLiquidityXyt", async () => {
+    // correct but strange
     const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
     await bootstrapSampleMarket(amountToTokenize);
 
@@ -367,24 +372,26 @@ describe("PendleMarket", async () => {
       testToken.address,
       totalSupply.div(4),
       amountToTokenize.div(6),
-      constants.HIGH_GAS_OVERRIDE);
+      constants.HIGH_GAS_OVERRIDE
+    );
 
     const currentFutureYieldTokenBalance = await pendleXyt.balanceOf(
       wallet.address
     );
     const expectedDifference = 43750000;
 
-    expect(currentFutureYieldTokenBalance.sub(initialFutureYieldTokenBalance)).to.be.equal(expectedDifference);
+    expect(
+      currentFutureYieldTokenBalance.sub(initialFutureYieldTokenBalance)
+    ).to.be.equal(expectedDifference);
   });
 
-  it("should be able to removeMarketLiquidityToken", async () => { // maybe correct but wrong name
+  it("should be able to removeMarketLiquidityToken", async () => {
+    // maybe correct but wrong name
     const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
 
     await bootstrapSampleMarket(amountToTokenize);
 
-    const initialTestTokenBalance = await testToken.balanceOf(
-      wallet.address
-    );
+    const initialTestTokenBalance = await testToken.balanceOf(wallet.address);
     const totalSupply = await pendleMarket.totalSupply();
 
     await advanceTime(provider, constants.ONE_MONTH);
@@ -396,14 +403,15 @@ describe("PendleMarket", async () => {
       testToken.address,
       totalSupply.div(4),
       amountToTokenize.div(6),
-      constants.HIGH_GAS_OVERRIDE);
-
-    const currentTestTokenBalance = await testToken.balanceOf(
-      wallet.address
+      constants.HIGH_GAS_OVERRIDE
     );
+
+    const currentTestTokenBalance = await testToken.balanceOf(wallet.address);
     const expectedDifference = 43750000;
 
-    expect(currentTestTokenBalance.sub(initialTestTokenBalance)).to.be.equal(expectedDifference);
+    expect(currentTestTokenBalance.sub(initialTestTokenBalance)).to.be.equal(
+      expectedDifference
+    );
   });
 
   it("should be able to addMarketLiquidityToken", async () => {
@@ -467,7 +475,9 @@ describe("PendleMarket", async () => {
   });
 
   it("should be able to getMarketTokenAddresses", async () => {
-    let { token, xyt } = await pendle.getMarketTokenAddresses(pendleMarket.address);
+    let { token, xyt } = await pendle.getMarketTokenAddresses(
+      pendleMarket.address
+    );
     expect(token).to.be.equal(testToken.address);
     expect(xyt).to.be.equal(pendleXyt.address);
   });
@@ -482,10 +492,13 @@ describe("PendleMarket", async () => {
       constants.THREE_MONTH_FROM_NOW,
       constants.HIGH_GAS_OVERRIDE
     );
-    let allEvents = await pendleAaveMarketFactory.queryFilter(filter, tx.blockHash);
+    let allEvents = await pendleAaveMarketFactory.queryFilter(
+      filter,
+      tx.blockHash
+    );
     let expectedMarkets: string[] = [];
-    allEvents.forEach(event => {
-      expectedMarkets.push((event.args!).market);
+    allEvents.forEach((event) => {
+      expectedMarkets.push(event.args!.market);
     });
     let allMarkets = await pendle.getAllMarkets();
     expect(allMarkets).to.have.members(expectedMarkets);
