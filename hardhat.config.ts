@@ -3,6 +3,7 @@ dotenv.config();
 
 import { HardhatUserConfig } from "hardhat/types";
 import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-web3";
 import "solidity-coverage";
 import "hardhat-typechain";
 
@@ -17,7 +18,10 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+        // url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+        blockNumber: 11647664
+        // url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
       },
       accounts: [
         // 5 accounts with 10^14 ETH each
