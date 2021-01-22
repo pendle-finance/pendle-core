@@ -31,6 +31,7 @@ import "../interfaces/IPendleForge.sol";
 import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "hardhat/console.sol";
+import {ErrorMessages as errMsg} from "../libraries/ErrorMessages.sol";
 
 contract PendleAaveForge is IPendleForge, ReentrancyGuard {
     using SafeMath for uint256;
@@ -57,9 +58,9 @@ contract PendleAaveForge is IPendleForge, ReentrancyGuard {
         IAaveLendingPoolCore _aaveLendingPoolCore,
         bytes32 _forgeId
     ) {
-        require(address(_core) != address(0), "Pendle: zero address");
-        require(address(_aaveLendingPoolCore) != address(0), "Pendle: zero address");
-        require(_forgeId != 0x0, "Pendle: zero bytes");
+        require(address(_core) != address(0), errMsg.ZERO_ADDRESS);
+        require(address(_aaveLendingPoolCore) != address(0), errMsg.ZERO_ADDRESS);
+        require(_forgeId != 0x0, errMsg.ZERO_BYTES);
 
         core = _core;
         aaveLendingPoolCore = _aaveLendingPoolCore;
@@ -67,7 +68,7 @@ contract PendleAaveForge is IPendleForge, ReentrancyGuard {
     }
 
     modifier onlyCore() {
-        require(msg.sender == address(core), "Pendle: only core");
+        require(msg.sender == address(core), errMsg.ONLY_CORE);
         _;
     }
 
@@ -75,7 +76,7 @@ contract PendleAaveForge is IPendleForge, ReentrancyGuard {
         IPendleData data = core.data();
         require(
             msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
-            "Pendle: only XYT"
+            errMsg.ONLY_XYT
         );
         _;
     }
@@ -173,11 +174,8 @@ contract PendleAaveForge is IPendleForge, ReentrancyGuard {
     ) public override returns (uint256 redeemedAmount) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
 
-        require(tokens.ot.balanceOf(_msgSender) >= _amountToRedeem, "Must have enough OT tokens");
-        require(
-            tokens.xyt.balanceOf(_msgSender) >= _amountToRedeem,
-            "Must have enough XYT tokens"
-        );
+        require(tokens.ot.balanceOf(_msgSender) >= _amountToRedeem, errMsg.NOT_ENOUGH_OT);
+        require(tokens.xyt.balanceOf(_msgSender) >= _amountToRedeem, errMsg.NOT_ENOUGH_XYT);
 
         IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
 

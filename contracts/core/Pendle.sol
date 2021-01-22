@@ -28,6 +28,7 @@ import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../periphery/Permissions.sol";
+import {ErrorMessages as errMsg} from "../libraries/ErrorMessages.sol";
 
 contract Pendle is IPendle, Permissions {
     using SafeMath for uint256;
@@ -36,11 +37,6 @@ contract Pendle is IPendle, Permissions {
 
     address public immutable override weth;
     address public override treasury;
-
-    string public constant ERR_ZERO_ADDRESS = "Pendle: zero address";
-    string public constant ERR_ZERO_BYTES = "Pendle: zero bytes";
-    string public constant ERR_MARKET_NOT_FOUND = "Pendle: market not found";
-    string public constant ERR_FORGE_NOT_EXIST = "Pendle: forge doesn't exist";
 
     constructor(address _governance, address _weth) Permissions(_governance) {
         weth = _weth;
@@ -54,9 +50,9 @@ contract Pendle is IPendle, Permissions {
     }
 
     function initialize(IPendleData _data, address _treasury) external {
-        require(msg.sender == initializer, "Pendle: forbidden");
-        require(address(_data) != address(0), ERR_ZERO_ADDRESS);
-        require(_treasury != address(0), ERR_ZERO_ADDRESS);
+        require(msg.sender == initializer, errMsg.FORBIDDEN);
+        require(address(_data) != address(0), errMsg.ZERO_ADDRESS);
+        require(_treasury != address(0), errMsg.ZERO_ADDRESS);
 
         initializer = address(0);
         data = _data;
@@ -69,10 +65,10 @@ contract Pendle is IPendle, Permissions {
         initialized
         onlyGovernance
     {
-        require(_forgeId != bytes32(0), ERR_ZERO_BYTES);
-        require(_forgeAddress != address(0), ERR_ZERO_ADDRESS);
-        require(_forgeId == IPendleForge(_forgeAddress).forgeId(), "Pendle: wrong id");
-        require(data.getForgeAddress(_forgeId) == address(0), "Pendle: existing id");
+        require(_forgeId != bytes32(0), errMsg.ZERO_BYTES);
+        require(_forgeAddress != address(0), errMsg.ZERO_ADDRESS);
+        require(_forgeId == IPendleForge(_forgeAddress).forgeId(), errMsg.INVALID_ID);
+        require(data.getForgeAddress(_forgeId) == address(0), errMsg.EXISTED_ID);
         data.addForge(_forgeId, _forgeAddress);
     }
 
@@ -81,23 +77,23 @@ contract Pendle is IPendle, Permissions {
         bytes32 _marketFactoryId,
         address _marketFactoryAddress
     ) external override initialized onlyGovernance {
-        require(_forgeId != bytes32(0), ERR_ZERO_BYTES);
-        require(_marketFactoryId != bytes32(0), ERR_ZERO_BYTES);
-        require(_marketFactoryAddress != address(0), ERR_ZERO_ADDRESS);
+        require(_forgeId != bytes32(0), errMsg.ZERO_BYTES);
+        require(_marketFactoryId != bytes32(0), errMsg.ZERO_BYTES);
+        require(_marketFactoryAddress != address(0), errMsg.ZERO_ADDRESS);
         require(
             _marketFactoryId == IPendleMarketFactory(_marketFactoryAddress).marketFactoryId(),
-            "Pendle: wrong id"
+            errMsg.INVALID_ID
         );
         require(
             data.getMarketFactoryAddress(_forgeId, _marketFactoryId) == address(0),
-            "Pendle: existing id"
+            errMsg.EXISTED_ID
         );
         data.addMarketFactory(_forgeId, _marketFactoryId, _marketFactoryAddress);
     }
 
     // @@Vu TODO: do we ever want to remove a forge? It will render all existing XYTs and OTs and Markets for that forge invalid
     function removeForge(bytes32 _forgeId) external override initialized onlyGovernance {
-        require(data.getForgeAddress(_forgeId) != address(0), ERR_FORGE_NOT_EXIST);
+        require(data.getForgeAddress(_forgeId) != address(0), errMsg.FORGE_NOT_EXIST);
         data.removeForge(_forgeId);
     }
 
@@ -108,8 +104,8 @@ contract Pendle is IPendle, Permissions {
         initialized
         onlyGovernance
     {
-        require(address(_data) != address(0), ERR_ZERO_ADDRESS);
-        require(_treasury != address(0), ERR_ZERO_ADDRESS);
+        require(address(_data) != address(0), errMsg.ZERO_ADDRESS);
+        require(_treasury != address(0), errMsg.ZERO_ADDRESS);
 
         data = _data;
         treasury = _treasury;
@@ -131,7 +127,7 @@ contract Pendle is IPendle, Permissions {
         _checkValidYieldAndRedeemTransaction(_forgeId, _underlyingAsset);
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), ERR_FORGE_NOT_EXIST);
+        require(address(forge) != address(0), errMsg.FORGE_NOT_EXIST);
         (ot, xyt) = forge.newYieldContracts(_underlyingAsset, _expiry);
     }
 
@@ -146,7 +142,7 @@ contract Pendle is IPendle, Permissions {
         _checkValidYieldAndRedeemTransaction(_forgeId, _underlyingAsset);
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), ERR_FORGE_NOT_EXIST);
+        require(address(forge) != address(0), errMsg.FORGE_NOT_EXIST);
         interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
     }
 
@@ -160,10 +156,10 @@ contract Pendle is IPendle, Permissions {
         address _to
     ) public override returns (uint256 redeemedAmount) {
         _checkValidYieldAndRedeemTransaction(_forgeId, _underlyingAsset);
-        require(_to != address(0), ERR_ZERO_ADDRESS);
+        require(_to != address(0), errMsg.ZERO_ADDRESS);
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), ERR_FORGE_NOT_EXIST);
+        require(address(forge) != address(0), errMsg.FORGE_NOT_EXIST);
         redeemedAmount = forge.redeemAfterExpiry(msg.sender, _underlyingAsset, _expiry, _to);
     }
 
@@ -178,10 +174,10 @@ contract Pendle is IPendle, Permissions {
         address _to
     ) public override returns (uint256 redeemedAmount) {
         _checkValidYieldAndRedeemTransaction(_forgeId, _underlyingAsset);
-        require(_to != address(0), ERR_ZERO_ADDRESS);
+        require(_to != address(0), errMsg.ZERO_ADDRESS);
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), ERR_FORGE_NOT_EXIST);
+        require(address(forge) != address(0), errMsg.FORGE_NOT_EXIST);
         redeemedAmount = forge.redeemUnderlying(
             msg.sender,
             _underlyingAsset,
@@ -202,10 +198,10 @@ contract Pendle is IPendle, Permissions {
         address _to
     ) public override returns (address ot, address xyt) {
         _checkValidYieldAndRedeemTransaction(_forgeId, _underlyingAsset);
-        require(_to != address(0), ERR_ZERO_ADDRESS);
+        require(_to != address(0), errMsg.ZERO_ADDRESS);
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), ERR_FORGE_NOT_EXIST);
+        require(address(forge) != address(0), errMsg.FORGE_NOT_EXIST);
         (ot, xyt) = forge.tokenizeYield(
             msg.sender,
             _underlyingAsset,
@@ -236,7 +232,7 @@ contract Pendle is IPendle, Permissions {
     {
         _checkValidYieldAndRedeemTransaction(_forgeId, _underlyingAsset);
         require(_newExpiry > _oldExpiry, "Pendle: new expiry must be later than old expiry"); // strictly greater
-        require(_yieldTo != address(0), ERR_ZERO_ADDRESS);
+        require(_yieldTo != address(0), errMsg.ZERO_ADDRESS);
 
         redeemedAmount = redeemAfterExpiry(_forgeId, _underlyingAsset, _oldExpiry, msg.sender);
         (ot, xyt) = tokenizeYield(
@@ -268,7 +264,7 @@ contract Pendle is IPendle, Permissions {
     ) public override {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), ERR_MARKET_NOT_FOUND);
+        require(address(market) != address(0), errMsg.MARKET_NOT_FOUND);
         market.joinPoolByAll(msg.sender, exactOutLp, maxInXyt, maxInToken);
     }
 
@@ -287,7 +283,7 @@ contract Pendle is IPendle, Permissions {
     ) public override {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), ERR_MARKET_NOT_FOUND);
+        require(address(market) != address(0), errMsg.MARKET_NOT_FOUND);
         market.joinPoolSingleToken(msg.sender, xyt, exactInXyt, minOutLp);
     }
 
@@ -306,7 +302,7 @@ contract Pendle is IPendle, Permissions {
     ) public override {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), ERR_MARKET_NOT_FOUND);
+        require(address(market) != address(0), errMsg.MARKET_NOT_FOUND);
         market.joinPoolSingleToken(msg.sender, token, exactInToken, minOutLp);
     }
 
@@ -326,7 +322,7 @@ contract Pendle is IPendle, Permissions {
     ) public override {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), ERR_MARKET_NOT_FOUND);
+        require(address(market) != address(0), errMsg.MARKET_NOT_FOUND);
         market.exitPoolByAll(msg.sender, exactInLp, minOutXyt, minOutToken);
     }
 
@@ -345,7 +341,7 @@ contract Pendle is IPendle, Permissions {
     ) public override {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), ERR_MARKET_NOT_FOUND);
+        require(address(market) != address(0), errMsg.MARKET_NOT_FOUND);
         market.exitPoolSingleToken(msg.sender, xyt, exactInLp, minOutXyt);
     }
 
@@ -364,7 +360,7 @@ contract Pendle is IPendle, Permissions {
     ) public override {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), ERR_MARKET_NOT_FOUND);
+        require(address(market) != address(0), errMsg.MARKET_NOT_FOUND);
         market.exitPoolSingleToken(msg.sender, token, exactInLp, minOutToken);
     }
 
@@ -384,7 +380,7 @@ contract Pendle is IPendle, Permissions {
     ) public override returns (uint256 amount, uint256 priceAfter) {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), ERR_MARKET_NOT_FOUND);
+        require(address(market) != address(0), errMsg.MARKET_NOT_FOUND);
         (amount, priceAfter) = market.swapAmountIn(
             msg.sender,
             exactInXyt,
@@ -411,7 +407,7 @@ contract Pendle is IPendle, Permissions {
     ) public override returns (uint256 amount, uint256 priceAfter) {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), ERR_MARKET_NOT_FOUND);
+        require(address(market) != address(0), errMsg.MARKET_NOT_FOUND);
         (amount, priceAfter) = market.swapAmountIn(
             msg.sender,
             exactInToken,
@@ -438,7 +434,7 @@ contract Pendle is IPendle, Permissions {
     ) public override returns (uint256 amount, uint256 priceAfter) {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), ERR_MARKET_NOT_FOUND);
+        require(address(market) != address(0), errMsg.MARKET_NOT_FOUND);
         (amount, priceAfter) = market.swapAmountOut(
             msg.sender,
             token,
@@ -465,7 +461,7 @@ contract Pendle is IPendle, Permissions {
     ) public override returns (uint256 amount, uint256 priceAfter) {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), ERR_MARKET_NOT_FOUND);
+        require(address(market) != address(0), errMsg.MARKET_NOT_FOUND);
         (amount, priceAfter) = market.swapAmountOut(
             msg.sender,
             xyt,
@@ -497,7 +493,7 @@ contract Pendle is IPendle, Permissions {
     {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), ERR_MARKET_NOT_FOUND);
+        require(address(market) != address(0), errMsg.MARKET_NOT_FOUND);
         (xytAmount, tokenAmount, currentTime) = market.getReserves();
     }
 
@@ -545,12 +541,12 @@ contract Pendle is IPendle, Permissions {
         address token,
         uint256 expiry
     ) public override returns (address market) {
-        require(xyt != address(0), ERR_ZERO_ADDRESS);
-        require(token != address(0), ERR_ZERO_ADDRESS);
+        require(xyt != address(0), errMsg.ZERO_ADDRESS);
+        require(token != address(0), errMsg.ZERO_ADDRESS);
 
         IPendleMarketFactory factory =
             IPendleMarketFactory(data.getMarketFactoryAddress(_forgeId, _marketFactoryId));
-        require(address(factory) != address(0), "Pendle: Factory not found");
+        require(address(factory) != address(0), errMsg.FACTORY_NOT_FOUND);
         market = factory.createMarket(_forgeId, xyt, token, expiry); //@@XM should use forge directly? otherwise need to add in msg.sender here
     }
 
@@ -566,15 +562,12 @@ contract Pendle is IPendle, Permissions {
         uint256 initialXytLiquidity,
         uint256 initialTokenLiquidity
     ) public override {
-        require(initialXytLiquidity > 0, "Pendle: initial Xyt amount must be greater than zero");
-        require(
-            initialTokenLiquidity > 0,
-            "Pendle: initial token amount must be greater than zero"
-        );
+        require(initialXytLiquidity > 0, errMsg.ZERO_XYT);
+        require(initialTokenLiquidity > 0, errMsg.ZERO_TOKEN);
 
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), ERR_MARKET_NOT_FOUND);
+        require(address(market) != address(0), errMsg.MARKET_NOT_FOUND);
         market.bootstrap(msg.sender, initialXytLiquidity, initialTokenLiquidity);
     }
 
@@ -601,7 +594,7 @@ contract Pendle is IPendle, Permissions {
         override
         returns (address token, address xyt)
     {
-        require(data.isMarket(market), ERR_MARKET_NOT_FOUND);
+        require(data.isMarket(market), errMsg.MARKET_NOT_FOUND);
 
         IPendleMarket benmarkMarket = IPendleMarket(market);
         token = benmarkMarket.token();
@@ -612,7 +605,7 @@ contract Pendle is IPendle, Permissions {
         internal
         pure
     {
-        require(_forgeId != bytes32(0), ERR_ZERO_BYTES);
-        require(_underlyingAsset != address(0), ERR_ZERO_ADDRESS);
+        require(_forgeId != bytes32(0), errMsg.ZERO_BYTES);
+        require(_underlyingAsset != address(0), errMsg.ZERO_ADDRESS);
     }
 }
