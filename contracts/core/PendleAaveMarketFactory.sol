@@ -29,6 +29,7 @@ import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleYieldToken.sol";
 import "../periphery/Permissions.sol";
+import {ErrorMessages as errMsg} from "../libraries/ErrorMessages.sol";
 
 contract PendleAaveMarketFactory is IPendleMarketFactory, Permissions {
     IPendle public override core;
@@ -39,8 +40,8 @@ contract PendleAaveMarketFactory is IPendleMarketFactory, Permissions {
     }
 
     function initialize(IPendle _core) external {
-        require(msg.sender == initializer, "Pendle: forbidden");
-        require(address(_core) != address(0), "Pendle: zero address");
+        require(msg.sender == initializer, errMsg.FORBIDDEN);
+        require(address(_core) != address(0), errMsg.ZERO_ADDRESS);
 
         initializer = address(0);
         core = _core;
@@ -52,17 +53,17 @@ contract PendleAaveMarketFactory is IPendleMarketFactory, Permissions {
         address _token,
         uint256 _expiry
     ) external override initialized returns (address market) {
-        require(_xyt != _token, "Pendle: similar tokens");
-        require(_xyt != address(0) && _token != address(0), "Pendle: zero address");
+        require(_xyt != _token, errMsg.SIMILAR_TOKEN);
+        require(_xyt != address(0) && _token != address(0), errMsg.ZERO_ADDRESS);
 
         IPendleData data = core.data();
         address forgeAddress = data.getForgeAddress(_forgeId);
 
         require(
             data.getMarket(_forgeId, marketFactoryId, _xyt, _token) == address(0),
-            "Pendle: market already exists"
+            errMsg.EXISTED_MARKET
         );
-        require(data.isValidXYT(_xyt), "Pendle: not xyt");
+        require(data.isValidXYT(_xyt), errMsg.NOT_XYT);
 
         market = Factory.createContract(
             type(PendleMarket).creationCode,
@@ -78,7 +79,7 @@ contract PendleAaveMarketFactory is IPendleMarketFactory, Permissions {
     }
 
     function setCore(IPendle _core) public override onlyGovernance {
-        require(address(_core) != address(0), "Pendle: zero address");
+        require(address(_core) != address(0), errMsg.ZERO_ADDRESS);
 
         core = _core;
         emit CoreSet(address(_core));

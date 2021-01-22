@@ -25,6 +25,7 @@ pragma solidity ^0.7.0;
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../periphery/Permissions.sol";
+import {ErrorMessages as errMsg} from "../libraries/ErrorMessages.sol";
 
 contract PendleData is IPendleData, Permissions {
     mapping(address => bytes32) public override getForgeId;
@@ -50,33 +51,33 @@ contract PendleData is IPendleData, Permissions {
     constructor(address _governance) Permissions(_governance) {}
 
     modifier onlyCore() {
-        require(msg.sender == address(core), "Pendle: only core");
+        require(msg.sender == address(core), errMsg.ONLY_CORE);
         _;
     }
 
     modifier onlyForge(bytes32 _forgeId) {
-        require(getForgeAddress[_forgeId] == msg.sender, "Pendle: only forge");
+        require(getForgeAddress[_forgeId] == msg.sender, errMsg.ONLY_FORGE);
         _;
     }
 
     modifier onlyMarketFactory(bytes32 _forgeId, bytes32 _marketFactoryId) {
         require(
             msg.sender == getMarketFactoryAddress[_forgeId][_marketFactoryId],
-            "Pendle: only market factory"
+            errMsg.ONLY_MARKET_FACTORY
         );
         _;
     }
 
     function initialize(IPendle _core) external {
-        require(msg.sender == initializer, "Pendle: forbidden");
-        require(address(_core) != address(0), "Pendle: zero address");
+        require(msg.sender == initializer, errMsg.FORBIDDEN);
+        require(address(_core) != address(0), errMsg.ZERO_ADDRESS);
 
         initializer = address(0);
         core = _core;
     }
 
     function setCore(IPendle _core) external override initialized onlyGovernance {
-        require(address(_core) != address(0), "Pendle: zero address");
+        require(address(_core) != address(0), errMsg.ZERO_ADDRESS);
 
         core = _core;
 

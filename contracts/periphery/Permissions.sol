@@ -23,6 +23,7 @@
 pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ErrorMessages as errMsg} from "../libraries/ErrorMessages.sol";
 
 abstract contract Permissions {
     address public immutable governance;
@@ -32,18 +33,18 @@ abstract contract Permissions {
     event TokenWithdraw(IERC20 token, uint256 amount, address sendTo);
 
     constructor(address _governance) {
-        require(_governance != address(0), "Pendle: zero address");
+        require(_governance != address(0), errMsg.ZERO_ADDRESS);
         initializer = msg.sender;
         governance = _governance;
     }
 
     modifier initialized() {
-        require(initializer == address(0), "Pendle: not initialized");
+        require(initializer == address(0), errMsg.NOT_INITIALIZED);
         _;
     }
 
     modifier onlyGovernance() {
-        require(msg.sender == governance, "Pendle: only governance");
+        require(msg.sender == governance, errMsg.ONLY_GOVERNANCE);
         _;
     }
 
@@ -55,7 +56,7 @@ abstract contract Permissions {
      */
     function withdrawEther(uint256 amount, address payable sendTo) external onlyGovernance {
         (bool success, ) = sendTo.call{value: amount}("");
-        require(success, "withdraw failed");
+        require(success, errMsg.WITHDRAW_FAIL);
         emit EtherWithdraw(amount, sendTo);
     }
 

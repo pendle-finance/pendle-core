@@ -20,6 +20,7 @@ pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import {ErrorMessages as errMsg} from "./ErrorMessages.sol";
 
 library Factory {
     function createContract(
@@ -34,7 +35,7 @@ library Factory {
         assembly {
             forge := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
-        require(forge != address(0), "Pendle: failed on deploy");
+        require(forge != address(0), errMsg.DEPLOY_FAIL);
     }
 }
 
