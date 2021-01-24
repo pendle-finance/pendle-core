@@ -50,28 +50,10 @@ interface IBenchmark {
     }
 
     /**
-     * @notice Emitted when Benchmark and BenchmarkFactory addresses have been updated.
-     * @param treasury The address of the new treasury contract.
-     **/
-    event TreasurySet(address treasury);
-
-    /**
-     * @notice Sets the BenchmarkTreasury contract addresses.
-     * @param newtreasury Address of new treasury contract.
-     **/
-    function setTreasury(address newtreasury) external;
-
-    /**
-     * @notice Gets a reference to the BenchmarkData contract.
-     * @return Returns the data contract reference.
-     **/
-    function data() external view returns (IBenchmarkData);
-
-    /**
-     * @notice Gets the treasury contract address where fees are being sent to.
-     * @return Address of the treasury contract.
-     **/
-    function treasury() external view returns (address);
+      * @notice Gets a reference to the BenchmarkData contract.
+      * @return Returns the data contract reference.
+      **/
+     function data() external view returns (IBenchmarkData);
 
     /**
      * @notice Gets a reference of the WETH9 token contract address.
@@ -154,17 +136,17 @@ interface IBenchmark {
         bytes32 marketFactoryId,
         address xyt,
         address token,
-        uint256 lpAmountDesired,
-        uint256 xytAmountMax,
-        uint256 tokenAmountMax
+        uint256 exactOutLp,
+        uint256 maxInXyt,
+        uint256 maxInToken
     ) external payable;
 
     function addMarketLiquidityETH(
         bytes32 forgeId,
         bytes32 marketFactoryId,
         address xyt,
-        uint256 ethAmountDesired,
-        uint256 lpAmountMin
+        uint256 exactInEth,
+        uint256 minInLp
     ) external payable;
 
     function addMarketLiquidityToken(
@@ -172,8 +154,8 @@ interface IBenchmark {
         bytes32 marketFactoryId,
         address xyt,
         address token,
-        uint256 tokenAmountDesired,
-        uint256 lpAmountMin
+        uint256 exactInToken,
+        uint256 minInLp
     ) external;
 
     function addMarketLiquidityXyt(
@@ -181,8 +163,8 @@ interface IBenchmark {
         bytes32 marketFactoryId,
         address xyt,
         address token,
-        uint256 xytAmountDesired,
-        uint256 lpAmountMin
+        uint256 exactInXyt,
+        uint256 minInLp
     ) external;
 
     function removeMarketLiquidity(
@@ -190,17 +172,17 @@ interface IBenchmark {
         bytes32 marketFactoryId,
         address xyt,
         address token,
-        uint256 lpAmountDesired,
-        uint256 xytAmountMin,
-        uint256 tokenAmountMin
+        uint256 exactOutLp,
+        uint256 minInXyt,
+        uint256 minInToken
     ) external;
 
     function removeMarketLiquidityETH(
         bytes32 forgeId,
         bytes32 marketFactoryId,
         address xyt,
-        uint256 lpAmountDesired,
-        uint256 ethAmountMin
+        uint256 exactOutLp,
+        uint256 minInEth
     ) external;
 
     function removeMarketLiquidityToken(
@@ -208,8 +190,8 @@ interface IBenchmark {
         bytes32 marketFactoryId,
         address xyt,
         address token,
-        uint256 lpAmountDesired,
-        uint256 tokenAmountMin
+        uint256 exactOutLp,
+        uint256 minInToken
     ) external;
 
     function removeMarketLiquidityXyt(
@@ -217,45 +199,56 @@ interface IBenchmark {
         bytes32 marketFactoryId,
         address xyt,
         address token,
-        uint256 lpAmountDesired,
-        uint256 xytAmountMin
+        uint256 exactOutLp,
+        uint256 minInXyt
+    ) external;
+
+    /**
+     * @notice Creates a market given a protocol ID, future yield token, and an ERC20 token.
+     * @param forgeId Forge identifier.
+     * @param marketFactoryId Market Factory identifier.
+     * @param xyt Token address of the future yield token as base asset.
+     * @param token Token address of an ERC20 token as quote asset.
+     * @param expiry Yield contract expiry in epoch time.
+     * @return market Returns the address of the newly created market.
+     **/
+    function createMarket(
+        bytes32 forgeId,
+        bytes32 marketFactoryId,
+        address xyt,
+        address token,
+        uint256 expiry
+    ) external returns (address market);
+
+    function bootstrapMarket(
+        bytes32 forgeId,
+        bytes32 marketFactoryId,
+        address xyt,
+        address token,
+        uint256 initialXytLiquidity,
+        uint256 initialTokenLiquidity
     ) external;
 
     function batchExactSwapIn(
         Swap[] memory swaps,
-        IERC20 tokenIn,
-        IERC20 tokenOut,
-        uint256 totalAmountIn,
-        uint256 minTotalAmountOut
-    ) external payable returns (uint256 totalAmountOut);
+        address tokenIn,
+        address tokenOut,
+        uint256 inTotalAmount,
+        uint256 minOutTotalAmount
+    ) external payable returns (uint256 outTotalAmount);
 
     function batchSwapExactOut(
         Swap[] memory swaps,
-        IERC20 tokenIn,
-        IERC20 tokenOut,
-        uint256 maxTotalAmountIn
-    ) external payable returns (uint256 totalAmountIn);
-
-    function multStepBatchExactSwapIn(
-        Swap[][] memory swapSequences,
-        IERC20 tokenIn,
-        IERC20 tokenOut,
-        uint256 totalAmountIn,
-        uint256 minTotalAmountOut
-    ) external payable returns (uint256 totalAmountOut);
-
-    function multStepBatchExactSwapOut(
-        Swap[][] memory swapSequences,
-        IERC20 tokenIn,
-        IERC20 tokenOut,
-        uint256 maxTotalAmountIn
-    ) external payable returns (uint256 totalAmountIn);
+        address tokenIn,
+        address tokenOut,
+        uint256 maxInTotalAmount
+    ) external payable returns (uint256 inTotalAmount);
 
     function swapExactIn(
         address tokenIn,
         address tokenOut,
-        uint256 totalAmountIn,
-        uint256 minTotalAmountOut,
+        uint256 inTotalAmount,
+        uint256 minOutTotalAmount,
         uint256 numMarkets
     )
         external payable returns (uint amount);
@@ -263,8 +256,8 @@ interface IBenchmark {
     function swapExactOut(
         address tokenIn,
         address tokenOut,
-        uint256 totalAmountOut,
-        uint256 maxTotalAmountIn,
+        uint256 outTotalAmount,
+        uint256 maxInTotalAmount,
         uint256 numMarkets
     )
         external payable returns (uint amount);
@@ -272,27 +265,27 @@ interface IBenchmark {
     function getAllMarkets() external view returns (address[] memory);
 
     function getMarketByUnderlyingToken(
-        bytes32 _forgeId,
-        bytes32 _marketFactoryId,
-        address _underlyingAsset,
-        uint256 _expiry
+        bytes32 forgeId,
+        bytes32 marketFactoryId,
+        address underlyingAsset,
+        uint256 expiry
     ) external view returns (address market);
 
     function getMarketRateExactIn(
         address tokenIn,
         address tokenOut,
-        uint256 swapAmount,
-        uint256 nMarkets
+        uint256 inSwapAmount,
+        uint256 numMarkets
     )
         external view returns (Swap[] memory swaps, uint totalOutput);
 
     function getMarketRateExactOut(
         address tokenIn,
         address tokenOut,
-        uint swapAmount,
+        uint outSwapAmount,
         uint numMarkets
     )
-        external view returns (Swap[] memory swaps, uint totalOutput);
+        external view returns (Swap[] memory swaps, uint totalInput);
 
     function getMarketReserves(
         bytes32 forgeId,

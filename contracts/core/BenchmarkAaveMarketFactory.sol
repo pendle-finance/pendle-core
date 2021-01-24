@@ -38,35 +38,25 @@ contract BenchmarkAaveMarketFactory is IBenchmarkMarketFactory, Permissions {
         marketFactoryId = _marketFactoryId;
     }
 
+    modifier onlyCore() {
+        require(msg.sender == address(core), "Benchmark: only core");
+        _;
+    }
+
     function initialize(IBenchmark _core) external {
         require(msg.sender == initializer, "Benchmark: forbidden");
         require(address(_core) != address(0), "Benchmark: zero address");
 
         initializer = address(0);
         core = _core;
-    }
-
-    function bootStrapMarket(
-        bytes32 _forgeId,
-        address _xyt,
-        address _token,
-        uint256 _initialXytLiquidity,
-        uint256 _initialTokenLiquidity
-    ) public override {
-        IBenchmarkData data = core.data();
-        IBenchmarkMarket market =
-            IBenchmarkMarket(data.getMarket(_forgeId, marketFactoryId, _xyt, _token));
-        require(address(market) != address(0), "Benchmark: market not found");
-        market.bootstrap(msg.sender, _initialXytLiquidity, _initialTokenLiquidity);
-    }
-
+    }    
 
     function createMarket(
         bytes32 _forgeId,
         address _xyt,
         address _token,
         uint256 _expiry
-    ) external override initialized returns (address market) {
+    ) external override initialized onlyCore returns (address market) {
         require(_xyt != _token, "Benchmark: similar tokens");
         require(_xyt != address(0) && _token != address(0), "Benchmark: zero address");
 
@@ -89,7 +79,7 @@ contract BenchmarkAaveMarketFactory is IBenchmarkMarketFactory, Permissions {
         emit MarketCreated(marketFactoryId, _xyt, _token, market);
     }
 
-    function setCore(IBenchmark _core) public override onlyGovernance {
+    function setCore(IBenchmark _core) external override onlyGovernance {
         require(address(_core) != address(0), "Benchmark: zero address");
 
         core = _core;

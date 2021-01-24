@@ -23,12 +23,12 @@
 pragma solidity ^0.7.0;
 
 interface IAaveLendingPoolCore {
-    function getReserveATokenAddress(address _reserveUnderlyingToken)
+    function getReserveATokenAddress(address underlyingAsset)
         external
         view
         returns (address);
 
-    function getReserveNormalizedIncome(address _reserveUnderlyingToken)
+    function getReserveNormalizedIncome(address underlyingAsset)
         external
         view
         returns (uint256);

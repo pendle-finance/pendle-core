@@ -39,7 +39,6 @@ contract Benchmark is IBenchmark, Permissions {
 
     IWETH public immutable override weth;
     IBenchmarkData public override data;
-    address public override treasury;
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     constructor(address _governance, IWETH _weth) Permissions(_governance) {
@@ -51,21 +50,12 @@ contract Benchmark is IBenchmark, Permissions {
      **/
     receive() external payable {}
 
-    function initialize(IBenchmarkData _data, address _treasury) external {
-        require(msg.sender == initializer, "Benchmark: forbidden");
-        require(address(_data) != address(0), "Benchmark: zero address");
-        require(_treasury != address(0), "Benchmark: zero address");
+    function initialize(IBenchmarkData _data) external {
+        require(msg.sender == initializer, "Pendle: forbidden");
+        require(address(_data) != address(0), "Pendle: zero address");
 
         initializer = address(0);
         data = _data;
-        treasury = _treasury;
-    }
-
-    function setTreasury(address _treasury) external override initialized onlyGovernance {
-        require(_treasury != address(0), "Benchmark: zero address");
-
-        treasury = _treasury;
-        emit TreasurySet(_treasury);
     }
 
     /***********
@@ -78,10 +68,10 @@ contract Benchmark is IBenchmark, Permissions {
         initialized
         onlyGovernance
     {
-        require(_forgeId != bytes32(0), "Benchmark: zero bytes");
-        require(_forgeAddress != address(0), "Benchmark: zero address");
-        require(_forgeId == IBenchmarkForge(_forgeAddress).forgeId(), "Benchmark: wrong id");
-        require(data.getForgeAddress(_forgeId) == address(0), "Benchmark: existing id");
+        require(_forgeId != bytes32(0), "Pendle: zero bytes");
+        require(_forgeAddress != address(0), "Pendle: zero address");
+        require(_forgeId == IBenchmarkForge(_forgeAddress).forgeId(), "Pendle: wrong id");
+        require(data.getForgeAddress(_forgeId) == address(0), "Pendle: existing id");
 
         data.addForge(_forgeId, _forgeAddress);
     }
@@ -95,15 +85,6 @@ contract Benchmark is IBenchmark, Permissions {
         (ot, xyt) = forge.newYieldContracts(_underlyingAsset, _expiry);
     }
 
-    function redeemDueInterests(
-        bytes32 _forgeId,
-        address _underlyingAsset,
-        uint256 _expiry
-    ) public override returns (uint256 interests) {
-        IBenchmarkForge forge = IBenchmarkForge(data.getForgeAddress(_forgeId));
-        interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
-    }
-
     function redeemAfterExpiry(
         bytes32 _forgeId,
         address _underlyingAsset,
@@ -112,6 +93,15 @@ contract Benchmark is IBenchmark, Permissions {
     ) public override returns (uint256 redeemedAmount) {
         IBenchmarkForge forge = IBenchmarkForge(data.getForgeAddress(_forgeId));
         redeemedAmount = forge.redeemAfterExpiry(msg.sender, _underlyingAsset, _expiry, _to);
+    }
+
+    function redeemDueInterests(
+        bytes32 _forgeId,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) public override returns (uint256 interests) {
+        IBenchmarkForge forge = IBenchmarkForge(data.getForgeAddress(_forgeId));
+        interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
     }
 
     function redeemUnderlying(
@@ -165,13 +155,11 @@ contract Benchmark is IBenchmark, Permissions {
         address _to
     ) public override returns (address ot, address xyt) {
         IBenchmarkForge forge = IBenchmarkForge(data.getForgeAddress(_forgeId));
-        (ot, xyt) = forge.tokenizeYield(
-            msg.sender,
-            _underlyingAsset,
-            _expiry,
-            _amountToTokenize,
-            _to
-        );
+
+        IERC20 aToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
+        aToken.transferFrom(msg.sender, address(forge), _amountToTokenize);
+
+        (ot, xyt) = forge.tokenizeYield(_underlyingAsset, _expiry, _amountToTokenize, _to);
     }
 
     /***********
@@ -183,16 +171,16 @@ contract Benchmark is IBenchmark, Permissions {
         bytes32 _marketFactoryId,
         address _marketFactoryAddress
     ) external override initialized onlyGovernance {
-        require(_forgeId != 0, "Benchmark: empty bytes");
-        require(_marketFactoryId != bytes32(0), "Benchmark: zero bytes");
-        require(_marketFactoryAddress != address(0), "Benchmark: zero address");
+        require(_forgeId != 0, "Pendle: empty bytes");
+        require(_marketFactoryId != bytes32(0), "Pendle: zero bytes");
+        require(_marketFactoryAddress != address(0), "Pendle: zero address");
         require(
             _marketFactoryId == IBenchmarkMarketFactory(_marketFactoryAddress).marketFactoryId(),
-            "Benchmark: wrong id"
+            "Pendle: wrong id"
         );
         require(
             data.getMarketFactoryAddress(_forgeId, _marketFactoryId) == address(0),
-            "Benchmark: existing id"
+            "Pendle: existing id"
         );
         data.addMarketFactory(_forgeId, _marketFactoryId, _marketFactoryAddress);
     }
@@ -200,400 +188,323 @@ contract Benchmark is IBenchmark, Permissions {
     function addMarketLiquidity(
         bytes32 _forgeId,
         bytes32 _marketFactoryId,
-        address xyt,
-        address token,
-        uint256 lpAmountDesired,
-        uint256 xytAmountMax,
-        uint256 tokenAmountMax
+        address _xyt,
+        address _token,
+        uint256 _exactOutLp,
+        uint256 _maxInXyt,
+        uint256 _maxInToken
     ) public payable override {
-        if (_isETH(token)) {
-            require(msg.value == tokenAmountMax, "Pendle: eth sent mismatch");
-            weth.deposit();
-            token = address(weth);
-        }
-
         IBenchmarkMarket market =
-            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), "Benchmark: market not found");
+            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
+        require(address(market) != address(0), "Pendle: market not found");
 
-        _approveMarketAllowance(IERC20(xyt), address(market), xytAmountMax);
-        _approveMarketAllowance(IERC20(token), address(market), tokenAmountMax);
-        _transferIn(xyt, msg.sender, address(market), xytAmountMax);
-        _transferIn(token, msg.sender, address(market), tokenAmountMax);
+        _transferIn(_xyt, _maxInXyt);
+        _transferIn(_token, _maxInToken);
 
-        market.joinPoolByAll(msg.sender, lpAmountDesired, xytAmountMax, tokenAmountMax);
+        market.joinMarketByAll(_exactOutLp, _maxInXyt, _maxInToken);
+
+        _transferOut(address(market), _exactOutLp);
     }
 
     function addMarketLiquidityETH(
         bytes32 _forgeId,
         bytes32 _marketFactoryId,
-        address xyt,
-        uint256 ethAmountDesired,
-        uint256 lpAmountMin
+        address _xyt,
+        uint256 _exactInEth,
+        uint256 _minInLp
     ) public payable override {
-        require(msg.value == ethAmountDesired, "Pendle: eth sent mismatch");
-
-        address token = address(weth);
         IBenchmarkMarket market =
-            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), "Benchmark: market not found");
+            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, address(weth)));
+        require(address(market) != address(0), "Pendle: market not found");
+        require(msg.value == _exactInEth, "Pendle: eth sent mismatch");
 
-        _approveMarketAllowance(weth, address(market), ethAmountDesired);
-        _transferIn(ETH_ADDRESS, msg.sender, address(market), ethAmountDesired);
+        _transferIn(ETH_ADDRESS, _exactInEth);
 
-        market.joinPoolSingleToken(msg.sender, token, ethAmountDesired, lpAmountMin);
+        market.joinMarketSingleToken(address(weth), _exactInEth, _minInLp);
     }
 
     function addMarketLiquidityToken(
         bytes32 _forgeId,
         bytes32 _marketFactoryId,
-        address xyt,
-        address token,
-        uint256 tokenAmountDesired,
-        uint256 lpAmountMin
+        address _xyt,
+        address _token,
+        uint256 _exactInToken,
+        uint256 _minInLp
     ) public override {
-        if (_isETH(token)) {
-            token = address(weth);
-        }
-
         IBenchmarkMarket market =
-            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), "Benchmark: market not found");
+            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
+        require(address(market) != address(0), "Pendle: market not found");
 
-        _approveMarketAllowance(IERC20(token), address(market), tokenAmountDesired);
-        _transferIn(token, msg.sender, address(market), tokenAmountDesired);
+        _transferIn(_token, _exactInToken);
 
-        market.joinPoolSingleToken(msg.sender, token, tokenAmountDesired, lpAmountMin);
+        market.joinMarketSingleToken(_token, _exactInToken, _minInLp);
     }
 
     function addMarketLiquidityXyt(
         bytes32 _forgeId,
         bytes32 _marketFactoryId,
-        address xyt,
-        address token,
-        uint256 xytAmountDesired,
-        uint256 lpAmountMin
+        address _xyt,
+        address _token,
+        uint256 _xytAmountDesired,
+        uint256 _minInLp
     ) public override {
-        if (_isETH(token)) token = address(weth);
-
         IBenchmarkMarket market =
-            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), "Benchmark: market not found");
+            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
+        require(address(market) != address(0), "Pendle: market not found");
 
-        _approveMarketAllowance(IERC20(xyt), address(market), xytAmountDesired);
-        _transferIn(xyt, msg.sender, address(market), xytAmountDesired);
+        _transferIn(_xyt, _xytAmountDesired);
 
-        market.joinPoolSingleToken(msg.sender, xyt, xytAmountDesired, lpAmountMin);
+        market.joinMarketSingleToken(_xyt, _xytAmountDesired, _minInLp);
     }
 
     function removeMarketLiquidity(
         bytes32 _forgeId,
         bytes32 _marketFactoryId,
-        address xyt,
-        address token,
-        uint256 lpAmountDesired,
-        uint256 xytAmountMin,
-        uint256 tokenAmountMin
+        address _xyt,
+        address _token,
+        uint256 _exactOutLp,
+        uint256 _minInXyt,
+        uint256 _minInToken
     ) public override {
-        if (_isETH(token)) token = address(weth);
-
         IBenchmarkMarket market =
-            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), "Benchmark: market not found");
-        market.exitPoolByAll(msg.sender, lpAmountDesired, xytAmountMin, tokenAmountMin);
+            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
+        require(address(market) != address(0), "Pendle: market not found");
+
+        _transferIn(address(market), _exactOutLp);
+
+        (uint256 xytAmount, uint256 tokenAmount) = market.exitMarketByAll(
+            _exactOutLp,
+            _minInXyt,
+            _minInToken
+        );
+
+        _transferOut(_xyt, xytAmount);
+        _transferOut(_token, tokenAmount);
     }
 
     function removeMarketLiquidityETH(
         bytes32 _forgeId,
         bytes32 _marketFactoryId,
-        address xyt,
-        uint256 lpAmountDesired,
-        uint256 ethAmountMin
+        address _xyt,
+        uint256 _exactOutLp,
+        uint256 _minInEth
     ) public override {
-        address token = address(weth);
         IBenchmarkMarket market =
-            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), "Benchmark: market not found");
-        market.exitPoolSingleToken(msg.sender, token, lpAmountDesired, ethAmountMin);
+            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, address(weth)));
+        require(address(market) != address(0), "Pendle: market not found");
+
+        _transferIn(address(market), _exactOutLp);
+
+        uint256 ethAmount =
+            market.exitMarketSingleToken(
+                address(weth),
+                _exactOutLp,
+                _minInEth
+            );
+
+        _transferOut(ETH_ADDRESS, ethAmount);
     }
 
     function removeMarketLiquidityToken(
         bytes32 _forgeId,
         bytes32 _marketFactoryId,
-        address xyt,
-        address token,
-        uint256 lpAmountDesired,
-        uint256 tokenAmountMin
+        address _xyt,
+        address _token,
+        uint256 _exactOutLp,
+        uint256 _minInToken
     ) public override {
         IBenchmarkMarket market =
-            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), "Benchmark: market not found");
-        market.exitPoolSingleToken(msg.sender, token, lpAmountDesired, tokenAmountMin);
+            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
+        require(address(market) != address(0), "Pendle: market not found");
+
+        _transferIn(address(market), _exactOutLp);
+
+        uint256 tokenAmount =
+            market.exitMarketSingleToken(_token, _exactOutLp, _minInToken);
+
+        _transferOut(_token, tokenAmount);
     }
 
     function removeMarketLiquidityXyt(
         bytes32 _forgeId,
         bytes32 _marketFactoryId,
-        address xyt,
-        address token,
-        uint256 lpAmountDesired,
-        uint256 xytAmountMin
+        address _xyt,
+        address _token,
+        uint256 _exactOutLp,
+        uint256 _minInXyt
     ) public override {
         IBenchmarkMarket market =
-            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), "Benchmark: market not found");
-        market.exitPoolSingleToken(msg.sender, xyt, lpAmountDesired, xytAmountMin);
+            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
+        require(address(market) != address(0), "Pendle: market not found");
+
+        _transferIn(address(market), _exactOutLp);
+
+        uint256 xytAmount =
+            market.exitMarketSingleToken(_xyt, _exactOutLp, _minInXyt);
+
+        _transferOut(_xyt, xytAmount);
+    }
+
+    function createMarket(
+        bytes32 _forgeId,
+        bytes32 _marketFactoryId,
+        address _xyt,
+        address _token,
+        uint256 _expiry
+    ) public override returns (address market) {
+        IBenchmarkMarketFactory factory = IBenchmarkMarketFactory(data.getMarketFactoryAddress(_forgeId, _marketFactoryId));
+        require(address(factory) != address(0), "Pendle: zero address");
+        market = factory.createMarket(_forgeId, _xyt, _token, _expiry);
+        IERC20(_token).approve(market, Math.UINT_MAX_VALUE);
+    }
+
+    function bootstrapMarket(
+        bytes32 _forgeId,
+        bytes32 _marketFactoryId,
+        address _xyt,
+        address _token,
+        uint256 _initialXytLiquidity,
+        uint256 _initialTokenLiquidity
+    ) public override {
+        IBenchmarkMarket market =
+            IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
+        require(address(market) != address(0), "Pendle: market not found");
+
+        _transferIn(_xyt, _initialTokenLiquidity);
+        _transferIn(_token, _initialTokenLiquidity);
+
+        (address lp, uint256 lpAmount) = market.bootstrap(_initialXytLiquidity, _initialTokenLiquidity);
+
+        _transferOut(lp, lpAmount);
     }
 
     function batchExactSwapIn(
         Swap[] memory swaps,
-        IERC20 tokenIn,
-        IERC20 tokenOut,
-        uint256 totalAmountIn,
-        uint256 minTotalAmountOut
-    ) public payable override returns (uint256 totalAmountOut) {
-        // _transferIn(tokenIn, msg.sender, totalAmountIn); // TODO: last here
+        address tokenIn,
+        address tokenOut,
+        uint256 inTotalAmount,
+        uint256 minOutTotalAmount
+    ) public payable override returns (uint256 outTotalAmount) {
+        IBenchmarkMarket market;
+        IERC20 swapTokenIn;
+        Swap memory swap;
+        uint256 change = inTotalAmount;
+
+        _transferIn(tokenIn, inTotalAmount);
 
         for (uint256 i = 0; i < swaps.length; i++) {
-            Swap memory swap = swaps[i];
-            IERC20 swapTokenIn = IERC20(swap.tokenIn);
-            IBenchmarkMarket market = IBenchmarkMarket(swap.market);
-
-            if (swapTokenIn.allowance(address(this), swap.market) > 0) {
-                swapTokenIn.approve(swap.market, 0);
-            }
-            swapTokenIn.approve(swap.market, swap.swapAmount);
+            swap = swaps[i];
+            swapTokenIn = IERC20(swap.tokenIn);
+            market = IBenchmarkMarket(swap.market);
 
             (uint256 tokenAmountOut, ) =
-                market.swapAmountIn(
-                    msg.sender,
+                market.swapAmountExactIn(
                     swap.tokenIn,
                     swap.swapAmount,
                     swap.tokenOut,
                     swap.limitReturnAmount,
                     swap.maxPrice
                 );
-            totalAmountOut = tokenAmountOut.add(totalAmountOut);
+            outTotalAmount = tokenAmountOut.add(outTotalAmount);
+            change = change.sub(swap.swapAmount);
         }
 
-        require(totalAmountOut >= minTotalAmountOut, "Benchmark: limit out error");
+        require(outTotalAmount >= minOutTotalAmount, "Pendle: limit out error");
 
-        // _transferOut(tokenOut, totalAmountOut);
-        // _transferOut(tokenIn, _getBalance(tokenIn));
+        _transferOut(tokenOut, outTotalAmount);
+        _transferOut(tokenIn, change);
     }
 
     function batchSwapExactOut(
         Swap[] memory swaps,
-        IERC20 tokenIn,
-        IERC20 tokenOut,
-        uint256 maxTotalAmountIn
-    ) public payable override returns (uint256 totalAmountIn) {
-        // _transferIn(tokenIn, maxTotalAmountIn);
+        address tokenIn,
+        address tokenOut,
+        uint256 maxInTotalAmount
+    ) public payable override returns (uint256 inTotalAmount) {
+        IBenchmarkMarket market;
+        IERC20 swapTokenIn;
+        Swap memory swap;
+        uint256 outTotalAmount;
+        uint256 change = maxInTotalAmount;
+
+        _transferIn(tokenIn, maxInTotalAmount);
 
         for (uint256 i = 0; i < swaps.length; i++) {
-            Swap memory swap = swaps[i];
-            IERC20 swapTokenIn = IERC20(swap.tokenIn);
-
-            IBenchmarkMarket market = IBenchmarkMarket(swap.market);
-            _approveMarketAllowance(swapTokenIn, swap.market, swap.limitReturnAmount);
+            swap = swaps[i];
+            swapTokenIn = IERC20(swap.tokenIn);
+            market = IBenchmarkMarket(swap.market);
 
             (uint256 tokenAmountIn, ) =
-                market.swapAmountOut(
-                    msg.sender,
+                market.swapAmountExactOut(
                     swap.tokenIn,
                     swap.limitReturnAmount,
                     swap.tokenOut,
                     swap.swapAmount,
                     swap.maxPrice
                 );
-            totalAmountIn = tokenAmountIn.add(totalAmountIn);
-        }
-        require(totalAmountIn <= maxTotalAmountIn, "Benchmark: limit in error");
-
-        // _transferOut(tokenOut, _getBalance(tokenOut));
-        // _transferOut(tokenIn, _getBalance(tokenIn));
-    }
-
-    function multStepBatchExactSwapIn(
-        Swap[][] memory swapSequences,
-        IERC20 tokenIn,
-        IERC20 tokenOut,
-        uint256 totalAmountIn,
-        uint256 minTotalAmountOut
-    ) public payable override returns (uint256 totalAmountOut) {
-        // _transferIn(tokenIn, totalAmountIn);
-
-        for (uint256 i = 0; i < swapSequences.length; i++) {
-            uint256 tokenAmountOut;
-            for (uint256 k = 0; k < swapSequences[i].length; k++) {
-                Swap memory swap = swapSequences[i][k];
-                IERC20 swapTokenIn = IERC20(swap.tokenIn);
-                if (k == 1) {
-                    swap.swapAmount = tokenAmountOut;
-                }
-
-                IBenchmarkMarket market = IBenchmarkMarket(swap.market);
-                _approveMarketAllowance(swapTokenIn, swap.market, swap.swapAmount);
-
-                (tokenAmountOut, ) = market.swapAmountIn(
-                    msg.sender,
-                    swap.tokenIn,
-                    swap.swapAmount,
-                    swap.tokenOut,
-                    swap.limitReturnAmount,
-                    swap.maxPrice
-                );
-            }
-            // This takes the amountOut of the last swap
-            totalAmountOut = tokenAmountOut.add(totalAmountOut);
+            inTotalAmount = tokenAmountIn.add(inTotalAmount);
+            outTotalAmount = outTotalAmount.add(swap.swapAmount);
+            change = change.sub(swap.limitReturnAmount);
         }
 
-        require(totalAmountOut >= minTotalAmountOut, "Benchmark: limit out error");
+        require(inTotalAmount <= maxInTotalAmount, "Pendle: limit in error");
 
-        // _transferOut(tokenOut, totalAmountOut);
-        // _transferOut(tokenIn, _getBalance(tokenIn));
-    }
-
-    function multStepBatchExactSwapOut(
-        Swap[][] memory swapSequences,
-        IERC20 tokenIn,
-        IERC20 tokenOut,
-        uint256 maxTotalAmountIn
-    ) public payable override returns (uint256 totalAmountIn) {
-        // _transferIn(tokenIn, maxTotalAmountIn);
-
-        IBenchmarkMarket.TokenReserve memory inTokenReserve;
-        IBenchmarkMarket.TokenReserve memory outTokenReserve;
-
-        for (uint256 i = 0; i < swapSequences.length; i++) {
-            uint256 tokenAmountInFirstSwap;
-            if (swapSequences[i].length == 1) {
-                Swap memory swap = swapSequences[i][0];
-                IERC20 swapTokenIn = IERC20(swap.tokenIn);
-
-                IBenchmarkMarket market = IBenchmarkMarket(swap.market);
-                _approveMarketAllowance(swapTokenIn, swap.market, swap.limitReturnAmount);
-                _transferIn(address(swapTokenIn), msg.sender, swap.market, swap.limitReturnAmount);
-
-                (tokenAmountInFirstSwap, ) = market.swapAmountOut(
-                    msg.sender,
-                    swap.tokenIn,
-                    swap.limitReturnAmount,
-                    swap.tokenOut,
-                    swap.swapAmount,
-                    swap.maxPrice
-                );
-            } else {
-                uint256 intermediateTokenAmount;
-                Swap memory secondSwap = swapSequences[i][1];
-                IBenchmarkMarket marketSecondSwap = IBenchmarkMarket(secondSwap.market);
-
-                inTokenReserve.balance = marketSecondSwap.getBalance(secondSwap.tokenIn);
-                inTokenReserve.weight = marketSecondSwap.getWeight(secondSwap.tokenIn);
-                outTokenReserve.balance = marketSecondSwap.getBalance(secondSwap.tokenOut);
-                outTokenReserve.weight = marketSecondSwap.getWeight(secondSwap.tokenOut);
-
-                intermediateTokenAmount = marketSecondSwap.calcOutAmount(
-                    inTokenReserve,
-                    outTokenReserve,
-                    secondSwap.swapAmount,
-                    data.swapFee()
-                );
-
-                Swap memory firstSwap = swapSequences[i][0];
-                IERC20 firstSwapTokenIn = IERC20(firstSwap.tokenIn);
-                IBenchmarkMarket marketFirstSwap = IBenchmarkMarket(firstSwap.market);
-                if (
-                    firstSwapTokenIn.allowance(address(this), firstSwap.market) <
-                    Math.UINT_MAX_VALUE
-                ) {
-                    firstSwapTokenIn.approve(firstSwap.market, Math.UINT_MAX_VALUE);
-                }
-
-                (tokenAmountInFirstSwap, ) = marketFirstSwap.swapAmountOut(
-                    msg.sender,
-                    firstSwap.tokenIn,
-                    firstSwap.limitReturnAmount,
-                    firstSwap.tokenOut,
-                    intermediateTokenAmount, // This is the amount of token B we need
-                    firstSwap.maxPrice
-                );
-
-                IERC20 secondSwapTokenIn = IERC20(secondSwap.tokenIn);
-                if (
-                    secondSwapTokenIn.allowance(address(this), secondSwap.market) <
-                    Math.UINT_MAX_VALUE
-                ) {
-                    secondSwapTokenIn.approve(secondSwap.market, Math.UINT_MAX_VALUE);
-                }
-
-                marketSecondSwap.swapAmountOut(
-                    msg.sender,
-                    secondSwap.tokenIn,
-                    secondSwap.limitReturnAmount,
-                    secondSwap.tokenOut,
-                    secondSwap.swapAmount,
-                    secondSwap.maxPrice
-                );
-            }
-            totalAmountIn = tokenAmountInFirstSwap.add(totalAmountIn);
-        }
-
-        require(totalAmountIn <= maxTotalAmountIn, "Benchmark: limit in error");
-
-        // _transferOut(tokenOut, _getBalance(tokenOut));
-        // _transferOut(tokenIn, _getBalance(tokenIn));
+        _transferOut(tokenOut, outTotalAmount);
+        _transferOut(tokenIn, change);
     }
 
     function swapExactIn(
         address tokenIn,
         address tokenOut,
-        uint256 totalAmountIn,
-        uint256 minTotalAmountOut,
+        uint256 inTotalAmount,
+        uint256 minOutTotalAmount,
         uint256 numMarkets
     ) public payable override returns (uint256 amount) {
         Swap[] memory swaps;
+
         if (_isETH(tokenIn)) {
-            (swaps, ) = getMarketRateExactIn(address(weth), tokenOut, totalAmountIn, numMarkets);
+            (swaps, ) = getMarketRateExactIn(address(weth), tokenOut, inTotalAmount, numMarkets);
         } else if (_isETH(tokenOut)) {
-            (swaps, ) = getMarketRateExactIn(tokenIn, address(weth), totalAmountIn, numMarkets);
+            (swaps, ) = getMarketRateExactIn(tokenIn, address(weth), inTotalAmount, numMarkets);
         } else {
-            (swaps, ) = getMarketRateExactIn(tokenIn, tokenOut, totalAmountIn, numMarkets);
+            (swaps, ) = getMarketRateExactIn(tokenIn, tokenOut, inTotalAmount, numMarkets);
         }
 
         amount = batchExactSwapIn(
             swaps,
-            IERC20(tokenIn),
-            IERC20(tokenOut),
-            totalAmountIn,
-            minTotalAmountOut
+            tokenIn,
+            tokenOut,
+            inTotalAmount,
+            minOutTotalAmount
         );
     }
 
     function swapExactOut(
         address tokenIn,
         address tokenOut,
-        uint256 totalAmountOut,
-        uint256 maxTotalAmountIn,
+        uint256 outTotalAmount,
+        uint256 maxInTotalAmount,
         uint256 numMarkets
     ) public payable override returns (uint256 amount) {
         Swap[] memory swaps;
+
         if (_isETH(tokenIn)) {
-            (swaps, ) = getMarketRateExactOut(address(weth), tokenOut, totalAmountOut, numMarkets);
+            (swaps, ) = getMarketRateExactOut(address(weth), tokenOut, outTotalAmount, numMarkets);
         } else if (_isETH(tokenOut)) {
-            (swaps, ) = getMarketRateExactOut(tokenIn, address(weth), totalAmountOut, numMarkets);
+            (swaps, ) = getMarketRateExactOut(tokenIn, address(weth), outTotalAmount, numMarkets);
         } else {
-            (swaps, ) = getMarketRateExactOut(tokenIn, tokenOut, totalAmountOut, numMarkets);
+            (swaps, ) = getMarketRateExactOut(tokenIn, tokenOut, outTotalAmount, numMarkets);
         }
 
-        amount = batchSwapExactOut(swaps, IERC20(tokenIn), IERC20(tokenOut), maxTotalAmountIn);
+        amount = batchSwapExactOut(swaps, tokenIn, tokenOut, maxInTotalAmount);
     }
 
     function getAllMarkets() public view override returns (address[] memory) {
         return (data.getAllMarkets());
     }
 
-    // @@Vu TODO: This is not returning the list of markets for the underlying token. We will need to add some structs to BenchmarkData to query this
+    // @@Vu TODO: This is not returning the list of markets for the underlying token.
+    // We will need to add some structs to BenchmarkData to query this
     function getMarketByUnderlyingToken(
         bytes32 _forgeId,
         bytes32 _marketFactoryId,
@@ -608,11 +519,11 @@ contract Benchmark is IBenchmark, Permissions {
     function getMarketRateExactIn(
         address tokenIn,
         address tokenOut,
-        uint256 swapAmount,
-        uint256 nMarkets
+        uint256 inSwapAmount,
+        uint256 numMarkets
     ) public view override returns (Swap[] memory swaps, uint256 totalOutput) {
         address[] memory marketAddresses =
-            data.getBestMarketsWithLimit(tokenIn, tokenOut, nMarkets);
+            data.getBestMarketsWithLimit(tokenIn, tokenOut, numMarkets);
 
         Market[] memory markets = new Market[](marketAddresses.length);
         uint256 sumEffectiveLiquidity;
@@ -624,16 +535,16 @@ contract Benchmark is IBenchmark, Permissions {
         uint256[] memory bestInputAmounts = new uint256[](markets.length);
         uint256 totalInputAmount;
         for (uint256 i = 0; i < markets.length; i++) {
-            bestInputAmounts[i] = swapAmount.mul(markets[i].effectiveLiquidity).div(
+            bestInputAmounts[i] = inSwapAmount.mul(markets[i].effectiveLiquidity).div(
                 sumEffectiveLiquidity
             );
             totalInputAmount = totalInputAmount.add(bestInputAmounts[i]);
         }
 
-        if (totalInputAmount < swapAmount) {
-            bestInputAmounts[0] = bestInputAmounts[0].add(swapAmount.sub(totalInputAmount));
+        if (totalInputAmount < inSwapAmount) {
+            bestInputAmounts[0] = bestInputAmounts[0].add(inSwapAmount.sub(totalInputAmount));
         } else {
-            bestInputAmounts[0] = bestInputAmounts[0].sub(totalInputAmount.sub(swapAmount));
+            bestInputAmounts[0] = bestInputAmounts[0].sub(totalInputAmount.sub(inSwapAmount));
         }
 
         swaps = new Swap[](markets.length);
@@ -657,11 +568,11 @@ contract Benchmark is IBenchmark, Permissions {
     function getMarketRateExactOut(
         address tokenIn,
         address tokenOut,
-        uint256 swapAmount,
-        uint256 nMarkets
-    ) public view override returns (Swap[] memory swaps, uint256 totalOutput) {
+        uint256 outSwapAmount,
+        uint256 numMarkets
+    ) public view override returns (Swap[] memory swaps, uint256 totalInput) {
         address[] memory marketAddresses =
-            data.getBestMarketsWithLimit(tokenIn, tokenOut, nMarkets);
+            data.getBestMarketsWithLimit(tokenIn, tokenOut, numMarkets);
 
         Market[] memory markets = new Market[](marketAddresses.length);
         uint256 sumEffectiveLiquidity;
@@ -673,16 +584,16 @@ contract Benchmark is IBenchmark, Permissions {
         uint256[] memory bestInputAmounts = new uint256[](markets.length);
         uint256 totalInputAmount;
         for (uint256 i = 0; i < markets.length; i++) {
-            bestInputAmounts[i] = swapAmount.mul(markets[i].effectiveLiquidity).div(
+            bestInputAmounts[i] = outSwapAmount.mul(markets[i].effectiveLiquidity).div(
                 sumEffectiveLiquidity
             );
             totalInputAmount = totalInputAmount.add(bestInputAmounts[i]);
         }
 
-        if (totalInputAmount < swapAmount) {
-            bestInputAmounts[0] = bestInputAmounts[0].add(swapAmount.sub(totalInputAmount));
+        if (totalInputAmount < outSwapAmount) {
+            bestInputAmounts[0] = bestInputAmounts[0].add(outSwapAmount.sub(totalInputAmount));
         } else {
-            bestInputAmounts[0] = bestInputAmounts[0].sub(totalInputAmount.sub(swapAmount));
+            bestInputAmounts[0] = bestInputAmounts[0].sub(totalInputAmount.sub(outSwapAmount));
         }
 
         swaps = new Swap[](markets.length);
@@ -698,9 +609,9 @@ contract Benchmark is IBenchmark, Permissions {
             });
         }
 
-        totalOutput = _calcTotalOutExactOut(bestInputAmounts, markets);
+        totalInput = _calcTotalOutExactOut(bestInputAmounts, markets);
 
-        return (swaps, totalOutput);
+        return (swaps, totalInput);
     }
 
     function getMarketReserves(
@@ -720,7 +631,7 @@ contract Benchmark is IBenchmark, Permissions {
     {
         IBenchmarkMarket market =
             IBenchmarkMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
-        require(address(market) != address(0), "Benchmark: market not found");
+        require(address(market) != address(0), "Pendle: market not found");
         (xytAmount, tokenAmount, currentTime) = market.getReserves();
     }
 
@@ -730,20 +641,34 @@ contract Benchmark is IBenchmark, Permissions {
         override
         returns (address token, address xyt)
     {
-        require(address(market) != address(0), "Benchmark: market not found");
+        require(address(market) != address(0), "Pendle: market not found");
         IBenchmarkMarket benmarkMarket = IBenchmarkMarket(market);
         token = benmarkMarket.token();
         xyt = benmarkMarket.xyt();
     }
 
-    function _approveMarketAllowance(
-        IERC20 token,
-        address market,
-        uint256 amount
-    ) internal {
-        if (token.allowance(address(this), market) < amount) {
-            token.approve(market, 0);
-            token.approve(market, Math.UINT_MAX_VALUE);
+    /// @dev Inbound transfer from msg.sender to core
+    function _transferIn(address _token, uint256 _amount) internal {
+        if (_amount == 0) return;
+        require(msg.value == _amount, "Pendle: eth sent mismatch");
+
+        if (_isETH(_token)) {
+            weth.deposit{value: msg.value}();
+        } else {
+            IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+        }
+    }
+
+    /// @dev Outbound transfer from core to msg.sender
+    function _transferOut(address _token, uint256 _amount) internal {
+        if (_amount == 0) return;
+
+        if (_isETH(_token)) {
+            weth.withdraw(_amount);
+            (bool success, ) = msg.sender.call{value: _amount}("");
+            require(success, "Pendle: transfer failed");
+        } else {
+            IERC20(_token).safeTransfer(msg.sender, _amount);
         }
     }
 
@@ -772,20 +697,6 @@ contract Benchmark is IBenchmark, Permissions {
             });
 
         return returnMarket;
-    }
-
-    function _calcEffectiveLiquidity(
-        uint256 tokenWeightIn,
-        uint256 tokenBalanceOut,
-        uint256 tokenWeightOut
-    ) internal pure returns (uint256 effectiveLiquidity) {
-        effectiveLiquidity = tokenWeightIn
-            .mul(Math.WAD)
-            .div(tokenWeightOut.add(tokenWeightIn))
-            .mul(tokenBalanceOut)
-            .div(Math.WAD);
-
-        return effectiveLiquidity;
     }
 
     function _calcTotalOutExactIn(uint256[] memory bestInAmounts, Market[] memory bestMarkets)
@@ -852,23 +763,21 @@ contract Benchmark is IBenchmark, Permissions {
         }
     }
 
-    function _isETH(address token) internal pure returns (bool) {
-        return (token == ETH_ADDRESS);
+    function _calcEffectiveLiquidity(
+        uint256 tokenWeightIn,
+        uint256 tokenBalanceOut,
+        uint256 tokenWeightOut
+    ) internal pure returns (uint256 effectiveLiquidity) {
+        effectiveLiquidity = tokenWeightIn
+            .mul(Math.WAD)
+            .div(tokenWeightOut.add(tokenWeightIn))
+            .mul(tokenBalanceOut)
+            .div(Math.WAD);
+
+        return effectiveLiquidity;
     }
 
-    function _transferIn(
-        address token,
-        address source,
-        address destination,
-        uint256 amount
-    ) internal {
-        if (amount == 0) return;
-
-        if (_isETH(token)) {
-            weth.deposit{value: msg.value}();
-            weth.transfer(destination, amount);
-        } else {
-            IERC20(token).safeTransferFrom(source, destination, amount);
-        }
+    function _isETH(address token) internal pure returns (bool) {
+        return (token == ETH_ADDRESS);
     }
 }

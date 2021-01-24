@@ -48,14 +48,6 @@ interface IBenchmarkMarketFactory {
         address indexed market
     );
 
-    function bootStrapMarket(
-        bytes32 forgeId,
-        address xyt,
-        address token,
-        uint256 initialXytLiquidity,
-        uint256 initialTokenLiquidity
-    ) external;
-
     /**
      * @notice Creates a market given a protocol ID, future yield token, and an ERC20 token.
      * @param forgeId Forge identifier.

@@ -30,9 +30,11 @@ import "../interfaces/IBenchmarkData.sol";
 import "../interfaces/IBenchmarkForge.sol";
 import "../tokens/BenchmarkFutureYieldToken.sol";
 import "../tokens/BenchmarkOwnershipToken.sol";
-import "hardhat/console.sol";
 
-contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
+import "../periphery/Permissions.sol";
+
+
+contract BenchmarkAaveForge is IBenchmarkForge, Permissions, ReentrancyGuard {
     using SafeMath for uint256;
     using Utils for string;
 
@@ -41,7 +43,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         IBenchmarkYieldToken ot;
     }
 
-    IBenchmark public immutable override core;
+    IBenchmark public override core;
     IAaveLendingPoolCore public immutable aaveLendingPoolCore;
     bytes32 public immutable override forgeId;
 
@@ -53,10 +55,11 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
     string private constant XYT = "XYT-Aave";
 
     constructor(
+        address _governance,
         IBenchmark _core,
         IAaveLendingPoolCore _aaveLendingPoolCore,
         bytes32 _forgeId
-    ) {
+    ) Permissions(_governance) {
         require(address(_core) != address(0), "Benchmark: zero address");
         require(address(_aaveLendingPoolCore) != address(0), "Benchmark: zero address");
         require(_forgeId != 0x0, "Benchmark: zero bytes");
@@ -81,11 +84,12 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
     }
 
     function newYieldContracts(address _underlyingAsset, uint256 _expiry)
-        public
+        external
         override
+        onlyCore
         returns (address ot, address xyt)
     {
-        address aToken = aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset);
+        address aToken = getYieldBearingToken(_underlyingAsset);
         uint8 aTokenDecimals = IBenchmarkBaseToken(aToken).decimals();
 
         string memory otName = OT.concat(IBenchmarkBaseToken(aToken).name(), " ");
@@ -115,43 +119,25 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         emit NewYieldContracts(ot, xyt, _expiry);
     }
 
-    function redeemDueInterests(
-        address _msgSender,
-        address _underlyingAsset,
-        uint256 _expiry
-    ) public override returns (uint256 interests) {
-        BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
-    }
-
-    function redeemDueInterestsBeforeTransfer(
-        address _underlyingAsset,
-        uint256 _expiry,
-        address _account
-    ) public override onlyXYT(_underlyingAsset, _expiry) returns (uint256 interests) {
-        // console.log("[contract] [Forge] Redeeming due interests for account ", _account);
-        BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
-    }
-
     function redeemAfterExpiry(
-        address _msgSender,
+        address _account,
         address _underlyingAsset,
         uint256 _expiry,
         address _to
-    ) public override returns (uint256 redeemedAmount) {
+    ) external override onlyCore returns (uint256 redeemedAmount) {
         require(block.timestamp > _expiry, "Benchmark: must be after expiry");
 
-        IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
+        IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
         BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        redeemedAmount = tokens.ot.balanceOf(_msgSender);
+        redeemedAmount = tokens.ot.balanceOf(_account);
 
         aToken.transfer(_to, redeemedAmount);
         uint256 currentNormalizedIncome =
             aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
 
-        // interests from the timestamp of the last XYT transfer (before expiry) to now is entitled to the OT holders
-        // this means that the OT holders are getting some extra interests, at the expense of XYT holders
+        // Interests from the timestamp of the last XYT transfer (before expiry)
+        // to now is entitled to the OT holders. Rhis means that the OT holders
+        // are getting some extra interests, at the expense of XYT holders
         uint256 interestsAfterExpiry =
             currentNormalizedIncome
                 .mul(redeemedAmount)
@@ -159,49 +145,60 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
                 .sub(redeemedAmount);
         aToken.transfer(_to, interestsAfterExpiry);
 
-        _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
-        tokens.ot.burn(_msgSender, redeemedAmount);
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
+        tokens.ot.burn(_account, redeemedAmount);
     }
 
-    // msg.sender needs to have both OT and XYT tokens
+    function redeemDueInterests(
+        address _account,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) external override onlyCore returns (uint256 interests) {
+        BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
+    }
+
+    function redeemDueInterestsBeforeTransfer(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) external override onlyXYT(_underlyingAsset, _expiry) returns (uint256 interests) {
+        BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
+    }
+
+    /// @dev msg.sender needs to have both OT and XYT tokens
     function redeemUnderlying(
-        address _msgSender,
+        address _account,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToRedeem,
         address _to
-    ) public override returns (uint256 redeemedAmount) {
+    ) external override onlyCore returns (uint256 redeemedAmount) {
         BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
 
-        require(tokens.ot.balanceOf(_msgSender) >= _amountToRedeem, "Must have enough OT tokens");
-        require(
-            tokens.xyt.balanceOf(_msgSender) >= _amountToRedeem,
-            "Must have enough XYT tokens"
-        );
+        require(tokens.ot.balanceOf(_account) >= _amountToRedeem, "Must have enough OT tokens");
+        require(tokens.xyt.balanceOf(_account) >= _amountToRedeem, "Must have enough XYT tokens");
 
-        IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
+        IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
 
         aToken.transfer(_to, _amountToRedeem);
 
-        _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
 
-        tokens.ot.burn(_msgSender, _amountToRedeem);
-        tokens.xyt.burn(_msgSender, _amountToRedeem);
+        tokens.ot.burn(_account, _amountToRedeem);
+        tokens.xyt.burn(_account, _amountToRedeem);
 
         return _amountToRedeem;
     }
 
     function tokenizeYield(
-        address _msgSender,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToTokenize,
         address _to
-    ) public override onlyCore returns (address ot, address xyt) {
+    ) external override onlyCore returns (address ot, address xyt) {
         BenchmarkTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-
-        IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
-        aToken.transferFrom(_msgSender, address(this), _amountToTokenize);
 
         tokens.ot.mint(_to, _amountToTokenize);
         tokens.xyt.mint(_to, _amountToTokenize);
@@ -209,6 +206,22 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
             .getReserveNormalizedIncome(address(_underlyingAsset));
 
         return (address(tokens.ot), address(tokens.xyt));
+    }
+
+    function setCore(IBenchmark _core) external override onlyGovernance {
+        require(address(_core) != address(0), "Benchmark: zero address");
+
+        core = _core;
+        emit CoreSet(address(_core));
+    }
+
+    function getYieldBearingToken(address _underlyingAsset)
+        public
+        view
+        override
+        returns (address)
+    {
+        return aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset);
     }
 
     function _forgeFutureYieldToken(
@@ -219,7 +232,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         uint8 _decimals,
         uint256 _expiry
     ) internal nonReentrant() returns (address xyt) {
-        IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
+        IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
 
         xyt = Factory.createContract(
             type(BenchmarkFutureYieldToken).creationCode,
@@ -244,7 +257,7 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         uint8 _decimals,
         uint256 _expiry
     ) internal nonReentrant() returns (address ot) {
-        IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
+        IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
 
         ot = Factory.createContract(
             type(BenchmarkOwnershipToken).creationCode,
@@ -268,31 +281,28 @@ contract BenchmarkAaveForge is IBenchmarkForge, ReentrancyGuard {
         address _account
     ) internal returns (uint256) {
         uint256 principal = _tokens.xyt.balanceOf(_account);
-        uint256 Ix = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
-
-        uint256 In;
+        uint256 ix = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
+        uint256 iy;
 
         if (block.timestamp >= _expiry) {
-            In = lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
+            iy = lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
         } else {
-            In = aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
-            lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = In;
+            iy = aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
+            lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = iy;
         }
         // first time getting XYT
-        if (Ix == 0) {
-            lastNormalisedIncome[_underlyingAsset][_expiry][_account] = In;
+        if (ix == 0) {
+            lastNormalisedIncome[_underlyingAsset][_expiry][_account] = iy;
             return 0;
         }
+        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = iy;
 
-        uint256 dueInterests = principal.mul(In).div(Ix).sub(principal);
-
+        uint256 dueInterests = principal.mul(iy).div(ix).sub(principal);
         if (dueInterests > 0) {
-            IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
+            IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
             IERC20(aToken).transfer(_account, dueInterests);
         }
 
-        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = In;
-        // console.log("[contract] [Forge] in _settleDueInterests, interests = ", dueInterests);
         return dueInterests;
     }
 

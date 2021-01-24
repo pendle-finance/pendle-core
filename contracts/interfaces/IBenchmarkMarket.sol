@@ -35,22 +35,9 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
         uint256 balance;
     }
 
-    /* ========== EVENTS ========== */
+    event Join(address indexed token, uint256 amount);
 
-    /**
-     * @notice Emitted when a swap happens on the market.
-     * @param trader The address of the trader.
-     * @param srcAmount The source amount being traded.
-     * @param destAmount The destination amount received.
-     **/
-    event Swap(
-        address indexed trader,
-        uint256 srcAmount,
-        uint256 destAmount
-    );
-
-    event Join(address indexed lp, address indexed token, uint256 amount);
-    event Exit(address indexed lp, address indexed token, uint256 amount);
+    event Exit(address indexed token, uint256 amount);
 
     event Shift(
         uint256 xytWeightOld,
@@ -59,19 +46,52 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
         uint256 tokenWeightNew
     );
 
-    /* ========== POOL MANAGEMENT ========== */
+    /**
+     * @notice Emitted when a swap happens on the market.
+     * @param inToken The source token being traded.
+     * @param inAmount The source amount being traded.
+     * @param outToken The destination token received.
+     * @param outAmount The destination amount received.
+     **/
+    event Swap(
+        address indexed inToken,
+        uint256 inAmount,
+        address indexed outToken,
+        uint256 outAmount
+    );
 
-    // function setPoolRatio(
-    //     address xytToken,
-    //     uint256 denomXYToken,
-    //     address pairToken,
-    //     uint256 denomPairToken
-    // ) external;
+    function bootstrap(
+        uint256 initialXytLiquidity,
+        uint256 initialTokenLiquidity
+    ) external returns (address, uint256);
 
-    /* ========== SWAP ========== */
+    function joinMarketByAll(
+        uint256 outAmountLp,
+        uint256 maxInAmoutXyt,
+        uint256 maxInAmountPair
+    ) external;
 
-    function swapAmountIn(
-        address _msgSender,
+    function exitMarketByAll(
+        uint256 inAmountLp,
+        uint256 minOutAmountXyt,
+        uint256 minOutAmountPair
+    ) external returns (uint256 xytOut, uint256 tokenOut) ;
+
+    //function interestDistribute(address lp) returns (uint interestReturn);
+
+    function exitMarketSingleToken(
+        address outToken,
+        uint256 inAmountLp,
+        uint256 minOutAmountToken
+    ) external returns (uint256 outAmountToken);
+
+    function joinMarketSingleToken(
+        address inToken,
+        uint256 inAmount,
+        uint256 minOutAmountLp
+    ) external returns (uint256 outAmountLp);
+
+    function swapAmountExactIn(
         address inToken,
         uint256 inAmount,
         address outToken,
@@ -79,54 +99,13 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
         uint256 maxPrice
     ) external returns (uint256 outAmount, uint256 spotPriceAfter);
 
-    function swapAmountOut(
-        address _msgSender,
+    function swapAmountExactOut(
         address inToken,
         uint256 maxInAmount,
         address outToken,
         uint256 outAmount,
         uint256 maxPrice
     ) external returns (uint256 inAmount, uint256 spotPriceAfter);
-
-    /* ========== LP ========== */
-
-    function bootstrap(
-        address _msgSender,
-        uint256 initialXytLiquidity,
-        uint256 initialTokenLiquidity
-    ) external;
-
-    function joinPoolByAll(
-        address _msgSender,
-        uint256 outAmountLp,
-        uint256 maxInAmoutXyt,
-        uint256 maxInAmountPair
-    ) external;
-
-    function exitPoolByAll(
-        address _msgSender,
-        uint256 inAmountLp,
-        uint256 minOutAmountXyt,
-        uint256 minOutAmountPair
-    ) external;
-
-    function joinPoolSingleToken(
-        address _msgSender,
-        address inToken,
-        uint256 inAmount,
-        uint256 minOutAmountLp
-    ) external returns (uint256 outAmountLp);
-
-    function exitPoolSingleToken(
-        address _msgSender,
-        address outToken,
-        uint256 inAmountLp,
-        uint256 minOutAmountToken
-    ) external returns (uint256 outAmountToken);
-
-    //function interestDistribute(address lp) returns (uint interestReturn);
-
-    /* ========== VIEW ========== */
 
     function calcInAmount(
         TokenReserve memory inTokenReserve,
@@ -156,12 +135,6 @@ interface IBenchmarkMarket is IBenchmarkBaseToken {
     function getWeight(address asset) external view returns (uint256);
 
     function spotPrice(address inToken, address outToken) external view returns (uint256 spot);
-
-    /**
-     * @notice Gets a reference to the Benchmark core contract.
-     * @return Returns the core contract reference.
-     **/
-    function core() external view returns (IBenchmark);
 
     /**
      * @dev Returns the address of the BenchmarkMarketFactory contract address.

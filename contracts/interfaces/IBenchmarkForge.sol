@@ -27,6 +27,12 @@ import "./IBenchmark.sol";
 
 interface IBenchmarkForge {
     /**
+     * @notice Emitted when Benchmark core contract reference is changed.
+     * @param core The address of the new core contract.
+     **/
+    event CoreSet(address core);
+
+    /**
      * @dev Emitted when the Forge has minted the OT and XYT tokens.
      * @param underlyingYieldToken The address of the underlying yield token.
      * @param amount The amount to be minted.
@@ -56,40 +62,15 @@ interface IBenchmarkForge {
         external
         returns (address ot, address xyt);
 
-    function redeemUnderlying(
-        address msgSender,
-        address underlyingAsset,
-        uint256 expiry,
-        uint256 amountToRedeem,
-        address to
-    ) external returns (uint256 redeemedAmount);
-
-    function tokenizeYield(
-        address msgSender,
-        address underlyingAsset,
-        uint256 expiry,
-        uint256 amountToTokenize,
-        address to
-    ) external returns (address ot, address xyt);
-
     function redeemAfterExpiry(
-        address msgSender,
+        address account,
         address underlyingAsset,
         uint256 expiry,
         address to
     ) external returns (uint256 redeemedAmount);
-
-    // TODO: to implement renew
-    // function renew(
-    //     ContractDurations oldContractDuration,
-    //     uint256 oldExpiry,
-    //     ContractDurations newContractDuration,
-    //     uint256 newExpiry,
-    //     address to
-    // ) external returns (uint256 redeemedAmount);
 
     function redeemDueInterests(
-        address msgSender,
+        address account,
         address underlyingAsset,
         uint256 expiry
     ) external returns (uint256 interests);
@@ -99,6 +80,27 @@ interface IBenchmarkForge {
         uint256 expiry,
         address account
     ) external returns (uint256 interests);
+
+    function redeemUnderlying(
+        address account,
+        address underlyingAsset,
+        uint256 expiry,
+        uint256 amountToRedeem,
+        address to
+    ) external returns (uint256 redeemedAmount);
+
+    function tokenizeYield(
+        address underlyingAsset,
+        uint256 expiry,
+        uint256 amountToTokenize,
+        address to
+    ) external returns (address ot, address xyt);
+
+    /**
+     * @notice Sets the Benchmark core contract reference.
+     * @param _core Address of the new core contract.
+     **/
+    function setCore(IBenchmark _core) external;
 
     /**
      * @notice Gets a reference to the Benchmark core contract.
@@ -111,4 +113,6 @@ interface IBenchmarkForge {
      * @return Returns the forge and protocol identifier.
      **/
     function forgeId() external view returns (bytes32);
+
+    function getYieldBearingToken(address underlyingAsset) external view returns (address);
 }

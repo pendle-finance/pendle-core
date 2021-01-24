@@ -25,26 +25,24 @@ pragma experimental ABIEncoderV2;
 
 import "../interfaces/IBenchmarkData.sol";
 import "../interfaces/IBenchmarkMarket.sol";
+import "../interfaces/IBenchmarkMarketFactory.sol";
 import "../interfaces/IBenchmarkYieldToken.sol";
 import "../tokens/BenchmarkBaseToken.sol";
 import "../libraries/BenchmarkLibrary.sol";
 import {Math} from "../libraries/BenchmarkLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "hardhat/console.sol";
-
 
 contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
     using Math for uint256;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IBenchmark public immutable override core;
     address public immutable override factory;
     address public immutable override forge;
     address public immutable override token;
     address public immutable override xyt;
     uint256 public constant MIN_LIQUIDITY = 10**3;
-    string private constant NAME = "Benchmark Market";
+    string private constant NAME = "Pendle Market";
     string private constant SYMBOL = "BMK-LPT";
     uint256 private constant INITIAL_LP_FOR_CREATOR = 10**18; // arbitrary number
     uint8 private constant DECIMALS = 18;
@@ -60,19 +58,16 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
     constructor(
         address _creator,
-        IBenchmark _core,
         address _forge,
         address _xyt,
         address _token,
         uint256 _expiry
     ) BenchmarkBaseToken(NAME, SYMBOL, DECIMALS, block.timestamp, _expiry) {
-        require(address(_core) != address(0), "Benchmark: zero address");
         require(_forge != address(0), "Benchmark: zero address");
         require(_xyt != address(0), "Benchmark: zero address");
         require(_token != address(0), "Benchmark: zero address");
 
         factory = msg.sender;
-        core = _core;
         forge = _forge;
         xyt = _xyt;
         token = _token;
@@ -86,48 +81,45 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         _;
     }
 
-    function getReserves()
-        external
-        view
-        override
-        returns (
-            uint256 xytReserves,
-            uint256 tokenReserves,
-            uint256 lastBlockTimestamp
-        )
-    {
-        return (reserves[xyt].balance, reserves[token].balance, block.timestamp);
+    modifier onlyCore() {
+        address core = address(IBenchmarkMarketFactory(factory).core());
+        require(msg.sender == core, "Benchmark: only core");
+        _;
     }
 
-    function bootstrap(
-        address _msgSender,
-        uint256 initialXytLiquidity,
-        uint256 initialTokenLiquidity
-    ) external override {
-        _pullToken(xyt, _msgSender, initialXytLiquidity);
-        _pullToken(token, _msgSender, initialTokenLiquidity);
+    function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
+        external
+        override
+        onlyCore
+        returns (address, uint256)
+    {
+        _transferIn(xyt, initialXytLiquidity);
+        _transferIn(token, initialTokenLiquidity);
 
         reserves[xyt].balance = initialXytLiquidity;
         reserves[xyt].weight = Math.FORMULA_PRECISION / 2;
         reserves[token].balance = initialTokenLiquidity;
         reserves[token].weight = Math.FORMULA_PRECISION / 2;
 
-        _mintLpToken(INITIAL_LP_FOR_CREATOR);
-        _pushLpToken(_msgSender, INITIAL_LP_FOR_CREATOR);
+        _mintLp(INITIAL_LP_FOR_CREATOR);
+        _transferOutLp(INITIAL_LP_FOR_CREATOR);
+
         blockNumLast = block.number;
         bootstrapped = true;
+
+        return (address(this), INITIAL_LP_FOR_CREATOR);
     }
 
     /**
-     * @notice exit the pool by putting in desired amount of lpToken
-     * and get back xytToken and pairToken
+     * @notice Exit the market by putting in the desired amount of LP tokens
+     *         and getting back XYT and pair tokens.
      */
-    function exitPoolByAll(
-        address _msgSender,
+    function exitMarketByAll(
         uint256 inAmountLp,
         uint256 minOutAmountXyt,
         uint256 minOutAmountPair
-    ) external override {
+    ) external override onlyCore returns (uint256 xytOut, uint256 tokenOut) {
+        IBenchmark core = IBenchmarkMarketFactory(factory).core();
         IBenchmarkData data = core.data();
         uint256 exitFee = data.exitFee();
         uint256 totalLp = totalSupply;
@@ -136,39 +128,42 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 ratio = Math.rdiv(inLpAfterExitFee, totalLp);
         require(ratio != 0, "Benchmark: math problem");
 
-        //calc and withdraw xyt token
+        // Calc and withdraw xyt token.
         uint256 balanceToken = reserves[xyt].balance;
         uint256 outAmount = Math.rmul(ratio, balanceToken);
         require(outAmount != 0, "Benchmark: math problem");
         require(outAmount >= minOutAmountXyt, "Benchmark: beyond amount limit");
         reserves[xyt].balance = reserves[xyt].balance.sub(outAmount);
-        emit Exit(_msgSender, xyt, outAmount);
-        _pushToken(xyt, _msgSender, outAmount);
+        xytOut = outAmount;
+        emit Exit(xyt, outAmount);
+        _transferOut(xyt, outAmount);
 
-        //calc and withdraw pair token
+        // Calc and withdraw pair token.
         balanceToken = reserves[token].balance;
         outAmount = Math.rmul(ratio, balanceToken);
         require(outAmount != 0, "Benchmark: math problem");
         require(outAmount >= minOutAmountPair, "Benchmark: beyond amount limit");
         reserves[token].balance = reserves[token].balance.sub(outAmount);
-        emit Exit(_msgSender, token, outAmount);
-        _pushToken(token, _msgSender, outAmount);
+        tokenOut = outAmount;
+        emit Exit(token, outAmount);
+        _transferOut(token, outAmount);
 
-        //let's deal with lp last
-        _pullLpToken(_msgSender, inAmountLp);
-        _pushLpToken(factory, exitFees);
-        _burnLpToken(inLpAfterExitFee);
+        // Deal with lp last.
+        _transferInLp(inAmountLp);
+        _collectFees(exitFees);
+        _burnLp(inLpAfterExitFee);
     }
 
-    function exitPoolSingleToken(
-        address _msgSender,
+    function exitMarketSingleToken(
         address outToken,
         uint256 inAmountLp,
         uint256 minOutAmountToken
-    ) external override returns (uint256 outAmountToken) {
+    ) external override onlyCore returns (uint256 outAmountToken) {
+        IBenchmark core = IBenchmarkMarketFactory(factory).core();
         IBenchmarkData data = core.data();
         TokenReserve storage outTokenReserve = reserves[outToken];
         uint256 exitFee = data.exitFee();
+        uint256 exitFees = Math.rmul(inAmountLp, data.exitFee());
         uint256 totalLp = totalSupply;
         uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
 
@@ -181,71 +176,67 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         );
         require(outAmountToken >= minOutAmountToken, "Benchmark: bad token out amount");
 
-        //update reserves and operate underlying lp and outtoken
+        // Update reserves and operate underlying LP and outToken
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmountToken);
 
-        uint256 exitFees = Math.rmul(inAmountLp, data.exitFee());
+        emit Exit(outToken, outAmountToken);
 
-        emit Exit(_msgSender, outToken, outAmountToken);
-
-        _pullLpToken(_msgSender, inAmountLp);
-        _burnLpToken(inAmountLp.sub(exitFees));
-        _pushLpToken(factory, exitFee);
-        _pushToken(outToken, _msgSender, outAmountToken);
+        _transferInLp(inAmountLp);
+        _collectFees(exitFee);
+        _burnLp(inAmountLp.sub(exitFees));
+        _transferOut(outToken, outAmountToken);
 
         return outAmountToken;
     }
 
     /**
-     * @notice join the pool by putting in xytToken and pairTokens
-     * and get back desired amount of lpToken
+     * @notice Join the market by putting in xytToken and pairTokens
+    *          and get back desired amount of lpToken.
      */
-    function joinPoolByAll(
-        address _msgSender,
+    function joinMarketByAll(
         uint256 outAmountLp,
         uint256 maxInAmoutXyt,
         uint256 maxInAmountPair
-    ) external override {
+    ) external override onlyCore {
         uint256 totalLp = totalSupply;
         uint256 ratio = Math.rdiv(outAmountLp, totalLp);
         require(ratio != 0, "Benchmark: math problem");
 
-        //calc and inject xyt token
+        // Calc and inject XYT token.
         uint256 balanceToken = reserves[xyt].balance;
         uint256 inAmount = Math.rmul(ratio, balanceToken);
         require(inAmount != 0, "Benchmark: math problem");
         require(inAmount <= maxInAmoutXyt, "Benchmark: beyond amount limit");
         reserves[xyt].balance = reserves[xyt].balance.add(inAmount);
-        emit Join(_msgSender, xyt, inAmount);
-        _pullToken(xyt, _msgSender, inAmount);
+        emit Join(xyt, inAmount);
+        _transferIn(xyt, inAmount);
 
-        //calc and inject pair token
+        // Calc and inject pair token.
         balanceToken = reserves[token].balance;
         inAmount = Math.rmul(ratio, balanceToken);
         require(inAmount != 0, "Benchmark: math problem");
         require(inAmount <= maxInAmountPair, "Benchmark: beyond amount limit");
         reserves[token].balance = reserves[token].balance.add(inAmount);
-        emit Join(_msgSender, token, inAmount);
-        _pullToken(token, _msgSender, inAmount);
+        emit Join(token, inAmount);
+        _transferIn(token, inAmount);
 
-        //mint and push lp token
-        _mintLpToken(outAmountLp);
-        _pushLpToken(_msgSender, outAmountLp);
-        printAcc(_msgSender);
+        // Mint and push LP token.
+        _mintLp(outAmountLp);
+        _transferOutLp(outAmountLp);
     }
 
-    function joinPoolSingleToken(
-        address _msgSender,
+    function joinMarketSingleToken(
         address inToken,
         uint256 inAmount,
         uint256 minOutAmountLp
-    ) external override returns (uint256 outAmountLp) {
+    ) external override onlyCore returns (uint256 outAmountLp) {
+        IBenchmark core = IBenchmarkMarketFactory(factory).core();
         IBenchmarkData data = core.data();
         TokenReserve storage inTokenReserve = reserves[inToken];
         uint256 totalLp = totalSupply;
         uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
 
-        //calc out amount of lp token
+        // Calc out amount of LP token.
         outAmountLp = _calcOutAmountLp(
             inAmount,
             inTokenReserve,
@@ -255,28 +246,28 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         );
         require(outAmountLp >= minOutAmountLp, "Benchmark: bad lp out amount");
 
-        //update reserves and operate underlying lp and intoken
+        // Update reserves and operate underlying LP and inToken.
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
+        emit Join(inToken, inAmount);
+        _transferIn(inToken, inAmount);
 
-        emit Join(_msgSender, inToken, inAmount);
-
-        _mintLpToken(outAmountLp);
-        _pushLpToken(_msgSender, outAmountLp);
-        _pullToken(inToken, _msgSender, inAmount);
+        // Mint and push LP token.
+        _mintLp(outAmountLp);
+        _transferOutLp(outAmountLp);
 
         return outAmountLp;
     }
 
-    function swapAmountIn(
-        address _trader,
+    function swapAmountExactIn(
         address inToken,
         uint256 inAmount,
         address outToken,
         uint256 minOutAmount,
         uint256 maxPrice
-    ) external override returns (uint256 outAmount, uint256 spotPriceAfter) {
+    ) external override onlyCore returns (uint256 outAmount, uint256 spotPriceAfter) {
         _curveShift();
 
+        IBenchmark core = IBenchmarkMarketFactory(factory).core();
         IBenchmarkData data = core.data();
         TokenReserve storage inTokenReserve = reserves[inToken];
         TokenReserve storage outTokenReserve = reserves[outToken];
@@ -284,7 +275,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
         require(spotPriceBefore <= maxPrice, "Benchmark: bad price");
 
-        //calc out amount
         outAmount = calcOutAmount(inTokenReserve, outTokenReserve, inAmount, data.swapFee());
         require(outAmount >= minOutAmount, "Benchmark: low out amount");
 
@@ -297,33 +287,33 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         require(spotPriceAfter <= maxPrice, "Benchmark: bad price");
         require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "Benchmark: math problem");
 
-        emit Swap(_trader, inAmount, outAmount);
+        emit Swap(inToken, inAmount, outToken, outAmount);
 
-        _pullToken(inToken, msg.sender, inAmount);
-        _pushToken(outToken, msg.sender, outAmount);
+        _transferIn(inToken, inAmount);
+        _transferOut(outToken, outAmount);
 
         return (outAmount, spotPriceAfter);
     }
 
-    function swapAmountOut(
-        address _trader,
+    function swapAmountExactOut(
         address inToken,
         uint256 maxInAmount,
         address outToken,
         uint256 outAmount,
         uint256 maxPrice
-    ) external override returns (uint256 inAmount, uint256 spotPriceAfter) {
+    ) external override onlyCore returns (uint256 inAmount, uint256 spotPriceAfter) {
         _curveShift();
 
+        IBenchmark core = IBenchmarkMarketFactory(factory).core();
         IBenchmarkData data = core.data();
         TokenReserve storage inTokenReserve = reserves[inToken];
         TokenReserve storage outTokenReserve = reserves[outToken];
 
-        //calc spot price
+        // Calc spot price.
         uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
         require(spotPriceBefore <= maxPrice, "Benchmark: bad price");
 
-        //calc in amount
+        // Calc in amount.
         inAmount = calcInAmount(inTokenReserve, outTokenReserve, data.swapFee(), outAmount);
         require(inAmount <= maxInAmount, "Benchmark: high in amount");
 
@@ -336,29 +326,25 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         require(spotPriceAfter <= maxPrice, "Benchmark: bad price");
         require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "Benchmark: math problem");
 
-        emit Swap(_trader, inAmount, outAmount);
+        emit Swap(inToken, inAmount, outToken, outAmount);
 
-        _pullToken(inToken, msg.sender, inAmount);
-        _pushToken(outToken, msg.sender, outAmount);
+        _transferIn(inToken, inAmount);
+        _transferOut(outToken, outAmount);
 
         return (inAmount, spotPriceAfter);
     }
 
-    function printAcc(address a) internal view {
-        console.log("\t\t[contract] Details for ", a);
-        console.log("\t\t\t[contract] globalIncomeIndex=", globalIncomeIndex);
-        console.log(
-            "\t\t\t[contract] underlyingYieldTokenAsset bal of account=",
-            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(a)
-        );
-        console.log(
-            "\t\t\t[contract] underlyingYieldToken bal of amm =",
-            IERC20(IBenchmarkYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this))
-        );
-        console.log(
-            "\t\t\t[contract] lastGlobalIncomeIndex of account = ",
-            lastGlobalIncomeIndex[a]
-        );
+    function getReserves()
+        external
+        view
+        override
+        returns (
+            uint256 xytReserves,
+            uint256 tokenReserves,
+            uint256 lastBlockTimestamp
+        )
+    {
+        return (reserves[xyt].balance, reserves[token].balance, block.timestamp);
     }
 
     function calcInAmount(
@@ -407,6 +393,7 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         override
         returns (uint256 spot)
     {
+        IBenchmark core = IBenchmarkMarketFactory(factory).core();
         IBenchmarkData data = core.data();
         TokenReserve storage inTokenReserve = reserves[inToken];
         TokenReserve storage outTokenReserve = reserves[outToken];
@@ -475,36 +462,39 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         return outAmountToken;
     }
 
-    function _pullToken(
-        address tokenAddr,
-        address fromAddr,
-        uint256 amountToPull
-    ) internal {
-        IERC20(tokenAddr).safeTransferFrom(fromAddr, address(this), amountToPull);
+    /// @notice Sends fees as LP to Treasury
+    function _collectFees(uint256 _amount) internal {
+        IBenchmark core = IBenchmarkMarketFactory(factory).core();
+        IBenchmarkData data = core.data();
+
+        IERC20(address(this)).safeTransfer(data.treasury(), _amount);
     }
 
-    function _pushToken(
-        address tokenAddr,
-        address toAddr,
-        uint256 amountToPush
-    ) internal {
-        IERC20(tokenAddr).safeTransfer(toAddr, amountToPush);
+
+    /// @dev Inbound transfer from core to market
+    function _transferIn(address _token, uint256 _amount) internal {
+        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
     }
 
-    function _pullLpToken(address from, uint256 amount) internal {
-        _transfer(from, address(this), amount);
+    /// @dev Outbound transfer from market to core
+    function _transferOut(address _token, uint256 _amount) internal {
+        IERC20(_token).safeTransfer(msg.sender, _amount);
     }
 
-    function _pushLpToken(address to, uint256 amount) internal {
-        _transfer(address(this), to, amount);
+    function _transferInLp(uint256 amount) internal {
+        _transferIn(address(this), amount);
     }
 
-    function _mintLpToken(uint256 amount) internal {
-        _mint(address(this), amount);
+    function _transferOutLp(uint256 amount) internal {
+        _transferOut(address(this), amount);
     }
 
-    function _burnLpToken(uint256 amount) internal {
+    function _burnLp(uint256 amount) internal {
         _burn(address(this), amount);
+    }
+
+    function _mintLp(uint256 amount) internal {
+        _mint(address(this), amount);
     }
 
     function _updateWeight() internal {
@@ -519,10 +509,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
 
         uint256 xytWeight = xytReserve.weight;
         uint256 tokenWeight = tokenReserve.weight;
-        console.log("\tendTime,", endTime);
-        console.log("\tcurrentTime,", currentTime);
-        console.log("\tduration,", duration);
-        console.log("\tWeights before shifting,", xytWeight, tokenWeight);
 
         require((endTime - currentTime) <= duration, "Benchmark: wrong duration");
 
@@ -554,7 +540,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
         reserves[xyt].weight = xytWeightUpdated;
         reserves[token].weight = tokenWeightUpdated;
         priceLast = priceNow;
-        console.log("\tNew weights: ", xytWeightUpdated, tokenWeightUpdated);
         emit Shift(xytWeight, tokenWeight, xytWeightUpdated, tokenWeightUpdated);
     }
 
@@ -585,9 +570,6 @@ contract BenchmarkMarket is IBenchmarkMarket, BenchmarkBaseToken {
             account,
             dueInterests
         );
-
-        console.log("Settled LP interests for ", account);
-        printAcc(account);
     }
 
     // this function should be called whenver the total amount of LP changes

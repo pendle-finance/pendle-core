@@ -35,16 +35,34 @@ interface IBenchmarkData {
     event CoreSet(address core);
 
     /**
+     * @notice Emitted when Benchmark and BenchmarkFactory addresses have been updated.
+     * @param treasury The address of the new treasury contract.
+     **/
+    event TreasurySet(address treasury);
+
+    /**
      * @notice Sets the Benchmark core contract address.
      * @param _core Address of the new core contract.
      **/
     function setCore(IBenchmark _core) external;
 
     /**
+     * @notice Sets the BenchmarkTreasury contract addresses.
+     * @param newTreasury Address of new treasury contract.
+     **/
+    function setTreasury(address newTreasury) external;
+
+    /**
      * @notice Gets a reference to the Benchmark core contract.
      * @return Returns the core contract reference.
      **/
     function core() external view returns (IBenchmark);
+
+    /**
+     * @notice Gets the treasury contract address where fees are being sent to.
+     * @return Address of the treasury contract.
+     **/
+    function treasury() external view returns (address);
 
     /***********
      *  FORGE  *
@@ -161,7 +179,7 @@ interface IBenchmarkData {
         address market
     ) external;
 
-    function calcMarketsEffectiveLiquidity(
+    function purgeMarketsEffectiveLiquidity(
         address xyt,
         address token,
         address[] memory markets
@@ -206,6 +224,12 @@ interface IBenchmarkData {
         uint256 limit
     ) external view returns (address[] memory bestMarkets);
 
+    function getEffectiveLiquidityForMarkets(
+        address _xyt,
+        address _token,
+        address[] memory _markets
+    ) external view returns (uint256[] memory effectiveLiquidity);
+
     /**
      * @notice Gets a market given a future yield token and an ERC20 token.
      * @param forgeId Forge and protocol identifier.
@@ -220,7 +244,7 @@ interface IBenchmarkData {
         address token
     ) external view returns (address market);
 
-    function getMarketFactoryAddress(bytes32, bytes32) external view returns (address);
+    function getMarketFactoryAddress(bytes32 forgeId, bytes32 marketFactoryId) external view returns (address);
 
     function getMarketInfo(
         address market,
@@ -232,7 +256,6 @@ interface IBenchmarkData {
     function getMarketsWithLimit(
         address source,
         address destination,
-        uint256 offset,
         uint256 limit
     ) external view returns (address[] memory result);
 
