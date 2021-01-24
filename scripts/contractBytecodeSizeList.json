@@ -9,5 +9,6 @@
   "Timelock.sol": 6025,
   "PendleFutureYieldToken.sol": 3526,
   "PendleOwnershipToken.sol": 3425,
+  "PendleLiquidityMining.sol": 0,
   "PDL.sol": 5975
 }
