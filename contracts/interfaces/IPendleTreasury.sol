@@ -25,7 +25,6 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-
 interface IPendleTreasury {
     function setFundPercentage(uint256 _fundPercentage) external;
 

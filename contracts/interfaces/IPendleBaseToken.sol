@@ -25,7 +25,6 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-
 interface IPendleBaseToken is IERC20 {
     /**
      * @notice Decreases the allowance granted to spender by the caller.

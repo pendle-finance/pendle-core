@@ -22,7 +22,6 @@
  */
 pragma solidity ^0.7.0;
 
-
 interface IPendleLpHolder {
     function sendLp(address user, uint256 amount) external;
 
