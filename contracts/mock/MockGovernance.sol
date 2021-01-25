@@ -21,14 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity ^0.7.0;
-
-import "../core/BenchmarkGovernance.sol";
 pragma experimental ABIEncoderV2;
 
-contract MockGovernance is BenchmarkGovernance {
+import "../core/PendleGovernance.sol";
+
+contract MockGovernance is PendleGovernance {
     constructor(
-        IBMK _bmk,
+        IPENDLE _pendle,
         ITimelock _timelock,
         address _guardian
-    ) BenchmarkGovernance(_bmk, _timelock, _guardian) {}
+    ) PendleGovernance(_pendle, _timelock, _guardian) {}
 }

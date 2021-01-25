@@ -6,21 +6,22 @@ const {resolve} = require('path');
 const fs = require('fs');
 
 const EIP170 = 24576;
-const CONTRACTS = `${__dirname}/../artifacts/contracts`;
+const CONTRACTS = `${__dirname}/../build/artifacts/contracts`;
 const READDIR = promisify(fs.readdir);
 const STAT = promisify(fs.stat);
 const LIST = [
-  'Benchmark.sol',
-  'BenchmarkAaveForge.sol',
-  'BenchmarkData.sol',
-  'BenchmarkMarket.sol',
-  'BenchmarkMarketFactory.sol',
-  'BenchmarkGovernance.sol',
-  'BenchmarkTreasury.sol',
-  'Timelock.sol',
-  'BenchmarkFutureYieldToken.sol',
-  'BenchmarkOwnershipToken.sol',
-  'BMK.sol',
+  'PendleRouter.sol',
+  'PendleAaveForge.sol',
+  'PendleData.sol',
+  'PendleMarket.sol',
+  'PendleMarketFactory.sol',
+  'PendleGovernance.sol',
+  'PendleTreasury.sol',
+  'PendleLiquidityMining',
+  'PendleLpHolder',
+  'PendleFutureYieldToken.sol',
+  'PendleOwnershipToken.sol',
+  'PENDLE.sol',
 ];
 
 async function generateReport() {
