@@ -517,13 +517,9 @@ contract PendleRouter is IPendleRouter, Permissions {
     ) public payable override returns (uint256 amount) {
         Swap[] memory swaps;
 
-        if (_isETH(tokenIn)) {
-            (swaps, ) = getMarketRateExactIn(address(weth), tokenOut, inTotalAmount, numMarkets);
-        } else if (_isETH(tokenOut)) {
-            (swaps, ) = getMarketRateExactIn(tokenIn, address(weth), inTotalAmount, numMarkets);
-        } else {
-            (swaps, ) = getMarketRateExactIn(tokenIn, tokenOut, inTotalAmount, numMarkets);
-        }
+        tokenIn = _isETH(tokenIn) ? address(weth) : tokenIn;
+        tokenOut = _isETH(tokenOut) ? address(weth) : tokenOut;
+        (swaps, ) = getMarketRateExactOut(tokenIn, tokenOut, inTotalAmount, numMarkets);
 
         amount = batchExactSwapIn(swaps, tokenIn, tokenOut, inTotalAmount, minOutTotalAmount);
     }
@@ -537,13 +533,9 @@ contract PendleRouter is IPendleRouter, Permissions {
     ) public payable override returns (uint256 amount) {
         Swap[] memory swaps;
 
-        if (_isETH(tokenIn)) {
-            (swaps, ) = getMarketRateExactOut(address(weth), tokenOut, outTotalAmount, numMarkets);
-        } else if (_isETH(tokenOut)) {
-            (swaps, ) = getMarketRateExactOut(tokenIn, address(weth), outTotalAmount, numMarkets);
-        } else {
-            (swaps, ) = getMarketRateExactOut(tokenIn, tokenOut, outTotalAmount, numMarkets);
-        }
+        tokenIn = _isETH(tokenIn) ? address(weth) : tokenIn;
+        tokenOut = _isETH(tokenOut) ? address(weth) : tokenOut;
+        (swaps, ) = getMarketRateExactOut(tokenIn, tokenOut, outTotalAmount, numMarkets);
 
         amount = batchSwapExactOut(swaps, tokenIn, tokenOut, maxInTotalAmount);
     }
