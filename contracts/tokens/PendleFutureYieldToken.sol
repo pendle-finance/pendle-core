@@ -49,6 +49,31 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldToken {
         underlyingYieldToken = _underlyingYieldToken;
     }
 
+    modifier onlyForge() {
+        require(msg.sender == address(forge), "Pendle: only forge");
+        _;
+    }
+
+    /**
+     * @dev Burns OT or XYT tokens from account, reducting the total supply.
+     * @param account The address performing the burn.
+     * @param amount The amount to be burned.
+     **/
+    function burn(address account, uint256 amount) public override onlyForge {
+        _burn(account, amount);
+        emit Burn(account, amount);
+    }
+
+    /**
+     * @dev Mints new OT or XYT tokens for account, increasing the total supply.
+     * @param account The address to send the minted tokens.
+     * @param amount The amount to be minted.
+     **/
+    function mint(address account, uint256 amount) public override onlyForge {
+        _mint(account, amount);
+        emit Mint(account, amount);
+    }
+
     function _beforeTokenTransfer(address from, address to) internal override {
         IPendleForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, from);
         IPendleForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, to);

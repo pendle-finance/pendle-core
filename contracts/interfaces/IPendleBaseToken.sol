@@ -28,27 +28,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IPendleBaseToken is IERC20 {
     /**
-     * @notice Emitted when burning OT or XYT tokens.
-     * @param account The address performing the burn.
-     * @param amount The amount to be burned.
-     **/
-    event Burn(address indexed account, uint256 amount);
-
-    /**
-     * @notice Emitted when minting OT or XYT tokens.
-     * @param account The address performing the mint.
-     * @param amount The amount to be minted.
-     **/
-    event Mint(address indexed account, uint256 amount);
-
-    /**
-     * @notice Burns OT or XYT tokens from account, reducing the total supply.
-     * @param account The address performing the burn.
-     * @param amount The amount to be burned.
-     **/
-    function burn(address account, uint256 amount) external;
-
-    /**
      * @notice Decreases the allowance granted to spender by the caller.
      * @param spender The address to reduce the allowance from.
      * @param subtractedValue The amount allowance to subtract.
@@ -75,13 +54,6 @@ interface IPendleBaseToken is IERC20 {
      * @return Returns true if allowance has increased, otherwise false
      **/
     function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
-
-    /**
-     * @notice Mints new OT or XYT tokens for account, increasing the total supply.
-     * @param account The address to send the minted tokens.
-     * @param amount The amount to be minted.
-     **/
-    function mint(address account, uint256 amount) external;
 
     /**
      * @notice Returns the number of decimals the token uses.
