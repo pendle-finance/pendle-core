@@ -23,7 +23,6 @@
 
 pragma solidity ^0.7.0;
 
-
 interface IPendleLiquidityMining {
     /**
      * @notice Stake an exact amount of LP_expiry

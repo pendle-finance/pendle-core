@@ -95,7 +95,10 @@ describe("PendleLiquidityMining", async () => {
     );
     console.log("deployed liquidity mining contract");
 
-    await pendle.approve(pendleLiquidityMining.address, constants.MAX_ALLOWANCE);
+    await pendle.approve(
+      pendleLiquidityMining.address,
+      constants.MAX_ALLOWANCE
+    );
     await pendleMarket.approve(
       pendleLiquidityMining.address,
       constants.MAX_ALLOWANCE
@@ -234,7 +237,9 @@ describe("PendleLiquidityMining", async () => {
         amountToStake.div(BigNumber.from(2)),
         constants.HIGH_GAS_OVERRIDE
       );
-    const pendleBalanceOfUserAfter2ndTnx = await pendle.balanceOf(wallet1.address);
+    const pendleBalanceOfUserAfter2ndTnx = await pendle.balanceOf(
+      wallet1.address
+    );
     const expectedPdlBalanceOfUsersAfter2ndTnx = expectedPdlBalanceOfUserAfter.add(
       liquidityMiningParameters.rewardsPerEpoch
     );

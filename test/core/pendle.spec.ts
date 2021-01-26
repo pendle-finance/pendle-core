@@ -244,9 +244,7 @@ describe("Pendle", async () => {
   });
 
   it("Should be able to setTreasury", async () => {
-    await expect(
-      pendleRouter.setTreasury(pendleTreasury.address)
-    )
+    await expect(pendleRouter.setTreasury(pendleTreasury.address))
       .to.emit(pendleRouter, "TreasurySet")
       .withArgs(pendleTreasury.address);
   });

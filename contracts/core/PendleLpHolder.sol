@@ -26,7 +26,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../interfaces/IPendleLpHolder.sol";
 
-
 contract PendleLpHolder is IPendleLpHolder {
     using SafeERC20 for IERC20;
 

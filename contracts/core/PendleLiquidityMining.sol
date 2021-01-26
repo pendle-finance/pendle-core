@@ -37,7 +37,6 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../periphery/Permissions.sol";
 import "hardhat/console.sol";
 
-
 // Things that must hold in this contract:
 //      - If an account's stake information is updated (hence lastTimeUserStakeUpdated is changed),
 //        then his pending rewards are calculated as well (and saved in availableRewardsForEpoch[user][epochId])
