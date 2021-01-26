@@ -27,6 +27,9 @@ export var consts = {
   ONE_YEAR: BN.from(31536000),
   T0: BN.from(Math.round(Date.now() / 1000)),
   HIGH_GAS_OVERRIDE: { gasLimit: 40000000 },
+  INITIAL_USDT_AMOUNT: BN.from(10 ** 5),
+  INITIAL_AAVE_TOKEN_AMOUNT: BN.from(100),
+  INITIAL_OT_XYT_AMOUNT: BN.from(100), // 10^6 is the number of wei in a token
 };
 
 export function setT0(time: BN) {

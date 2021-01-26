@@ -1,4 +1,4 @@
-import { BigNumber as BN, providers, Wallet } from 'ethers';
+import { providers, Wallet } from 'ethers';
 import { consts, getAContract, mint, mintAaveToken, tokens } from "../../helpers";
 import { aaveFixture, AaveFixture } from './aave.fixture';
 import { PendleAaveFixture, pendleAaveForgeFixture } from './pendleAaveForge.fixture';
@@ -21,12 +21,11 @@ export async function pendleFixture(
 
   const { pendleAaveForge } = forge;
   const { lendingPoolCore } = aave;
-  const token = tokens.USDT
 
-  await mint(provider, token, wallet, BN.from(100));
-  await mintAaveToken(token, wallet, BN.from(100));
+  await mint(provider, tokens.USDT, wallet, consts.INITIAL_USDT_AMOUNT);
+  await mintAaveToken(tokens.USDT, wallet, consts.INITIAL_AAVE_TOKEN_AMOUNT);
 
-  const aContract = await getAContract(wallet, lendingPoolCore, token);
+  const aContract = await getAContract(wallet, lendingPoolCore, tokens.USDT);
   await aContract.approve(pendleAaveForge.address, consts.MAX_ALLOWANCE);
 
   return { core, aave, forge }

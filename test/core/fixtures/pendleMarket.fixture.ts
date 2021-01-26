@@ -1,7 +1,7 @@
-import { BigNumber as BN, Contract, providers, Wallet } from 'ethers';
+import { Contract, providers, Wallet } from 'ethers';
 import PendleMarket from "../../../build/artifacts/contracts/core/PendleMarket.sol/PendleMarket.json";
 import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
-import { amountToWei, consts, mintAproveTokenizeYield, tokens } from "../../helpers";
+import { amountToWei, consts, mintOtAndXyt, tokens } from "../../helpers";
 import { aaveFixture, AaveFixture } from './aave.fixture';
 import { PendleAaveFixture, pendleAaveForgeFixture } from './pendleAaveForge.fixture';
 import { pendleCoreFixture, PendleCoreFixture } from './pendleCore.fixture';
@@ -28,10 +28,10 @@ export async function pendleMarketFixture(
   const { pendleAaveForge, pendleFutureYieldToken } = forge;
   const token = tokens.USDT
 
-  const amount = amountToWei(token, BN.from(100));
+  const amount = amountToWei(token, consts.INITIAL_OT_XYT_AMOUNT);
 
-  await mintAproveTokenizeYield(provider, token, wallet, amount, pendle, pendleAaveForge);
-  await mintAproveTokenizeYield(provider, token, wallet1, amount, pendle, pendleAaveForge);
+  await mintOtAndXyt(provider, token, wallet, amount, pendle, pendleAaveForge);
+  await mintOtAndXyt(provider, token, wallet1, amount, pendle, pendleAaveForge);
 
   const testToken = await deployContract(wallet, TestToken, ['Test Token', 'TEST', 6]);
   const totalSupply = await testToken.totalSupply();

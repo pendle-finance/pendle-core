@@ -31,7 +31,7 @@ export async function evm_revert(snapshotId: string) {
   });
 }
 
-export async function mintAproveTokenizeYield(
+export async function mintOtAndXyt(
   provider: providers.Web3Provider,
   token: Token,
   wallet: Wallet,
