@@ -20,7 +20,7 @@ describe("PendleMarket", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [wallet, wallet1] = wallets;
-  let pendle: Contract;
+  let pendleRouter: Contract;
   let pendleTreasury: Contract;
   let pendleAaveMarketFactory: Contract;
   let pendleData: Contract;
@@ -38,10 +38,10 @@ describe("PendleMarket", async () => {
     globalSnapshotId = await evm_snapshot();
 
     const fixture = await loadFixture(pendleMarketFixture);
-    pendle = fixture.core.pendle;
-    pendleTreasury = fixture.core.pendleTreasury;
-    pendleAaveMarketFactory = fixture.core.pendleAaveMarketFactory;
-    pendleData = fixture.core.pendleData;
+    pendleRouter = fixture.router.pendleRouter;
+    pendleTreasury = fixture.router.pendleTreasury;
+    pendleAaveMarketFactory = fixture.router.pendleAaveMarketFactory;
+    pendleData = fixture.router.pendleData;
     pendleOwnershipToken = fixture.forge.pendleOwnershipToken;
     pendleXyt = fixture.forge.pendleFutureYieldToken;
     pendleAaveForge = fixture.forge.pendleAaveForge;
@@ -74,7 +74,7 @@ describe("PendleMarket", async () => {
         constants.HIGH_GAS_OVERRIDE
       );
     } else {
-      await pendle.bootStrapMarket(
+      await pendleRouter.bootStrapMarket(
         constants.FORGE_AAVE,
         constants.MARKET_FACTORY_AAVE,
         pendleXyt.address,
@@ -124,7 +124,7 @@ describe("PendleMarket", async () => {
 
     const totalSupply = await pendleMarket.totalSupply();
 
-    await pendle
+    await pendleRouter
       .connect(wallet1)
       .addMarketLiquidity(
         constants.FORGE_AAVE,
@@ -151,7 +151,7 @@ describe("PendleMarket", async () => {
 
     await bootstrapSampleMarket(amountToTokenize);
 
-    await pendle
+    await pendleRouter
       .connect(wallet1)
       .swapXytFromToken(
         constants.FORGE_AAVE,
@@ -178,7 +178,7 @@ describe("PendleMarket", async () => {
 
     await bootstrapSampleMarket(amountToTokenize);
 
-    await pendle
+    await pendleRouter
       .connect(wallet1)
       .swapXytToToken(
         constants.FORGE_AAVE,
@@ -228,7 +228,7 @@ describe("PendleMarket", async () => {
     await advanceTime(provider, constants.ONE_MONTH);
     const totalSuply = await pendleMarket.totalSupply();
 
-    await pendle.removeMarketLiquidity(
+    await pendleRouter.removeMarketLiquidity(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
       pendleXyt.address,
@@ -308,7 +308,7 @@ describe("PendleMarket", async () => {
       xytReserve,
       tokenReserve,
       currentTime,
-    ] = await pendle.getMarketReserves(
+    ] = await pendleRouter.getMarketReserves(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
       pendleXyt.address,
@@ -324,7 +324,7 @@ describe("PendleMarket", async () => {
 
     await bootstrapSampleMarket(amountToTokenize);
 
-    let marketRate = await pendle.getMarketRateToken(
+    let marketRate = await pendleRouter.getMarketRateToken(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
       pendleXyt.address,
@@ -341,7 +341,7 @@ describe("PendleMarket", async () => {
 
     await bootstrapSampleMarket(amountToTokenize);
 
-    let marketRate = await pendle.getMarketRateXyt(
+    let marketRate = await pendleRouter.getMarketRateXyt(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
       pendleXyt.address,
@@ -365,7 +365,7 @@ describe("PendleMarket", async () => {
 
     await advanceTime(provider, constants.ONE_MONTH);
 
-    await pendle.removeMarketLiquidityXyt(
+    await pendleRouter.removeMarketLiquidityXyt(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
       pendleXyt.address,
@@ -396,7 +396,7 @@ describe("PendleMarket", async () => {
 
     await advanceTime(provider, constants.ONE_MONTH);
 
-    await pendle.removeMarketLiquidityToken(
+    await pendleRouter.removeMarketLiquidityToken(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
       pendleXyt.address,
@@ -425,7 +425,7 @@ describe("PendleMarket", async () => {
     let initalTestTokenBal = await testToken.balanceOf(wallet.address);
 
     let totalSupply = await pendleMarket.totalSupply();
-    await pendle.addMarketLiquidityToken(
+    await pendleRouter.addMarketLiquidityToken(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
       pendleXyt.address,
@@ -455,7 +455,7 @@ describe("PendleMarket", async () => {
     let initalTestTokenBal = await testToken.balanceOf(wallet.address);
 
     let totalSupply = await pendleMarket.totalSupply();
-    await pendle.addMarketLiquidityXyt(
+    await pendleRouter.addMarketLiquidityXyt(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
       pendleXyt.address,
@@ -475,7 +475,7 @@ describe("PendleMarket", async () => {
   });
 
   it("should be able to getMarketTokenAddresses", async () => {
-    let { token, xyt } = await pendle.getMarketTokenAddresses(
+    let { token, xyt } = await pendleRouter.getMarketTokenAddresses(
       pendleMarket.address
     );
     expect(token).to.be.equal(testToken.address);
@@ -484,7 +484,7 @@ describe("PendleMarket", async () => {
 
   it("should be able to getAllMarkets", async () => {
     let filter = pendleAaveMarketFactory.filters.MarketCreated();
-    let tx = await pendle.createMarket(
+    let tx = await pendleRouter.createMarket(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
       pendleXyt.address,
@@ -500,7 +500,7 @@ describe("PendleMarket", async () => {
     allEvents.forEach((event) => {
       expectedMarkets.push(event.args!.market);
     });
-    let allMarkets = await pendle.getAllMarkets();
+    let allMarkets = await pendleRouter.getAllMarkets();
     expect(allMarkets).to.have.members(expectedMarkets);
   });
 

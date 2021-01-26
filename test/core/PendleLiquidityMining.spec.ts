@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { Contract, BigNumber } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
 import PendleLiquidityMining from "../../build/artifacts/contracts/core/PendleLiquidityMining.sol/PendleLiquidityMining.json";
-import PDL from "../../build/artifacts/contracts/tokens/PDL.sol/PDL.json";
+import PENDLE from "../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
 
 import { pendleMarketFixture } from "./fixtures";
 import {
@@ -22,7 +22,7 @@ describe("PendleLiquidityMining", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [wallet, wallet1] = wallets;
-  let pendle: Contract;
+  let pendleRouter: Contract;
   let pendleTreasury: Contract;
   let pendleAaveMarketFactory: Contract;
   let pendleData: Contract;
@@ -32,7 +32,7 @@ describe("PendleLiquidityMining", async () => {
   let pendleAaveForge: Contract;
   let pendleMarket: Contract;
   let pendleLiquidityMining: Contract;
-  let pdl: Contract;
+  let pendle: Contract;
   let testToken: Contract;
   let aUSDT: Contract;
   let snapshotId: string;
@@ -49,10 +49,10 @@ describe("PendleLiquidityMining", async () => {
     globalSnapshotId = await evm_snapshot();
 
     const fixture = await loadFixture(pendleMarketFixture);
-    pendle = fixture.core.pendle;
-    pendleTreasury = fixture.core.pendleTreasury;
-    pendleAaveMarketFactory = fixture.core.pendleAaveMarketFactory;
-    pendleData = fixture.core.pendleData;
+    pendleRouter = fixture.router.pendleRouter;
+    pendleTreasury = fixture.router.pendleTreasury;
+    pendleAaveMarketFactory = fixture.router.pendleAaveMarketFactory;
+    pendleData = fixture.router.pendleData;
     pendleOwnershipToken = fixture.forge.pendleOwnershipToken;
     pendleFutureYieldToken = fixture.forge.pendleFutureYieldToken;
     pendleAaveForge = fixture.forge.pendleAaveForge;
@@ -65,7 +65,7 @@ describe("PendleLiquidityMining", async () => {
 
     // TODO: make a fixture for PendleLiquidityMining, and set up a few (maybe 2) markets with different expiries
     // to participate in liquidity mining.
-    await pendle.bootStrapMarket(
+    await pendleRouter.bootStrapMarket(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
       pendleFutureYieldToken.address,
@@ -75,14 +75,14 @@ describe("PendleLiquidityMining", async () => {
       constants.HIGH_GAS_OVERRIDE
     );
 
-    pdl = await deployContract(wallet, PDL, [wallet.address]);
+    pendle = await deployContract(wallet, PENDLE, [wallet.address]);
 
     pendleLiquidityMining = await deployContract(
       wallet,
       PendleLiquidityMining,
       [
         wallet.address,
-        pdl.address,
+        pendle.address,
         pendleAaveMarketFactory.address,
         tokens.USDT.address,
         testToken.address,
@@ -95,7 +95,7 @@ describe("PendleLiquidityMining", async () => {
     );
     console.log("deployed liquidity mining contract");
 
-    await pdl.approve(pendleLiquidityMining.address, constants.MAX_ALLOWANCE);
+    await pendle.approve(pendleLiquidityMining.address, constants.MAX_ALLOWANCE);
     await pendleMarket.approve(
       pendleLiquidityMining.address,
       constants.MAX_ALLOWANCE
@@ -126,17 +126,17 @@ describe("PendleLiquidityMining", async () => {
     const amountToStake = BigNumber.from("100000000000000000"); //1e17 LP = 0.1 LP
 
     await pendleMarket.transfer(wallet1.address, amountToStake);
-    const pdlBalanceOfContract = await pdl.balanceOf(
+    const pendleBalanceOfContract = await pendle.balanceOf(
       pendleLiquidityMining.address
     );
-    const pdlBalanceOfUser = await pdl.balanceOf(wallet1.address);
+    const pendleBalanceOfUser = await pendle.balanceOf(wallet1.address);
     const lpBalanceOfUser = await pendleMarket.balanceOf(wallet1.address);
 
     console.log(
-      `\tPDL balance of PendleLiquidityMining contract before: ${pdlBalanceOfContract}`
+      `\tPENDLE balance of PendleLiquidityMining contract before: ${pendleBalanceOfContract}`
     );
-    console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
-    console.log(`\tLP balance of user before: ${pdlBalanceOfUser}`);
+    console.log(`\tPENDLE balance of user before: ${pendleBalanceOfUser}`);
+    console.log(`\tLP balance of user before: ${pendleBalanceOfUser}`);
 
     await advanceTime(
       provider,
@@ -175,23 +175,23 @@ describe("PendleLiquidityMining", async () => {
         constants.HIGH_GAS_OVERRIDE
       );
 
-    const pdlBalanceOfContractAfter = await pdl.balanceOf(
+    const pendleBalanceOfContractAfter = await pendle.balanceOf(
       pendleLiquidityMining.address
     );
-    const pdlBalanceOfUserAfter = await pdl.balanceOf(wallet1.address);
+    const pendleBalanceOfUserAfter = await pendle.balanceOf(wallet1.address);
     const expectedPdlBalanceOfUserAfter = liquidityMiningParameters.rewardsPerEpoch.div(
       BigNumber.from(4)
     );
     console.log(
-      `\tPDL balance of PendleLiquidityMining contract after: ${pdlBalanceOfContractAfter}`
+      `\tPENDLE balance of PendleLiquidityMining contract after: ${pendleBalanceOfContractAfter}`
     );
-    console.log(`\tPDL balance of user after: ${pdlBalanceOfUserAfter}`);
+    console.log(`\tPENDLE balance of user after: ${pendleBalanceOfUserAfter}`);
     console.log(
-      `\tExpected PDL balance of user after: ${expectedPdlBalanceOfUserAfter}`
+      `\tExpected PENDLE balance of user after: ${expectedPdlBalanceOfUserAfter}`
     );
 
     // we need to do this properly
-    expect(pdlBalanceOfUserAfter.toNumber()).to.be.approximately(
+    expect(pendleBalanceOfUserAfter.toNumber()).to.be.approximately(
       expectedPdlBalanceOfUserAfter.toNumber(),
       expectedPdlBalanceOfUserAfter.toNumber() / 1000
     );
@@ -234,18 +234,18 @@ describe("PendleLiquidityMining", async () => {
         amountToStake.div(BigNumber.from(2)),
         constants.HIGH_GAS_OVERRIDE
       );
-    const pdlBalanceOfUserAfter2ndTnx = await pdl.balanceOf(wallet1.address);
+    const pendleBalanceOfUserAfter2ndTnx = await pendle.balanceOf(wallet1.address);
     const expectedPdlBalanceOfUsersAfter2ndTnx = expectedPdlBalanceOfUserAfter.add(
       liquidityMiningParameters.rewardsPerEpoch
     );
     console.log(
-      `\tPDL balance of user after 2nd withdraw: ${pdlBalanceOfUserAfter2ndTnx}`
+      `\tPENDLE balance of user after 2nd withdraw: ${pendleBalanceOfUserAfter2ndTnx}`
     );
     console.log(
-      `\tExpected PDL balance of user after 2nd withdraw: ${expectedPdlBalanceOfUsersAfter2ndTnx}`
+      `\tExpected PENDLE balance of user after 2nd withdraw: ${expectedPdlBalanceOfUsersAfter2ndTnx}`
     );
 
-    expect(pdlBalanceOfUserAfter2ndTnx.toNumber()).to.be.approximately(
+    expect(pendleBalanceOfUserAfter2ndTnx.toNumber()).to.be.approximately(
       expectedPdlBalanceOfUsersAfter2ndTnx.toNumber(),
       expectedPdlBalanceOfUsersAfter2ndTnx.toNumber() / 1000
     );

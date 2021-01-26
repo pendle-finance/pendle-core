@@ -322,14 +322,14 @@ contract PendleData is IPendleData, Permissions {
     }
 
     function getBestMarketsWithLimit(
-        address source,
-        address destination,
-        uint256 limit
+        address _tokenIn,
+        address _tokenOut,
+        uint256 _limit
     ) public view override returns (address[] memory bestMarkets) {
-        bytes32 key = _createKey(source, destination);
+        bytes32 key = _createKey(_tokenIn, _tokenOut);
         bytes32 indices = markets[key].indices;
         uint256 len = 0;
-        while (indices[len] > 0 && len < Math.min(limit, indices.length)) {
+        while (indices[len] > 0 && len < Math.min(_limit, indices.length)) {
             len++;
         }
 

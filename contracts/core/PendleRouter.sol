@@ -519,7 +519,7 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         tokenIn = _isETH(tokenIn) ? address(weth) : tokenIn;
         tokenOut = _isETH(tokenOut) ? address(weth) : tokenOut;
-        (swaps, ) = getMarketRateExactOut(tokenIn, tokenOut, inTotalAmount, numMarkets);
+        (swaps, ) = getMarketRateExactIn(tokenIn, tokenOut, inTotalAmount, numMarkets);
 
         amount = batchExactSwapIn(swaps, tokenIn, tokenOut, inTotalAmount, minOutTotalAmount);
     }
