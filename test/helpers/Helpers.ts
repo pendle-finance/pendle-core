@@ -1,14 +1,14 @@
-import { BigNumber as BN, Contract, providers, Wallet } from "ethers";
+import { BigNumber, Contract, providers, Wallet } from "ethers";
 import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
 import AToken from "../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json";
 import TetherToken from "../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json";
 import { aaveFixture } from "../core/fixtures/aave.fixture";
-import type { Token } from "./Constants";
-import { consts } from "./Constants";
+import { consts, Token } from "./Constants";
 
 const hre = require("hardhat");
+const PRECISION = BigNumber.from(2).pow(40);
 
-type MutyiplierMap = Record<string, BN>;
+type MutyiplierMap = Record<string, BigNumber>;
 
 export async function impersonateAccount(address: String) {
   await hre.network.provider.request({
@@ -35,7 +35,7 @@ export async function mintAproveTokenizeYield(
   provider: providers.Web3Provider,
   token: Token,
   wallet: Wallet,
-  amount: BN,
+  amount: BigNumber,
   pendle: Contract,
   pendleAaveForge: Contract
 ) {
@@ -58,7 +58,7 @@ export async function mint(
   provider: providers.Web3Provider,
   token: Token,
   wallet: Wallet,
-  amount: BN
+  amount: BigNumber
 ) {
   await impersonateAccount(token.owner!);
   const signer = await provider.getSigner(token.owner!);
@@ -69,7 +69,11 @@ export async function mint(
   await contractToken.transfer(wallet.address, tokenAmount);
 }
 
-export async function mintAaveToken(token: Token, wallet: Wallet, amount: BN) {
+export async function mintAaveToken(
+  token: Token,
+  wallet: Wallet,
+  amount: BigNumber
+) {
   const { lendingPool, lendingPoolCore } = await aaveFixture(wallet);
   const tokenAmount = amountToWei(token, amount);
 
@@ -83,7 +87,7 @@ export async function transferToken(
   token: Token,
   from: Wallet,
   to: string,
-  amount: BN
+  amount: BigNumber
 ) {
   const erc20 = new Contract(token.address, ERC20.abi, from);
   await erc20.transfer(to, amount);
@@ -106,29 +110,40 @@ export async function getERC20Contract(
   return new Contract(token.address, AToken.abi, wallet);
 }
 
-export function amountToWei({ decimal }: Token, amount: BN) {
-  return BN.from(10 ** decimal).mul(amount);
+export function amountToWei({ decimal }: Token, amount: BigNumber) {
+  return BigNumber.from(10 ** decimal).mul(amount);
 }
 
 export async function advanceTime(
   provider: providers.Web3Provider,
-  duration: BN
+  duration: BigNumber
 ) {
   provider.send("evm_increaseTime", [duration.toNumber()]);
   provider.send("evm_mine", []);
 }
 
+export async function setTimeNextBlock(
+  provider: providers.Web3Provider,
+  time: BigNumber
+) {
+  provider.send("evm_setNextBlockTimestamp", [time.toNumber()]);
+}
+
 export async function getLiquidityRate(
   wallet: Wallet,
   token: Token
-): Promise<BN> {
+): Promise<BigNumber> {
   const { lendingPool } = await aaveFixture(wallet);
   const { liquidityRate } = await lendingPool.getReserveData(token.address);
   return liquidityRate;
 }
 
-export function getGain(amount: BN, rate: BN, duration: BN): BN {
-  const precision = BN.from(10).pow(27);
+export function getGain(
+  amount: BigNumber,
+  rate: BigNumber,
+  duration: BigNumber
+): BigNumber {
+  const precision = BigNumber.from(10).pow(27);
   const rateForDuration = rate
     .mul(duration)
     .mul(amount)
@@ -136,4 +151,32 @@ export function getGain(amount: BN, rate: BN, duration: BN): BN {
     .div(precision);
 
   return rateForDuration;
+}
+
+export function approxBigNumber(
+  val1: BigNumber,
+  val2: BigNumber,
+  delta: BigNumber
+): boolean {
+  var diff = val1.sub(val2);
+  if (diff.lt(0)) {
+    diff = diff.mul(-1);
+  }
+  console.log("diff", diff);
+  return diff.lte(delta);
+}
+
+export function toFixedPoint(val: string | number): BigNumber {
+  if (typeof val === "number") {
+    return BigNumber.from(val).mul(PRECISION);
+  }
+  var pos: number = val.indexOf(".");
+  if (pos == -1) {
+    return BigNumber.from(val).mul(PRECISION);
+  }
+  var lenFrac = val.length - pos - 1;
+  val = val.replace(".", "");
+  return BigNumber.from(val)
+    .mul(PRECISION)
+    .div(BigNumber.from(10).pow(lenFrac));
 }
