@@ -26,8 +26,8 @@ describe("PendleLiquidityMining", async () => {
   let pendleTreasury: Contract;
   let pendleAaveMarketFactory: Contract;
   let pendleData: Contract;
-  let pendleOwnershipToken: Contract;
-  let pendleFutureYieldToken: Contract;
+  let pendleOt: Contract;
+  let pendleXyt: Contract;
   let lendingPoolCore: Contract;
   let pendleAaveForge: Contract;
   let pendleMarket: Contract;
@@ -53,8 +53,8 @@ describe("PendleLiquidityMining", async () => {
     pendleTreasury = fixture.core.pendleTreasury;
     pendleAaveMarketFactory = fixture.core.pendleAaveMarketFactory;
     pendleData = fixture.core.pendleData;
-    pendleOwnershipToken = fixture.forge.pendleOwnershipToken;
-    pendleFutureYieldToken = fixture.forge.pendleFutureYieldToken;
+    pendleOt = fixture.forge.pendleOwnershipToken;
+    pendleXyt = fixture.forge.pendleFutureYieldToken;
     pendleAaveForge = fixture.forge.pendleAaveForge;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     testToken = fixture.testToken;
@@ -68,7 +68,7 @@ describe("PendleLiquidityMining", async () => {
     await pendle.bootStrapMarket(
       consts.FORGE_AAVE,
       consts.MARKET_FACTORY_AAVE,
-      pendleFutureYieldToken.address,
+      pendleXyt.address,
       testToken.address,
       amountToTokenize,
       amountToTokenize,
