@@ -1,6 +1,7 @@
 import { expect } from "chai";
-import { Contract, constants } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
+import { Contract } from "ethers";
+import { consts } from "../helpers";
 import { governanceFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
@@ -24,7 +25,7 @@ describe("PendleGovernance", () => {
     const admin = await timelock.admin();
     expect(admin).to.be.eq(wallet.address);
     const pendingAdmin = await timelock.pendingAdmin();
-    expect(pendingAdmin).to.be.eq(constants.AddressZero);
+    expect(pendingAdmin).to.be.eq(consts.ZERO_ADDRESS);
     const delay = await timelock.delay();
     expect(delay).to.be.eq(45000);
   });

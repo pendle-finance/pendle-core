@@ -1,15 +1,14 @@
-import { Contract, Wallet, providers, BigNumber } from "ethers";
-import TetherToken from "../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json";
+import { BigNumber as BN, Contract, providers, Wallet } from "ethers";
 import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
-import { aaveFixture } from "../core/fixtures/aave.fixture";
 import AToken from "../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json";
-import * as config from "../../hardhat.config";
+import TetherToken from "../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json";
+import { aaveFixture } from "../core/fixtures/aave.fixture";
+import type { Token } from "./Constants";
+import { consts } from "./Constants";
 
 const hre = require("hardhat");
 
-import { constants, Token } from "./Constants";
-
-type MutyiplierMap = Record<string, BigNumber>;
+type MutyiplierMap = Record<string, BN>;
 
 export async function impersonateAccount(address: String) {
   await hre.network.provider.request({
@@ -36,7 +35,7 @@ export async function mintAproveTokenizeYield(
   provider: providers.Web3Provider,
   token: Token,
   wallet: Wallet,
-  amount: BigNumber,
+  amount: BN,
   pendle: Contract,
   pendleAaveForge: Contract
 ) {
@@ -45,11 +44,11 @@ export async function mintAproveTokenizeYield(
   const { lendingPoolCore } = await aaveFixture(wallet);
 
   const aContract = await getAContract(wallet, lendingPoolCore, token);
-  await aContract.approve(pendleAaveForge.address, constants.MAX_ALLOWANCE);
+  await aContract.approve(pendleAaveForge.address, consts.MAX_ALLOWANCE);
   await pendle.tokenizeYield(
-    constants.FORGE_AAVE,
+    consts.FORGE_AAVE,
     token.address,
-    constants.SIX_MONTH_FROM_NOW,
+    consts.SIX_MONTH_FROM_NOW,
     amount,
     wallet.address
   );
@@ -59,7 +58,7 @@ export async function mint(
   provider: providers.Web3Provider,
   token: Token,
   wallet: Wallet,
-  amount: BigNumber
+  amount: BN
 ) {
   await impersonateAccount(token.owner!);
   const signer = await provider.getSigner(token.owner!);
@@ -70,11 +69,7 @@ export async function mint(
   await contractToken.transfer(wallet.address, tokenAmount);
 }
 
-export async function mintAaveToken(
-  token: Token,
-  wallet: Wallet,
-  amount: BigNumber
-) {
+export async function mintAaveToken(token: Token, wallet: Wallet, amount: BN) {
   const { lendingPool, lendingPoolCore } = await aaveFixture(wallet);
   const tokenAmount = amountToWei(token, amount);
 
@@ -88,7 +83,7 @@ export async function transferToken(
   token: Token,
   from: Wallet,
   to: string,
-  amount: BigNumber
+  amount: BN
 ) {
   const erc20 = new Contract(token.address, ERC20.abi, from);
   await erc20.transfer(to, amount);
@@ -111,13 +106,13 @@ export async function getERC20Contract(
   return new Contract(token.address, AToken.abi, wallet);
 }
 
-export function amountToWei({ decimal }: Token, amount: BigNumber) {
-  return BigNumber.from(10 ** decimal).mul(amount);
+export function amountToWei({ decimal }: Token, amount: BN) {
+  return BN.from(10 ** decimal).mul(amount);
 }
 
 export async function advanceTime(
   provider: providers.Web3Provider,
-  duration: BigNumber
+  duration: BN
 ) {
   provider.send("evm_increaseTime", [duration.toNumber()]);
   provider.send("evm_mine", []);
@@ -126,22 +121,18 @@ export async function advanceTime(
 export async function getLiquidityRate(
   wallet: Wallet,
   token: Token
-): Promise<BigNumber> {
+): Promise<BN> {
   const { lendingPool } = await aaveFixture(wallet);
   const { liquidityRate } = await lendingPool.getReserveData(token.address);
   return liquidityRate;
 }
 
-export function getGain(
-  amount: BigNumber,
-  rate: BigNumber,
-  duration: BigNumber
-): BigNumber {
-  const precision = BigNumber.from(10).pow(27);
+export function getGain(amount: BN, rate: BN, duration: BN): BN {
+  const precision = BN.from(10).pow(27);
   const rateForDuration = rate
     .mul(duration)
     .mul(amount)
-    .div(constants.ONE_YEAR)
+    .div(consts.ONE_YEAR)
     .div(precision);
 
   return rateForDuration;

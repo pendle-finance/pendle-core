@@ -1,9 +1,8 @@
-import { Contract, Wallet, providers } from 'ethers'
-import Bmk from '../../../build/artifacts/contracts/core/Pendle.sol/Pendle.json'
-import Timelock from '../../../build/artifacts/contracts/periphery/Timelock.sol/Timelock.json'
-import PendleGovernance from '../../../build/artifacts/contracts/core/PendleGovernance.sol/PendleGovernance.json'
-import {tokens} from "../../helpers/Constants"
-
+import { Contract, providers, Wallet } from 'ethers';
+import Bmk from '../../../build/artifacts/contracts/core/Pendle.sol/Pendle.json';
+import PendleGovernance from '../../../build/artifacts/contracts/core/PendleGovernance.sol/PendleGovernance.json';
+import Timelock from '../../../build/artifacts/contracts/periphery/Timelock.sol/Timelock.json';
+import { tokens } from "../../helpers";
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;
 

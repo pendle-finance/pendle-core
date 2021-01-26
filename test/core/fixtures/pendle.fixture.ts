@@ -1,10 +1,8 @@
-import chai, { expect } from 'chai'
-import { Wallet, providers, BigNumber } from 'ethers'
-import { pendleCoreFixture, PendleCoreFixture } from './pendleCore.fixture';
-import { pendleAaveForgeFixture, PendleAaveFixture } from './pendleAaveForge.fixture'
+import { BigNumber as BN, providers, Wallet } from 'ethers';
+import { consts, getAContract, mint, mintAaveToken, tokens } from "../../helpers";
 import { aaveFixture, AaveFixture } from './aave.fixture';
-import { constants, tokens } from "../../helpers/Constants"
-import { mint, mintAaveToken, getAContract, amountToWei } from "../../helpers/Helpers";
+import { PendleAaveFixture, pendleAaveForgeFixture } from './pendleAaveForge.fixture';
+import { pendleCoreFixture, PendleCoreFixture } from './pendleCore.fixture';
 
 interface PendleFixture {
   core: PendleCoreFixture,
@@ -25,11 +23,11 @@ export async function pendleFixture(
   const { lendingPoolCore } = aave;
   const token = tokens.USDT
 
-  await mint(provider, token, wallet, BigNumber.from(100));
-  await mintAaveToken(token, wallet, BigNumber.from(100));
+  await mint(provider, token, wallet, BN.from(100));
+  await mintAaveToken(token, wallet, BN.from(100));
 
   const aContract = await getAContract(wallet, lendingPoolCore, token);
-  await aContract.approve(pendleAaveForge.address, constants.MAX_ALLOWANCE);
+  await aContract.approve(pendleAaveForge.address, consts.MAX_ALLOWANCE);
 
   return { core, aave, forge }
 }

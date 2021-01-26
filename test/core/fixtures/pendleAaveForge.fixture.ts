@@ -1,10 +1,10 @@
 
-import { Contract, Wallet } from 'ethers'
-import PendleAaveForge from '../../../build/artifacts/contracts/core/PendleAaveForge.sol/PendleAaveForge.json'
-import PendleOwnershipToken from '../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json'
-import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json"
-import { constants, tokens } from "../../helpers/Constants"
-import { PendleCoreFixture } from "./pendleCore.fixture"
+import { Contract, Wallet } from 'ethers';
+import PendleAaveForge from '../../../build/artifacts/contracts/core/PendleAaveForge.sol/PendleAaveForge.json';
+import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
+import PendleOwnershipToken from '../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json';
+import { consts, tokens } from "../../helpers";
+import { PendleCoreFixture } from "./pendleCore.fixture";
 
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;
@@ -19,21 +19,21 @@ export async function pendleAaveForgeFixture(
     wallet: Wallet,
     { pendle, pendleData }: PendleCoreFixture
 ): Promise<PendleAaveFixture> {
-    const pendleAaveForge = await deployContract(wallet, PendleAaveForge, [pendle.address, constants.AAVE_LENDING_POOL_CORE_ADDRESS, constants.FORGE_AAVE]);
+    const pendleAaveForge = await deployContract(wallet, PendleAaveForge, [pendle.address, consts.AAVE_LENDING_POOL_CORE_ADDRESS, consts.FORGE_AAVE]);
 
-    await pendle.addForge(constants.FORGE_AAVE, pendleAaveForge.address)
+    await pendle.addForge(consts.FORGE_AAVE, pendleAaveForge.address)
 
-    await pendleAaveForge.newYieldContracts(tokens.USDT.address, constants.SIX_MONTH_FROM_NOW);
+    await pendleAaveForge.newYieldContracts(tokens.USDT.address, consts.SIX_MONTH_FROM_NOW);
     const otTokenAddress = await pendleData.otTokens(
-        constants.FORGE_AAVE,
+        consts.FORGE_AAVE,
         tokens.USDT.address,
-        constants.SIX_MONTH_FROM_NOW
+        consts.SIX_MONTH_FROM_NOW
     );
 
     const xytTokenAddress = await pendleData.xytTokens(
-        constants.FORGE_AAVE,
+        consts.FORGE_AAVE,
         tokens.USDT.address,
-        constants.SIX_MONTH_FROM_NOW
+        consts.SIX_MONTH_FROM_NOW
     );
 
     const pendleOwnershipToken = new Contract(otTokenAddress, PendleOwnershipToken.abi, wallet);
