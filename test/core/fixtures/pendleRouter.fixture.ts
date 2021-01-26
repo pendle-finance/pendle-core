@@ -4,10 +4,10 @@ import PendleTreasury from '../../../build/artifacts/contracts/core/PendleTreasu
 import PendleAaveMarketFactory from "../../../build/artifacts/contracts/core/PendleAaveMarketFactory.sol/PendleAaveMarketFactory.json"
 import PendleData from "../../../build/artifacts/contracts/core/PendleData.sol/PendleData.json"
 import { constants, tokens } from "../../helpers/Constants"
-
+import { createFixtureLoader } from "ethereum-waffle";
 
 const { waffle } = require("hardhat");
-const { deployContract } = waffle;
+const { provider, deployContract } = waffle;
 
 export interface PendleRouterFixture {
   pendleRouter: Contract
@@ -23,11 +23,11 @@ export async function pendleRouterFixture(
   const pendleRouter = await deployContract(wallet, PendleRouter, [wallet.address, tokens.WETH.address]);
   const pendleTreasury = await deployContract(wallet, PendleTreasury, [wallet.address]);
   const pendleAaveMarketFactory = await deployContract(wallet, PendleAaveMarketFactory, [wallet.address, constants.MARKET_FACTORY_AAVE]);
-  const pendleData = await deployContract(wallet, PendleData, [wallet.address]);
+  const pendleData = await deployContract(wallet, PendleData, [wallet.address, pendleTreasury.address]);
 
   await pendleAaveMarketFactory.initialize(pendleRouter.address);
   await pendleData.initialize(pendleRouter.address);
-  await pendleRouter.initialize(pendleData.address, pendleTreasury.address);
+  await pendleRouter.initialize(pendleData.address);
 
   return { pendleRouter, pendleTreasury, pendleAaveMarketFactory, pendleData }
 }

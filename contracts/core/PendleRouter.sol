@@ -32,6 +32,7 @@ import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../periphery/Permissions.sol";
+import "hardhat/console.sol";
 
 contract PendleRouter is IPendleRouter, Permissions {
     using SafeERC20 for IERC20;
@@ -691,9 +692,8 @@ contract PendleRouter is IPendleRouter, Permissions {
     /// @dev Inbound transfer from msg.sender to router
     function _transferIn(address _token, uint256 _amount) internal {
         if (_amount == 0) return;
-        require(msg.value == _amount, "Pendle: eth sent mismatch");
-
         if (_isETH(_token)) {
+            require(msg.value == _amount, "Pendle: eth sent mismatch");
             weth.deposit{value: msg.value}();
         } else {
             IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);

@@ -14,6 +14,7 @@ describe("PendleData", async () => {
 
   let pendleRouter: Contract;
   let pendleData: Contract;
+  let pendleTreasury: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
 
@@ -23,7 +24,7 @@ describe("PendleData", async () => {
     const fixture = await loadFixture(pendleRouterFixture);
     pendleRouter = fixture.pendleRouter;
     pendleData = fixture.pendleData;
-
+    pendleTreasury = fixture.pendleTreasury;
     snapshotId = await evm_snapshot();
   });
 
@@ -58,5 +59,11 @@ describe("PendleData", async () => {
     await expect(pendleData.setRouter(pendleRouter.address))
       .to.emit(pendleData, "RouterSet")
       .withArgs(pendleRouter.address);
+  });
+
+  it("Should be able to setTreasury", async () => {
+    await expect(pendleData.setTreasury(pendleTreasury.address))
+      .to.emit(pendleData, "TreasurySet")
+      .withArgs(pendleTreasury.address);
   });
 });

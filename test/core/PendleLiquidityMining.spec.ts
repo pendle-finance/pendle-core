@@ -65,7 +65,7 @@ describe("PendleLiquidityMining", async () => {
 
     // TODO: make a fixture for PendleLiquidityMining, and set up a few (maybe 2) markets with different expiries
     // to participate in liquidity mining.
-    await pendleRouter.bootStrapMarket(
+    await pendleRouter.bootstrapMarket(
       constants.FORGE_AAVE,
       constants.MARKET_FACTORY_AAVE,
       pendleFutureYieldToken.address,

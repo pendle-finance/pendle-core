@@ -38,14 +38,14 @@ export async function mintAproveTokenizeYield(
   wallet: Wallet,
   amount: BigNumber,
   pendle: Contract,
-  pendleAaveForge: Contract
+  pendleRouter: Contract
 ) {
   await mint(provider, token, wallet, amount);
   await mintAaveToken(token, wallet, amount);
   const { lendingPoolCore } = await aaveFixture(wallet);
 
   const aContract = await getAContract(wallet, lendingPoolCore, token);
-  await aContract.approve(pendleAaveForge.address, constants.MAX_ALLOWANCE);
+  await aContract.approve(pendleRouter.address, constants.MAX_ALLOWANCE);
   await pendle.tokenizeYield(
     constants.FORGE_AAVE,
     token.address,

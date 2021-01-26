@@ -64,26 +64,16 @@ describe("PendleMarket", async () => {
 
   async function bootstrapSampleMarket(
     amountToTokenize: BigNumber,
-    lowLevelCall: boolean = false
   ) {
-    if (lowLevelCall == true) {
-      await pendleMarket.bootstrap(
-        wallet.address,
-        amountToTokenize,
-        amountToTokenize,
-        constants.HIGH_GAS_OVERRIDE
-      );
-    } else {
-      await pendleRouter.bootStrapMarket(
-        constants.FORGE_AAVE,
-        constants.MARKET_FACTORY_AAVE,
-        pendleXyt.address,
-        testToken.address,
-        amountToTokenize,
-        amountToTokenize,
-        constants.HIGH_GAS_OVERRIDE
-      );
-    }
+    await pendleRouter.bootstrapMarket(
+      constants.FORGE_AAVE,
+      constants.MARKET_FACTORY_AAVE,
+      pendleXyt.address,
+      testToken.address,
+      amountToTokenize,
+      amountToTokenize,
+      constants.HIGH_GAS_OVERRIDE
+    );
   }
 
   it("should be able to join a bootstrapped pool with a single tokenUSDT", async () => {

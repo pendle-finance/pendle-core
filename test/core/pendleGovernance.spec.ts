@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { Contract, constants } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
-import { governanceFixture } from "./fixtures";
+import { pendleGovernanceFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
@@ -14,7 +14,7 @@ describe("PendleGovernance", () => {
   let timelock: Contract;
   let pendleGovernor: Contract;
   beforeEach(async () => {
-    const fixture = await loadFixture(governanceFixture);
+    const fixture = await loadFixture(pendleGovernanceFixture);
     pendle = fixture.pendle;
     timelock = fixture.timelock;
     pendleGovernor = fixture.pendleGovernor;

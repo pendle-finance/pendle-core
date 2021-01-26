@@ -70,7 +70,7 @@ describe("Pendle", async () => {
       tokenUSDT.address,
       constants.SIX_MONTH_FROM_NOW,
       amountToTokenize,
-      wallet.address
+      wallet.address,
     );
     const balanceOwnershipToken = await pendleOt.balanceOf(wallet.address);
     const balanceFutureYieldToken = await pendleXyt.balanceOf(wallet.address);
@@ -87,7 +87,6 @@ describe("Pendle", async () => {
       constants.SIX_MONTH_FROM_NOW,
       amountToTokenize,
       wallet.address,
-      constants.HIGH_GAS_OVERRIDE
     );
     await advanceTime(provider, constants.ONE_MONTH);
 
@@ -97,7 +96,6 @@ describe("Pendle", async () => {
       constants.SIX_MONTH_FROM_NOW,
       amountToTokenize,
       wallet.address,
-      constants.HIGH_GAS_OVERRIDE
     );
 
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
@@ -241,12 +239,6 @@ describe("Pendle", async () => {
       initialAUSDTbalance.add(gain).toNumber(),
       20000
     );
-  });
-
-  it("Should be able to setTreasury", async () => {
-    await expect(pendleRouter.setTreasury(pendleTreasury.address))
-      .to.emit(pendleRouter, "TreasurySet")
-      .withArgs(pendleTreasury.address);
   });
 
   it("Should be able to newYieldContracts", async () => {
