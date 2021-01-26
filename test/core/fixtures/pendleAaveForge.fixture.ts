@@ -4,7 +4,7 @@ import PendleAaveForge from '../../../build/artifacts/contracts/core/PendleAaveF
 import PendleOwnershipToken from '../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json'
 import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json"
 import { constants, tokens } from "../../helpers/Constants"
-import { PendleCoreFixture } from "./pendleCore.fixture"
+import { PendleRouterFixture } from "./pendleRouter.fixture"
 
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;
@@ -17,11 +17,11 @@ export interface PendleAaveFixture {
 
 export async function pendleAaveForgeFixture(
     wallet: Wallet,
-    { pendle, pendleData }: PendleCoreFixture
+    { pendleRouter, pendleData }: PendleRouterFixture
 ): Promise<PendleAaveFixture> {
-    const pendleAaveForge = await deployContract(wallet, PendleAaveForge, [pendle.address, constants.AAVE_LENDING_POOL_CORE_ADDRESS, constants.FORGE_AAVE]);
+    const pendleAaveForge = await deployContract(wallet, PendleAaveForge, [pendleRouter.address, constants.AAVE_LENDING_POOL_CORE_ADDRESS, constants.FORGE_AAVE]);
 
-    await pendle.addForge(constants.FORGE_AAVE, pendleAaveForge.address)
+    await pendleRouter.addForge(constants.FORGE_AAVE, pendleAaveForge.address)
 
     await pendleAaveForge.newYieldContracts(tokens.USDT.address, constants.SIX_MONTH_FROM_NOW);
     const otTokenAddress = await pendleData.otTokens(

@@ -1,5 +1,5 @@
 import { Wallet, providers, BigNumber, Contract } from 'ethers'
-import { pendleCoreFixture, PendleCoreFixture } from './pendleCore.fixture';
+import { pendleRouterFixture, PendleRouterFixture } from './pendleRouter.fixture';
 import { pendleAaveForgeFixture, PendleAaveFixture } from './pendleAaveForge.fixture'
 import { aaveFixture, AaveFixture } from './aave.fixture';
 import { constants, tokens, mintAproveTokenizeYield, amountToWei } from "../../helpers";
@@ -9,7 +9,7 @@ const { waffle } = require("hardhat");
 const { deployContract } = waffle;
 
 interface PendleMarketFixture {
-  core: PendleCoreFixture,
+  router: PendleRouterFixture,
   forge: PendleAaveFixture,
   aave: AaveFixture,
   testToken: Contract,
@@ -21,23 +21,23 @@ export async function pendleMarketFixture(
   provider: providers.Web3Provider
 ): Promise<PendleMarketFixture> {
   const [wallet, wallet1] = wallets
-  const core = await pendleCoreFixture(wallets, provider);
-  const forge = await pendleAaveForgeFixture(wallet, core);
+  const router = await pendleRouterFixture(wallets, provider);
+  const forge = await pendleAaveForgeFixture(wallet, router);
   const aave = await aaveFixture(wallet);
-  const { pendle, pendleAaveMarketFactory, pendleData } = core;
+  const { pendleRouter, pendleAaveMarketFactory, pendleData } = router;
   const { pendleAaveForge, pendleFutureYieldToken } = forge;
   const token = tokens.USDT
 
   const amount = amountToWei(token, BigNumber.from(100));
 
-  await mintAproveTokenizeYield(provider, token, wallet, amount, pendle, pendleAaveForge);
-  await mintAproveTokenizeYield(provider, token, wallet1, amount, pendle, pendleAaveForge);
+  await mintAproveTokenizeYield(provider, token, wallet, amount, pendleRouter, pendleAaveForge);
+  await mintAproveTokenizeYield(provider, token, wallet1, amount, pendleRouter, pendleAaveForge);
 
   const testToken = await deployContract(wallet, TestToken, ['Test Token', 'TEST', 6]);
   const totalSupply = await testToken.totalSupply();
   await testToken.transfer(wallet1.address, totalSupply.div(2))
 
-  await pendle.addMarketFactory(constants.FORGE_AAVE, constants.MARKET_FACTORY_AAVE, pendleAaveMarketFactory.address);
+  await pendleRouter.addMarketFactory(constants.FORGE_AAVE, constants.MARKET_FACTORY_AAVE, pendleAaveMarketFactory.address);
 
   await pendleAaveMarketFactory.createMarket(
     pendleFutureYieldToken.address,
@@ -60,5 +60,5 @@ export async function pendleMarketFixture(
   await pendleFutureYieldToken.approve(pendleMarketAddress, constants.MAX_ALLOWANCE);
   await pendleFutureYieldToken.connect(wallet1).approve(pendleMarketAddress, constants.MAX_ALLOWANCE);
 
-  return { core, aave, forge, testToken, pendleMarket }
+  return { router, aave, forge, testToken, pendleMarket }
 }

@@ -1,13 +1,13 @@
 import chai, { expect } from 'chai'
 import { Wallet, providers, BigNumber } from 'ethers'
-import { pendleCoreFixture, PendleCoreFixture } from './pendleCore.fixture';
+import { pendleRouterFixture, PendleRouterFixture } from './pendleRouter.fixture';
 import { pendleAaveForgeFixture, PendleAaveFixture } from './pendleAaveForge.fixture'
 import { aaveFixture, AaveFixture } from './aave.fixture';
 import { constants, tokens } from "../../helpers/Constants"
 import { mint, mintAaveToken, getAContract, amountToWei } from "../../helpers/Helpers";
 
 interface PendleFixture {
-  core: PendleCoreFixture,
+  router: PendleRouterFixture,
   forge: PendleAaveFixture,
   aave: AaveFixture,
 }
@@ -17,8 +17,8 @@ export async function pendleFixture(
   provider: providers.Web3Provider
 ): Promise<PendleFixture> {
   const [wallet] = wallets;
-  const core = await pendleCoreFixture(wallets, provider);
-  const forge = await pendleAaveForgeFixture(wallet, core);
+  const router = await pendleRouterFixture(wallets, provider);
+  const forge = await pendleAaveForgeFixture(wallet, router);
   const aave = await aaveFixture(wallet);
 
   const { pendleAaveForge } = forge;
@@ -31,5 +31,5 @@ export async function pendleFixture(
   const aContract = await getAContract(wallet, lendingPoolCore, token);
   await aContract.approve(pendleAaveForge.address, constants.MAX_ALLOWANCE);
 
-  return { core, aave, forge }
+  return { router, aave, forge }
 }

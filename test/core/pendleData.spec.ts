@@ -2,7 +2,7 @@ import { expect, assert } from "chai";
 import { Contract } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
 
-import { pendleCoreFixture } from "./fixtures";
+import { pendleRouterFixture } from "./fixtures";
 import { evm_revert, evm_snapshot } from "../helpers";
 
 const { waffle } = require("hardhat");
@@ -12,7 +12,7 @@ describe("PendleData", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
 
-  let pendle: Contract;
+  let pendleRouter: Contract;
   let pendleData: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
@@ -20,8 +20,8 @@ describe("PendleData", async () => {
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
-    const fixture = await loadFixture(pendleCoreFixture);
-    pendle = fixture.pendle;
+    const fixture = await loadFixture(pendleRouterFixture);
+    pendleRouter = fixture.pendleRouter;
     pendleData = fixture.pendleData;
 
     snapshotId = await evm_snapshot();
@@ -54,9 +54,9 @@ describe("PendleData", async () => {
     assert(Array.isArray(getAllMarkets));
   });
 
-  it("should be able to setCore", async () => {
-    await expect(pendleData.setCore(pendle.address))
-      .to.emit(pendleData, "CoreSet")
-      .withArgs(pendle.address);
+  it("should be able to setRouter", async () => {
+    await expect(pendleData.setRouter(pendleRouter.address))
+      .to.emit(pendleData, "RouterSet")
+      .withArgs(pendleRouter.address);
   });
 });
