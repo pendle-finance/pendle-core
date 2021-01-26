@@ -180,3 +180,7 @@ export function toFixedPoint(val: string | number): BigNumber {
     .mul(PRECISION)
     .div(BigNumber.from(10).pow(lenFrac));
 }
+
+export function toFPWei(val: string | number): BigNumber {
+  return toFixedPoint(val).mul(1000000);
+}

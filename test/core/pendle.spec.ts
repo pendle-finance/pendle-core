@@ -11,7 +11,7 @@ import {
   getAContract,
   getGain,
   getLiquidityRate,
-  tokens
+  tokens,
 } from "../helpers";
 import { pendleFixture } from "./fixtures";
 
@@ -153,9 +153,9 @@ describe("Pendle", async () => {
       wallet.address
     );
     await pendleXyt.transfer(wallet1.address, amountToTokenize);
-    const duration = consts.T0.add(consts.SIX_MONTH).sub(
-      Math.round(Date.now() / 1000)
-    ).sub(180);
+    const duration = consts.T0.add(consts.SIX_MONTH)
+      .sub(Math.round(Date.now() / 1000))
+      .sub(180);
 
     await advanceTime(provider, duration);
 
@@ -201,9 +201,9 @@ describe("Pendle", async () => {
       wallet.address
     );
     await pendleXyt.transfer(wallet1.address, amountToTokenize);
-    const duration = consts.T0.add(consts.SIX_MONTH).sub(
-      Math.round(Date.now() / 1000)
-    ).sub(180);
+    const duration = consts.T0.add(consts.SIX_MONTH)
+      .sub(Math.round(Date.now() / 1000))
+      .sub(180);
 
     await advanceTime(provider, duration);
 
