@@ -256,8 +256,6 @@ interface IPendleRouter {
         uint256 numMarkets
     ) external payable returns (uint256 amount);
 
-    function getAllMarkets() external view returns (address[] memory);
-
     function getMarketByUnderlyingToken(
         bytes32 forgeId,
         bytes32 marketFactoryId,

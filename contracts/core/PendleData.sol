@@ -29,6 +29,7 @@ import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../periphery/Permissions.sol";
 
+
 contract PendleData is IPendleData, Permissions {
     using SafeMath for uint256;
     using Enumerable for Enumerable.AddressSet;
@@ -180,12 +181,6 @@ contract PendleData is IPendleData, Permissions {
         bytes32 key = _createKey(_xyt, _token);
         markets[key].markets.add(_market);
 
-        infos[_market][key] = MarketInfo({
-            xytWeight: uint80(IPendleMarket(_market).getWeight(_xyt)),
-            tokenWeight: uint80(IPendleMarket(_market).getWeight(_token)),
-            liquidity: uint256(0)
-        });
-
         getMarket[_forgeId][_marketFactoryId][_xyt][_token] = _market;
         isMarket[_market] = true;
 
@@ -292,6 +287,24 @@ contract PendleData is IPendleData, Permissions {
         }
     }
 
+    function updateMarketInfo(
+        address _xyt,
+        address _token,
+        address _market
+    ) public override {
+        bytes32 key = _createKey(_xyt, _token);
+        MarketInfo memory info = infos[_market][key];
+
+        info.xytWeight = uint80(IPendleMarket(_market).getWeight(_xyt));
+        info.tokenWeight = uint80(IPendleMarket(_market).getWeight(_token));
+        info.liquidity = Math.rdiv(
+            uint256(info.xytWeight),
+            uint256(info.xytWeight).add(uint256(info.tokenWeight))
+        );
+
+        infos[_market][key] = info;
+    }
+
     function allMarketsLength() external view override returns (uint256) {
         return allMarkets.length;
     }
@@ -313,11 +326,21 @@ contract PendleData is IPendleData, Permissions {
         address market,
         address source,
         address destination
-    ) external view override returns (uint256 xytWeight, uint256 tokenWeight) {
+    )
+        external
+        view
+        override
+        returns (
+            uint256 xytWeight,
+            uint256 tokenWeight,
+            uint256 liquidity
+        )
+    {
         bytes32 key = _createKey(source, destination);
         MarketInfo memory info = infos[market][key];
         xytWeight = info.xytWeight;
         tokenWeight = info.tokenWeight;
+        liquidity = info.liquidity;
     }
 
     function getBestMarketsWithLimit(

@@ -27,6 +27,7 @@ import {Utils} from "../libraries/PendleLibrary.sol";
 import "./IPendleRouter.sol";
 import "./IPendleYieldToken.sol";
 
+
 interface IPendleData {
     /**
      * @notice Emitted when the PendleRouter address has been updated.
@@ -197,6 +198,12 @@ interface IPendleData {
         uint256 lengthLimit
     ) external;
 
+    function updateMarketInfo(
+        address _xyt,
+        address _token,
+        address _market
+    ) external;
+
     /**
      * @notice Displays the number of markets currently existing.
      * @return Returns markets length,
@@ -266,7 +273,14 @@ interface IPendleData {
         address market,
         address source,
         address destination
-    ) external view returns (uint256 xytWeight, uint256 tokenWeight);
+    )
+        external
+        view
+        returns (
+            uint256 xytWeight,
+            uint256 tokenWeight,
+            uint256 liquidity
+        );
 
     function getMarketsWithLimit(
         address source,

@@ -61,7 +61,7 @@ interface IPendleMarket is IPendleBaseToken {
 
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
-        returns (address, uint256);
+        returns (uint256);
 
     function joinMarketByAll(
         uint256 exactOutLp,
@@ -105,19 +105,19 @@ interface IPendleMarket is IPendleBaseToken {
         uint256 maxPrice
     ) external returns (uint256 inAmount, uint256 spotPriceAfter);
 
-    function calcInAmount(
+    function calcExactIn(
         TokenReserve memory inTokenReserve,
         TokenReserve memory outTokenReserve,
-        uint256 swapFee,
-        uint256 outAmount
-    ) external pure returns (uint256 inAmount);
+        uint256 outAmount,
+        uint256 swapFee
+    ) external pure returns (uint256 exactIn);
 
-    function calcOutAmount(
+    function calcExactOut(
         TokenReserve memory inTokenReserve,
         TokenReserve memory outTokenReserve,
-        uint256 swapFee,
-        uint256 inAmount
-    ) external pure returns (uint256 outAmount);
+        uint256 exactIn,
+        uint256 swapFee
+    ) external pure returns (uint256 exactOut);
 
     function getReserves()
         external

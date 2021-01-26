@@ -64,6 +64,9 @@ export async function pendleMarketFixture(
   await pendleFutureYieldToken.approve(pendleRouter.address, constants.MAX_ALLOWANCE);
   await pendleFutureYieldToken.connect(wallet1).approve(pendleRouter.address, constants.MAX_ALLOWANCE);
 
+  await pendleMarket.approve(pendleRouter.address, constants.MAX_ALLOWANCE);
+  await pendleMarket.connect(wallet1).approve(pendleRouter.address, constants.MAX_ALLOWANCE);
+
   return { router, aave, forge, testToken, pendleMarket }
 }
 

@@ -261,7 +261,9 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         _transferIn(ETH_ADDRESS, _exactInEth);
 
-        market.joinMarketSingleToken(address(weth), _exactInEth, _minOutLp);
+        uint256 exactOutLp = market.joinMarketSingleToken(address(weth), _exactInEth, _minOutLp);
+
+        _transferOut(address(market), exactOutLp);
     }
 
     /**
@@ -283,7 +285,9 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         _transferIn(_token, _exactInToken);
 
-        market.joinMarketSingleToken(_token, _exactInToken, _minOutLp);
+        uint256 exactOutLp = market.joinMarketSingleToken(_token, _exactInToken, _minOutLp);
+
+        _transferOut(address(market), exactOutLp);
     }
 
     /**
@@ -305,7 +309,9 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         _transferIn(_xyt, _exactInXyt);
 
-        market.joinMarketSingleToken(_xyt, _exactInXyt, _minOutLp);
+        uint256 exactOutLp = market.joinMarketSingleToken(_xyt, _exactInXyt, _minOutLp);
+
+        _transferOut(address(market), exactOutLp);
     }
 
     /**
@@ -406,9 +412,9 @@ contract PendleRouter is IPendleRouter, Permissions {
         require(address(factory) != address(0), "Pendle: zero address");
 
         market = factory.createMarket(_forgeId, _xyt, _token, _expiry);
-        IERC20(_xyt).approve(market, Math.UINT_MAX_VALUE);
-        IERC20(_token).approve(market, Math.UINT_MAX_VALUE);
-        IERC20(market).approve(market, Math.UINT_MAX_VALUE);
+        IERC20(_xyt).safeApprove(market, Math.UINT_MAX_VALUE);
+        IERC20(_token).safeApprove(market, Math.UINT_MAX_VALUE);
+        IERC20(market).safeApprove(market, Math.UINT_MAX_VALUE);
     }
 
     function bootstrapMarket(
@@ -429,30 +435,30 @@ contract PendleRouter is IPendleRouter, Permissions {
         _transferIn(_xyt, _initialTokenLiquidity);
         _transferIn(_token, _initialTokenLiquidity);
 
-        (address lp, uint256 lpAmount) =
-            market.bootstrap(_initialXytLiquidity, _initialTokenLiquidity);
+        uint256 lpAmount = market.bootstrap(_initialXytLiquidity, _initialTokenLiquidity);
 
-        _transferOut(lp, lpAmount);
+        _transferOut(address(market), lpAmount);
+
+        address[] memory xyts = new address[](1);
+        address[] memory tokens = new address[](1);
+        xyts[0] = _xyt;
+        tokens[0] = _token;
+        data.updateMarketInfo(_xyt, _token, address(market));
+        data.sortMarkets(xyts, tokens, 32);
     }
 
     function batchExactSwapIn(
-        Swap[] memory swaps,
-        address tokenIn,
-        address tokenOut,
-        uint256 inTotalAmount,
-        uint256 minOutTotalAmount
+        Swap[] memory _swaps,
+        address _tokenIn,
+        address _tokenOut,
+        uint256 _inTotalAmount,
+        uint256 _minOutTotalAmount
     ) public payable override returns (uint256 outTotalAmount) {
-        IPendleMarket market;
-        IERC20 swapTokenIn;
-        Swap memory swap;
-        uint256 change = inTotalAmount;
+        _transferIn(_tokenIn, _inTotalAmount);
 
-        _transferIn(tokenIn, inTotalAmount);
-
-        for (uint256 i = 0; i < swaps.length; i++) {
-            swap = swaps[i];
-            swapTokenIn = IERC20(swap.tokenIn);
-            market = IPendleMarket(swap.market);
+        for (uint256 i = 0; i < _swaps.length; i++) {
+            Swap memory swap = _swaps[i];
+            IPendleMarket market = IPendleMarket(swap.market);
 
             (uint256 tokenAmountOut, ) =
                 market.swapAmountExactIn(
@@ -463,33 +469,27 @@ contract PendleRouter is IPendleRouter, Permissions {
                     swap.maxPrice
                 );
             outTotalAmount = tokenAmountOut.add(outTotalAmount);
-            change = change.sub(swap.swapAmount);
         }
 
-        require(outTotalAmount >= minOutTotalAmount, "Pendle: limit out error");
+        require(outTotalAmount >= _minOutTotalAmount, "Pendle: limit out error");
 
-        _transferOut(tokenOut, outTotalAmount);
-        _transferOut(tokenIn, change);
+        _transferOut(_tokenOut, outTotalAmount);
     }
 
     function batchSwapExactOut(
-        Swap[] memory swaps,
-        address tokenIn,
-        address tokenOut,
-        uint256 maxInTotalAmount
+        Swap[] memory _swaps,
+        address _tokenIn,
+        address _tokenOut,
+        uint256 _maxInTotalAmount
     ) public payable override returns (uint256 inTotalAmount) {
-        IPendleMarket market;
-        IERC20 swapTokenIn;
-        Swap memory swap;
         uint256 outTotalAmount;
-        uint256 change = maxInTotalAmount;
+        uint256 change = _maxInTotalAmount;
 
-        _transferIn(tokenIn, maxInTotalAmount);
+        _transferIn(_tokenIn, _maxInTotalAmount);
 
-        for (uint256 i = 0; i < swaps.length; i++) {
-            swap = swaps[i];
-            swapTokenIn = IERC20(swap.tokenIn);
-            market = IPendleMarket(swap.market);
+        for (uint256 i = 0; i < _swaps.length; i++) {
+            Swap memory swap = _swaps[i];
+            IPendleMarket market = IPendleMarket(swap.market);
 
             (uint256 tokenAmountIn, ) =
                 market.swapAmountExactOut(
@@ -501,49 +501,45 @@ contract PendleRouter is IPendleRouter, Permissions {
                 );
             inTotalAmount = tokenAmountIn.add(inTotalAmount);
             outTotalAmount = outTotalAmount.add(swap.swapAmount);
-            change = change.sub(swap.limitReturnAmount);
         }
 
-        require(inTotalAmount <= maxInTotalAmount, "Pendle: limit in error");
+        require(inTotalAmount <= _maxInTotalAmount, "Pendle: limit in error");
+        change = change.sub(inTotalAmount);
 
-        _transferOut(tokenOut, outTotalAmount);
-        _transferOut(tokenIn, change);
+        _transferOut(_tokenOut, outTotalAmount);
+        _transferOut(_tokenIn, change);
     }
 
     function swapExactIn(
-        address tokenIn,
-        address tokenOut,
-        uint256 inTotalAmount,
-        uint256 minOutTotalAmount,
-        uint256 numMarkets
+        address _tokenIn,
+        address _tokenOut,
+        uint256 _inTotalAmount,
+        uint256 _minOutTotalAmount,
+        uint256 _numMarkets
     ) public payable override returns (uint256 amount) {
         Swap[] memory swaps;
 
-        tokenIn = _isETH(tokenIn) ? address(weth) : tokenIn;
-        tokenOut = _isETH(tokenOut) ? address(weth) : tokenOut;
-        (swaps, ) = getMarketRateExactIn(tokenIn, tokenOut, inTotalAmount, numMarkets);
+        _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
+        _tokenOut = _isETH(_tokenOut) ? address(weth) : _tokenOut;
+        (swaps, ) = getMarketRateExactIn(_tokenIn, _tokenOut, _inTotalAmount, _numMarkets);
 
-        amount = batchExactSwapIn(swaps, tokenIn, tokenOut, inTotalAmount, minOutTotalAmount);
+        amount = batchExactSwapIn(swaps, _tokenIn, _tokenOut, _inTotalAmount, _minOutTotalAmount);
     }
 
     function swapExactOut(
-        address tokenIn,
-        address tokenOut,
-        uint256 outTotalAmount,
-        uint256 maxInTotalAmount,
-        uint256 numMarkets
+        address _tokenIn,
+        address _tokenOut,
+        uint256 _outTotalAmount,
+        uint256 _maxInTotalAmount,
+        uint256 _numMarkets
     ) public payable override returns (uint256 amount) {
         Swap[] memory swaps;
 
-        tokenIn = _isETH(tokenIn) ? address(weth) : tokenIn;
-        tokenOut = _isETH(tokenOut) ? address(weth) : tokenOut;
-        (swaps, ) = getMarketRateExactOut(tokenIn, tokenOut, outTotalAmount, numMarkets);
+        _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
+        _tokenOut = _isETH(_tokenOut) ? address(weth) : _tokenOut;
+        (swaps, ) = getMarketRateExactOut(_tokenIn, _tokenOut, _outTotalAmount, _numMarkets);
 
-        amount = batchSwapExactOut(swaps, tokenIn, tokenOut, maxInTotalAmount);
-    }
-
-    function getAllMarkets() public view override returns (address[] memory) {
-        return (data.getAllMarkets());
+        amount = batchSwapExactOut(swaps, _tokenIn, _tokenOut, _maxInTotalAmount);
     }
 
     // @@Vu TODO: This is not returning the list of markets for the underlying token.
@@ -560,34 +556,34 @@ contract PendleRouter is IPendleRouter, Permissions {
     }
 
     function getMarketRateExactIn(
-        address tokenIn,
-        address tokenOut,
-        uint256 inSwapAmount,
-        uint256 numMarkets
+        address _tokenIn,
+        address _tokenOut,
+        uint256 _inSwapAmount,
+        uint256 _numMarkets
     ) public view override returns (Swap[] memory swaps, uint256 totalOutput) {
         address[] memory marketAddresses =
-            data.getBestMarketsWithLimit(tokenIn, tokenOut, numMarkets);
+            data.getBestMarketsWithLimit(_tokenIn, _tokenOut, _numMarkets);
 
         Market[] memory markets = new Market[](marketAddresses.length);
         uint256 sumEffectiveLiquidity;
         for (uint256 i = 0; i < marketAddresses.length; i++) {
-            markets[i] = _getMarketData(tokenIn, tokenOut, marketAddresses[i]);
+            markets[i] = _getMarketData(_tokenIn, _tokenOut, marketAddresses[i]);
             sumEffectiveLiquidity = sumEffectiveLiquidity.add(markets[i].effectiveLiquidity);
         }
 
         uint256[] memory bestInputAmounts = new uint256[](markets.length);
         uint256 totalInputAmount;
         for (uint256 i = 0; i < markets.length; i++) {
-            bestInputAmounts[i] = inSwapAmount.mul(markets[i].effectiveLiquidity).div(
+            bestInputAmounts[i] = _inSwapAmount.mul(markets[i].effectiveLiquidity).div(
                 sumEffectiveLiquidity
             );
             totalInputAmount = totalInputAmount.add(bestInputAmounts[i]);
         }
 
-        if (totalInputAmount < inSwapAmount) {
-            bestInputAmounts[0] = bestInputAmounts[0].add(inSwapAmount.sub(totalInputAmount));
+        if (totalInputAmount < _inSwapAmount) {
+            bestInputAmounts[0] = bestInputAmounts[0].add(_inSwapAmount.sub(totalInputAmount));
         } else {
-            bestInputAmounts[0] = bestInputAmounts[0].sub(totalInputAmount.sub(inSwapAmount));
+            bestInputAmounts[0] = bestInputAmounts[0].sub(totalInputAmount.sub(_inSwapAmount));
         }
 
         swaps = new Swap[](markets.length);
@@ -595,8 +591,8 @@ contract PendleRouter is IPendleRouter, Permissions {
         for (uint256 i = 0; i < markets.length; i++) {
             swaps[i] = Swap({
                 market: markets[i].market,
-                tokenIn: tokenIn,
-                tokenOut: tokenOut,
+                tokenIn: _tokenIn,
+                tokenOut: _tokenOut,
                 swapAmount: bestInputAmounts[i],
                 limitReturnAmount: 0,
                 maxPrice: Math.UINT_MAX_VALUE
@@ -609,34 +605,34 @@ contract PendleRouter is IPendleRouter, Permissions {
     }
 
     function getMarketRateExactOut(
-        address tokenIn,
-        address tokenOut,
-        uint256 outSwapAmount,
-        uint256 numMarkets
-    ) public view override returns (Swap[] memory swaps, uint256 totalInput) {
+        address _tokenIn,
+        address _tokenOut,
+        uint256 _outSwapAmount,
+        uint256 _numMarkets
+    ) public view override returns (Swap[] memory swaps, uint256 totalOutput) {
         address[] memory marketAddresses =
-            data.getBestMarketsWithLimit(tokenIn, tokenOut, numMarkets);
+            data.getBestMarketsWithLimit(_tokenIn, _tokenOut, _numMarkets);
 
         Market[] memory markets = new Market[](marketAddresses.length);
         uint256 sumEffectiveLiquidity;
         for (uint256 i = 0; i < marketAddresses.length; i++) {
-            markets[i] = _getMarketData(tokenIn, tokenOut, marketAddresses[i]);
+            markets[i] = _getMarketData(_tokenIn, _tokenOut, marketAddresses[i]);
             sumEffectiveLiquidity = sumEffectiveLiquidity.add(markets[i].effectiveLiquidity);
         }
 
         uint256[] memory bestInputAmounts = new uint256[](markets.length);
         uint256 totalInputAmount;
         for (uint256 i = 0; i < markets.length; i++) {
-            bestInputAmounts[i] = outSwapAmount.mul(markets[i].effectiveLiquidity).div(
+            bestInputAmounts[i] = _outSwapAmount.mul(markets[i].effectiveLiquidity).div(
                 sumEffectiveLiquidity
             );
             totalInputAmount = totalInputAmount.add(bestInputAmounts[i]);
         }
 
-        if (totalInputAmount < outSwapAmount) {
-            bestInputAmounts[0] = bestInputAmounts[0].add(outSwapAmount.sub(totalInputAmount));
+        if (totalInputAmount < _outSwapAmount) {
+            bestInputAmounts[0] = bestInputAmounts[0].add(_outSwapAmount.sub(totalInputAmount));
         } else {
-            bestInputAmounts[0] = bestInputAmounts[0].sub(totalInputAmount.sub(outSwapAmount));
+            bestInputAmounts[0] = bestInputAmounts[0].sub(totalInputAmount.sub(_outSwapAmount));
         }
 
         swaps = new Swap[](markets.length);
@@ -644,24 +640,24 @@ contract PendleRouter is IPendleRouter, Permissions {
         for (uint256 i = 0; i < markets.length; i++) {
             swaps[i] = Swap({
                 market: markets[i].market,
-                tokenIn: tokenIn,
-                tokenOut: tokenOut,
+                tokenIn: _tokenIn,
+                tokenOut: _tokenOut,
                 swapAmount: bestInputAmounts[i],
                 limitReturnAmount: Math.UINT_MAX_VALUE,
                 maxPrice: Math.UINT_MAX_VALUE
             });
         }
 
-        totalInput = _calcTotalOutExactOut(bestInputAmounts, markets);
+        totalOutput = _calcTotalOutExactOut(bestInputAmounts, markets);
 
-        return (swaps, totalInput);
+        return (swaps, totalOutput);
     }
 
     function getMarketReserves(
         bytes32 _forgeId,
         bytes32 _marketFactoryId,
-        address xyt,
-        address token
+        address _xyt,
+        address _token
     )
         public
         view
@@ -673,20 +669,20 @@ contract PendleRouter is IPendleRouter, Permissions {
         )
     {
         IPendleMarket market =
-            IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, xyt, token));
+            IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "Pendle: market not found");
         (xytAmount, tokenAmount, currentTime) = market.getReserves();
     }
 
-    function getMarketTokenAddresses(address market)
+    function getMarketTokenAddresses(address _market)
         public
         view
         override
         returns (address token, address xyt)
     {
-        require(address(market) != address(0), "Pendle: market not found");
+        require(address(_market) != address(0), "Pendle: market not found");
 
-        IPendleMarket benmarkMarket = IPendleMarket(market);
+        IPendleMarket benmarkMarket = IPendleMarket(_market);
         token = benmarkMarket.token();
         xyt = benmarkMarket.xyt();
     }
@@ -716,15 +712,15 @@ contract PendleRouter is IPendleRouter, Permissions {
     }
 
     function _getMarketData(
-        address tokenIn,
-        address tokenOut,
+        address _tokenIn,
+        address _tokenOut,
         address marketAddress
     ) internal view returns (Market memory) {
         IPendleMarket market = IPendleMarket(marketAddress);
-        uint256 tokenBalanceIn = market.getBalance(tokenIn);
-        uint256 tokenBalanceOut = market.getBalance(tokenOut);
-        uint256 tokenWeightIn = market.getWeight(tokenIn);
-        uint256 tokenWeightOut = market.getWeight(tokenOut);
+        uint256 tokenBalanceIn = market.getBalance(_tokenIn);
+        uint256 tokenBalanceOut = market.getBalance(_tokenOut);
+        uint256 tokenWeightIn = market.getWeight(_tokenIn);
+        uint256 tokenWeightOut = market.getWeight(_tokenOut);
 
         uint256 effectiveLiquidity =
             _calcEffectiveLiquidity(tokenWeightIn, tokenBalanceOut, tokenWeightOut);
@@ -758,7 +754,7 @@ contract PendleRouter is IPendleRouter, Permissions {
             outTokenReserve.weight = bestMarkets[i].tokenWeightOut;
 
             uint256 output =
-                IPendleMarket(bestMarkets[i].market).calcOutAmount(
+                IPendleMarket(bestMarkets[i].market).calcExactOut(
                     inTokenReserve,
                     outTokenReserve,
                     bestInAmounts[i],
@@ -767,6 +763,7 @@ contract PendleRouter is IPendleRouter, Permissions {
 
             totalOutput = totalOutput.add(output);
         }
+
         return totalOutput;
     }
 
@@ -786,7 +783,7 @@ contract PendleRouter is IPendleRouter, Permissions {
             outTokenReserve.weight = bestMarkets[i].tokenWeightOut;
 
             uint256 output =
-                IPendleMarket(bestMarkets[i].market).calcInAmount(
+                IPendleMarket(bestMarkets[i].market).calcExactIn(
                     inTokenReserve,
                     outTokenReserve,
                     bestInputAmounts[i],
@@ -795,6 +792,7 @@ contract PendleRouter is IPendleRouter, Permissions {
 
             totalOutput = totalOutput.add(output);
         }
+
         return totalOutput;
     }
 
