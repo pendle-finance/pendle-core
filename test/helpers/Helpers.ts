@@ -48,7 +48,7 @@ export async function mintAproveTokenizeYield(
   await pendle.tokenizeYield(
     consts.FORGE_AAVE,
     token.address,
-    consts.SIX_MONTH_FROM_NOW,
+    consts.T0.add(consts.SIX_MONTH),
     amount,
     wallet.address
   );

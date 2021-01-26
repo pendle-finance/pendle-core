@@ -9,7 +9,7 @@ import {
   evm_snapshot,
   getAContract,
   Token,
-  tokens,
+  tokens
 } from "../helpers";
 import { pendleMarketFixture } from "./fixtures";
 
@@ -481,7 +481,7 @@ describe("PendleMarket", async () => {
       consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
       tokenUSDT.address,
-      consts.THREE_MONTH_FROM_NOW,
+      consts.T0.add(consts.THREE_MONTH),
       consts.HIGH_GAS_OVERRIDE
     );
     let allEvents = await pendleAaveMarketFactory.queryFilter(
@@ -501,7 +501,7 @@ describe("PendleMarket", async () => {
       pendleAaveMarketFactory.createMarket(
         pendleXyt.address,
         testToken.address,
-        consts.THREE_MONTH_FROM_NOW,
+        consts.T0.add(consts.THREE_MONTH),
         consts.HIGH_GAS_OVERRIDE
       )
     ).to.be.revertedWith("Pendle: market already exists");

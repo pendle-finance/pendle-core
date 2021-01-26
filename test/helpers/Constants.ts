@@ -8,7 +8,7 @@ export type Token = {
 
 type TokenMap = Record<string, Token>;
 
-export const consts = {
+export var consts = {
   DUMMY_GOVERNANCE_ADDRESS: "0xdac17f958d2ee523a2206206994597c13d831ec7",
 
   AAVE_LENDING_POOL_CORE_ADDRESS: "0x3dfd23A6c5E8BbcFc9581d2E864a68feb6a076d3",
@@ -22,12 +22,16 @@ export const consts = {
   MAX_ALLOWANCE: BN.from(2).pow(256).sub(1),
   ONE_DAY: BN.from(86400),
   ONE_MONTH: BN.from(2592000),
-  RIGHT_NOW: BN.from(Math.round(Date.now() / 1000)),
-  THREE_MONTH_FROM_NOW: BN.from(Math.round(Date.now() / 1000)).add(2592000 * 3),
-  SIX_MONTH_FROM_NOW: BN.from(Math.round(Date.now() / 1000)).add(2592000 * 6),
+  THREE_MONTH: BN.from(2592000 * 3),
+  SIX_MONTH: BN.from(2592000 * 6),
   ONE_YEAR: BN.from(31536000),
+  T0: BN.from(Math.round(Date.now() / 1000)),
   HIGH_GAS_OVERRIDE: { gasLimit: 40000000 },
 };
+
+export function setT0(time: BN) {
+  consts.T0 = time;
+}
 
 export const tokens: TokenMap = {
   USDT: {

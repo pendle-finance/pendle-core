@@ -11,7 +11,7 @@ import {
   getAContract,
   getGain,
   getLiquidityRate,
-  tokens,
+  tokens
 } from "../helpers";
 import { pendleFixture } from "./fixtures";
 
@@ -64,7 +64,7 @@ describe("Pendle", async () => {
     await pendle.tokenizeYield(
       consts.FORGE_AAVE,
       tokenUSDT.address,
-      consts.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
       wallet.address
     );
@@ -80,7 +80,7 @@ describe("Pendle", async () => {
     await pendle.tokenizeYield(
       consts.FORGE_AAVE,
       tokenUSDT.address,
-      consts.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
       wallet.address,
       consts.HIGH_GAS_OVERRIDE
@@ -90,7 +90,7 @@ describe("Pendle", async () => {
     await pendle.redeemUnderlying(
       consts.FORGE_AAVE,
       tokenUSDT.address,
-      consts.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
       wallet.address,
       consts.HIGH_GAS_OVERRIDE
@@ -112,7 +112,7 @@ describe("Pendle", async () => {
     await pendle.tokenizeYield(
       consts.FORGE_AAVE,
       tokenUSDT.address,
-      consts.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
       wallet.address
     );
@@ -126,7 +126,7 @@ describe("Pendle", async () => {
     await pendle.redeemDueInterests(
       consts.FORGE_AAVE,
       tokenUSDT.address,
-      consts.SIX_MONTH_FROM_NOW
+      consts.T0.add(consts.SIX_MONTH)
     );
 
     const rate = await getLiquidityRate(wallet, tokenUSDT);
@@ -148,12 +148,12 @@ describe("Pendle", async () => {
     await pendle.tokenizeYield(
       consts.FORGE_AAVE,
       tokenUSDT.address,
-      consts.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
       wallet.address
     );
     await pendleXyt.transfer(wallet1.address, amountToTokenize);
-    const duration = consts.SIX_MONTH_FROM_NOW.sub(
+    const duration = consts.T0.add(consts.SIX_MONTH).sub(
       Math.round(Date.now() / 1000)
     ).sub(180);
 
@@ -164,7 +164,7 @@ describe("Pendle", async () => {
     await wallet1Pendle.redeemDueInterests(
       consts.FORGE_AAVE,
       tokenUSDT.address,
-      consts.SIX_MONTH_FROM_NOW
+      consts.T0.add(consts.SIX_MONTH)
     );
 
     const wallet1Gain = await aUSDT.balanceOf(wallet1.address);
@@ -178,7 +178,7 @@ describe("Pendle", async () => {
     await pendle.redeemAfterExpiry(
       consts.FORGE_AAVE,
       tokenUSDT.address,
-      consts.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       wallet.address
     );
 
@@ -196,12 +196,12 @@ describe("Pendle", async () => {
     await pendle.tokenizeYield(
       consts.FORGE_AAVE,
       tokenUSDT.address,
-      consts.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
       wallet.address
     );
     await pendleXyt.transfer(wallet1.address, amountToTokenize);
-    const duration = consts.SIX_MONTH_FROM_NOW.sub(
+    const duration = consts.T0.add(consts.SIX_MONTH).sub(
       Math.round(Date.now() / 1000)
     ).sub(180);
 
@@ -212,7 +212,7 @@ describe("Pendle", async () => {
     await wallet1Pendle.redeemDueInterests(
       consts.FORGE_AAVE,
       tokenUSDT.address,
-      consts.SIX_MONTH_FROM_NOW
+      consts.T0.add(consts.SIX_MONTH)
     );
 
     const wallet1Gain = await aUSDT.balanceOf(wallet1.address);
@@ -226,7 +226,7 @@ describe("Pendle", async () => {
     await pendle.redeemAfterExpiry(
       consts.FORGE_AAVE,
       tokenUSDT.address,
-      consts.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       wallet.address
     );
 
@@ -254,7 +254,7 @@ describe("Pendle", async () => {
   });
 
   it("Should be able to newYieldContracts", async () => {
-    let futureTime = consts.SIX_MONTH_FROM_NOW.add(consts.ONE_DAY);
+    let futureTime = consts.T0.add(consts.SIX_MONTH).add(consts.ONE_DAY);
     let filter = pendleAaveForge.filters.NewYieldContracts();
     let tx = await pendle.newYieldContracts(
       consts.FORGE_AAVE,

@@ -147,13 +147,13 @@ describe("PendleLiquidityMining", async () => {
     await pendleLiquidityMining
       .connect(wallet1)
       .stake(
-        consts.SIX_MONTH_FROM_NOW,
+        consts.T0.add(consts.SIX_MONTH),
         amountToStake,
         consts.HIGH_GAS_OVERRIDE
       );
     console.log("\tStaked");
     const lpHolderContract = await pendleLiquidityMining.lpHolderForExpiry(
-      consts.SIX_MONTH_FROM_NOW
+      consts.T0.add(consts.SIX_MONTH)
     );
     const aTokenBalanceOfLpHolderContract = await aUSDT.balanceOf(
       lpHolderContract
@@ -170,7 +170,7 @@ describe("PendleLiquidityMining", async () => {
     await pendleLiquidityMining
       .connect(wallet1)
       .withdraw(
-        consts.SIX_MONTH_FROM_NOW,
+        consts.T0.add(consts.SIX_MONTH),
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
@@ -198,7 +198,7 @@ describe("PendleLiquidityMining", async () => {
 
     //stake using another user - wallet, for the same amount as wallet1's stake now (amountToStake/2)
     await pendleLiquidityMining.stake(
-      consts.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       amountToStake.div(2),
       consts.HIGH_GAS_OVERRIDE
     );
@@ -230,7 +230,7 @@ describe("PendleLiquidityMining", async () => {
     await pendleLiquidityMining
       .connect(wallet1)
       .withdraw(
-        consts.SIX_MONTH_FROM_NOW,
+        consts.T0.add(consts.SIX_MONTH),
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
@@ -251,7 +251,7 @@ describe("PendleLiquidityMining", async () => {
     );
 
     await pendleLiquidityMining.withdraw(
-      consts.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       amountToStake.div(2),
       consts.HIGH_GAS_OVERRIDE
     );

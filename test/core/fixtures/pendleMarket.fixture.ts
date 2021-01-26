@@ -42,7 +42,7 @@ export async function pendleMarketFixture(
   await pendleAaveMarketFactory.createMarket(
     pendleFutureYieldToken.address,
     testToken.address,
-    consts.SIX_MONTH_FROM_NOW,
+    consts.T0.add(consts.SIX_MONTH),
     consts.HIGH_GAS_OVERRIDE
   );
 

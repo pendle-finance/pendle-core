@@ -23,17 +23,17 @@ export async function pendleAaveForgeFixture(
 
     await pendle.addForge(consts.FORGE_AAVE, pendleAaveForge.address)
 
-    await pendleAaveForge.newYieldContracts(tokens.USDT.address, consts.SIX_MONTH_FROM_NOW);
+    await pendleAaveForge.newYieldContracts(tokens.USDT.address, consts.T0.add(consts.SIX_MONTH));
     const otTokenAddress = await pendleData.otTokens(
         consts.FORGE_AAVE,
         tokens.USDT.address,
-        consts.SIX_MONTH_FROM_NOW
+        consts.T0.add(consts.SIX_MONTH)
     );
 
     const xytTokenAddress = await pendleData.xytTokens(
         consts.FORGE_AAVE,
         tokens.USDT.address,
-        consts.SIX_MONTH_FROM_NOW
+        consts.T0.add(consts.SIX_MONTH)
     );
 
     const pendleOwnershipToken = new Contract(otTokenAddress, PendleOwnershipToken.abi, wallet);
