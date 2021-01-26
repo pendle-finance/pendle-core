@@ -52,13 +52,13 @@ describe("PendleLiquidityMining", async () => {
     pendleRouter = fixture.router.pendleRouter;
     pendleTreasury = fixture.router.pendleTreasury;
     pendleAaveMarketFactory = fixture.router.pendleAaveMarketFactory;
+    pendleMarket = fixture.pendleMarket;
     pendleData = fixture.router.pendleData;
     pendleOwnershipToken = fixture.forge.pendleOwnershipToken;
     pendleFutureYieldToken = fixture.forge.pendleFutureYieldToken;
     pendleAaveForge = fixture.forge.pendleAaveForge;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     testToken = fixture.testToken;
-    pendleMarket = fixture.pendleMarket;
     aUSDT = await getAContract(wallet, lendingPoolCore, tokens.USDT);
 
     const amountToTokenize = amountToWei(tokens.USDT, BigNumber.from(100));
@@ -76,14 +76,17 @@ describe("PendleLiquidityMining", async () => {
     );
 
     pendle = await deployContract(wallet, PENDLE, [wallet.address]);
-
+    
+    console.log("deploying");
     pendleLiquidityMining = await deployContract(
       wallet,
       PendleLiquidityMining,
       [
         wallet.address,
         pendle.address,
+        pendleData.address,
         pendleAaveMarketFactory.address,
+        pendleAaveForge.address,
         tokens.USDT.address,
         testToken.address,
         liquidityMiningParameters.startTime,
@@ -93,6 +96,7 @@ describe("PendleLiquidityMining", async () => {
         liquidityMiningParameters.vestingEpochs,
       ]
     );
+    console.log("deployed");
     console.log("deployed liquidity mining contract");
 
     await pendle.approve(

@@ -84,15 +84,15 @@ library Factory {
         bytes memory bytecode,
         bytes memory salting,
         bytes memory ctor
-    ) internal returns (address forge) {
+    ) internal returns (address deployed) {
         bytes32 salt = keccak256(salting);
 
         bytecode = abi.encodePacked(bytecode, ctor);
 
         assembly {
-            forge := create2(0, add(bytecode, 32), mload(bytecode), salt)
+            deployed := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
-        require(forge != address(0), "Pendle: failed on deploy");
+        require(deployed != address(0), "Pendle: failed on deploy");
     }
 }
 

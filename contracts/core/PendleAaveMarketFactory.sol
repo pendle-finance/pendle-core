@@ -30,6 +30,7 @@ import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleYieldToken.sol";
 import "../periphery/Permissions.sol";
 
+
 contract PendleAaveMarketFactory is IPendleMarketFactory, Permissions {
     IPendleRouter public override router;
     bytes32 public immutable override marketFactoryId;
@@ -72,8 +73,8 @@ contract PendleAaveMarketFactory is IPendleMarketFactory, Permissions {
 
         market = Factory.createContract(
             type(PendleMarket).creationCode,
-            abi.encodePacked(msg.sender, router, forgeAddress, _xyt, _token, _expiry),
-            abi.encode(msg.sender, router, forgeAddress, _xyt, _token, _expiry)
+            abi.encodePacked(msg.sender, forgeAddress, _xyt, _token, _expiry),
+            abi.encode(msg.sender, forgeAddress, _xyt, _token, _expiry)
         );
         data.addMarket(_forgeId, marketFactoryId, _xyt, _token, market);
 

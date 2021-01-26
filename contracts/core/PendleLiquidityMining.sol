@@ -101,7 +101,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     constructor(
         address _governance,
         address _pendleAddress,
-        IPendleData _pendleData,
+        address _pendleData,
         address _pendleMarketFactory,
         address _pendleAaveForge,
         address _underlyingAsset,
@@ -116,7 +116,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         //TODO: add more sanity checks:
         //  - ...
         pendleAddress = _pendleAddress;
-        pendleData = _pendleData;
+        pendleData = IPendleData(_pendleData);
         underlyingAsset = _underlyingAsset;
         baseToken = _baseToken;
         startTime = _startTime;
@@ -125,8 +125,8 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         numberOfEpochs = _numberOfEpochs;
         vestingEpochs = _vestingEpochs;
 
-        marketFactoryId = _pendleData.getMarketFactoryId(_pendleMarketFactory);
-        forgeId = _pendleData.getForgeId(_pendleAaveForge);
+        marketFactoryId = pendleData.getMarketFactoryId(_pendleMarketFactory);
+        forgeId = pendleData.getForgeId(_pendleAaveForge);
     }
 
     function readUserExpiries(address user)

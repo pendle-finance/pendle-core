@@ -20,7 +20,7 @@ import { toUtf8CodePoints } from "ethers/lib/utils";
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
-describe("Pendle", async () => {
+describe("PendleRouter", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [wallet, wallet1] = wallets;

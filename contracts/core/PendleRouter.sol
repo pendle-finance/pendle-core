@@ -32,7 +32,7 @@ import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../periphery/Permissions.sol";
-import "hardhat/console.sol";
+
 
 contract PendleRouter is IPendleRouter, Permissions {
     using SafeERC20 for IERC20;
@@ -406,7 +406,9 @@ contract PendleRouter is IPendleRouter, Permissions {
         require(address(factory) != address(0), "Pendle: zero address");
 
         market = factory.createMarket(_forgeId, _xyt, _token, _expiry);
+        IERC20(_xyt).approve(market, Math.UINT_MAX_VALUE);
         IERC20(_token).approve(market, Math.UINT_MAX_VALUE);
+        IERC20(market).approve(market, Math.UINT_MAX_VALUE);
     }
 
     function bootstrapMarket(
