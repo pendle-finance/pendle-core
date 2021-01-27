@@ -16,7 +16,7 @@ export async function pendleFixture(
 ): Promise<PendleFixture> {
   const [wallet] = wallets;
   const core = await pendleCoreFixture(wallets, provider);
-  const forge = await pendleAaveForgeFixture(wallet, core);
+  const forge = await pendleAaveForgeFixture(wallet, provider, core, false);
   const aave = await aaveFixture(wallet);
 
   const { pendleAaveForge } = forge;

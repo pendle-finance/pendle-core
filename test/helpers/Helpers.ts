@@ -129,6 +129,14 @@ export async function setTimeNextBlock(
   provider.send("evm_setNextBlockTimestamp", [time.toNumber()]);
 }
 
+export async function setTime(
+  provider: providers.Web3Provider,
+  time: BigNumber
+) {
+  provider.send("evm_setNextBlockTimestamp", [time.toNumber()]);
+  provider.send("evm_mine", []);
+}
+
 export async function getLiquidityRate(
   wallet: Wallet,
   token: Token

@@ -29,8 +29,8 @@ export var consts = {
   HIGH_GAS_OVERRIDE: { gasLimit: 40000000 },
   INITIAL_USDT_AMOUNT: toFixedPoint(10 ** 5),
   INITIAL_AAVE_TOKEN_AMOUNT: toFixedPoint(10 ** 4),
-  INITIAL_OT_XYT_AMOUNT: toFixedPoint(10 ** 5), // 10^6 is the number of wei in a token
-  AMM_DELTA: toFixedPoint(1000), // the lower the better
+  INITIAL_OT_XYT_AMOUNT: toFixedPoint(10 ** 5),
+  AMM_DELTA: toFixedPoint(1), // this is the best delta possible
 };
 
 export function setT0(time: BN) {
