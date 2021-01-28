@@ -1,5 +1,4 @@
 import { BigNumber as BN, utils } from "ethers";
-import { toFixedPoint } from "./Helpers";
 export type Token = {
   address: string;
   decimal: number;
@@ -27,10 +26,10 @@ export var consts = {
   ONE_YEAR: BN.from(31536000),
   T0: BN.from(Math.round(Date.now() / 1000)),
   HIGH_GAS_OVERRIDE: { gasLimit: 40000000 },
-  INITIAL_USDT_AMOUNT: toFixedPoint(10 ** 5),
-  INITIAL_AAVE_TOKEN_AMOUNT: toFixedPoint(10 ** 4),
-  INITIAL_OT_XYT_AMOUNT: toFixedPoint(10 ** 5),
-  AMM_DELTA: toFixedPoint(1), // this is the best delta possible
+  INITIAL_USDT_AMOUNT: BN.from(10 ** 5),
+  INITIAL_AAVE_TOKEN_AMOUNT: BN.from(10 ** 4),
+  INITIAL_OT_XYT_AMOUNT: BN.from(10 ** 5),
+  AMM_DELTA: 10,
 };
 
 export function setT0(time: BN) {

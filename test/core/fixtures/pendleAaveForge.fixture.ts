@@ -26,7 +26,7 @@ export async function pendleAaveForgeFixture(
     await pendle.addForge(consts.FORGE_AAVE, pendleAaveForge.address)
 
     if (useFixedTime == true) {
-        setT0(BN.from(4102444800));
+        setT0(BN.from(4000000000));
         setTimeNextBlock(provider, consts.T0);
         console.log("block number after setTime", await provider.getBlockNumber());
     }

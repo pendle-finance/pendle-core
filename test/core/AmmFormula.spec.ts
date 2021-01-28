@@ -1,11 +1,10 @@
-import { assert } from "chai";
+import { assert, expect } from "chai";
 import { BigNumber as BN, Contract } from "ethers";
 import {
   amountToWei,
   approxBigNumber,
   consts,
   setTimeNextBlock,
-  toFixedPoint,
   toFPWei,
   Token,
   tokens,
@@ -72,96 +71,98 @@ describe("AMM Formula", async () => {
     );
   }
 
-  async function runTestTokenToXyt(time: BN, tokenIn: string, xytOut: string) {
+  async function runTestTokenToXyt(time: BN, tokenIn: BN, xytOut: BN) {
     var {
       xytReserves: initialXytReserves,
       tokenReserves: initialTokenReserves,
     } = await pendleMarket.getReserves();
 
     await setTimeNextBlock(provider, time);
-    await swapTokenToXyt(toFPWei(tokenIn));
+    await swapTokenToXyt(tokenIn);
     var { xytReserves, tokenReserves } = await pendleMarket.getReserves();
 
     var actualXytOut = initialXytReserves.sub(xytReserves);
     var actualTokenIn = tokenReserves.sub(initialTokenReserves);
 
-    assert(approxBigNumber(toFPWei(tokenIn), actualTokenIn, consts.AMM_DELTA));
-    assert(approxBigNumber(toFPWei(xytOut), actualXytOut, consts.AMM_DELTA));
+    console.log("diff:", tokenIn.sub(actualTokenIn).toNumber());
+    console.log("diff:", xytOut.sub(actualXytOut).toNumber());
+    expect(tokenIn.toNumber()).to.be.approximately(actualTokenIn.toNumber(), consts.AMM_DELTA);
+    expect(xytOut.toNumber()).to.be.approximately(actualXytOut.toNumber(), consts.AMM_DELTA);
   }
 
-  async function runTestXytToToken(time: BN, xytIn: string, tokenOut: string) {
+  async function runTestXytToToken(time: BN, xytIn: BN, tokenOut: BN) {
     var {
       xytReserves: initialXytReserves,
       tokenReserves: initialTokenReserves,
     } = await pendleMarket.getReserves();
 
     await setTimeNextBlock(provider, time);
-    await swapXytToToken(toFPWei(xytIn));
+    await swapXytToToken(xytIn);
     var { xytReserves, tokenReserves } = await pendleMarket.getReserves();
 
-    var actualXytIn = xytReserves.sub(initialXytReserves);
-    var actualTokenOut = initialTokenReserves.sub(tokenReserves);
+    var actualXytIn: BN = xytReserves.sub(initialXytReserves);
+    var actualTokenOut: BN = initialTokenReserves.sub(tokenReserves);
 
-    assert(
-      approxBigNumber(toFPWei(tokenOut), actualTokenOut, consts.AMM_DELTA)
-    );
-    assert(approxBigNumber(toFPWei(xytIn), actualXytIn, consts.AMM_DELTA));
+    console.log("diff:", tokenOut.sub(actualTokenOut).toNumber());
+    console.log("diff:", xytIn.sub(actualXytIn).toNumber());
+    expect(tokenOut.toNumber()).to.be.approximately(actualTokenOut.toNumber(), consts.AMM_DELTA);
+    expect(xytIn.toNumber()).to.be.approximately(actualXytIn.toNumber(), consts.AMM_DELTA);
   }
 
   it("Test 1", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, toFixedPoint(1000));
+    const amountToTokenize = amountToWei(tokenUSDT, BN.from(1000));
     await bootstrapSampleMarket(amountToTokenize);
     await testToken.approve(pendleMarket.address, consts.MAX_ALLOWANCE);
 
     await runTestTokenToXyt(
       consts.T0.add(3600),
-      "20.4056154640437012529487593",
-      "20"
+      BN.from(20405615),
+      BN.from(20000000),
     );
     await runTestXytToToken(
       consts.T0.add(3660),
-      "120",
-      "111.303781468187238009565391"
+      BN.from(120000000),
+      BN.from(111303781),
     );
     await runTestTokenToXyt(
       consts.T0.add(43200),
-      "300",
-      "273.280448649430121754778355"
+      BN.from(300000000),
+      BN.from(273280448),
     );
     await runTestXytToToken(
       consts.T0.add(43210),
-      "74.65525897473777272314011",
-      "100"
+      BN.from(74655258),
+      BN.from(100000000),
     );
     await runTestXytToToken(
       consts.T0.add(2592030),
-      "100",
-      "100.71634012485444436225310"
+      BN.from(100000000),
+      BN.from(100716340),
     );
     await runTestXytToToken(
       consts.T0.add(14515300),
-      "200",
-      "24.266823488747670122258785"
+      BN.from(200000000),
+      BN.from(24266823),
     );
     await runTestTokenToXyt(
       consts.T0.add(14861000),
-      "26.338047049500061035209868",
-      "300"
+      BN.from(26338047),
+      BN.from(300000000),
     );
     await runTestXytToToken(
       consts.T0.add(15120300),
-      "400",
-      "21.59504665672333789302071"
+      BN.from(400000000),
+      BN.from(21595046),
     );
     await runTestTokenToXyt(
       consts.T0.add(15120360),
-      "3.69683925359824726534054",
-      "80"
+      BN.from(3696839),
+      BN.from(80000000),
     );
     await runTestXytToToken(
       consts.T0.add(15551400),
-      "800",
-      "0.04263564745466537519981"
+      BN.from(800000000),
+      BN.from(42635),
     );
   });
 });
