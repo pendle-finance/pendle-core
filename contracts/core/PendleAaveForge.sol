@@ -161,6 +161,8 @@ contract PendleAaveForge is IPendleForge, ReentrancyGuard {
 
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
         tokens.ot.burn(_msgSender, redeemedAmount);
+
+        emit RedeemYieldToken(_underlyingAsset, redeemedAmount);
     }
 
     // msg.sender needs to have both OT and XYT tokens
@@ -188,6 +190,7 @@ contract PendleAaveForge is IPendleForge, ReentrancyGuard {
         tokens.ot.burn(_msgSender, _amountToRedeem);
         tokens.xyt.burn(_msgSender, _amountToRedeem);
 
+        emit RedeemYieldToken(_underlyingAsset, _amountToRedeem);
         return _amountToRedeem;
     }
 
@@ -208,6 +211,7 @@ contract PendleAaveForge is IPendleForge, ReentrancyGuard {
         lastNormalisedIncome[_underlyingAsset][_expiry][_to] = aaveLendingPoolCore
             .getReserveNormalizedIncome(address(_underlyingAsset));
 
+        emit MintYieldToken(_underlyingAsset, _amountToTokenize);
         return (address(tokens.ot), address(tokens.xyt));
     }
 
