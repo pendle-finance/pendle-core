@@ -32,7 +32,11 @@ interface IPendleForge {
      * @param amount The amount to be minted.
      * @param expiry The expiry of the XYT token
      **/
-    event MintYieldToken(address indexed underlyingYieldToken, uint256 amount, uint256 indexed expiry);
+    event MintYieldToken(
+        address indexed underlyingYieldToken,
+        uint256 amount,
+        uint256 indexed expiry
+    );
 
     /**
      * @dev Emitted when the Forge has created new yield token contracts.
@@ -48,7 +52,11 @@ interface IPendleForge {
      * @param amount The amount to be redeemed.
      * @param expiry The expiry of the XYT token
      **/
-    event RedeemYieldToken(address indexed underlyingYieldToken, uint256 amount, uint256 indexed expiry);
+    event RedeemYieldToken(
+        address indexed underlyingYieldToken,
+        uint256 amount,
+        uint256 indexed expiry
+    );
 
     /**
      * @dev Emitted when interest claim is settled
@@ -57,8 +65,13 @@ interface IPendleForge {
      * @param amount The amount of interest claimed
      * @param expiry The expiry of the XYT token
      **/
-    event DueInterestSettled(address indexed underlyingYieldToken, address indexed receiver, uint256 amount, uint256 indexed expiry);
-    
+    event DueInterestSettled(
+        address indexed underlyingYieldToken,
+        address indexed receiver,
+        uint256 amount,
+        uint256 indexed expiry
+    );
+
     // TODO: We need some logic to only allow some kinds of expiry
     // for each contractDuration
     // For example: For each duration, only allow expiry at the start,
