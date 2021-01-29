@@ -46,10 +46,19 @@ interface IPendleForge {
      * @dev Emitted when the Forge has redeemed the OT and XYT tokens.
      * @param underlyingYieldToken The address of the underlying yield token.
      * @param amount The amount to be redeemed.
-    * @param expiry The expiry of the XYT token
+     * @param expiry The expiry of the XYT token
      **/
     event RedeemYieldToken(address indexed underlyingYieldToken, uint256 amount, uint256 indexed expiry);
 
+    /**
+     * @dev Emitted when interest claim is settled
+     * @param underlyingYieldToken The address of the underlying yield token.
+     * @param receiver Interest receiver Address
+     * @param amount The amount of interest claimed
+     * @param expiry The expiry of the XYT token
+     **/
+    event DueInterestSettled(address indexed underlyingYieldToken, address indexed receiver, uint256 amount, uint256 indexed expiry);
+    
     // TODO: We need some logic to only allow some kinds of expiry
     // for each contractDuration
     // For example: For each duration, only allow expiry at the start,

@@ -294,6 +294,8 @@ contract PendleAaveForge is IPendleForge, ReentrancyGuard {
         if (dueInterests > 0) {
             IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
             IERC20(aToken).transfer(_account, dueInterests);
+
+            emit DueInterestSettled(_underlyingAsset, _account, dueInterests, _expiry);
         }
 
         // console.log("[contract] [Forge] in _settleDueInterests, interests = ", dueInterests);
