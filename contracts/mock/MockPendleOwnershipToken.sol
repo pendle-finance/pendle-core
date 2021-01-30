@@ -22,6 +22,7 @@
  */
 pragma solidity ^0.7.0;
 import "../tokens/PendleOwnershipToken.sol";
+import "hardhat/console.sol";
 
 contract MockPendleOwnershipToken is PendleOwnershipToken {
     constructor(

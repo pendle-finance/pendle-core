@@ -11,8 +11,8 @@ import {
   Token,
   tokens,
 } from "../helpers";
+import { AMMTest } from "./AmmFormula";
 import { pendleMarketFixture } from "./fixtures";
-
 const { waffle } = require("hardhat");
 const { deployContract, provider } = waffle;
 
@@ -54,28 +54,17 @@ describe("PendleMarket", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  async function bootstrapSampleMarket(
-    amountToTokenize: BN,
-    lowLevelCall: boolean = false
-  ) {
-    if (lowLevelCall == true) {
-      await pendleMarket.bootstrap(
-        wallet.address,
-        amountToTokenize,
-        amountToTokenize,
-        consts.HIGH_GAS_OVERRIDE
-      );
-    } else {
-      await pendle.bootStrapMarket(
-        consts.FORGE_AAVE,
-        consts.MARKET_FACTORY_AAVE,
-        pendleXyt.address,
-        testToken.address,
-        amountToTokenize,
-        amountToTokenize,
-        consts.HIGH_GAS_OVERRIDE
-      );
-    }
+  async function bootstrapSampleMarket(amountToTokenize: BN) {
+    await pendle.bootStrapMarket(
+      // TODO: Rename to bootstrap when merge with Anton's new code
+      consts.FORGE_AAVE,
+      consts.MARKET_FACTORY_AAVE,
+      pendleXyt.address,
+      testToken.address,
+      amountToTokenize,
+      amountToTokenize,
+      consts.HIGH_GAS_OVERRIDE
+    );
   }
 
   it("should be able to join a bootstrapped pool with a single tokenUSDT", async () => {
@@ -507,7 +496,14 @@ describe("PendleMarket", async () => {
     ).to.be.revertedWith("Pendle: market already exists");
   });
 
-  // it.only("should be able to getMarketByUnderlyingToken", async () => {
-  // place holder only since the original function is not complete
-  // });
+  it("AMM's formula should be correct", async () => {
+    await AMMTest(
+      pendle,
+      pendleMarket,
+      tokenUSDT,
+      testToken,
+      pendleXyt,
+      bootstrapSampleMarket
+    );
+  });
 });

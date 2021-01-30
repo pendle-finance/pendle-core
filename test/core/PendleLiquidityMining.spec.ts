@@ -10,7 +10,7 @@ import {
   evm_revert,
   evm_snapshot,
   getAContract,
-  tokens
+  tokens,
 } from "../helpers";
 import { pendleMarketFixture } from "./fixtures";
 
@@ -140,9 +140,7 @@ describe("PendleLiquidityMining", async () => {
 
     await advanceTime(
       provider,
-      liquidityMiningParameters.startTime.sub(
-        consts.T0
-      )
+      liquidityMiningParameters.startTime.sub(consts.T0)
     );
     await pendleLiquidityMining
       .connect(wallet1)
