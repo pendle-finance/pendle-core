@@ -171,6 +171,12 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(spotPriceAfter <= maxPrice, "Pendle: high after spotprice");
         require(spotPriceBefore <= Math.rdiv(exactIn, exactOut), "Pendle: math problem");
 
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
         emit Swap(_msgSender, exactIn, exactOut, _msgSender);
 
         _pullToken(inToken, _msgSender, exactIn);
@@ -210,6 +216,12 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(spotPriceAfter <= maxPrice, "Pendle: high after spotprice");
         require(spotPriceBefore <= Math.rdiv(exactIn, exactOut), "Pendle: math problem");
 
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
         emit Swap(_msgSender, exactIn, exactOut, _msgSender);
 
         _pullToken(inToken, _msgSender, exactIn);
