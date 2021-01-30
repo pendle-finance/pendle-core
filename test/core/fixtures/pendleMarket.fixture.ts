@@ -19,11 +19,10 @@ interface PendleMarketFixture {
 export async function pendleMarketFixture(
   wallets: Wallet[],
   provider: providers.Web3Provider,
-  useFixedTime: boolean = false
 ): Promise<PendleMarketFixture> {
   const [wallet, wallet1] = wallets
   const core = await pendleCoreFixture(wallets, provider);
-  const forge = await pendleAaveForgeFixture(wallet, provider, core, useFixedTime);
+  const forge = await pendleAaveForgeFixture(wallet, provider, core);
   const aave = await aaveFixture(wallet);
   const { pendle, pendleAaveMarketFactory, pendleData } = core;
   const { pendleAaveForge, pendleFutureYieldToken } = forge;

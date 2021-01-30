@@ -7,7 +7,7 @@ export type Token = {
 
 type TokenMap = Record<string, Token>;
 
-export var consts = {
+export const consts = {
   DUMMY_GOVERNANCE_ADDRESS: "0xdac17f958d2ee523a2206206994597c13d831ec7",
 
   AAVE_LENDING_POOL_CORE_ADDRESS: "0x3dfd23A6c5E8BbcFc9581d2E864a68feb6a076d3",
@@ -24,7 +24,7 @@ export var consts = {
   THREE_MONTH: BN.from(2592000 * 3),
   SIX_MONTH: BN.from(2592000 * 6),
   ONE_YEAR: BN.from(31536000),
-  T0: BN.from(Math.round(Date.now() / 1000)),
+  T0: BN.from(4000000000),
   HIGH_GAS_OVERRIDE: { gasLimit: 40000000 },
   INITIAL_USDT_AMOUNT: BN.from(10 ** 5),
   INITIAL_AAVE_TOKEN_AMOUNT: BN.from(10 ** 4),
@@ -32,9 +32,9 @@ export var consts = {
   AMM_DELTA: 10,
 };
 
-export function setT0(time: BN) {
-  consts.T0 = time;
-}
+// export function setT0(time: BN) {
+//   consts.T0 = time;
+// }
 
 export const tokens: TokenMap = {
   USDT: {
