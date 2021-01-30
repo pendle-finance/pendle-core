@@ -119,6 +119,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         _pushLpToken(_msgSender, INITIAL_LP_FOR_CREATOR);
         blockNumLast = block.number; //@@XM added for curve shifting
         bootstrapped = true;
+
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
     }
 
     function spotPrice(address inToken, address outToken)
@@ -232,7 +239,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(exactIn != 0, "Pendle: zero xyt in amount");
         require(exactIn <= maxInXyt, "Pendle: high xyt in amount");
         reserves[xyt].balance = reserves[xyt].balance.add(exactIn);
-        emit Join(_msgSender, xyt, exactIn);
         _pullToken(xyt, _msgSender, exactIn);
 
         //calc and inject pair token
@@ -241,13 +247,19 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(exactIn != 0, "Pendle: zero token in amount");
         require(exactIn <= maxInPair, "Pendle: high token in amount");
         reserves[token].balance = reserves[token].balance.add(exactIn);
-        emit Join(_msgSender, token, exactIn);
         _pullToken(token, _msgSender, exactIn);
 
         //mint and push lp token
         _mintLpToken(exactOutLp);
         _pushLpToken(_msgSender, exactOutLp);
         printAcc(_msgSender);
+
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
     }
 
     function printAcc(address a) internal view {
@@ -291,7 +303,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(exactOut != 0, "Pendle: zero xyt out amount");
         require(exactOut >= minOutXyt, "Pendle: low xyt out amount");
         reserves[xyt].balance = reserves[xyt].balance.sub(exactOut);
-        emit Exit(_msgSender, xyt, exactOut);
         _pushToken(xyt, _msgSender, exactOut);
 
         //calc and withdraw pair token
@@ -300,13 +311,19 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(exactOut != 0, "Pendle: zero token out amount");
         require(exactOut >= minOutPair, "Pendle: low token out amount");
         reserves[token].balance = reserves[token].balance.sub(exactOut);
-        emit Exit(_msgSender, token, exactOut);
         _pushToken(token, _msgSender, exactOut);
 
         //let's deal with lp last
         _pullLpToken(_msgSender, exactInLp);
         _pushLpToken(factory, exitFees);
         _burnLpToken(inLpAfterExitFee);
+
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
     }
 
     function joinPoolSingleToken(
@@ -333,11 +350,16 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         //update reserves and operate underlying lp and intoken
         inTokenReserve.balance = inTokenReserve.balance.add(exactIn);
 
-        emit Join(_msgSender, inToken, exactIn);
-
         _mintLpToken(exactOutLp);
         _pushLpToken(_msgSender, exactOutLp);
         _pullToken(inToken, _msgSender, exactIn);
+
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
 
         return exactOutLp;
     }
@@ -368,12 +390,17 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         uint256 exitFees = Math.rmul(exactInLp, data.exitFee());
 
-        emit Exit(_msgSender, outToken, exactOutToken);
-
         _pullLpToken(_msgSender, exactInLp);
         _burnLpToken(exactInLp.sub(exitFees));
         _pushLpToken(factory, exitFee);
         _pushToken(outToken, _msgSender, exactOutToken);
+
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
 
         return exactOutToken;
     }
