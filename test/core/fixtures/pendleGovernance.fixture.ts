@@ -13,17 +13,17 @@ interface GovernanceFixture {
 }
 
 export async function governanceFixture(
-  [wallet]: Wallet[],
+  [alice]: Wallet[],
   provider: providers.Web3Provider
 ): Promise<GovernanceFixture> {
   // deploy PDL, sending the total supply to the deployer.
-  const pdl = await deployContract(wallet, Bmk, [wallet.address, tokens.WETH.address])
+  const pdl = await deployContract(alice, Bmk, [alice.address, tokens.WETH.address])
 
   // deploy timelock, controlled by what will be the governor
-  const timelock = await deployContract(wallet, Timelock, [])
+  const timelock = await deployContract(alice, Timelock, [])
 
   // deploy pdlGovernor
-  const pdlGovernor = await deployContract(wallet, PendleGovernance, [pdl.address, timelock.address, wallet.address])
+  const pdlGovernor = await deployContract(alice, PendleGovernance, [pdl.address, timelock.address, alice.address])
 
   return { pdl, timelock, pdlGovernor }
 }

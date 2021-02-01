@@ -20,22 +20,22 @@ export async function pendleMarketFixture(
   wallets: Wallet[],
   provider: providers.Web3Provider,
 ): Promise<PendleMarketFixture> {
-  const [wallet, wallet1] = wallets
+  const [alice, bob] = wallets
   const core = await pendleCoreFixture(wallets, provider);
-  const forge = await pendleAaveForgeFixture(wallet, provider, core);
-  const aave = await aaveFixture(wallet);
+  const forge = await pendleAaveForgeFixture(alice, provider, core);
+  const aave = await aaveFixture(alice);
   const { pendle, pendleAaveMarketFactory, pendleData } = core;
   const { pendleAaveForge, pendleFutureYieldToken } = forge;
   const token = tokens.USDT
 
   const amount = amountToWei(token, consts.INITIAL_OT_XYT_AMOUNT);
 
-  await mintOtAndXyt(provider, token, wallet, amount, pendle, pendleAaveForge);
-  await mintOtAndXyt(provider, token, wallet1, amount, pendle, pendleAaveForge);
+  await mintOtAndXyt(provider, token, alice, amount, pendle, pendleAaveForge);
+  await mintOtAndXyt(provider, token, bob, amount, pendle, pendleAaveForge);
 
-  const testToken = await deployContract(wallet, TestToken, ['Test Token', 'TEST', 6]);
+  const testToken = await deployContract(alice, TestToken, ['Test Token', 'TEST', 6]);
   const totalSupply = await testToken.totalSupply();
-  await testToken.transfer(wallet1.address, totalSupply.div(2))
+  await testToken.transfer(bob.address, totalSupply.div(2))
 
   await pendle.addMarketFactory(consts.FORGE_AAVE, consts.MARKET_FACTORY_AAVE, pendleAaveMarketFactory.address);
 
@@ -53,12 +53,12 @@ export async function pendleMarketFixture(
     testToken.address
   );
 
-  const pendleMarket = new Contract(pendleMarketAddress, PendleMarket.abi, wallet)
+  const pendleMarket = new Contract(pendleMarketAddress, PendleMarket.abi, alice)
   await testToken.approve(pendleMarketAddress, totalSupply);
-  await testToken.connect(wallet1).approve(pendleMarketAddress, totalSupply);
+  await testToken.connect(bob).approve(pendleMarketAddress, totalSupply);
 
   await pendleFutureYieldToken.approve(pendleMarketAddress, consts.MAX_ALLOWANCE);
-  await pendleFutureYieldToken.connect(wallet1).approve(pendleMarketAddress, consts.MAX_ALLOWANCE);
+  await pendleFutureYieldToken.connect(bob).approve(pendleMarketAddress, consts.MAX_ALLOWANCE);
 
   return { core, aave, forge, testToken, pendleMarket }
 }

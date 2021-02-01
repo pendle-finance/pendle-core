@@ -20,7 +20,7 @@ const provider = waffle.provider;
 describe("Pendle", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
-  const [wallet, wallet1, walletX, walletY] = wallets;
+  const [wallet, bob, charlie, dave] = wallets;
 
   let pendle: Contract;
   let pendleTreasury: Contract;
@@ -99,7 +99,7 @@ describe("Pendle", async () => {
 
   it("[After 1 month] should be able to redeem aUSDT to get back OT, XYT and interests $", async () => {
     await tokenizeYieldSample(amountToTokenize);
-    await startCalInterest(walletX, amountToTokenize);
+    await startCalInterest(charlie, amountToTokenize);
 
     await setTimeNextBlock(provider, consts.T0.add(consts.ONE_MONTH));
 
@@ -114,7 +114,7 @@ describe("Pendle", async () => {
 
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
 
-    const expectedGain = await getCurInterest(walletX, amountToTokenize);
+    const expectedGain = await getCurInterest(charlie, amountToTokenize);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.add(expectedGain).toNumber(),
       1000
@@ -123,10 +123,10 @@ describe("Pendle", async () => {
 
   it("[After 1 month] should be able to get due interests", async () => {
     await tokenizeYieldSample(amountToTokenize);
-    await startCalInterest(walletX, amountToTokenize);
+    await startCalInterest(charlie, amountToTokenize);
 
     const balance = await pendleOt.balanceOf(wallet.address);
-    await pendleOt.transfer(wallet1.address, balance);
+    await pendleOt.transfer(bob.address, balance);
 
     const afterLendingAUSDTbalance = await aUSDT.balanceOf(wallet.address);
 
@@ -138,7 +138,7 @@ describe("Pendle", async () => {
       consts.T0.add(consts.SIX_MONTH)
     );
 
-    const expectedGain = await getCurInterest(walletX, amountToTokenize);
+    const expectedGain = await getCurInterest(charlie, amountToTokenize);
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
 
     expect(finalAUSDTbalance).to.be.below(initialAUSDTbalance);
@@ -149,24 +149,24 @@ describe("Pendle", async () => {
   });
 
   it("Another wallet should be able to receive interests from XYT", async () => {
-    await startCalInterest(walletX, amountToTokenize);
+    await startCalInterest(charlie, amountToTokenize);
 
     await tokenizeYieldSample(amountToTokenize);
-    await pendleXyt.transfer(wallet1.address, amountToTokenize);
+    await pendleXyt.transfer(bob.address, amountToTokenize);
 
     const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
     await pendle
-      .connect(wallet1)
+      .connect(bob)
       .redeemDueInterests(
         consts.FORGE_AAVE,
         tokenUSDT.address,
         consts.T0.add(consts.SIX_MONTH)
       );
 
-    const actualGain = await aUSDT.balanceOf(wallet1.address);
-    const expectedGain = await getCurInterest(walletX, amountToTokenize);
+    const actualGain = await aUSDT.balanceOf(bob.address);
+    const expectedGain = await getCurInterest(charlie, amountToTokenize);
 
     console.log(actualGain.sub(expectedGain).toString());
     expect(actualGain.toNumber()).to.be.approximately(
@@ -176,23 +176,23 @@ describe("Pendle", async () => {
   });
 
   it("Short after expiry, should be able to redeem aUSDT from OT", async () => {
-    await startCalInterest(walletX, amountToTokenize);
+    await startCalInterest(charlie, amountToTokenize);
 
     await tokenizeYieldSample(amountToTokenize);
-    await pendleXyt.transfer(wallet1.address, amountToTokenize);
+    await pendleXyt.transfer(bob.address, amountToTokenize);
 
     const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
     await pendle
-      .connect(wallet1)
+      .connect(bob)
       .redeemDueInterests(
         consts.FORGE_AAVE,
         tokenUSDT.address,
         consts.T0.add(consts.SIX_MONTH)
       );
 
-    await startCalInterest(walletY, amountToTokenize);
+    await startCalInterest(dave, amountToTokenize);
 
     const T2 = T1.add(10);
     await setTimeNextBlock(provider, T2);
@@ -204,7 +204,7 @@ describe("Pendle", async () => {
       wallet.address
     );
 
-    const expectedGain = await getCurInterest(walletY, amountToTokenize);
+    const expectedGain = await getCurInterest(dave, amountToTokenize);
 
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     console.log(
@@ -218,23 +218,23 @@ describe("Pendle", async () => {
   });
 
   it("One month after expiry, should be able to redeem aUSDT with intrest", async () => {
-    await startCalInterest(walletX, amountToTokenize);
+    await startCalInterest(charlie, amountToTokenize);
 
     await tokenizeYieldSample(amountToTokenize);
-    await pendleXyt.transfer(wallet1.address, amountToTokenize);
+    await pendleXyt.transfer(bob.address, amountToTokenize);
 
     const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
     await pendle
-      .connect(wallet1)
+      .connect(bob)
       .redeemDueInterests(
         consts.FORGE_AAVE,
         tokenUSDT.address,
         consts.T0.add(consts.SIX_MONTH)
       );
 
-    await startCalInterest(walletY, amountToTokenize);
+    await startCalInterest(dave, amountToTokenize);
 
     const T2 = T1.add(consts.ONE_MONTH);
     await setTimeNextBlock(provider, T2);
@@ -246,7 +246,7 @@ describe("Pendle", async () => {
       wallet.address
     );
 
-    const expectedGain = await getCurInterest(walletY, amountToTokenize);
+    const expectedGain = await getCurInterest(dave, amountToTokenize);
 
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     console.log(

@@ -7,8 +7,8 @@ const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
 describe("Date", () => {
-  const [wallet] = provider.getWallets();
-  const loadFixture = createFixtureLoader([wallet], provider);
+  const [alice] = provider.getWallets();
+  const loadFixture = createFixtureLoader([alice], provider);
 
   let dateContract: Contract;
   beforeEach(async () => {

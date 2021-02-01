@@ -9,9 +9,9 @@ export interface AaveFixture {
   lendingPool: Contract
 }
 
-export async function aaveFixture(wallet: Wallet): Promise<AaveFixture> {
-  const lendingPoolCore = new Contract(consts.AAVE_LENDING_POOL_CORE_ADDRESS, LendingPoolCore.abi, wallet);
-  const lendingPool = new Contract(consts.AAVE_LENDING_POOL_ADDRESS, LendingPool.abi, wallet);
+export async function aaveFixture(alice: Wallet): Promise<AaveFixture> {
+  const lendingPoolCore = new Contract(consts.AAVE_LENDING_POOL_CORE_ADDRESS, LendingPoolCore.abi, alice);
+  const lendingPool = new Contract(consts.AAVE_LENDING_POOL_ADDRESS, LendingPool.abi, alice);
   return {
     lendingPoolCore,
     lendingPool

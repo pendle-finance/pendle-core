@@ -34,30 +34,30 @@ export async function evm_revert(snapshotId: string) {
 export async function mintOtAndXyt(
   provider: providers.Web3Provider,
   token: Token,
-  wallet: Wallet,
+  alice: Wallet,
   amount: BN,
   pendle: Contract,
   pendleAaveForge: Contract
 ) {
-  await mint(provider, token, wallet, amount);
-  await convertToAaveToken(token, wallet, amount);
-  const { lendingPoolCore } = await aaveFixture(wallet);
+  await mint(provider, token, alice, amount);
+  await convertToAaveToken(token, alice, amount);
+  const { lendingPoolCore } = await aaveFixture(alice);
 
-  const aContract = await getAContract(wallet, lendingPoolCore, token);
+  const aContract = await getAContract(alice, lendingPoolCore, token);
   await aContract.approve(pendleAaveForge.address, consts.MAX_ALLOWANCE);
   await pendle.tokenizeYield(
     consts.FORGE_AAVE,
     token.address,
     consts.T0.add(consts.SIX_MONTH),
     amount,
-    wallet.address
+    alice.address
   );
 }
 
 export async function mint(
   provider: providers.Web3Provider,
   token: Token,
-  wallet: Wallet,
+  alice: Wallet,
   amount: BN
 ) {
   await impersonateAccount(token.owner!);
@@ -66,18 +66,18 @@ export async function mint(
   const contractToken = new Contract(token.address, TetherToken.abi, signer);
   const tokenAmount = amountToWei(token, amount);
   await contractToken.issue(tokenAmount);
-  await contractToken.transfer(wallet.address, tokenAmount);
+  await contractToken.transfer(alice.address, tokenAmount);
 }
 
 export async function convertToAaveToken(
   token: Token,
-  wallet: Wallet,
+  alice: Wallet,
   amount: BN
 ) {
-  const { lendingPool, lendingPoolCore } = await aaveFixture(wallet);
+  const { lendingPool, lendingPoolCore } = await aaveFixture(alice);
   const tokenAmount = amountToWei(token, amount);
 
-  const erc20 = new Contract(token.address, ERC20.abi, wallet);
+  const erc20 = new Contract(token.address, ERC20.abi, alice);
   await erc20.approve(lendingPoolCore.address, tokenAmount);
 
   await lendingPool.deposit(token.address, tokenAmount, 0);
@@ -86,11 +86,11 @@ export async function convertToAaveToken(
 export async function mintAaveToken(
   provider: providers.Web3Provider,
   token: Token,
-  wallet: Wallet,
+  alice: Wallet,
   amount: BN
 ) {
-  await mint(provider, token, wallet, amount);
-  await convertToAaveToken(token, wallet, amount);
+  await mint(provider, token, alice, amount);
+  await convertToAaveToken(token, alice, amount);
 }
 
 export async function transferToken(
@@ -103,21 +103,21 @@ export async function transferToken(
   await erc20.transfer(to, amount);
 }
 export async function getAContract(
-  wallet: Wallet,
+  alice: Wallet,
   lendingPoolCore: Contract,
   token: Token
 ): Promise<Contract> {
   const aTokenAddress = await lendingPoolCore.getReserveATokenAddress(
     token.address
   );
-  return new Contract(aTokenAddress, ERC20.abi, wallet);
+  return new Contract(aTokenAddress, ERC20.abi, alice);
 }
 
 export async function getERC20Contract(
-  wallet: Wallet,
+  alice: Wallet,
   token: Token
 ): Promise<Contract> {
-  return new Contract(token.address, AToken.abi, wallet);
+  return new Contract(token.address, AToken.abi, alice);
 }
 
 export function amountToWei({ decimal }: Token, amount: BN) {
@@ -145,10 +145,10 @@ export async function setTime(provider: providers.Web3Provider, time: BN) {
 }
 
 export async function getLiquidityRate(
-  wallet: Wallet,
+  alice: Wallet,
   token: Token
 ): Promise<BN> {
-  const { lendingPool } = await aaveFixture(wallet);
+  const { lendingPool } = await aaveFixture(alice);
   const { liquidityRate } = await lendingPool.getReserveData(token.address);
   return liquidityRate;
 }
