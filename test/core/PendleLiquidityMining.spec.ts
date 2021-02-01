@@ -100,6 +100,8 @@ describe("PendleLiquidityMining", async () => {
       pendleLiquidityMining.address,
       constants.MAX_ALLOWANCE
     );
+    await pendleLiquidityMining.setAllocationSetting([constants.SIX_MONTH_FROM_NOW],[BigNumber.from(1000000000)], constants.HIGH_GAS_OVERRIDE);
+
     await pendleMarket
       .connect(wallet1)
       .approve(pendleLiquidityMining.address, constants.MAX_ALLOWANCE);
@@ -212,7 +214,6 @@ describe("PendleLiquidityMining", async () => {
 
     // console.log(`abi = ${PendleLiquidityMining.abi}`);
     // console.log(pendleLiquidityMining);
-    await pendleLiquidityMining.calculateEpochData(BigNumber.from(2)); // Although its already epoch 4, we still need to call this transaction
 
     const pendleLiquidityMiningWeb3 = new hre.web3.eth.Contract(
       PendleLiquidityMining.abi,
@@ -225,7 +226,7 @@ describe("PendleLiquidityMining", async () => {
       .claimLpInterests()
       .call({ from: wallet.address });
     console.log(`\tInterests for wallet = ${interestsData}`);
-    console.log(`\tRewards available for epoches from now: ${rewardsData}`);
+    console.log(`\tRewards available for epochs from now: ${rewardsData}`);
 
     await pendleLiquidityMining
       .connect(wallet1)
