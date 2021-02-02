@@ -100,7 +100,11 @@ describe("PendleLiquidityMining", async () => {
       pendleLiquidityMining.address,
       constants.MAX_ALLOWANCE
     );
-    await pendleLiquidityMining.setAllocationSetting([constants.SIX_MONTH_FROM_NOW],[BigNumber.from(1000000000)], constants.HIGH_GAS_OVERRIDE);
+    await pendleLiquidityMining.setAllocationSetting(
+      [constants.SIX_MONTH_FROM_NOW],
+      [BigNumber.from(1000000000)],
+      constants.HIGH_GAS_OVERRIDE
+    );
 
     await pendleMarket
       .connect(wallet1)
