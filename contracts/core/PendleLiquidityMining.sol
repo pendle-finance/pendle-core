@@ -208,11 +208,6 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         address marketAddress = pendleData.getMarket(forgeId, marketFactoryId, xyt, baseToken);
         require(xyt != address(0), "Pendle: xyt not found");
         require(marketAddress != address(0), "Pendle: market not found");
-        // get the LPs
-        _pullLpToken(marketAddress, expiry, amount); // Long: move it up here for the next PR
-
-        balances[msg.sender][expiry] = balances[msg.sender][expiry].add(amount);
-        currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].add(amount);
 
         if (!hasExpiry[expiry]) {
             newLpHoldingContract = _addNewExpiry(expiry, xyt, marketAddress);
@@ -222,6 +217,11 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
             userExpiries[msg.sender].expiries.push(expiry);
             userExpiries[msg.sender].hasExpiry[expiry] = true;
         }
+        // get the LPs
+        _pullLpToken(marketAddress, expiry, amount); // Long: move it up here for the next PR
+
+        balances[msg.sender][expiry] = balances[msg.sender][expiry].add(amount);
+        currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].add(amount);
     }
 
     function withdraw(uint256 expiry, uint256 amount) public override nonReentrant isFunded {
@@ -509,6 +509,10 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         uint256 interestsEarned =
             currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance[expiry];
         lastUnderlyingYieldTokenBalance[expiry] = currentUnderlyingYieldTokenBalance;
+
+        if (interestsEarned == 0 || currentTotalStakeForExpiry[expiry] == 0) {
+            return;
+        }
 
         globalIncomeIndexForExpiry[expiry] = globalIncomeIndexForExpiry[expiry].add(
             interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(
