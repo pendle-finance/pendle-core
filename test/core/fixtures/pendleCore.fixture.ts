@@ -1,9 +1,9 @@
-import { Contract, Wallet, providers } from 'ethers'
+import { Contract, providers, Wallet } from 'ethers'
 import Pendle from '../../../build/artifacts/contracts/core/Pendle.sol/Pendle.json'
-import PendleTreasury from '../../../build/artifacts/contracts/core/PendleTreasury.sol/PendleTreasury.json'
 import PendleAaveMarketFactory from "../../../build/artifacts/contracts/core/PendleAaveMarketFactory.sol/PendleAaveMarketFactory.json"
 import PendleData from "../../../build/artifacts/contracts/core/PendleData.sol/PendleData.json"
-import { constants, tokens } from "../../helpers/Constants"
+import PendleTreasury from '../../../build/artifacts/contracts/core/PendleTreasury.sol/PendleTreasury.json'
+import { consts, tokens } from "../../helpers"
 
 
 const { waffle } = require("hardhat");
@@ -17,13 +17,13 @@ export interface PendleCoreFixture {
 }
 
 export async function pendleCoreFixture(
-  [wallet]: Wallet[],
+  [alice]: Wallet[],
   provider: providers.Web3Provider
 ): Promise<PendleCoreFixture> {
-  const pendle = await deployContract(wallet, Pendle, [wallet.address, tokens.WETH.address]);
-  const pendleTreasury = await deployContract(wallet, PendleTreasury, [wallet.address]);
-  const pendleAaveMarketFactory = await deployContract(wallet, PendleAaveMarketFactory, [wallet.address, constants.MARKET_FACTORY_AAVE]);
-  const pendleData = await deployContract(wallet, PendleData, [wallet.address]);
+  const pendle = await deployContract(alice, Pendle, [alice.address, tokens.WETH.address]);
+  const pendleTreasury = await deployContract(alice, PendleTreasury, [alice.address]);
+  const pendleAaveMarketFactory = await deployContract(alice, PendleAaveMarketFactory, [alice.address, consts.MARKET_FACTORY_AAVE]);
+  const pendleData = await deployContract(alice, PendleData, [alice.address]);
 
   await pendleAaveMarketFactory.initialize(pendle.address);
   await pendleData.initialize(pendle.address);
