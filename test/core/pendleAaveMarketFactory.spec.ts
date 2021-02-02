@@ -1,9 +1,8 @@
-import { expect, assert } from "chai";
-import { Contract } from "ethers";
+import { expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
-
-import { pendleCoreFixture } from "./fixtures";
+import { Contract } from "ethers";
 import { evm_revert, evm_snapshot } from "../helpers";
+import { pendleCoreFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;

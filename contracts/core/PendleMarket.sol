@@ -546,7 +546,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 currentTime = block.timestamp;
         uint256 endTime = IPendleYieldToken(xyt).expiry();
         uint256 startTime = IPendleYieldToken(xyt).start();
-        //uint256 duration = 6 * 3600 * 24 * 30;
         uint256 duration = endTime - startTime;
 
         TokenReserve storage xytReserve = reserves[xyt];
@@ -554,9 +553,10 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         uint256 xytWeight = xytReserve.weight;
         uint256 tokenWeight = tokenReserve.weight;
+        console.log("\tstartTime,", startTime);
         console.log("\tendTime,", endTime);
-        console.log("\tcurrentTime,", currentTime);
         console.log("\tduration,", duration);
+        console.log("\tcurrentTime,", currentTime);
         console.log("\tWeights before shifting,", xytWeight, tokenWeight);
 
         require((endTime - currentTime) <= duration, "Pendle: wrong duration");
