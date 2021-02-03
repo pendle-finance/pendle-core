@@ -237,7 +237,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     }
 
     function claimRewards() public override nonReentrant returns (uint256[] memory rewards) {
-        uint256 _epoch = _currentEpoch();
+        uint256 _epoch = _currentEpoch(); //!!! what if currentEpoch > final epoch?
         require(_epoch > 0, "Pendle: not started");
 
         rewards = new uint256[](vestingEpochs);

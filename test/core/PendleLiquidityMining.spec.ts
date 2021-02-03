@@ -2,17 +2,15 @@ import { expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract } from "ethers";
 import PendleLiquidityMining from "../../build/artifacts/contracts/core/PendleLiquidityMining.sol/PendleLiquidityMining.json";
-import PDL from "../../build/artifacts/contracts/tokens/PDL.sol/PDL.json";
 import {
   advanceTime,
-  amountToWei,
   consts,
   evm_revert,
   evm_snapshot,
   getAContract,
-  tokens
+  tokens,
 } from "../helpers";
-import { pendleMarketFixture } from "./fixtures";
+import { liqParams, pendleLiquidityMiningFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const hre = require("hardhat");
@@ -22,96 +20,23 @@ describe("PendleLiquidityMining", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;
-  let pendle: Contract;
-  let pendleTreasury: Contract;
-  let pendleAaveMarketFactory: Contract;
-  let pendleData: Contract;
-  let pendleOt: Contract;
-  let pendleXyt: Contract;
   let lendingPoolCore: Contract;
-  let pendleAaveForge: Contract;
-  let pendleMarket: Contract;
   let pendleLiquidityMining: Contract;
   let pdl: Contract;
-  let testToken: Contract;
   let aUSDT: Contract;
+  let params: liqParams;
   let snapshotId: string;
   let globalSnapshotId: string;
-  let liqParams = {
-    startTime: consts.T0.add(1000), // starts in 1000s
-    epochDuration: BN.from(3600 * 24 * 10), //10 days
-    rewardsPerEpoch: BN.from("10000000000"), // 1e10
-    numberOfEpochs: BN.from(20),
-    vestingEpochs: BN.from(4),
-  };
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
-    const fixture = await loadFixture(pendleMarketFixture);
-    pendle = fixture.core.pendle;
-    pendleTreasury = fixture.core.pendleTreasury;
-    pendleAaveMarketFactory = fixture.core.pendleAaveMarketFactory;
-    pendleData = fixture.core.pendleData;
-    pendleOt = fixture.forge.pendleOwnershipToken;
-    pendleXyt = fixture.forge.pendleFutureYieldToken;
-    pendleAaveForge = fixture.forge.pendleAaveForge;
+    const fixture = await loadFixture(pendleLiquidityMiningFixture);
     lendingPoolCore = fixture.aave.lendingPoolCore;
-    testToken = fixture.testToken;
-    pendleMarket = fixture.pendleMarket;
+    pendleLiquidityMining = fixture.pendleLiquidityMining;
+    params = fixture.params;
     aUSDT = await getAContract(alice, lendingPoolCore, tokens.USDT);
-
-    const amountToTokenize = amountToWei(tokens.USDT, BN.from(100));
-
-    // TODO: make a fixture for PendleLiquidityMining, and set up a few (maybe 2) markets with different expiries
-    // to participate in liquidity mining.
-    await pendle.bootStrapMarket(
-      consts.FORGE_AAVE,
-      consts.MARKET_FACTORY_AAVE,
-      pendleXyt.address,
-      testToken.address,
-      amountToTokenize,
-      amountToTokenize,
-      consts.HIGH_GAS_OVERRIDE
-    );
-
-    pdl = await deployContract(alice, PDL, [alice.address]);
-
-    pendleLiquidityMining = await deployContract(
-      alice,
-      PendleLiquidityMining,
-      [
-        alice.address,
-        pdl.address,
-        pendleAaveMarketFactory.address,
-        tokens.USDT.address,
-        testToken.address,
-        liqParams.startTime,
-        liqParams.epochDuration,
-        liqParams.rewardsPerEpoch,
-        liqParams.numberOfEpochs,
-        liqParams.vestingEpochs,
-      ]
-    );
-    console.log("deployed liquidity mining contract");
-
-    await pdl.approve(pendleLiquidityMining.address, consts.MAX_ALLOWANCE);
-    await pendleMarket.approve(
-      pendleLiquidityMining.address,
-      consts.MAX_ALLOWANCE
-    );
-    await pendleLiquidityMining.setAllocationSetting(
-      [consts.T0.add(consts.SIX_MONTH)],
-      [BN.from(1000000000)],
-      consts.HIGH_GAS_OVERRIDE
-    );
-
-    await pendleMarket
-      .connect(bob)
-      .approve(pendleLiquidityMining.address, consts.MAX_ALLOWANCE);
-    // alice has some LP now
-    await pendleLiquidityMining.fund();
-
+    pdl = fixture.pdl;
     snapshotId = await evm_snapshot();
   });
 
@@ -125,11 +50,10 @@ describe("PendleLiquidityMining", async () => {
   });
 
   it("can stake and withdraw", async () => {
-    const FIFTEEN_DAYS = BN.from(3600 * 24 * 15);
+    const FIFTEEN_DAYS = consts.ONE_DAY.mul(15);
 
-    const amountToStake = BN.from("100000000000000000"); //1e17 LP = 0.1 LP
+    const amountToStake = params.INITIAL_LP_AMOUNT; //1e17 LP = 0.1 LP
 
-    await pendleMarket.transfer(bob.address, amountToStake);
     const pdlBalanceOfContract = await pdl.balanceOf(
       pendleLiquidityMining.address
     );
@@ -141,10 +65,7 @@ describe("PendleLiquidityMining", async () => {
     console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
     console.log(`\tLP balance of user before: ${pdlBalanceOfUser}`);
 
-    await advanceTime(
-      provider,
-      liqParams.startTime.sub(consts.T0)
-    );
+    await advanceTime(provider, params.START_TIME.sub(consts.T0));
     await pendleLiquidityMining
       .connect(bob)
       .stake(
@@ -180,9 +101,7 @@ describe("PendleLiquidityMining", async () => {
       pendleLiquidityMining.address
     );
     const pdlBalanceOfUserAfter = await pdl.balanceOf(bob.address);
-    const expectedPdlBalanceOfUserAfter = liqParams.rewardsPerEpoch.div(
-      BN.from(4)
-    );
+    const expectedPdlBalanceOfUserAfter = params.REWARDS_PER_EPOCH.div(4);
     console.log(
       `\tPDL balance of PendleLiquidityMining contract after: ${pdlBalanceOfContractAfter}`
     );
@@ -236,7 +155,7 @@ describe("PendleLiquidityMining", async () => {
       );
     const pdlBalanceOfUserAfter2ndTnx = await pdl.balanceOf(bob.address);
     const expectedPdlBalanceOfUsersAfter2ndTnx = expectedPdlBalanceOfUserAfter.add(
-      liqParams.rewardsPerEpoch
+      params.REWARDS_PER_EPOCH
     );
     console.log(
       `\tPDL balance of user after 2nd withdraw: ${pdlBalanceOfUserAfter2ndTnx}`
