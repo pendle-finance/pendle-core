@@ -1,9 +1,8 @@
-import { expect, assert } from "chai";
-import { Contract } from "ethers";
+import { assert, expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
-
-import { pendleMarketFixture } from "./fixtures";
-import { constants, evm_revert, evm_snapshot, tokens, Token } from "../helpers";
+import { Contract } from "ethers";
+import { consts, evm_revert, evm_snapshot, tokens, Token } from "../helpers";
+import { pendleRouterFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
@@ -13,7 +12,7 @@ describe("PendleData", async () => {
   const loadFixture = createFixtureLoader(wallets, provider);
 
   let pendleRouter: Contract;
-  let pendleAaveMarketFactory: Contract;
+  let pendleMarketFactory: Contract;
   let pendleData: Contract;
   let pendleTreasury: Contract;
   let pendleXyt: Contract;
@@ -24,12 +23,12 @@ describe("PendleData", async () => {
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
-    const fixture = await loadFixture(pendleMarketFixture);
-    pendleRouter = fixture.router.pendleRouter;
-    pendleTreasury = fixture.router.pendleTreasury;
-    pendleData = fixture.router.pendleData;
-    pendleAaveMarketFactory = fixture.router.pendleAaveMarketFactory;
-    pendleXyt = fixture.forge.pendleFutureYieldToken;
+    const fixture = await loadFixture(pendleRouterFixture);
+    pendleRouter = fixture.pendleRouter;
+    pendleTreasury = fixture.pendleTreasury;
+    pendleData = fixture.pendleData;
+    pendleMarketFactory = fixture.pendleMarketFactory;
+    pendleXyt = fixture.pendleXyt;
     tokenUSDT = tokens.USDT;
     snapshotId = await evm_snapshot();
   });
@@ -57,16 +56,16 @@ describe("PendleData", async () => {
   });
 
   it("getAllMarkets", async () => {
-    let filter = pendleAaveMarketFactory.filters.MarketCreated();
+    let filter = pendleMarketFactory.filters.MarketCreated();
     let tx = await pendleRouter.createMarket(
-      constants.FORGE_AAVE,
-      constants.MARKET_FACTORY_AAVE,
+      consts.FORGE_AAVE,
+      consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
       tokenUSDT.address,
-      constants.THREE_MONTH_FROM_NOW,
-      constants.HIGH_GAS_OVERRIDE
+      consts.THREE_MONTH,
+      consts.HIGH_GAS_OVERRIDE
     );
-    let allEvents = await pendleAaveMarketFactory.queryFilter(
+    let allEvents = await pendleMarketFactory.queryFilter(
       filter,
       tx.blockHash
     );

@@ -36,8 +36,13 @@ interface IPendleForge {
      * @dev Emitted when the Forge has minted the OT and XYT tokens.
      * @param underlyingYieldToken The address of the underlying yield token.
      * @param amount The amount to be minted.
+     * @param expiry The expiry of the XYT token
      **/
-    event MintYieldToken(address indexed underlyingYieldToken, uint256 amount);
+    event MintYieldToken(
+        address indexed underlyingYieldToken,
+        uint256 amount,
+        uint256 indexed expiry
+    );
 
     /**
      * @dev Emitted when the Forge has created new yield token contracts.
@@ -45,14 +50,33 @@ interface IPendleForge {
      * @param xyt The address of the new future yield token.
      * @param expiry The date in epoch time when the contract will expire.
      **/
-    event NewYieldContracts(address indexed ot, address indexed xyt, uint256 expiry);
+    event NewYieldContracts(address indexed ot, address indexed xyt, uint256 indexed expiry);
 
     /**
      * @dev Emitted when the Forge has redeemed the OT and XYT tokens.
      * @param underlyingYieldToken The address of the underlying yield token.
      * @param amount The amount to be redeemed.
+     * @param expiry The expiry of the XYT token
      **/
-    event RedeemYieldToken(address indexed underlyingYieldToken, uint256 amount);
+    event RedeemYieldToken(
+        address indexed underlyingYieldToken,
+        uint256 amount,
+        uint256 indexed expiry
+    );
+
+    /**
+     * @dev Emitted when interest claim is settled
+     * @param underlyingYieldToken The address of the underlying yield token.
+     * @param receiver Interest receiver Address
+     * @param amount The amount of interest claimed
+     * @param expiry The expiry of the XYT token
+     **/
+    event DueInterestSettled(
+        address indexed underlyingYieldToken,
+        address indexed receiver,
+        uint256 amount,
+        uint256 indexed expiry
+    );
 
     function newYieldContracts(address underlyingAsset, uint256 expiry)
         external

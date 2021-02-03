@@ -43,22 +43,21 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     address public immutable override token;
     address public immutable override xyt;
     uint256 public constant MIN_LIQUIDITY = 10**3;
-    string private constant NAME = "Pendle Market";
-    string private constant SYMBOL = "PENDLE-LPT";
-    uint256 private constant INITIAL_LP_FOR_CREATOR = 10**18; // arbitrary number
-    uint8 private constant DECIMALS = 18;
-    address public creator;
-    bool public bootstrapped;
-    uint256 private priceLast = Math.FORMULA_PRECISION;
-    uint256 private blockNumLast;
     uint256 public lastUnderlyingYieldTokenBalance;
     uint256 public globalIncomeIndex;
+    bool public bootstrapped;
+    string private constant NAME = "Pendle Market";
+    string private constant SYMBOL = "PENDLE-LPT";
+    uint256 private constant INITIAL_LP = 10**18; // arbitrary number
+    uint8 private constant DECIMALS = 18;
+    uint256 private priceLast = Math.FORMULA_PRECISION;
+    uint256 private blockNumLast;
+    
     uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**8;
     mapping(address => uint256) public lastGlobalIncomeIndex;
     mapping(address => TokenReserve) private reserves;
 
     constructor(
-        address _creator,
         address _forge,
         address _xyt,
         address _token,
@@ -72,7 +71,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         forge = _forge;
         xyt = _xyt;
         token = _token;
-        creator = _creator;
         bootstrapped = false;
         globalIncomeIndex = 1;
     }
@@ -102,13 +100,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         reserves[token].balance = initialTokenLiquidity;
         reserves[token].weight = Math.FORMULA_PRECISION / 2;
 
-        _mintLp(INITIAL_LP_FOR_CREATOR);
-        _transferOutLp(INITIAL_LP_FOR_CREATOR);
+        _mintLp(INITIAL_LP);
+        _transferOutLp(INITIAL_LP);
 
         blockNumLast = block.number;
         bootstrapped = true;
 
-        return INITIAL_LP_FOR_CREATOR;
+        return INITIAL_LP;
     }
 
     /**
@@ -119,7 +117,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 inLp,
         uint256 minOutXyt,
         uint256 minOutToken
-    ) external override onlyRouter returns (uint256 xytOut, uint256 tokenOut) {
+    ) external override isBootstrapped onlyRouter returns (uint256 xytOut, uint256 tokenOut) {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
         uint256 exitFee = data.exitFee();
@@ -159,7 +157,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address outToken,
         uint256 inLp,
         uint256 minOutAmountToken
-    ) external override onlyRouter returns (uint256 outAmountToken) {
+    ) external override isBootstrapped onlyRouter returns (uint256 outAmountToken) {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
         TokenReserve storage outTokenReserve = reserves[outToken];
@@ -192,7 +190,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 exactOutLp,
         uint256 maxInXyt,
         uint256 maxInToken
-    ) external override onlyRouter {
+    ) external override isBootstrapped onlyRouter {
         uint256 totalLp = totalSupply;
         uint256 ratio = Math.rdiv(exactOutLp, totalLp);
         require(ratio != 0, "Pendle: zero ratio");
@@ -224,7 +222,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address inToken,
         uint256 exactIn,
         uint256 minOutLp
-    ) external override onlyRouter returns (uint256 exactOutLp) {
+    ) external override isBootstrapped onlyRouter returns (uint256 exactOutLp) {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
         TokenReserve storage inTokenReserve = reserves[inToken];
@@ -250,6 +248,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         _mintLp(exactOutLp);
         _transferOutLp(exactOutLp);
 
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
+
         return exactOutLp;
     }
 
@@ -259,7 +264,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address outToken,
         uint256 minOutAmount,
         uint256 maxPrice
-    ) external override onlyRouter returns (uint256 outAmount, uint256 spotPriceAfter) {
+    ) external override isBootstrapped onlyRouter returns (uint256 outAmount, uint256 spotPriceAfter) {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
 
@@ -297,7 +302,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address outToken,
         uint256 outAmount,
         uint256 maxPrice
-    ) external override onlyRouter returns (uint256 inAmount, uint256 spotPriceAfter) {
+    ) external override isBootstrapped onlyRouter returns (uint256 inAmount, uint256 spotPriceAfter) {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
 
@@ -495,7 +500,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 currentTime = block.timestamp;
         uint256 endTime = IPendleYieldToken(xyt).expiry();
         uint256 startTime = IPendleYieldToken(xyt).start();
-        //uint256 duration = 6 * 3600 * 24 * 30;
         uint256 duration = endTime - startTime;
 
         TokenReserve storage xytReserve = reserves[xyt];

@@ -37,6 +37,14 @@ interface IPendleMarket is IPendleBaseToken {
     event Join(address indexed token, uint256 amount);
 
     event Exit(address indexed token, uint256 amount);
+    /**
+     * @notice Emitted when reserves pool has been updated
+     * @param reserve0 The XYT reserves.
+     * @param weight0  The XYT weight
+     * @param reserve1 The generic token reserves.
+     * @param weight1  The generic token weight
+     **/
+    event Sync(uint256 reserve0, uint256 weight0, uint256 reserve1, uint256 weight1);
 
     event Shift(
         uint256 xytWeightOld,

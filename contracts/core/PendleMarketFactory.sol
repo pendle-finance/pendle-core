@@ -31,7 +31,7 @@ import "../interfaces/IPendleYieldToken.sol";
 import "../periphery/Permissions.sol";
 
 
-contract PendleAaveMarketFactory is IPendleMarketFactory, Permissions {
+contract PendleMarketFactory is IPendleMarketFactory, Permissions {
     IPendleRouter public override router;
     bytes32 public immutable override marketFactoryId;
 

@@ -15,17 +15,17 @@ export interface PendleGovernanceFixture {
 }
 
 export async function pendleGovernanceFixture(
-  [wallet]: Wallet[],
+  [alice]: Wallet[],
   provider: providers.Web3Provider
 ): Promise<PendleGovernanceFixture> {
   // deploy PDL, sending the total supply to the deployer.
-  const pendle = await deployContract(wallet, PENDLE, [wallet.address])
+  const pendle = await deployContract(alice, PENDLE, [alice.address])
 
   // deploy timelock, controlled by what will be the governor
-  const timelock = await deployContract(wallet, Timelock, [])
+  const timelock = await deployContract(alice, Timelock, [])
 
   // deploy pendleGovernor
-  const pendleGovernor = await deployContract(wallet, PendleGovernance, [pendle.address, timelock.address, wallet.address])
+  const pendleGovernor = await deployContract(alice, PendleGovernance, [pendle.address, timelock.address, alice.address])
 
   return { pendle, timelock, pendleGovernor }
 }

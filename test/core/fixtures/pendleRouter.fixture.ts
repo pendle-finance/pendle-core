@@ -1,10 +1,10 @@
-import { Contract, Wallet, providers } from 'ethers'
+import { Contract, providers, Wallet } from 'ethers'
 import PendleRouter from '../../../build/artifacts/contracts/core/PendleRouter.sol/PendleRouter.json'
-import PendleTreasury from '../../../build/artifacts/contracts/core/PendleTreasury.sol/PendleTreasury.json'
-import PendleAaveMarketFactory from "../../../build/artifacts/contracts/core/PendleAaveMarketFactory.sol/PendleAaveMarketFactory.json"
+import PendleMarketFactory from "../../../build/artifacts/contracts/core/PendleMarketFactory.sol/PendleMarketFactory.json"
 import PendleData from "../../../build/artifacts/contracts/core/PendleData.sol/PendleData.json"
-import { constants, tokens } from "../../helpers/Constants"
-import { createFixtureLoader } from "ethereum-waffle";
+import PendleTreasury from '../../../build/artifacts/contracts/core/PendleTreasury.sol/PendleTreasury.json'
+import { consts, tokens } from "../../helpers"
+
 
 const { waffle } = require("hardhat");
 const { provider, deployContract } = waffle;
@@ -12,22 +12,22 @@ const { provider, deployContract } = waffle;
 export interface PendleRouterFixture {
   pendleRouter: Contract
   pendleTreasury: Contract
-  pendleAaveMarketFactory: Contract
+  pendleMarketFactory: Contract
   pendleData: Contract
 }
 
 export async function pendleRouterFixture(
-  [wallet]: Wallet[],
+  [alice]: Wallet[],
   provider: providers.Web3Provider
 ): Promise<PendleRouterFixture> {
-  const pendleRouter = await deployContract(wallet, PendleRouter, [wallet.address, tokens.WETH.address]);
-  const pendleTreasury = await deployContract(wallet, PendleTreasury, [wallet.address]);
-  const pendleAaveMarketFactory = await deployContract(wallet, PendleAaveMarketFactory, [wallet.address, constants.MARKET_FACTORY_AAVE]);
-  const pendleData = await deployContract(wallet, PendleData, [wallet.address, pendleTreasury.address]);
+  const pendleRouter = await deployContract(alice, PendleRouter, [alice.address, tokens.WETH.address]);
+  const pendleTreasury = await deployContract(alice, PendleTreasury, [alice.address]);
+  const pendleMarketFactory = await deployContract(alice, PendleMarketFactory, [alice.address, consts.MARKET_FACTORY_AAVE]);
+  const pendleData = await deployContract(alice, PendleData, [alice.address]);
 
-  await pendleAaveMarketFactory.initialize(pendleRouter.address);
+  await pendleMarketFactory.initialize(pendleRouter.address);
   await pendleData.initialize(pendleRouter.address);
   await pendleRouter.initialize(pendleData.address);
 
-  return { pendleRouter, pendleTreasury, pendleAaveMarketFactory, pendleData }
+  return { pendleRouter, pendleTreasury, pendleMarketFactory, pendleData }
 }

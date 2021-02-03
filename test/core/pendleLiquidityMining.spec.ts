@@ -1,19 +1,20 @@
 import { expect } from "chai";
-import { Contract, BigNumber } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
+import { BigNumber as BN, Contract } from "ethers";
 import PendleLiquidityMining from "../../build/artifacts/contracts/core/PendleLiquidityMining.sol/PendleLiquidityMining.json";
 import PENDLE from "../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
 
 import { pendleMarketFixture } from "./fixtures";
 import {
-  constants,
-  tokens,
-  amountToWei,
-  getAContract,
-  evm_snapshot,
-  evm_revert,
   advanceTime,
+  amountToWei,
+  consts,
+  evm_revert,
+  evm_snapshot,
+  getAContract,
+  tokens,
 } from "../helpers";
+
 const { waffle } = require("hardhat");
 const hre = require("hardhat");
 const { deployContract, provider } = waffle;
@@ -24,10 +25,10 @@ describe("PendleLiquidityMining", async () => {
   const [wallet, wallet1] = wallets;
   let pendleRouter: Contract;
   let pendleTreasury: Contract;
-  let pendleAaveMarketFactory: Contract;
+  let pendleMarketFactory: Contract;
   let pendleData: Contract;
-  let pendleOwnershipToken: Contract;
-  let pendleFutureYieldToken: Contract;
+  let pendleOt: Contract;
+  let pendleXyt: Contract;
   let lendingPoolCore: Contract;
   let pendleAaveForge: Contract;
   let pendleMarket: Contract;
@@ -38,11 +39,11 @@ describe("PendleLiquidityMining", async () => {
   let snapshotId: string;
   let globalSnapshotId: string;
   let liquidityMiningParameters = {
-    startTime: BigNumber.from(Math.round(Date.now() / 1000)).add(5000), // starts in 1000s
-    epochDuration: BigNumber.from(3600 * 24 * 10), //10 days
-    rewardsPerEpoch: BigNumber.from("10000000000"), // 1e10
-    numberOfEpochs: BigNumber.from(20),
-    vestingEpochs: BigNumber.from(4),
+    startTime: consts.T0.add(1000), // starts in 1000s
+    epochDuration: BN.from(3600 * 24 * 10), //10 days
+    rewardsPerEpoch: BN.from("10000000000"), // 1e10
+    numberOfEpochs: BN.from(20),
+    vestingEpochs: BN.from(4),
   };
 
   before(async () => {
@@ -51,29 +52,27 @@ describe("PendleLiquidityMining", async () => {
     const fixture = await loadFixture(pendleMarketFixture);
     pendleRouter = fixture.router.pendleRouter;
     pendleTreasury = fixture.router.pendleTreasury;
-    pendleAaveMarketFactory = fixture.router.pendleAaveMarketFactory;
-    pendleMarket = fixture.pendleMarket;
+    pendleMarketFactory = fixture.router.pendleMarketFactory;
     pendleData = fixture.router.pendleData;
-    pendleOwnershipToken = fixture.forge.pendleOwnershipToken;
-    pendleFutureYieldToken = fixture.forge.pendleFutureYieldToken;
+    pendleOt = fixture.forge.pendleOwnershipToken;
+    pendleXyt = fixture.forge.pendleFutureYieldToken;
     pendleAaveForge = fixture.forge.pendleAaveForge;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     testToken = fixture.testToken;
     aUSDT = await getAContract(wallet, lendingPoolCore, tokens.USDT);
 
-    const amountToTokenize = amountToWei(tokens.USDT, BigNumber.from(100));
-    console.log()
+    const amountToTokenize = amountToWei(tokens.USDT, BN.from(100));
 
     // TODO: make a fixture for PendleLiquidityMining, and set up a few (maybe 2) markets with different expiries
     // to participate in liquidity mining.
-    await pendleRouter.bootstrapMarket(
-      constants.FORGE_AAVE,
-      constants.MARKET_FACTORY_AAVE,
-      pendleFutureYieldToken.address,
+    await pendle.bootStrapMarket(
+      consts.FORGE_AAVE,
+      consts.MARKET_FACTORY_AAVE,
+      pendleXyt.address,
       testToken.address,
       amountToTokenize,
       amountToTokenize,
-      constants.HIGH_GAS_OVERRIDE
+      consts.HIGH_GAS_OVERRIDE
     );
 
     pendle = await deployContract(wallet, PENDLE, [wallet.address]);
@@ -86,7 +85,7 @@ describe("PendleLiquidityMining", async () => {
         wallet.address,
         pendle.address,
         pendleData.address,
-        pendleAaveMarketFactory.address,
+        pendleMarketFactory.address,
         pendleAaveForge.address,
         tokens.USDT.address,
         testToken.address,
@@ -102,15 +101,15 @@ describe("PendleLiquidityMining", async () => {
 
     await pendle.approve(
       pendleLiquidityMining.address,
-      constants.MAX_ALLOWANCE
+      consts.MAX_ALLOWANCE
     );
     await pendleMarket.approve(
       pendleLiquidityMining.address,
-      constants.MAX_ALLOWANCE
+      consts.MAX_ALLOWANCE
     );
     await pendleMarket
       .connect(wallet1)
-      .approve(pendleLiquidityMining.address, constants.MAX_ALLOWANCE);
+      .approve(pendleLiquidityMining.address, consts.MAX_ALLOWANCE);
     // wallet has some LP now
     await pendleLiquidityMining.fund();
 
@@ -127,11 +126,11 @@ describe("PendleLiquidityMining", async () => {
   });
 
   it("can stake and withdraw", async () => {
-    const TEN_DAYS = BigNumber.from(3600 * 24 * 10);
-    const FIFTEEN_DAYS = BigNumber.from(3600 * 24 * 15);
-    const THIRTY_DAYS = BigNumber.from(3600 * 24 * 30);
+    const TEN_DAYS = BN.from(3600 * 24 * 10);
+    const FIFTEEN_DAYS = BN.from(3600 * 24 * 15);
+    const THIRTY_DAYS = BN.from(3600 * 24 * 30);
 
-    const amountToStake = BigNumber.from("100000000000000000"); //1e17 LP = 0.1 LP
+    const amountToStake = BN.from("100000000000000000"); //1e17 LP = 0.1 LP
 
     await pendleMarket.transfer(wallet1.address, amountToStake);
     const pendleBalanceOfContract = await pendle.balanceOf(
@@ -148,20 +147,18 @@ describe("PendleLiquidityMining", async () => {
 
     await advanceTime(
       provider,
-      liquidityMiningParameters.startTime.sub(
-        BigNumber.from(Math.round(Date.now() / 1000))
-      )
+      liquidityMiningParameters.startTime.sub(consts.T0)
     );
     await pendleLiquidityMining
       .connect(wallet1)
       .stake(
-        constants.SIX_MONTH_FROM_NOW,
+        consts.T0.add(consts.SIX_MONTH),
         amountToStake,
-        constants.HIGH_GAS_OVERRIDE
+        consts.HIGH_GAS_OVERRIDE
       );
     console.log("\tStaked");
     const lpHolderContract = await pendleLiquidityMining.lpHolderForExpiry(
-      constants.SIX_MONTH_FROM_NOW
+      consts.T0.add(consts.SIX_MONTH)
     );
     const aTokenBalanceOfLpHolderContract = await aUSDT.balanceOf(
       lpHolderContract
@@ -178,9 +175,9 @@ describe("PendleLiquidityMining", async () => {
     await pendleLiquidityMining
       .connect(wallet1)
       .withdraw(
-        constants.SIX_MONTH_FROM_NOW,
-        amountToStake.div(BigNumber.from(2)),
-        constants.HIGH_GAS_OVERRIDE
+        consts.T0.add(consts.SIX_MONTH),
+        amountToStake.div(BN.from(2)),
+        consts.HIGH_GAS_OVERRIDE
       );
 
     const pendleBalanceOfContractAfter = await pendle.balanceOf(
@@ -188,7 +185,7 @@ describe("PendleLiquidityMining", async () => {
     );
     const pendleBalanceOfUserAfter = await pendle.balanceOf(wallet1.address);
     const expectedPdlBalanceOfUserAfter = liquidityMiningParameters.rewardsPerEpoch.div(
-      BigNumber.from(4)
+      BN.from(4)
     );
     console.log(
       `\tPENDLE balance of PendleLiquidityMining contract after: ${pendleBalanceOfContractAfter}`
@@ -206,9 +203,9 @@ describe("PendleLiquidityMining", async () => {
 
     //stake using another user - wallet, for the same amount as wallet1's stake now (amountToStake/2)
     await pendleLiquidityMining.stake(
-      constants.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       amountToStake.div(2),
-      constants.HIGH_GAS_OVERRIDE
+      consts.HIGH_GAS_OVERRIDE
     );
 
     // Now we wait for another 15 days to withdraw (at the very start of epoch 4), then the rewards to be withdrawn for wallet1 should be:
@@ -220,7 +217,7 @@ describe("PendleLiquidityMining", async () => {
 
     // console.log(`abi = ${PendleLiquidityMining.abi}`);
     // console.log(pendleLiquidityMining);
-    await pendleLiquidityMining.calculateEpochData(BigNumber.from(2)); // Although its already epoch 4, we still need to call this transaction
+    await pendleLiquidityMining.calculateEpochData(BN.from(2)); // Although its already epoch 4, we still need to call this transaction
 
     const pendleLiquidityMiningWeb3 = new hre.web3.eth.Contract(
       PendleLiquidityMining.abi,
@@ -238,9 +235,9 @@ describe("PendleLiquidityMining", async () => {
     await pendleLiquidityMining
       .connect(wallet1)
       .withdraw(
-        constants.SIX_MONTH_FROM_NOW,
-        amountToStake.div(BigNumber.from(2)),
-        constants.HIGH_GAS_OVERRIDE
+        consts.T0.add(consts.SIX_MONTH),
+        amountToStake.div(BN.from(2)),
+        consts.HIGH_GAS_OVERRIDE
       );
     const pendleBalanceOfUserAfter2ndTnx = await pendle.balanceOf(
       wallet1.address
@@ -261,9 +258,9 @@ describe("PendleLiquidityMining", async () => {
     );
 
     await pendleLiquidityMining.withdraw(
-      constants.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       amountToStake.div(2),
-      constants.HIGH_GAS_OVERRIDE
+      consts.HIGH_GAS_OVERRIDE
     );
     const aTokenBalanceOfLpHolderContractAfter = await aUSDT.balanceOf(
       lpHolderContract

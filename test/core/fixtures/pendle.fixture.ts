@@ -1,14 +1,9 @@
-import chai, { expect } from 'chai'
-import { Wallet, providers, BigNumber } from 'ethers'
-import { pendleRouterFixture, PendleRouterFixture } from './pendleRouter.fixture';
-import { pendleAaveForgeFixture, PendleAaveFixture } from './pendleAaveForge.fixture'
-import { pendleGovernanceFixture, PendleGovernanceFixture } from './pendleGovernance.fixture'
+import { providers, Wallet } from 'ethers';
+import { consts, convertToAaveToken, getAContract, mint, tokens } from "../../helpers";
 import { aaveFixture, AaveFixture } from './aave.fixture';
-import { constants, tokens } from "../../helpers/Constants"
-import { mint, mintAaveToken, getAContract, amountToWei } from "../../helpers/Helpers";
-const { waffle } = require("hardhat");
-const { provider, deployContract } = waffle;
-import { createFixtureLoader } from "ethereum-waffle";
+import { PendleAaveFixture, pendleAaveForgeFixture } from './pendleAaveForge.fixture';
+import { pendleRouterFixture, PendleRouterFixture } from './pendleRouter.fixture';
+
 interface PendleFixture {
   router: PendleRouterFixture,
   forge: PendleAaveFixture,
@@ -19,22 +14,20 @@ export async function pendleFixture(
   wallets: Wallet[],
   provider: providers.Web3Provider
 ): Promise<PendleFixture> {
-  const [wallet] = wallets;
+  const [alice] = wallets;
   const router = await pendleRouterFixture(wallets, provider);
-  const governance = await pendleGovernanceFixture(wallets, provider);
-  const forge = await pendleAaveForgeFixture(wallet, router, governance);
-  const aave = await aaveFixture(wallet);
+  const forge = await pendleAaveForgeFixture(alice, provider, router);
+  const aave = await aaveFixture(alice);
 
   const { pendleAaveForge } = forge;
   const { lendingPoolCore } = aave;
-  const token = tokens.USDT
 
-  await mint(provider, token, wallet, BigNumber.from(100));
-  await mintAaveToken(token, wallet, BigNumber.from(100));
+  await mint(provider, tokens.USDT, alice, consts.INITIAL_USDT_AMOUNT);
+  await convertToAaveToken(tokens.USDT, alice, consts.INITIAL_AAVE_TOKEN_AMOUNT);
 
-  const aContract = await getAContract(wallet, lendingPoolCore, token);
+  const aContract = await getAContract(alice, lendingPoolCore, tokens.USDT);
 
-  await aContract.approve(router.pendleRouter.address, constants.MAX_ALLOWANCE);
+  await aContract.approve(router.pendleRouter.address, consts.MAX_ALLOWANCE);
 
   return { router, aave, forge }
 }
