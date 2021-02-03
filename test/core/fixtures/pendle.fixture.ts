@@ -29,8 +29,8 @@ export async function pendleFixture(
   const { lendingPoolCore } = aave;
   const token = tokens.USDT
 
-  await mint(provider, token, wallet, BigNumber.from(100000));
-  await mintAaveToken(token, wallet, BigNumber.from(100000));
+  await mint(provider, token, wallet, BigNumber.from(100));
+  await mintAaveToken(token, wallet, BigNumber.from(100));
 
   const aContract = await getAContract(wallet, lendingPoolCore, token);
 

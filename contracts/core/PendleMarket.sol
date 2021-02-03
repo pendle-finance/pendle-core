@@ -127,7 +127,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 exitFees = Math.rmul(inLp, exitFee);
         uint256 inLpAfterExitFee = inLp.sub(exitFee);
         uint256 ratio = Math.rdiv(inLpAfterExitFee, totalLp);
-        require(ratio != 0, "Pendle: math problem");
+        require(ratio != 0, "Pendle: zero ratio");
 
         // Calc and withdraw xyt token.
         uint256 balanceToken = reserves[xyt].balance;

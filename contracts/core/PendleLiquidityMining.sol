@@ -103,7 +103,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         address _pendleAddress,
         address _pendleData,
         address _pendleMarketFactory,
-        address _pendleAaveForge,
+        address _pendleForge,
         address _underlyingAsset,
         address _baseToken,
         uint256 _startTime,
@@ -126,7 +126,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         vestingEpochs = _vestingEpochs;
 
         marketFactoryId = pendleData.getMarketFactoryId(_pendleMarketFactory);
-        forgeId = pendleData.getForgeId(_pendleAaveForge);
+        forgeId = pendleData.getForgeId(_pendleForge);
     }
 
     function readUserExpiries(address user)

@@ -38,7 +38,7 @@ describe("PendleLiquidityMining", async () => {
   let snapshotId: string;
   let globalSnapshotId: string;
   let liquidityMiningParameters = {
-    startTime: BigNumber.from(Math.round(Date.now() / 1000)).add(1000), // starts in 1000s
+    startTime: BigNumber.from(Math.round(Date.now() / 1000)).add(5000), // starts in 1000s
     epochDuration: BigNumber.from(3600 * 24 * 10), //10 days
     rewardsPerEpoch: BigNumber.from("10000000000"), // 1e10
     numberOfEpochs: BigNumber.from(20),
@@ -62,6 +62,7 @@ describe("PendleLiquidityMining", async () => {
     aUSDT = await getAContract(wallet, lendingPoolCore, tokens.USDT);
 
     const amountToTokenize = amountToWei(tokens.USDT, BigNumber.from(100));
+    console.log()
 
     // TODO: make a fixture for PendleLiquidityMining, and set up a few (maybe 2) markets with different expiries
     // to participate in liquidity mining.

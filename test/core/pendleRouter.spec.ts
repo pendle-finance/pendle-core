@@ -96,14 +96,16 @@ describe("PendleRouter", async () => {
       constants.SIX_MONTH_FROM_NOW,
       amountToTokenize,
       wallet.address,
+      constants.HIGH_GAS_OVERRIDE
     );
 
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     const rate = await getLiquidityRate(wallet, tokenUSDT);
     const gain = getGain(amountToTokenize, rate, constants.ONE_MONTH);
+
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.add(gain).toNumber(),
-      20
+      3000
     );
   });
 
@@ -160,7 +162,6 @@ describe("PendleRouter", async () => {
     ).sub(180);
 
     await advanceTime(provider, duration);
-
     const wallet1Pendle = pendleRouter.connect(wallet1);
 
     await wallet1Pendle.redeemDueInterests(
@@ -191,7 +192,7 @@ describe("PendleRouter", async () => {
     );
   });
 
-  it("One month after expiry, should be able to redeem aUSDT with intrest", async () => {
+  it("One month after expiry, should be able to redeem aUSDT with interest", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
     const initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
 
@@ -237,7 +238,7 @@ describe("PendleRouter", async () => {
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.add(gain).toNumber(),
-      20000
+      60000
     );
   });
 
