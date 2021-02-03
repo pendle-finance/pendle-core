@@ -10,7 +10,7 @@ import {
   getAContract,
   mintAaveToken,
   setTimeNextBlock,
-  tokens,
+  tokens
 } from "../helpers";
 import { pendleFixture } from "./fixtures";
 
@@ -20,7 +20,7 @@ const provider = waffle.provider;
 describe("Pendle", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
-  const [wallet, bob, charlie, dave] = wallets;
+  const [alice, bob, charlie, dave] = wallets;
 
   let pendle: Contract;
   let pendleTreasury: Contract;
@@ -47,7 +47,7 @@ describe("Pendle", async () => {
     pendleAaveForge = fixture.forge.pendleAaveForge;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     tokenUSDT = tokens.USDT;
-    aUSDT = await getAContract(wallet, lendingPoolCore, tokens.USDT);
+    aUSDT = await getAContract(alice, lendingPoolCore, tokens.USDT);
     snapshotId = await evm_snapshot();
   });
 
@@ -59,7 +59,7 @@ describe("Pendle", async () => {
     await evm_revert(snapshotId);
     snapshotId = await evm_snapshot();
     amountToTokenize = amountToWei(tokenUSDT, consts.INITIAL_AAVE_TOKEN_AMOUNT);
-    initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    initialAUSDTbalance = await aUSDT.balanceOf(alice.address);
   });
 
   async function tokenizeYieldSample(amountToTokenize: BN) {
@@ -68,7 +68,7 @@ describe("Pendle", async () => {
       tokenUSDT.address,
       consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
-      wallet.address
+      alice.address
     );
   }
 
@@ -91,8 +91,8 @@ describe("Pendle", async () => {
 
   it("should be able to deposit aUSDT to get back OT and XYT", async () => {
     await tokenizeYieldSample(amountToTokenize);
-    const balanceOwnershipToken = await pendleOt.balanceOf(wallet.address);
-    const balanceFutureYieldToken = await pendleXyt.balanceOf(wallet.address);
+    const balanceOwnershipToken = await pendleOt.balanceOf(alice.address);
+    const balanceFutureYieldToken = await pendleXyt.balanceOf(alice.address);
     expect(balanceOwnershipToken).to.be.eq(amountToTokenize);
     expect(balanceFutureYieldToken).to.be.eq(amountToTokenize);
   });
@@ -108,11 +108,11 @@ describe("Pendle", async () => {
       tokenUSDT.address,
       consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
-      wallet.address,
+      alice.address,
       consts.HIGH_GAS_OVERRIDE
     );
 
-    const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
 
     const expectedGain = await getCurInterest(charlie, amountToTokenize);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
@@ -125,10 +125,10 @@ describe("Pendle", async () => {
     await tokenizeYieldSample(amountToTokenize);
     await startCalInterest(charlie, amountToTokenize);
 
-    const balance = await pendleOt.balanceOf(wallet.address);
+    const balance = await pendleOt.balanceOf(alice.address);
     await pendleOt.transfer(bob.address, balance);
 
-    const afterLendingAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    const afterLendingAUSDTbalance = await aUSDT.balanceOf(alice.address);
 
     await setTimeNextBlock(provider, consts.T0.add(consts.ONE_MONTH));
 
@@ -139,7 +139,7 @@ describe("Pendle", async () => {
     );
 
     const expectedGain = await getCurInterest(charlie, amountToTokenize);
-    const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
 
     expect(finalAUSDTbalance).to.be.below(initialAUSDTbalance);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
@@ -201,12 +201,12 @@ describe("Pendle", async () => {
       consts.FORGE_AAVE,
       tokenUSDT.address,
       consts.T0.add(consts.SIX_MONTH),
-      wallet.address
+      alice.address
     );
 
     const expectedGain = await getCurInterest(dave, amountToTokenize);
 
-    const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
     console.log(
       finalAUSDTbalance.sub(initialAUSDTbalance.add(expectedGain)).toString()
     );
@@ -243,12 +243,12 @@ describe("Pendle", async () => {
       consts.FORGE_AAVE,
       tokenUSDT.address,
       consts.T0.add(consts.SIX_MONTH),
-      wallet.address
+      alice.address
     );
 
     const expectedGain = await getCurInterest(dave, amountToTokenize);
 
-    const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
     console.log(
       finalAUSDTbalance.sub(initialAUSDTbalance.add(expectedGain)).toString()
     );

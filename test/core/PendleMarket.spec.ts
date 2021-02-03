@@ -9,7 +9,7 @@ import {
   evm_snapshot,
   getAContract,
   Token,
-  tokens,
+  tokens
 } from "../helpers";
 import { AMMTest } from "./AmmFormula";
 import { pendleMarketFixture } from "./fixtures";
@@ -19,7 +19,7 @@ const { deployContract, provider } = waffle;
 describe("PendleMarket", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
-  const [alice, wallet1] = wallets;
+  const [alice, bob] = wallets;
   let pendle: Contract;
   let pendleAaveMarketFactory: Contract;
   let pendleXyt: Contract;
@@ -106,7 +106,7 @@ describe("PendleMarket", async () => {
     const totalSupply = await pendleMarket.totalSupply();
 
     await pendle
-      .connect(wallet1)
+      .connect(bob)
       .addMarketLiquidity(
         consts.FORGE_AAVE,
         consts.MARKET_FACTORY_AAVE,
@@ -133,7 +133,7 @@ describe("PendleMarket", async () => {
     await bootstrapSampleMarket(amountToTokenize);
 
     await pendle
-      .connect(wallet1)
+      .connect(bob)
       .swapXytFromToken(
         consts.FORGE_AAVE,
         consts.MARKET_FACTORY_AAVE,
@@ -160,7 +160,7 @@ describe("PendleMarket", async () => {
     await bootstrapSampleMarket(amountToTokenize);
 
     await pendle
-      .connect(wallet1)
+      .connect(bob)
       .swapXytToToken(
         consts.FORGE_AAVE,
         consts.MARKET_FACTORY_AAVE,
