@@ -542,6 +542,127 @@ contract PendleRouter is IPendleRouter, Permissions {
         amount = batchSwapExactOut(swaps, _tokenIn, _tokenOut, _maxInTotalAmount);
     }
 
+    /// @dev Needed for multi-path off-chain routing
+    function swapPathExactIn(
+        Swap[][] memory _swapPath,
+        address _tokenIn,
+        address _tokenOut,
+        uint256 _inTotalAmount,
+        uint256 _minOutTotalAmount
+    ) public payable override returns (uint256 outTotalAmount) {
+        _transferIn(_tokenIn, _inTotalAmount);
+
+        for (uint256 i = 0; i < _swapPath.length; i++) {
+            uint256 tokenAmountOut;
+            for (uint256 j = 0; j < _swapPath[i].length; j++) {
+                Swap memory swap = _swapPath[i][j];
+
+                if (j == 1) {
+                    swap.swapAmount = tokenAmountOut;
+                }
+
+                IPendleMarket market = IPendleMarket(swap.market);
+
+                (tokenAmountOut, ) = market.swapAmountExactIn(
+                    swap.tokenIn,
+                    swap.swapAmount,
+                    swap.tokenOut,
+                    swap.limitReturnAmount,
+                    swap.maxPrice
+                );
+            }
+
+            outTotalAmount = tokenAmountOut.add(outTotalAmount);
+        }
+
+        require(outTotalAmount >= _minOutTotalAmount, "Pendle: limit out error");
+
+        _transferOut(_tokenOut, outTotalAmount);
+    }
+
+    /// @dev Needed for multi-path off-chain routing
+    function swapPathExactOut(
+        Swap[][] memory _swapPath,
+        address _tokenIn,
+        address _tokenOut,
+        uint256 _maxInTotalAmount
+    ) public payable override returns (uint256 inTotalAmount) {
+        uint256 outTotalAmount;
+        uint256 change = _maxInTotalAmount;
+
+        _transferIn(_tokenIn, _maxInTotalAmount);
+
+        for (uint256 i = 0; i < _swapPath.length; i++) {
+            uint256 firstSwapTokenIn;
+            // Specific code for a simple swap and a multihop (2 swaps in sequence)
+            if (_swapPath[i].length == 1) {
+                Swap memory swap = _swapPath[i][0];
+
+                IPendleMarket market = IPendleMarket(swap.market);
+
+                (firstSwapTokenIn, ) = market.swapAmountExactOut(
+                    swap.tokenIn,
+                    swap.limitReturnAmount,
+                    swap.tokenOut,
+                    swap.swapAmount,
+                    swap.maxPrice
+                );
+                outTotalAmount = outTotalAmount.add(swap.swapAmount);
+            } else {
+                // Consider we are swapping A -> B and B -> C. The goal is to buy a given amount
+                // of token C. But first we need to buy B with A so we can then buy C with B
+                // To get the exact amount of C we then first need to calculate how much B we'll need:
+                uint256 intermediateTokenAmount; // This would be token B as described above
+                Swap memory secondSwap = _swapPath[i][1];
+                IPendleMarket secondMarket = IPendleMarket(secondSwap.market);
+                IPendleMarket.TokenReserve memory inTokenReserve;
+                IPendleMarket.TokenReserve memory outTokenReserve;
+
+                inTokenReserve.balance = secondMarket.getBalance(secondSwap.tokenIn);
+                inTokenReserve.weight = secondMarket.getWeight(secondSwap.tokenIn);
+                outTokenReserve.balance = secondMarket.getBalance(secondSwap.tokenOut);
+                outTokenReserve.weight = secondMarket.getWeight(secondSwap.tokenOut);
+
+                intermediateTokenAmount = secondMarket.calcExactOut(
+                    inTokenReserve,
+                    outTokenReserve,
+                    secondSwap.swapAmount,
+                    data.swapFee()
+                );
+
+                // Buy intermediateTokenAmount of token B with A in the first pool
+                Swap memory firstSwap = _swapPath[i][0];
+                IPendleMarket firstMarket = IPendleMarket(firstSwap.market);
+
+                (firstSwapTokenIn, ) = firstMarket.swapAmountExactOut(
+                    firstSwap.tokenIn,
+                    firstSwap.limitReturnAmount,
+                    firstSwap.tokenOut,
+                    intermediateTokenAmount, // This is the amount of token B we need
+                    firstSwap.maxPrice
+                );
+
+                // Buy the final amount of token C desired
+                secondMarket.swapAmountExactOut(
+                    secondSwap.tokenIn,
+                    secondSwap.limitReturnAmount,
+                    secondSwap.tokenOut,
+                    secondSwap.swapAmount,
+                    secondSwap.maxPrice
+                );
+                outTotalAmount = outTotalAmount.add(secondSwap.swapAmount);
+            }
+
+            inTotalAmount = firstSwapTokenIn.add(inTotalAmount);
+        }
+
+        require(inTotalAmount <= _maxInTotalAmount, "Pendle: limit in error");
+        change = change.sub(inTotalAmount);
+
+        _transferOut(_tokenOut, outTotalAmount);
+        _transferOut(_tokenIn, change);
+    }
+
     // @@Vu TODO: This is not returning the list of markets for the underlying token.
     // We will need to add some structs to PendleData to query this
     function getMarketByUnderlyingToken(
@@ -794,14 +915,6 @@ contract PendleRouter is IPendleRouter, Permissions {
         }
 
         return totalOutput;
-    }
-
-    function _getBalance(IERC20 token) internal view returns (uint256) {
-        if (_isETH(address(token))) {
-            return weth.balanceOf(address(this));
-        } else {
-            return token.balanceOf(address(this));
-        }
     }
 
     function _calcEffectiveLiquidity(

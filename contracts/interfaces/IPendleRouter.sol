@@ -29,6 +29,7 @@ import "../interfaces/IWETH.sol";
 import "./IPendleData.sol";
 import "./IPendleMarketFactory.sol";
 
+
 interface IPendleRouter {
     struct Market {
         address market;
@@ -255,6 +256,21 @@ interface IPendleRouter {
         uint256 maxInTotalAmount,
         uint256 numMarkets
     ) external payable returns (uint256 amount);
+
+    function swapPathExactIn(
+        Swap[][] memory swapPath,
+        address tokenIn,
+        address tokenOut,
+        uint256 inTotalAmount,
+        uint256 minOutTotalAmount
+    ) external payable returns (uint256 outTotalAmount);
+
+    function swapPathExactOut(
+        Swap[][] memory swapPath,
+        address tokenIn,
+        address tokenOut,
+        uint256 maxInTotalAmount
+    ) external payable returns (uint256 inTotalAmount);
 
     function getMarketByUnderlyingToken(
         bytes32 forgeId,
