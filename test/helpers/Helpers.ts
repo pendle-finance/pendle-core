@@ -36,7 +36,7 @@ export async function mintOtAndXyt(
   token: Token,
   alice: Wallet,
   amount: BN,
-  pendleRouter: Contract,
+  pendleRouter: Contract
 ) {
   await mint(provider, token, alice, amount);
   await convertToAaveToken(token, alice, amount);

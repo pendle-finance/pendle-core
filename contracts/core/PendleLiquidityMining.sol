@@ -137,9 +137,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         // TODO: add some functon to make sure this forgeId belongs to our system
         // getForgeAddress  should be the same as the constructor params
         forgeId = pendleData.getForgeId(_pendleForge);
-
     }
-
 
     function readUserExpiries(address user)
         public
