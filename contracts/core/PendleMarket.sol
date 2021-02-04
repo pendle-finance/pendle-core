@@ -32,7 +32,6 @@ import "../libraries/PendleLibrary.sol";
 import {Math} from "../libraries/PendleLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-
 contract PendleMarket is IPendleMarket, PendleBaseToken {
     using Math for uint256;
     using SafeMath for uint256;
@@ -52,7 +51,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     uint8 private constant DECIMALS = 18;
     uint256 private priceLast = Math.FORMULA_PRECISION;
     uint256 private blockNumLast;
-    
+
     uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**8;
     mapping(address => uint256) public lastGlobalIncomeIndex;
     mapping(address => TokenReserve) private reserves;
@@ -264,7 +263,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address outToken,
         uint256 minOutAmount,
         uint256 maxPrice
-    ) external override isBootstrapped onlyRouter returns (uint256 outAmount, uint256 spotPriceAfter) {
+    )
+        external
+        override
+        isBootstrapped
+        onlyRouter
+        returns (uint256 outAmount, uint256 spotPriceAfter)
+    {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
 
@@ -302,7 +307,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address outToken,
         uint256 outAmount,
         uint256 maxPrice
-    ) external override isBootstrapped onlyRouter returns (uint256 inAmount, uint256 spotPriceAfter) {
+    )
+        external
+        override
+        isBootstrapped
+        onlyRouter
+        returns (uint256 inAmount, uint256 spotPriceAfter)
+    {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
 

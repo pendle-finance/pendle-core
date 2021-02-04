@@ -1,19 +1,21 @@
 import { expect } from "chai";
-import { Contract, BigNumber } from "ethers";
+import { Contract, BigNumber as BN, Wallet } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
 
 import { pendleFixture } from "./fixtures";
 import {
-  constants,
+  consts,
   tokens,
   amountToWei,
   getAContract,
+  mintAaveToken,
   advanceTime,
   getLiquidityRate,
   getGain,
   evm_revert,
   evm_snapshot,
   Token,
+  setTimeNextBlock,
 } from "../helpers";
 import { toUtf8CodePoints } from "ethers/lib/utils";
 
@@ -23,7 +25,7 @@ const provider = waffle.provider;
 describe("PendleRouter", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
-  const [wallet, wallet1] = wallets;
+  const [wallet, wallet1, charlie, dave] = wallets;
 
   let pendleRouter: Contract;
   let pendleTreasury: Contract;
@@ -37,14 +39,16 @@ describe("PendleRouter", async () => {
   let snapshotId: string;
   let globalSnapshotId: string;
   let tokenUSDT: Token;
+  let amountToTokenize: BN;
+  let initialAUSDTbalance: BN;
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
     const fixture = await loadFixture(pendleFixture);
-    pendleRouter = fixture.router.pendleRouter;
-    pendleTreasury = fixture.router.pendleTreasury;
-    pendleMarketFactory = fixture.router.pendleMarketFactory;
-    pendleData = fixture.router.pendleData;
+    pendleRouter = fixture.core.pendleRouter;
+    pendleTreasury = fixture.core.pendleTreasury;
+    pendleMarketFactory = fixture.core.pendleMarketFactory;
+    pendleData = fixture.core.pendleData;
     pendleOt = fixture.forge.pendleOwnershipToken;
     pendleXyt = fixture.forge.pendleFutureYieldToken;
     pendleAaveForge = fixture.forge.pendleAaveForge;
@@ -61,17 +65,39 @@ describe("PendleRouter", async () => {
   beforeEach(async () => {
     await evm_revert(snapshotId);
     snapshotId = await evm_snapshot();
+    amountToTokenize = amountToWei(tokenUSDT, consts.INITIAL_AAVE_TOKEN_AMOUNT);
+    initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
   });
 
-  it("should be able to deposit aUSDT to get back OT and XYT", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
+  async function tokenizeYieldSample(amountToTokenize: BN) {
     await pendleRouter.tokenizeYield(
-      constants.FORGE_AAVE,
+      consts.FORGE_AAVE,
       tokenUSDT.address,
-      constants.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
-      wallet.address,
+      wallet.address
     );
+  }
+
+  async function startCalInterest(walletToUse: Wallet, initialAmount: BN) {
+    // divide by 10^decimal since mintAaveToken will multiply that number back
+    await mintAaveToken(
+      provider,
+      tokenUSDT,
+      walletToUse,
+      initialAmount.div(10 ** tokenUSDT.decimal)
+    );
+  }
+
+  async function getCurInterest(
+    walletToUse: Wallet,
+    initialAmount: BN
+  ): Promise<BN> {
+    return (await aUSDT.balanceOf(walletToUse.address)).sub(initialAmount);
+  }
+
+  it("should be able to deposit aUSDT to get back OT and XYT", async () => {
+    await tokenizeYieldSample(amountToTokenize);
     const balanceOwnershipToken = await pendleOt.balanceOf(wallet.address);
     const balanceFutureYieldToken = await pendleXyt.balanceOf(wallet.address);
     expect(balanceOwnershipToken).to.be.eq(amountToTokenize);
@@ -79,174 +105,167 @@ describe("PendleRouter", async () => {
   });
 
   it("[After 1 month] should be able to redeem aUSDT to get back OT, XYT and interests $", async () => {
-    const initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
-    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
-    await pendleRouter.tokenizeYield(
-      constants.FORGE_AAVE,
-      tokenUSDT.address,
-      constants.SIX_MONTH_FROM_NOW,
-      amountToTokenize,
-      wallet.address,
-    );
-    await advanceTime(provider, constants.ONE_MONTH);
+    await tokenizeYieldSample(amountToTokenize);
+    await startCalInterest(charlie, amountToTokenize);
+
+    await setTimeNextBlock(provider, consts.T0.add(consts.ONE_MONTH));
 
     await pendleRouter.redeemUnderlying(
-      constants.FORGE_AAVE,
+      consts.FORGE_AAVE,
       tokenUSDT.address,
-      constants.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
       wallet.address,
-      constants.HIGH_GAS_OVERRIDE
+      consts.HIGH_GAS_OVERRIDE
     );
 
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
-    const rate = await getLiquidityRate(wallet, tokenUSDT);
-    const gain = getGain(amountToTokenize, rate, constants.ONE_MONTH);
 
+    const expectedGain = await getCurInterest(charlie, amountToTokenize);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
-      initialAUSDTbalance.add(gain).toNumber(),
-      3000
+      initialAUSDTbalance.add(expectedGain).toNumber(),
+      1000
     );
   });
 
   it("[After 1 month] should be able to get due interests", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
-    const initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
-
-    await pendleRouter.tokenizeYield(
-      constants.FORGE_AAVE,
-      tokenUSDT.address,
-      constants.SIX_MONTH_FROM_NOW,
-      amountToTokenize,
-      wallet.address
-    );
+    await tokenizeYieldSample(amountToTokenize);
+    await startCalInterest(charlie, amountToTokenize);
 
     const balance = await pendleOt.balanceOf(wallet.address);
     await pendleOt.transfer(wallet1.address, balance);
 
     const afterLendingAUSDTbalance = await aUSDT.balanceOf(wallet.address);
-    await advanceTime(provider, constants.ONE_MONTH);
+
+    await setTimeNextBlock(provider, consts.T0.add(consts.ONE_MONTH));
 
     await pendleRouter.redeemDueInterests(
-      constants.FORGE_AAVE,
+      consts.FORGE_AAVE,
       tokenUSDT.address,
-      constants.SIX_MONTH_FROM_NOW
+      consts.T0.add(consts.SIX_MONTH)
     );
 
-    const rate = await getLiquidityRate(wallet, tokenUSDT);
-    const gain = getGain(amountToTokenize, rate, constants.ONE_MONTH);
-
+    const expectedGain = await getCurInterest(charlie, amountToTokenize);
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
 
     expect(finalAUSDTbalance).to.be.below(initialAUSDTbalance);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
-      afterLendingAUSDTbalance.add(gain).toNumber(),
-      10
+      afterLendingAUSDTbalance.add(expectedGain).toNumber(),
+      1000
+    );
+  });
+
+  it("Another wallet should be able to receive interests from XYT", async () => {
+    await startCalInterest(charlie, amountToTokenize);
+
+    await tokenizeYieldSample(amountToTokenize);
+    await pendleXyt.transfer(wallet1.address, amountToTokenize);
+
+    const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
+    await setTimeNextBlock(provider, T1);
+
+    await pendleRouter
+      .connect(wallet1)
+      .redeemDueInterests(
+        consts.FORGE_AAVE,
+        tokenUSDT.address,
+        consts.T0.add(consts.SIX_MONTH)
+      );
+
+    const actualGain = await aUSDT.balanceOf(wallet1.address);
+    const expectedGain = await getCurInterest(charlie, amountToTokenize);
+
+    console.log(actualGain.sub(expectedGain).toString());
+    expect(actualGain.toNumber()).to.be.approximately(
+      expectedGain.toNumber(),
+      1000
     );
   });
 
   it("Short after expiry, should be able to redeem aUSDT from OT", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
-    const initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    await startCalInterest(charlie, amountToTokenize);
 
-    await pendleRouter.tokenizeYield(
-      constants.FORGE_AAVE,
-      tokenUSDT.address,
-      constants.SIX_MONTH_FROM_NOW,
-      amountToTokenize,
-      wallet.address
-    );
+    await tokenizeYieldSample(amountToTokenize);
     await pendleXyt.transfer(wallet1.address, amountToTokenize);
-    const duration = constants.SIX_MONTH_FROM_NOW.sub(
-      Math.round(Date.now() / 1000)
-    ).sub(180);
 
-    await advanceTime(provider, duration);
-    const wallet1Pendle = pendleRouter.connect(wallet1);
+    const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
+    await setTimeNextBlock(provider, T1);
 
-    await wallet1Pendle.redeemDueInterests(
-      constants.FORGE_AAVE,
-      tokenUSDT.address,
-      constants.SIX_MONTH_FROM_NOW
-    );
+    await pendleRouter
+      .connect(wallet1)
+      .redeemDueInterests(
+        consts.FORGE_AAVE,
+        tokenUSDT.address,
+        consts.T0.add(consts.SIX_MONTH)
+      );
 
-    const wallet1Gain = await aUSDT.balanceOf(wallet1.address);
-    let rate = await getLiquidityRate(wallet, tokenUSDT);
-    let gain = getGain(amountToTokenize, rate, duration);
+    await startCalInterest(dave, amountToTokenize);
 
-    expect(wallet1Gain.toNumber()).to.be.approximately(gain.toNumber(), 20);
-
-    await advanceTime(provider, BigNumber.from(360));
+    const T2 = T1.add(10);
+    await setTimeNextBlock(provider, T2);
 
     await pendleRouter.redeemAfterExpiry(
-      constants.FORGE_AAVE,
+      consts.FORGE_AAVE,
       tokenUSDT.address,
-      constants.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       wallet.address
     );
 
+    const expectedGain = await getCurInterest(dave, amountToTokenize);
+
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    console.log(
+      finalAUSDTbalance.sub(initialAUSDTbalance.add(expectedGain)).toString()
+    );
+
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
-      initialAUSDTbalance.toNumber(),
-      150
+      initialAUSDTbalance.add(expectedGain).toNumber(),
+      1000
     );
   });
 
-  it("One month after expiry, should be able to redeem aUSDT with interest", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BigNumber.from(100));
-    const initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+  it("One month after expiry, should be able to redeem aUSDT with intrest", async () => {
+    await startCalInterest(charlie, amountToTokenize);
 
-    await pendleRouter.tokenizeYield(
-      constants.FORGE_AAVE,
-      tokenUSDT.address,
-      constants.SIX_MONTH_FROM_NOW,
-      amountToTokenize,
-      wallet.address
-    );
+    await tokenizeYieldSample(amountToTokenize);
     await pendleXyt.transfer(wallet1.address, amountToTokenize);
-    const duration = constants.SIX_MONTH_FROM_NOW.sub(
-      Math.round(Date.now() / 1000)
-    ).sub(180);
 
-    await advanceTime(provider, duration);
+    const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
+    await setTimeNextBlock(provider, T1);
 
-    const wallet1Pendle = pendleRouter.connect(wallet1);
+    await pendleRouter
+      .connect(wallet1)
+      .redeemDueInterests(
+        consts.FORGE_AAVE,
+        tokenUSDT.address,
+        consts.T0.add(consts.SIX_MONTH)
+      );
 
-    await wallet1Pendle.redeemDueInterests(
-      constants.FORGE_AAVE,
-      tokenUSDT.address,
-      constants.SIX_MONTH_FROM_NOW
-    );
+    await startCalInterest(dave, amountToTokenize);
 
-    const wallet1Gain = await aUSDT.balanceOf(wallet1.address);
-    let rate = await getLiquidityRate(wallet, tokenUSDT);
-    let gain = getGain(amountToTokenize, rate, duration);
-
-    expect(wallet1Gain.toNumber()).to.be.approximately(gain.toNumber(), 20);
-
-    await advanceTime(provider, constants.ONE_MONTH);
+    const T2 = T1.add(consts.ONE_MONTH);
+    await setTimeNextBlock(provider, T2);
 
     await pendleRouter.redeemAfterExpiry(
-      constants.FORGE_AAVE,
+      consts.FORGE_AAVE,
       tokenUSDT.address,
-      constants.SIX_MONTH_FROM_NOW,
+      consts.T0.add(consts.SIX_MONTH),
       wallet.address
     );
 
-    rate = await getLiquidityRate(wallet, tokenUSDT);
-    gain = getGain(amountToTokenize, rate, constants.ONE_MONTH);
+    const expectedGain = await getCurInterest(dave, amountToTokenize);
     const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
-      initialAUSDTbalance.add(gain).toNumber(),
-      60000
+      initialAUSDTbalance.add(expectedGain).toNumber(),
+      1000
     );
   });
 
   it("Should be able to newYieldContracts", async () => {
-    let futureTime = constants.SIX_MONTH_FROM_NOW.add(constants.ONE_DAY);
+    let futureTime = consts.T0.add(consts.SIX_MONTH).add(consts.ONE_DAY);
     let filter = pendleAaveForge.filters.NewYieldContracts();
     let tx = await pendleRouter.newYieldContracts(
-      constants.FORGE_AAVE,
+      consts.FORGE_AAVE,
       tokenUSDT.address,
       futureTime
     );

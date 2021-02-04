@@ -29,7 +29,6 @@ import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../periphery/Permissions.sol";
 
-
 contract PendleData is IPendleData, Permissions {
     using SafeMath for uint256;
     using Enumerable for Enumerable.AddressSet;

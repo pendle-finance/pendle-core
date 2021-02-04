@@ -3,7 +3,7 @@ import { Contract } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
 
 import { pendleMarketFixture } from "./fixtures";
-import { constants, evm_revert, evm_snapshot, tokens, Token } from "../helpers";
+import { consts, evm_revert, evm_snapshot, tokens, Token } from "../helpers";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
@@ -25,10 +25,10 @@ describe("PendleData", async () => {
     globalSnapshotId = await evm_snapshot();
 
     const fixture = await loadFixture(pendleMarketFixture);
-    pendleRouter = fixture.router.pendleRouter;
-    pendleTreasury = fixture.router.pendleTreasury;
-    pendleData = fixture.router.pendleData;
-    pendleMarketFactory = fixture.router.pendleMarketFactory;
+    pendleRouter = fixture.core.pendleRouter;
+    pendleTreasury = fixture.core.pendleTreasury;
+    pendleData = fixture.core.pendleData;
+    pendleMarketFactory = fixture.core.pendleMarketFactory;
     pendleXyt = fixture.forge.pendleFutureYieldToken;
     tokenUSDT = tokens.USDT;
     snapshotId = await evm_snapshot();
@@ -59,17 +59,14 @@ describe("PendleData", async () => {
   it("getAllMarkets", async () => {
     let filter = pendleMarketFactory.filters.MarketCreated();
     let tx = await pendleRouter.createMarket(
-      constants.FORGE_AAVE,
-      constants.MARKET_FACTORY_AAVE,
+      consts.FORGE_AAVE,
+      consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
       tokenUSDT.address,
-      constants.THREE_MONTH_FROM_NOW,
-      constants.HIGH_GAS_OVERRIDE
+      consts.T0.add(consts.THREE_MONTH),
+      consts.HIGH_GAS_OVERRIDE
     );
-    let allEvents = await pendleMarketFactory.queryFilter(
-      filter,
-      tx.blockHash
-    );
+    let allEvents = await pendleMarketFactory.queryFilter(filter, tx.blockHash);
     let expectedMarkets: string[] = [];
     allEvents.forEach((event) => {
       expectedMarkets.push(event.args!.market);

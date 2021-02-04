@@ -2,7 +2,7 @@ import { expect, assert } from "chai";
 import { Contract } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
 
-import { pendleRouterFixture } from "./fixtures";
+import { pendleCoreFixture } from "./fixtures";
 import { evm_revert, evm_snapshot } from "../helpers";
 
 const { waffle } = require("hardhat");
@@ -20,7 +20,7 @@ describe("pendleMarketFactory", async () => {
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
-    const fixture = await loadFixture(pendleRouterFixture);
+    const fixture = await loadFixture(pendleCoreFixture);
     pendleMarketFactory = fixture.pendleMarketFactory;
     pendleRouter = fixture.pendleRouter;
     snapshotId = await evm_snapshot();
