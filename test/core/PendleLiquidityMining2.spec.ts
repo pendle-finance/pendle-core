@@ -65,10 +65,14 @@ describe("PendleLiquidityMining", async () => {
         consts.HIGH_GAS_OVERRIDE
       );
 
-
-    await setTimeNextBlock(provider, params.START_TIME.add(params.EPOCH_DURATION));
+    await setTimeNextBlock(
+      provider,
+      params.START_TIME.add(params.EPOCH_DURATION)
+    );
     // await advanceTime(provider, params.EPOCH_DURATION);
-    console.log("\t\t\t\t\t--------------------------[start of e 2] Withdrawing ");
+    console.log(
+      "\t\t\t\t\t--------------------------[start of e 2] Withdrawing "
+    );
     await pendleLiq
       .connect(bob)
       .withdraw(
@@ -77,15 +81,28 @@ describe("PendleLiquidityMining", async () => {
         consts.HIGH_GAS_OVERRIDE
       );
     console.log("Before claimedRewards");
-    console.log("pdl balance = ", (await pdl.balanceOf(bob.address)).toString());
-    console.log("\t\t\t\t\t-------------------------- still start of e2: ClaimingRewards ");
+    console.log(
+      "pdl balance = ",
+      (await pdl.balanceOf(bob.address)).toString()
+    );
+    console.log(
+      "\t\t\t\t\t-------------------------- still start of e2: ClaimingRewards "
+    );
     await pendleLiq.connect(bob).claimRewards();
     console.log("claimedRewards");
-    console.log("pdl balance = ", (await pdl.balanceOf(bob.address)).toString());
+    console.log(
+      "pdl balance = ",
+      (await pdl.balanceOf(bob.address)).toString()
+    );
 
-    await setTimeNextBlock(provider, params.START_TIME.add(params.EPOCH_DURATION).add(params.EPOCH_DURATION));
+    await setTimeNextBlock(
+      provider,
+      params.START_TIME.add(params.EPOCH_DURATION).add(params.EPOCH_DURATION)
+    );
     // await advanceTime(provider, params.EPOCH_DURATION);
-    console.log("\t\t\t\t\t--------------------------[start of e 3] ClaimingRewards ");
+    console.log(
+      "\t\t\t\t\t--------------------------[start of e 3] ClaimingRewards "
+    );
     console.log((await pdl.balanceOf(bob.address)).toString());
 
     console.log("Before claimedRewards 2");

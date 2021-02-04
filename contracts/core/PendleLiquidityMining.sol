@@ -326,7 +326,10 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
                 .add(
                 currentTotalStakeForExpiry[expiry].mul(newLastUpdated.sub(lastUpdatedForEpoch))
             );
-            console.log("\tupdated totalStakeSecondsForExpiry for this epoch = ", epochs[_epoch].totalStakeSecondsForExpiry[expiry]);
+            console.log(
+                "\tupdated totalStakeSecondsForExpiry for this epoch = ",
+                epochs[_epoch].totalStakeSecondsForExpiry[expiry]
+            );
             epochs[_epoch].lastTimeStakeSecondsUpdatedForExpiry[expiry] = newLastUpdated;
             _epoch = _epoch.sub(1);
         }
@@ -406,7 +409,10 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
                     epochDuration.sub(
                         lastTimeUserStakeUpdated[account][expiry].sub(startTime).mod(epochDuration) // TODO:Change this to _epochRelativeTime
                     ); // number of remaining seconds in this startEpoch (since the last action of user)
-                console.log("\t userStakeSeconds for this epoch = ", epochs[e].userStakeSeconds[account][expiry]);
+                console.log(
+                    "\t userStakeSeconds for this epoch = ",
+                    epochs[e].userStakeSeconds[account][expiry]
+                );
                 console.log("\t balance of user = ", balances[account][expiry]);
                 vars.userStakeSeconds = epochs[e].userStakeSeconds[account][expiry].add(
                     secondsStakedThisEpochSinceLastUpdate.mul(balances[account][expiry])
@@ -435,12 +441,15 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
                     // in the extreme extreme case of zero staked LPs for this expiry even now, nothing to do from this epoch onwards
                     break;
                 }
-                
+
                 epochs[e].totalStakeSecondsForExpiry[e] = currentTotalStakeForExpiry[expiry].mul(
                     epochDuration
                 ); // no one does anything in this epoch => totalStakeSecondsForExpiry = full epoch
 
-                console.log("\ttotalStakeSecondsForExpiry for this epoch was zero and updated to ", epochs[e].totalStakeSecondsForExpiry[e]);
+                console.log(
+                    "\ttotalStakeSecondsForExpiry for this epoch was zero and updated to ",
+                    epochs[e].totalStakeSecondsForExpiry[e]
+                );
             }
             vars.rewardsPerVestingEpoch = vars
                 .rewardsForMarket
