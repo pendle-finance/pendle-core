@@ -73,8 +73,8 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions {
 
         market = Factory.createContract(
             type(PendleMarket).creationCode,
-            abi.encodePacked(msg.sender, forgeAddress, _xyt, _token, _expiry),
-            abi.encode(msg.sender, forgeAddress, _xyt, _token, _expiry)
+            abi.encodePacked(forgeAddress, _xyt, _token, _expiry),
+            abi.encode(forgeAddress, _xyt, _token, _expiry)
         );
         data.addMarket(_forgeId, marketFactoryId, _xyt, _token, market);
 

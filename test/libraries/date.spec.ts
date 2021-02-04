@@ -1,14 +1,15 @@
-import { expect } from "chai";
-import { createFixtureLoader } from "ethereum-waffle";
-import { Contract } from "ethers";
+import chai, { expect } from "chai";
+import { Contract, constants } from "ethers";
+import { solidity, MockProvider, createFixtureLoader } from "ethereum-waffle";
+
 import { dateFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
 describe("Date", () => {
-  const [alice] = provider.getWallets();
-  const loadFixture = createFixtureLoader([alice], provider);
+  const [wallet] = provider.getWallets();
+  const loadFixture = createFixtureLoader([wallet], provider);
 
   let dateContract: Contract;
   beforeEach(async () => {

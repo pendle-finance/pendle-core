@@ -1,10 +1,11 @@
 
-import { Contract, providers, Wallet } from 'ethers';
-import PendleAaveForge from '../../../build/artifacts/contracts/core/PendleAaveForge.sol/PendleAaveForge.json';
-import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
-import PendleOwnershipToken from '../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json';
-import { consts, setTimeNextBlock, tokens } from "../../helpers";
-import { PendleRouterFixture } from "./pendleRouter.fixture";
+import { Contract, Wallet } from 'ethers'
+import PendleAaveForge from '../../../build/artifacts/contracts/core/PendleAaveForge.sol/PendleAaveForge.json'
+import PendleOwnershipToken from '../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json'
+import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json"
+import { constants, tokens } from "../../helpers/Constants"
+import { PendleRouterFixture } from "./pendleRouter.fixture"
+import { PendleGovernanceFixture } from "./pendleGovernance.fixture"
 
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;
@@ -16,30 +17,29 @@ export interface PendleAaveFixture {
 }
 
 export async function pendleAaveForgeFixture(
-    alice: Wallet,
-    provider: providers.Web3Provider,
+    wallet: Wallet,
     { pendleRouter, pendleData }: PendleRouterFixture,
+    { pendle }: PendleGovernanceFixture
 ): Promise<PendleAaveFixture> {
-    const pendleAaveForge = await deployContract(alice, PendleAaveForge, [pendleRouter.address, pendleRouter.address, consts.AAVE_LENDING_POOL_CORE_ADDRESS, consts.FORGE_AAVE]);
+    const pendleAaveForge = await deployContract(wallet, PendleAaveForge, [pendle.address, pendleRouter.address, constants.AAVE_LENDING_POOL_CORE_ADDRESS, constants.FORGE_AAVE]);
 
-    await pendleRouter.addForge(consts.FORGE_AAVE, pendleAaveForge.address)
+    await pendleRouter.addForge(constants.FORGE_AAVE, pendleAaveForge.address)
 
-    await setTimeNextBlock(provider, consts.T0); // set the minting time for the first OT and XYT
-    await pendleAaveForge.newYieldContracts(tokens.USDT.address, consts.T0.add(consts.SIX_MONTH));
+    await pendleRouter.newYieldContracts(constants.FORGE_AAVE, tokens.USDT.address, constants.SIX_MONTH_FROM_NOW);
     const otTokenAddress = await pendleData.otTokens(
-        consts.FORGE_AAVE,
+        constants.FORGE_AAVE,
         tokens.USDT.address,
-        consts.T0.add(consts.SIX_MONTH)
+        constants.SIX_MONTH_FROM_NOW
     );
 
     const xytTokenAddress = await pendleData.xytTokens(
-        consts.FORGE_AAVE,
+        constants.FORGE_AAVE,
         tokens.USDT.address,
-        consts.T0.add(consts.SIX_MONTH)
+        constants.SIX_MONTH_FROM_NOW
     );
 
-    const pendleOwnershipToken = new Contract(otTokenAddress, PendleOwnershipToken.abi, alice);
-    const pendleFutureYieldToken = new Contract(xytTokenAddress, PendleFutureYieldToken.abi, alice);
+    const pendleOwnershipToken = new Contract(otTokenAddress, PendleOwnershipToken.abi, wallet);
+    const pendleFutureYieldToken = new Contract(xytTokenAddress, PendleFutureYieldToken.abi, wallet);
 
     return { pendleAaveForge, pendleOwnershipToken, pendleFutureYieldToken, };
 }
