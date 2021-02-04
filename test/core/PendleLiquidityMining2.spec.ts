@@ -16,7 +16,7 @@ const { waffle } = require("hardhat");
 const hre = require("hardhat");
 const { deployContract, provider } = waffle;
 
-describe("PendleLiquidityMining", async () => {
+describe("PendleLiquidityMining-beta tests", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave] = wallets;
@@ -52,7 +52,7 @@ describe("PendleLiquidityMining", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  it("this test is failing and it shouldn't fail", async () => {
+  it("this test should run fine", async () => {
     const amountToStake = params.INITIAL_LP_AMOUNT;
 
     await setTimeNextBlock(provider, params.START_TIME);
@@ -112,7 +112,7 @@ describe("PendleLiquidityMining", async () => {
     console.log((await pdl.balanceOf(bob.address)).toString());
   });
 
-  it("test 1", async () => {
+  it("sample test 1", async () => {
     const amountToStake = params.INITIAL_LP_AMOUNT;
 
     await setTimeNextBlock(provider, params.START_TIME);

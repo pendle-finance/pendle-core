@@ -17,13 +17,13 @@ export interface PendleCoreFixture {
 }
 
 export async function pendleCoreFixture(
-  [wallet]: Wallet[],
+  [alice]: Wallet[],
   provider: providers.Web3Provider
 ): Promise<PendleCoreFixture> {
-  const pendleRouter = await deployContract(wallet, PendleRouter, [wallet.address, tokens.WETH.address]);
-  const pendleTreasury = await deployContract(wallet, PendleTreasury, [wallet.address]);
-  const pendleMarketFactory = await deployContract(wallet, PendleMarketFactory, [wallet.address, consts.MARKET_FACTORY_AAVE]);
-  const pendleData = await deployContract(wallet, PendleData, [wallet.address, pendleTreasury.address]);
+  const pendleRouter = await deployContract(alice, PendleRouter, [alice.address, tokens.WETH.address]);
+  const pendleTreasury = await deployContract(alice, PendleTreasury, [alice.address]);
+  const pendleMarketFactory = await deployContract(alice, PendleMarketFactory, [alice.address, consts.MARKET_FACTORY_AAVE]);
+  const pendleData = await deployContract(alice, PendleData, [alice.address, pendleTreasury.address]);
 
   await pendleMarketFactory.initialize(pendleRouter.address);
   await pendleData.initialize(pendleRouter.address);

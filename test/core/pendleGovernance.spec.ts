@@ -7,8 +7,8 @@ const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
 describe("PendleGovernance", () => {
-  const [wallet] = provider.getWallets();
-  const loadFixture = createFixtureLoader([wallet], provider);
+  const [alice] = provider.getWallets();
+  const loadFixture = createFixtureLoader([alice], provider);
 
   let pendle: Contract;
   let timelock: Contract;
@@ -22,7 +22,7 @@ describe("PendleGovernance", () => {
 
   it("timelock", async () => {
     const admin = await timelock.admin();
-    expect(admin).to.be.eq(wallet.address);
+    expect(admin).to.be.eq(alice.address);
     const pendingAdmin = await timelock.pendingAdmin();
     expect(pendingAdmin).to.be.eq(constants.AddressZero);
     const delay = await timelock.delay();

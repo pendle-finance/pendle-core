@@ -25,7 +25,7 @@ const provider = waffle.provider;
 describe("PendleRouter", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
-  const [wallet, wallet1, charlie, dave] = wallets;
+  const [alice, bob, charlie, dave] = wallets;
 
   let pendleRouter: Contract;
   let pendleTreasury: Contract;
@@ -54,7 +54,7 @@ describe("PendleRouter", async () => {
     pendleAaveForge = fixture.forge.pendleAaveForge;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     tokenUSDT = tokens.USDT;
-    aUSDT = await getAContract(wallet, lendingPoolCore, tokenUSDT);
+    aUSDT = await getAContract(alice, lendingPoolCore, tokenUSDT);
     snapshotId = await evm_snapshot();
   });
 
@@ -66,7 +66,7 @@ describe("PendleRouter", async () => {
     await evm_revert(snapshotId);
     snapshotId = await evm_snapshot();
     amountToTokenize = amountToWei(tokenUSDT, consts.INITIAL_AAVE_TOKEN_AMOUNT);
-    initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    initialAUSDTbalance = await aUSDT.balanceOf(alice.address);
   });
 
   async function tokenizeYieldSample(amountToTokenize: BN) {
@@ -75,7 +75,7 @@ describe("PendleRouter", async () => {
       tokenUSDT.address,
       consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
-      wallet.address
+      alice.address
     );
   }
 
@@ -98,8 +98,8 @@ describe("PendleRouter", async () => {
 
   it("should be able to deposit aUSDT to get back OT and XYT", async () => {
     await tokenizeYieldSample(amountToTokenize);
-    const balanceOwnershipToken = await pendleOt.balanceOf(wallet.address);
-    const balanceFutureYieldToken = await pendleXyt.balanceOf(wallet.address);
+    const balanceOwnershipToken = await pendleOt.balanceOf(alice.address);
+    const balanceFutureYieldToken = await pendleXyt.balanceOf(alice.address);
     expect(balanceOwnershipToken).to.be.eq(amountToTokenize);
     expect(balanceFutureYieldToken).to.be.eq(amountToTokenize);
   });
@@ -115,11 +115,11 @@ describe("PendleRouter", async () => {
       tokenUSDT.address,
       consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
-      wallet.address,
+      alice.address,
       consts.HIGH_GAS_OVERRIDE
     );
 
-    const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
 
     const expectedGain = await getCurInterest(charlie, amountToTokenize);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
@@ -132,10 +132,10 @@ describe("PendleRouter", async () => {
     await tokenizeYieldSample(amountToTokenize);
     await startCalInterest(charlie, amountToTokenize);
 
-    const balance = await pendleOt.balanceOf(wallet.address);
-    await pendleOt.transfer(wallet1.address, balance);
+    const balance = await pendleOt.balanceOf(alice.address);
+    await pendleOt.transfer(bob.address, balance);
 
-    const afterLendingAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    const afterLendingAUSDTbalance = await aUSDT.balanceOf(alice.address);
 
     await setTimeNextBlock(provider, consts.T0.add(consts.ONE_MONTH));
 
@@ -146,7 +146,7 @@ describe("PendleRouter", async () => {
     );
 
     const expectedGain = await getCurInterest(charlie, amountToTokenize);
-    const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
 
     expect(finalAUSDTbalance).to.be.below(initialAUSDTbalance);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
@@ -155,24 +155,24 @@ describe("PendleRouter", async () => {
     );
   });
 
-  it("Another wallet should be able to receive interests from XYT", async () => {
+  it("Another alice should be able to receive interests from XYT", async () => {
     await startCalInterest(charlie, amountToTokenize);
 
     await tokenizeYieldSample(amountToTokenize);
-    await pendleXyt.transfer(wallet1.address, amountToTokenize);
+    await pendleXyt.transfer(bob.address, amountToTokenize);
 
     const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
     await pendleRouter
-      .connect(wallet1)
+      .connect(bob)
       .redeemDueInterests(
         consts.FORGE_AAVE,
         tokenUSDT.address,
         consts.T0.add(consts.SIX_MONTH)
       );
 
-    const actualGain = await aUSDT.balanceOf(wallet1.address);
+    const actualGain = await aUSDT.balanceOf(bob.address);
     const expectedGain = await getCurInterest(charlie, amountToTokenize);
 
     console.log(actualGain.sub(expectedGain).toString());
@@ -186,13 +186,13 @@ describe("PendleRouter", async () => {
     await startCalInterest(charlie, amountToTokenize);
 
     await tokenizeYieldSample(amountToTokenize);
-    await pendleXyt.transfer(wallet1.address, amountToTokenize);
+    await pendleXyt.transfer(bob.address, amountToTokenize);
 
     const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
     await pendleRouter
-      .connect(wallet1)
+      .connect(bob)
       .redeemDueInterests(
         consts.FORGE_AAVE,
         tokenUSDT.address,
@@ -208,12 +208,12 @@ describe("PendleRouter", async () => {
       consts.FORGE_AAVE,
       tokenUSDT.address,
       consts.T0.add(consts.SIX_MONTH),
-      wallet.address
+      alice.address
     );
 
     const expectedGain = await getCurInterest(dave, amountToTokenize);
 
-    const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
     console.log(
       finalAUSDTbalance.sub(initialAUSDTbalance.add(expectedGain)).toString()
     );
@@ -228,13 +228,13 @@ describe("PendleRouter", async () => {
     await startCalInterest(charlie, amountToTokenize);
 
     await tokenizeYieldSample(amountToTokenize);
-    await pendleXyt.transfer(wallet1.address, amountToTokenize);
+    await pendleXyt.transfer(bob.address, amountToTokenize);
 
     const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
     await pendleRouter
-      .connect(wallet1)
+      .connect(bob)
       .redeemDueInterests(
         consts.FORGE_AAVE,
         tokenUSDT.address,
@@ -250,11 +250,11 @@ describe("PendleRouter", async () => {
       consts.FORGE_AAVE,
       tokenUSDT.address,
       consts.T0.add(consts.SIX_MONTH),
-      wallet.address
+      alice.address
     );
 
     const expectedGain = await getCurInterest(dave, amountToTokenize);
-    const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.add(expectedGain).toNumber(),
       1000

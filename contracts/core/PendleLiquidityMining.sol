@@ -60,7 +60,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     }
 
     /* IPendleData public pendleData; */
-    address public pdlAddress;
+    address public pendleAddress;
     IPendleMarketFactory public pendleMarketFactory;
     IPendleData public pendleData;
     bytes32 public override forgeId;
@@ -93,7 +93,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     mapping(address => mapping(uint256 => uint256)) public override balances;
     mapping(address => mapping(uint256 => uint256)) public lastTimeUserStakeUpdated;
 
-    // availableRewardsForEpoch[account][epochId] is the amount of PDLs the account can withdraw at the beginning of epochId
+    // availableRewardsForEpoch[account][epochId] is the amount of PENDLEs the account can withdraw at the beginning of epochId
     mapping(address => mapping(uint256 => uint256)) public availableRewardsForEpoch;
 
     mapping(uint256 => EpochData) private epochs;
@@ -107,7 +107,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
     constructor(
         address _governance,
-        address _pdlAddress,
+        address _pendleAddress,
         address _pendleData,
         address _pendleMarketFactory,
         address _pendleForge,
@@ -122,7 +122,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         require(_startTime > block.timestamp, "Pendle: startTime is over");
         //TODO: add more sanity checks:
         //  - ...
-        pdlAddress = _pdlAddress;
+        pendleAddress = _pendleAddress;
         pendleData = IPendleData(_pendleData);
         pendleMarketFactory = IPendleMarketFactory(_pendleMarketFactory);
         underlyingAsset = _underlyingAsset;
@@ -154,7 +154,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         require(!funded, "Pendle: funded");
         require(currentSettingId > 0, "Pendle: must set allocationSetting");
         funded = true;
-        IERC20(pdlAddress).safeTransferFrom(
+        IERC20(pendleAddress).safeTransferFrom(
             msg.sender,
             address(this),
             rewardsPerEpoch.mul(numberOfEpochs)
@@ -486,7 +486,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
             }
         }
         console.log("\trewardWithdrawableNow = ", _rewardsWithdrawableNow);
-        IERC20(pdlAddress).safeTransfer(account, _rewardsWithdrawableNow);
+        IERC20(pendleAddress).safeTransfer(account, _rewardsWithdrawableNow);
     }
 
     function _pullLpToken(

@@ -17,12 +17,12 @@ export interface PendleAaveFixture {
 }
 
 export async function pendleAaveForgeFixture(
-    wallet: Wallet,
+    alice: Wallet,
     provider: providers.Web3Provider,
     { pendleRouter, pendleData }: PendleCoreFixture,
     { pendle }: PendleGovernanceFixture
 ): Promise<PendleAaveFixture> {
-    const pendleAaveForge = await deployContract(wallet, PendleAaveForge, [pendle.address, pendleRouter.address, consts.AAVE_LENDING_POOL_CORE_ADDRESS, consts.FORGE_AAVE]);
+    const pendleAaveForge = await deployContract(alice, PendleAaveForge, [pendle.address, pendleRouter.address, consts.AAVE_LENDING_POOL_CORE_ADDRESS, consts.FORGE_AAVE]);
 
     await pendleRouter.addForge(consts.FORGE_AAVE, pendleAaveForge.address)
 
@@ -40,8 +40,8 @@ export async function pendleAaveForgeFixture(
         consts.T0.add(consts.SIX_MONTH)
     );
 
-    const pendleOwnershipToken = new Contract(otTokenAddress, PendleOwnershipToken.abi, wallet);
-    const pendleFutureYieldToken = new Contract(xytTokenAddress, PendleFutureYieldToken.abi, wallet);
+    const pendleOwnershipToken = new Contract(otTokenAddress, PendleOwnershipToken.abi, alice);
+    const pendleFutureYieldToken = new Contract(xytTokenAddress, PendleFutureYieldToken.abi, alice);
 
     return { pendleAaveForge, pendleOwnershipToken, pendleFutureYieldToken, };
 }
