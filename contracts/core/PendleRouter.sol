@@ -431,7 +431,7 @@ contract PendleRouter is IPendleRouter, Permissions {
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "Pendle: market not found");
 
-        _transferIn(_xyt, _initialTokenLiquidity);
+        _transferIn(_xyt, _initialXytLiquidity);
         _transferIn(_token, _initialTokenLiquidity);
 
         uint256 lpAmount = market.bootstrap(_initialXytLiquidity, _initialTokenLiquidity);
