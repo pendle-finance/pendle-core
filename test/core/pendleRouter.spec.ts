@@ -175,7 +175,6 @@ describe("PendleRouter", async () => {
     const actualGain = await aUSDT.balanceOf(bob.address);
     const expectedGain = await getCurInterest(charlie, amountToTokenize);
 
-    console.log(actualGain.sub(expectedGain).toString());
     expect(actualGain.toNumber()).to.be.approximately(
       expectedGain.toNumber(),
       1000
@@ -214,9 +213,6 @@ describe("PendleRouter", async () => {
     const expectedGain = await getCurInterest(dave, amountToTokenize);
 
     const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
-    console.log(
-      finalAUSDTbalance.sub(initialAUSDTbalance.add(expectedGain)).toString()
-    );
 
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.add(expectedGain).toNumber(),
