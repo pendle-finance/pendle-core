@@ -24,7 +24,6 @@
 pragma solidity ^0.7.0;
 
 import "./IPendleBaseToken.sol";
-import {Utils} from "../libraries/PendleLibrary.sol";
 
 interface IPendleYieldToken is IPendleBaseToken {
     /**

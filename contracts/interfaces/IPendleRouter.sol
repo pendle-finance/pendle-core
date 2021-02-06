@@ -24,7 +24,6 @@
 pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
-import {Utils} from "../libraries/PendleLibrary.sol";
 import "../interfaces/IWETH.sol";
 import "./IPendleData.sol";
 import "./IPendleMarketFactory.sol";

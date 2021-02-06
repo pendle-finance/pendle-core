@@ -65,7 +65,7 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions {
             data.getMarket(_forgeId, marketFactoryId, _xyt, _token) == address(0),
             "Pendle: market already exists"
         );
-        require(data.isValidXYT(_xyt), "Pendle: not xyt");
+        require(data.isRelatedForgeXYT(_forgeId, _xyt), "Pendle: forge-xyt not related");
 
         address forgeAddress = data.getForgeAddress(_forgeId);
         require(forgeAddress != address(0), "Pendle: zero address");

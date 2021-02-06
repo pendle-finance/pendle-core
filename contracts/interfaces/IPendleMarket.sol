@@ -26,7 +26,6 @@ pragma experimental ABIEncoderV2;
 
 import "./IPendleRouter.sol";
 import "./IPendleBaseToken.sol";
-import {Utils} from "../libraries/PendleLibrary.sol";
 
 interface IPendleMarket is IPendleBaseToken {
     struct TokenReserve {

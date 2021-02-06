@@ -75,7 +75,8 @@ describe("PendleRouter", async () => {
       tokenUSDT.address,
       consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
-      alice.address
+      alice.address,
+      consts.HIGH_GAS_OVERRIDE
     );
   }
 

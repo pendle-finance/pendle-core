@@ -23,7 +23,7 @@
 pragma solidity ^0.7.0;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import {Factory, Utils} from "../libraries/PendleLibrary.sol";
+import {ExpiryUtils, Factory} from "../libraries/PendleLibrary.sol";
 import "../interfaces/IAaveLendingPoolCore.sol";
 import "../interfaces/IPendleBaseToken.sol";
 import "../interfaces/IPendleData.sol";
@@ -33,8 +33,8 @@ import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
 
 contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
+    using ExpiryUtils for string;
     using SafeMath for uint256;
-    using Utils for string;
 
     struct PendleTokens {
         IPendleYieldToken xyt;
@@ -49,8 +49,8 @@ contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         public lastNormalisedIncome; //lastNormalisedIncome[underlyingAsset][expiry][account]
 
-    string private constant OT = "OT-Aave";
-    string private constant XYT = "XYT-Aave";
+    string private constant OT = "OT";
+    string private constant XYT = "XYT";
 
     constructor(
         address _governance,
@@ -90,23 +90,18 @@ contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
         address aToken = aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset);
         uint8 aTokenDecimals = IPendleBaseToken(aToken).decimals();
 
-        string memory otName = OT.concat(IPendleBaseToken(aToken).name(), " ");
-        string memory otSymbol = OT.concat(IPendleBaseToken(aToken).symbol(), "-");
-        string memory xytName = XYT.concat(IPendleBaseToken(aToken).name(), " ");
-        string memory xytSymbol = XYT.concat(IPendleBaseToken(aToken).symbol(), "-");
-
         ot = _forgeOwnershipToken(
             _underlyingAsset,
-            otName.concat(_expiry, " "),
-            otSymbol.concat(_expiry, "-"),
+            OT.concat(IPendleBaseToken(aToken).name(), _expiry, " "),
+            OT.concat(IPendleBaseToken(aToken).symbol(), _expiry, "-"),
             aTokenDecimals,
             _expiry
         );
         xyt = _forgeFutureYieldToken(
             _underlyingAsset,
             ot,
-            xytName.concat(_expiry, " "),
-            xytSymbol.concat(_expiry, "-"),
+            XYT.concat(IPendleBaseToken(aToken).name(), _expiry, " "),
+            XYT.concat(IPendleBaseToken(aToken).symbol(), _expiry, "-"),
             aTokenDecimals,
             _expiry
         );

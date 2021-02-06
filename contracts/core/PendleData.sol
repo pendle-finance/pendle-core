@@ -150,6 +150,16 @@ contract PendleData is IPendleData, Permissions {
         xyt = xytTokens[_forgeId][_underlyingAsset][_expiry];
     }
 
+    function isRelatedForgeXYT(bytes32 _forgeId, address _xyt)
+        external
+        view
+        override
+        returns (bool)
+    {
+        bytes32 forgeId = getForgeId[IPendleYieldToken(_xyt).forge()];
+        return forgeId == _forgeId;
+    }
+
     function isValidXYT(address _xyt) external view override returns (bool) {
         address forge = IPendleYieldToken(_xyt).forge();
         return getForgeId[forge] != bytes32(0);
@@ -318,7 +328,7 @@ contract PendleData is IPendleData, Permissions {
         override
         returns (address[] memory bestMarkets)
     {
-        return getBestMarketsWithLimit(source, destination, 32);
+        return getBestMarketsWithLimit(source, destination, 3);
     }
 
     function getMarketInfo(

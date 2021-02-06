@@ -464,7 +464,8 @@ describe("PendleMarket", async () => {
       pendleXyt.address,
       testToken.address,
       amountToTokenize.div(10),
-      totalSupply.div(21)
+      totalSupply.div(21),
+      consts.HIGH_GAS_OVERRIDE
     );
 
     let currentLpTokenBal = await pendleMarket.balanceOf(alice.address);

@@ -413,8 +413,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         return _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
     }
 
-    function _interestDistribute(address lp) internal returns (uint256 interestReturn) {}
-
     function _calcSpotPrice(
         TokenReserve memory inTokenReserve,
         TokenReserve memory outTokenReserve,

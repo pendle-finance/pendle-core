@@ -9,7 +9,7 @@ const {
   shouldBehaveLikeERC20Approve,
 } = require('./ERC20.behavior');
 
-const MockPendleOwnerShipToke = artifacts.require(
+const MockPendleOwnerShipToken = artifacts.require(
   '../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json'
 );
 const TestToken = artifacts.require('../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json');
@@ -22,7 +22,7 @@ contract('PendleOwnershipToken', function (accounts) {
   const initialSupply = new BN(100);
 
   beforeEach(async function () {
-    this.token = await MockPendleOwnerShipToke.new(
+    this.token = await MockPendleOwnerShipToken.new(
       consts.ZERO_ADDRESS,
       consts.ZERO_ADDRESS,
       name,

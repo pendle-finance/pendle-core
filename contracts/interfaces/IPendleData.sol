@@ -23,7 +23,6 @@
 
 pragma solidity ^0.7.0;
 
-import {Utils} from "../libraries/PendleLibrary.sol";
 import "./IPendleRouter.sol";
 import "./IPendleYieldToken.sol";
 
@@ -125,6 +124,8 @@ interface IPendleData {
      * @return forgeAddress Returns the forge address.
      **/
     function getForgeAddress(bytes32 forgeId) external view returns (address forgeAddress);
+
+    function isRelatedForgeXYT(bytes32 forgeId, address xyt) external view returns (bool);
 
     /**
      * @notice Checks if an XYT token is valid.
