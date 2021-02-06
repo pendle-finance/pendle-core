@@ -18,11 +18,31 @@ describe("ExpiryUtils", () => {
   let expiryUtilsContract: Contract;
 
   async function validate(expiryEpoch: number, expiryString: string) {
-    const otName = await expiryUtilsContract.concat(OT, AAVE_NAME, expiryEpoch, " ");
-    const otSymbol = await expiryUtilsContract.concat(OT, AAVE_SYMBOL, expiryEpoch, "-");
-    const xytName = await expiryUtilsContract.concat(XYT, AAVE_NAME, expiryEpoch, " ");
-    const xytSymbol = await expiryUtilsContract.concat(XYT, AAVE_SYMBOL, expiryEpoch, "-");
-  
+    const otName = await expiryUtilsContract.concat(
+      OT,
+      AAVE_NAME,
+      expiryEpoch,
+      " "
+    );
+    const otSymbol = await expiryUtilsContract.concat(
+      OT,
+      AAVE_SYMBOL,
+      expiryEpoch,
+      "-"
+    );
+    const xytName = await expiryUtilsContract.concat(
+      XYT,
+      AAVE_NAME,
+      expiryEpoch,
+      " "
+    );
+    const xytSymbol = await expiryUtilsContract.concat(
+      XYT,
+      AAVE_SYMBOL,
+      expiryEpoch,
+      "-"
+    );
+
     expect(otName).to.be.eq(`${OT} ${AAVE_NAME} ${expiryString}`);
     expect(otSymbol).to.be.eq(`${OT}-${AAVE_SYMBOL}-${expiryString}`);
     expect(xytName).to.be.eq(`${XYT} ${AAVE_NAME} ${expiryString}`);
