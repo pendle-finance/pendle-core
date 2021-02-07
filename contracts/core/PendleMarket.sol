@@ -108,12 +108,11 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 initialXytLiquidity,
         uint256 initialTokenLiquidity
     ) external override {
-
         reserves[xyt].balance = initialXytLiquidity;
         reserves[xyt].weight = Math.FORMULA_PRECISION / 2;
         reserves[token].balance = initialTokenLiquidity;
         reserves[token].weight = Math.FORMULA_PRECISION / 2;
-     
+
         blockNumLast = block.number; //@@XM added for curve shifting
         bootstrapped = true;
 
@@ -418,7 +417,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         _burnLpToken(exactInLp.sub(exitFees));
         _pushLpToken(factory, exitFee);
         _pushToken(outToken, _msgSender, exactOutToken);
-
 
         return exactOutToken;
     }
