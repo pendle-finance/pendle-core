@@ -112,7 +112,7 @@ contract PendleAaveForge is IPendleForge, ReentrancyGuard {
         IPendleData data = core.data();
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
-        emit NewYieldContracts(ot, xyt, _expiry);
+        emit NewYieldContracts(forgeId, _underlyingAsset, _expiry, ot, xyt);
     }
 
     function redeemDueInterests(
@@ -162,7 +162,7 @@ contract PendleAaveForge is IPendleForge, ReentrancyGuard {
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
         tokens.ot.burn(_msgSender, redeemedAmount);
 
-        emit RedeemYieldToken(_underlyingAsset, redeemedAmount, _expiry);
+        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, redeemedAmount);
     }
 
     // msg.sender needs to have both OT and XYT tokens
@@ -190,7 +190,7 @@ contract PendleAaveForge is IPendleForge, ReentrancyGuard {
         tokens.ot.burn(_msgSender, _amountToRedeem);
         tokens.xyt.burn(_msgSender, _amountToRedeem);
 
-        emit RedeemYieldToken(_underlyingAsset, _amountToRedeem, _expiry);
+        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem);
         return _amountToRedeem;
     }
 
@@ -211,7 +211,7 @@ contract PendleAaveForge is IPendleForge, ReentrancyGuard {
         lastNormalisedIncome[_underlyingAsset][_expiry][_to] = aaveLendingPoolCore
             .getReserveNormalizedIncome(address(_underlyingAsset));
 
-        emit MintYieldToken(_underlyingAsset, _amountToTokenize, _expiry);
+        emit MintYieldToken(forgeId, _underlyingAsset, _expiry, _amountToTokenize);
         return (address(tokens.ot), address(tokens.xyt));
     }
 
@@ -295,7 +295,7 @@ contract PendleAaveForge is IPendleForge, ReentrancyGuard {
             IERC20 aToken = IERC20(aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset));
             IERC20(aToken).transfer(_account, dueInterests);
 
-            emit DueInterestSettled(_underlyingAsset, _account, dueInterests, _expiry);
+            emit DueInterestSettled(forgeId, _underlyingAsset, _expiry, dueInterests, _account);
         }
 
         // console.log("[contract] [Forge] in _settleDueInterests, interests = ", dueInterests);

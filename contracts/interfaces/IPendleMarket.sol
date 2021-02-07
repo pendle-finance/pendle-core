@@ -33,14 +33,18 @@ interface IPendleMarket is IPendleBaseToken {
     /**
      * @notice Emitted when a swap happens on the market.
      * @param trader The address of msg.sender.
-     * @param srcAmount The source amount being traded.
-     * @param destAmount The destination amount received.
+     * @param inToken The input token.
+     * @param outToken The output token.
+     * @param exactIn The exact amount being traded.
+     * @param exactOut The exact amount received.
      * @param destination The destination addressed where the swap funds is sent to.
      **/
     event Swap(
         address indexed trader,
-        uint256 srcAmount,
-        uint256 destAmount,
+        address inToken,
+        address outToken,
+        uint256 exactIn,
+        uint256 exactOut,
         address indexed destination
     );
 

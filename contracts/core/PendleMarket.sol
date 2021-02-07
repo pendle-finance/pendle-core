@@ -108,15 +108,12 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 initialXytLiquidity,
         uint256 initialTokenLiquidity
     ) external override {
-        _pullToken(xyt, _msgSender, initialXytLiquidity);
 
-        _pullToken(token, _msgSender, initialTokenLiquidity);
         reserves[xyt].balance = initialXytLiquidity;
         reserves[xyt].weight = Math.FORMULA_PRECISION / 2;
         reserves[token].balance = initialTokenLiquidity;
         reserves[token].weight = Math.FORMULA_PRECISION / 2;
-        _mintLpToken(INITIAL_LP_FOR_CREATOR);
-        _pushLpToken(_msgSender, INITIAL_LP_FOR_CREATOR);
+     
         blockNumLast = block.number; //@@XM added for curve shifting
         bootstrapped = true;
 
@@ -126,6 +123,12 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].balance,
             reserves[token].weight
         );
+
+        _pullToken(xyt, _msgSender, initialXytLiquidity);
+        _pullToken(token, _msgSender, initialTokenLiquidity);
+
+        _mintLpToken(INITIAL_LP_FOR_CREATOR);
+        _pushLpToken(_msgSender, INITIAL_LP_FOR_CREATOR);
     }
 
     function spotPrice(address inToken, address outToken)
@@ -177,7 +180,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].balance,
             reserves[token].weight
         );
-        emit Swap(_msgSender, exactIn, exactOut, _msgSender);
+        emit Swap(_msgSender, inToken, outToken, exactIn, exactOut, _msgSender);
 
         _pullToken(inToken, _msgSender, exactIn);
         _pushToken(outToken, _msgSender, exactOut);
@@ -222,7 +225,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].balance,
             reserves[token].weight
         );
-        emit Swap(_msgSender, exactIn, exactOut, _msgSender);
+        emit Swap(_msgSender, inToken, outToken, exactIn, exactOut, _msgSender);
 
         _pullToken(inToken, _msgSender, exactIn);
         _pushToken(outToken, _msgSender, exactOut);
@@ -251,7 +254,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(exactIn != 0, "Pendle: zero xyt in amount");
         require(exactIn <= maxInXyt, "Pendle: high xyt in amount");
         reserves[xyt].balance = reserves[xyt].balance.add(exactIn);
-        _pullToken(xyt, _msgSender, exactIn);
 
         //calc and inject pair token
         balanceToken = reserves[token].balance;
@@ -259,12 +261,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(exactIn != 0, "Pendle: zero token in amount");
         require(exactIn <= maxInPair, "Pendle: high token in amount");
         reserves[token].balance = reserves[token].balance.add(exactIn);
-        _pullToken(token, _msgSender, exactIn);
-
-        //mint and push lp token
-        _mintLpToken(exactOutLp);
-        _pushLpToken(_msgSender, exactOutLp);
-        printAcc(_msgSender);
 
         emit Sync(
             reserves[xyt].balance,
@@ -272,6 +268,14 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].balance,
             reserves[token].weight
         );
+
+        _pullToken(xyt, _msgSender, exactIn);
+        _pullToken(token, _msgSender, exactIn);
+
+        //mint and push lp token
+        _mintLpToken(exactOutLp);
+        _pushLpToken(_msgSender, exactOutLp);
+        printAcc(_msgSender);
     }
 
     function printAcc(address a) internal view {
@@ -315,7 +319,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(exactOut != 0, "Pendle: zero xyt out amount");
         require(exactOut >= minOutXyt, "Pendle: low xyt out amount");
         reserves[xyt].balance = reserves[xyt].balance.sub(exactOut);
-        _pushToken(xyt, _msgSender, exactOut);
 
         //calc and withdraw pair token
         balanceToken = reserves[token].balance;
@@ -323,12 +326,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(exactOut != 0, "Pendle: zero token out amount");
         require(exactOut >= minOutPair, "Pendle: low token out amount");
         reserves[token].balance = reserves[token].balance.sub(exactOut);
-        _pushToken(token, _msgSender, exactOut);
-
-        //let's deal with lp last
-        _pullLpToken(_msgSender, exactInLp);
-        _pushLpToken(factory, exitFees);
-        _burnLpToken(inLpAfterExitFee);
 
         emit Sync(
             reserves[xyt].balance,
@@ -336,6 +333,14 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].balance,
             reserves[token].weight
         );
+
+        _pushToken(xyt, _msgSender, exactOut);
+        _pushToken(token, _msgSender, exactOut);
+
+        //let's deal with lp last
+        _pullLpToken(_msgSender, exactInLp);
+        _pushLpToken(factory, exitFees);
+        _burnLpToken(inLpAfterExitFee);
     }
 
     function joinPoolSingleToken(
@@ -362,16 +367,16 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         //update reserves and operate underlying lp and intoken
         inTokenReserve.balance = inTokenReserve.balance.add(exactIn);
 
-        _mintLpToken(exactOutLp);
-        _pushLpToken(_msgSender, exactOutLp);
-        _pullToken(inToken, _msgSender, exactIn);
-
         emit Sync(
             reserves[xyt].balance,
             reserves[xyt].weight,
             reserves[token].balance,
             reserves[token].weight
         );
+
+        _mintLpToken(exactOutLp);
+        _pushLpToken(_msgSender, exactOutLp);
+        _pullToken(inToken, _msgSender, exactIn);
 
         return exactOutLp;
     }
@@ -402,17 +407,18 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         uint256 exitFees = Math.rmul(exactInLp, data.exitFee());
 
-        _pullLpToken(_msgSender, exactInLp);
-        _burnLpToken(exactInLp.sub(exitFees));
-        _pushLpToken(factory, exitFee);
-        _pushToken(outToken, _msgSender, exactOutToken);
-
         emit Sync(
             reserves[xyt].balance,
             reserves[xyt].weight,
             reserves[token].balance,
             reserves[token].weight
         );
+
+        _pullLpToken(_msgSender, exactInLp);
+        _burnLpToken(exactInLp.sub(exitFees));
+        _pushLpToken(factory, exitFee);
+        _pushToken(outToken, _msgSender, exactOutToken);
+
 
         return exactOutToken;
     }
