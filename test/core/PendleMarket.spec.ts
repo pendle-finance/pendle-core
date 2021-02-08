@@ -21,7 +21,7 @@ describe("PendleMarket", async () => {
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, wallet1] = wallets;
   let pendle: Contract;
-  let pendleAaveMarketFactory: Contract;
+  let pendleMarketFactory: Contract;
   let pendleXyt: Contract;
   let lendingPoolCore: Contract;
   let pendleMarket: Contract;
@@ -35,7 +35,7 @@ describe("PendleMarket", async () => {
 
     const fixture = await loadFixture(pendleMarketFixture);
     pendle = fixture.core.pendle;
-    pendleAaveMarketFactory = fixture.core.pendleAaveMarketFactory;
+    pendleMarketFactory = fixture.core.pendleMarketFactory;
     pendleXyt = fixture.forge.pendleFutureYieldToken;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     testToken = fixture.testToken;
@@ -464,7 +464,7 @@ describe("PendleMarket", async () => {
   });
 
   it("should be able to getAllMarkets", async () => {
-    let filter = pendleAaveMarketFactory.filters.MarketCreated();
+    let filter = pendleMarketFactory.filters.MarketCreated();
     let tx = await pendle.createMarket(
       consts.FORGE_AAVE,
       consts.MARKET_FACTORY_AAVE,
@@ -473,10 +473,7 @@ describe("PendleMarket", async () => {
       consts.T0.add(consts.THREE_MONTH),
       consts.HIGH_GAS_OVERRIDE
     );
-    let allEvents = await pendleAaveMarketFactory.queryFilter(
-      filter,
-      tx.blockHash
-    );
+    let allEvents = await pendleMarketFactory.queryFilter(filter, tx.blockHash);
     let expectedMarkets: string[] = [];
     allEvents.forEach((event) => {
       expectedMarkets.push(event.args!.market);
@@ -487,7 +484,7 @@ describe("PendleMarket", async () => {
 
   it("shouldn't be able to create duplicated markets", async () => {
     await expect(
-      pendleAaveMarketFactory.createMarket(
+      pendleMarketFactory.createMarket(
         pendleXyt.address,
         testToken.address,
         consts.T0.add(consts.THREE_MONTH),

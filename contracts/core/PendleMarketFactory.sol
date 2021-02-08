@@ -30,15 +30,19 @@ import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleYieldToken.sol";
 import "../periphery/Permissions.sol";
 
-contract PendleAaveMarketFactory is IPendleMarketFactory, Permissions {
+contract PendleMarketFactory is IPendleMarketFactory, Permissions {
     IPendle public override core;
     bytes32 public immutable override marketFactoryId;
     bytes32 public immutable override forgeId;
 
-    constructor(address _governance, bytes32 _marketFactoryId) Permissions(_governance) {
+    constructor(
+        address _governance,
+        bytes32 _marketFactoryId,
+        bytes32 _forgeId
+    ) Permissions(_governance) {
         marketFactoryId = _marketFactoryId;
         //@@Vu TODO: put this as a constructor argument
-        forgeId = "Aave";
+        forgeId = _forgeId;
     }
 
     function initialize(IPendle _core) external {

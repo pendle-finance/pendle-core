@@ -3,7 +3,7 @@
   "PendleAaveForge.sol": 17558,
   "PendleData.sol": 5117,
   "PendleMarket.sol": 3762,
-  "PendleAaveMarketFactory.sol": 4903,
+  "PendleMarketFactory.sol": 4903,
   "PendleGovernance.sol": 11894,
   "PendleTreasury.sol": 3461,
   "Timelock.sol": 6025,

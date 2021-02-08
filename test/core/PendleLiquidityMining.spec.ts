@@ -24,7 +24,7 @@ describe("PendleLiquidityMining", async () => {
   const [wallet, wallet1] = wallets;
   let pendle: Contract;
   let pendleTreasury: Contract;
-  let pendleAaveMarketFactory: Contract;
+  let pendleMarketFactory: Contract;
   let pendleData: Contract;
   let pendleOt: Contract;
   let pendleXyt: Contract;
@@ -51,7 +51,7 @@ describe("PendleLiquidityMining", async () => {
     const fixture = await loadFixture(pendleMarketFixture);
     pendle = fixture.core.pendle;
     pendleTreasury = fixture.core.pendleTreasury;
-    pendleAaveMarketFactory = fixture.core.pendleAaveMarketFactory;
+    pendleMarketFactory = fixture.core.pendleMarketFactory;
     pendleData = fixture.core.pendleData;
     pendleOt = fixture.forge.pendleOwnershipToken;
     pendleXyt = fixture.forge.pendleFutureYieldToken;
@@ -83,7 +83,7 @@ describe("PendleLiquidityMining", async () => {
       [
         wallet.address,
         pdl.address,
-        pendleAaveMarketFactory.address,
+        pendleMarketFactory.address,
         tokens.USDT.address,
         testToken.address,
         liquidityMiningParameters.startTime,

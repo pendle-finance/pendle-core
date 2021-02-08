@@ -24,7 +24,7 @@ export async function pendleMarketFixture(
   const core = await pendleCoreFixture(wallets, provider);
   const forge = await pendleAaveForgeFixture(alice, provider, core);
   const aave = await aaveFixture(alice);
-  const { pendle, pendleAaveMarketFactory, pendleData } = core;
+  const { pendle, pendleMarketFactory, pendleData } = core;
   const { pendleAaveForge, pendleFutureYieldToken } = forge;
   const token = tokens.USDT
 
@@ -37,9 +37,9 @@ export async function pendleMarketFixture(
   const totalSupply = await testToken.totalSupply();
   await testToken.transfer(bob.address, totalSupply.div(2))
 
-  await pendle.addMarketFactory(consts.FORGE_AAVE, consts.MARKET_FACTORY_AAVE, pendleAaveMarketFactory.address);
+  await pendle.addMarketFactory(consts.FORGE_AAVE, consts.MARKET_FACTORY_AAVE, pendleMarketFactory.address);
 
-  await pendleAaveMarketFactory.createMarket(
+  await pendleMarketFactory.createMarket(
     pendleFutureYieldToken.address,
     testToken.address,
     consts.T0.add(consts.SIX_MONTH),

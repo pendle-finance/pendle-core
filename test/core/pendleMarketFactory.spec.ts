@@ -7,11 +7,11 @@ import { pendleCoreFixture } from "./fixtures";
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
-describe("pendleAaveMarketFactory", async () => {
+describe("pendleMarketFactory", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
 
-  let pendleAaveMarketFactory: Contract;
+  let pendleMarketFactory: Contract;
   let pendle: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
@@ -20,7 +20,7 @@ describe("pendleAaveMarketFactory", async () => {
     globalSnapshotId = await evm_snapshot();
 
     const fixture = await loadFixture(pendleCoreFixture);
-    pendleAaveMarketFactory = fixture.pendleAaveMarketFactory;
+    pendleMarketFactory = fixture.pendleMarketFactory;
     pendle = fixture.pendle;
     snapshotId = await evm_snapshot();
   });
@@ -35,8 +35,8 @@ describe("pendleAaveMarketFactory", async () => {
   });
 
   it("should be able to setCore", async () => {
-    await expect(pendleAaveMarketFactory.setCore(pendle.address))
-      .to.emit(pendleAaveMarketFactory, "CoreSet")
+    await expect(pendleMarketFactory.setCore(pendle.address))
+      .to.emit(pendleMarketFactory, "CoreSet")
       .withArgs(pendle.address);
   });
 });
