@@ -410,15 +410,12 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         _pushLpToken(factory, exitFee);
         _pushToken(outToken, _msgSender, exactOutToken);
 
-<<<<<<< HEAD
         emit Sync(
             reserves[xyt].balance,
             reserves[xyt].weight,
             reserves[token].balance,
             reserves[token].weight
         );
-=======
->>>>>>> 1465b92caa47a0a9f004ec8fed7f78a71b9063e1
         return exactOutToken;
     }
 
