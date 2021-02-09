@@ -404,7 +404,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         uint256 exitFees = Math.rmul(exactInLp, data.exitFee());
 
-
         _pullLpToken(_msgSender, exactInLp);
         _burnLpToken(exactInLp.sub(exitFees));
         _pushLpToken(factory, exitFee);
