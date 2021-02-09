@@ -236,6 +236,7 @@ library Math {
     }
 
     function rpowApprox(uint256 _base, uint256 _exp) internal pure returns (uint256) {
+        require(0 < _base && _base < 2 * FORMULA_PRECISION, "base out of range"); // from Balancer's audit report
         // term 0:
         uint256 a = _exp;
         (uint256 x, bool xneg) = rsignSub(_base, FORMULA_PRECISION);
