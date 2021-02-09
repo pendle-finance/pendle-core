@@ -112,7 +112,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         reserves[xyt].weight = Math.FORMULA_PRECISION / 2;
         reserves[token].balance = initialTokenLiquidity;
         reserves[token].weight = Math.FORMULA_PRECISION / 2;
-     
+
         blockNumLast = block.number; //@@XM added for curve shifting
         bootstrapped = true;
 
@@ -410,12 +410,15 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         _pushLpToken(factory, exitFee);
         _pushToken(outToken, _msgSender, exactOutToken);
 
+<<<<<<< HEAD
         emit Sync(
             reserves[xyt].balance,
             reserves[xyt].weight,
             reserves[token].balance,
             reserves[token].weight
         );
+=======
+>>>>>>> 1465b92caa47a0a9f004ec8fed7f78a71b9063e1
         return exactOutToken;
     }
 
