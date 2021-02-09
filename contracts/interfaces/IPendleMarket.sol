@@ -64,6 +64,20 @@ interface IPendleMarket is IPendleBaseToken {
         uint256 tokenWeightNew
     );
 
+    /**
+     * @dev Emitted when user adds liquidity
+     * @param token0Amount the amount of token0 (xyt) provided by user
+     * @param token1Amount the amount of token1 provided by user
+     */
+    event Join(address indexed sender, uint256 token0Amount, uint256 token1Amount);
+
+    /**
+     * @dev Emitted when user removes liquidity
+     * @param token0Amount the amount of token0 (xyt) given to user
+     * @param token1Amount the amount of token1 given to user
+     */
+    event Exit(address indexed sender, uint256 token0Amount, uint256 token1Amount);
+
     /* ========== POOL MANAGEMENT ========== */
 
     // function setPoolRatio(
