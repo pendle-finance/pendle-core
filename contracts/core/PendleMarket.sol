@@ -108,7 +108,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 initialXytLiquidity,
         uint256 initialTokenLiquidity
     ) external override {
-
         reserves[xyt].balance = initialXytLiquidity;
         reserves[xyt].weight = Math.FORMULA_PRECISION / 2;
         reserves[token].balance = initialTokenLiquidity;
@@ -254,6 +253,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(exactIn != 0, "Pendle: zero xyt in amount");
         require(exactIn <= maxInXyt, "Pendle: high xyt in amount");
         reserves[xyt].balance = reserves[xyt].balance.add(exactIn);
+        _pullToken(xyt, _msgSender, exactIn);
 
         //calc and inject pair token
         balanceToken = reserves[token].balance;
@@ -261,6 +261,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(exactIn != 0, "Pendle: zero token in amount");
         require(exactIn <= maxInPair, "Pendle: high token in amount");
         reserves[token].balance = reserves[token].balance.add(exactIn);
+        _pullToken(token, _msgSender, exactIn);
 
         emit Sync(
             reserves[xyt].balance,
@@ -268,9 +269,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].balance,
             reserves[token].weight
         );
-
-        _pullToken(xyt, _msgSender, exactIn);
-        _pullToken(token, _msgSender, exactIn);
 
         //mint and push lp token
         _mintLpToken(exactOutLp);
@@ -319,6 +317,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(exactOut != 0, "Pendle: zero xyt out amount");
         require(exactOut >= minOutXyt, "Pendle: low xyt out amount");
         reserves[xyt].balance = reserves[xyt].balance.sub(exactOut);
+        _pushToken(xyt, _msgSender, exactOut);
 
         //calc and withdraw pair token
         balanceToken = reserves[token].balance;
@@ -326,6 +325,12 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(exactOut != 0, "Pendle: zero token out amount");
         require(exactOut >= minOutPair, "Pendle: low token out amount");
         reserves[token].balance = reserves[token].balance.sub(exactOut);
+        _pushToken(token, _msgSender, exactOut);
+
+        //let's deal with lp last
+        _pullLpToken(_msgSender, exactInLp);
+        _pushLpToken(factory, exitFees);
+        _burnLpToken(inLpAfterExitFee);
 
         emit Sync(
             reserves[xyt].balance,
@@ -333,14 +338,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].balance,
             reserves[token].weight
         );
-
-        _pushToken(xyt, _msgSender, exactOut);
-        _pushToken(token, _msgSender, exactOut);
-
-        //let's deal with lp last
-        _pullLpToken(_msgSender, exactInLp);
-        _pushLpToken(factory, exitFees);
-        _burnLpToken(inLpAfterExitFee);
     }
 
     function joinPoolSingleToken(
@@ -407,19 +404,18 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         uint256 exitFees = Math.rmul(exactInLp, data.exitFee());
 
-        emit Sync(
-            reserves[xyt].balance,
-            reserves[xyt].weight,
-            reserves[token].balance,
-            reserves[token].weight
-        );
 
         _pullLpToken(_msgSender, exactInLp);
         _burnLpToken(exactInLp.sub(exitFees));
         _pushLpToken(factory, exitFee);
         _pushToken(outToken, _msgSender, exactOutToken);
 
-
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
         return exactOutToken;
     }
 
