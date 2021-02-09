@@ -1,5 +1,5 @@
 import { assert, expect } from "chai";
-import { Contract, BigNumber as BN } from "ethers";
+import { Contract, BigNumber as BN, Wallet } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
 
 import { pendleMarketFixture } from "./fixtures";
@@ -18,24 +18,19 @@ import {
 import { AMMTest } from "./AmmFormula";
 const { waffle } = require("hardhat");
 const { deployContract, provider } = waffle;
-const LP_TEST_DELTA: BN = BN.from(10 ** 9);
-const ERR_DELTA_TOO_LARGE = "fails due to delta between expected answer and actual answer is greater than allowed deta";
+const LP_TEST_DELTA: BN = BN.from(2 * 10 ** 9);
+const ERR_DELTA_TOO_LARGE =
+  "fails due to delta between expected answer and actual answer is greater than allowed deta";
 
 describe("pendleLpFormula", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
-  const [alice, bob] = wallets;
+  const [alice, bob, charlie] = wallets;
   let pendleRouter: Contract;
-  let pendleTreasury: Contract;
-  let pendleMarketFactory: Contract;
   let pendleData: Contract;
-  let pendleOwnershipToken: Contract;
   let pendleXyt: Contract;
-  let lendingPoolCore: Contract;
-  let pendleAaveForge: Contract;
   let pendleMarket: Contract;
   let testToken: Contract;
-  let aUSDT: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
   let tokenUSDT: Token;
@@ -45,17 +40,11 @@ describe("pendleLpFormula", async () => {
 
     const fixture = await loadFixture(pendleMarketFixture);
     pendleRouter = fixture.core.pendleRouter;
-    pendleTreasury = fixture.core.pendleTreasury;
-    pendleMarketFactory = fixture.core.pendleMarketFactory;
     pendleData = fixture.core.pendleData;
-    pendleOwnershipToken = fixture.forge.pendleOwnershipToken;
     pendleXyt = fixture.forge.pendleFutureYieldToken;
-    pendleAaveForge = fixture.forge.pendleAaveForge;
-    lendingPoolCore = fixture.aave.lendingPoolCore;
     testToken = fixture.testToken;
     pendleMarket = fixture.pendleMarket;
     tokenUSDT = tokens.USDT;
-    aUSDT = await getAContract(alice, lendingPoolCore, tokenUSDT);
     snapshotId = await evm_snapshot();
   });
 
@@ -94,17 +83,56 @@ describe("pendleLpFormula", async () => {
     );
   }
 
-  async function addLiquidity(amount: BN) {
-    await pendleRouter
-      .connect(bob)
-      .addMarketLiquidityToken(
-        consts.FORGE_AAVE,
-        consts.MARKET_FACTORY_AAVE,
-        pendleXyt.address,
-        testToken.address,
-        amount,
-        BN.from(0)
-      );
+  async function printMarketData() {
+    console.log(
+      `USDT weight: ${await pendleMarket.getWeight(
+        testToken.address
+      )} USDT balance: ${await pendleMarket.getBalance(
+        testToken.address
+      )} XYT weight: ${await pendleMarket.getWeight(
+        pendleXyt.address
+      )} XYT balance: ${await pendleMarket.getBalance(
+        pendleXyt.address
+      )} totalLp: ${await pendleMarket.totalSupply()}`
+    );
+  }
+
+  async function addLiquidity(user: Wallet, tokenAddress: string, amount: BN) {
+    // add by Bob since he is not having any Lp now
+    if (tokenAddress == testToken.address) {
+      await pendleRouter
+        .connect(user)
+        .addMarketLiquidityToken(
+          consts.FORGE_AAVE,
+          consts.MARKET_FACTORY_AAVE,
+          pendleXyt.address,
+          testToken.address,
+          amount,
+          BN.from(0)
+        );
+    } else if (tokenAddress == pendleXyt.address) {
+      await pendleRouter
+        .connect(user)
+        .addMarketLiquidityXyt(
+          consts.FORGE_AAVE,
+          consts.MARKET_FACTORY_AAVE,
+          pendleXyt.address,
+          testToken.address,
+          amount,
+          BN.from(0)
+        );
+    }
+  }
+
+  async function checkBalance(user: Wallet, expected: BN) {
+    expect(
+      approxBigNumber(
+        await pendleMarket.balanceOf(user.address),
+        expected,
+        LP_TEST_DELTA
+      ),
+      ERR_DELTA_TOO_LARGE
+    ).to.be.true;
   }
 
   // TODO: Investigate why market can handle a large amount of token swapping in
@@ -116,18 +144,22 @@ describe("pendleLpFormula", async () => {
     await setTimeNextBlock(provider, consts.T0.add(consts.THREE_MONTH));
     await swapTokenToXyt(amountToWei(tokenUSDT, BN.from(1000)));
 
-    console.log(
-      `weight of testToken ${await pendleMarket.getWeight(testToken.address)}`
+    await addLiquidity(
+      bob,
+      testToken.address,
+      amountToWei(tokenUSDT, BN.from(50))
     );
-    await addLiquidity(amountToWei(tokenUSDT, BN.from(50)));
-    expect(
-      approxBigNumber(
-        await pendleMarket.balanceOf(bob.address),
-        BN.from("15781471012099146"),
-        LP_TEST_DELTA
-      ),
-      ERR_DELTA_TOO_LARGE
-    ).to.be.true;
+    await checkBalance(bob, BN.from("15781471012099146"));
+
+    // await swapTokenToXyt(amountToWei(tokenUSDT, BN.from(1)));
+    await printMarketData();
+
+    await addLiquidity(
+      charlie,
+      pendleXyt.address,
+      amountToWei(tokenUSDT, BN.from(57))
+    );
+    await checkBalance(charlie, BN.from("188530794007041984"));
   });
 
   it("test 2", async () => {
@@ -137,19 +169,20 @@ describe("pendleLpFormula", async () => {
 
     await setTimeNextBlock(provider, consts.T0.add(consts.ONE_MONTH));
     await swapTokenToXyt(amountToWei(tokenUSDT, BN.from(1)));
-
-    console.log(
-      `weight of testToken ${await pendleMarket.getWeight(testToken.address)}`
+    await addLiquidity(
+      bob,
+      testToken.address,
+      amountToWei(tokenUSDT, BN.from(157))
     );
-    await addLiquidity(amountToWei(tokenUSDT, BN.from(157)));
-    expect(
-      approxBigNumber(
-        await pendleMarket.balanceOf(bob.address),
-        BN.from("197803881410821184"),
-        LP_TEST_DELTA
-      ),
-      ERR_DELTA_TOO_LARGE
-    ).to.be.true;
+    await checkBalance(bob, BN.from("197803881410821184"));
+    await printMarketData();
+
+    await addLiquidity(
+      charlie,
+      pendleXyt.address,
+      amountToWei(tokenUSDT, BN.from(36))
+    );
+    await checkBalance(charlie, BN.from("116503683068610384"));
   });
 
   it("test 3", async () => {
@@ -159,41 +192,29 @@ describe("pendleLpFormula", async () => {
 
     await setTimeNextBlock(provider, consts.T0.add(consts.ONE_MONTH.mul(5)));
     await swapTokenToXyt(amountToWei(tokenUSDT, BN.from(1)));
-    console.log(
-      `weight of testToken ${await pendleMarket.getWeight(testToken.address)}`
+    await addLiquidity(
+      bob,
+      testToken.address,
+      amountToWei(tokenUSDT, BN.from(729))
     );
+    await checkBalance(bob, BN.from("550165108272933056"));
+    await printMarketData();
 
-    await addLiquidity(amountToWei(tokenUSDT, BN.from(729)));
-    expect(
-      approxBigNumber(
-        await pendleMarket.balanceOf(bob.address),
-        BN.from("550165108272933056"),
-        LP_TEST_DELTA
-      ),
-      ERR_DELTA_TOO_LARGE
-    ).to.be.true;
+    await addLiquidity(
+      charlie,
+      pendleXyt.address,
+      amountToWei(tokenUSDT, BN.from(12))
+    );
+    await checkBalance(charlie, BN.from("86120215370550144"));
   });
+
   // it.only("test 3", async () => {
   //   const amountOfXyt = amountToWei(tokenUSDT, BN.from(458));
-  //   const amountOfToken = amountToWei(tokenUSDT, BN.from(445))
+  //   const amountOfToken = amountToWei(tokenUSDT, BN.from(445));
   //   await bootstrapMarket(amountOfXyt, amountOfToken);
-  //   await addLiquidity(amountToWei(tokenUSDT, BN.from(440))); // TODO: check why cannot add in 700
-  //   await swapTokenToXyt(amountToWei(tokenUSDT, BN.from(1)));
-  //   console.log((await pendleMarket.getWeight(testToken.address)));
+  //   await addLiquidity(amountToWei(tokenUSDT, BN.from(700))); // TODO: check why cannot add in 700
+  //   // await swapTokenToXyt(amountToWei(tokenUSDT, BN.from(1)));
+  //   console.log(await pendleMarket.getWeight(testToken.address));
   //   console.log(await pendleMarket.balanceOf(bob.address));
-  // });
-
-  // it.only("test 3 beta", async () => {
-  //   const amountOfXyt = amountToWei(tokenUSDT, BN.from(458));
-  //   const amountOfToken = amountToWei(tokenUSDT, BN.from(445))
-  //   await bootstrapMarket(amountOfXyt, amountOfToken);
-  //   await addLiquidity(amountToWei(tokenUSDT, BN.from(445)));
-
-  //   // await setTimeNextBlock(provider, consts.T0.add(consts.THREE_MONTH));
-  //   // await swapTokenToXyt(amountToWei(tokenUSDT, BN.from(1000)));
-
-  //   console.log(`weight of testToken ${(await pendleMarket.getWeight(testToken.address))}`);
-
-  //   assert(approxBigNumber(await pendleMarket.balanceOf(bob.address), BN.from("58059846184891792"), LP_TEST_DELTA));
   // });
 });
