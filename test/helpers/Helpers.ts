@@ -163,12 +163,14 @@ export function getGain(amount: BN, rate: BN, duration: BN): BN {
   return rateForDuration;
 }
 
-export function approxBigNumber(val1: BN, val2: BN, delta: BN): boolean {
-  var diff = val1.sub(val2);
+export function approxBigNumber(actual: BN, expected: BN, delta: BN): boolean {
+  var diff = expected.sub(actual);
   if (diff.lt(0)) {
     diff = diff.mul(-1);
   }
-  console.log("diff", diff);
+  console.log(
+    `expecting: ${expected.toString()}, received: ${actual.toString()}, diff: ${diff.toString()}, allowedDelta: ${delta.toString()}`
+  );
   return diff.lte(delta);
 }
 
