@@ -182,7 +182,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  it.only("Test", async () => {
+  it("Test", async () => {
     calculateExpectedRewards(
       [
         [
