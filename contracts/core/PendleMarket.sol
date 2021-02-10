@@ -189,32 +189,40 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 exactOutLp,
         uint256 maxInXyt,
         uint256 maxInToken
-    ) external override isBootstrapped onlyRouter {
+    )
+        external
+        override
+        isBootstrapped
+        onlyRouter
+        returns (uint256 amountXytUsed, uint256 amountTokenUsed)
+    {
         uint256 totalLp = totalSupply;
         uint256 ratio = Math.rdiv(exactOutLp, totalLp);
         require(ratio != 0, "Pendle: zero ratio");
 
         // Calc and inject XYT token.
-        uint256 balanceToken = reserves[xyt].balance;
-        uint256 inAmount = Math.rmul(ratio, balanceToken);
-        require(inAmount != 0, "Pendle: zero xyt in amount");
-        require(inAmount <= maxInXyt, "Pendle: high xyt in amount");
-        reserves[xyt].balance = reserves[xyt].balance.add(inAmount);
-        emit Join(xyt, inAmount);
-        _transferIn(xyt, inAmount);
+        uint256 balanceXyt = reserves[xyt].balance;
+        amountXytUsed = Math.rmul(ratio, balanceXyt);
+        require(amountXytUsed != 0, "Pendle: zero xyt in amount");
+        require(amountXytUsed <= maxInXyt, "Pendle: high xyt in amount");
+        reserves[xyt].balance = reserves[xyt].balance.add(amountXytUsed);
+        emit Join(xyt, amountXytUsed);
+        _transferIn(xyt, amountXytUsed);
 
         // Calc and inject pair token.
-        balanceToken = reserves[token].balance;
-        inAmount = Math.rmul(ratio, balanceToken);
-        require(inAmount != 0, "Pendle: zero token in amount");
-        require(inAmount <= maxInToken, "Pendle: high token in amount");
-        reserves[token].balance = reserves[token].balance.add(inAmount);
-        emit Join(token, inAmount);
-        _transferIn(token, inAmount);
+        uint256 balanceToken = reserves[token].balance;
+        amountTokenUsed = Math.rmul(ratio, balanceToken);
+        require(amountTokenUsed != 0, "Pendle: zero token in amount");
+        require(amountTokenUsed <= maxInToken, "Pendle: high token in amount");
+        reserves[token].balance = reserves[token].balance.add(amountTokenUsed);
+        emit Join(token, amountTokenUsed);
+        _transferIn(token, amountTokenUsed);
 
         // Mint and push LP token.
         _mintLp(exactOutLp);
         _transferOutLp(exactOutLp);
+
+        return (amountXytUsed, amountTokenUsed);
     }
 
     function joinMarketSingleToken(

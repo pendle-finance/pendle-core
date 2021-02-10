@@ -74,7 +74,7 @@ interface IPendleMarket is IPendleBaseToken {
         uint256 exactOutLp,
         uint256 maxInXyt,
         uint256 maxInToken
-    ) external;
+    ) external returns (uint256 amountXytUsed, uint256 amountTokenUsed);
 
     function exitMarketByAll(
         uint256 inLp,

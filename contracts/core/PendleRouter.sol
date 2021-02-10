@@ -236,9 +236,11 @@ contract PendleRouter is IPendleRouter, Permissions {
         _transferIn(_xyt, _maxInXyt);
         _transferIn(_token, _maxInToken);
 
-        market.joinMarketByAll(_exactOutLp, _maxInXyt, _maxInToken);
+        (uint256 amountXytUsed, uint256 amountTokenUsed) = market.joinMarketByAll(_exactOutLp, _maxInXyt, _maxInToken);
 
         _transferOut(address(market), _exactOutLp);
+        _transferOut(address(market), _maxInXyt-amountXytUsed); // transfer unused XYT back to user
+        _transferOut(address(market), _maxInToken-amountTokenUsed); // transfer unused Token back to user
     }
 
     /**
