@@ -138,8 +138,9 @@ contract MockLibrary {
     //  Also, EVM division is flooring and
     //    floor[(n-1) / 2] = floor[n / 2].
     //
-    function rpow(uint256 _base, uint256 _exp) public view returns (uint256) {
+    function rpow(uint256 _base, uint256 _exp) public view returns (uint256) { // base should be in range 0.666 & 1.5
         uint256 whole = rfloor(_exp);
+        console.log(_exp, whole);
         uint256 remain = _exp.sub(whole);
 
         uint256 wholePow = rpowi(_base, rtoi(whole));
@@ -147,8 +148,10 @@ contract MockLibrary {
         if (remain == 0) {
             return wholePow;
         }
-        console.log(_base, remain);
+
+        console.log("152", _base, remain);
         uint256 partialResult = rpowApprox(_base, remain);
+        console.log("153", wholePow, partialResult);
         return rmul(wholePow, partialResult);
     }
 
@@ -166,6 +169,7 @@ contract MockLibrary {
     }
 
     function rpowApprox(uint256 _base, uint256 _exp) public view returns (uint256) {
+        require(0 < _base && _base < 2 * FORMULA_PRECISION, "base out of range");
         // term 0:
         uint256 a = _exp;
         (uint256 x, bool xneg) = rsignSub(_base, FORMULA_PRECISION);
@@ -194,7 +198,7 @@ contract MockLibrary {
                 sum = sum.add(term);
             }
             console.log(term, c, x, bigK);
-            if (i == 100) {
+            if (i == 1000) {
                 break;
             }
         }
