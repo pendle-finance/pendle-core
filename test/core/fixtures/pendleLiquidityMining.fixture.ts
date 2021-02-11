@@ -66,7 +66,6 @@ export async function pendleLiquidityMiningFixture(
   );
 
   let pdl = await deployContract(alice, PENDLE, [alice.address]);
-  console.log("address out", pdl.address);
 
   let pendleLiquidityMining = await deployContract(
     alice,

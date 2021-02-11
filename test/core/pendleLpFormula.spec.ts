@@ -22,6 +22,7 @@ const LP_TEST_DELTA: BN = BN.from(2 * 10 ** 9);
 const ERR_DELTA_TOO_LARGE =
   "fails due to delta between expected answer and actual answer is greater than allowed deta";
 
+// TODO: add tests that check for transfering unused tokens back to users
 describe("pendleLpFormula", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);

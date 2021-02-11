@@ -1,5 +1,5 @@
 import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract } from "ethers";
+import { BigNumber as BN, Contract, Wallet } from "ethers";
 import {
   advanceTime,
   consts,
@@ -8,6 +8,7 @@ import {
   getAContract,
   setTimeNextBlock,
   tokens,
+  setTime,
 } from "../helpers";
 import PendleLiquidityMining from "../../build/artifacts/contracts/core/PendleLiquidityMining.sol/PendleLiquidityMining.json";
 import { liqParams, pendleLiquidityMiningFixture } from "./fixtures";
@@ -81,9 +82,7 @@ function calculateExpectedRewards(
         isStaking: true,
       });
       userData.forEach((userAction, actionId) => {
-        console.log(
-          `\t[calculateExpectedRewards] Processing userAction: ${userAction.time} ${userAction.amount} ${userAction.isStaking} for user ${userId}`
-        );
+        // console.log(`\t[calculateExpectedRewards] Processing userAction: ${userAction.time} ${userAction.amount} ${userAction.isStaking} for user ${userId}`);
         const timeElapsed = userAction.time.sub(lastTimeUpdated);
         const additionalStakeSeconds = userCurrentStakes[userId].mul(
           timeElapsed
@@ -91,15 +90,9 @@ function calculateExpectedRewards(
         userStakeSeconds[userId] = userStakeSeconds[userId].add(
           additionalStakeSeconds
         );
-        console.log(
-          `\t\ttotalStakeSeconds before = ${totalStakeSeconds}, ${totalStakeSeconds.add(
-            additionalStakeSeconds
-          )}`
-        );
+        // console.log(`\t\ttotalStakeSeconds before = ${totalStakeSeconds}, ${totalStakeSeconds.add(additionalStakeSeconds)}`);
         totalStakeSeconds = totalStakeSeconds.add(additionalStakeSeconds);
-        console.log(
-          `\t\t[calculateExpectedRewards] additionalStakeSeconds = ${additionalStakeSeconds}, timeElapsed = ${timeElapsed}, totalStakeSeconds = ${totalStakeSeconds}`
-        );
+        // console.log(`\t\t[calculateExpectedRewards] additionalStakeSeconds = ${additionalStakeSeconds}, timeElapsed = ${timeElapsed}, totalStakeSeconds = ${totalStakeSeconds}`);
 
         if (userAction.isStaking) {
           userCurrentStakes[userId] = userCurrentStakes[userId].add(
@@ -113,9 +106,7 @@ function calculateExpectedRewards(
         lastTimeUpdated = userAction.time;
       });
     });
-    console.log(
-      `\t[calculateExpectedRewards] Epoch = ${epochId}, totalStakeSeconds = ${totalStakeSeconds}`
-    );
+    // console.log(`\t[calculateExpectedRewards] Epoch = ${epochId}, totalStakeSeconds = ${totalStakeSeconds}`);
 
     epochData.forEach((userData, userId) => {
       const rewardsPerVestingEpoch = params.REWARDS_PER_EPOCH.mul(
@@ -182,15 +173,32 @@ describe("PendleLiquidityMining-beta tests", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  it("Test", async () => {
+  async function doStake(person: Wallet, amount: BN) {
+    await pendleLiq
+      .connect(person)
+      .stake(consts.T0.add(consts.SIX_MONTH), amount, consts.HIGH_GAS_OVERRIDE);
+  }
+
+  async function doWithdraw(person: Wallet, amount: BN) {
+    await pendleLiq
+      .connect(person)
+      .withdraw(
+        consts.T0.add(consts.SIX_MONTH),
+        amount,
+        consts.HIGH_GAS_OVERRIDE
+      );
+  }
+
+  it.only("Test", async () => {
     calculateExpectedRewards(
       [
         [
           //epoch 1
+          [],
           [
             // epoch 1 - user 1
             {
-              time: BN.from(4000001000), // start of epoch
+              time: BN.from(params.START_TIME), // start of epoch
               amount: BN.from(10000),
               isStaking: true,
             },
@@ -198,37 +206,62 @@ describe("PendleLiquidityMining-beta tests", async () => {
           [
             // epoch 1 - user 2
             {
-              time: BN.from(4000433000), // exactly half
+              time: BN.from(
+                params.START_TIME.add(params.EPOCH_DURATION.div(2))
+              ), // exactly half
               amount: BN.from(10000),
               isStaking: true,
             },
           ],
         ],
-        [
-          // epoch 2
-          [
-            // epoche 2 - user 1
-            {
-              time: BN.from(4000865000), // start of epoch
-              amount: BN.from(10000),
-              isStaking: false, //withdraw all
-            },
-          ],
-          [
-            // epoche 2 - user 2: dont do anything
-          ],
-        ],
+        // [ // epoch 2
+        //   [],
+        //   [ // epoche 2 - user 1
+        //     {
+        //       time: BN.from(params.START_TIME.add(params.EPOCH_DURATION)), // start of epoch
+        //       amount: BN.from(10000),
+        //       isStaking: false //withdraw all
+        //     },
+        //   ],
+        //   // [ // epoche 2 - user 2: dont do anything
+        //   // ],
+        // ]
       ],
       params,
-      3 // calculate for currentEpoch = 3
+      2
     );
+
+    console.log((await pdl.balanceOf(bob.address)).toString());
+
+    await setTimeNextBlock(provider, params.START_TIME);
+    await doStake(bob, BN.from(10000));
+
+    await advanceTime(provider, params.EPOCH_DURATION.div(2));
+    await doStake(charlie, BN.from(10000));
+
+    await advanceTime(provider, params.EPOCH_DURATION.div(2));
+
+    console.log(
+      "rewards Bob",
+      await pendleLiqWeb3.methods.claimRewards().call({ from: bob.address })
+    );
+    console.log(
+      "rewards Charlie",
+      await pendleLiqWeb3.methods.claimRewards().call({ from: charlie.address })
+    );
+    // await doWithdraw(bob, BN.from(10000));
+
+    // // await advanceTime(provider, params.EPOCH_DURATION);
+
+    // console.log("rewards Bob", await pendleLiqWeb3.methods
+    //   .claimRewards()
+    //   .call({ from: bob.address }));
   });
 
   it("this test should run fine", async () => {
     const amountToStake = params.INITIAL_LP_AMOUNT;
 
     await setTimeNextBlock(provider, params.START_TIME);
-    console.log("\t\t\t\t\t--------------------------[start of e 1] Staking ");
     await pendleLiq
       .connect(bob)
       .stake(
@@ -242,9 +275,6 @@ describe("PendleLiquidityMining-beta tests", async () => {
       params.START_TIME.add(params.EPOCH_DURATION)
     );
     // await advanceTime(provider, params.EPOCH_DURATION);
-    console.log(
-      "\t\t\t\t\t--------------------------[start of e 2] Withdrawing "
-    );
     await pendleLiq
       .connect(bob)
       .withdraw(
@@ -252,36 +282,14 @@ describe("PendleLiquidityMining-beta tests", async () => {
         amountToStake,
         consts.HIGH_GAS_OVERRIDE
       );
-    console.log("Before claimedRewards");
-    console.log(
-      "pdl balance = ",
-      (await pdl.balanceOf(bob.address)).toString()
-    );
-    console.log(
-      "\t\t\t\t\t-------------------------- still start of e2: ClaimingRewards "
-    );
     await pendleLiq.connect(bob).claimRewards();
-    console.log("claimedRewards");
-    console.log(
-      "pdl balance = ",
-      (await pdl.balanceOf(bob.address)).toString()
-    );
-
     await setTimeNextBlock(
       provider,
       params.START_TIME.add(params.EPOCH_DURATION).add(params.EPOCH_DURATION)
     );
-    // await advanceTime(provider, params.EPOCH_DURATION);
-    console.log(
-      "\t\t\t\t\t--------------------------[start of e 3] ClaimingRewards "
-    );
     console.log((await pdl.balanceOf(bob.address)).toString());
 
-    console.log("Before claimedRewards 2");
     await pendleLiq.connect(bob).claimRewards();
-    console.log("claimedRewards 2");
-
-    console.log((await pdl.balanceOf(bob.address)).toString());
   });
 
   it("sample test 1", async () => {
