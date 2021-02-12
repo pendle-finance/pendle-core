@@ -231,6 +231,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
       2
     );
 
+    console.log(`rewardsPerEpoch in params = ${params.REWARDS_PER_EPOCH}`);
     console.log((await pdl.balanceOf(bob.address)).toString());
 
     await setTimeNextBlock(provider, params.START_TIME);

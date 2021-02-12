@@ -435,7 +435,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
                 .mul(allocationSettings[vars.settingId][expiry])
                 .div(ALLOCATION_DENOMINATOR);
 
-            if (epochs[e].totalStakeSecondsForExpiry[e] == 0) {
+            if (epochs[e].totalStakeSecondsForExpiry[expiry] == 0) {
                 //There is a remote but possible case when no-one stake/unstake for this expiry during the epoch
                 //I.e. Everyone staked before the start of the epoch and hold through the end
                 //as such, totalStakeSecondsForExpiry is still not updated, and is zero.
@@ -445,7 +445,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
                     break;
                 }
 
-                epochs[e].totalStakeSecondsForExpiry[e] = currentTotalStakeForExpiry[expiry].mul(
+                epochs[e].totalStakeSecondsForExpiry[expiry] = currentTotalStakeForExpiry[expiry].mul(
                     epochDuration
                 ); // no one does anything in this epoch => totalStakeSecondsForExpiry = full epoch
 
@@ -457,7 +457,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
             vars.rewardsPerVestingEpoch = vars
                 .rewardsForMarket
                 .mul(vars.userStakeSeconds)
-                .div(epochs[e].totalStakeSecondsForExpiry[e])
+                .div(epochs[e].totalStakeSecondsForExpiry[expiry])
                 .div(vestingEpochs);
 
             // console.log("\trewardPerVestingEpoch = ", vars.rewardsPerVestingEpoch);
