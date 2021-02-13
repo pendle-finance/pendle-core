@@ -31,6 +31,7 @@ import "../tokens/PendleBaseToken.sol";
 import "../libraries/PendleLibrary.sol";
 import {Math} from "../libraries/PendleLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "hardhat/console.sol";
 
 contract PendleMarket is IPendleMarket, PendleBaseToken {
     using Math for uint256;
@@ -232,6 +233,10 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     ) external override isBootstrapped onlyRouter returns (uint256 exactOutLp) {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
+
+        _curveShift(data);
+        console.log("weight of inToken",reserves[inToken].weight);
+
         TokenReserve storage inTokenReserve = reserves[inToken];
         uint256 totalLp = totalSupply;
         uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
