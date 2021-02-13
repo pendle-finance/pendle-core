@@ -112,6 +112,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     /**
      * @notice Exit the market by putting in the desired amount of LP tokens
      *         and getting back XYT and pair tokens.
+     * @dev no curveShift to save gas because this function
+                doesn't depend on weights of tokens
      */
     function exitMarketByAll(
         uint256 inLp,
@@ -160,6 +162,10 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     ) external override isBootstrapped onlyRouter returns (uint256 outAmountToken) {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
+
+        _curveShift(data);
+        console.log("exitMarket - weight of outToken: ", reserves[outToken].weight);
+
         TokenReserve storage outTokenReserve = reserves[outToken];
         uint256 exitFee = data.exitFee();
         uint256 exitFees = Math.rmul(inLp, data.exitFee());
@@ -185,6 +191,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     /**
      * @notice Join the market by putting in xytToken and pairTokens
      *          and get back desired amount of lpToken.
+     * @dev no curveShift to save gas because this function
+                doesn't depend on weights of tokens
      */
     function joinMarketByAll(
         uint256 exactOutLp,
@@ -235,7 +243,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         IPendleData data = router.data();
 
         _curveShift(data);
-        console.log("weight of inToken", reserves[inToken].weight);
+        console.log("joinMarket - weight of inToken: ", reserves[inToken].weight);
 
         TokenReserve storage inTokenReserve = reserves[inToken];
         uint256 totalLp = totalSupply;
