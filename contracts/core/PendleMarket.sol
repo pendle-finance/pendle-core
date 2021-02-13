@@ -235,7 +235,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         IPendleData data = router.data();
 
         _curveShift(data);
-        console.log("weight of inToken",reserves[inToken].weight);
+        console.log("weight of inToken", reserves[inToken].weight);
 
         TokenReserve storage inTokenReserve = reserves[inToken];
         uint256 totalLp = totalSupply;
