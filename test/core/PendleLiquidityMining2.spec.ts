@@ -46,26 +46,39 @@ function calculateExpectedRewards(
   currentEpoch: number
 ): BN[][] {
   let userCurrentStakes: BN[] = [];
+  let userLastWithdrawnEpoch: number[] = [];
   let rewards: BN[][] = [];
 
   let nUsers = userStakingData[0].length;
-  let availableRewardsForEpoch: BN[][] = []; // availableRewardsForEpoch[userId][epochId]
+  // let availableRewardsForEpoch: BN[][] = []; // availableRewardsForEpoch[userId][epochId]
 
   for (let i: number = 0; i < nUsers; i++) {
     userCurrentStakes.push(BN.from(0));
+    userLastWithdrawnEpoch.push(0);
     rewards.push([]);
-    availableRewardsForEpoch.push([]);
-    for (
-      let j: number = 0;
-      j < params.NUMBER_OF_EPOCHS.add(params.VESTING_EPOCHS).toNumber();
-      j++
-    ) {
-      availableRewardsForEpoch[i].push(BN.from(0));
-    }
+    // availableRewardsForEpoch.push([]);
+    // for (
+    //   let j: number = 0;
+    //   j < params.NUMBER_OF_EPOCHS.add(params.VESTING_EPOCHS).toNumber();
+    //   j++
+    // ) {
+    //   availableRewardsForEpoch[i].push(BN.from(0));
+    // }
     for (let j: number = 0; j < params.VESTING_EPOCHS.toNumber(); j++) {
       rewards[i].push(BN.from(0));
     }
   }
+
+  userStakingData.forEach((epochData, i) => {
+    let epochId = i + 1;
+    epochData.forEach((userData, userId) => {
+      userData.forEach((userAction, actionId) => {
+        if (!userAction.isStaking) {
+          userLastWithdrawnEpoch[userId] = epochId;
+        }
+      });
+    })
+  });
 
   userStakingData.forEach((epochData, i) => {
     let epochId = i + 1;
@@ -119,6 +132,9 @@ function calculateExpectedRewards(
         e <= epochId + params.VESTING_EPOCHS.toNumber();
         e++
       ) {
+        if (e <= userLastWithdrawnEpoch[userId]) {
+          continue; // this would be withdrawn by the user's last withdraw action
+        }
         if (e <= currentEpoch) {
           rewards[userId][0] = rewards[userId][0].add(rewardsPerVestingEpoch);
           continue;
@@ -214,21 +230,21 @@ describe("PendleLiquidityMining-beta tests", async () => {
             },
           ],
         ],
-        // [ // epoch 2
-        //   [],
-        //   [ // epoche 2 - user 1
-        //     {
-        //       time: BN.from(params.START_TIME.add(params.EPOCH_DURATION)), // start of epoch
-        //       amount: BN.from(10000),
-        //       isStaking: false //withdraw all
-        //     },
-        //   ],
-        //   // [ // epoche 2 - user 2: dont do anything
-        //   // ],
-        // ]
+        [ // epoch 2
+          [],
+          [ // epoche 2 - user 1
+            {
+              time: BN.from(params.START_TIME.add(params.EPOCH_DURATION)), // start of epoch
+              amount: BN.from(10000),
+              isStaking: false //withdraw all
+            },
+          ],
+          [ // epoche 2 - user 2: dont do anything
+          ],
+        ]
       ],
       params,
-      2
+      3
     );
 
     console.log(`rewardsPerEpoch in params = ${params.REWARDS_PER_EPOCH}`);
