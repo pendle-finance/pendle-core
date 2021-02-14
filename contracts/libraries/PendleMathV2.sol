@@ -160,6 +160,9 @@ library Math {
             if (curTerm == 0) {
                 break;
             }
+            if (n == 500) {
+                revert("rpowe slow converge");
+            }
         }
 
         return res;
