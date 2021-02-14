@@ -199,18 +199,21 @@ library Math {
     }
 
     /**
-    @notice return a^q with a in FP form and q in Int
+    @notice return base^exp with base in FP form and exp in Int
     @dev this function use a technique called: exponentiating by squaring
         complexity O(log(q))
-    @dev (q & 1 > 0) is a faster way to check if q % 2 !=0 or not
-        q>>=1 is a faster way to calculate q/=2
+    @dev function is from Kyber. Long have verified this function
+            to be working correctly
      */
-    function rpowi(uint256 a, uint256 q) internal pure returns (uint256) {
-        uint256 res = RONE;
-        while (q > 0) {
-            if ((q & 1) > 0) res = rmul(res, a);
-            a = rmul(a, a);
-            q >>= 1;
+    function rpowi(uint256 base, uint256 exp) internal pure returns (uint256) {
+        uint256 res = exp % 2 != 0 ? base : RONE;
+
+        for (exp /= 2; exp != 0; exp /= 2) {
+            base = rmul(base, base);
+
+            if (exp % 2 != 0) {
+                res = rmul(res, base);
+            }
         }
         return res;
     }
