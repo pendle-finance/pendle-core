@@ -445,9 +445,8 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
                     break;
                 }
 
-                epochs[e].totalStakeSecondsForExpiry[expiry] = currentTotalStakeForExpiry[expiry].mul(
-                    epochDuration
-                ); // no one does anything in this epoch => totalStakeSecondsForExpiry = full epoch
+                epochs[e].totalStakeSecondsForExpiry[expiry] = currentTotalStakeForExpiry[expiry]
+                    .mul(epochDuration); // no one does anything in this epoch => totalStakeSecondsForExpiry = full epoch
 
                 // console.log(
                 //     "\ttotalStakeSecondsForExpiry for this epoch was zero and updated to ",

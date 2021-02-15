@@ -138,7 +138,8 @@ contract MockLibrary {
     //  Also, EVM division is flooring and
     //    floor[(n-1) / 2] = floor[n / 2].
     //
-    function rpow(uint256 _base, uint256 _exp) public view returns (uint256) { // base should be in range 0.666 & 1.5
+    function rpow(uint256 _base, uint256 _exp) public view returns (uint256) {
+        // base should be in range 0.666 & 1.5
         uint256 whole = rfloor(_exp);
         console.log(_exp, whole);
         uint256 remain = _exp.sub(whole);

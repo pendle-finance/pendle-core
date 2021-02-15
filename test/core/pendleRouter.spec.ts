@@ -156,7 +156,7 @@ describe("PendleRouter", async () => {
     );
   });
 
-  it("Another alice should be able to receive interests from XYT", async () => {
+  it("Another wallet should be able to receive interests from XYT", async () => {
     await startCalInterest(charlie, amountToTokenize);
 
     await tokenizeYieldSample(amountToTokenize);

@@ -77,7 +77,7 @@ function calculateExpectedRewards(
           userLastWithdrawnEpoch[userId] = epochId;
         }
       });
-    })
+    });
   });
 
   userStakingData.forEach((epochData, i) => {
@@ -205,7 +205,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
       );
   }
 
-  it.only("Test", async () => {
+  it("Test", async () => {
     calculateExpectedRewards(
       [
         [

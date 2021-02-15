@@ -7,7 +7,6 @@ import {
   consts,
   tokens,
   amountToWei,
-  getAContract,
   evm_snapshot,
   evm_revert,
   Token,
@@ -15,14 +14,14 @@ import {
   approxBigNumber,
   setTimeNextBlock,
 } from "../helpers";
-import { AMMTest } from "./AmmFormula";
 const { waffle } = require("hardhat");
-const { deployContract, provider } = waffle;
-const LP_TEST_DELTA: BN = BN.from(2 * 10 ** 9);
+const { provider } = waffle;
+
 const ERR_DELTA_TOO_LARGE =
   "fails due to delta between expected answer and actual answer is greater than allowed deta";
 
 // TODO: add tests that check for transfering unused tokens back to users
+// TODO: add tests to test new math lib
 describe("pendleLpFormula", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
@@ -98,8 +97,7 @@ describe("pendleLpFormula", async () => {
     );
   }
 
-  async function addLiquidity(user: Wallet, tokenAddress: string, amount: BN) {
-    // add by Bob since he is not having any Lp now
+  async function addLiquiditySingleToken(user: Wallet, tokenAddress: string, amount: BN) {
     if (tokenAddress == testToken.address) {
       await pendleRouter
         .connect(user)
@@ -111,7 +109,8 @@ describe("pendleLpFormula", async () => {
           amount,
           BN.from(0)
         );
-    } else if (tokenAddress == pendleXyt.address) {
+    } else {
+      // if (tokenAddress == pendleXyt.address) {
       await pendleRouter
         .connect(user)
         .addMarketLiquidityXyt(
@@ -125,97 +124,238 @@ describe("pendleLpFormula", async () => {
     }
   }
 
-  async function checkBalance(user: Wallet, expected: BN) {
+  async function removeLiquiditySingleToken(
+    user: Wallet,
+    tokenAddress: string,
+    amount: BN
+  ): Promise<BN> {
+    let initialBalance: BN;
+    let postBalance: BN;
+    if (tokenAddress == testToken.address) {
+      initialBalance = await testToken.balanceOf(user.address);
+      await pendleRouter
+        .connect(user)
+        .removeMarketLiquidityToken(
+          consts.FORGE_AAVE,
+          consts.MARKET_FACTORY_AAVE,
+          pendleXyt.address,
+          testToken.address,
+          amount,
+          BN.from(0)
+        );
+      postBalance = await testToken.balanceOf(user.address);
+    } else {
+      // if (tokenAddress == pendleXyt.address)
+      initialBalance = await pendleXyt.balanceOf(user.address);
+      await pendleRouter
+        .connect(user)
+        .removeMarketLiquidityXyt(
+          consts.FORGE_AAVE,
+          consts.MARKET_FACTORY_AAVE,
+          pendleXyt.address,
+          testToken.address,
+          amount,
+          BN.from(0)
+        );
+      postBalance = await pendleXyt.balanceOf(user.address);
+    }
+    return postBalance.sub(initialBalance);
+  }
+
+  async function checkLpBalance(user: Wallet, expected: BN) {
     expect(
       approxBigNumber(
         await pendleMarket.balanceOf(user.address),
         expected,
-        LP_TEST_DELTA
+        consts.TEST_LP_DELTA
       ),
       ERR_DELTA_TOO_LARGE
     ).to.be.true;
   }
 
   // TODO: Investigate why market can handle a large amount of token swapping in
-  it("test 1", async () => {
+  it("add liquidity with single token test 1", async () => {
     const amountOfXyt = amountToWei(tokenUSDT, BN.from(331));
     const amountOfToken = amountToWei(tokenUSDT, BN.from(891));
+    const T1 = consts.T0.add(consts.THREE_MONTH);
+    const T2 = T1.add(consts.ONE_DAY);
     await bootstrapMarket(amountOfXyt, amountOfToken);
 
-    await setTimeNextBlock(provider, consts.T0.add(consts.THREE_MONTH));
-    await swapTokenToXyt(amountToWei(tokenUSDT, BN.from(1000)));
+    await setTimeNextBlock(provider, T1);
+    // weights: USDT: 660606624370, XYT: 438905003406
 
-    await addLiquidity(
+    await addLiquiditySingleToken(
       bob,
       testToken.address,
       amountToWei(tokenUSDT, BN.from(50))
     );
-    await checkBalance(bob, BN.from("15781471012099146"));
+    await checkLpBalance(bob, BN.from("33301790282170172"));
 
-    // await swapTokenToXyt(amountToWei(tokenUSDT, BN.from(1)));
-    await printMarketData();
-
-    await addLiquidity(
+    await setTimeNextBlock(provider, T2);
+    await addLiquiditySingleToken(
       charlie,
       pendleXyt.address,
       amountToWei(tokenUSDT, BN.from(57))
     );
-    await checkBalance(charlie, BN.from("188530794007041984"));
+    await checkLpBalance(charlie, BN.from("67220816465474392"));
   });
 
-  it("test 2", async () => {
+  it("add liquidity with single token test 2", async () => {
     const amountOfXyt = amountToWei(tokenUSDT, BN.from(167));
     const amountOfToken = amountToWei(tokenUSDT, BN.from(381));
+    const T1 = consts.T0.add(consts.ONE_MONTH);
+    const T2 = T1.add(consts.ONE_DAY);
     await bootstrapMarket(amountOfXyt, amountOfToken);
 
-    await setTimeNextBlock(provider, consts.T0.add(consts.ONE_MONTH));
-    await swapTokenToXyt(amountToWei(tokenUSDT, BN.from(1)));
-    await addLiquidity(
+    await setTimeNextBlock(provider, T1);
+    // weights: USDT weight: 577209185546 XYT weight: 522302442230
+
+    await addLiquiditySingleToken(
       bob,
       testToken.address,
       amountToWei(tokenUSDT, BN.from(157))
     );
-    await checkBalance(bob, BN.from("197803881410821184"));
-    await printMarketData();
+    await checkLpBalance(bob, BN.from("198283961837071968"));
 
-    await addLiquidity(
+    await setTimeNextBlock(provider, T2);
+    await addLiquiditySingleToken(
       charlie,
       pendleXyt.address,
       amountToWei(tokenUSDT, BN.from(36))
     );
-    await checkBalance(charlie, BN.from("116503683068610384"));
+    await checkLpBalance(charlie, BN.from("115989733684135088"));
   });
 
-  it("test 3", async () => {
+  it("add liquidity with single token test 3", async () => {
     const amountOfXyt = amountToWei(tokenUSDT, BN.from(45));
     const amountOfToken = amountToWei(tokenUSDT, BN.from(951));
+    const T1 = consts.T0.add(consts.FIVE_MONTH);
+    const T2 = T1.add(consts.ONE_DAY);
     await bootstrapMarket(amountOfXyt, amountOfToken);
 
-    await setTimeNextBlock(provider, consts.T0.add(consts.ONE_MONTH.mul(5)));
-    await swapTokenToXyt(amountToWei(tokenUSDT, BN.from(1)));
-    await addLiquidity(
+    await setTimeNextBlock(provider, T1);
+    // weights: USDT weight: 848215863334 XYT weight: 251295764442
+
+    await addLiquiditySingleToken(
       bob,
       testToken.address,
       amountToWei(tokenUSDT, BN.from(729))
     );
-    await checkBalance(bob, BN.from("550165108272933056"));
-    await printMarketData();
+    await checkLpBalance(bob, BN.from("550710168310602816"));
 
-    await addLiquidity(
+    await setTimeNextBlock(provider, T2);
+    await addLiquiditySingleToken(
       charlie,
       pendleXyt.address,
       amountToWei(tokenUSDT, BN.from(12))
     );
-    await checkBalance(charlie, BN.from("86120215370550144"));
+    await checkLpBalance(charlie, BN.from("83998302108293488"));
   });
 
-  // it.only("test 3", async () => {
-  //   const amountOfXyt = amountToWei(tokenUSDT, BN.from(458));
-  //   const amountOfToken = amountToWei(tokenUSDT, BN.from(445));
-  //   await bootstrapMarket(amountOfXyt, amountOfToken);
-  //   await addLiquidity(amountToWei(tokenUSDT, BN.from(700))); // TODO: check why cannot add in 700
-  //   // await swapTokenToXyt(amountToWei(tokenUSDT, BN.from(1)));
-  //   console.log(await pendleMarket.getWeight(testToken.address));
-  //   console.log(await pendleMarket.balanceOf(bob.address));
-  // });
+  it("remove liquidity with single token test 1", async () => {
+    const amountOfXyt = amountToWei(tokenUSDT, BN.from(331));
+    const amountOfToken = amountToWei(tokenUSDT, BN.from(891));
+    const T1 = consts.T0.add(consts.THREE_MONTH);
+    const T2 = T1.add(consts.ONE_DAY);
+    await bootstrapMarket(amountOfXyt, amountOfToken);
+
+    let lpBalanceAlice = await pendleMarket.balanceOf(alice.address);
+    let amountToRemove = lpBalanceAlice.div(7);
+
+    await setTimeNextBlock(provider, T1);
+    // weights: USDT: 660606624370, XYT: 438905003406
+
+    let balanceDiff: BN = await removeLiquiditySingleToken(
+      alice,
+      testToken.address,
+      amountToRemove
+    );
+    expect(balanceDiff.toNumber()).to.be.approximately(
+      201349414,
+      consts.TEST_TOKEN_DELTA.toNumber()
+    );
+
+    await setTimeNextBlock(provider, T2);
+    // weights: XYT weight: 436996733543
+    balanceDiff = await removeLiquiditySingleToken(
+      alice,
+      pendleXyt.address,
+      amountToRemove
+    );
+    expect(balanceDiff.toNumber()).to.be.approximately(
+      121523300,
+      consts.TEST_TOKEN_DELTA.toNumber()
+    );
+  });
+
+  it("remove liquidity with single token test 2", async () => {
+    const amountOfXyt = amountToWei(tokenUSDT, BN.from(167));
+    const amountOfToken = amountToWei(tokenUSDT, BN.from(381));
+    const T1 = consts.T0.add(consts.ONE_MONTH);
+    const T2 = T1.add(consts.ONE_DAY);
+    await bootstrapMarket(amountOfXyt, amountOfToken);
+
+    let lpBalanceAlice = await pendleMarket.balanceOf(alice.address);
+    let amountToRemove = lpBalanceAlice.div(15);
+
+    await setTimeNextBlock(provider, T1);
+    // weights: USDT weight: 577209185546 XYT weight: 522302442230
+    let balanceDiff: BN = await removeLiquiditySingleToken(
+      alice,
+      testToken.address,
+      amountToRemove
+    );
+    expect(balanceDiff.toNumber()).to.be.approximately(
+      46843304,
+      consts.TEST_TOKEN_DELTA.toNumber()
+    );
+
+    await setTimeNextBlock(provider, T2);
+    // weights: XYT weight: 521269347121
+    balanceDiff = await removeLiquiditySingleToken(
+      alice,
+      pendleXyt.address,
+      amountToRemove
+    );
+    expect(balanceDiff.toNumber()).to.be.approximately(
+      24122230,
+      consts.TEST_TOKEN_DELTA.toNumber()
+    );
+  });
+
+  it("remove liquidity with single token test 3", async () => {
+    const amountOfXyt = amountToWei(tokenUSDT, BN.from(45));
+    const amountOfToken = amountToWei(tokenUSDT, BN.from(951));
+    const T1 = consts.T0.add(consts.FIVE_MONTH);
+    const T2 = T1.add(consts.ONE_DAY);
+    await bootstrapMarket(amountOfXyt, amountOfToken);
+
+    let lpBalanceAlice = await pendleMarket.balanceOf(alice.address);
+    let amountToRemove = lpBalanceAlice.div(2);
+
+    await setTimeNextBlock(provider, T1);
+    // weights: USDT weight: 848215863334 XYT weight: 251295764442
+    let balanceDiff: BN = await removeLiquiditySingleToken(
+      alice,
+      testToken.address,
+      amountToRemove
+    );
+    expect(balanceDiff.toNumber()).to.be.approximately(
+      563321520,
+      consts.TEST_TOKEN_DELTA.toNumber()
+    );
+
+    // weights: XYT weight: 245957533896
+    // TODO: Enable this part after the math lib is fixed
+    // await setTimeNextBlock(provider, T2);
+    // balanceDiff = await removeLiquiditySingleToken(
+    //   alice,
+    //   pendleXyt.address,
+    //   amountToRemove
+    // );
+    // expect(balanceDiff.toNumber()).to.be.approximately(
+    //   44877732,
+    //   consts.TEST_TOKEN_DELTA.toNumber()
+    // );
+  });
 });
