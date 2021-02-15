@@ -160,7 +160,12 @@ library Math {
             if (curTerm == 0) {
                 break;
             }
-            if (n == 500) {
+            if (n == 200) {
+                /*
+                testing shows that in the most extreme case, it only takes 97 turns
+                to converge.
+                the most extreme case is rpow(1,RONE-1) (equal to rpow(0.00...01,0.99..9))
+                */
                 revert("rpowe slow converge");
             }
         }
