@@ -237,14 +237,14 @@ describe("PendleMarket", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
     await bootstrapSampleMarket(amountToTokenize);
     await advanceTime(provider, consts.ONE_MONTH);
-    const totalSuply = await pendleMarket.totalSupply();
+    const totalSupply = await pendleMarket.totalSupply();
 
     await pendleRouter.removeMarketLiquidity(
       consts.FORGE_AAVE,
       consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
       testToken.address,
-      totalSuply.div(10),
+      totalSupply.div(10),
       amountToTokenize.div(10),
       amountToTokenize.div(10),
       consts.HIGH_GAS_OVERRIDE

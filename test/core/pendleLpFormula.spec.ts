@@ -358,4 +358,77 @@ describe("pendleLpFormula", async () => {
     //   consts.TEST_TOKEN_DELTA.toNumber()
     // );
   });
+
+  it.only("add liquidity dual token test 1", async () => {
+    const amountOfXyt = amountToWei(tokenUSDT, BN.from(331));
+    const amountOfToken = amountToWei(tokenUSDT, BN.from(891));
+    await bootstrapMarket(amountOfXyt, amountOfToken);
+
+    const totalSupply: BN = await pendleMarket.totalSupply();
+    // weights: USDT: 660606624370, XYT: 438905003406
+
+    let initialXytBalance: BN = await pendleXyt.balanceOf(bob.address);
+    let initialTokenBalance: BN = await testToken.balanceOf(bob.address);
+
+    await pendleRouter.connect(bob).addMarketLiquidity(
+      consts.FORGE_AAVE,
+      consts.MARKET_FACTORY_AAVE,
+      pendleXyt.address,
+      testToken.address,
+      initialXytBalance,
+      initialTokenBalance,
+      totalSupply.mul(3),
+      consts.HIGH_GAS_OVERRIDE
+    )
+
+    let finalXytBalance = await pendleXyt.balanceOf(bob.address);
+    let finalTokenBalance = await testToken.balanceOf(bob.address);
+    let amountXytUsed = initialXytBalance.sub(finalXytBalance);
+    let amountTokenUsed = initialTokenBalance.sub(finalTokenBalance);
+
+    await checkLpBalance(bob, totalSupply.mul(3));
+    approxBigNumber(amountXytUsed, amountOfXyt.mul(3), consts.TEST_TOKEN_DELTA);
+    approxBigNumber(amountTokenUsed, amountOfToken.mul(3), consts.TEST_TOKEN_DELTA);
+
+    approxBigNumber(await pendleXyt.balanceOf(pendleMarket.address), amountOfXyt.mul(4), BN.from(0));
+    approxBigNumber(await testToken.balanceOf(pendleMarket.address), amountOfToken.mul(4), BN.from(0));
+    approxBigNumber(await pendleMarket.totalSupply(), totalSupply.mul(4), BN.from(0));
+  });
+
+  it.only("remove liquidity dual token test 1", async () => {
+    const amountOfXyt = amountToWei(tokenUSDT, BN.from(331));
+    const amountOfToken = amountToWei(tokenUSDT, BN.from(891));
+    await bootstrapMarket(amountOfXyt, amountOfToken);
+
+    const totalSupply: BN = await pendleMarket.totalSupply();
+    // weights: USDT: 660606624370, XYT: 438905003406
+
+    let initialXytBalance: BN = await pendleXyt.balanceOf(alice.address);
+    let initialTokenBalance: BN = await testToken.balanceOf(alice.address);
+
+    await pendleRouter.removeMarketLiquidity(
+      consts.FORGE_AAVE,
+      consts.MARKET_FACTORY_AAVE,
+      pendleXyt.address,
+      testToken.address,
+      totalSupply,
+      BN.from(0),
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
+    );
+
+    await checkLpBalance(alice, BN.from(0));
+
+    let finalXytBalance = await pendleXyt.balanceOf(alice.address);
+    let finalTokenBalance = await testToken.balanceOf(alice.address);
+    let amountXytReceived = finalXytBalance.sub(initialXytBalance);
+    let amountTokenReceived = finalTokenBalance.sub(initialTokenBalance);
+
+    approxBigNumber(amountXytReceived, amountOfXyt, consts.TEST_TOKEN_DELTA);
+    approxBigNumber(amountTokenReceived, amountOfToken, consts.TEST_TOKEN_DELTA);
+
+    approxBigNumber(await pendleXyt.balanceOf(pendleMarket.address), BN.from(0), BN.from(0));
+    approxBigNumber(await testToken.balanceOf(pendleMarket.address), BN.from(0), BN.from(0));
+    approxBigNumber(await pendleMarket.totalSupply(), BN.from(0), BN.from(0));
+  });
 });
