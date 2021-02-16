@@ -1,3 +1,4 @@
+/* solhint-disable  const-name-snakecase*/
 // SPDX-License-Identifier: MIT
 /*
  * MIT License
@@ -223,7 +224,8 @@ contract PENDLE is IPENDLE {
 
     /**
      * @notice Determine the prior number of votes for an account as of a block number
-     * @dev Block number must be a finalized block or else this function will revert to prevent misinformation.
+     * @dev Block number must be a finalized block or else
+                this function will revert to prevent misinformation
      * @param account The address of the account to check
      * @param blockNumber The block number to get the vote balance at
      * @return The number of votes the account had as of the given block
@@ -282,8 +284,8 @@ contract PENDLE is IPENDLE {
         address dst,
         uint96 amount
     ) internal {
-        require(src != address(0), "Pendle: cannot transfer from the zero address");
-        require(dst != address(0), "Pendle: cannot transfer to the zero address");
+        require(src != address(0), "Pendle: transfer from zero address");
+        require(dst != address(0), "Pendle: transfer to zero address");
 
         balances[src] = sub96(balances[src], amount, "Pendle: transfer amount exceeds balance");
         balances[dst] = add96(balances[dst], amount, "Pendle: transfer amount overflows");

@@ -1,3 +1,4 @@
+/* solhint-disable reason-string*/
 // SPDX-License-Identifier: MIT
 /*
  * MIT License
