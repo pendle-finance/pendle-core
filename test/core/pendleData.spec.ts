@@ -73,12 +73,6 @@ describe("PendleData", async () => {
     expect(allMarkets).to.have.members(expectedMarkets);
   });
 
-  it("should be able to setRouter", async () => {
-    await expect(pendleData.setRouter(pendleRouter.address))
-      .to.emit(pendleData, "RouterSet")
-      .withArgs(pendleRouter.address);
-  });
-
   it("Should be able to setTreasury", async () => {
     await expect(pendleData.setTreasury(pendleTreasury.address))
       .to.emit(pendleData, "TreasurySet")

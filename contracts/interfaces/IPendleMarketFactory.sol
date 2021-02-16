@@ -27,12 +27,6 @@ import "./IPendleRouter.sol";
 
 interface IPendleMarketFactory {
     /**
-     * @notice Emitted when the PendleRouter address has been updated.
-     * @param router The address of the new router contract.
-     **/
-    event RouterSet(address router);
-
-    /**
      * @notice Emitted when a market for a future yield token and an ERC20 token is created.
      * @param marketFactoryId Forge identifier.
      * @param xyt The address of the tokenized future yield token as the base asset.
@@ -58,12 +52,6 @@ interface IPendleMarketFactory {
         address xyt,
         address token
     ) external returns (address market);
-
-    /**
-     * @notice Sets the PendleRouter contract address.
-     * @param _router Address of the new router contract.
-     **/
-    function setRouter(IPendleRouter _router) external;
 
     /**
      * @notice Gets a reference to the PendleRouter contract.

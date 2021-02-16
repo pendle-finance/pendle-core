@@ -79,11 +79,4 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions {
 
         emit MarketCreated(marketFactoryId, _xyt, _token, market);
     }
-
-    function setRouter(IPendleRouter _router) external override onlyGovernance {
-        require(address(_router) != address(0), "Pendle: zero address");
-
-        router = _router;
-        emit RouterSet(address(_router));
-    }
 }

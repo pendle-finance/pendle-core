@@ -19,7 +19,8 @@ export async function AMMTest(
       pendleXyt.address,
       amount,
       BN.from(0),
-      consts.MAX_ALLOWANCE
+      consts.MAX_ALLOWANCE,
+      consts.MARKET_FACTORY_AAVE
     );
   }
 
@@ -29,7 +30,8 @@ export async function AMMTest(
       testToken.address,
       amount,
       BN.from(0),
-      consts.MAX_ALLOWANCE
+      consts.MAX_ALLOWANCE,
+      consts.MARKET_FACTORY_AAVE
     );
   }
 

@@ -149,7 +149,7 @@ describe("PendleMarket", async () => {
       pendleXyt.address,
       testToken.address,
       amountToWei(tokenUSDT, BN.from(10)),
-      32
+      consts.MARKET_FACTORY_AAVE
     );
 
     await pendleRouter.connect(bob).swapExactOut(
@@ -158,7 +158,8 @@ describe("PendleMarket", async () => {
       // amountToTokenize.div(10), // 100000000 xyt, 500000000000000000000000000000000000000000000 usdt!?
       amountToWei(tokenUSDT, BN.from(10)),
       amountToWei(tokenUSDT, BN.from(100)),
-      32,
+      consts.MAX_ALLOWANCE,
+      consts.MARKET_FACTORY_AAVE,
       consts.HIGH_GAS_OVERRIDE
     );
 
@@ -188,7 +189,7 @@ describe("PendleMarket", async () => {
     //     pendleXyt.address,
     //     testToken.address,
     //     amountToWei(tokenUSDT, BN.from(10)),
-    //     32
+    //     consts.MARKET_FACTORY_AAVE
     //   );
 
     await pendleRouter
@@ -198,7 +199,8 @@ describe("PendleMarket", async () => {
         testToken.address,
         amountToWei(tokenUSDT, BN.from(10)),
         BN.from(0),
-        32,
+        consts.MAX_ALLOWANCE,
+        consts.MARKET_FACTORY_AAVE,
         consts.HIGH_GAS_OVERRIDE
       );
 
@@ -336,7 +338,7 @@ describe("PendleMarket", async () => {
       pendleXyt.address,
       testToken.address,
       amountToWei(tokenUSDT, BN.from(10)),
-      32
+      consts.MARKET_FACTORY_AAVE
     );
 
     expect(result[1].toNumber()).to.be.approximately(11111111, 100);
@@ -351,7 +353,7 @@ describe("PendleMarket", async () => {
       testToken.address,
       pendleXyt.address,
       amountToWei(tokenUSDT, BN.from(10)),
-      32
+      consts.MARKET_FACTORY_AAVE
     );
 
     expect(result[1].toNumber()).to.be.approximately(9090909, 100);

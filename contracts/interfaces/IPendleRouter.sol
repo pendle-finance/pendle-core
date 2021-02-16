@@ -222,36 +222,23 @@ interface IPendleRouter {
         uint256 initialTokenLiquidity
     ) external;
 
-    function batchExactSwapIn(
-        Swap[] memory swaps,
-        address tokenIn,
-        address tokenOut,
-        uint256 inTotalAmount,
-        uint256 minOutTotalAmount
-    ) external payable returns (uint256 outTotalAmount);
-
-    function batchSwapExactOut(
-        Swap[] memory swaps,
-        address tokenIn,
-        address tokenOut,
-        uint256 maxInTotalAmount
-    ) external payable returns (uint256 inTotalAmount);
-
     function swapExactIn(
         address tokenIn,
         address tokenOut,
         uint256 inTotalAmount,
         uint256 minOutTotalAmount,
-        uint256 numMarkets
-    ) external payable returns (uint256 amount);
+        uint256 maxPrice,
+        bytes32 marketFactoryId
+    ) external payable returns (uint256 outTotalAmount);
 
     function swapExactOut(
         address tokenIn,
         address tokenOut,
         uint256 outTotalAmount,
         uint256 maxInTotalAmount,
-        uint256 numMarkets
-    ) external payable returns (uint256 amount);
+        uint256 maxPrice,
+        bytes32 marketFactoryId
+    ) external payable returns (uint256 inTotalAmount);
 
     function swapPathExactIn(
         Swap[][] memory swapPath,
@@ -272,15 +259,15 @@ interface IPendleRouter {
         address tokenIn,
         address tokenOut,
         uint256 inSwapAmount,
-        uint256 numMarkets
-    ) external view returns (Swap[] memory swaps, uint256 totalOutput);
+        bytes32 marketFactoryId
+    ) external view returns (Swap calldata swap, uint256 totalOutput);
 
     function getMarketRateExactOut(
         address tokenIn,
         address tokenOut,
         uint256 outSwapAmount,
-        uint256 numMarkets
-    ) external view returns (Swap[] memory swaps, uint256 totalInput);
+        bytes32 marketFactoryId
+    ) external view returns (Swap calldata swap, uint256 totalInput);
 
     function getMarketReserves(
         bytes32 forgeId,

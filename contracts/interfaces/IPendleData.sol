@@ -28,22 +28,10 @@ import "./IPendleYieldToken.sol";
 
 interface IPendleData {
     /**
-     * @notice Emitted when the PendleRouter address has been updated.
-     * @param router The address of the new router contract.
-     **/
-    event RouterSet(address router);
-
-    /**
      * @notice Emitted when Pendle and PendleFactory addresses have been updated.
      * @param treasury The address of the new treasury contract.
      **/
     event TreasurySet(address treasury);
-
-    /**
-     * @notice Sets the PendleRouter contract address.
-     * @param _router Address of the new router contract.
-     **/
-    function setRouter(IPendleRouter _router) external;
 
     /**
      * @notice Sets the PendleTreasury contract addresses.
@@ -178,30 +166,18 @@ interface IPendleData {
         address market
     ) external;
 
-    function purgeMarketsEffectiveLiquidity(
-        address xyt,
-        address token,
-        address[] memory markets
-    ) external returns (uint256[] memory effectiveLiquidity);
-
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
 
-    function sortMarkets(
-        address[] calldata xyts,
-        address[] calldata tokens,
-        uint256 lengthLimit
-    ) external;
-
-    function sortMarketsWithPurge(
-        address[] calldata xyts,
-        address[] calldata tokens,
-        uint256 lengthLimit
+    function updateMarketInfo(
+        address xyt,
+        address token,
+        address marketFactory
     ) external;
 
     function updateMarketInfo(
-        address _xyt,
-        address _token,
-        address _market
+        address xyt,
+        address token,
+        bytes32 marketFactoryId
     ) external;
 
     /**
@@ -218,22 +194,11 @@ interface IPendleData {
      **/
     function getAllMarkets() external view returns (address[] calldata);
 
-    function getBestMarkets(address source, address destination)
-        external
-        view
-        returns (address[] memory bestMarkets);
-
-    function getBestMarketsWithLimit(
-        address source,
-        address destination,
-        uint256 limit
-    ) external view returns (address[] memory bestMarkets);
-
-    function getEffectiveLiquidityForMarkets(
-        address _xyt,
-        address _token,
-        address[] memory _markets
-    ) external view returns (uint256[] memory effectiveLiquidity);
+    function getEffectiveLiquidityForMarket(
+        address xyt,
+        address token,
+        bytes32 marketFactoryId
+    ) external view returns (uint256 effectiveLiquidity);
 
     /**
      * @notice Gets a market given a future yield token and an ERC20 token.
@@ -269,10 +234,16 @@ interface IPendleData {
         view
         returns (address marketFactoryAddress);
 
+    function getMarketFromKey(
+        address xyt,
+        address token,
+        bytes32 marketFactoryId
+    ) external view returns (address market);
+
     function getMarketInfo(
-        address market,
-        address source,
-        address destination
+        address xyt,
+        address token,
+        bytes32 marketFactoryId
     )
         external
         view
@@ -281,12 +252,6 @@ interface IPendleData {
             uint256 tokenWeight,
             uint256 liquidity
         );
-
-    function getMarketsWithLimit(
-        address source,
-        address destination,
-        uint256 limit
-    ) external view returns (address[] memory result);
 
     function swapFee() external view returns (uint256);
 }

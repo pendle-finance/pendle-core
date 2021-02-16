@@ -576,7 +576,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     function _curveShift(IPendleData _data) internal {
         if (block.number > blockNumLast) {
             _updateWeight();
-            _data.updateMarketInfo(xyt, token, address(this));
+            _data.updateMarketInfo(xyt, token, factory);
             blockNumLast = block.number;
         }
     }
