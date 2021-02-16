@@ -97,7 +97,11 @@ describe("pendleLpFormula", async () => {
     );
   }
 
-  async function addLiquiditySingleToken(user: Wallet, tokenAddress: string, amount: BN) {
+  async function addLiquiditySingleToken(
+    user: Wallet,
+    tokenAddress: string,
+    amount: BN
+  ) {
     if (tokenAddress == testToken.address) {
       await pendleRouter
         .connect(user)
@@ -370,16 +374,18 @@ describe("pendleLpFormula", async () => {
     let initialXytBalance: BN = await pendleXyt.balanceOf(bob.address);
     let initialTokenBalance: BN = await testToken.balanceOf(bob.address);
 
-    await pendleRouter.connect(bob).addMarketLiquidity(
-      consts.FORGE_AAVE,
-      consts.MARKET_FACTORY_AAVE,
-      pendleXyt.address,
-      testToken.address,
-      initialXytBalance,
-      initialTokenBalance,
-      totalSupply.mul(3),
-      consts.HIGH_GAS_OVERRIDE
-    )
+    await pendleRouter
+      .connect(bob)
+      .addMarketLiquidity(
+        consts.FORGE_AAVE,
+        consts.MARKET_FACTORY_AAVE,
+        pendleXyt.address,
+        testToken.address,
+        initialXytBalance,
+        initialTokenBalance,
+        totalSupply.mul(3),
+        consts.HIGH_GAS_OVERRIDE
+      );
 
     let finalXytBalance = await pendleXyt.balanceOf(bob.address);
     let finalTokenBalance = await testToken.balanceOf(bob.address);
@@ -388,11 +394,27 @@ describe("pendleLpFormula", async () => {
 
     await checkLpBalance(bob, totalSupply.mul(3));
     approxBigNumber(amountXytUsed, amountOfXyt.mul(3), consts.TEST_TOKEN_DELTA);
-    approxBigNumber(amountTokenUsed, amountOfToken.mul(3), consts.TEST_TOKEN_DELTA);
+    approxBigNumber(
+      amountTokenUsed,
+      amountOfToken.mul(3),
+      consts.TEST_TOKEN_DELTA
+    );
 
-    approxBigNumber(await pendleXyt.balanceOf(pendleMarket.address), amountOfXyt.mul(4), BN.from(0));
-    approxBigNumber(await testToken.balanceOf(pendleMarket.address), amountOfToken.mul(4), BN.from(0));
-    approxBigNumber(await pendleMarket.totalSupply(), totalSupply.mul(4), BN.from(0));
+    approxBigNumber(
+      await pendleXyt.balanceOf(pendleMarket.address),
+      amountOfXyt.mul(4),
+      BN.from(0)
+    );
+    approxBigNumber(
+      await testToken.balanceOf(pendleMarket.address),
+      amountOfToken.mul(4),
+      BN.from(0)
+    );
+    approxBigNumber(
+      await pendleMarket.totalSupply(),
+      totalSupply.mul(4),
+      BN.from(0)
+    );
   });
 
   it.only("remove liquidity dual token test 1", async () => {
@@ -425,10 +447,22 @@ describe("pendleLpFormula", async () => {
     let amountTokenReceived = finalTokenBalance.sub(initialTokenBalance);
 
     approxBigNumber(amountXytReceived, amountOfXyt, consts.TEST_TOKEN_DELTA);
-    approxBigNumber(amountTokenReceived, amountOfToken, consts.TEST_TOKEN_DELTA);
+    approxBigNumber(
+      amountTokenReceived,
+      amountOfToken,
+      consts.TEST_TOKEN_DELTA
+    );
 
-    approxBigNumber(await pendleXyt.balanceOf(pendleMarket.address), BN.from(0), BN.from(0));
-    approxBigNumber(await testToken.balanceOf(pendleMarket.address), BN.from(0), BN.from(0));
+    approxBigNumber(
+      await pendleXyt.balanceOf(pendleMarket.address),
+      BN.from(0),
+      BN.from(0)
+    );
+    approxBigNumber(
+      await testToken.balanceOf(pendleMarket.address),
+      BN.from(0),
+      BN.from(0)
+    );
     approxBigNumber(await pendleMarket.totalSupply(), BN.from(0), BN.from(0));
   });
 });
