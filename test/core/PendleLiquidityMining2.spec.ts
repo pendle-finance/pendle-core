@@ -133,6 +133,7 @@ function calExpectedRewards(
   return rewards;
 }
 
+// TODO: test set allocation, interest of Lp
 describe("PendleLiquidityMining-beta tests", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
@@ -234,7 +235,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
     let numUser = expectedRewards.length;
     for (let userId = 0; userId < numUser; userId++) {
       await pendleLiq.connect(wallets[userId]).claimRewards();
-      // console.log(expectedRewards[userId][0].toString(), (await pdl.balanceOf(wallets[userId].address)).toString());
+      console.log(expectedRewards[userId][0].toString(), (await pdl.balanceOf(wallets[userId].address)).toString());
       approxBigNumber(
         await pdl.balanceOf(wallets[userId].address),
         expectedRewards[userId][0],
@@ -279,6 +280,15 @@ describe("PendleLiquidityMining-beta tests", async () => {
 
   it("test 3", async () => {
     let userStakingData: userStakeAction[][][] = scenario.scenario03(params);
+    await doSequence(userStakingData);
+    await checkEqualRewardsFourEpochs(
+      userStakingData,
+      userStakingData.length + 1
+    );
+  });
+
+  it.only("test 4", async () => {
+    let userStakingData: userStakeAction[][][] = scenario.scenario04(params);
     await doSequence(userStakingData);
     await checkEqualRewardsFourEpochs(
       userStakingData,
