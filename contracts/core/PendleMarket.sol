@@ -31,9 +31,10 @@ import "../tokens/PendleBaseToken.sol";
 import "../libraries/PendleLibrary.sol";
 import {Math} from "../libraries/PendleLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "hardhat/console.sol";
 
-contract PendleMarket is IPendleMarket, PendleBaseToken {
+contract PendleMarket is IPendleMarket, PendleBaseToken, ReentrancyGuard {
     using Math for uint256;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -90,6 +91,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         external
         override
         onlyRouter
+        nonReentrant
         returns (uint256)
     {
         _transferIn(xyt, initialXytLiquidity);
@@ -119,7 +121,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 inLp,
         uint256 minOutXyt,
         uint256 minOutToken
-    ) external override isBootstrapped onlyRouter returns (uint256 xytOut, uint256 tokenOut) {
+    ) external override isBootstrapped onlyRouter nonReentrant returns (uint256 xytOut, uint256 tokenOut) {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
         uint256 exitFee = data.exitFee();
@@ -159,7 +161,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address outToken,
         uint256 inLp,
         uint256 minOutAmountToken
-    ) external override isBootstrapped onlyRouter returns (uint256 outAmountToken) {
+    ) external override isBootstrapped onlyRouter nonReentrant returns (uint256 outAmountToken) {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
 
@@ -203,6 +205,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         override
         isBootstrapped
         onlyRouter
+        nonReentrant
         returns (uint256 amountXytUsed, uint256 amountTokenUsed)
     {
         uint256 totalLp = totalSupply;
@@ -238,7 +241,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address inToken,
         uint256 exactIn,
         uint256 minOutLp
-    ) external override isBootstrapped onlyRouter returns (uint256 exactOutLp) {
+    ) external override isBootstrapped onlyRouter nonReentrant returns (uint256 exactOutLp) {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
 
@@ -289,6 +292,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         override
         isBootstrapped
         onlyRouter
+        nonReentrant
         returns (uint256 outAmount, uint256 spotPriceAfter)
     {
         IPendleRouter router = IPendleMarketFactory(factory).router();
@@ -333,6 +337,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         override
         isBootstrapped
         onlyRouter
+        nonReentrant
         returns (uint256 inAmount, uint256 spotPriceAfter)
     {
         IPendleRouter router = IPendleMarketFactory(factory).router();
