@@ -20,7 +20,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
+
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import {ExpiryUtils, Factory} from "../libraries/PendleLibrary.sol";
@@ -31,6 +32,7 @@ import "../interfaces/IPendleForge.sol";
 import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
+
 
 contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
     using ExpiryUtils for string;

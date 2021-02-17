@@ -20,7 +20,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "../interfaces/IPendleData.sol";
@@ -32,6 +32,7 @@ import "../libraries/PendleLibrary.sol";
 import {Math} from "../libraries/PendleLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "hardhat/console.sol";
+
 
 contract PendleMarket is IPendleMarket, PendleBaseToken {
     using Math for uint256;

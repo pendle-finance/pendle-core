@@ -20,11 +20,12 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "../interfaces/IPENDLE.sol";
 import "hardhat/console.sol";
+
 
 contract PENDLE is IPENDLE {
     /// @notice A checkpoint for marking number of votes from a given block

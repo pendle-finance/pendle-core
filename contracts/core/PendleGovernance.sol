@@ -20,13 +20,14 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
-import "@openzeppelin/contracts/math/SafeMath.sol";
 
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IPendleGovernance.sol";
 import "../interfaces/IPENDLE.sol";
 import "../interfaces/ITimelock.sol";
+
 
 contract PendleGovernance is IPendleGovernance {
     using SafeMath for uint256;

@@ -20,7 +20,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 
 import {Factory} from "../libraries/PendleLibrary.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -36,6 +36,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../periphery/Permissions.sol";
 import "hardhat/console.sol";
+
 
 // Things that must hold in this contract:
 //      - If an account's stake information is updated (hence lastTimeUserStakeUpdated is changed),
