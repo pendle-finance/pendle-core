@@ -495,15 +495,11 @@ describe("PendleMarket", async () => {
         consts.MARKET_FACTORY_AAVE,
         pendleXyt.address,
         testToken.address,
-        consts.T0.add(consts.THREE_MONTH),
         consts.HIGH_GAS_OVERRIDE
       )
     ).to.be.revertedWith("Pendle: market already exists");
   });
 
-  // it.only("should be able to getMarketByUnderlyingToken", async () => {
-  // place holder only since the original function is not complete
-  // });
   it("AMM's formula should be correct", async () => {
     await AMMTest(
       pendleRouter,

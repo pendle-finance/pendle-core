@@ -92,6 +92,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         onlyRouter
         returns (uint256)
     {
+        require(!bootstrapped, "Pendle: already bootstrapped");
+
         _transferIn(xyt, initialXytLiquidity);
         _transferIn(token, initialTokenLiquidity);
 
