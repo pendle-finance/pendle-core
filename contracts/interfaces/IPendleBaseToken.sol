@@ -38,13 +38,13 @@ interface IPendleBaseToken is IERC20 {
      * @notice The yield contract start in epoch time.
      * @return Returns the yield start date.
      **/
-    function start() external returns (uint256);
+    function start() external view returns (uint256);
 
     /**
      * @notice The yield contract expiry in epoch time.
      * @return Returns the yield expiry date.
      **/
-    function expiry() external returns (uint256);
+    function expiry() external view returns (uint256);
 
     /**
      * @notice Increases the allowance granted to spender by the caller.

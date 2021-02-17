@@ -417,7 +417,16 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     }
 
     function getWeight(address asset) external view override returns (uint256) {
-        return reserves[asset].weight;
+        (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) =  _updateWeightDry();
+        if (asset == xyt) {
+            return xytWeightUpdated;
+        }
+        else if (asset == token) {
+            return tokenWeightUpdated;
+        }
+        else {
+            return 0;
+        }
     }
 
     function spotPrice(address inToken, address outToken)
@@ -525,8 +534,20 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     function _mintLp(uint256 amount) internal {
         _mint(address(this), amount);
     }
-
+    
     function _updateWeight() internal {
+        uint256 xytWeight = reserves[xyt].weight;
+        uint256 tokenWeight = reserves[token].weight;
+
+        (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) =  _updateWeightDry();
+
+        reserves[xyt].weight = xytWeightUpdated;
+        reserves[token].weight = tokenWeightUpdated;
+        priceLast = priceNow;
+        emit Shift(xytWeight, tokenWeight, xytWeightUpdated, tokenWeightUpdated);
+    }
+
+    function _updateWeightDry() internal view returns (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) {
         uint256 currentTime = block.timestamp;
         uint256 endTime = IPendleYieldToken(xyt).expiry();
         uint256 startTime = IPendleYieldToken(xyt).start();
@@ -545,7 +566,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
                 (endTime - currentTime) * Math.FORMULA_PRECISION,
                 duration * Math.FORMULA_PRECISION
             );
-        uint256 priceNow =
+        priceNow =
             Math.rdiv(
                 Math.ln(
                     Math.rmul(Math.PI, timeToMature).add(Math.FORMULA_PRECISION),
@@ -562,13 +583,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         uint256 theta = Math.rdiv(thetaNumerator, thetaDenominator);
 
-        uint256 xytWeightUpdated = xytWeight.sub(theta);
-        uint256 tokenWeightUpdated = tokenWeight.add(theta);
-
-        reserves[xyt].weight = xytWeightUpdated;
-        reserves[token].weight = tokenWeightUpdated;
-        priceLast = priceNow;
-        emit Shift(xytWeight, tokenWeight, xytWeightUpdated, tokenWeightUpdated);
+        xytWeightUpdated = xytWeight.sub(theta);
+        tokenWeightUpdated = tokenWeight.add(theta);
     }
 
     function _curveShift(IPendleData _data) internal {
