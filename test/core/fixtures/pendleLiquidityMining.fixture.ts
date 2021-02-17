@@ -30,11 +30,17 @@ export interface liqParams {
   TOTAL_NUMERATOR: BN,
   INITIAL_LP_AMOUNT: BN,
 }
-export interface userStakeAction {
+export class userStakeAction {
   time: BN;
-  amount: BN;
   isStaking: boolean;
+  amount: BN;
   id: number; // will not be used in calExpectedRewards
+  constructor(time: BN, amount: BN, isStaking: boolean, id: number) {
+    this.time = time;
+    this.amount = amount;
+    this.isStaking = isStaking;
+    this.id = id;
+  }
 }
 
 const params: liqParams = {

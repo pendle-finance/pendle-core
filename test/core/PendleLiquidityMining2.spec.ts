@@ -74,12 +74,9 @@ function calExpectedRewards(
     epochData.forEach((userData, userId) => {
       userStakeSeconds.push(BN.from(0));
       let lastTimeUpdated = startOfEpoch(params, epochId);
-      userData.push({
-        time: startOfEpoch(params, epochId + 1),
-        amount: BN.from(0),
-        isStaking: true,
-        id: -1,
-      });
+      userData.push(
+        new userStakeAction(startOfEpoch(params, epochId + 1), BN.from(0), true, -1)
+      );
       userData.forEach((userAction, actionId) => {
         // console.log(`\t[calculateExpectedRewards] Processing userAction: ${userAction.time} ${userAction.amount} ${userAction.isStaking} for user ${userId}`);
         const timeElapsed = userAction.time.sub(lastTimeUpdated);
@@ -209,7 +206,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
 
     // console.log(flatData);
     for (let i = 0; i < flatData.length; i++) {
-      let action = flatData[i];
+      let action: userStakeAction = flatData[i];
       if (i != 0) {
         // console.log(flatData[i - 1], flatData[i]);
         assert(flatData[i - 1].time < flatData[i].time);
@@ -262,7 +259,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
     }
   }
 
-  it("beta", async () => {
+  it("test 1", async () => {
     let userStakingData: userStakeAction[][][] = scenario.scenario01(params);
     await doSequence(userStakingData);
     await checkEqualRewardsFourEpochs(
@@ -271,7 +268,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
     );
   });
 
-  it("Test", async () => {
+  it("test 2", async () => {
     let userStakingData: userStakeAction[][][] = scenario.scenario02(params);
     await doSequence(userStakingData);
     await checkEqualRewardsFourEpochs(
@@ -280,8 +277,8 @@ describe("PendleLiquidityMining-beta tests", async () => {
     );
   });
 
-  it("Test 2", async () => {
-    let userStakingData = scenario.scenario03(params);
+  it("test 3", async () => {
+    let userStakingData: userStakeAction[][][] = scenario.scenario03(params);
     await doSequence(userStakingData);
     await checkEqualRewardsFourEpochs(
       userStakingData,
