@@ -17,9 +17,6 @@ import { pendleMarketFixture } from "./fixtures";
 const { waffle } = require("hardhat");
 const { provider } = waffle;
 
-const ERR_DELTA_TOO_LARGE =
-  "fails due to delta between expected answer and actual answer is greater than allowed deta";
-
 // TODO: add tests that check for transfering unused tokens back to users
 // TODO: add tests to test new math lib
 describe("pendleLpFormula", async () => {
@@ -167,14 +164,11 @@ describe("pendleLpFormula", async () => {
   }
 
   async function checkLpBalance(user: Wallet, expected: BN) {
-    expect(
-      approxBigNumber(
-        await pendleMarket.balanceOf(user.address),
-        expected,
-        consts.TEST_LP_DELTA
-      ),
-      ERR_DELTA_TOO_LARGE
-    ).to.be.true;
+    approxBigNumber(
+      await pendleMarket.balanceOf(user.address),
+      expected,
+      consts.TEST_LP_DELTA
+    )
   }
 
   // TODO: Investigate why market can handle a large amount of token swapping in
@@ -363,7 +357,7 @@ describe("pendleLpFormula", async () => {
     // );
   });
 
-  it.only("add liquidity dual token test 1", async () => {
+  it("add liquidity dual token test 1", async () => {
     const amountOfXyt = amountToWei(tokenUSDT, BN.from(331));
     const amountOfToken = amountToWei(tokenUSDT, BN.from(891));
     await bootstrapMarket(amountOfXyt, amountOfToken);
@@ -417,7 +411,7 @@ describe("pendleLpFormula", async () => {
     );
   });
 
-  it.only("remove liquidity dual token test 1", async () => {
+  it("remove liquidity dual token test 1", async () => {
     const amountOfXyt = amountToWei(tokenUSDT, BN.from(331));
     const amountOfToken = amountToWei(tokenUSDT, BN.from(891));
     await bootstrapMarket(amountOfXyt, amountOfToken);

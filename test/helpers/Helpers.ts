@@ -1,4 +1,5 @@
 import { BigNumber as BN, Contract, providers, Wallet } from "ethers";
+import { expect } from "chai";
 import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
 import AToken from "../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json";
 import TetherToken from "../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json";
@@ -169,17 +170,21 @@ export function approxBigNumber(
   expected: BN,
   delta: BN,
   log: boolean = true
-): boolean {
+) {
   var diff = expected.sub(actual);
   if (diff.lt(0)) {
     diff = diff.mul(-1);
   }
-  if (log) {
-    console.log(
-      `expecting: ${expected.toString()}, received: ${actual.toString()}, diff: ${diff.toString()}, allowedDelta: ${delta.toString()}`
-    );
+  if (diff.lte(delta) == false) {
+    expect(diff.lte(delta), `expecting: ${expected.toString()}, received: ${actual.toString()}, diff: ${diff.toString()}, allowedDelta: ${delta.toString()}`).to.be.true;
   }
-  return diff.lte(delta);
+  else {
+    if (log) {
+      console.log(
+        `expecting: ${expected.toString()}, received: ${actual.toString()}, diff: ${diff.toString()}, allowedDelta: ${delta.toString()}`
+      );
+    }
+  }
 }
 
 export function toFixedPoint(val: string | number): BN {

@@ -221,7 +221,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
             userExpiries[msg.sender].hasExpiry[expiry] = true;
         }
         // get the LPs
-        _pullLpToken(marketAddress, expiry, amount); // Long: move it up here for the next PR
+        _pullLpToken(marketAddress, expiry, amount);
 
         balances[msg.sender][expiry] = balances[msg.sender][expiry].add(amount);
         currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].add(amount);

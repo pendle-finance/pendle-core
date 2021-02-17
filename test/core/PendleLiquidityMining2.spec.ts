@@ -287,7 +287,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
     );
   });
 
-  it.only("test 4", async () => {
+  it("test 4", async () => {
     let userStakingData: userStakeAction[][][] = scenario.scenario04(params);
     await doSequence(userStakingData);
     await checkEqualRewardsFourEpochs(
