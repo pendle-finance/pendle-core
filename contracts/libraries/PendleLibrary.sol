@@ -21,20 +21,78 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
+library Enumerable {
+    struct AddressSet {
+        mapping(address => uint256) index;
+        address[] values;
+    }
+
+    function add(AddressSet storage set, address value) internal returns (bool) {
+        if (!contains(set, value)) {
+            set.values.push(value);
+            set.index[value] = set.values.length;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function remove(AddressSet storage set, address value) internal returns (bool) {
+        if (contains(set, value)) {
+            uint256 toDeleteIndex = set.index[value] - 1;
+            uint256 lastIndex = set.values.length - 1;
+
+            if (lastIndex != toDeleteIndex) {
+                address lastValue = set.values[lastIndex];
+
+                set.values[toDeleteIndex] = lastValue;
+                set.index[lastValue] = toDeleteIndex + 1;
+            }
+
+            delete set.index[value];
+            set.values.pop();
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function contains(AddressSet storage set, address value) internal view returns (bool) {
+        return set.index[value] != 0;
+    }
+
+    function enumerate(AddressSet storage set) internal view returns (address[] memory) {
+        address[] memory output = new address[](set.values.length);
+        for (uint256 i; i < set.values.length; i++) {
+            output[i] = set.values[i];
+        }
+        return output;
+    }
+
+    function length(AddressSet storage set) internal view returns (uint256) {
+        return set.values.length;
+    }
+
+    function get(AddressSet storage set, uint256 index) internal view returns (address) {
+        return set.values[index];
+    }
+}
+
 library Factory {
     function createContract(
         bytes memory bytecode,
         bytes memory salting,
         bytes memory ctor
-    ) internal returns (address forge) {
+    ) internal returns (address deployed) {
         bytes32 salt = keccak256(salting);
 
         bytecode = abi.encodePacked(bytecode, ctor);
 
         assembly {
-            forge := create2(0, add(bytecode, 32), mload(bytecode), salt)
+            deployed := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
-        require(forge != address(0), "Pendle: failed on deploy");
+        require(deployed != address(0), "Pendle: failed on deploy");
     }
 }
 
@@ -42,6 +100,7 @@ library Math {
     using SafeMath for uint256;
 
     uint256 internal constant UINT_MAX_VALUE = uint256(-1);
+    uint256 internal constant WAD = 1e18;
     uint256 internal constant BIG_NUMBER = (uint256(1) << uint256(200));
     uint256 internal constant PRECISION_BITS = 40;
     uint256 internal constant FORMULA_PRECISION = uint256(1) << PRECISION_BITS;
@@ -120,6 +179,14 @@ library Math {
         require(!checkMultOverflow(ln2Numerator, log2x));
 
         return (ln2Numerator * log2x) / ln2Denomerator;
+    }
+
+    function max(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a >= b ? a : b;
+    }
+
+    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a < b ? a : b;
     }
 
     function rfloor(uint256 x) internal pure returns (uint256) {
@@ -220,168 +287,47 @@ library Math {
     }
 }
 
-library Utils {
-    /**
-     * @notice Concatenates a Pendle token name/symbol to a yield token name/symbol
-     *         using a delimiter (usually "-" or " ").
-     * @param _bt The Pendle token name/symbol.
-     * @param _yt The yield token name/symbol.
-     * @param _delimiter Can be any delimiter, but usually "-" or " ".
-     * @return result Returns the concatenated string.
-     **/
-    function concat(
-        string memory _bt,
-        string memory _yt,
-        string memory _delimiter
-    ) internal pure returns (string memory result) {
-        uint256 btPart;
-        uint256 ytPart;
-        uint256 delimiterPart;
-        uint256 resultPart;
-
-        result = new string(
-            bytes(_bt).length + bytes(_yt).length + (bytes(_delimiter).length * 2)
-        );
-
-        assembly {
-            btPart := add(_bt, 0x20)
-            ytPart := add(_yt, 0x20)
-            delimiterPart := add(_delimiter, 0x20)
-            resultPart := add(result, 32)
-        }
-
-        memcpy(btPart, resultPart, bytes(_bt).length);
-        memcpy(delimiterPart, resultPart + bytes(_bt).length, bytes(_delimiter).length);
-        memcpy(
-            ytPart,
-            resultPart + bytes(_bt).length + bytes(_delimiter).length,
-            bytes(_yt).length
-        );
-    }
-
-    /**
-     * @notice Concatenates a OT/XYT token name/symbol to an expiry
-     *         using a delimiter (usually "-" or " ").
-     * @param _name The OT/XYT token name/symbol.
-     * @param _expiry The expiry in epoch time.
-     * @param _delimiter Can be any delimiter, but usually "-" or " ".
-     * @return result Returns the concatenated string.
-     **/
-    function concat(
-        string memory _name,
-        uint256 _expiry,
-        string memory _delimiter
-    ) internal pure returns (string memory result) {
-        uint256 namePart;
-        uint256 expiryPart;
-        uint256 delimiterPart;
-        uint256 resultPart;
-        uint256 length;
-        uint256 i = _expiry;
-
-        while (i != 0) {
-            length++;
-            i /= 10;
-        }
-
-        bytes memory expiryBytes = new bytes(length);
-        uint256 j = length - 1;
-
-        while (_expiry != 0) {
-            expiryBytes[j--] = bytes1(uint8(48 + (_expiry % 10)));
-            _expiry /= 10;
-        }
-
-        string memory expiry = string(expiryBytes);
-        result = new string(bytes(_name).length + bytes(expiry).length + bytes(_delimiter).length);
-
-        assembly {
-            namePart := add(_name, 0x20)
-            expiryPart := add(expiry, 0x20)
-            delimiterPart := add(_delimiter, 0x20)
-            resultPart := add(result, 32)
-        }
-
-        memcpy(namePart, resultPart, bytes(_name).length);
-        memcpy(delimiterPart, resultPart + bytes(_name).length, bytes(_delimiter).length);
-        memcpy(
-            expiryPart,
-            resultPart + bytes(_name).length + bytes(_delimiter).length,
-            bytes(expiry).length
-        );
-    }
-
-    function memcpy(
-        uint256 src,
-        uint256 dest,
-        uint256 length
-    ) private pure {
-        for (; length >= 32; length -= 32) {
-            assembly {
-                mstore(dest, mload(src))
-            }
-            src += 32;
-            dest += 32;
-        }
-
-        uint256 mask = 256**(32 - length) - 1;
-
-        assembly {
-            let srcPart := and(mload(src), not(mask))
-            let destPart := and(mload(dest), mask)
-            mstore(dest, or(destPart, srcPart))
-        }
-    }
-}
-
-library UIntUtils {
-    function uintToString(uint256 _i) internal pure returns (string memory) {
-        if (_i == 0) {
-            return "0";
-        }
-        uint256 j = _i;
-        uint256 len;
-        while (j != 0) {
-            len++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(len);
-        uint256 k = len - 1;
-        while (_i != 0) {
-            bstr[k--] = bytes1(uint8(48 + (_i % 10)));
-            _i /= 10;
-        }
-        return string(bstr);
-    }
-}
-
-library DateUtils {
-    /*
-     *  Date utilities for ethereum contracts
-     *
-     */
+library ExpiryUtils {
     struct Date {
         uint16 year;
         uint8 month;
         uint8 day;
     }
 
-    uint256 public constant DAY_IN_SECONDS = 86400;
-    uint256 public constant YEAR_IN_SECONDS = 31536000;
-    uint256 public constant LEAP_YEAR_IN_SECONDS = 31622400;
+    uint256 private constant DAY_IN_SECONDS = 86400;
+    uint256 private constant YEAR_IN_SECONDS = 31536000;
+    uint256 private constant LEAP_YEAR_IN_SECONDS = 31622400;
+    uint16 private constant ORIGIN_YEAR = 1970;
 
-    uint16 public constant ORIGIN_YEAR = 1970;
-
-    function isLeapYear(uint16 _year) public pure returns (bool) {
-        return ((_year % 4 == 0) && (_year % 100 != 0)) || (_year % 400 == 0);
+    /**
+     * @notice Concatenates a Pendle token name/symbol, a yield token name/symbol,
+     *         and an expiry, using a delimiter (usually "-" or " ").
+     * @param _bt The Pendle token name/symbol.
+     * @param _yt The yield token name/symbol.
+     * @param _expiry The expiry in epoch time.
+     * @param _delimiter Can be any delimiter, but usually "-" or " ".
+     * @return result Returns the concatenated string.
+     **/
+    function concat(
+        string memory _bt,
+        string memory _yt,
+        uint256 _expiry,
+        string memory _delimiter
+    ) internal pure returns (string memory result) {
+        result = string(
+            abi.encodePacked(_bt, _delimiter, _yt, _delimiter, toRFC2822String(_expiry))
+        );
     }
 
-    function leapYearsBefore(uint256 _year) public pure returns (uint256) {
-        _year -= 1;
-        return _year / 4 - _year / 100 + _year / 400;
+    function toRFC2822String(uint256 _timestamp) internal pure returns (string memory s) {
+        Date memory d = parseTimestamp(_timestamp);
+        string memory day = uintToString(d.day);
+        string memory month = monthName(d);
+        string memory year = uintToString(d.year);
+        s = string(abi.encodePacked(day, month, year));
     }
 
-    function getDaysInMonth(uint8 _month, uint16 _year) public pure returns (uint8) {
+    function getDaysInMonth(uint8 _month, uint16 _year) private pure returns (uint8) {
         if (
             _month == 1 ||
             _month == 3 ||
@@ -401,7 +347,45 @@ library DateUtils {
         }
     }
 
-    function parseTimestamp(uint256 _timestamp) public pure returns (Date memory d) {
+    function getYear(uint256 _timestamp) private pure returns (uint16) {
+        uint256 secondsAccountedFor = 0;
+        uint16 year;
+        uint256 numLeapYears;
+
+        // Year
+        year = uint16(ORIGIN_YEAR + _timestamp / YEAR_IN_SECONDS);
+        numLeapYears = leapYearsBefore(year) - leapYearsBefore(ORIGIN_YEAR);
+
+        secondsAccountedFor += LEAP_YEAR_IN_SECONDS * numLeapYears;
+        secondsAccountedFor += YEAR_IN_SECONDS * (year - ORIGIN_YEAR - numLeapYears);
+
+        while (secondsAccountedFor > _timestamp) {
+            if (isLeapYear(uint16(year - 1))) {
+                secondsAccountedFor -= LEAP_YEAR_IN_SECONDS;
+            } else {
+                secondsAccountedFor -= YEAR_IN_SECONDS;
+            }
+            year -= 1;
+        }
+        return year;
+    }
+
+    function isLeapYear(uint16 _year) private pure returns (bool) {
+        return ((_year % 4 == 0) && (_year % 100 != 0)) || (_year % 400 == 0);
+    }
+
+    function leapYearsBefore(uint256 _year) private pure returns (uint256) {
+        _year -= 1;
+        return _year / 4 - _year / 100 + _year / 400;
+    }
+
+    function monthName(Date memory d) private pure returns (string memory) {
+        string[12] memory months =
+            ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+        return months[d.month - 1];
+    }
+
+    function parseTimestamp(uint256 _timestamp) private pure returns (Date memory d) {
         uint256 secondsAccountedFor = 0;
         uint256 buf;
         uint8 i;
@@ -434,40 +418,22 @@ library DateUtils {
         }
     }
 
-    function getYear(uint256 _timestamp) public pure returns (uint16) {
-        uint256 secondsAccountedFor = 0;
-        uint16 year;
-        uint256 numLeapYears;
-
-        // Year
-        year = uint16(ORIGIN_YEAR + _timestamp / YEAR_IN_SECONDS);
-        numLeapYears = leapYearsBefore(year) - leapYearsBefore(ORIGIN_YEAR);
-
-        secondsAccountedFor += LEAP_YEAR_IN_SECONDS * numLeapYears;
-        secondsAccountedFor += YEAR_IN_SECONDS * (year - ORIGIN_YEAR - numLeapYears);
-
-        while (secondsAccountedFor > _timestamp) {
-            if (isLeapYear(uint16(year - 1))) {
-                secondsAccountedFor -= LEAP_YEAR_IN_SECONDS;
-            } else {
-                secondsAccountedFor -= YEAR_IN_SECONDS;
-            }
-            year -= 1;
+    function uintToString(uint256 _i) private pure returns (string memory) {
+        if (_i == 0) {
+            return "0";
         }
-        return year;
-    }
-
-    function toRFC2822String(uint256 _timestamp) public pure returns (string memory s) {
-        Date memory d = parseTimestamp(_timestamp);
-        string memory day = UIntUtils.uintToString(d.day);
-        string memory month = monthName(d);
-        string memory year = UIntUtils.uintToString(d.year);
-        s = string(abi.encodePacked(day, month, year));
-    }
-
-    function monthName(Date memory d) private pure returns (string memory) {
-        string[12] memory months =
-            ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-        return months[d.month - 1];
+        uint256 j = _i;
+        uint256 len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint256 k = len - 1;
+        while (_i != 0) {
+            bstr[k--] = bytes1(uint8(48 + (_i % 10)));
+            _i /= 10;
+        }
+        return string(bstr);
     }
 }

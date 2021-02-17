@@ -24,7 +24,7 @@ pragma solidity ^0.7.0;
 
 import {Factory} from "../libraries/PendleLibrary.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../interfaces/IPendle.sol";
+import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
@@ -53,13 +53,14 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         mapping(uint256 => uint256) totalStakeSecondsForExpiry;
         mapping(uint256 => uint256) lastTimeStakeSecondsUpdatedForExpiry;
         mapping(address => mapping(uint256 => uint256)) userStakeSeconds; // userStakeSeconds[user][expiry] = the stake * seconds for the user for LP_expiry
-        mapping(uint256 => uint256) baseTokenReserve; // baseTokenReserve[expiry] = baseToken reserve of the market for LP_expiry
-        uint256 totalBaseTokenReserve; // sum of all baseTokenReserve
+        /* mapping(uint256 => uint256) baseTokenReserve; // baseTokenReserve[expiry] = baseToken reserve of the market for LP_expiry */
+        /* uint256 totalBaseTokenReserve; // sum of all baseTokenReserve */
         bool calculated;
+        uint256 allocationSettingId;
     }
 
     /* IPendleData public pendleData; */
-    address public pdlAddress;
+    address public pendleAddress;
     IPendleMarketFactory public pendleMarketFactory;
     IPendleData public pendleData;
     bytes32 public override forgeId;
@@ -76,6 +77,10 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
     uint256[] public expiries;
     mapping(uint256 => bool) public hasExpiry;
+    uint256 private constant ALLOCATION_DENOMINATOR = 1_000_000_000;
+    mapping(uint256 => mapping(uint256 => uint256)) public allocationSettings; // allocationSettings[settingId][expiry] = rewards portion of a pool for settingId
+    uint256 public currentSettingId;
+    uint256 public lastEpochWithSettingId;
 
     // storage for LP interests stuff
     mapping(uint256 => address) public lpHolderForExpiry;
@@ -88,10 +93,10 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     mapping(address => mapping(uint256 => uint256)) public override balances;
     mapping(address => mapping(uint256 => uint256)) public lastTimeUserStakeUpdated;
 
-    // availableRewardsForEpoch[account][epochId] is the amount of PDLs the account can withdraw at the beginning of epochId
+    // availableRewardsForEpoch[account][epochId] is the amount of PENDLEs the account can withdraw at the beginning of epochId
     mapping(address => mapping(uint256 => uint256)) public availableRewardsForEpoch;
 
-    mapping(uint256 => EpochData) private epoches;
+    mapping(uint256 => EpochData) private epochs;
     mapping(uint256 => uint256) public currentTotalStakeForExpiry;
     mapping(address => UserExpiries) private userExpiries;
 
@@ -102,9 +107,10 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
     constructor(
         address _governance,
-        address _pdlAddress,
-        /* IPendleData _pendleData, */
-        IPendleMarketFactory _pendleMarketFactory,
+        address _pendleAddress,
+        address _pendleData,
+        address _pendleMarketFactory,
+        address _pendleForge,
         address _underlyingAsset,
         address _baseToken,
         uint256 _startTime,
@@ -116,8 +122,9 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         require(_startTime > block.timestamp, "Pendle: startTime is over");
         //TODO: add more sanity checks:
         //  - ...
-        pdlAddress = _pdlAddress;
-        pendleMarketFactory = _pendleMarketFactory;
+        pendleAddress = _pendleAddress;
+        pendleData = IPendleData(_pendleData);
+        pendleMarketFactory = IPendleMarketFactory(_pendleMarketFactory);
         underlyingAsset = _underlyingAsset;
         baseToken = _baseToken;
         startTime = _startTime;
@@ -127,8 +134,9 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         vestingEpochs = _vestingEpochs;
 
         marketFactoryId = pendleMarketFactory.marketFactoryId();
-        forgeId = pendleMarketFactory.forgeId();
-        pendleData = IPendleData(IPendle(pendleMarketFactory.core()).data());
+        // TODO: add some functon to make sure this forgeId belongs to our system
+        // getForgeAddress  should be the same as the constructor params
+        forgeId = pendleData.getForgeId(_pendleForge);
     }
 
     function readUserExpiries(address user)
@@ -142,11 +150,48 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
     function fund() public {
         require(!funded, "Pendle: funded");
+        require(currentSettingId > 0, "Pendle: must set allocationSetting");
         funded = true;
-        IERC20(pdlAddress).safeTransferFrom(
+        IERC20(pendleAddress).safeTransferFrom(
             msg.sender,
             address(this),
             rewardsPerEpoch.mul(numberOfEpochs)
+        );
+    }
+
+    // set a new allocation setting, which will be applied from the next Epoch onwards
+    // all the epochs from lastEpochWithSettingId+1 to current epoch will follow the previous allocation setting
+    function setAllocationSetting(
+        uint256[] calldata _expiries,
+        uint256[] calldata allocationNominators
+    ) public onlyGovernance {
+        // not many expiries, about 2-3 max
+        console.log("Setting allocation settings");
+        uint256 _currentE = _currentEpoch();
+        if (currentSettingId == 0) {
+            // We must set the very first allocation setting before the start of epoch1, otherwise epoch 1 will not have any allocation setting!
+            // if that is the case, we will not be able to set any allocation and hence its not possible to fund the contract as well
+            // We should just throw this contract away, and funds are SAFU!
+            require(block.timestamp < startTime, "Pendle: too late to set first allocation");
+        }
+        for (uint256 _epoch = lastEpochWithSettingId.add(1); _epoch <= _currentE; _epoch++) {
+            // save the epochSettingId for the epochs before the current epoch
+            epochs[_epoch].allocationSettingId = currentSettingId;
+        }
+        console.log("Setting allocation settings 2");
+        lastEpochWithSettingId = _currentE;
+        currentSettingId++;
+        uint256 sumAllocationNominators;
+        require(_expiries.length == allocationNominators.length, "Pendle: invalid array lengths");
+        console.log("Setting allocation settings 3");
+        for (uint256 _i = 0; _i < _expiries.length; _i++) {
+            allocationSettings[currentSettingId][_expiries[_i]] = allocationNominators[_i];
+            sumAllocationNominators = sumAllocationNominators.add(allocationNominators[_i]);
+        }
+        console.log("Setting allocation settings 4");
+        require(
+            sumAllocationNominators == ALLOCATION_DENOMINATOR,
+            "Pendle: allocations dont add up"
         );
     }
 
@@ -158,16 +203,15 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         returns (address newLpHoldingContract)
     {
         uint256 _epoch = _currentEpoch();
+        require(_epoch > 0, "Pendle: not started");
         require(_epoch <= numberOfEpochs, "Pendle: end of incentives");
-        _makeSureEpochIsCalculated(_epoch.sub(1));
         _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, _epoch);
 
-        balances[msg.sender][expiry] = balances[msg.sender][expiry].add(amount);
-        currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].add(amount);
         address xyt = address(pendleData.xytTokens(forgeId, underlyingAsset, expiry));
         address marketAddress = pendleData.getMarket(forgeId, marketFactoryId, xyt, baseToken);
         require(xyt != address(0), "Pendle: xyt not found");
         require(marketAddress != address(0), "Pendle: market not found");
+
         if (!hasExpiry[expiry]) {
             newLpHoldingContract = _addNewExpiry(expiry, xyt, marketAddress);
         }
@@ -176,16 +220,18 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
             userExpiries[msg.sender].expiries.push(expiry);
             userExpiries[msg.sender].hasExpiry[expiry] = true;
         }
-
         // get the LPs
-        _pullLpToken(marketAddress, expiry, amount);
+        _pullLpToken(marketAddress, expiry, amount); // Long: move it up here for the next PR
+
+        balances[msg.sender][expiry] = balances[msg.sender][expiry].add(amount);
+        currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].add(amount);
     }
 
     function withdraw(uint256 expiry, uint256 amount) public override nonReentrant isFunded {
         uint256 _epoch = _currentEpoch();
+        require(_epoch > 0, "Pendle: not started");
         /* console.log("Balance, amount = ", balances[msg.sender][expiry], amount); */
         require(balances[msg.sender][expiry] >= amount, "Pendle: insufficient balance");
-        _makeSureEpochIsCalculated(_epoch.sub(1));
         _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, _epoch);
         _pushLpToken(expiry, amount); // this has to happen before currentTotalStakeForExpiry and balances are updated
 
@@ -194,8 +240,9 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     }
 
     function claimRewards() public override nonReentrant returns (uint256[] memory rewards) {
-        uint256 _epoch = _currentEpoch();
-        _makeSureEpochIsCalculated(_epoch.sub(1));
+        uint256 _epoch = _currentEpoch(); //!!! what if currentEpoch > final epoch?
+        require(_epoch > 0, "Pendle: not started");
+
         rewards = new uint256[](vestingEpochs);
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
             uint256 expiry = userExpiries[msg.sender].expiries[i];
@@ -214,35 +261,6 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         }
     }
 
-    // this must be called as the very first function when a new epoch starts
-    // It will snapshot and save the base token reserves of the Markets that participated in the liq mining programme
-    function calculateEpochData(uint256 epochId) public override {
-        require(_currentEpoch() > epochId, "Pendle: invalid epochId");
-        require(epochId <= numberOfEpochs, "Pendle: invalid epochId");
-        require(epochId > 0, "Pendle: invalid epochId");
-        require(!epoches[epochId].calculated, "Pendle: epoch already calculated");
-
-        // The previous epochId (more than 10 days ago) must have been calculated first.
-        // By right every epoch must be calculated very soon after it ends, so this should never happens.
-        if (epochId > 1) {
-            require(epoches[epochId - 1].calculated, "Pendle: previous epoch not calculated");
-        }
-
-        //@@Vu: TODO: there could be a problem if the number of expiries are so many that
-        // this loop will not fit in 12.4M gas for a transaction
-        for (uint256 _expiryId = 0; _expiryId < expiries.length; _expiryId++) {
-            uint256 expiry = expiries[_expiryId];
-            address xyt = address(pendleData.xytTokens(forgeId, underlyingAsset, expiry));
-            (, epoches[epochId].baseTokenReserve[expiry], ) = IPendleMarket(
-                pendleData.getMarket(forgeId, marketFactoryId, xyt, baseToken)
-            )
-                .getReserves();
-            epoches[epochId].totalBaseTokenReserve += epoches[epochId].baseTokenReserve[expiry];
-        }
-
-        epoches[epochId].calculated = true;
-    }
-
     // internal functions
 
     // 1-indexed
@@ -251,13 +269,8 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     }
 
     function _epochOfTimestamp(uint256 t) internal view returns (uint256) {
+        if (t < startTime) return 0;
         return t.sub(startTime).div(epochDuration).add(1);
-    }
-
-    function _makeSureEpochIsCalculated(uint256 epochId) internal {
-        if (epochId > 0 && !epoches[epochId].calculated) {
-            calculateEpochData(epochId);
-        }
     }
 
     function _epochRelativeTime(uint256 t) internal view returns (uint256) {
@@ -276,25 +289,28 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
     // must be called right before _settlePendingRewards()
     // This will update the following stake data for the current epoch:
-    //      epoches[current epoch].totalStakeSecondsForExpiry
-    //      epoches[current epoch].lastTimeStakeSecondsUpdatedForExpiry
+    //      epochs[current epoch].totalStakeSecondsForExpiry
+    //      epochs[current epoch].lastTimeStakeSecondsUpdatedForExpiry
     //          If this is the very first transaction involving this expiry, then we need to update for the previous epoch as well
     //          If the previous didn't have any transactions at all, (and hence was not updated at all), we need to update it and check the previous previous ones, and so on..
     // This is the only function that updates lastTimeUserStakeUpdated
     // Other functions must make sure that currentTotalStakeForExpiry could be assumed to stay exactly the same since lastTimeUserStakeUpdated until now;
     function _updateStakeDataForExpiry(uint256 expiry, uint256 _currentE) internal {
         uint256 _epoch = _currentE;
+        console.log("_updateStakeDataForExpiry, _epoch = ", _epoch);
 
         if (_currentE > numberOfEpochs) {
             _epoch = numberOfEpochs;
         }
         while (_epoch > 0) {
+            console.log("In loop to updateStakeData, _epoch = ", _epoch);
             uint256 endOfEpoch = startTime.add(_epoch.mul(epochDuration));
             uint256 lastUpdatedForEpoch =
-                epoches[_epoch].lastTimeStakeSecondsUpdatedForExpiry[expiry];
+                epochs[_epoch].lastTimeStakeSecondsUpdatedForExpiry[expiry];
             if (lastUpdatedForEpoch == endOfEpoch) {
                 break; // its already updated until this epoch, our job here is done
             }
+            console.log("\tlastUpdatedForEpoch = ", lastUpdatedForEpoch);
 
             if (lastUpdatedForEpoch == 0) {
                 // if lastTimeStakeSecondsUpdatedForExpiry[expiry] is zero, we have not run this function for this epoch,
@@ -306,15 +322,27 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
             if (_epoch == _currentE) {
                 newLastUpdated = block.timestamp;
             }
+            console.log("\tnewLastUpdated = ", newLastUpdated);
 
-            epoches[_epoch].totalStakeSecondsForExpiry[expiry] = epoches[_epoch]
+            epochs[_epoch].totalStakeSecondsForExpiry[expiry] = epochs[_epoch]
                 .totalStakeSecondsForExpiry[expiry]
                 .add(
                 currentTotalStakeForExpiry[expiry].mul(newLastUpdated.sub(lastUpdatedForEpoch))
             );
-            epoches[_epoch].lastTimeStakeSecondsUpdatedForExpiry[expiry] = newLastUpdated;
+            console.log(
+                "\tupdated totalStakeSecondsForExpiry for this epoch = ",
+                epochs[_epoch].totalStakeSecondsForExpiry[expiry]
+            );
+            epochs[_epoch].lastTimeStakeSecondsUpdatedForExpiry[expiry] = newLastUpdated;
             _epoch = _epoch.sub(1);
         }
+    }
+
+    struct RewardsCalculation {
+        uint256 userStakeSeconds;
+        uint256 settingId;
+        uint256 rewardsForMarket;
+        uint256 rewardsPerVestingEpoch;
     }
 
     // See if the user is entitled for any new rewards,
@@ -323,8 +351,8 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     //      I.e. Since lastTimeUserStakeUpdated[account]
     // The user's stake since the lastTimeUserStakeUpdated[user] until now is exactly balances[user][expiry]
     // After this function, the following should be updated correctly up to this point:
-    //      availableRewardsForEpoch[account][all epoches]
-    //      epoches[all epoches].userStakeSeconds
+    //      availableRewardsForEpoch[account][all epochs]
+    //      epochs[all epochs].userStakeSeconds
     function _settlePendingRewards(
         address account,
         uint256 expiry,
@@ -342,6 +370,10 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         uint256 _endEpoch;
         uint256 _startEpoch = _epochOfTimestamp(lastTimeUserStakeUpdated[account][expiry]);
         // if its after the end of the programme, only count until the last epoch
+        /*
+        calculate the rewards in the current block. All blocks before this will be calculated
+        in the for-loop after this if-else
+        */
         if (_currentE > numberOfEpochs) {
             _endEpoch = numberOfEpochs.add(1);
         } else {
@@ -351,12 +383,15 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
             // We need to update userStakeSeconds for this epoch, until the current timestamp
             if (_startEpoch < _currentE) {
                 // if the last time we ran this funciton was in a previous epoch, then we just count the seconds elapsed this epoch
-                epoches[_currentE].userStakeSeconds[account][expiry] = balances[account][expiry]
+                epochs[_currentE].userStakeSeconds[account][expiry] = balances[account][expiry]
                     .mul(_epochRelativeTime(block.timestamp));
+                // last action of user is in a previous epoch
+                // tlast -> now the user hasn't changed their amount of Lp
             } else {
                 uint256 timeElapsed =
                     block.timestamp.sub(lastTimeUserStakeUpdated[account][expiry]);
-                epoches[_currentE].userStakeSeconds[account][expiry] = epoches[_currentE]
+                // last action of user is in this epoch
+                epochs[_currentE].userStakeSeconds[account][expiry] = epochs[_currentE]
                     .userStakeSeconds[account][expiry]
                     .add(balances[account][expiry].mul(timeElapsed));
             }
@@ -365,52 +400,73 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
         uint256 e;
 
-        // Go through epoches that were over, and update epoches[..].userStakeSeconds and availableRewardsForEpoch
+        // Go through epochs that were over, and update epochs[..].userStakeSeconds and availableRewardsForEpoch
         for (e = _startEpoch; e < _endEpoch; e++) {
-            //// Update epoches[e].userStakeSeconds
-            uint256 userStakeSeconds;
+            //// Update epochs[e].userStakeSeconds
+            RewardsCalculation memory vars;
+            vars.userStakeSeconds = 0; // making it explicit for readability
             if (e == _startEpoch) {
                 // if its the epoch where user staked,
                 // the user staked from lastTimeUserStakeUpdated[expiry] until the end of that epoch
                 uint256 secondsStakedThisEpochSinceLastUpdate =
                     epochDuration.sub(
-                        lastTimeUserStakeUpdated[account][expiry].sub(startTime).mod(epochDuration)
-                    );
-                userStakeSeconds = epoches[e].userStakeSeconds[account][expiry].add(
+                        lastTimeUserStakeUpdated[account][expiry].sub(startTime).mod(epochDuration) // TODO:Change this to _epochRelativeTime
+                    ); // number of remaining seconds in this startEpoch (since the last action of user)
+                console.log(
+                    "\t userStakeSeconds for this epoch = ",
+                    epochs[e].userStakeSeconds[account][expiry]
+                );
+                console.log("\t balance of user = ", balances[account][expiry]);
+                vars.userStakeSeconds = epochs[e].userStakeSeconds[account][expiry].add(
                     secondsStakedThisEpochSinceLastUpdate.mul(balances[account][expiry])
                 );
             } else {
-                userStakeSeconds = epochDuration.mul(balances[account][expiry]);
+                vars.userStakeSeconds = epochDuration.mul(balances[account][expiry]);
             }
-            epoches[e].userStakeSeconds[account][expiry] = userStakeSeconds;
-            console.log("\tuserStakeSeconds = ", userStakeSeconds);
+            epochs[e].userStakeSeconds[account][expiry] = vars.userStakeSeconds;
+            console.log("\tuserStakeSeconds = ", vars.userStakeSeconds);
 
-            uint256 rewardsForMarket =
-                rewardsPerEpoch.mul(epoches[e].baseTokenReserve[expiry]).div(
-                    epoches[e].totalBaseTokenReserve
-                );
-            if (epoches[e].totalStakeSecondsForExpiry[e] == 0) {
+            vars.settingId = e > lastEpochWithSettingId
+                ? currentSettingId
+                : epochs[e].allocationSettingId;
+            //TODO: think of a better way to update the epoch setting
+
+            vars.rewardsForMarket = rewardsPerEpoch
+                .mul(allocationSettings[vars.settingId][expiry])
+                .div(ALLOCATION_DENOMINATOR);
+
+            if (epochs[e].totalStakeSecondsForExpiry[e] == 0) {
                 //There is a remote but possible case when no-one stake/unstake for this expiry during the epoch
                 //I.e. Everyone staked before the start of the epoch and hold through the end
                 //as such, totalStakeSecondsForExpiry is still not updated, and is zero.
                 //we will just need to update it to be currentTotalStakeForExpiry[expiry] * epochDuration
-                epoches[e].totalStakeSecondsForExpiry[e] = currentTotalStakeForExpiry[expiry].mul(
+                if (currentTotalStakeForExpiry[expiry] == 0) {
+                    // in the extreme extreme case of zero staked LPs for this expiry even now, nothing to do from this epoch onwards
+                    break;
+                }
+
+                epochs[e].totalStakeSecondsForExpiry[e] = currentTotalStakeForExpiry[expiry].mul(
                     epochDuration
+                ); // no one does anything in this epoch => totalStakeSecondsForExpiry = full epoch
+
+                console.log(
+                    "\ttotalStakeSecondsForExpiry for this epoch was zero and updated to ",
+                    epochs[e].totalStakeSecondsForExpiry[e]
                 );
             }
-            uint256 rewardsPerVestingEpoch =
-                rewardsForMarket
-                    .mul(userStakeSeconds)
-                    .div(epoches[e].totalStakeSecondsForExpiry[e])
-                    .div(vestingEpochs);
+            vars.rewardsPerVestingEpoch = vars
+                .rewardsForMarket
+                .mul(vars.userStakeSeconds)
+                .div(epochs[e].totalStakeSecondsForExpiry[e])
+                .div(vestingEpochs);
 
-            console.log("\trewardPerVestingEpoch = ", rewardsPerVestingEpoch);
+            console.log("\trewardPerVestingEpoch = ", vars.rewardsPerVestingEpoch);
             // Now we distribute this rewards over the vestingEpochs starting from e + 1
             for (uint256 vestingE = e + 1; vestingE <= e + vestingEpochs; vestingE++) {
                 availableRewardsForEpoch[account][vestingE] = availableRewardsForEpoch[account][
                     vestingE
                 ]
-                    .add(rewardsPerVestingEpoch);
+                    .add(vars.rewardsPerVestingEpoch);
                 console.log(
                     "\t vestingE, availableRewardsForEpoch = ",
                     vestingE,
@@ -428,7 +484,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
             }
         }
         console.log("\trewardWithdrawableNow = ", _rewardsWithdrawableNow);
-        IERC20(pdlAddress).safeTransfer(account, _rewardsWithdrawableNow);
+        IERC20(pendleAddress).safeTransfer(account, _rewardsWithdrawableNow);
     }
 
     function _pullLpToken(
@@ -449,6 +505,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         internal
         returns (uint256 dueInterests)
     {
+        // calculate interest for each expiry
         _updateGlobalIncomeIndex(expiry);
         if (lastGlobalIncomeIndexForExpiry[expiry][account] == 0) {
             lastGlobalIncomeIndexForExpiry[expiry][account] = globalIncomeIndexForExpiry[expiry];
@@ -479,6 +536,10 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         uint256 interestsEarned =
             currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance[expiry];
         lastUnderlyingYieldTokenBalance[expiry] = currentUnderlyingYieldTokenBalance;
+
+        if (interestsEarned == 0 || currentTotalStakeForExpiry[expiry] == 0) {
+            return;
+        }
 
         globalIncomeIndexForExpiry[expiry] = globalIncomeIndexForExpiry[expiry].add(
             interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(

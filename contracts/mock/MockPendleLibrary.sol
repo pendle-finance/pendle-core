@@ -22,8 +22,17 @@
  */
 pragma solidity ^0.7.0;
 
-interface IAaveLendingPoolCore {
-    function getReserveATokenAddress(address underlyingAsset) external view returns (address);
+import {ExpiryUtils} from "../libraries/PendleLibrary.sol";
 
-    function getReserveNormalizedIncome(address underlyingAsset) external view returns (uint256);
+contract MockPendleLibrary {
+    using ExpiryUtils for string;
+
+    function concat(
+        string memory _bt,
+        string memory _yt,
+        uint256 _expiry,
+        string memory _delimiter
+    ) public pure returns (string memory result) {
+        result = _bt.concat(_yt, _expiry, _delimiter);
+    }
 }

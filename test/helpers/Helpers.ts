@@ -36,16 +36,15 @@ export async function mintOtAndXyt(
   token: Token,
   alice: Wallet,
   amount: BN,
-  pendle: Contract,
-  pendleAaveForge: Contract
+  pendleRouter: Contract
 ) {
   await mint(provider, token, alice, amount);
   await convertToAaveToken(token, alice, amount);
   const { lendingPoolCore } = await aaveFixture(alice);
 
   const aContract = await getAContract(alice, lendingPoolCore, token);
-  await aContract.approve(pendleAaveForge.address, consts.MAX_ALLOWANCE);
-  await pendle.tokenizeYield(
+  await aContract.approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+  await pendleRouter.tokenizeYield(
     consts.FORGE_AAVE,
     token.address,
     consts.T0.add(consts.SIX_MONTH),

@@ -20,9 +20,16 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-
 pragma solidity ^0.7.0;
+pragma experimental ABIEncoderV2;
 
-interface IPDL {
-    function getPriorVotes(address account, uint256 blockNumber) external view returns (uint96);
+import "../core/PendleRouter.sol";
+
+contract MockPendleRouter is PendleRouter {
+    constructor()
+        PendleRouter(
+            0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa,
+            IWETH(0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB)
+        )
+    {}
 }

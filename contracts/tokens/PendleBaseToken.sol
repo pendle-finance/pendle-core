@@ -72,15 +72,6 @@ abstract contract PendleBaseToken is IPendleBaseToken {
     }
 
     /**
-     * @dev Burns OT or XYT tokens from account, reducting the total supply.
-     * @param account The address performing the burn.
-     * @param amount The amount to be burned.
-     **/
-    function burn(address account, uint256 amount) public override {
-        _burn(account, amount);
-    }
-
-    /**
      * @dev Decreases the allowance granted to spender by the caller.
      * @param spender The address to reduce the allowance from.
      * @param subtractedValue The amount allowance to subtract.
@@ -112,15 +103,6 @@ abstract contract PendleBaseToken is IPendleBaseToken {
     {
         _approve(msg.sender, spender, allowance[msg.sender][spender].add(addedValue));
         return true;
-    }
-
-    /**
-     * @dev Mints new OT or XYT tokens for account, increasing the total supply.
-     * @param account The address to send the minted tokens.
-     * @param amount The amount to be minted.
-     **/
-    function mint(address account, uint256 amount) public override {
-        _mint(account, amount);
     }
 
     /**

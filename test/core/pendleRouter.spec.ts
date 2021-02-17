@@ -1,29 +1,35 @@
 import { expect } from "chai";
+import { Contract, BigNumber as BN, Wallet } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract, Wallet } from "ethers";
-import type { Token } from "../helpers";
+
+import { pendleFixture } from "./fixtures";
 import {
-  amountToWei,
   consts,
-  evm_revert,
-  evm_snapshot,
+  tokens,
+  amountToWei,
   getAContract,
   mintAaveToken,
+  advanceTime,
+  getLiquidityRate,
+  getGain,
+  evm_revert,
+  evm_snapshot,
+  Token,
   setTimeNextBlock,
-  tokens,
 } from "../helpers";
-import { pendleFixture } from "./fixtures";
+import { toUtf8CodePoints } from "ethers/lib/utils";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
-describe("Pendle", async () => {
+describe("PendleRouter", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
-  const [wallet, bob, charlie, dave] = wallets;
+  const [alice, bob, charlie, dave] = wallets;
 
-  let pendle: Contract;
+  let pendleRouter: Contract;
   let pendleTreasury: Contract;
+  let pendleMarketFactory: Contract;
   let pendleData: Contract;
   let pendleOt: Contract;
   let pendleXyt: Contract;
@@ -39,15 +45,16 @@ describe("Pendle", async () => {
     globalSnapshotId = await evm_snapshot();
 
     const fixture = await loadFixture(pendleFixture);
-    pendle = fixture.core.pendle;
+    pendleRouter = fixture.core.pendleRouter;
     pendleTreasury = fixture.core.pendleTreasury;
+    pendleMarketFactory = fixture.core.pendleMarketFactory;
     pendleData = fixture.core.pendleData;
     pendleOt = fixture.forge.pendleOwnershipToken;
     pendleXyt = fixture.forge.pendleFutureYieldToken;
     pendleAaveForge = fixture.forge.pendleAaveForge;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     tokenUSDT = tokens.USDT;
-    aUSDT = await getAContract(wallet, lendingPoolCore, tokens.USDT);
+    aUSDT = await getAContract(alice, lendingPoolCore, tokenUSDT);
     snapshotId = await evm_snapshot();
   });
 
@@ -59,16 +66,17 @@ describe("Pendle", async () => {
     await evm_revert(snapshotId);
     snapshotId = await evm_snapshot();
     amountToTokenize = amountToWei(tokenUSDT, consts.INITIAL_AAVE_TOKEN_AMOUNT);
-    initialAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    initialAUSDTbalance = await aUSDT.balanceOf(alice.address);
   });
 
   async function tokenizeYieldSample(amountToTokenize: BN) {
-    await pendle.tokenizeYield(
+    await pendleRouter.tokenizeYield(
       consts.FORGE_AAVE,
       tokenUSDT.address,
       consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
-      wallet.address
+      alice.address,
+      consts.HIGH_GAS_OVERRIDE
     );
   }
 
@@ -91,8 +99,8 @@ describe("Pendle", async () => {
 
   it("should be able to deposit aUSDT to get back OT and XYT", async () => {
     await tokenizeYieldSample(amountToTokenize);
-    const balanceOwnershipToken = await pendleOt.balanceOf(wallet.address);
-    const balanceFutureYieldToken = await pendleXyt.balanceOf(wallet.address);
+    const balanceOwnershipToken = await pendleOt.balanceOf(alice.address);
+    const balanceFutureYieldToken = await pendleXyt.balanceOf(alice.address);
     expect(balanceOwnershipToken).to.be.eq(amountToTokenize);
     expect(balanceFutureYieldToken).to.be.eq(amountToTokenize);
   });
@@ -103,16 +111,16 @@ describe("Pendle", async () => {
 
     await setTimeNextBlock(provider, consts.T0.add(consts.ONE_MONTH));
 
-    await pendle.redeemUnderlying(
+    await pendleRouter.redeemUnderlying(
       consts.FORGE_AAVE,
       tokenUSDT.address,
       consts.T0.add(consts.SIX_MONTH),
       amountToTokenize,
-      wallet.address,
+      alice.address,
       consts.HIGH_GAS_OVERRIDE
     );
 
-    const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
 
     const expectedGain = await getCurInterest(charlie, amountToTokenize);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
@@ -125,21 +133,21 @@ describe("Pendle", async () => {
     await tokenizeYieldSample(amountToTokenize);
     await startCalInterest(charlie, amountToTokenize);
 
-    const balance = await pendleOt.balanceOf(wallet.address);
+    const balance = await pendleOt.balanceOf(alice.address);
     await pendleOt.transfer(bob.address, balance);
 
-    const afterLendingAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    const afterLendingAUSDTbalance = await aUSDT.balanceOf(alice.address);
 
     await setTimeNextBlock(provider, consts.T0.add(consts.ONE_MONTH));
 
-    await pendle.redeemDueInterests(
+    await pendleRouter.redeemDueInterests(
       consts.FORGE_AAVE,
       tokenUSDT.address,
       consts.T0.add(consts.SIX_MONTH)
     );
 
     const expectedGain = await getCurInterest(charlie, amountToTokenize);
-    const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
+    const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
 
     expect(finalAUSDTbalance).to.be.below(initialAUSDTbalance);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
@@ -148,7 +156,7 @@ describe("Pendle", async () => {
     );
   });
 
-  it("Another wallet should be able to receive interests from XYT", async () => {
+  it("Another alice should be able to receive interests from XYT", async () => {
     await startCalInterest(charlie, amountToTokenize);
 
     await tokenizeYieldSample(amountToTokenize);
@@ -157,7 +165,7 @@ describe("Pendle", async () => {
     const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
-    await pendle
+    await pendleRouter
       .connect(bob)
       .redeemDueInterests(
         consts.FORGE_AAVE,
@@ -168,7 +176,6 @@ describe("Pendle", async () => {
     const actualGain = await aUSDT.balanceOf(bob.address);
     const expectedGain = await getCurInterest(charlie, amountToTokenize);
 
-    console.log(actualGain.sub(expectedGain).toString());
     expect(actualGain.toNumber()).to.be.approximately(
       expectedGain.toNumber(),
       1000
@@ -184,7 +191,7 @@ describe("Pendle", async () => {
     const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
-    await pendle
+    await pendleRouter
       .connect(bob)
       .redeemDueInterests(
         consts.FORGE_AAVE,
@@ -197,19 +204,16 @@ describe("Pendle", async () => {
     const T2 = T1.add(10);
     await setTimeNextBlock(provider, T2);
 
-    await pendle.redeemAfterExpiry(
+    await pendleRouter.redeemAfterExpiry(
       consts.FORGE_AAVE,
       tokenUSDT.address,
       consts.T0.add(consts.SIX_MONTH),
-      wallet.address
+      alice.address
     );
 
     const expectedGain = await getCurInterest(dave, amountToTokenize);
 
-    const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
-    console.log(
-      finalAUSDTbalance.sub(initialAUSDTbalance.add(expectedGain)).toString()
-    );
+    const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
 
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.add(expectedGain).toNumber(),
@@ -226,7 +230,7 @@ describe("Pendle", async () => {
     const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
-    await pendle
+    await pendleRouter
       .connect(bob)
       .redeemDueInterests(
         consts.FORGE_AAVE,
@@ -239,44 +243,25 @@ describe("Pendle", async () => {
     const T2 = T1.add(consts.ONE_MONTH);
     await setTimeNextBlock(provider, T2);
 
-    await pendle.redeemAfterExpiry(
+    await pendleRouter.redeemAfterExpiry(
       consts.FORGE_AAVE,
       tokenUSDT.address,
       consts.T0.add(consts.SIX_MONTH),
-      wallet.address
+      alice.address
     );
 
     const expectedGain = await getCurInterest(dave, amountToTokenize);
-
-    const finalAUSDTbalance = await aUSDT.balanceOf(wallet.address);
-    console.log(
-      finalAUSDTbalance.sub(initialAUSDTbalance.add(expectedGain)).toString()
-    );
-
+    const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.add(expectedGain).toNumber(),
       1000
     );
   });
 
-  it("Should be able to remove a forge", async () => {
-    await pendle.removeForge(consts.FORGE_AAVE);
-    let deleted = await pendleData.getForgeAddress(consts.FORGE_AAVE);
-    expect(deleted).to.be.equal("0x0000000000000000000000000000000000000000");
-  });
-
-  it("Should be able to setContracts", async () => {
-    await expect(
-      pendle.setContracts(pendleData.address, pendleTreasury.address)
-    )
-      .to.emit(pendle, "ContractsSet")
-      .withArgs(pendleData.address, pendleTreasury.address);
-  });
-
   it("Should be able to newYieldContracts", async () => {
     let futureTime = consts.T0.add(consts.SIX_MONTH).add(consts.ONE_DAY);
     let filter = pendleAaveForge.filters.NewYieldContracts();
-    let tx = await pendle.newYieldContracts(
+    let tx = await pendleRouter.newYieldContracts(
       consts.FORGE_AAVE,
       tokenUSDT.address,
       futureTime

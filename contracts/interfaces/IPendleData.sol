@@ -23,28 +23,45 @@
 
 pragma solidity ^0.7.0;
 
-import {Utils} from "../libraries/PendleLibrary.sol";
-import "./IPendle.sol";
+import "./IPendleRouter.sol";
 import "./IPendleYieldToken.sol";
 
 interface IPendleData {
     /**
-     * @notice Emitted when the Pendle core address has been updated.
-     * @param core The address of the new core contract.
+     * @notice Emitted when the PendleRouter address has been updated.
+     * @param router The address of the new router contract.
      **/
-    event CoreSet(address core);
+    event RouterSet(address router);
 
     /**
-     * @notice Sets the Pendle core contract address.
-     * @param _core Address of the new core contract.
+     * @notice Emitted when Pendle and PendleFactory addresses have been updated.
+     * @param treasury The address of the new treasury contract.
      **/
-    function setCore(IPendle _core) external;
+    event TreasurySet(address treasury);
 
     /**
-     * @notice Gets a reference to the Pendle core contract.
-     * @return Returns the core contract reference.
+     * @notice Sets the PendleRouter contract address.
+     * @param _router Address of the new router contract.
      **/
-    function core() external view returns (IPendle);
+    function setRouter(IPendleRouter _router) external;
+
+    /**
+     * @notice Sets the PendleTreasury contract addresses.
+     * @param newTreasury Address of new treasury contract.
+     **/
+    function setTreasury(address newTreasury) external;
+
+    /**
+     * @notice Gets a reference to the PendleRouter contract.
+     * @return Returns the router contract reference.
+     **/
+    function router() external view returns (IPendleRouter);
+
+    /**
+     * @notice Gets the treasury contract address where fees are being sent to.
+     * @return Address of the treasury contract.
+     **/
+    function treasury() external view returns (address);
 
     /***********
      *  FORGE  *
@@ -58,13 +75,6 @@ interface IPendleData {
     event ForgeAdded(bytes32 indexed forgeId, address indexed forgeAddress);
 
     /**
-     * @notice Emitted when a forge for a protocol is removed.
-     * @param forgeId Forge and protocol identifier.
-     * @param forgeAddress The address of the removed forge.
-     **/
-    event ForgeRemoved(bytes32 indexed forgeId, address indexed forgeAddress);
-
-    /**
      * @notice Adds a new forge for a protocol.
      * @param forgeId Forge and protocol identifier.
      * @param forgeAddress The address of the added forge.
@@ -72,24 +82,18 @@ interface IPendleData {
     function addForge(bytes32 forgeId, address forgeAddress) external;
 
     /**
-     * @notice Removes a forge.
-     * @param forgeId Forge and protocol identifier.
-     **/
-    function removeForge(bytes32 forgeId) external;
-
-    /**
      * @notice Store new OT and XYT details.
      * @param forgeId Forge and protocol identifier.
      * @param ot The address of the new XYT.
      * @param xyt The address of the new XYT.
-     * @param underlyingYieldToken Token address of the underlying yield token.
+     * @param underlyingAsset Token address of the underlying asset.
      * @param expiry Yield contract expiry in epoch time.
      **/
     function storeTokens(
         bytes32 forgeId,
         address ot,
         address xyt,
-        address underlyingYieldToken,
+        address underlyingAsset,
         uint256 expiry
     ) external;
 
@@ -120,6 +124,8 @@ interface IPendleData {
      * @return forgeAddress Returns the forge address.
      **/
     function getForgeAddress(bytes32 forgeId) external view returns (address forgeAddress);
+
+    function isRelatedForgeXYT(bytes32 forgeId, address xyt) external view returns (bool);
 
     /**
      * @notice Checks if an XYT token is valid.
@@ -158,41 +164,44 @@ interface IPendleData {
      *  MARKET *
      ***********/
 
-    function addMarketFactory(
-        bytes32 forgeId,
-        bytes32 marketFactoryId,
-        address _marketFactoryAddress
-    ) external;
+    event MarketPairAdded(address indexed market, address indexed xyt, address indexed token);
+
+    function addMarketFactory(bytes32 marketFactoryId, address marketFactoryAddress) external;
 
     function isMarket(address _addr) external view returns (bool result);
 
     function addMarket(
         bytes32 forgeId,
         bytes32 marketFactoryId,
-        address _market
-    ) external;
-
-    function exitFee() external view returns (uint256);
-
-    function swapFee() external view returns (uint256);
-
-    function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
-
-    function getMarketFactoryAddress(bytes32, bytes32) external view returns (address);
-
-    /**
-     * @notice Store new market details.
-     * @param forgeId Forge and protocol identifier.
-     * @param xyt Token address of the future yield token as base asset.
-     * @param token Token address of an ERC20 token as quote asset.
-     * @param market The newly created market address.
-     **/
-    function storeMarket(
-        bytes32 forgeId,
-        bytes32 marketFactoryId,
         address xyt,
         address token,
         address market
+    ) external;
+
+    function purgeMarketsEffectiveLiquidity(
+        address xyt,
+        address token,
+        address[] memory markets
+    ) external returns (uint256[] memory effectiveLiquidity);
+
+    function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
+
+    function sortMarkets(
+        address[] calldata xyts,
+        address[] calldata tokens,
+        uint256 lengthLimit
+    ) external;
+
+    function sortMarketsWithPurge(
+        address[] calldata xyts,
+        address[] calldata tokens,
+        uint256 lengthLimit
+    ) external;
+
+    function updateMarketInfo(
+        address _xyt,
+        address _token,
+        address _market
     ) external;
 
     /**
@@ -201,11 +210,30 @@ interface IPendleData {
      **/
     function allMarketsLength() external view returns (uint256);
 
+    function exitFee() external view returns (uint256);
+
     /**
      * @notice Gets all the markets.
      * @return Returns an array of all markets.
      **/
     function getAllMarkets() external view returns (address[] calldata);
+
+    function getBestMarkets(address source, address destination)
+        external
+        view
+        returns (address[] memory bestMarkets);
+
+    function getBestMarketsWithLimit(
+        address source,
+        address destination,
+        uint256 limit
+    ) external view returns (address[] memory bestMarkets);
+
+    function getEffectiveLiquidityForMarkets(
+        address _xyt,
+        address _token,
+        address[] memory _markets
+    ) external view returns (uint256[] memory effectiveLiquidity);
 
     /**
      * @notice Gets a market given a future yield token and an ERC20 token.
@@ -220,4 +248,45 @@ interface IPendleData {
         address xyt,
         address token
     ) external view returns (address market);
+
+    /**
+     * @notice Gets the identifier of the market factory.
+     * @param marketFactoryAddress The factory's address.
+     * @return marketFactoryId Returns the factory identifier.
+     **/
+    function getMarketFactoryId(address marketFactoryAddress)
+        external
+        view
+        returns (bytes32 marketFactoryId);
+
+    /**
+     * @notice Gets a market factory given the identifier.
+     * @param marketFactoryId MarketFactory identifier.
+     * @return marketFactoryAddress Returns the factory address.
+     **/
+    function getMarketFactoryAddress(bytes32 marketFactoryId)
+        external
+        view
+        returns (address marketFactoryAddress);
+
+    function getMarketInfo(
+        address market,
+        address source,
+        address destination
+    )
+        external
+        view
+        returns (
+            uint256 xytWeight,
+            uint256 tokenWeight,
+            uint256 liquidity
+        );
+
+    function getMarketsWithLimit(
+        address source,
+        address destination,
+        uint256 limit
+    ) external view returns (address[] memory result);
+
+    function swapFee() external view returns (uint256);
 }

@@ -20,15 +20,9 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
+
 pragma solidity ^0.7.0;
 
-import "../core/Pendle.sol";
-
-contract MockPendle is Pendle {
-    constructor()
-        Pendle(
-            0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa,
-            0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB
-        )
-    {}
+interface IPENDLE {
+    function getPriorVotes(address account, uint256 blockNumber) external view returns (uint96);
 }

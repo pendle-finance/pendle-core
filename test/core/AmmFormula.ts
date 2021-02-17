@@ -6,7 +6,7 @@ const { waffle } = require("hardhat");
 const { provider } = waffle;
 
 export async function AMMTest(
-  pendle: Contract,
+  pendleRouter: Contract,
   pendleMarket: Contract,
   tokenUSDT: Token,
   testToken: Contract,
@@ -14,11 +14,9 @@ export async function AMMTest(
   bootstrapSampleMarket: Function
 ) {
   async function swapTokenToXyt(amount: BN) {
-    await pendle.swapTokenToXyt(
-      consts.FORGE_AAVE,
-      consts.MARKET_FACTORY_AAVE,
-      pendleXyt.address,
+    await pendleRouter.swapExactIn(
       testToken.address,
+      pendleXyt.address,
       amount,
       BN.from(0),
       consts.MAX_ALLOWANCE
@@ -26,9 +24,7 @@ export async function AMMTest(
   }
 
   async function swapXytToToken(amount: BN) {
-    await pendle.swapXytToToken(
-      consts.FORGE_AAVE,
-      consts.MARKET_FACTORY_AAVE,
+    await pendleRouter.swapExactIn(
       pendleXyt.address,
       testToken.address,
       amount,

@@ -1,8 +1,7 @@
 import { expect } from "chai";
+import { Contract, constants } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
-import { Contract } from "ethers";
-import { consts } from "../helpers";
-import { governanceFixture } from "./fixtures";
+import { pendleGovernanceFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
@@ -11,31 +10,31 @@ describe("PendleGovernance", () => {
   const [alice] = provider.getWallets();
   const loadFixture = createFixtureLoader([alice], provider);
 
-  let pdl: Contract;
+  let pendle: Contract;
   let timelock: Contract;
-  let pdlGovernor: Contract;
+  let pendleGovernor: Contract;
   beforeEach(async () => {
-    const fixture = await loadFixture(governanceFixture);
-    pdl = fixture.pdl;
+    const fixture = await loadFixture(pendleGovernanceFixture);
+    pendle = fixture.pendle;
     timelock = fixture.timelock;
-    pdlGovernor = fixture.pdlGovernor;
+    pendleGovernor = fixture.pendleGovernor;
   });
 
   it("timelock", async () => {
     const admin = await timelock.admin();
     expect(admin).to.be.eq(alice.address);
     const pendingAdmin = await timelock.pendingAdmin();
-    expect(pendingAdmin).to.be.eq(consts.ZERO_ADDRESS);
+    expect(pendingAdmin).to.be.eq(constants.AddressZero);
     const delay = await timelock.delay();
     expect(delay).to.be.eq(45000);
   });
 
   it("governor", async () => {
-    const votingPeriod = await pdlGovernor.votingPeriod();
+    const votingPeriod = await pendleGovernor.votingPeriod();
     expect(votingPeriod).to.be.eq(17280);
-    const timelockAddress = await pdlGovernor.timelock();
+    const timelockAddress = await pendleGovernor.timelock();
     expect(timelockAddress).to.be.eq(timelock.address);
-    const pdlFromGovernor = await pdlGovernor.pdl();
-    expect(pdlFromGovernor).to.be.eq(pdl.address);
+    const pendleFromGovernor = await pendleGovernor.pendle();
+    expect(pendleFromGovernor).to.be.eq(pendle.address);
   });
 });
