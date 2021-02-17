@@ -26,7 +26,6 @@ import "./PendleBaseToken.sol";
 import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleYieldToken.sol";
 
-
 contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldToken {
     address public override forge;
     address public override underlyingAsset;

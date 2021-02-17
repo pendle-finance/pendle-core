@@ -25,7 +25,6 @@ pragma solidity 0.7.6;
 
 import "./IPendleRouter.sol";
 
-
 interface IPendleMarketFactory {
     /**
      * @notice Emitted when the PendleRouter address has been updated.

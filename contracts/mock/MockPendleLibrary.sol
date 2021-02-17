@@ -24,7 +24,6 @@ pragma solidity 0.7.6;
 
 import {ExpiryUtils} from "../libraries/PendleLibrary.sol";
 
-
 contract MockPendleLibrary {
     using ExpiryUtils for string;
 

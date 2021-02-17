@@ -22,7 +22,6 @@
  */
 pragma solidity 0.7.6;
 
-
 interface IAaveLendingPool {
     function deposit(
         address _reserve,

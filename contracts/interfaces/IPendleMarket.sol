@@ -27,7 +27,6 @@ pragma experimental ABIEncoderV2;
 import "./IPendleRouter.sol";
 import "./IPendleBaseToken.sol";
 
-
 interface IPendleMarket is IPendleBaseToken {
     struct TokenReserve {
         uint256 weight;

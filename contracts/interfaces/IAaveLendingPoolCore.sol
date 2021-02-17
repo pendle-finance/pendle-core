@@ -22,7 +22,6 @@
  */
 pragma solidity 0.7.6;
 
-
 interface IAaveLendingPoolCore {
     function getReserveATokenAddress(address underlyingAsset) external view returns (address);
 

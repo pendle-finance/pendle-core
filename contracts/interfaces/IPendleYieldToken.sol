@@ -25,7 +25,6 @@ pragma solidity 0.7.6;
 
 import "./IPendleBaseToken.sol";
 
-
 interface IPendleYieldToken is IPendleBaseToken {
     /**
      * @notice Emitted when burning OT or XYT tokens.

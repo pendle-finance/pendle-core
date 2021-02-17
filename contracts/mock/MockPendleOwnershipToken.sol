@@ -24,7 +24,6 @@ pragma solidity 0.7.6;
 
 import "../tokens/PendleOwnershipToken.sol";
 
-
 contract MockPendleOwnershipToken is PendleOwnershipToken {
     constructor(
         address _underlyingAsset,

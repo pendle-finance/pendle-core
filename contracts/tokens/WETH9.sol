@@ -19,7 +19,6 @@
 
 pragma solidity 0.7.6;
 
-
 contract WETH9 {
     string public name = "Wrapped Ether";
     string public symbol = "WETH";

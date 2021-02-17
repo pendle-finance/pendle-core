@@ -26,7 +26,6 @@ pragma experimental ABIEncoderV2;
 import "../interfaces/IPENDLE.sol";
 import "hardhat/console.sol";
 
-
 contract PENDLE is IPENDLE {
     /// @notice A checkpoint for marking number of votes from a given block
     struct Checkpoint {
