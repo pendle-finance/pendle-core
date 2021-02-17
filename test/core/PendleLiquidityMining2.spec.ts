@@ -306,7 +306,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
     );
   });
 
-  it.only("test invalid setAllocationSetting", async () => {
+  it("test invalid setAllocationSetting", async () => {
     await expect(
       pendleLiq.setAllocationSetting(
         [
