@@ -224,7 +224,8 @@ describe("PendleLiquidityMining-beta tests", async () => {
 
   async function checkEqualRewards(
     userStakingData: userStakeAction[][][],
-    epochToCheck: number
+    epochToCheck: number,
+    _allocationRateDiv?: number
   ) {
     let expectedRewards: BN[][] = calExpectedRewards(
       userStakingData,
@@ -233,12 +234,13 @@ describe("PendleLiquidityMining-beta tests", async () => {
     );
     await setTime(provider, startOfEpoch(params, epochToCheck));
     let numUser = expectedRewards.length;
+    let allocationRateDiv = (_allocationRateDiv !== undefined ? _allocationRateDiv : 1);
     for (let userId = 0; userId < numUser; userId++) {
       await pendleLiq.connect(wallets[userId]).claimRewards();
-      console.log(expectedRewards[userId][0].toString(), (await pdl.balanceOf(wallets[userId].address)).toString());
+      // console.log(expectedRewards[userId][0].toString(), (await pdl.balanceOf(wallets[userId].address)).toString());
       approxBigNumber(
         await pdl.balanceOf(wallets[userId].address),
-        expectedRewards[userId][0],
+        expectedRewards[userId][0].div(allocationRateDiv),
         BN.from(100),
         false
       );
@@ -253,33 +255,16 @@ describe("PendleLiquidityMining-beta tests", async () => {
 
   async function checkEqualRewardsFourEpochs(
     userStakingData: userStakeAction[][][],
-    epochToCheck: number
+    epochToCheck: number,
+    _allocationRateDiv?: number
   ) {
     for (let i = 0; i < 4; i++) {
-      await checkEqualRewards(userStakingData, epochToCheck + i);
+      await checkEqualRewards(userStakingData, epochToCheck + i, _allocationRateDiv);
     }
   }
 
   it("test 1", async () => {
     let userStakingData: userStakeAction[][][] = scenario.scenario01(params);
-    await doSequence(userStakingData);
-    await checkEqualRewardsFourEpochs(
-      userStakingData,
-      userStakingData.length + 1
-    );
-  });
-
-  it("test 2", async () => {
-    let userStakingData: userStakeAction[][][] = scenario.scenario02(params);
-    await doSequence(userStakingData);
-    await checkEqualRewardsFourEpochs(
-      userStakingData,
-      userStakingData.length + 1
-    );
-  });
-
-  it("test 3", async () => {
-    let userStakingData: userStakeAction[][][] = scenario.scenario03(params);
     await doSequence(userStakingData);
     await checkEqualRewardsFourEpochs(
       userStakingData,
@@ -294,6 +279,29 @@ describe("PendleLiquidityMining-beta tests", async () => {
       userStakingData,
       userStakingData.length + 1
     );
+  });
+
+  it("test 5", async () => {
+    await pendleLiq.setAllocationSetting(
+      [consts.T0.add(consts.SIX_MONTH), consts.T0.add(consts.THREE_MONTH)],
+      [params.TOTAL_NUMERATOR.div(2), params.TOTAL_NUMERATOR.div(2)],
+      consts.HIGH_GAS_OVERRIDE
+    );
+    let userStakingData: userStakeAction[][][] = scenario.scenario04(params);
+    await doSequence(userStakingData);
+    await checkEqualRewardsFourEpochs(
+      userStakingData,
+      userStakingData.length + 1,
+      2
+    );
+  });
+
+  it.only("test invalid setAllocationSetting", async () => {
+    await expect(pendleLiq.setAllocationSetting(
+      [consts.T0.add(consts.SIX_MONTH), consts.T0.add(consts.THREE_MONTH), consts.T0.add(consts.ONE_MONTH)],
+      [params.TOTAL_NUMERATOR.div(3), params.TOTAL_NUMERATOR.div(3), params.TOTAL_NUMERATOR.div(3)],
+      consts.HIGH_GAS_OVERRIDE
+    )).to.be.revertedWith("VM Exception while processing transaction: revert Pendle: allocations dont add up");
   });
 
   it("this test shouldn't crash", async () => {

@@ -69,66 +69,6 @@ export function scenario01(params: liqParams): userStakeAction[][][] {
   ];
 }
 
-export function scenario02(params: liqParams): userStakeAction[][][] {
-  let LENGTH = params.EPOCH_DURATION;
-  return [
-    [
-      [
-        new userStakeAction(
-          startOfEpoch(params, 1),
-          SAME_AMOUNT,
-          true,
-          0
-        ),
-      ],
-      [
-        new userStakeAction(
-          startOfEpoch(params, 1).add(LENGTH.div(2)),
-          SAME_AMOUNT,
-          true,
-          1
-        ),
-      ],
-    ],
-  ];
-}
-
-export function scenario03(params: liqParams): userStakeAction[][][] {
-  let LENGTH = params.EPOCH_DURATION;
-  return [
-    [
-      [
-        new userStakeAction(
-          startOfEpoch(params, 1),
-          SAME_AMOUNT,
-          true,
-          0
-        ),
-        new userStakeAction(
-          startOfEpoch(params, 1).add(LENGTH.div(3)),
-          SAME_AMOUNT,
-          true,
-          0
-        ),
-      ],
-      [
-        new userStakeAction(
-          startOfEpoch(params, 1).add(LENGTH.div(2)),
-          SAME_AMOUNT,
-          true,
-          1
-        ),
-        new userStakeAction(
-          startOfEpoch(params, 1).add(LENGTH.mul(4).div(5)),
-          SAME_AMOUNT,
-          true,
-          1
-        ),
-      ],
-    ],
-  ];
-}
-
 export function scenario04(params: liqParams): userStakeAction[][][] {
   return [
     [
