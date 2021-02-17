@@ -121,7 +121,14 @@ contract PendleMarket is IPendleMarket, PendleBaseToken, ReentrancyGuard {
         uint256 inLp,
         uint256 minOutXyt,
         uint256 minOutToken
-    ) external override isBootstrapped onlyRouter nonReentrant returns (uint256 xytOut, uint256 tokenOut) {
+    )
+        external
+        override
+        isBootstrapped
+        onlyRouter
+        nonReentrant
+        returns (uint256 xytOut, uint256 tokenOut)
+    {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
         uint256 exitFee = data.exitFee();
@@ -422,14 +429,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken, ReentrancyGuard {
     }
 
     function getWeight(address asset) external view override returns (uint256) {
-        (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) =  _updateWeightDry();
+        (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) =
+            _updateWeightDry();
         if (asset == xyt) {
             return xytWeightUpdated;
-        }
-        else if (asset == token) {
+        } else if (asset == token) {
             return tokenWeightUpdated;
-        }
-        else {
+        } else {
             return 0;
         }
     }
@@ -539,12 +545,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken, ReentrancyGuard {
     function _mintLp(uint256 amount) internal {
         _mint(address(this), amount);
     }
-    
+
     function _updateWeight() internal {
         uint256 xytWeight = reserves[xyt].weight;
         uint256 tokenWeight = reserves[token].weight;
 
-        (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) =  _updateWeightDry();
+        (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) =
+            _updateWeightDry();
 
         reserves[xyt].weight = xytWeightUpdated;
         reserves[token].weight = tokenWeightUpdated;
@@ -552,7 +559,15 @@ contract PendleMarket is IPendleMarket, PendleBaseToken, ReentrancyGuard {
         emit Shift(xytWeight, tokenWeight, xytWeightUpdated, tokenWeightUpdated);
     }
 
-    function _updateWeightDry() internal view returns (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) {
+    function _updateWeightDry()
+        internal
+        view
+        returns (
+            uint256 xytWeightUpdated,
+            uint256 tokenWeightUpdated,
+            uint256 priceNow
+        )
+    {
         uint256 currentTime = block.timestamp;
         uint256 endTime = IPendleYieldToken(xyt).expiry();
         uint256 startTime = IPendleYieldToken(xyt).start();
@@ -571,14 +586,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken, ReentrancyGuard {
                 (endTime - currentTime) * Math.FORMULA_PRECISION,
                 duration * Math.FORMULA_PRECISION
             );
-        priceNow =
-            Math.rdiv(
-                Math.ln(
-                    Math.rmul(Math.PI, timeToMature).add(Math.FORMULA_PRECISION),
-                    Math.FORMULA_PRECISION
-                ),
-                Math.ln(Math.PI_PLUSONE, Math.FORMULA_PRECISION)
-            );
+        priceNow = Math.rdiv(
+            Math.ln(
+                Math.rmul(Math.PI, timeToMature).add(Math.FORMULA_PRECISION),
+                Math.FORMULA_PRECISION
+            ),
+            Math.ln(Math.PI_PLUSONE, Math.FORMULA_PRECISION)
+        );
         uint256 r = Math.rdiv(priceNow, priceLast);
         require(Math.FORMULA_PRECISION >= r, "Pendle: wrong r value");
 
