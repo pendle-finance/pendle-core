@@ -30,6 +30,12 @@ export interface liqParams {
   TOTAL_NUMERATOR: BN,
   INITIAL_LP_AMOUNT: BN,
 }
+export interface userStakeAction {
+  time: BN;
+  amount: BN;
+  isStaking: boolean;
+  id: number; // will not be used in calExpectedRewards
+}
 
 const params: liqParams = {
   START_TIME: consts.T0.add(1000), // starts in 1000s
@@ -104,6 +110,7 @@ export async function pendleLiquidityMiningFixture(
   }
 
   await pendleLiquidityMining.fund();
+  await pdl.transfer(pendleLiquidityMining.address, await pdl.balanceOf(alice.address));
 
   for (var person of [bob, charlie, dave]) {
     await pendleMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);

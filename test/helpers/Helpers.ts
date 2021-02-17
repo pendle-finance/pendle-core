@@ -2,6 +2,7 @@ import { BigNumber as BN, Contract, providers, Wallet } from "ethers";
 import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
 import AToken from "../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json";
 import TetherToken from "../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json";
+import { liqParams } from "../core/fixtures/";
 import { aaveFixture } from "../core/fixtures/aave.fixture";
 import { consts, Token } from "./Constants";
 
@@ -163,14 +164,21 @@ export function getGain(amount: BN, rate: BN, duration: BN): BN {
   return rateForDuration;
 }
 
-export function approxBigNumber(actual: BN, expected: BN, delta: BN): boolean {
+export function approxBigNumber(
+  actual: BN,
+  expected: BN,
+  delta: BN,
+  log: boolean = true
+): boolean {
   var diff = expected.sub(actual);
   if (diff.lt(0)) {
     diff = diff.mul(-1);
   }
-  console.log(
-    `expecting: ${expected.toString()}, received: ${actual.toString()}, diff: ${diff.toString()}, allowedDelta: ${delta.toString()}`
-  );
+  if (log) {
+    console.log(
+      `expecting: ${expected.toString()}, received: ${actual.toString()}, diff: ${diff.toString()}, allowedDelta: ${delta.toString()}`
+    );
+  }
   return diff.lte(delta);
 }
 
@@ -189,4 +197,17 @@ export function toFixedPoint(val: string | number): BN {
 
 export function toFPWei(val: string | number): BN {
   return toFixedPoint(val).mul(1000000);
+}
+
+export function epochRelativeTime(params: liqParams, t: BN): BN {
+  return t.sub(params.START_TIME).mod(params.EPOCH_DURATION);
+}
+
+export function epochOfTimestamp(params: liqParams, t: BN): BN {
+  if (t.lt(params.START_TIME)) return BN.from(0);
+  return t.sub(params.START_TIME).div(params.EPOCH_DURATION).add(BN.from(1));
+}
+
+export function startOfEpoch(params: liqParams, e: number): BN {
+  return params.EPOCH_DURATION.mul(e - 1).add(params.START_TIME);
 }

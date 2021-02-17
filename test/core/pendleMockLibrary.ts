@@ -1,4 +1,4 @@
-import { Contract, Wallet, providers, BigNumber as BN } from "ethers";
+import { BigNumber as BN } from "ethers";
 import MockLibrary from "../../build/artifacts/contracts/mock/MockLibrary.sol/MockLibrary.json";
 
 const { waffle } = require("hardhat");

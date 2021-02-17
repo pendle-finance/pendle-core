@@ -1,42 +1,26 @@
+import { assert, expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
+import PendleLiquidityMining from "../../build/artifacts/contracts/core/PendleLiquidityMining.sol/PendleLiquidityMining.json";
 import {
-  advanceTime,
+  approxBigNumber,
   consts,
   evm_revert,
   evm_snapshot,
-  getAContract,
-  setTimeNextBlock,
-  tokens,
   setTime,
+  setTimeNextBlock,
+  startOfEpoch,
 } from "../helpers";
-import PendleLiquidityMining from "../../build/artifacts/contracts/core/PendleLiquidityMining.sol/PendleLiquidityMining.json";
-import { liqParams, pendleLiquidityMiningFixture } from "./fixtures";
-import { assert, expect, use } from "chai";
+import {
+  liqParams,
+  pendleLiquidityMiningFixture,
+  userStakeAction,
+} from "./fixtures";
+import * as scenario from "./fixtures/pendleLiquidityMiningScenario.fixture";
 
 const { waffle } = require("hardhat");
 const hre = require("hardhat");
 const { deployContract, provider } = waffle;
-
-interface userStakeAction {
-  time: BN;
-  amount: BN;
-  isStaking: boolean;
-  id: number; // will not be used in calExpectedRewards
-}
-
-function epochRelativeTime(params: liqParams, t: BN): BN {
-  return t.sub(params.START_TIME).mod(params.EPOCH_DURATION);
-}
-
-function epochOfTimestamp(params: liqParams, t: BN): BN {
-  if (t.lt(params.START_TIME)) return BN.from(0);
-  return t.sub(params.START_TIME).div(params.EPOCH_DURATION).add(BN.from(1));
-}
-
-function startOfEpoch(params: liqParams, e: BN): BN {
-  return params.EPOCH_DURATION.mul(e.sub(1)).add(params.START_TIME);
-}
 
 // returns a rewards object = BN[][]
 //    rewards[userId][0] is the rewards withdrawable at currentEpoch
@@ -47,40 +31,39 @@ function calExpectedRewards(
   params: liqParams,
   currentEpoch: number
 ): BN[][] {
+  let nUsers = userStakingData[0].length;
+  /*
+  pushing params.NUMBER_OF_EPOCHS empty epochs to mimic the real-life situation where users
+  will continue to receive rewards even if they don't do any action
+  */
+  for (let i = 1; i <= params.NUMBER_OF_EPOCHS.toNumber(); i++) {
+    let emptyArr = [];
+    for (let j = 1; j <= nUsers; j++) {
+      emptyArr.push([]);
+    }
+    userStakingData.push(emptyArr);
+  }
+
   let userCurrentStakes: BN[] = [];
-  let userLastWithdrawnEpoch: number[] = [];
   let rewards: BN[][] = [];
 
-  let nUsers = userStakingData[0].length;
-  // let availableRewardsForEpoch: BN[][] = []; // availableRewardsForEpoch[userId][epochId]
+  let availableRewardsForEpoch: BN[][] = []; // availableRewardsForEpoch[userId][epochId]
 
   for (let i: number = 0; i < nUsers; i++) {
     userCurrentStakes.push(BN.from(0));
-    userLastWithdrawnEpoch.push(0);
     rewards.push([]);
-    // availableRewardsForEpoch.push([]);
-    // for (
-    //   let j: number = 0;
-    //   j < params.NUMBER_OF_EPOCHS.add(params.VESTING_EPOCHS).toNumber();
-    //   j++
-    // ) {
-    //   availableRewardsForEpoch[i].push(BN.from(0));
-    // }
+    availableRewardsForEpoch.push([]);
+    for (
+      let j: number = 0;
+      j < params.NUMBER_OF_EPOCHS.add(params.VESTING_EPOCHS).toNumber();
+      j++
+    ) {
+      availableRewardsForEpoch[i].push(BN.from(0));
+    }
     for (let j: number = 0; j < params.VESTING_EPOCHS.toNumber(); j++) {
       rewards[i].push(BN.from(0));
     }
   }
-
-  userStakingData.forEach((epochData, i) => {
-    let epochId = i + 1;
-    epochData.forEach((userData, userId) => {
-      userData.forEach((userAction, actionId) => {
-        if (!userAction.isStaking) {
-          userLastWithdrawnEpoch[userId] = epochId;
-        }
-      });
-    });
-  });
 
   userStakingData.forEach((epochData, i) => {
     let epochId = i + 1;
@@ -90,15 +73,15 @@ function calExpectedRewards(
 
     epochData.forEach((userData, userId) => {
       userStakeSeconds.push(BN.from(0));
-      let lastTimeUpdated = startOfEpoch(params, BN.from(epochId));
+      let lastTimeUpdated = startOfEpoch(params, epochId);
       userData.push({
-        time: startOfEpoch(params, BN.from(epochId + 1)),
+        time: startOfEpoch(params, epochId + 1),
         amount: BN.from(0),
         isStaking: true,
-        id: -1
+        id: -1,
       });
       userData.forEach((userAction, actionId) => {
-        // console.log(`\t[calExpectedRewards] Processing userAction: ${userAction.time} ${userAction.amount} ${userAction.isStaking} for user ${userId}`);
+        // console.log(`\t[calculateExpectedRewards] Processing userAction: ${userAction.time} ${userAction.amount} ${userAction.isStaking} for user ${userId}`);
         const timeElapsed = userAction.time.sub(lastTimeUpdated);
         const additionalStakeSeconds = userCurrentStakes[userId].mul(
           timeElapsed
@@ -108,7 +91,7 @@ function calExpectedRewards(
         );
         // console.log(`\t\ttotalStakeSeconds before = ${totalStakeSeconds}, ${totalStakeSeconds.add(additionalStakeSeconds)}`);
         totalStakeSeconds = totalStakeSeconds.add(additionalStakeSeconds);
-        // console.log(`\t\t[calExpectedRewards] additionalStakeSeconds = ${additionalStakeSeconds}, timeElapsed = ${timeElapsed}, totalStakeSeconds = ${totalStakeSeconds}`);
+        // console.log(`\t\t[calculateExpectedRewards] additionalStakeSeconds = ${additionalStakeSeconds}, timeElapsed = ${timeElapsed}, totalStakeSeconds = ${totalStakeSeconds}`);
 
         if (userAction.isStaking) {
           userCurrentStakes[userId] = userCurrentStakes[userId].add(
@@ -122,7 +105,7 @@ function calExpectedRewards(
         lastTimeUpdated = userAction.time;
       });
     });
-    // console.log(`\t[calExpectedRewards] Epoch = ${epochId}, totalStakeSeconds = ${totalStakeSeconds}`);
+    // console.log(`\t[calculateExpectedRewards] Epoch = ${epochId}, totalStakeSeconds = ${totalStakeSeconds}`);
 
     epochData.forEach((userData, userId) => {
       const rewardsPerVestingEpoch = params.REWARDS_PER_EPOCH.mul(
@@ -135,9 +118,6 @@ function calExpectedRewards(
         e <= epochId + params.VESTING_EPOCHS.toNumber();
         e++
       ) {
-        if (e <= userLastWithdrawnEpoch[userId]) {
-          continue; // this would be withdrawn by the user's last withdraw action
-        }
         if (e <= currentEpoch) {
           rewards[userId][0] = rewards[userId][0].add(rewardsPerVestingEpoch);
           continue;
@@ -150,9 +130,9 @@ function calExpectedRewards(
       }
     });
   });
-  rewards.forEach((userReward, userId) => {
-    console.log(`\tRewards for user ${userId}: ${userReward}`);
-  });
+  // rewards.forEach((userReward, userId) => {
+  //   console.log(`\tRewards for user ${userId}: ${userReward}`);
+  // });
   return rewards;
 }
 
@@ -160,10 +140,8 @@ describe("PendleLiquidityMining-beta tests", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave] = wallets;
-  let lendingPoolCore: Contract;
   let pendleLiq: Contract;
   let pdl: Contract;
-  let aUSDT: Contract;
   let params: liqParams;
   let snapshotId: string;
   let globalSnapshotId: string;
@@ -171,10 +149,8 @@ describe("PendleLiquidityMining-beta tests", async () => {
   before(async () => {
     globalSnapshotId = await evm_snapshot();
     const fixture = await loadFixture(pendleLiquidityMiningFixture);
-    lendingPoolCore = fixture.aave.lendingPoolCore;
     pendleLiq = fixture.pendleLiquidityMining;
     params = fixture.params;
-    aUSDT = await getAContract(alice, lendingPoolCore, tokens.USDT);
     pdl = fixture.pdl;
     pendleLiqWeb3 = new hre.web3.eth.Contract(
       PendleLiquidityMining.abi,
@@ -220,170 +196,97 @@ describe("PendleLiquidityMining-beta tests", async () => {
     userStakingData.forEach((epochData) => {
       epochData.forEach((userData) => {
         userData.forEach((userAction) => {
-          flatData.push(userAction);
-        })
-      })
-    })
+          if (userAction.id != -1) {
+            flatData.push(userAction);
+          }
+        });
+      });
+    });
 
     flatData = flatData.sort((a, b) => {
-      assert(a.time != b.time);
       return a.time.sub(b.time).toNumber();
-    })
+    });
 
     // console.log(flatData);
     for (let i = 0; i < flatData.length; i++) {
       let action = flatData[i];
-      if (action.id == -1) {
-        continue; // placeholder event, skip
-      }
       if (i != 0) {
+        // console.log(flatData[i - 1], flatData[i]);
         assert(flatData[i - 1].time < flatData[i].time);
       }
       await setTimeNextBlock(provider, action.time);
       if (action.isStaking) {
         await doStake(wallets[action.id], action.amount); // acess users directly by their id instead of names
-      }
-      else { // withdrawing
+      } else {
+        // withdrawing
         await doWithdraw(wallets[action.id], action.amount);
       }
     }
   }
 
-  function checkEqualRewards(expectedRewards: BN[][], actualRewards: BN[][]) {
-    let numUser = expectedRewards.length;
-    for (let userId = 0; userId < numUser; userId++) {
-      for (let i = 0; i < 4; i++) {
-        expect(expectedRewards[userId][i].toNumber()).to.be.approximately(
-          BN.from(actualRewards[userId][i]).toNumber(),
-          10000
-        );
-      }
-    }
-  }
-  it("beta", async () => {
-    const T0 = params.START_TIME;
-    const LENGTH = params.EPOCH_DURATION;
-
-    let userStakingData = [
-      [
-        [
-          {
-            time: T0,
-            amount: BN.from(10000),
-            isStaking: true,
-            id: 0
-          },
-          {
-            time: T0.add(LENGTH.div(3)),
-            amount: BN.from(10000),
-            isStaking: true,
-            id: 0
-          },
-        ],
-        [
-          {
-            time: T0.add(LENGTH.div(2)), // exactly half
-            amount: BN.from(10000),
-            isStaking: true,
-            id: 1
-          },
-          {
-            time: T0.add(LENGTH.mul(4).div(5)), // exactly half
-            amount: BN.from(10000),
-            isStaking: true,
-            id: 1
-          },
-        ],
-      ],
-    ];
+  async function checkEqualRewards(
+    userStakingData: userStakeAction[][][],
+    epochToCheck: number
+  ) {
     let expectedRewards: BN[][] = calExpectedRewards(
       userStakingData,
       params,
-      2
+      epochToCheck
     );
+    await setTime(provider, startOfEpoch(params, epochToCheck));
+    let numUser = expectedRewards.length;
+    for (let userId = 0; userId < numUser; userId++) {
+      await pendleLiq.connect(wallets[userId]).claimRewards();
+      // console.log(expectedRewards[userId][0].toString(), (await pdl.balanceOf(wallets[userId].address)).toString());
+      approxBigNumber(
+        await pdl.balanceOf(wallets[userId].address),
+        expectedRewards[userId][0],
+        BN.from(100),
+        false
+      );
+      // expect(expectedRewards[userId][0].toNumber()).to.be.approximately(
+      // (await pdl.balanceOf(wallets[userId].address)).toNumber(),
+      // 100 // 100 is much better than necessary, but usually the differences are 0
+      // );
+    }
+    // console.log(await claimRewardsWeb3(wallets[0]));
+    // console.log(await claimRewardsWeb3(wallets[1]));
+  }
+
+  async function checkEqualRewardsFourEpochs(
+    userStakingData: userStakeAction[][][],
+    epochToCheck: number
+  ) {
+    for (let i = 0; i < 4; i++) {
+      await checkEqualRewards(userStakingData, epochToCheck + i);
+    }
+  }
+
+  it("beta", async () => {
+    let userStakingData: userStakeAction[][][] = scenario.scenario01(params);
     await doSequence(userStakingData);
-    await setTime(provider, params.START_TIME.add(params.EPOCH_DURATION));
-    let actualRewards: BN[][] = [await claimRewardsWeb3(alice), await claimRewardsWeb3(bob)];
-    checkEqualRewards(expectedRewards, actualRewards);
+    await checkEqualRewardsFourEpochs(
+      userStakingData,
+      userStakingData.length + 1
+    );
   });
 
   it("Test", async () => {
-    let userStakingData: userStakeAction[][][] = [
-      [
-        [
-          {
-            time: params.START_TIME, // start of epoch
-            amount: BN.from(10000),
-            isStaking: true,
-            id: 0
-          },
-        ],
-        [
-          {
-            time: params.START_TIME.add(params.EPOCH_DURATION.div(2)), // exactly half
-            amount: BN.from(10000),
-            isStaking: true,
-            id: 1
-          },
-        ],
-      ],
-    ];
-    let expectedRewards: BN[][] = calExpectedRewards(
-      userStakingData,
-      params,
-      2
-    );
+    let userStakingData: userStakeAction[][][] = scenario.scenario02(params);
     await doSequence(userStakingData);
-    await setTime(provider, params.START_TIME.add(params.EPOCH_DURATION));
-    let actualRewards: BN[][] = [await claimRewardsWeb3(alice), await claimRewardsWeb3(bob)];
-    checkEqualRewards(expectedRewards, actualRewards);
+    await checkEqualRewardsFourEpochs(
+      userStakingData,
+      userStakingData.length + 1
+    );
   });
 
   it("Test 2", async () => {
-    const T0 = params.START_TIME;
-    const LENGTH = params.EPOCH_DURATION;
-
-    let userStakingData = [
-      [
-        [
-          {
-            time: T0,
-            amount: BN.from(10000),
-            isStaking: true,
-            id: 0
-          },
-          {
-            time: T0.add(LENGTH.div(3)),
-            amount: BN.from(10000),
-            isStaking: true,
-            id: 0
-          },
-        ],
-        [
-          {
-            time: T0.add(LENGTH.div(2)), // exactly half
-            amount: BN.from(10000),
-            isStaking: true,
-            id: 1
-          },
-          {
-            time: T0.add(LENGTH.mul(4).div(5)), // exactly half
-            amount: BN.from(10000),
-            isStaking: true,
-            id: 1
-          },
-        ],
-      ],
-    ];
-    let expectedRewards: BN[][] = calExpectedRewards(
-      userStakingData,
-      params,
-      2
-    );
+    let userStakingData = scenario.scenario03(params);
     await doSequence(userStakingData);
-    await setTime(provider, params.START_TIME.add(params.EPOCH_DURATION));
-    let actualRewards: BN[][] = [await claimRewardsWeb3(alice), await claimRewardsWeb3(bob)];
-    checkEqualRewards(expectedRewards, actualRewards);
+    await checkEqualRewardsFourEpochs(
+      userStakingData,
+      userStakingData.length + 1
+    );
   });
 
   it("this test shouldn't crash", async () => {
