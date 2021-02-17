@@ -168,7 +168,7 @@ describe("pendleLpFormula", async () => {
       await pendleMarket.balanceOf(user.address),
       expected,
       consts.TEST_LP_DELTA
-    )
+    );
   }
 
   // TODO: Investigate why market can handle a large amount of token swapping in

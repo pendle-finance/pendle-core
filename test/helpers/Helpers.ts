@@ -176,9 +176,11 @@ export function approxBigNumber(
     diff = diff.mul(-1);
   }
   if (diff.lte(delta) == false) {
-    expect(diff.lte(delta), `expecting: ${expected.toString()}, received: ${actual.toString()}, diff: ${diff.toString()}, allowedDelta: ${delta.toString()}`).to.be.true;
-  }
-  else {
+    expect(
+      diff.lte(delta),
+      `expecting: ${expected.toString()}, received: ${actual.toString()}, diff: ${diff.toString()}, allowedDelta: ${delta.toString()}`
+    ).to.be.true;
+  } else {
     if (log) {
       console.log(
         `expecting: ${expected.toString()}, received: ${actual.toString()}, diff: ${diff.toString()}, allowedDelta: ${delta.toString()}`

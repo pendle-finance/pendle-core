@@ -75,7 +75,12 @@ function calExpectedRewards(
       userStakeSeconds.push(BN.from(0));
       let lastTimeUpdated = startOfEpoch(params, epochId);
       userData.push(
-        new userStakeAction(startOfEpoch(params, epochId + 1), BN.from(0), true, -1)
+        new userStakeAction(
+          startOfEpoch(params, epochId + 1),
+          BN.from(0),
+          true,
+          -1
+        )
       );
       userData.forEach((userAction, actionId) => {
         // console.log(`\t[calculateExpectedRewards] Processing userAction: ${userAction.time} ${userAction.amount} ${userAction.isStaking} for user ${userId}`);
@@ -234,7 +239,8 @@ describe("PendleLiquidityMining-beta tests", async () => {
     );
     await setTime(provider, startOfEpoch(params, epochToCheck));
     let numUser = expectedRewards.length;
-    let allocationRateDiv = (_allocationRateDiv !== undefined ? _allocationRateDiv : 1);
+    let allocationRateDiv =
+      _allocationRateDiv !== undefined ? _allocationRateDiv : 1;
     for (let userId = 0; userId < numUser; userId++) {
       await pendleLiq.connect(wallets[userId]).claimRewards();
       // console.log(expectedRewards[userId][0].toString(), (await pdl.balanceOf(wallets[userId].address)).toString());
@@ -259,7 +265,11 @@ describe("PendleLiquidityMining-beta tests", async () => {
     _allocationRateDiv?: number
   ) {
     for (let i = 0; i < 4; i++) {
-      await checkEqualRewards(userStakingData, epochToCheck + i, _allocationRateDiv);
+      await checkEqualRewards(
+        userStakingData,
+        epochToCheck + i,
+        _allocationRateDiv
+      );
     }
   }
 
@@ -297,11 +307,23 @@ describe("PendleLiquidityMining-beta tests", async () => {
   });
 
   it.only("test invalid setAllocationSetting", async () => {
-    await expect(pendleLiq.setAllocationSetting(
-      [consts.T0.add(consts.SIX_MONTH), consts.T0.add(consts.THREE_MONTH), consts.T0.add(consts.ONE_MONTH)],
-      [params.TOTAL_NUMERATOR.div(3), params.TOTAL_NUMERATOR.div(3), params.TOTAL_NUMERATOR.div(3)],
-      consts.HIGH_GAS_OVERRIDE
-    )).to.be.revertedWith("VM Exception while processing transaction: revert Pendle: allocations dont add up");
+    await expect(
+      pendleLiq.setAllocationSetting(
+        [
+          consts.T0.add(consts.SIX_MONTH),
+          consts.T0.add(consts.THREE_MONTH),
+          consts.T0.add(consts.ONE_MONTH),
+        ],
+        [
+          params.TOTAL_NUMERATOR.div(3),
+          params.TOTAL_NUMERATOR.div(3),
+          params.TOTAL_NUMERATOR.div(3),
+        ],
+        consts.HIGH_GAS_OVERRIDE
+      )
+    ).to.be.revertedWith(
+      "VM Exception while processing transaction: revert Pendle: allocations dont add up"
+    );
   });
 
   it("this test shouldn't crash", async () => {
