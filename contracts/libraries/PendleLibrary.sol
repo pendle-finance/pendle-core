@@ -100,7 +100,6 @@ library Math {
     using SafeMath for uint256;
 
     uint256 internal constant UINT_MAX_VALUE = uint256(-1);
-    uint256 internal constant WAD = 1e18;
     uint256 internal constant BIG_NUMBER = (uint256(1) << uint256(200));
     uint256 internal constant PRECISION_BITS = 40;
     uint256 internal constant FORMULA_PRECISION = uint256(1) << PRECISION_BITS;

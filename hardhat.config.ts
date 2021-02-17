@@ -92,11 +92,7 @@ const config: HardhatUserConfig = {
   },
   mocha: {
     timeout: 500000,
-  },
-  tenderly: {
-		username: "ayobuenavista",
-		project: "projects"
-	}
+  }
 };
 
 export default config;
