@@ -15,7 +15,8 @@ interface PendleMarketFixture {
   forge: PendleAaveFixture,
   aave: AaveFixture,
   testToken: Contract,
-  pendleMarket: Contract
+  pendleStdMarket: Contract
+  pendleEthMarket: Contract
 }
 
 export async function pendleMarketFixture(
@@ -28,7 +29,7 @@ export async function pendleMarketFixture(
   const forge = await pendleAaveForgeFixture(alice, provider, core, governance);
   const aave = await aaveFixture(alice);
   const { pendleRouter, pendleMarketFactory, pendleData } = core;
-  const { pendleAaveForge, pendleFutureYieldToken } = forge;
+  const { pendleFutureYieldToken } = forge;
   const token = tokens.USDT
 
   const amount = amountToWei(token, consts.INITIAL_OT_XYT_AMOUNT);
@@ -46,7 +47,7 @@ export async function pendleMarketFixture(
 
   await pendleRouter.addMarketFactory(consts.MARKET_FACTORY_AAVE, pendleMarketFactory.address);
 
-  await pendleRouter.createMarket(
+  await pendleRouter.createMarket( // create market for XYT-Test Token (any token conforms to IERC20 standard)
     consts.FORGE_AAVE,
     consts.MARKET_FACTORY_AAVE,
     pendleFutureYieldToken.address,
@@ -54,20 +55,38 @@ export async function pendleMarketFixture(
     consts.HIGH_GAS_OVERRIDE
   );
 
-  const pendleMarketAddress = await pendleData.getMarket(
+  await pendleRouter.createMarket( // create market for XYT-WETH
+    consts.FORGE_AAVE,
+    consts.MARKET_FACTORY_AAVE,
+    pendleFutureYieldToken.address,
+    tokens.WETH.address,
+    consts.HIGH_GAS_OVERRIDE
+  );
+
+  // pendleStdMarketAddress = pendleStandardMarket
+  const pendleStdMarketAddress = await pendleData.getMarket(
     consts.FORGE_AAVE,
     consts.MARKET_FACTORY_AAVE,
     pendleFutureYieldToken.address,
     testToken.address
   );
 
-  const pendleMarket = new Contract(pendleMarketAddress, PendleMarket.abi, alice)
+  const pendleEthMarketAddress = await pendleData.getMarket(
+    consts.FORGE_AAVE,
+    consts.MARKET_FACTORY_AAVE,
+    pendleFutureYieldToken.address,
+    tokens.WETH.address,
+  );
+
+  const pendleStdMarket = new Contract(pendleStdMarketAddress, PendleMarket.abi, alice)
+  const pendleEthMarket = new Contract(pendleEthMarketAddress, PendleMarket.abi, alice)
 
   for (var person of [alice, bob, charlie]) {
     await testToken.connect(person).approve(pendleRouter.address, totalSupply);
     await pendleFutureYieldToken.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
-    await pendleMarket.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+    await pendleStdMarket.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+    await pendleEthMarket.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
   }
 
-  return { core, aave, forge, testToken, pendleMarket }
+  return { core, aave, forge, testToken, pendleStdMarket, pendleEthMarket }
 }
