@@ -121,13 +121,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 inLp,
         uint256 minOutXyt,
         uint256 minOutToken
-    )
-        external
-        override
-        isBootstrapped
-        onlyRouter
-        returns (uint256 xytOut, uint256 tokenOut)
-    {
+    ) external override isBootstrapped onlyRouter returns (uint256 xytOut, uint256 tokenOut) {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
         uint256 exitFee = data.exitFee();
