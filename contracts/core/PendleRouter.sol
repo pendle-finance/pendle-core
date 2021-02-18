@@ -89,7 +89,7 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         ot = address(data.otTokens(_forgeId, _underlyingAsset, _expiry));
         xyt = address(data.xytTokens(_forgeId, _underlyingAsset, _expiry));
-        require(ot == address(0) || xyt == address(0), "Pendle: duplicate yield contracts");
+        require(ot == address(0) && xyt == address(0), "Pendle: duplicate yield contracts");
 
         (ot, xyt) = forge.newYieldContracts(_underlyingAsset, _expiry);
     }
