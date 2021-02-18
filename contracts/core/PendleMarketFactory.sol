@@ -20,7 +20,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 
 import {Factory} from "../libraries/PendleLibrary.sol";
 import "./PendleMarket.sol";
@@ -54,8 +54,7 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions {
     function createMarket(
         bytes32 _forgeId,
         address _xyt,
-        address _token,
-        uint256 _expiry
+        address _token
     ) external override initialized onlyRouter returns (address market) {
         require(_xyt != _token, "Pendle: similar tokens");
         require(_xyt != address(0) || _token != address(0), "Pendle: zero address");
@@ -70,10 +69,11 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions {
         address forgeAddress = data.getForgeAddress(_forgeId);
         require(forgeAddress != address(0), "Pendle: zero address");
 
+        uint256 expiry = IPendleYieldToken(_xyt).expiry();
         market = Factory.createContract(
             type(PendleMarket).creationCode,
-            abi.encodePacked(forgeAddress, _xyt, _token, _expiry),
-            abi.encode(forgeAddress, _xyt, _token, _expiry)
+            abi.encodePacked(forgeAddress, _xyt, _token, expiry),
+            abi.encode(forgeAddress, _xyt, _token, expiry)
         );
         data.addMarket(_forgeId, marketFactoryId, _xyt, _token, market);
 

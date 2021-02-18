@@ -20,7 +20,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import {Enumerable, Math} from "../libraries/PendleLibrary.sol";
@@ -55,10 +55,10 @@ contract PendleData is IPendleData, Permissions {
         override getMarket;
     mapping(bytes32 => mapping(address => mapping(uint256 => IPendleYieldToken)))
         public
-        override otTokens;
+        override otTokens; // [forgeId][underlyingAsset][expiry]
     mapping(bytes32 => mapping(address => mapping(uint256 => IPendleYieldToken)))
         public
-        override xytTokens;
+        override xytTokens; // [forgeId][underlyingAsset][expiry]
     uint256 public override swapFee;
     uint256 public override exitFee;
     IPendleRouter public override router;

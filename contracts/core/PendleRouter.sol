@@ -20,7 +20,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -87,6 +87,10 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         require(address(forge) != address(0), "Pendle: forge does not exist");
+
+        ot = address(data.otTokens(_forgeId, _underlyingAsset, _expiry));
+        xyt = address(data.xytTokens(_forgeId, _underlyingAsset, _expiry));
+        require(ot == address(0) && xyt == address(0), "Pendle: duplicate yield contracts");
 
         (ot, xyt) = forge.newYieldContracts(_underlyingAsset, _expiry);
     }
@@ -404,8 +408,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         bytes32 _forgeId,
         bytes32 _marketFactoryId,
         address _xyt,
-        address _token,
-        uint256 _expiry
+        address _token
     ) public override nonReentrant returns (address market) {
         require(_xyt != address(0), "Pendle: zero address");
         require(_token != address(0), "Pendle: zero address");
@@ -414,7 +417,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));
         require(address(factory) != address(0), "Pendle: zero address");
 
-        market = factory.createMarket(_forgeId, _xyt, _token, _expiry);
+        market = factory.createMarket(_forgeId, _xyt, _token);
         IERC20(_xyt).safeApprove(market, Math.UINT_MAX_VALUE);
         IERC20(_token).safeApprove(market, Math.UINT_MAX_VALUE);
         IERC20(market).safeApprove(market, Math.UINT_MAX_VALUE);
@@ -664,19 +667,6 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
 
         _transferOut(_tokenOut, outTotalAmount);
         _transferOut(_tokenIn, change);
-    }
-
-    // @@Vu TODO: This is not returning the list of markets for the underlying token.
-    // We will need to add some structs to PendleData to query this
-    function getMarketByUnderlyingToken(
-        bytes32 _forgeId,
-        bytes32 _marketFactoryId,
-        address _underlyingAsset,
-        uint256 _expiry
-    ) public view override returns (address market) {
-        (IPendleYieldToken xyt, IPendleYieldToken token) =
-            data.getPendleYieldTokens(_forgeId, _underlyingAsset, _expiry);
-        market = data.getMarket(_forgeId, _marketFactoryId, address(xyt), address(token));
     }
 
     function getMarketRateExactIn(
