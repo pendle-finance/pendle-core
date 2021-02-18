@@ -25,6 +25,7 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Math} from "../libraries/PendleLibrary.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleData.sol";
@@ -33,7 +34,7 @@ import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../periphery/Permissions.sol";
 
-contract PendleRouter is IPendleRouter, Permissions {
+contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -228,7 +229,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         uint256 _maxInXyt,
         uint256 _maxInToken,
         uint256 _exactOutLp
-    ) public payable override {
+    ) public payable override nonReentrant {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "Pendle: market not found");
@@ -255,7 +256,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _xyt,
         uint256 _exactInEth,
         uint256 _minOutLp
-    ) public payable override {
+    ) public payable override nonReentrant {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, address(weth)));
         require(address(market) != address(0), "Pendle: market not found");
@@ -280,7 +281,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _token,
         uint256 _exactInToken,
         uint256 _minOutLp
-    ) public override {
+    ) public override nonReentrant {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "Pendle: market not found");
@@ -304,7 +305,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _token,
         uint256 _exactInXyt,
         uint256 _minOutLp
-    ) public override {
+    ) public override nonReentrant {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "Pendle: market not found");
@@ -329,7 +330,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         uint256 _exactInLp,
         uint256 _minOutXyt,
         uint256 _minOutToken
-    ) public override {
+    ) public override nonReentrant {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "Pendle: market not found");
@@ -349,7 +350,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _xyt,
         uint256 _exactInLp,
         uint256 _minOutEth
-    ) public override {
+    ) public override nonReentrant {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, address(weth)));
         require(address(market) != address(0), "Pendle: market not found");
@@ -368,7 +369,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _token,
         uint256 _exactInLp,
         uint256 _minOutToken
-    ) public override {
+    ) public override nonReentrant {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "Pendle: market not found");
@@ -387,7 +388,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _token,
         uint256 _exactInLp,
         uint256 _minOutXyt
-    ) public override {
+    ) public override nonReentrant {
         IPendleMarket market =
             IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "Pendle: market not found");
@@ -405,7 +406,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _xyt,
         address _token,
         uint256 _expiry
-    ) public override returns (address market) {
+    ) public override nonReentrant returns (address market) {
         require(_xyt != address(0), "Pendle: zero address");
         require(_token != address(0), "Pendle: zero address");
 
@@ -426,7 +427,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _token,
         uint256 _initialXytLiquidity,
         uint256 _initialTokenLiquidity
-    ) public override {
+    ) public override nonReentrant {
         require(_initialXytLiquidity > 0, "Pendle: initial XYT <= 0");
         require(_initialTokenLiquidity > 0, "Pendle: initial tokens <= 0");
 
@@ -455,7 +456,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _tokenOut,
         uint256 _inTotalAmount,
         uint256 _minOutTotalAmount
-    ) public payable override returns (uint256 outTotalAmount) {
+    ) public payable override nonReentrant returns (uint256 outTotalAmount) {
         _transferIn(_tokenIn, _inTotalAmount);
 
         for (uint256 i = 0; i < _swaps.length; i++) {
@@ -483,7 +484,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _tokenIn,
         address _tokenOut,
         uint256 _maxInTotalAmount
-    ) public payable override returns (uint256 inTotalAmount) {
+    ) public payable override nonReentrant returns (uint256 inTotalAmount) {
         uint256 outTotalAmount;
         uint256 change = _maxInTotalAmount;
 
@@ -551,7 +552,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _tokenOut,
         uint256 _inTotalAmount,
         uint256 _minOutTotalAmount
-    ) public payable override returns (uint256 outTotalAmount) {
+    ) public payable override nonReentrant returns (uint256 outTotalAmount) {
         _transferIn(_tokenIn, _inTotalAmount);
 
         for (uint256 i = 0; i < _swapPath.length; i++) {
@@ -588,7 +589,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _tokenIn,
         address _tokenOut,
         uint256 _maxInTotalAmount
-    ) public payable override returns (uint256 inTotalAmount) {
+    ) public payable override nonReentrant returns (uint256 inTotalAmount) {
         uint256 outTotalAmount;
         uint256 change = _maxInTotalAmount;
 
