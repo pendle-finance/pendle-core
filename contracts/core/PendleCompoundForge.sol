@@ -24,7 +24,6 @@ pragma solidity ^0.7.0;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import {Factory, Utils} from "../libraries/PendleLibrary.sol";
-import "../interfaces/ICompound.sol";
 import "../interfaces/ICERC20.sol";
 import "../interfaces/IPendleBaseToken.sol";
 import "../interfaces/IPendleData.sol";
@@ -48,9 +47,9 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
     ICompound public immutable compound;
 
     mapping(address => ICERC20) public underlyingToCToken;
-    mapping(address => mapping(uint256 => uint256)) public lastTotalBorrowsBeforeExpiry;
+    mapping(address => mapping(uint256 => uint256)) public lastUnderlyingBeforeExpiry;
     mapping(address => mapping(uint256 => uint256)) public lastIncomeBeforeExpiry;
-    mapping(address => mapping(uint256 => mapping(address => uint256))) public lastTotalBorrows; //lastTotalBorrows[underlyingAsset][expiry][account]
+    mapping(address => mapping(uint256 => mapping(address => uint256))) public lastUnderlying //lastUnderlying[underlyingAsset][expiry][account]
     mapping(address => mapping(uint256 => mapping(address => uint256))) public lastIncome; //lastIncome[underlyingAsset][expiry][account]
 
     string private constant OT = "OT-Compound";
@@ -59,15 +58,12 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
     constructor(
         address _governance,
         IPendle _core,
-        ICompound _compound,
         bytes32 _forgeId
     ) Permissions(_governance) {
         require(address(_core) != address(0), "Pendle: zero address");
-        require(address(_compound) != address(0), "Pendle: zero address");
         require(_forgeId != 0x0, "Pendle: zero bytes");
 
         core = _core;
-        compound = _compound;
         forgeId = _forgeId;
     }
 
@@ -138,9 +134,7 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
         uint256 _expiry,
         address _account
     ) public override onlyXYT(_underlyingAsset, _expiry) returns (uint256 interests) {
-        // console.log("[contract] [Forge] Redeeming due interests for account ", _account);
-        PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
+        return 0;
     }
 
     function redeemAfterExpiry(
@@ -157,8 +151,8 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
 
         cToken.transfer(_to, redeemedAmount);
         uint256 currentIncome =
-            cToken.totalBorrowsCurrent().sub(
-                lastTotalBorrowsBeforeExpiry[_underlyingAsset][_expiry]
+            cToken.UnderlyingCurrent().sub(
+                lastUnderlyingBeforeExpiry[_underlyingAsset][_expiry]
             );
 
         // interests from the timestamp of the last XYT transfer (before expiry) to now is entitled to the OT holders
@@ -170,7 +164,7 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
                 .sub(redeemedAmount);
         cToken.transfer(_to, interestsAfterExpiry);
 
-        _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
+        //_settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
         tokens.ot.burn(_msgSender, redeemedAmount);
 
         emit RedeemYieldToken(_underlyingAsset, redeemedAmount, _expiry);
@@ -195,7 +189,7 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
         ICERC20 cToken = underlyingToCToken[_underlyingAsset];
         cToken.transfer(_to, _amountToRedeem);
 
-        _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
+        //_settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
 
         tokens.ot.burn(_msgSender, _amountToRedeem);
         tokens.xyt.burn(_msgSender, _amountToRedeem);
@@ -212,17 +206,14 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
         address _to
     ) public override onlyCore returns (address ot, address xyt) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        lastIncome[_underlyingAsset][_expiry][_to] = cToken.balanceOfUnderlying(address(this)).sub(lastUnderlying[_underlyingAsset][_expiry][_to]);
 
         ICERC20 cToken = underlyingToCToken[_underlyingAsset];
         cToken.transferFrom(_msgSender, address(this), _amountToTokenize);
 
         tokens.ot.mint(_to, _amountToTokenize);
         tokens.xyt.mint(_to, _amountToTokenize);
-        uint256 totalBorrows = cToken.totalBorrowsCurrent();
-        lastIncome[_underlyingAsset][_expiry][_to] = totalBorrows.sub(
-            lastTotalBorrows[_underlyingAsset][_expiry][_to]
-        );
-        lastTotalBorrows[_underlyingAsset][_expiry][_to] = totalBorrows;
+        lastUnderlying[_underlyingAsset][_expiry][_to] = cToken.balanceOfUnderlying(address(this));
 
         emit MintYieldToken(_underlyingAsset, _amountToTokenize, _expiry);
         return (address(tokens.ot), address(tokens.xyt));
@@ -286,22 +277,22 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
     ) internal returns (uint256) {
         uint256 principal = _tokens.xyt.balanceOf(_account);
         uint256 ix = lastIncome[_underlyingAsset][_expiry][_account];
-        uint256 trx = lastTotalBorrows[_underlyingAsset][_expiry][_account];
+        uint256 trx = lastUnderlying[_underlyingAsset][_expiry][_account];
         ICERC20 cToken = underlyingToCToken[_underlyingAsset];
         uint256 income;
-        uint256 totalBorrows;
+        uint256 underlying;
 
         if (block.timestamp >= _expiry) {
-            totalBorrows = lastTotalBorrowsBeforeExpiry[_underlyingAsset][_expiry];
+            underlying = lastUnderlyingBeforeExpiry[_underlyingAsset][_expiry];
             income = lastIncomeBeforeExpiry[_underlyingAsset][_expiry];
         } else {
-            totalBorrows = cToken.totalBorrowsCurrent();
-            income = totalBorrows.sub(lastTotalBorrowsBeforeExpiry[_underlyingAsset][_expiry]);
+            underlying = cToken.balanceOfUnderlying(address(this));
+            income = underlying.sub(lastUnderlyingBeforeExpiry[_underlyingAsset][_expiry]);
             lastIncomeBeforeExpiry[_underlyingAsset][_expiry] = income;
-            lastTotalBorrowsBeforeExpiry[_underlyingAsset][_expiry] = totalBorrows;
+            lastUnderlyingBeforeExpiry[_underlyingAsset][_expiry] = underlying;
         }
 
-        lastTotalBorrows[_underlyingAsset][_expiry][_account] = totalBorrows;
+        lastUnderlying[_underlyingAsset][_expiry][_account] = underlying;
         lastIncome[_underlyingAsset][_expiry][_account] = income;
         // first time getting XYT
         if (ix == 0) {

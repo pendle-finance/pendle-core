@@ -30,6 +30,7 @@ describe("PendleLiquidityMining", async () => {
   let pendleXyt: Contract;
   let lendingPoolCore: Contract;
   let pendleAaveForge: Contract;
+  let pendleCompoundForge: Contract;
   let pendleMarket: Contract;
   let pendleLiquidityMining: Contract;
   let pdl: Contract;
@@ -56,6 +57,7 @@ describe("PendleLiquidityMining", async () => {
     pendleOt = fixture.forge.pendleOwnershipToken;
     pendleXyt = fixture.forge.pendleFutureYieldToken;
     pendleAaveForge = fixture.forge.pendleAaveForge;
+    pendleCompoundForge = fixture.forge.pendleCompoundForge;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     testToken = fixture.testToken;
     pendleMarket = fixture.pendleMarket;
