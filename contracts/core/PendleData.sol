@@ -55,10 +55,10 @@ contract PendleData is IPendleData, Permissions {
         override getMarket;
     mapping(bytes32 => mapping(address => mapping(uint256 => IPendleYieldToken)))
         public
-        override otTokens;
+        override otTokens; // [forgeId][underlyingAsset][expiry]
     mapping(bytes32 => mapping(address => mapping(uint256 => IPendleYieldToken)))
         public
-        override xytTokens;
+        override xytTokens; // [forgeId][underlyingAsset][expiry]
     uint256 public override swapFee;
     uint256 public override exitFee;
     IPendleRouter public override router;

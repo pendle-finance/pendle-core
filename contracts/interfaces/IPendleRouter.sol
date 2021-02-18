@@ -204,15 +204,13 @@ interface IPendleRouter {
      * @param marketFactoryId Market Factory identifier.
      * @param xyt Token address of the future yield token as base asset.
      * @param token Token address of an ERC20 token as quote asset.
-     * @param expiry Yield contract expiry in epoch time.
      * @return market Returns the address of the newly created market.
      **/
     function createMarket(
         bytes32 forgeId,
         bytes32 marketFactoryId,
         address xyt,
-        address token,
-        uint256 expiry
+        address token
     ) external returns (address market);
 
     function bootstrapMarket(
@@ -269,13 +267,6 @@ interface IPendleRouter {
         address tokenOut,
         uint256 maxInTotalAmount
     ) external payable returns (uint256 inTotalAmount);
-
-    function getMarketByUnderlyingToken(
-        bytes32 forgeId,
-        bytes32 marketFactoryId,
-        address underlyingAsset,
-        uint256 expiry
-    ) external view returns (address market);
 
     function getMarketRateExactIn(
         address tokenIn,
