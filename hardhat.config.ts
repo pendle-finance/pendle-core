@@ -59,7 +59,7 @@ const config: HardhatUserConfig = {
           balance: '100000000000000000000000000000000',
         },
       ],
-      allowUnlimitedContractSize: false,
+      allowUnlimitedContractSize: true,
       blockGasLimit: 40000000,
       gas: 40000000,
       gasPrice: 'auto',
@@ -94,9 +94,9 @@ const config: HardhatUserConfig = {
     timeout: 500000,
   },
   tenderly: {
-		username: "ayobuenavista",
-		project: "projects"
-	}
+    username: "ayobuenavista",
+    project: "projects"
+  }
 };
 
 export default config;
