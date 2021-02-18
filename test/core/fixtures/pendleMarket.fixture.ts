@@ -51,7 +51,6 @@ export async function pendleMarketFixture(
     consts.MARKET_FACTORY_AAVE,
     pendleFutureYieldToken.address,
     testToken.address,
-    consts.T0.add(consts.SIX_MONTH),
     consts.HIGH_GAS_OVERRIDE
   );
 

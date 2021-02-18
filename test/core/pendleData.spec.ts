@@ -62,7 +62,6 @@ describe("PendleData", async () => {
       consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
       tokenUSDT.address,
-      consts.T0.add(consts.THREE_MONTH),
       consts.HIGH_GAS_OVERRIDE
     );
     let allEvents = await pendleMarketFactory.queryFilter(filter, tx.blockHash);

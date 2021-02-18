@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 
 import "./IPendleRouter.sol";
 
@@ -51,14 +51,12 @@ interface IPendleMarketFactory {
      * @param forgeId Forge identifier.
      * @param xyt Token address of the futuonlyCorere yield token as base asset.
      * @param token Token address of an ERC20 token as quote asset.
-     * @param expiry Yield contract expiry in epoch time.
      * @return market Returns the address of the newly created market.
      **/
     function createMarket(
         bytes32 forgeId,
         address xyt,
-        address token,
-        uint256 expiry
+        address token
     ) external returns (address market);
 
     /**
