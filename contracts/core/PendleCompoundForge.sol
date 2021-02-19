@@ -20,60 +20,61 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
+
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import {Factory, Utils} from "../libraries/PendleLibrary.sol";
-import "../interfaces/ICERC20.sol";
+import {ExpiryUtils, Factory} from "../libraries/PendleLibrary.sol";
+import "../interfaces/ICToken.sol";
 import "../interfaces/IPendleBaseToken.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleForge.sol";
-import "../periphery/Permissions.sol";
 import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
-import "hardhat/console.sol";
+import "../periphery/Permissions.sol";
 
-contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
+contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
+    using ExpiryUtils for string;
     using SafeMath for uint256;
-    using Utils for string;
 
     struct PendleTokens {
         IPendleYieldToken xyt;
         IPendleYieldToken ot;
     }
 
-    IPendle public immutable override core;
-    bytes32 public immutable override forgeId;
-    ICompound public immutable compound;
+    uint256 constant expScale = 1e18;
 
-    mapping(address => ICERC20) public underlyingToCToken;
+    IPendleRouter public override router;
+    bytes32 public immutable override forgeId;
+
+    mapping(address => ICToken) public underlyingToCToken;
     mapping(address => mapping(uint256 => uint256)) public lastUnderlyingBeforeExpiry;
     mapping(address => mapping(uint256 => uint256)) public lastIncomeBeforeExpiry;
-    mapping(address => mapping(uint256 => mapping(address => uint256))) public lastUnderlying //lastUnderlying[underlyingAsset][expiry][account]
-    mapping(address => mapping(uint256 => mapping(address => uint256))) public lastIncome; //lastIncome[underlyingAsset][expiry][account]
+    mapping(address => mapping(uint256 => mapping(address => uint256))) public lastUnderlying;
+    mapping(address => mapping(uint256 => mapping(address => uint256))) public lastIncome;
 
-    string private constant OT = "OT-Compound";
-    string private constant XYT = "XYT-Compound";
+    string private constant OT = "OT";
+    string private constant XYT = "XYT";
 
     constructor(
         address _governance,
-        IPendle _core,
+        IPendleRouter _router,
         bytes32 _forgeId
     ) Permissions(_governance) {
-        require(address(_core) != address(0), "Pendle: zero address");
+        require(address(_router) != address(0), "Pendle: zero address");
         require(_forgeId != 0x0, "Pendle: zero bytes");
 
-        core = _core;
+        router = _router;
         forgeId = _forgeId;
     }
 
-    modifier onlyCore() {
-        require(msg.sender == address(core), "Pendle: only core");
+    modifier onlyRouter() {
+        require(msg.sender == address(router), "Pendle: only router");
         _;
     }
 
     modifier onlyXYT(address _underlyingAsset, uint256 _expiry) {
-        IPendleData data = core.data();
+        IPendleData data = router.data();
         require(
             msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
             "Pendle: only XYT"
@@ -82,7 +83,7 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
     }
 
     function registerToken(address _underlyingAsset, address _cToken) external onlyGovernance {
-        underlyingToCToken[_underlyingAsset] = ICERC20(_cToken);
+        underlyingToCToken[_underlyingAsset] = ICToken(_cToken);
     }
 
     function newYieldContracts(address _underlyingAsset, uint256 _expiry)
@@ -93,28 +94,23 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
         address cToken = address(underlyingToCToken[_underlyingAsset]);
         uint8 cTokenDecimals = IPendleBaseToken(cToken).decimals();
 
-        string memory otName = OT.concat(IPendleBaseToken(cToken).name(), " ");
-        string memory otSymbol = OT.concat(IPendleBaseToken(cToken).symbol(), "-");
-        string memory xytName = XYT.concat(IPendleBaseToken(cToken).name(), " ");
-        string memory xytSymbol = XYT.concat(IPendleBaseToken(cToken).symbol(), "-");
-
         ot = _forgeOwnershipToken(
             _underlyingAsset,
-            otName.concat(_expiry, " "),
-            otSymbol.concat(_expiry, "-"),
+            OT.concat(IPendleBaseToken(cToken).name(), _expiry, " "),
+            OT.concat(IPendleBaseToken(cToken).symbol(), _expiry, "-"),
             cTokenDecimals,
             _expiry
         );
         xyt = _forgeFutureYieldToken(
             _underlyingAsset,
             ot,
-            xytName.concat(_expiry, " "),
-            xytSymbol.concat(_expiry, "-"),
+            XYT.concat(IPendleBaseToken(cToken).name(), _expiry, " "),
+            XYT.concat(IPendleBaseToken(cToken).symbol(), _expiry, "-"),
             cTokenDecimals,
             _expiry
         );
 
-        IPendleData data = core.data();
+        IPendleData data = router.data();
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
         emit NewYieldContracts(ot, xyt, _expiry);
@@ -134,7 +130,8 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
         uint256 _expiry,
         address _account
     ) public override onlyXYT(_underlyingAsset, _expiry) returns (uint256 interests) {
-        return 0;
+        PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
     }
 
     function redeemAfterExpiry(
@@ -145,13 +142,14 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
     ) public override returns (uint256 redeemedAmount) {
         require(block.timestamp > _expiry, "Pendle: must be after expiry");
 
-        ICERC20 cToken = underlyingToCToken[_underlyingAsset];
+        ICToken cToken = underlyingToCToken[_underlyingAsset];
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         redeemedAmount = tokens.ot.balanceOf(_msgSender);
 
-        cToken.transfer(_to, redeemedAmount);
+        uint256 cTokensToRedeem = redeemedAmount.mul(cToken.exchangeRateCurrent()).div(expScale);
+        cToken.transfer(_to, cTokensToRedeem);
         uint256 currentIncome =
-            cToken.UnderlyingCurrent().sub(
+            cToken.balanceOfUnderlying(address(this)).sub(
                 lastUnderlyingBeforeExpiry[_underlyingAsset][_expiry]
             );
 
@@ -186,10 +184,11 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
             "Must have enough XYT tokens"
         );
 
-        ICERC20 cToken = underlyingToCToken[_underlyingAsset];
-        cToken.transfer(_to, _amountToRedeem);
+        ICToken cToken = underlyingToCToken[_underlyingAsset];
+        uint256 cTokensToRedeem = _amountToRedeem.mul(cToken.exchangeRateCurrent()).div(expScale);
+        cToken.transfer(_to, cTokensToRedeem);
 
-        //_settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
 
         tokens.ot.burn(_msgSender, _amountToRedeem);
         tokens.xyt.burn(_msgSender, _amountToRedeem);
@@ -199,17 +198,13 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
     }
 
     function tokenizeYield(
-        address _msgSender,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToTokenize,
         address _to
-    ) public override onlyCore returns (address ot, address xyt) {
+    ) external override onlyRouter returns (address ot, address xyt) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        lastIncome[_underlyingAsset][_expiry][_to] = cToken.balanceOfUnderlying(address(this)).sub(lastUnderlying[_underlyingAsset][_expiry][_to]);
-
-        ICERC20 cToken = underlyingToCToken[_underlyingAsset];
-        cToken.transferFrom(_msgSender, address(this), _amountToTokenize);
+        ICToken cToken = underlyingToCToken[_underlyingAsset];
 
         tokens.ot.mint(_to, _amountToTokenize);
         tokens.xyt.mint(_to, _amountToTokenize);
@@ -217,6 +212,22 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
 
         emit MintYieldToken(_underlyingAsset, _amountToTokenize, _expiry);
         return (address(tokens.ot), address(tokens.xyt));
+    }
+
+    function setRouter(IPendleRouter _router) external override onlyGovernance {
+        require(address(_router) != address(0), "Pendle: zero address");
+
+        router = _router;
+        emit RouterSet(address(_router));
+    }
+
+    function getYieldBearingToken(address _underlyingAsset)
+        public
+        view
+        override
+        returns (address)
+    {
+        return address(underlyingToCToken[_underlyingAsset]);
     }
 
     function _forgeFutureYieldToken(
@@ -227,7 +238,7 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
         uint8 _decimals,
         uint256 _expiry
     ) internal nonReentrant() returns (address xyt) {
-        ICERC20 cToken = underlyingToCToken[_underlyingAsset];
+        ICToken cToken = underlyingToCToken[_underlyingAsset];
 
         xyt = Factory.createContract(
             type(PendleFutureYieldToken).creationCode,
@@ -252,7 +263,7 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
         uint8 _decimals,
         uint256 _expiry
     ) internal nonReentrant() returns (address ot) {
-        ICERC20 cToken = underlyingToCToken[_underlyingAsset];
+        ICToken cToken = underlyingToCToken[_underlyingAsset];
 
         ot = Factory.createContract(
             type(PendleOwnershipToken).creationCode,
@@ -277,8 +288,7 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
     ) internal returns (uint256) {
         uint256 principal = _tokens.xyt.balanceOf(_account);
         uint256 ix = lastIncome[_underlyingAsset][_expiry][_account];
-        uint256 trx = lastUnderlying[_underlyingAsset][_expiry][_account];
-        ICERC20 cToken = underlyingToCToken[_underlyingAsset];
+        ICToken cToken = underlyingToCToken[_underlyingAsset];
         uint256 income;
         uint256 underlying;
 
@@ -307,7 +317,6 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
             emit DueInterestSettled(_underlyingAsset, _account, dueInterests, _expiry);
         }
 
-        // console.log("[contract] [Forge] in _settleDueInterests, interests = ", dueInterests);
         return dueInterests;
     }
 
@@ -316,7 +325,7 @@ contract PendleCompoundForge is IPendleForge, ReentrancyGuard, Permissions {
         view
         returns (PendleTokens memory _tokens)
     {
-        IPendleData data = core.data();
+        IPendleData data = router.data();
         (_tokens.ot, _tokens.xyt) = data.getPendleYieldTokens(forgeId, _underlyingAsset, _expiry);
     }
 }

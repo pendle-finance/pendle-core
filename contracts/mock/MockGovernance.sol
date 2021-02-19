@@ -20,15 +20,15 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "../core/PendleGovernance.sol";
 
 contract MockGovernance is PendleGovernance {
     constructor(
-        IPDL _pdl,
+        IPENDLE _pendle,
         ITimelock _timelock,
         address _guardian
-    ) PendleGovernance(_pdl, _timelock, _guardian) {}
+    ) PendleGovernance(_pendle, _timelock, _guardian) {}
 }

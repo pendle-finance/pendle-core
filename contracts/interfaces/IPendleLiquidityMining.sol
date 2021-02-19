@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 
 interface IPendleLiquidityMining {
     /**
@@ -45,11 +45,6 @@ interface IPendleLiquidityMining {
      * @return _interests Returns the interest amount
      **/
     function claimLpInterests() external returns (uint256 _interests);
-
-    /**
-     * @notice calculate global data for an epoch. To be called by admins or anyone when necessary
-     **/
-    function calculateEpochData(uint256 epochId) external;
 
     /**
      * @notice Read the all the expiries that user has staked LP for

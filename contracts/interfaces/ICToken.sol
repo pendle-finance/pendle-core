@@ -20,7 +20,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -30,7 +30,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @dev Implementation of the interest bearing token for the DLP protocol.
  * @author Compound
  */
-interface ICERC20 is IERC20 {
+interface ICToken is IERC20 {
     /*** User Interface ***/
 
     function balanceOfUnderlying(address owner) external returns (uint256);
@@ -45,33 +45,7 @@ interface ICERC20 is IERC20 {
             uint256
         );
 
-    function borrowRatePerBlock() external view returns (uint256);
-
-    function supplyRatePerBlock() external view returns (uint256);
-
-    function totalBorrowsCurrent() external returns (uint256);
-
-    function borrowBalanceCurrent(address account) external returns (uint256);
-
-    function borrowBalanceStored(address account) external view returns (uint256);
-
-    function getCash() external view returns (uint256);
-
-    function seize(
-        address liquidator,
-        address borrower,
-        uint256 seizeTokens
-    ) external returns (uint256);
-
     function mint(uint256 mintAmount) external returns (uint256);
 
-    function redeem(uint256 redeemTokens) external returns (uint256);
-
-    function redeemUnderlying(uint256 redeemAmount) external returns (uint256);
-
-    function borrow(uint256 borrowAmount) external returns (uint256);
-
-    function repayBorrow(uint256 repayAmount) external returns (uint256);
-
-    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256);
+    function exchangeRateCurrent() external returns (uint256);
 }

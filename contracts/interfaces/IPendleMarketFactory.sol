@@ -21,52 +21,55 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 
-import {Utils} from "../libraries/PendleLibrary.sol";
-import "./IPendle.sol";
+import "./IPendleRouter.sol";
 
 interface IPendleMarketFactory {
     /**
-     * @notice Emitted when Pendle core contract reference is changed.
-     * @param core The address of the new core contract.
+     * @notice Emitted when the PendleRouter address has been updated.
+     * @param router The address of the new router contract.
      **/
-    event CoreSet(address core);
+    event RouterSet(address router);
 
     /**
      * @notice Emitted when a market for a future yield token and an ERC20 token is created.
+     * @param marketFactoryId Forge identifier.
      * @param xyt The address of the tokenized future yield token as the base asset.
      * @param token The address of an ERC20 token as the quote asset.
      * @param market The address of the newly created market.
      **/
-    event MarketCreated(address indexed xyt, address indexed token, address indexed market);
+    event MarketCreated(
+        bytes32 marketFactoryId,
+        address indexed xyt,
+        address indexed token,
+        address indexed market
+    );
 
     /**
      * @notice Creates a market given a protocol ID, future yield token, and an ERC20 token.
-     * @param xyt Token address of the future yield token as base asset.
+     * @param forgeId Forge identifier.
+     * @param xyt Token address of the futuonlyCorere yield token as base asset.
      * @param token Token address of an ERC20 token as quote asset.
-     * @param expiry Yield contract expiry in epoch time.
      * @return market Returns the address of the newly created market.
      **/
     function createMarket(
+        bytes32 forgeId,
         address xyt,
-        address token,
-        uint256 expiry
+        address token
     ) external returns (address market);
 
     /**
-     * @notice Sets the Pendle core contract reference.
-     * @param _core Address of the new core contract.
+     * @notice Sets the PendleRouter contract address.
+     * @param _router Address of the new router contract.
      **/
-    function setCore(IPendle _core) external;
+    function setRouter(IPendleRouter _router) external;
 
     /**
-     * @notice Gets a reference to the Pendle core contract.
-     * @return Returns the core contract reference.
+     * @notice Gets a reference to the PendleRouter contract.
+     * @return Returns the router contract reference.
      **/
-    function core() external view returns (IPendle);
+    function router() external view returns (IPendleRouter);
 
     function marketFactoryId() external view returns (bytes32);
-
-    function forgeId() external view returns (bytes32);
 }

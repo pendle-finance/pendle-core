@@ -20,15 +20,16 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
+pragma experimental ABIEncoderV2;
 
-import "../core/Pendle.sol";
+import "../core/PendleRouter.sol";
 
-contract MockPendle is Pendle {
+contract MockPendleRouter is PendleRouter {
     constructor()
-        Pendle(
+        PendleRouter(
             0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa,
-            0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB
+            IWETH(0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB)
         )
     {}
 }
