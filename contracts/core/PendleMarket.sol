@@ -209,7 +209,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         } else if (outToken == token) {
             emit Exit(msg.sender, 0, outAmountToken);
         }
-        
+
         _transferInLp(inLp);
         _collectFees(exitFee);
         _burnLp(inLp.sub(exitFees));
@@ -371,7 +371,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         // uint256 maxPrice
 
         emit Swap(msg.sender, exactInToken, exactOutToken, exactInAmount, exactOutAmount);
-        
+
         _transferIn(exactInToken, exactInAmount);
         _transferOut(exactOutToken, exactOutAmount);
 

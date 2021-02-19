@@ -38,11 +38,7 @@ interface IPendleForge {
      * @param expiry The expiry of the XYT token
      * @param amount The amount to be minted.
      **/
-    event MintYieldToken(
-        address indexed underlyingAsset,
-        uint256 indexed expiry,
-        uint256 amount
-    );
+    event MintYieldToken(address indexed underlyingAsset, uint256 indexed expiry, uint256 amount);
 
     /**
      * @dev Emitted when the Forge has created new yield token contracts.
