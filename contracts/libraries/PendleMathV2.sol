@@ -55,6 +55,7 @@ library Math {
 
     /**
     @notice log2 for a number that it in [1,2)
+    @dev _x is FP, return a FP
     @dev function is from Kyber. Long modified the condition to be (_x >= one) && (_x < two)
     to avoid the case where x = 2 may lead to incorrect result
      */
@@ -83,6 +84,7 @@ library Math {
     @notice log2 of (p/q). returns result in FP form
     @dev function is from Kyber. Long have verified this function
             to be working correctly
+    @dev _p & _q is FP, return a FP
      */
     function logBase2(uint256 _p, uint256 _q) internal pure returns (uint256) {
         uint256 n = 0;
@@ -108,6 +110,7 @@ library Math {
     @notice calculate ln(p/q). returned result >= 0
     @dev function is from Kyber. Long have verified this function
             to be working correctly
+    @dev _p & _q is FP, return a FP
     */
     function ln(uint256 p, uint256 q) internal pure returns (uint256) {
         uint256 ln2Numerator = 6931471805599453094172;
@@ -121,21 +124,24 @@ library Math {
     }
 
     /**
-    @notice extract the fractional part of an FP
+    @notice extract the fractional part of a FP
+    @dev value is a FP, return a FP
      */
     function fpart(uint256 value) internal pure returns (uint256) {
         return value % RONE;
     }
 
     /**
-    @notice convert an FP to an Int
+    @notice convert a FP to an Int
+    @dev value is a FP, return an Int
      */
     function toInt(uint256 value) internal pure returns (uint256) {
         return value / RONE;
     }
 
     /**
-    @notice convert an Int to an FP
+    @notice convert an Int to a FP
+    @dev value is an Int, return a FP
      */
     function toFP(uint256 value) internal pure returns (uint256) {
         return value * RONE;
@@ -147,7 +153,7 @@ library Math {
         the function is based on exp function of:
         https://github.com/NovakDistributed/macroverse/blob/master/contracts/RealMath.sol
     @dev the function is expected to converge quite fast, after about 20 iteration
-
+    @dev exp is a FP, return a FP
      */
     function rpowe(uint256 exp) internal pure returns (uint256) {
         uint256 res = 0;
@@ -178,6 +184,7 @@ library Math {
     @notice calculate base^exp with base and exp being FP int
     @dev to improve accuracy, base^exp = base^(int(exp)+frac(exp))
                                        = base^int(exp) * base^frac
+    @dev base & exp are FP, return a FP
      */
     function rpow(uint256 base, uint256 exp) internal pure returns (uint256) {
         if (exp == 0) {
@@ -188,7 +195,7 @@ library Math {
         uint256 frac = fpart(exp); // get the fractional part
         uint256 whole = exp - frac;
 
-        uint256 wholePow = rpowi(base, toInt(whole)); // whole is an FP, convert to Int
+        uint256 wholePow = rpowi(base, toInt(whole)); // whole is a FP, convert to Int
         uint256 fracPow;
 
         // instead of calculating base ^ frac, we will calculate e ^ (frac*ln(base))
@@ -213,6 +220,7 @@ library Math {
         complexity O(log(q))
     @dev function is from Kyber. Long have verified this function
             to be working correctly
+    @dev base is a FP, exp is an Int, return a FP
      */
     function rpowi(uint256 base, uint256 exp) internal pure returns (uint256) {
         uint256 res = exp % 2 != 0 ? base : RONE;
@@ -228,16 +236,18 @@ library Math {
     }
 
     /**
-    @notice divide 2 FP, return an FP
+    @notice divide 2 FP, return a FP
     @dev function is from Balancer.
+    @dev x & y are FP, return a FP
      */
     function rdiv(uint256 x, uint256 y) internal pure returns (uint256) {
         return (y / 2).add(x.mul(RONE)).div(y);
     }
 
     /**
-    @notice multiply 2 FP, return an FP
+    @notice multiply 2 FP, return a FP
     @dev function is from Balancer.
+    @dev x & y are FP, return a FP
      */
     function rmul(uint256 x, uint256 y) internal pure returns (uint256) {
         return (RONE / 2).add(x.mul(y)).div(RONE);
