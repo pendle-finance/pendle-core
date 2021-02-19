@@ -1,25 +1,20 @@
 import { expect } from "chai";
-import { Contract, BigNumber as BN, Wallet } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
-
-import { pendleFixture } from "./fixtures";
+import { BigNumber as BN, Contract, Wallet } from "ethers";
 import {
-  consts,
-  tokens,
   amountToWei,
   getAContract,
   getCContract,
   mintAaveToken,
   mintCompoundToken,
-  advanceTime,
-  getLiquidityRate,
-  getGain,
+  consts,
   evm_revert,
   evm_snapshot,
-  Token,
   setTimeNextBlock,
+  Token,
+  tokens,
 } from "../helpers";
-import { toUtf8CodePoints } from "ethers/lib/utils";
+import { pendleFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
@@ -168,7 +163,7 @@ describe("PendleRouter", async () => {
     );
   });
 
-  it("Another alice should be able to receive interests from XYT", async () => {
+  it("Another wallet should be able to receive interests from XYT", async () => {
     await startCalInterest(charlie, amountToTokenize);
 
     await tokenizeYieldSample(amountToTokenize);

@@ -34,6 +34,18 @@ export interface liqParams {
   TOTAL_NUMERATOR: BN,
   INITIAL_LP_AMOUNT: BN,
 }
+export class userStakeAction {
+  time: BN;
+  isStaking: boolean;
+  amount: BN;
+  id: number; // will not be used in calExpectedRewards
+  constructor(time: BN, amount: BN, isStaking: boolean, id: number) {
+    this.time = time;
+    this.amount = amount;
+    this.isStaking = isStaking;
+    this.id = id;
+  }
+}
 
 const params: liqParams = {
   START_TIME: consts.T0.add(1000), // starts in 1000s
@@ -82,7 +94,6 @@ export async function pendleLiquidityMiningFixture(
   );
 
   let pdl = await deployContract(alice, PENDLE, [alice.address]);
-  console.log("address out", pdl.address);
 
   let pendleALiquidityMining = await deployContract(
     alice,
@@ -156,6 +167,8 @@ export async function pendleLiquidityMiningFixture(
 
   await pendleALiquidityMining.fund();
   await pendleCLiquidityMining.fund();
+  await pdl.transfer(pendleALiquidityMining.address, await pdl.balanceOf(alice.address));
+  await pdl.transfer(pendleCLiquidityMining.address, await pdl.balanceOf(alice.address));
 
   for (var person of [bob, charlie, dave]) {
     await pendleAMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);

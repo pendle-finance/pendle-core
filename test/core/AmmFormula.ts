@@ -48,11 +48,11 @@ export async function AMMTest(
 
     expect(tokenIn.toNumber()).to.be.approximately(
       actualTokenIn.toNumber(),
-      consts.AMM_DELTA
+      consts.TEST_TOKEN_DELTA.toNumber()
     );
     expect(xytOut.toNumber()).to.be.approximately(
       actualXytOut.toNumber(),
-      consts.AMM_DELTA
+      consts.TEST_TOKEN_DELTA.toNumber()
     );
   }
 
@@ -71,11 +71,11 @@ export async function AMMTest(
 
     expect(tokenOut.toNumber()).to.be.approximately(
       actualTokenOut.toNumber(),
-      consts.AMM_DELTA
+      consts.TEST_TOKEN_DELTA.toNumber()
     );
     expect(xytIn.toNumber()).to.be.approximately(
       actualXytIn.toNumber(),
-      consts.AMM_DELTA
+      consts.TEST_TOKEN_DELTA.toNumber()
     );
   }
 

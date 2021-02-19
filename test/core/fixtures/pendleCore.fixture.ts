@@ -1,10 +1,9 @@
-import { Contract, Wallet, providers } from 'ethers'
+import { Contract, providers, Wallet } from 'ethers'
+import PendleData from "../../../build/artifacts/contracts/core/PendleData.sol/PendleData.json"
+import PendleMarketFactory from "../../../build/artifacts/contracts/core/PendleMarketFactory.sol/PendleMarketFactory.json"
 import PendleRouter from '../../../build/artifacts/contracts/core/PendleRouter.sol/PendleRouter.json'
 import PendleTreasury from '../../../build/artifacts/contracts/core/PendleTreasury.sol/PendleTreasury.json'
-import PendleMarketFactory from "../../../build/artifacts/contracts/core/PendleMarketFactory.sol/PendleMarketFactory.json"
-import PendleData from "../../../build/artifacts/contracts/core/PendleData.sol/PendleData.json"
 import { consts, tokens } from "../../helpers"
-import { createFixtureLoader } from "ethereum-waffle";
 
 const { waffle } = require("hardhat");
 const { provider, deployContract } = waffle;

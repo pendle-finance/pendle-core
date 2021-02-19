@@ -1,15 +1,13 @@
-import chai, { expect } from 'chai'
-import { Wallet, providers, BigNumber } from 'ethers'
-import { pendleCoreFixture, PendleCoreFixture } from './pendleCore.fixture';
-import { pendleAaveForgeFixture, PendleAaveFixture } from './pendleAaveForge.fixture'
-import { pendleCompoundForgeFixture, PendleCompoundFixture } from './pendleCompoundForge.fixture'
-import { pendleGovernanceFixture, PendleGovernanceFixture } from './pendleGovernance.fixture'
+import { providers, Wallet } from 'ethers';
+import { consts, convertToAaveToken, convertToCompoundToken, tokens } from "../../helpers";
+import { getAContract, getCContract, mint } from "../../helpers/Helpers";
 import { aaveFixture, AaveFixture } from './aave.fixture';
-import { consts, tokens, convertToAaveToken } from "../../helpers"
-import { mint, mintAaveToken, getAContract, getCContract, amountToWei } from "../../helpers/Helpers";
+import { PendleAaveFixture, pendleAaveForgeFixture } from './pendleAaveForge.fixture';
+import { pendleCompoundForgeFixture, PendleCompoundFixture } from './pendleCompoundForge.fixture'
+import { pendleCoreFixture, PendleCoreFixture } from './pendleCore.fixture';
+import { pendleGovernanceFixture } from './pendleGovernance.fixture';
 const { waffle } = require("hardhat");
 const { provider, deployContract } = waffle;
-import { createFixtureLoader } from "ethereum-waffle";
 interface PendleFixture {
   core: PendleCoreFixture,
   aave: AaveFixture,
@@ -35,7 +33,7 @@ export async function pendleFixture(
   await mint(provider, tokens.USDT, alice, consts.INITIAL_USDT_AMOUNT);
   await convertToAaveToken(tokens.USDT, alice, consts.INITIAL_AAVE_TOKEN_AMOUNT);
   await mint(provider, tokens.USDT, alice, consts.INITIAL_USDT_AMOUNT);
-  await convertToAaveToken(tokens.USDT, alice, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+  await convertToCompoundToken(tokens.USDT, alice, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
 
   const aContract = await getAContract(alice, lendingPoolCore, tokens.USDT);
   await aContract.approve(core.pendleRouter.address, consts.MAX_ALLOWANCE);

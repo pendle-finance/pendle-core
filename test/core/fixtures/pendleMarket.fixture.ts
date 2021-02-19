@@ -25,7 +25,7 @@ export async function pendleMarketFixture(
   wallets: Wallet[],
   provider: providers.Web3Provider
 ): Promise<PendleMarketFixture> {
-  const [alice, bob] = wallets
+  const [alice, bob, charlie] = wallets
   const core = await pendleCoreFixture(wallets, provider);
   const governance = await pendleGovernanceFixture(wallets, provider);
   const aForge = await pendleAaveForgeFixture(alice, provider, core, governance);
@@ -38,12 +38,16 @@ export async function pendleMarketFixture(
 
   const amount = amountToWei(token, consts.INITIAL_OT_XYT_AMOUNT);
 
-  await mintOtAndXyt(provider, token, alice, amount, pendleRouter);
-  await mintOtAndXyt(provider, token, bob, amount, pendleRouter);
+  for (var person of [alice, bob, charlie]) {
+    await mintOtAndXyt(provider, token, person, amount, pendleRouter);
+  }
 
   const testToken = await deployContract(alice, TestToken, ['Test Token', 'TEST', 6]);
   const totalSupply = await testToken.totalSupply();
-  await testToken.transfer(bob.address, totalSupply.div(2))
+
+  for (var person of [bob, charlie]) { // no alice since alice is holding all tokens
+    await testToken.transfer(person.address, totalSupply.div(4))
+  }
 
   await pendleRouter.addMarketFactory(consts.MARKET_FACTORY, pendleMarketFactory.address);
 
@@ -79,17 +83,14 @@ export async function pendleMarketFixture(
 
   const pendleAMarket = new Contract(pendleAMarketAddress, PendleMarket.abi, alice);
   const pendleCMarket = new Contract(pendleCMarketAddress, PendleMarket.abi, alice);
-  await testToken.approve(pendleRouter.address, totalSupply);
-  await testToken.connect(bob).approve(pendleRouter.address, totalSupply);
 
-  await pendleFutureYieldAToken.approve(pendleRouter.address, consts.MAX_ALLOWANCE);
-  await pendleFutureYieldAToken.connect(bob).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
-  await pendleFutureYieldCToken.approve(pendleRouter.address, consts.MAX_ALLOWANCE);
-  await pendleFutureYieldCToken.connect(bob).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
-  await pendleAMarket.approve(pendleRouter.address, consts.MAX_ALLOWANCE);
-  await pendleAMarket.connect(bob).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
-  await pendleCMarket.approve(pendleRouter.address, consts.MAX_ALLOWANCE);
-  await pendleCMarket.connect(bob).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+  for (var person of [alice, bob, charlie]) {
+    await testToken.connect(person).approve(pendleRouter.address, totalSupply);
+    await pendleFutureYieldAToken.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+    await pendleFutureYieldCToken.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+    await pendleAMarket.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+    await pendleCMarket.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+  }
 
   return { core, aave, aForge, cForge, testToken, pendleAMarket, pendleCMarket }
 }

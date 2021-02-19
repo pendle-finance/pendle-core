@@ -1,10 +1,10 @@
-import { Contract, providers, Wallet } from 'ethers'
-import PendleAaveForge from '../../../build/artifacts/contracts/core/PendleAaveForge.sol/PendleAaveForge.json'
-import PendleOwnershipToken from '../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json'
-import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json"
+import { Contract, providers, Wallet } from 'ethers';
+import PendleAaveForge from '../../../build/artifacts/contracts/core/PendleAaveForge.sol/PendleAaveForge.json';
+import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
+import PendleOwnershipToken from '../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json';
 import { consts, setTimeNextBlock, tokens } from "../../helpers";
 import { PendleCoreFixture } from "./pendleCore.fixture";
-import { PendleGovernanceFixture } from "./pendleGovernance.fixture"
+import { PendleGovernanceFixture } from "./pendleGovernance.fixture";
 
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;
