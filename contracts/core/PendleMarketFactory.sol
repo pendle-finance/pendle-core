@@ -39,13 +39,13 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions {
     }
 
     modifier onlyRouter() {
-        require(msg.sender == address(router), "Pendle: only router");
+        require(msg.sender == address(router), "only router");
         _;
     }
 
     function initialize(IPendleRouter _router) external {
-        require(msg.sender == initializer, "Pendle: forbidden");
-        require(address(_router) != address(0), "Pendle: zero address");
+        require(msg.sender == initializer, "forbidden");
+        require(address(_router) != address(0), "zero address");
 
         initializer = address(0);
         router = _router;
@@ -56,18 +56,18 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions {
         address _xyt,
         address _token
     ) external override initialized onlyRouter returns (address market) {
-        require(_xyt != _token, "Pendle: similar tokens");
-        require(_xyt != address(0) || _token != address(0), "Pendle: zero address");
+        require(_xyt != _token, "similar tokens");
+        require(_xyt != address(0) || _token != address(0), "zero address");
 
         IPendleData data = router.data();
         require(
             data.getMarket(_forgeId, marketFactoryId, _xyt, _token) == address(0),
-            "Pendle: market already exists"
+            "market already exists"
         );
-        require(data.isRelatedForgeXYT(_forgeId, _xyt), "Pendle: forge-xyt not related");
+        require(data.isRelatedForgeXYT(_forgeId, _xyt), "forge-xyt not related");
 
         address forgeAddress = data.getForgeAddress(_forgeId);
-        require(forgeAddress != address(0), "Pendle: zero address");
+        require(forgeAddress != address(0), "zero address");
 
         uint256 expiry = IPendleYieldToken(_xyt).expiry();
         market = Factory.createContract(
@@ -81,7 +81,7 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions {
     }
 
     function setRouter(IPendleRouter _router) external override onlyGovernance {
-        require(address(_router) != address(0), "Pendle: zero address");
+        require(address(_router) != address(0), "zero address");
 
         router = _router;
         emit RouterSet(address(_router));

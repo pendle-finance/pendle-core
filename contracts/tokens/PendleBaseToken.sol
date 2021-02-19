@@ -85,7 +85,7 @@ abstract contract PendleBaseToken is IPendleBaseToken {
         _approve(
             msg.sender,
             spender,
-            allowance[msg.sender][spender].sub(subtractedValue, "Pendle: allowance < 0")
+            allowance[msg.sender][spender].sub(subtractedValue, "allowance < 0")
         );
         return true;
     }
@@ -132,7 +132,7 @@ abstract contract PendleBaseToken is IPendleBaseToken {
         _approve(
             sender,
             msg.sender,
-            allowance[sender][msg.sender].sub(amount, "Pendle: transfer > allowance")
+            allowance[sender][msg.sender].sub(amount, "transfer > allowance")
         );
         return true;
     }
@@ -142,15 +142,15 @@ abstract contract PendleBaseToken is IPendleBaseToken {
         address spender,
         uint256 amount
     ) internal virtual {
-        require(owner != address(0), "Pendle: owner zero address");
-        require(spender != address(0), "Pendle: spender zero address");
+        require(owner != address(0), "owner zero address");
+        require(spender != address(0), "spender zero address");
 
         allowance[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
 
     function _mint(address account, uint256 amount) internal {
-        require(account != address(0), "Pendle: mint to zero address");
+        require(account != address(0), "mint to zero address");
 
         totalSupply = totalSupply.add(amount);
         balanceOf[account] = balanceOf[account].add(amount);
@@ -158,9 +158,9 @@ abstract contract PendleBaseToken is IPendleBaseToken {
     }
 
     function _burn(address account, uint256 amount) internal {
-        require(account != address(0), "Pendle: burn to zero address");
+        require(account != address(0), "burn to zero address");
 
-        balanceOf[account] = balanceOf[account].sub(amount, "Pendle: burn > balance");
+        balanceOf[account] = balanceOf[account].sub(amount, "burn > balance");
         totalSupply = totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
     }
@@ -170,12 +170,12 @@ abstract contract PendleBaseToken is IPendleBaseToken {
         address receiver,
         uint256 amount
     ) internal {
-        require(sender != address(0), "Pendle: sender zero address");
-        require(receiver != address(0), "Pendle: receiver zero address");
+        require(sender != address(0), "sender zero address");
+        require(receiver != address(0), "receiver zero address");
 
         _beforeTokenTransfer(sender, receiver);
 
-        balanceOf[sender] = balanceOf[sender].sub(amount, "Pendle: transfer > balance");
+        balanceOf[sender] = balanceOf[sender].sub(amount, "transfer > balance");
         balanceOf[receiver] = balanceOf[receiver].add(amount);
         emit Transfer(sender, receiver, amount);
     }

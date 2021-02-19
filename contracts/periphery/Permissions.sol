@@ -32,18 +32,18 @@ abstract contract Permissions {
     event TokenWithdraw(IERC20 token, uint256 amount, address sendTo);
 
     constructor(address _governance) {
-        require(_governance != address(0), "Pendle: zero address");
+        require(_governance != address(0), "zero address");
         initializer = msg.sender;
         governance = _governance;
     }
 
     modifier initialized() {
-        require(initializer == address(0), "Pendle: not initialized");
+        require(initializer == address(0), "not initialized");
         _;
     }
 
     modifier onlyGovernance() {
-        require(msg.sender == governance, "Pendle: only governance");
+        require(msg.sender == governance, "only governance");
         _;
     }
 

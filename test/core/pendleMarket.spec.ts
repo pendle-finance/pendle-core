@@ -497,7 +497,7 @@ describe("PendleMarket", async () => {
         testToken.address,
         consts.HIGH_GAS_OVERRIDE
       )
-    ).to.be.revertedWith("Pendle: market already exists");
+    ).to.be.revertedWith("market already exists");
   });
 
   it("AMM's formula should be correct", async () => {

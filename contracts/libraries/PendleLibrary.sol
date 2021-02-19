@@ -92,7 +92,7 @@ library Factory {
         assembly {
             deployed := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
-        require(deployed != address(0), "Pendle: failed on deploy");
+        require(deployed != address(0), "failed on deploy");
     }
 }
 

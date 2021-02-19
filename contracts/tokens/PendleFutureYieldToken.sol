@@ -50,7 +50,7 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldToken {
     }
 
     modifier onlyForge() {
-        require(msg.sender == address(forge), "Pendle: only forge");
+        require(msg.sender == address(forge), "only forge");
         _;
     }
 

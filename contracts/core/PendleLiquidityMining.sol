@@ -110,7 +110,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     mapping(address => UserExpiries) private userExpiries;
 
     modifier isFunded() {
-        require(funded, "Pendle: not funded");
+        require(funded, "not funded");
         _;
     }
 
@@ -128,7 +128,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         uint256 _numberOfEpochs,
         uint256 _vestingEpochs
     ) Permissions(_governance) {
-        require(_startTime > block.timestamp, "Pendle: startTime is over");
+        require(_startTime > block.timestamp, "startTime is over");
         //TODO: add more sanity checks:
         //  - ...
         pendleAddress = _pendleAddress;
@@ -158,8 +158,8 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     }
 
     function fund() public {
-        require(!funded, "Pendle: already funded");
-        require(currentSettingId > 0, "Pendle: must set allocationSetting");
+        require(!funded, "already funded");
+        require(currentSettingId > 0, "must set allocationSetting");
         funded = true;
         IERC20(pendleAddress).safeTransferFrom(
             msg.sender,
@@ -186,7 +186,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         // console.log("Setting allocation settings");
         uint256 _currentE = _currentEpoch();
         if (currentSettingId == 0) {
-            require(block.timestamp < startTime, "Pendle: too late to set first allocation");
+            require(block.timestamp < startTime, "too late to set first allocation");
         }
         for (uint256 _epoch = lastEpochWithSettingId.add(1); _epoch <= _currentE; _epoch++) {
             // save the epochSettingId for the epochs before the current epoch
@@ -196,7 +196,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         lastEpochWithSettingId = _currentE;
         currentSettingId++;
         uint256 sumAllocationNominators;
-        require(_expiries.length == allocationNominators.length, "Pendle: invalid array lengths");
+        require(_expiries.length == allocationNominators.length, "invalid array lengths");
         // console.log("Setting allocation settings 3");
         for (uint256 _i = 0; _i < _expiries.length; _i++) {
             allocationSettings[currentSettingId][_expiries[_i]] = allocationNominators[_i];
@@ -205,7 +205,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         // console.log("Setting allocation settings 4");
         require(
             sumAllocationNominators == ALLOCATION_DENOMINATOR,
-            "Pendle: allocations dont add up"
+            "allocations dont add up"
         );
     }
 
@@ -217,14 +217,14 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         returns (address newLpHoldingContract)
     {
         uint256 _epoch = _currentEpoch();
-        require(_epoch > 0, "Pendle: not started");
-        require(_epoch <= numberOfEpochs, "Pendle: end of incentives");
+        require(_epoch > 0, "not started");
+        require(_epoch <= numberOfEpochs, "end of incentives");
         _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, _epoch);
 
         address xyt = address(pendleData.xytTokens(forgeId, underlyingAsset, expiry));
         address marketAddress = pendleData.getMarket(forgeId, marketFactoryId, xyt, baseToken);
-        require(xyt != address(0), "Pendle: xyt not found");
-        require(marketAddress != address(0), "Pendle: market not found");
+        require(xyt != address(0), "xyt not found");
+        require(marketAddress != address(0), "market not found");
 
         if (!hasExpiry[expiry]) {
             newLpHoldingContract = _addNewExpiry(expiry, xyt, marketAddress);
@@ -243,9 +243,9 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
     function withdraw(uint256 expiry, uint256 amount) public override nonReentrant isFunded {
         uint256 _epoch = _currentEpoch();
-        require(_epoch > 0, "Pendle: not started");
+        require(_epoch > 0, "not started");
         /* console.log("Balance, amount = ", balances[msg.sender][expiry], amount); */
-        require(balances[msg.sender][expiry] >= amount, "Pendle: insufficient balance");
+        require(balances[msg.sender][expiry] >= amount, "insufficient balance");
         _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, _epoch);
 
         // _pushLpToken must happens before currentTotalStakeForExpiry and balances are updated
@@ -257,7 +257,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
     function claimRewards() public override nonReentrant returns (uint256[] memory rewards) {
         uint256 _epoch = _currentEpoch(); //!!! what if currentEpoch > final epoch?
-        require(_epoch > 0, "Pendle: not started");
+        require(_epoch > 0, "not started");
 
         rewards = new uint256[](vestingEpochs);
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
@@ -554,7 +554,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
     // this function should be called whenver the total amount of LP_expiry changes
     function _updateGlobalIncomeIndex(uint256 expiry) internal {
-        require(hasExpiry[expiry], "Pendle: invalid expiry");
+        require(hasExpiry[expiry], "invalid expiry");
         address xyt = address(pendleData.xytTokens(forgeId, underlyingAsset, expiry));
 
         uint256 currentUnderlyingYieldTokenBalance =

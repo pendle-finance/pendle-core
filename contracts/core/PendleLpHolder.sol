@@ -40,12 +40,12 @@ contract PendleLpHolder is IPendleLpHolder {
     }
 
     function sendLp(address user, uint256 amount) public override {
-        require(msg.sender == pendleLiquidityMining, "Pendle: not authorized");
+        require(msg.sender == pendleLiquidityMining, "not authorized");
         IERC20(pendleMarket).safeTransfer(user, amount);
     }
 
     function sendInterests(address user, uint256 amount) public override {
-        require(msg.sender == pendleLiquidityMining, "Pendle: not authorized");
+        require(msg.sender == pendleLiquidityMining, "not authorized");
         IERC20(underlyingYieldToken).safeTransfer(user, amount);
     }
 }
