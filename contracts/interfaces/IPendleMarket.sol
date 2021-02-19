@@ -21,14 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
+pragma experimental ABIEncoderV2;
 
-import "./IPendle.sol";
+import "./IPendleRouter.sol";
 import "./IPendleBaseToken.sol";
-import {Utils} from "../libraries/PendleLibrary.sol";
 
 interface IPendleMarket is IPendleBaseToken {
-    /* ========== EVENTS ========== */
+    struct TokenReserve {
+        uint256 weight;
+        uint256 balance;
+    }
 
     /**
      * @notice Emitted when a swap happens on the market.
@@ -88,66 +91,83 @@ interface IPendleMarket is IPendleBaseToken {
     // ) external;
 
     /* ========== TRADE ========== */
+    // function swapAmountIn(
+    //     address _msgSender,
+    //     uint256 exactIn,
+    //     address inToken,
+    //     address outToken,
+    //     uint256 minOut,
+    //     uint256 maxPrice
+    // ) external returns (uint256 exactOut, uint256 spotPriceAfter);
 
-    function spotPrice(address inToken, address outToken) external view returns (uint256 spot);
+    // function swapAmountOut(
+    //     address _msgSender,
+    //     address inToken,
+    //     uint256 maxIn,
+    //     address outToken,
+    //     uint256 exactOut,
+    //     uint256 maxPrice
+    // ) external returns (uint256 exactIn, uint256 spotPriceAfter);
 
-    function swapAmountIn(
-        address _msgSender,
-        uint256 exactIn,
-        address inToken,
-        address outToken,
-        uint256 minOut,
-        uint256 maxPrice
-    ) external returns (uint256 exactOut, uint256 spotPriceAfter);
+    function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
+        external
+        returns (uint256);
 
-    function swapAmountOut(
-        address _msgSender,
-        address inToken,
-        uint256 maxIn,
-        address outToken,
-        uint256 exactOut,
-        uint256 maxPrice
-    ) external returns (uint256 exactIn, uint256 spotPriceAfter);
-
-    /* ========== LP ========== */
-
-    function joinPoolByAll(
-        address _msgSender,
+    function joinMarketByAll(
         uint256 exactOutLp,
         uint256 maxInXyt,
-        uint256 maxInPair
-    ) external;
+        uint256 maxInToken
+    ) external returns (uint256 amountXytUsed, uint256 amountTokenUsed);
 
-    function exitPoolByAll(
-        address _msgSender,
-        uint256 exactInLp,
+    function exitMarketByAll(
+        uint256 inLp,
         uint256 minOutXyt,
-        uint256 minOutPair
-    ) external;
+        uint256 minOutToken
+    ) external returns (uint256 xytOut, uint256 tokenOut);
 
-    function joinPoolSingleToken(
-        address _msgSender,
-        address inToken,
-        uint256 exactIn,
-        uint256 minOutLp
-    ) external returns (uint256 exactOutLp);
+    //function interestDistribute(address lp) returns (uint interestReturn);
 
-    function exitPoolSingleToken(
-        address _msgSender,
+    function exitMarketSingleToken(
         address outToken,
         uint256 exactInLp,
         uint256 minOutToken
     ) external returns (uint256 exactOutToken);
 
-    //function interestDistribute(address lp)  returns (uint interestReturn);
+    function joinMarketSingleToken(
+        address inToken,
+        uint256 inAmount,
+        uint256 minOutLp
+    ) external returns (uint256 exactOutLp);
 
-    /* ========== CURVE SHIFTING ========== */
+    function swapAmountExactIn(
+        address inToken,
+        uint256 inAmount,
+        address outToken,
+        uint256 minOutAmount,
+        uint256 maxPrice
+    ) external returns (uint256 outAmount, uint256 spotPriceAfter);
 
-    //function shiftWeight(address xytToken, address pairToken) internal;
+    function swapAmountExactOut(
+        address inToken,
+        uint256 maxInAmount,
+        address outToken,
+        uint256 outAmount,
+        uint256 maxPrice
+    ) external returns (uint256 inAmount, uint256 spotPriceAfter);
 
-    //function shiftCurve(address xytToken, address pairToken) internal;
+    function calcExactIn(
+        TokenReserve memory inTokenReserve,
+        TokenReserve memory outTokenReserve,
+        uint256 outAmount,
+        uint256 swapFee
+    ) external pure returns (uint256 exactIn);
 
-    /* ========== VIEW ========== */
+    function calcExactOut(
+        TokenReserve memory inTokenReserve,
+        TokenReserve memory outTokenReserve,
+        uint256 exactIn,
+        uint256 swapFee
+    ) external pure returns (uint256 exactOut);
 
     function getReserves()
         external
@@ -158,17 +178,11 @@ interface IPendleMarket is IPendleBaseToken {
             uint256 lastBlockTimestamp
         );
 
-    function bootstrap(
-        address _msgSender,
-        uint256 initialXytLiquidity,
-        uint256 initialTokenLiquidity
-    ) external;
+    function getBalance(address asset) external view returns (uint256);
 
-    /**
-     * @notice Gets a reference to the Pendle core contract.
-     * @return Returns the core contract reference.
-     **/
-    function core() external view returns (IPendle);
+    function getWeight(address asset) external view returns (uint256);
+
+    function spotPrice(address inToken, address outToken) external view returns (uint256 spot);
 
     /**
      * @dev Returns the address of the PendleMarketFactory contract address.
@@ -181,8 +195,6 @@ interface IPendleMarket is IPendleBaseToken {
      * @return Returns the forge address.
      **/
     function forge() external view returns (address);
-
-    function minLiquidity() external pure returns (uint256);
 
     function token() external view returns (address);
 
