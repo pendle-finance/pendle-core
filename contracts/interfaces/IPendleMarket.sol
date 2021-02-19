@@ -33,9 +33,6 @@ interface IPendleMarket is IPendleBaseToken {
         uint256 balance;
     }
 
-    event Join(address indexed token, uint256 amount);
-
-    event Exit(address indexed token, uint256 amount);
     /**
      * @notice Emitted when reserves pool has been updated
      * @param reserve0 The XYT reserves.
@@ -54,17 +51,33 @@ interface IPendleMarket is IPendleBaseToken {
 
     /**
      * @notice Emitted when a swap happens on the market.
-     * @param inToken The source token being traded.
-     * @param inAmount The source amount being traded.
-     * @param outToken The destination token received.
-     * @param outAmount The destination amount received.
+     * @param trader The address of msg.sender.
+     * @param inToken The input token.
+     * @param outToken The output token.
+     * @param exactIn The exact amount being traded.
+     * @param exactOut The exact amount received.
      **/
     event Swap(
-        address indexed inToken,
-        uint256 inAmount,
-        address indexed outToken,
-        uint256 outAmount
+        address indexed trader,
+        address inToken,
+        address outToken,
+        uint256 exactIn,
+        uint256 exactOut
     );
+
+    /**
+     * @dev Emitted when user adds liquidity
+     * @param token0Amount the amount of token0 (xyt) provided by user
+     * @param token1Amount the amount of token1 provided by user
+     */
+    event Join(address indexed sender, uint256 token0Amount, uint256 token1Amount);
+
+    /**
+     * @dev Emitted when user removes liquidity
+     * @param token0Amount the amount of token0 (xyt) given to user
+     * @param token1Amount the amount of token1 given to user
+     */
+    event Exit(address indexed sender, uint256 token0Amount, uint256 token1Amount);
 
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
