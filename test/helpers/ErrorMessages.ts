@@ -1,4 +1,4 @@
-const prefix = "VM Exception while processing transaction: revert Pendle:";
+const prefix = "VM Exception while processing transaction: revert";
 export const errMsg = {
   NEGATIVE_ALLOWANCE: prefix + " " + "allowance < 0",
   BURN_EXCEED_BALANCE: prefix + " " + "burn > balance",
