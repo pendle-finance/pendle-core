@@ -219,13 +219,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         data.addMarketFactory(_marketFactoryId, _marketFactoryAddress);
     }
 
-    /**
-    *@dev if either _forgeId, _marketFactoryId, xyt, token is invalid
-        => require(address(market) != address(0)) will fail
-    *@dev no checks on exactOutLp, maxInXyt, max
-    */
-    function addMarketLiquidity(
-        bytes32 _forgeId,
+    function addMarketLiquidityAll(
         bytes32 _marketFactoryId,
         address _xyt,
         address _token,
@@ -234,99 +228,48 @@ contract PendleRouter is IPendleRouter, Permissions {
         uint256 _exactOutLp
     ) public payable override {
         IPendleMarket market =
-            IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
+            IPendleMarket(
+                data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
+            );
         require(address(market) != address(0), "Pendle: market not found");
 
         _transferIn(_xyt, _maxInXyt);
         _transferIn(_token, _maxInToken);
 
         (uint256 amountXytUsed, uint256 amountTokenUsed) =
-            market.joinMarketByAll(_exactOutLp, _maxInXyt, _maxInToken);
+            market.addMarketLiquidityAll(_exactOutLp, _maxInXyt, _maxInToken);
 
         _transferOut(address(market), _exactOutLp);
         _transferOut(_xyt, _maxInXyt - amountXytUsed); // transfer unused XYT back to user
         _transferOut(_token, _maxInToken - amountTokenUsed); // transfer unused Token back to user
     }
 
-    /**
-    *@dev if either _forgeId, _marketFactoryId, xyt, token is invalid
-        => require(address(market) != address(0)) will fail
-    *@dev no checks on exactInEth, minInLp
-    */
-    function addMarketLiquidityETH(
-        bytes32 _forgeId,
+    function addMarketLiquiditySingle(
         bytes32 _marketFactoryId,
         address _xyt,
-        uint256 _exactInEth,
+        address _token,
+        bool _forXyt,
+        uint256 _exactInAsset,
         uint256 _minOutLp
     ) public payable override {
+        address asset = _forXyt ? _xyt : _token;
+
+        _transferIn(asset, _exactInAsset);
+
+        asset = _isETH(_token) ? address(weth) : _token;
         IPendleMarket market =
-            IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, address(weth)));
+            IPendleMarket(
+                data.getMarket(_marketFactoryId, _xyt, asset)
+            );
         require(address(market) != address(0), "Pendle: market not found");
-        require(msg.value == _exactInEth, "Pendle: eth sent mismatch");
 
-        _transferIn(ETH_ADDRESS, _exactInEth);
-
-        uint256 exactOutLp = market.joinMarketSingleToken(address(weth), _exactInEth, _minOutLp);
+        asset = _forXyt ? _xyt : asset;
+        uint256 exactOutLp = market.addMarketLiquiditySingle(asset, _exactInAsset, _minOutLp);
 
         _transferOut(address(market), exactOutLp);
     }
 
-    /**
-    *@dev if either _forgeId, _marketFactoryId, xyt, token is invalid
-        => require(address(market) != address(0)) will fail
-    *@dev no checks on exactInToken, minOutLp
-    */
-    function addMarketLiquidityToken(
-        bytes32 _forgeId,
-        bytes32 _marketFactoryId,
-        address _xyt,
-        address _token,
-        uint256 _exactInToken,
-        uint256 _minOutLp
-    ) public override {
-        IPendleMarket market =
-            IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
-        require(address(market) != address(0), "Pendle: market not found");
-
-        _transferIn(_token, _exactInToken);
-
-        uint256 exactOutLp = market.joinMarketSingleToken(_token, _exactInToken, _minOutLp);
-
-        _transferOut(address(market), exactOutLp);
-    }
-
-    /**
-    *@dev if either _forgeId, _marketFactoryId, xyt, token is invalid
-        => require(address(market) != address(0)) will fail
-    *@dev no checks on exactInXyt, minOutLp
-    */
-    function addMarketLiquidityXyt(
-        bytes32 _forgeId,
-        bytes32 _marketFactoryId,
-        address _xyt,
-        address _token,
-        uint256 _exactInXyt,
-        uint256 _minOutLp
-    ) public override {
-        IPendleMarket market =
-            IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
-        require(address(market) != address(0), "Pendle: market not found");
-
-        _transferIn(_xyt, _exactInXyt);
-
-        uint256 exactOutLp = market.joinMarketSingleToken(_xyt, _exactInXyt, _minOutLp);
-
-        _transferOut(address(market), exactOutLp);
-    }
-
-    /**
-    *@dev if either _forgeId, _marketFactoryId, xyt, token is invalid
-        => require(address(market) != address(0)) will fail
-    *@dev no checks on exactInLp, minOutXyt, minOutToken
-    */
-    function removeMarketLiquidity(
-        bytes32 _forgeId,
+    function removeMarketLiquidityAll(
         bytes32 _marketFactoryId,
         address _xyt,
         address _token,
@@ -334,77 +277,42 @@ contract PendleRouter is IPendleRouter, Permissions {
         uint256 _minOutXyt,
         uint256 _minOutToken
     ) public override {
-        IPendleMarket market =
-            IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
+        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "Pendle: market not found");
 
         _transferIn(address(market), _exactInLp);
 
         (uint256 xytAmount, uint256 tokenAmount) =
-            market.exitMarketByAll(_exactInLp, _minOutXyt, _minOutToken);
+            market.removeMarketLiquidityAll(_exactInLp, _minOutXyt, _minOutToken);
 
         _transferOut(_xyt, xytAmount);
         _transferOut(_token, tokenAmount);
     }
 
-    function removeMarketLiquidityETH(
-        bytes32 _forgeId,
-        bytes32 _marketFactoryId,
-        address _xyt,
-        uint256 _exactInLp,
-        uint256 _minOutEth
-    ) public override {
-        IPendleMarket market =
-            IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, address(weth)));
-        require(address(market) != address(0), "Pendle: market not found");
-
-        _transferIn(address(market), _exactInLp);
-
-        uint256 ethAmount = market.exitMarketSingleToken(address(weth), _exactInLp, _minOutEth);
-
-        _transferOut(ETH_ADDRESS, ethAmount);
-    }
-
-    function removeMarketLiquidityToken(
-        bytes32 _forgeId,
+    function removeMarketLiquiditySingle(
         bytes32 _marketFactoryId,
         address _xyt,
         address _token,
+        bool _forXyt,
         uint256 _exactInLp,
-        uint256 _minOutToken
+        uint256 _minOutAsset
     ) public override {
+        address asset = _isETH(_token) ? address(weth) : _token;
+
         IPendleMarket market =
-            IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
+            IPendleMarket(data.getMarket(_marketFactoryId, _xyt, asset));
         require(address(market) != address(0), "Pendle: market not found");
 
         _transferIn(address(market), _exactInLp);
 
-        uint256 tokenAmount = market.exitMarketSingleToken(_token, _exactInLp, _minOutToken);
+        asset = _forXyt ? _xyt : asset;
+        uint256 assetOut = market.removeMarketLiquiditySingle(asset, _exactInLp, _minOutAsset);
 
-        _transferOut(_token, tokenAmount);
-    }
-
-    function removeMarketLiquidityXyt(
-        bytes32 _forgeId,
-        bytes32 _marketFactoryId,
-        address _xyt,
-        address _token,
-        uint256 _exactInLp,
-        uint256 _minOutXyt
-    ) public override {
-        IPendleMarket market =
-            IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
-        require(address(market) != address(0), "Pendle: market not found");
-
-        _transferIn(address(market), _exactInLp);
-
-        uint256 xytAmount = market.exitMarketSingleToken(_xyt, _exactInLp, _minOutXyt);
-
-        _transferOut(_xyt, xytAmount);
+        asset = _forXyt ? _xyt : _token;
+        _transferOut(asset, assetOut);
     }
 
     function createMarket(
-        bytes32 _forgeId,
         bytes32 _marketFactoryId,
         address _xyt,
         address _token
@@ -416,25 +324,25 @@ contract PendleRouter is IPendleRouter, Permissions {
             IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));
         require(address(factory) != address(0), "Pendle: zero address");
 
-        market = factory.createMarket(_forgeId, _xyt, _token);
+        market = factory.createMarket(_xyt, _token);
         IERC20(_xyt).safeApprove(market, Math.UINT_MAX_VALUE);
         IERC20(_token).safeApprove(market, Math.UINT_MAX_VALUE);
         IERC20(market).safeApprove(market, Math.UINT_MAX_VALUE);
     }
 
     function bootstrapMarket(
-        bytes32 _forgeId,
         bytes32 _marketFactoryId,
         address _xyt,
         address _token,
         uint256 _initialXytLiquidity,
         uint256 _initialTokenLiquidity
-    ) public override {
+    ) public payable override {
         require(_initialXytLiquidity > 0, "Pendle: initial XYT <= 0");
         require(_initialTokenLiquidity > 0, "Pendle: initial tokens <= 0");
 
-        IPendleMarket market =
-            IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
+        _token = _isETH(_token) ? address(weth) : _token;
+
+        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "Pendle: market not found");
 
         _transferIn(_xyt, _initialXytLiquidity);
@@ -466,7 +374,7 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         IPendleMarket market =
             IPendleMarket(data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId));
-        (outSwapAmount, ) = market.swapAmountExactIn(
+        (outSwapAmount, ) = market.swapExactIn(
             _tokenIn,
             _inTotalAmount,
             _tokenOut,
@@ -495,7 +403,7 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         IPendleMarket market =
             IPendleMarket(data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId));
-        (inSwapAmount, ) = market.swapAmountExactOut(
+        (inSwapAmount, ) = market.swapExactOut(
             _tokenIn,
             _maxInTotalAmount,
             _tokenOut,
@@ -531,7 +439,7 @@ contract PendleRouter is IPendleRouter, Permissions {
 
                 IPendleMarket market = IPendleMarket(swap.market);
 
-                (tokenAmountOut, ) = market.swapAmountExactIn(
+                (tokenAmountOut, ) = market.swapExactIn(
                     swap.tokenIn,
                     swap.swapAmount,
                     swap.tokenOut,
@@ -568,7 +476,7 @@ contract PendleRouter is IPendleRouter, Permissions {
 
                 IPendleMarket market = IPendleMarket(swap.market);
 
-                (firstSwapTokenIn, ) = market.swapAmountExactOut(
+                (firstSwapTokenIn, ) = market.swapExactOut(
                     swap.tokenIn,
                     swap.limitReturnAmount,
                     swap.tokenOut,
@@ -603,7 +511,7 @@ contract PendleRouter is IPendleRouter, Permissions {
                 Swap memory firstSwap = _swapPath[i][0];
                 IPendleMarket firstMarket = IPendleMarket(firstSwap.market);
 
-                (firstSwapTokenIn, ) = firstMarket.swapAmountExactOut(
+                (firstSwapTokenIn, ) = firstMarket.swapExactOut(
                     firstSwap.tokenIn,
                     firstSwap.limitReturnAmount,
                     firstSwap.tokenOut,
@@ -612,7 +520,7 @@ contract PendleRouter is IPendleRouter, Permissions {
                 );
 
                 // Buy the final amount of token C desired
-                secondMarket.swapAmountExactOut(
+                secondMarket.swapExactOut(
                     secondSwap.tokenIn,
                     secondSwap.limitReturnAmount,
                     secondSwap.tokenOut,
@@ -679,7 +587,6 @@ contract PendleRouter is IPendleRouter, Permissions {
     }
 
     function getMarketReserves(
-        bytes32 _forgeId,
         bytes32 _marketFactoryId,
         address _xyt,
         address _token
@@ -693,8 +600,7 @@ contract PendleRouter is IPendleRouter, Permissions {
             uint256 currentTime
         )
     {
-        IPendleMarket market =
-            IPendleMarket(data.getMarket(_forgeId, _marketFactoryId, _xyt, _token));
+        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "Pendle: market not found");
         (xytAmount, tokenAmount, currentTime) = market.getReserves();
     }

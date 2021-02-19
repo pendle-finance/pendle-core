@@ -126,8 +126,7 @@ interface IPendleRouter {
      ***********/
     function addMarketFactory(bytes32 marketFactoryId, address marketFactoryAddress) external;
 
-    function addMarketLiquidity(
-        bytes32 forgeId,
+    function addMarketLiquidityAll(
         bytes32 marketFactoryId,
         address xyt,
         address token,
@@ -136,34 +135,16 @@ interface IPendleRouter {
         uint256 exactOutLp
     ) external payable;
 
-    function addMarketLiquidityETH(
-        bytes32 forgeId,
+    function addMarketLiquiditySingle(
         bytes32 marketFactoryId,
         address xyt,
-        uint256 exactInEth,
+        address token,
+        bool forXyt,
+        uint256 exactInAsset,
         uint256 minOutLp
     ) external payable;
 
-    function addMarketLiquidityToken(
-        bytes32 forgeId,
-        bytes32 marketFactoryId,
-        address xyt,
-        address token,
-        uint256 exactInToken,
-        uint256 minOutLp
-    ) external;
-
-    function addMarketLiquidityXyt(
-        bytes32 forgeId,
-        bytes32 marketFactoryId,
-        address xyt,
-        address token,
-        uint256 exactInXyt,
-        uint256 minOutLp
-    ) external;
-
-    function removeMarketLiquidity(
-        bytes32 forgeId,
+    function removeMarketLiquidityAll(
         bytes32 marketFactoryId,
         address xyt,
         address token,
@@ -172,55 +153,35 @@ interface IPendleRouter {
         uint256 minOutToken
     ) external;
 
-    function removeMarketLiquidityETH(
-        bytes32 forgeId,
-        bytes32 marketFactoryId,
-        address xyt,
-        uint256 exactInLp,
-        uint256 minOutEth
-    ) external;
-
-    function removeMarketLiquidityToken(
-        bytes32 forgeId,
+    function removeMarketLiquiditySingle(
         bytes32 marketFactoryId,
         address xyt,
         address token,
+        bool forXyt,
         uint256 exactInLp,
-        uint256 minOutToken
-    ) external;
-
-    function removeMarketLiquidityXyt(
-        bytes32 forgeId,
-        bytes32 marketFactoryId,
-        address xyt,
-        address token,
-        uint256 exactInLp,
-        uint256 minOutXyt
+        uint256 minOutAsset
     ) external;
 
     /**
      * @notice Creates a market given a protocol ID, future yield token, and an ERC20 token.
-     * @param forgeId Forge identifier.
      * @param marketFactoryId Market Factory identifier.
      * @param xyt Token address of the future yield token as base asset.
      * @param token Token address of an ERC20 token as quote asset.
      * @return market Returns the address of the newly created market.
      **/
     function createMarket(
-        bytes32 forgeId,
         bytes32 marketFactoryId,
         address xyt,
         address token
     ) external returns (address market);
 
     function bootstrapMarket(
-        bytes32 forgeId,
         bytes32 marketFactoryId,
         address xyt,
         address token,
         uint256 initialXytLiquidity,
         uint256 initialTokenLiquidity
-    ) external;
+    ) external payable;
 
     function swapExactIn(
         address tokenIn,
@@ -270,7 +231,6 @@ interface IPendleRouter {
     ) external view returns (Swap calldata swap, uint256 totalInput);
 
     function getMarketReserves(
-        bytes32 forgeId,
         bytes32 marketFactoryId,
         address xyt,
         address token

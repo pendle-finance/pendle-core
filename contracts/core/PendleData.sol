@@ -23,15 +23,15 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import {Enumerable, Math} from "../libraries/PendleLibrary.sol";
+import {Math} from "../libraries/PendleLibrary.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../periphery/Permissions.sol";
 
+
 contract PendleData is IPendleData, Permissions {
     using SafeMath for uint256;
-    using Enumerable for Enumerable.AddressSet;
 
     struct MarketInfo {
         uint80 xytWeight;
@@ -44,9 +44,7 @@ contract PendleData is IPendleData, Permissions {
     mapping(address => bytes32) public override getMarketFactoryId;
     mapping(bytes32 => address) public override getMarketFactoryAddress;
 
-    mapping(bytes32 => mapping(bytes32 => mapping(address => mapping(address => address))))
-        public
-        override getMarket; // getMarket[forgeId][marketFactoryId][xyt][token]
+    mapping(bytes32 => mapping(address => mapping(address => address))) public override getMarket; // getMarket[marketFactoryId][xyt][token]
     mapping(bytes32 => mapping(address => mapping(uint256 => IPendleYieldToken)))
         public
         override otTokens; // [forgeId][underlyingAsset][expiry]
@@ -136,19 +134,14 @@ contract PendleData is IPendleData, Permissions {
         xyt = xytTokens[_forgeId][_underlyingAsset][_expiry];
     }
 
-    function isRelatedForgeXYT(bytes32 _forgeId, address _xyt)
-        external
-        view
-        override
-        returns (bool)
-    {
-        bytes32 forgeId = getForgeId[IPendleYieldToken(_xyt).forge()];
-        return forgeId == _forgeId;
-    }
-
-    function isValidXYT(address _xyt) external view override returns (bool) {
-        address forge = IPendleYieldToken(_xyt).forge();
-        return getForgeId[forge] != bytes32(0);
+    function isValidXYT(
+        address _forge,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) external view override returns (bool) {
+        bytes32 forgeId = getForgeId[_forge];
+        return (forgeId != bytes32(0) &&
+            address(xytTokens[forgeId][_underlyingAsset][_expiry]) != address(0));
     }
 
     /***********
@@ -165,7 +158,6 @@ contract PendleData is IPendleData, Permissions {
     }
 
     function addMarket(
-        bytes32 _forgeId,
         bytes32 _marketFactoryId,
         address _xyt,
         address _token,
@@ -176,7 +168,7 @@ contract PendleData is IPendleData, Permissions {
         bytes32 key = _createKey(_xyt, _token, _marketFactoryId);
         markets[key] = _market;
 
-        getMarket[_forgeId][_marketFactoryId][_xyt][_token] = _market;
+        getMarket[_marketFactoryId][_xyt][_token] = _market;
         isMarket[_market] = true;
 
         emit MarketPairAdded(_market, _xyt, _token);

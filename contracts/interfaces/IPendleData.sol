@@ -26,6 +26,7 @@ pragma solidity 0.7.6;
 import "./IPendleRouter.sol";
 import "./IPendleYieldToken.sol";
 
+
 interface IPendleData {
     /**
      * @notice Emitted when Pendle and PendleFactory addresses have been updated.
@@ -113,14 +114,18 @@ interface IPendleData {
      **/
     function getForgeAddress(bytes32 forgeId) external view returns (address forgeAddress);
 
-    function isRelatedForgeXYT(bytes32 forgeId, address xyt) external view returns (bool);
-
     /**
      * @notice Checks if an XYT token is valid.
-     * @param xyt Address of the XYT toke.
+     * @param forgeAddress The address of the added forge.
+     * @param underlyingAsset Token address of the underlying asset.
+     * @param expiry Yield contract expiry in epoch time.
      * @return True if valid, false otherwise.
      **/
-    function isValidXYT(address xyt) external view returns (bool);
+    function isValidXYT(
+        address forgeAddress,
+        address underlyingAsset,
+        uint256 expiry
+    ) external view returns (bool);
 
     /**
      * @notice Gets a reference to a specific OT.
@@ -159,7 +164,6 @@ interface IPendleData {
     function isMarket(address _addr) external view returns (bool result);
 
     function addMarket(
-        bytes32 forgeId,
         bytes32 marketFactoryId,
         address xyt,
         address token,
@@ -202,13 +206,11 @@ interface IPendleData {
 
     /**
      * @notice Gets a market given a future yield token and an ERC20 token.
-     * @param forgeId Forge and protocol identifier.
      * @param xyt Token address of the future yield token as base asset.
      * @param token Token address of an ERC20 token as quote asset.
      * @return market Returns the market address.
      **/
     function getMarket(
-        bytes32 forgeId,
         bytes32 marketFactoryId,
         address xyt,
         address token

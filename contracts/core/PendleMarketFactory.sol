@@ -30,6 +30,7 @@ import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleYieldToken.sol";
 import "../periphery/Permissions.sol";
 
+
 contract PendleMarketFactory is IPendleMarketFactory, Permissions {
     IPendleRouter public override router;
     bytes32 public immutable override marketFactoryId;
@@ -51,31 +52,33 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions {
         router = _router;
     }
 
-    function createMarket(
-        bytes32 _forgeId,
-        address _xyt,
-        address _token
-    ) external override initialized onlyRouter returns (address market) {
+    function createMarket(address _xyt, address _token)
+        external
+        override
+        initialized
+        onlyRouter
+        returns (address market)
+    {
         require(_xyt != _token, "Pendle: similar tokens");
         require(_xyt != address(0) || _token != address(0), "Pendle: zero address");
 
         IPendleData data = router.data();
         require(
-            data.getMarket(_forgeId, marketFactoryId, _xyt, _token) == address(0),
+            data.getMarket(marketFactoryId, _xyt, _token) == address(0),
             "Pendle: market already exists"
         );
-        require(data.isRelatedForgeXYT(_forgeId, _xyt), "Pendle: forge-xyt not related");
 
-        address forgeAddress = data.getForgeAddress(_forgeId);
-        require(forgeAddress != address(0), "Pendle: zero address");
-
+        address forgeAddress = IPendleYieldToken(_xyt).forge();
+        address underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
         uint256 expiry = IPendleYieldToken(_xyt).expiry();
+        require(data.isValidXYT(forgeAddress, underlyingAsset, expiry), "Pendle: invalid XYT");
+
         market = Factory.createContract(
             type(PendleMarket).creationCode,
             abi.encodePacked(forgeAddress, _xyt, _token, expiry),
             abi.encode(forgeAddress, _xyt, _token, expiry)
         );
-        data.addMarket(_forgeId, marketFactoryId, _xyt, _token, market);
+        data.addMarket(marketFactoryId, _xyt, _token, market);
 
         emit MarketCreated(marketFactoryId, _xyt, _token, market);
     }

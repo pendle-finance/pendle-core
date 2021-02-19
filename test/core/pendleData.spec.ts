@@ -58,7 +58,6 @@ describe("PendleData", async () => {
   it("getAllMarkets", async () => {
     let filter = pendleMarketFactory.filters.MarketCreated();
     let tx = await pendleRouter.createMarket(
-      consts.FORGE_AAVE,
       consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
       tokenUSDT.address,
