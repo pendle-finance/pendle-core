@@ -614,9 +614,11 @@ contract PendleRouter is IPendleRouter, Permissions {
                 );
                 outTotalAmount = outTotalAmount.add(swap.swapAmount);
             } else {
-                // Consider we are swapping A -> B and B -> C. The goal is to buy a given amount
-                // of token C. But first we need to buy B with A so we can then buy C with B
-                // To get the exact amount of C we then first need to calculate how much B we'll need:
+                /*
+                Consider we are swapping A -> B and B -> C. The goal is to buy a given amount
+                of token C. But first we need to buy B with A so we can then buy C with B
+                To get the exact amount of C we then first need to calculate how much B we'll need:
+                */
                 uint256 intermediateTokenAmount; // This would be token B as described above
                 Swap memory secondSwap = _swapPath[i][1];
                 IPendleMarket secondMarket = IPendleMarket(secondSwap.market);

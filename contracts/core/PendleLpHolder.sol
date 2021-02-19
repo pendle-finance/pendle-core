@@ -29,9 +29,9 @@ import "../interfaces/IPendleLpHolder.sol";
 contract PendleLpHolder is IPendleLpHolder {
     using SafeERC20 for IERC20;
 
-    address pendleLiquidityMining;
-    address underlyingYieldToken;
-    address pendleMarket;
+    address private pendleLiquidityMining;
+    address private underlyingYieldToken;
+    address private pendleMarket;
 
     constructor(address _pendleMarket, address _underlyingYieldToken) {
         pendleMarket = _pendleMarket;

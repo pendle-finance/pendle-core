@@ -1,4 +1,5 @@
-/* solhint-disable reason-string*/
+/* solhint-disable*/
+// disable because governance is not being used at the moment
 // SPDX-License-Identifier: MIT
 /*
  * MIT License
@@ -32,9 +33,6 @@ import "../interfaces/ITimelock.sol";
 contract PendleGovernance is IPendleGovernance {
     using SafeMath for uint256;
 
-    /**
-     * @notice The name of this contract
-     **/
     string public constant NAME = "Pendle Governance";
 
     /**

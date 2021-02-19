@@ -37,9 +37,12 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../periphery/Permissions.sol";
 import "hardhat/console.sol";
 
-// Things that must hold in this contract:
-//      - If an account's stake information is updated (hence lastTimeUserStakeUpdated is changed),
-//        then his pending rewards are calculated as well (and saved in availableRewardsForEpoch[user][epochId])
+/**
+    @dev things that must hold in this contract:
+     - If an account's stake information is updated (hence lastTimeUserStakeUpdated is changed),
+        then his pending rewards are calculated as well
+        (and saved in availableRewardsForEpoch[user][epochId])
+ */
 contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -52,8 +55,12 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     struct EpochData {
         mapping(uint256 => uint256) totalStakeSecondsForExpiry;
         mapping(uint256 => uint256) lastTimeStakeSecondsUpdatedForExpiry;
-        mapping(address => mapping(uint256 => uint256)) userStakeSeconds; // userStakeSeconds[user][expiry] = the stake * seconds for the user for LP_expiry
-        /* mapping(uint256 => uint256) baseTokenReserve; // baseTokenReserve[expiry] = baseToken reserve of the market for LP_expiry */
+        mapping(address => mapping(uint256 => uint256)) userStakeSeconds;
+        // userStakeSeconds[user][expiry] = the stake * seconds for the user for LP_expiry
+        /*
+        mapping(uint256 => uint256) baseTokenReserve;
+        baseTokenReserve[expiry] = baseToken reserve of the market for LP_expiry
+        */
         /* uint256 totalBaseTokenReserve; // sum of all baseTokenReserve */
         bool calculated;
         uint256 allocationSettingId;
@@ -78,7 +85,8 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     uint256[] public expiries;
     mapping(uint256 => bool) public hasExpiry;
     uint256 private constant ALLOCATION_DENOMINATOR = 1_000_000_000;
-    mapping(uint256 => mapping(uint256 => uint256)) public allocationSettings; // allocationSettings[settingId][expiry] = rewards portion of a pool for settingId
+    mapping(uint256 => mapping(uint256 => uint256)) public allocationSettings;
+    // allocationSettings[settingId][expiry] = rewards portion of a pool for settingId
     uint256 public currentSettingId;
     uint256 public lastEpochWithSettingId;
 
@@ -93,7 +101,8 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     mapping(address => mapping(uint256 => uint256)) public override balances;
     mapping(address => mapping(uint256 => uint256)) public lastTimeUserStakeUpdated;
 
-    // availableRewardsForEpoch[account][epochId] is the amount of PENDLEs the account can withdraw at the beginning of epochId
+    /* availableRewardsForEpoch[account][epochId] is the amount of PENDLEs the account
+        can withdraw at the beginning of epochId*/
     mapping(address => mapping(uint256 => uint256)) public availableRewardsForEpoch;
 
     mapping(uint256 => EpochData) private epochs;
@@ -149,7 +158,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     }
 
     function fund() public {
-        require(!funded, "Pendle: funded");
+        require(!funded, "Pendle: already funded");
         require(currentSettingId > 0, "Pendle: must set allocationSetting");
         funded = true;
         IERC20(pendleAddress).safeTransferFrom(
@@ -159,8 +168,16 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         );
     }
 
-    // set a new allocation setting, which will be applied from the next Epoch onwards
-    // all the epochs from lastEpochWithSettingId+1 to current epoch will follow the previous allocation setting
+    /**
+    @notice set a new allocation setting, which will be applied from the next Epoch onwards
+    @dev  all the epochs from lastEpochWithSettingId+1 to current epoch will follow the previous
+    allocation setting
+    @dev We must set the very first allocation setting before the start of epoch 1,
+            otherwise epoch 1 will not have any allocation setting!
+        In that case, we will not be able to set any allocation and hence its not possible to
+            fund the contract as well
+        => We should just throw this contract away, and funds are SAFU!
+     */
     function setAllocationSetting(
         uint256[] calldata _expiries,
         uint256[] calldata allocationNominators
@@ -169,9 +186,6 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         // console.log("Setting allocation settings");
         uint256 _currentE = _currentEpoch();
         if (currentSettingId == 0) {
-            // We must set the very first allocation setting before the start of epoch1, otherwise epoch 1 will not have any allocation setting!
-            // if that is the case, we will not be able to set any allocation and hence its not possible to fund the contract as well
-            // We should just throw this contract away, and funds are SAFU!
             require(block.timestamp < startTime, "Pendle: too late to set first allocation");
         }
         for (uint256 _epoch = lastEpochWithSettingId.add(1); _epoch <= _currentE; _epoch++) {
@@ -233,7 +247,9 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         /* console.log("Balance, amount = ", balances[msg.sender][expiry], amount); */
         require(balances[msg.sender][expiry] >= amount, "Pendle: insufficient balance");
         _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, _epoch);
-        _pushLpToken(expiry, amount); // this has to happen before currentTotalStakeForExpiry and balances are updated
+
+        // _pushLpToken must happens before currentTotalStakeForExpiry and balances are updated
+        _pushLpToken(expiry, amount);
 
         balances[msg.sender][expiry] = balances[msg.sender][expiry].sub(amount);
         currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].sub(amount);
@@ -287,14 +303,18 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         lastTimeUserStakeUpdated[account][expiry] = block.timestamp;
     }
 
-    // must be called right before _settlePendingRewards()
-    // This will update the following stake data for the current epoch:
-    //      epochs[current epoch].totalStakeSecondsForExpiry
-    //      epochs[current epoch].lastTimeStakeSecondsUpdatedForExpiry
-    //          If this is the very first transaction involving this expiry, then we need to update for the previous epoch as well
-    //          If the previous didn't have any transactions at all, (and hence was not updated at all), we need to update it and check the previous previous ones, and so on..
-    // This is the only function that updates lastTimeUserStakeUpdated
-    // Other functions must make sure that currentTotalStakeForExpiry could be assumed to stay exactly the same since lastTimeUserStakeUpdated until now;
+    /**
+    @notice update the following stake data for the current epoch:
+        - epochs[current epoch].totalStakeSecondsForExpiry
+        - epochs[current epoch].lastTimeStakeSecondsUpdatedForExpiry
+    @dev If this is the very first transaction involving this expiry, then need to update for the
+    previous epoch as well. If the previous didn't have any transactions at all, (and hence was not
+    updated at all), we need to update it and check the previous previous ones, and so on..
+    @dev must be called right before every _settlePendingRewards()
+    @dev this is the only function that updates lastTimeUserStakeUpdated
+    @dev other functions must make sure that currentTotalStakeForExpiry could be assumed
+        to stay exactly the same since lastTimeUserStakeUpdated until now;
+     */
     function _updateStakeDataForExpiry(uint256 expiry, uint256 _currentE) internal {
         uint256 _epoch = _currentE;
         // console.log("_updateStakeDataForExpiry, _epoch = ", _epoch);
@@ -313,9 +333,9 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
             // console.log("\tlastUpdatedForEpoch = ", lastUpdatedForEpoch);
 
             if (lastUpdatedForEpoch == 0) {
-                // if lastTimeStakeSecondsUpdatedForExpiry[expiry] is zero, we have not run this function for this epoch,
-                // we can assume that currentTotalStakeForExpiry[expiry] was staked from the beginning of this epoch.
-                // so we just use the start of the epoch as lastUpdatedForEpoch
+                /* we have not run this function for this epoch, and can assume that
+                currentTotalStakeForExpiry[expiry] was staked from the beginning of this epoch,
+                so we just use the start of the epoch as lastUpdatedForEpoch */
                 lastUpdatedForEpoch = endOfEpoch.sub(epochDuration);
             }
             uint256 newLastUpdated = endOfEpoch;
@@ -345,14 +365,16 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         uint256 rewardsPerVestingEpoch;
     }
 
-    // See if the user is entitled for any new rewards,
-    // since the last time rewards was calculated for him.
-    //      I.e. Since the last time his stake was "updated"
-    //      I.e. Since lastTimeUserStakeUpdated[account]
-    // The user's stake since the lastTimeUserStakeUpdated[user] until now is exactly balances[user][expiry]
-    // After this function, the following should be updated correctly up to this point:
-    //      availableRewardsForEpoch[account][all epochs]
-    //      epochs[all epochs].userStakeSeconds
+    /**
+    @notice Check if the user is entitled for any new rewards and transfer them to users.
+        The rewards are calculated since the last time rewards was calculated for him,
+        I.e. Since the last time his stake was "updated"
+        I.e. Since lastTimeUserStakeUpdated[account]
+    @dev The user's stake since lastTimeUserStakeUpdated[user] until now = balances[user][expiry]
+    @dev After this function, the following should be updated correctly up to this point:
+            - availableRewardsForEpoch[account][all epochs]
+            - epochs[all epochs].userStakeSeconds
+     */
     function _settlePendingRewards(
         address account,
         uint256 expiry,
@@ -382,7 +404,8 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
             // current epoch is still within the liq mining programme.
             // We need to update userStakeSeconds for this epoch, until the current timestamp
             if (_startEpoch < _currentE) {
-                // if the last time we ran this funciton was in a previous epoch, then we just count the seconds elapsed this epoch
+                /* if the last time we ran this funciton was in a previous epoch,
+                then we just count the seconds elapsed this epoch */
                 epochs[_currentE].userStakeSeconds[account][expiry] = balances[account][expiry]
                     .mul(_epochRelativeTime(block.timestamp));
                 // last action of user is in a previous epoch
@@ -400,18 +423,20 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
         uint256 e;
 
-        // Go through epochs that were over, and update epochs[..].userStakeSeconds and availableRewardsForEpoch
+        /* Go through epochs that were over
+        to update epochs[..].userStakeSeconds and epochs[..].availableRewardsForEpoch
+        */
         for (e = _startEpoch; e < _endEpoch; e++) {
             //// Update epochs[e].userStakeSeconds
             RewardsCalculation memory vars;
             vars.userStakeSeconds = 0; // making it explicit for readability
             if (e == _startEpoch) {
                 // if its the epoch where user staked,
-                // the user staked from lastTimeUserStakeUpdated[expiry] until the end of that epoch
+                // the user staked from lastTimeUserStakeUpdated[expiry] until end of that epoch
                 uint256 secondsStakedThisEpochSinceLastUpdate =
                     epochDuration.sub(
-                        lastTimeUserStakeUpdated[account][expiry].sub(startTime).mod(epochDuration) // TODO:Change this to _epochRelativeTime
-                    ); // number of remaining seconds in this startEpoch (since the last action of user)
+                        lastTimeUserStakeUpdated[account][expiry].sub(startTime).mod(epochDuration));
+                // number of remaining seconds in this startEpoch (since the last action of user)
                 // console.log(
                 //     "\t userStakeSeconds for this epoch = ",
                 //     epochs[e].userStakeSeconds[account][expiry]
@@ -436,17 +461,21 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
                 .div(ALLOCATION_DENOMINATOR);
 
             if (epochs[e].totalStakeSecondsForExpiry[expiry] == 0) {
-                //There is a remote but possible case when no-one stake/unstake for this expiry during the epoch
-                //I.e. Everyone staked before the start of the epoch and hold through the end
-                //as such, totalStakeSecondsForExpiry is still not updated, and is zero.
-                //we will just need to update it to be currentTotalStakeForExpiry[expiry] * epochDuration
+                /*
+                Handle special case when no-one stake/unstake for this expiry during the epoch
+                I.e. Everyone staked before the start of the epoch and hold through the end
+                as such, totalStakeSecondsForExpiry is still not updated, and is zero.
+                we will just update it to currentTotalStakeForExpiry[expiry] * epochDuration
+                */
                 if (currentTotalStakeForExpiry[expiry] == 0) {
-                    // in the extreme extreme case of zero staked LPs for this expiry even now, nothing to do from this epoch onwards
+                    /* in the extreme extreme case of zero staked LPs for this expiry even now,
+                    => nothing to do from this epoch onwards */
                     break;
                 }
 
+                // no one does anything in this epoch => totalStakeSecondsForExpiry = full epoch
                 epochs[e].totalStakeSecondsForExpiry[expiry] = currentTotalStakeForExpiry[expiry]
-                    .mul(epochDuration); // no one does anything in this epoch => totalStakeSecondsForExpiry = full epoch
+                    .mul(epochDuration);
 
                 // console.log(
                 //     "\ttotalStakeSecondsForExpiry for this epoch was zero and updated to ",
@@ -560,6 +589,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
             abi.encode(marketAddress, xyt)
         );
         lpHolderForExpiry[expiry] = newLpHoldingContract;
-        globalIncomeIndexForExpiry[expiry] = 1; //aribitrary non-zero initial income index for LP_expiry
+        globalIncomeIndexForExpiry[expiry] = 1;
+        //1 is an aribitrary non-zero initial income index for LP_expiry
     }
 }
