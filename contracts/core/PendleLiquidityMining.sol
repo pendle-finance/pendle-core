@@ -433,7 +433,8 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
                 // the user staked from lastTimeUserStakeUpdated[expiry] until end of that epoch
                 uint256 secondsStakedThisEpochSinceLastUpdate =
                     epochDuration.sub(
-                        lastTimeUserStakeUpdated[account][expiry].sub(startTime).mod(epochDuration));
+                        _epochRelativeTime(lastTimeUserStakeUpdated[account][expiry])
+                    );
                 // number of remaining seconds in this startEpoch (since the last action of user)
                 // console.log(
                 //     "\t userStakeSeconds for this epoch = ",
