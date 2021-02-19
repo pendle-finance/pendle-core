@@ -31,7 +31,8 @@ import "../tokens/PendleBaseToken.sol";
 import "../libraries/PendleLibrary.sol";
 import {Math} from "../libraries/PendleLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "hardhat/console.sol";
+
+// import "hardhat/console.sol";
 
 contract PendleMarket is IPendleMarket, PendleBaseToken {
     using Math for uint256;
@@ -166,7 +167,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         IPendleData data = router.data();
 
         _curveShift(data);
-        console.log("exitMarket - weight of outToken: ", reserves[outToken].weight);
+        // console.log("exitMarket - weight of outToken: ", reserves[outToken].weight);
 
         TokenReserve storage outTokenReserve = reserves[outToken];
         uint256 exitFee = data.exitFee();
@@ -245,7 +246,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         IPendleData data = router.data();
 
         _curveShift(data);
-        console.log("joinMarket - weight of inToken: ", reserves[inToken].weight);
+        // console.log("joinMarket - weight of inToken: ", reserves[inToken].weight);
 
         TokenReserve storage inTokenReserve = reserves[inToken];
         uint256 totalLp = totalSupply;

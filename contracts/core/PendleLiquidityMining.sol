@@ -35,7 +35,8 @@ import "../interfaces/IPendleLiquidityMining.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../periphery/Permissions.sol";
-import "hardhat/console.sol";
+
+// import "hardhat/console.sol";
 
 /**
     @dev things that must hold in this contract:
@@ -203,10 +204,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
             sumAllocationNominators = sumAllocationNominators.add(allocationNominators[_i]);
         }
         // console.log("Setting allocation settings 4");
-        require(
-            sumAllocationNominators == ALLOCATION_DENOMINATOR,
-            "INVALID_ALLOCATION"
-        );
+        require(sumAllocationNominators == ALLOCATION_DENOMINATOR, "INVALID_ALLOCATION");
     }
 
     function stake(uint256 expiry, uint256 amount)

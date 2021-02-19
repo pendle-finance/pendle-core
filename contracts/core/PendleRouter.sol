@@ -212,10 +212,7 @@ contract PendleRouter is IPendleRouter, Permissions {
             _marketFactoryId == IPendleMarketFactory(_marketFactoryAddress).marketFactoryId(),
             "wrong id"
         );
-        require(
-            data.getMarketFactoryAddress(_marketFactoryId) == address(0),
-            "existing id"
-        );
+        require(data.getMarketFactoryAddress(_marketFactoryId) == address(0), "existing id");
         data.addMarketFactory(_marketFactoryId, _marketFactoryAddress);
     }
 

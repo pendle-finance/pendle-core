@@ -84,10 +84,7 @@ contract PendleData is IPendleData, Permissions {
     }
 
     modifier onlyMarketFactory(bytes32 _marketFactoryId) {
-        require(
-            msg.sender == getMarketFactoryAddress[_marketFactoryId],
-            "only market factory"
-        );
+        require(msg.sender == getMarketFactoryAddress[_marketFactoryId], "only market factory");
         _;
     }
 
