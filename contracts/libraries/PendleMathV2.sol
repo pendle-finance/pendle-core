@@ -55,7 +55,8 @@ library Math {
 
     /**
     @notice log2 for a number that it in [1,2)
-    @dev function is from Kyber.
+    @dev function is from Kyber. Long modified the condition to be (_x >= one) && (_x < two)
+    to avoid the case where x = 2 may lead to incorrect result
      */
     function log2ForSmallNumber(uint256 _x) internal pure returns (uint256) {
         uint256 res = 0;
@@ -63,8 +64,8 @@ library Math {
         uint256 two = 2 * one;
         uint256 addition = one;
 
-        require((_x >= one) && (_x <= two));
-        require(PRECISION_BITS < 125);
+        require((_x >= one) && (_x < two),"INVALID_PARAM");
+        require(PRECISION_BITS < 125,"PRECISION_BITS_TOO_LARGE");
 
         for (uint256 i = PRECISION_BITS; i > 0; i--) {
             _x = (_x * _x) / one;
@@ -90,15 +91,15 @@ library Math {
             n = log2Int(_p, _q);
         }
 
-        require(!checkMultOverflow(_p, RONE));
-        require(!checkMultOverflow(n, RONE));
-        require(!checkMultOverflow(uint256(1) << n, _q));
+        require(n * RONE <= BIG_NUMBER,"INVALID_PARAM");
+        require(!checkMultOverflow(_p, RONE),"OVERFLOW");
+        require(!checkMultOverflow(n, RONE),"OVERFLOW");
+        require(!checkMultOverflow(uint256(1) << n, _q),"OVERFLOW");
 
         uint256 y = (_p * RONE) / (_q * (uint256(1) << n));
         uint256 log2Small = log2ForSmallNumber(y);
 
-        require(n * RONE <= BIG_NUMBER);
-        require(log2Small <= BIG_NUMBER);
+        assert(log2Small <= BIG_NUMBER);
 
         return n * RONE + log2Small;
     }
@@ -114,7 +115,7 @@ library Math {
 
         uint256 log2x = logBase2(p, q);
 
-        require(!checkMultOverflow(ln2Numerator, log2x));
+        require(!checkMultOverflow(ln2Numerator, log2x),"OVERFLOW");
 
         return (ln2Numerator * log2x) / ln2Denomerator;
     }

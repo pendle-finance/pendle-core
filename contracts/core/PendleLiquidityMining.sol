@@ -186,7 +186,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         // console.log("Setting allocation settings");
         uint256 _currentE = _currentEpoch();
         if (currentSettingId == 0) {
-            require(block.timestamp < startTime, "too late to set first allocation");
+            require(block.timestamp < startTime, "LATE_FIRST_ALLOCATION");
         }
         for (uint256 _epoch = lastEpochWithSettingId.add(1); _epoch <= _currentE; _epoch++) {
             // save the epochSettingId for the epochs before the current epoch
@@ -196,7 +196,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         lastEpochWithSettingId = _currentE;
         currentSettingId++;
         uint256 sumAllocationNominators;
-        require(_expiries.length == allocationNominators.length, "invalid array lengths");
+        require(_expiries.length == allocationNominators.length, "INVALID_ALLOCATION");
         // console.log("Setting allocation settings 3");
         for (uint256 _i = 0; _i < _expiries.length; _i++) {
             allocationSettings[currentSettingId][_expiries[_i]] = allocationNominators[_i];
@@ -205,7 +205,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         // console.log("Setting allocation settings 4");
         require(
             sumAllocationNominators == ALLOCATION_DENOMINATOR,
-            "allocations dont add up"
+            "INVALID_ALLOCATION"
         );
     }
 

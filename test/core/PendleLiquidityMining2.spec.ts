@@ -322,7 +322,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
         consts.HIGH_GAS_OVERRIDE
       )
     ).to.be.revertedWith(
-      "VM Exception while processing transaction: revert allocations dont add up"
+      "VM Exception while processing transaction: revert INVALID_ALLOCATION"
     );
   });
 
