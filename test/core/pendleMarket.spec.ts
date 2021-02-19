@@ -1,19 +1,19 @@
-import { assert, expect } from "chai";
-import { Contract, BigNumber as BN } from "ethers";
+import { expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
-
-import { pendleMarketFixture } from "./fixtures";
+import { BigNumber as BN, Contract } from "ethers";
 import {
-  consts,
-  tokens,
-  amountToWei,
-  getAContract,
-  evm_snapshot,
-  evm_revert,
   advanceTime,
+  amountToWei,
+  consts,
+  evm_revert,
+  evm_snapshot,
+  getAContract,
   Token,
+  tokens,
 } from "../helpers";
 import { AMMTest } from "./AmmFormula";
+import { pendleMarketFixture } from "./fixtures";
+
 const { waffle } = require("hardhat");
 const { deployContract, provider } = waffle;
 
@@ -237,14 +237,14 @@ describe("PendleMarket", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
     await bootstrapSampleMarket(amountToTokenize);
     await advanceTime(provider, consts.ONE_MONTH);
-    const totalSuply = await pendleMarket.totalSupply();
+    const totalSupply = await pendleMarket.totalSupply();
 
     await pendleRouter.removeMarketLiquidity(
       consts.FORGE_AAVE,
       consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
       testToken.address,
-      totalSuply.div(10),
+      totalSupply.div(10),
       amountToTokenize.div(10),
       amountToTokenize.div(10),
       consts.HIGH_GAS_OVERRIDE

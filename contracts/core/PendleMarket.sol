@@ -126,7 +126,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         IPendleData data = router.data();
         uint256 exitFee = data.exitFee();
         uint256 totalLp = totalSupply;
-        uint256 exitFees = Math.rmul(inLp, exitFee);
+        uint256 exitFeeLp = Math.rmul(inLp, exitFee);
         uint256 inLpAfterExitFee = inLp.sub(exitFee);
         uint256 ratio = Math.rdiv(inLpAfterExitFee, totalLp);
         require(ratio != 0, "Pendle: zero ratio");
@@ -153,7 +153,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         // Deal with lp last.
         _transferInLp(inLp);
-        _collectFees(exitFees);
+        _collectFees(exitFeeLp);
         _burnLp(inLpAfterExitFee);
     }
 
@@ -170,7 +170,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         TokenReserve storage outTokenReserve = reserves[outToken];
         uint256 exitFee = data.exitFee();
-        uint256 exitFees = Math.rmul(inLp, data.exitFee());
+        uint256 exitFeeLp = Math.rmul(inLp, exitFee);
         uint256 totalLp = totalSupply;
         uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
 
@@ -184,7 +184,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         _transferInLp(inLp);
         _collectFees(exitFee);
-        _burnLp(inLp.sub(exitFees));
+        _burnLp(inLp.sub(exitFeeLp));
         _transferOut(outToken, outAmountToken);
 
         return outAmountToken;
