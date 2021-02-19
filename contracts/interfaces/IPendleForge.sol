@@ -21,11 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 
-import "./IPendle.sol";
+import "./IPendleRouter.sol";
 
 interface IPendleForge {
+    /**
+     * @notice Emitted when the PendleRouter address has been updated.
+     * @param router The address of the new router contract.
+     **/
+    event RouterSet(address router);
+
     /**
      * @dev Emitted when the Forge has minted the OT and XYT tokens.
      * @param forgeId The forge ID
@@ -87,48 +93,19 @@ interface IPendleForge {
         address indexed receiver
     );
 
-    // TODO: We need some logic to only allow some kinds of expiry
-    // for each contractDuration
-    // For example: For each duration, only allow expiry at the start,
-    // 1/3rd and 2/3rd of the duration
     function newYieldContracts(address underlyingAsset, uint256 expiry)
         external
         returns (address ot, address xyt);
 
-    function redeemUnderlying(
-        address msgSender,
-        address underlyingAsset,
-        uint256 expiry,
-        uint256 amountToRedeem,
-        address to
-    ) external returns (uint256 redeemedAmount);
-
-    function tokenizeYield(
-        address msgSender,
-        address underlyingAsset,
-        uint256 expiry,
-        uint256 amountToTokenize,
-        address to
-    ) external returns (address ot, address xyt);
-
     function redeemAfterExpiry(
-        address msgSender,
+        address account,
         address underlyingAsset,
         uint256 expiry,
         address to
     ) external returns (uint256 redeemedAmount);
-
-    // TODO: to implement renew
-    // function renew(
-    //     ContractDurations oldContractDuration,
-    //     uint256 oldExpiry,
-    //     ContractDurations newContractDuration,
-    //     uint256 newExpiry,
-    //     address to
-    // ) external returns (uint256 redeemedAmount);
 
     function redeemDueInterests(
-        address msgSender,
+        address account,
         address underlyingAsset,
         uint256 expiry
     ) external returns (uint256 interests);
@@ -139,15 +116,38 @@ interface IPendleForge {
         address account
     ) external returns (uint256 interests);
 
+    function redeemUnderlying(
+        address account,
+        address underlyingAsset,
+        uint256 expiry,
+        uint256 amountToRedeem,
+        address to
+    ) external returns (uint256 redeemedAmount);
+
+    function tokenizeYield(
+        address underlyingAsset,
+        uint256 expiry,
+        uint256 amountToTokenize,
+        address to
+    ) external returns (address ot, address xyt);
+
     /**
-     * @notice Gets a reference to the Pendle core contract.
-     * @return Returns the core contract reference.
+     * @notice Sets the PendleRouter contract address.
+     * @param _router Address of the new router contract.
      **/
-    function core() external view returns (IPendle);
+    function setRouter(IPendleRouter _router) external;
+
+    /**
+     * @notice Gets a reference to the PendleRouter contract.
+     * @return Returns the router contract reference.
+     **/
+    function router() external view returns (IPendleRouter);
 
     /**
      * @notice Gets the bytes32 ID of the forge.
      * @return Returns the forge and protocol identifier.
      **/
     function forgeId() external view returns (bytes32);
+
+    function getYieldBearingToken(address underlyingAsset) external view returns (address);
 }

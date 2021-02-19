@@ -1,18 +1,18 @@
-import { Contract, Wallet, providers } from 'ethers'
-import DateUtils from '../../../build/artifacts/contracts/libraries/PendleLibrary.sol/DateUtils.json'
+import { Contract, providers, Wallet } from 'ethers';
+import ExpiryUtils from '../../../build/artifacts/contracts/mock/MockPendleLibrary.sol/MockPendleLibrary.json';
 
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;
 
-interface DateFixture {
-  date: Contract
+interface ExpiryUtilsFixture {
+  expiryUtils: Contract
 }
 
-export async function dateFixture(
-  [wallet]: Wallet[],
+export async function expiryUtilsFixture(
+  [alice]: Wallet[],
   provider: providers.Web3Provider
-): Promise<DateFixture> {
-  const date = await deployContract(wallet, DateUtils, [])
+): Promise<ExpiryUtilsFixture> {
+  const expiryUtils = await deployContract(alice, ExpiryUtils, [])
 
-  return { date }
+  return { expiryUtils }
 }

@@ -21,12 +21,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 
 import "./IPendleBaseToken.sol";
-import {Utils} from "../libraries/PendleLibrary.sol";
 
 interface IPendleYieldToken is IPendleBaseToken {
+    /**
+     * @notice Emitted when burning OT or XYT tokens.
+     * @param account The address performing the burn.
+     * @param amount The amount to be burned.
+     **/
+    event Burn(address indexed account, uint256 amount);
+
+    /**
+     * @notice Emitted when minting OT or XYT tokens.
+     * @param account The address performing the mint.
+     * @param amount The amount to be minted.
+     **/
+    event Mint(address indexed account, uint256 amount);
+
+    /**
+     * @notice Burns OT or XYT tokens from account, reducing the total supply.
+     * @param account The address performing the burn.
+     * @param amount The amount to be burned.
+     **/
+    function burn(address account, uint256 amount) external;
+
+    /**
+     * @notice Mints new OT or XYT tokens for account, increasing the total supply.
+     * @param account The address to send the minted tokens.
+     * @param amount The amount to be minted.
+     **/
+    function mint(address account, uint256 amount) external;
+
     /**
      * @notice Gets the forge address of the PendleForge contract for this yield token.
      * @return Retuns the forge address.

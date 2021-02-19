@@ -22,15 +22,17 @@
  */
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ExpiryUtils} from "../libraries/PendleLibrary.sol";
 
-contract TestToken is ERC20 {
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals
-    ) ERC20(_name, _symbol) {
-        _setupDecimals(_decimals);
-        _mint(msg.sender, 10**(21 + 24));
+contract MockPendleLibrary {
+    using ExpiryUtils for string;
+
+    function concat(
+        string memory _bt,
+        string memory _yt,
+        uint256 _expiry,
+        string memory _delimiter
+    ) public pure returns (string memory result) {
+        result = _bt.concat(_yt, _expiry, _delimiter);
     }
 }

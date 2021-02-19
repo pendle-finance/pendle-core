@@ -20,16 +20,10 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-pragma solidity ^0.7.0;
+pragma solidity 0.7.6;
 
 interface IAaveLendingPoolCore {
-    function getReserveATokenAddress(address _reserveUnderlyingToken)
-        external
-        view
-        returns (address);
+    function getReserveATokenAddress(address underlyingAsset) external view returns (address);
 
-    function getReserveNormalizedIncome(address _reserveUnderlyingToken)
-        external
-        view
-        returns (uint256);
+    function getReserveNormalizedIncome(address underlyingAsset) external view returns (uint256);
 }

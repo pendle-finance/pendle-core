@@ -7,11 +7,22 @@ const fs = require('fs');
 
 const EIP170 = 24576;
 const CONTRACTS = `${__dirname}/../build/artifacts/contracts`;
-const DOCS = `${__dirname}/../docs`;
-const LIST = `${__dirname}/contractBytecodeSizeList.json`;
-const REPORT = `${DOCS}/bytecodeSizeReport.json`;
 const READDIR = promisify(fs.readdir);
 const STAT = promisify(fs.stat);
+const LIST = [
+  'PendleRouter.sol',
+  'PendleAaveForge.sol',
+  'PendleData.sol',
+  'PendleMarket.sol',
+  'PendleMarketFactory.sol',
+  'PendleGovernance.sol',
+  'PendleTreasury.sol',
+  'PendleLiquidityMining.sol',
+  'PendleLpHolder.sol',
+  'PendleFutureYieldToken.sol',
+  'PendleOwnershipToken.sol',
+  'PENDLE.sol',
+];
 
 async function generateReport() {
   let bytecodeSize;
@@ -50,62 +61,34 @@ async function getFiles(dir) {
   return files.reduce((a, f) => a.concat(f), []);
 }
 
-async function readReport() {
-  return JSON.parse(fs.readFileSync(LIST, 'utf8'));
-}
-
-async function writeReport(content) {
-  if (!fs.existsSync(DOCS)) {
-    fs.mkdirSync(DOCS, {recursive: true});
-  }
-
-  fs.writeFileSync(REPORT, JSON.stringify(content, null, '\t'), 'utf8');
-}
-
 async function main() {
-  const compareReport = await readReport();
-  const newReport = await generateReport();
-  let currentSize;
-  let newSize;
-  let diff;
-  let diffDict = {};
+  const report = await generateReport();
+  let size;
   let exceeds;
+  let diffDict = {};
+  let result = {};
 
-  await writeReport(newReport);
-
-  for (let contract in newReport) {
-    if (contract in compareReport) {
-      currentSize = compareReport[contract];
-      newSize = newReport[contract];
-      diff = newSize - currentSize;
+  for (let contract in report) {
+    if (LIST.includes(contract)) {
+      size = report[contract];
 
       diffDict[contract] = {
-        current: currentSize,
-        new: newSize,
-        diff: diff,
-        exceeds: diff > EIP170,
+        size: size,
+        exceeds_EIP170: size > EIP170,
       };
     }
   }
 
-  for (let contract in compareReport) {
-    if (contract in compareReport && !(contract in diffDict)) {
-      currentSize = compareReport[contract];
-      newSize = newReport[contract];
-      diff = newSize - currentSize;
-      if (diff != 0) {
-        diffDict[contract] = {
-          current: currentSize,
-          new: newSize,
-          diff: diff,
-          exceeds: diff > EIP170,
-        };
-      }
-    }
-  }
+  Object.keys(diffDict)
+    .sort((x, y) => {
+      return diffDict[y].size - diffDict[x].size;
+    })
+    .forEach((key) => {
+      result[key] = diffDict[key];
+    });
 
   console.log('CONTRACT BYTECODE SIZE CHANGES');
-  console.table(diffDict);
+  console.table(result);
 }
 
 main();

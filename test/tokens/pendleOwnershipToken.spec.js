@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 const {BN, expectEvent, expectRevert} = require('@openzeppelin/test-helpers');
 const {expect} = require('chai');
-const {constants, errMsg} = require('../helpers');
+const {consts, errMsg} = require('../helpers');
 
 const {
   shouldBehaveLikeERC20,
@@ -9,7 +9,7 @@ const {
   shouldBehaveLikeERC20Approve,
 } = require('./ERC20.behavior');
 
-const MockPendleOwnerShipToke = artifacts.require(
+const MockPendleOwnerShipToken = artifacts.require(
   '../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json'
 );
 const TestToken = artifacts.require('../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json');
@@ -22,14 +22,14 @@ contract('PendleOwnershipToken', function (accounts) {
   const initialSupply = new BN(100);
 
   beforeEach(async function () {
-    this.token = await MockPendleOwnerShipToke.new(
-      constants.ZERO_ADDRESS,
-      constants.ZERO_ADDRESS,
+    this.token = await MockPendleOwnerShipToken.new(
+      consts.ZERO_ADDRESS,
+      consts.ZERO_ADDRESS,
       name,
       symbol,
       6,
-      constants.RIGHT_NOW,
-      constants.SIX_MONTH_FROM_NOW,
+      consts.T0,
+      consts.T0.add(consts.SIX_MONTH),
       initialHolder,
       initialSupply
     );
@@ -124,7 +124,7 @@ contract('PendleOwnershipToken', function (accounts) {
 
     describe('when the spender is the zero address', function () {
       const amount = initialSupply;
-      const spender = constants.ZERO_ADDRESS;
+      const spender = consts.ZERO_ADDRESS;
 
       it('reverts', async function () {
         await expectRevert(
@@ -209,7 +209,7 @@ contract('PendleOwnershipToken', function (accounts) {
     });
 
     describe('when the spender is the zero address', function () {
-      const spender = constants.ZERO_ADDRESS;
+      const spender = consts.ZERO_ADDRESS;
 
       it('reverts', async function () {
         await expectRevert(
@@ -223,7 +223,7 @@ contract('PendleOwnershipToken', function (accounts) {
   describe('_mint', function () {
     const amount = new BN(50);
     it('rejects a null account', async function () {
-      await expectRevert(this.token.mint(constants.ZERO_ADDRESS, amount), errMsg.MINT_TO_ZERO_ADDR);
+      await expectRevert(this.token.mint(consts.ZERO_ADDRESS, amount), errMsg.MINT_TO_ZERO_ADDR);
     });
 
     describe('for a non zero account', function () {
@@ -243,7 +243,7 @@ contract('PendleOwnershipToken', function (accounts) {
 
       it('emits Transfer event', async function () {
         const event = expectEvent.inLogs(this.logs, 'Transfer', {
-          from: constants.ZERO_ADDRESS,
+          from: consts.ZERO_ADDRESS,
           to: recipient,
         });
 
@@ -254,7 +254,7 @@ contract('PendleOwnershipToken', function (accounts) {
 
   describe('_burn', function () {
     it('rejects a null account', async function () {
-      await expectRevert(this.token.burn(constants.ZERO_ADDRESS, new BN(1)), errMsg.BURN_TO_ZERO_ADDR);
+      await expectRevert(this.token.burn(consts.ZERO_ADDRESS, new BN(1)), errMsg.BURN_TO_ZERO_ADDR);
     });
 
     describe('for a non zero account', function () {
@@ -282,7 +282,7 @@ contract('PendleOwnershipToken', function (accounts) {
           it('emits Transfer event', async function () {
             const event = expectEvent.inLogs(this.logs, 'Transfer', {
               from: initialHolder,
-              to: constants.ZERO_ADDRESS,
+              to: consts.ZERO_ADDRESS,
             });
 
             expect(event.args.value).to.be.bignumber.equal(amount);
@@ -303,7 +303,7 @@ contract('PendleOwnershipToken', function (accounts) {
     describe('when the sender is the zero address', function () {
       it('reverts', async function () {
         await expectRevert(
-          this.token.transferInternal(constants.ZERO_ADDRESS, recipient, initialSupply),
+          this.token.transferInternal(consts.ZERO_ADDRESS, recipient, initialSupply),
           errMsg.SENDER_ZERO_ADDR
         );
       });
@@ -318,7 +318,7 @@ contract('PendleOwnershipToken', function (accounts) {
     describe('when the owner is the zero address', function () {
       it('reverts', async function () {
         await expectRevert(
-          this.token.approveInternal(constants.ZERO_ADDRESS, recipient, initialSupply),
+          this.token.approveInternal(consts.ZERO_ADDRESS, recipient, initialSupply),
           errMsg.OWNER_ZERO_ADDR
         );
       });

@@ -4,12 +4,18 @@ dotenv.config();
 import { HardhatUserConfig } from "hardhat/types";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
-import "solidity-coverage";
-import "hardhat-typechain";
 import "@nomiclabs/hardhat-truffle5";
+import "@tenderly/hardhat-tenderly";
+import "hardhat-gas-reporter";
+import "hardhat-typechain";
+import "solidity-coverage";
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
+  gasReporter: {
+    currency: 'USD',
+    gasPrice: 100
+  },
   paths: {
     sources: './contracts',
     tests: './test/core/',
@@ -21,8 +27,8 @@ const config: HardhatUserConfig = {
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
         // url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-        blockNumber: 11647664
-
+        // url: 'http://localhost:8545',
+        blockNumber: 11732924
       },
       accounts: [
         // 5 accounts with 10^14 ETH each
@@ -57,6 +63,7 @@ const config: HardhatUserConfig = {
       blockGasLimit: 40000000,
       gas: 40000000,
       gasPrice: 'auto',
+      loggingEnabled: false,
     },
     development: {
       url: 'http://127.0.0.1:8545',
@@ -73,7 +80,7 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.7.4',
+        version: '0.7.6',
         settings: {
           optimizer: {
             enabled: true,
@@ -86,6 +93,10 @@ const config: HardhatUserConfig = {
   mocha: {
     timeout: 500000,
   },
+  tenderly: {
+		username: "ayobuenavista",
+		project: "projects"
+	}
 };
 
 export default config;
