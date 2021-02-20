@@ -110,6 +110,8 @@ interface IPendleMarket is IPendleBaseToken {
         uint256 maxPrice
     ) external returns (uint256 inAmount, uint256 spotPriceAfter);
 
+    function claimLpInterests(address account) external returns (uint256 interests);
+
     function calcExactIn(
         TokenReserve memory inTokenReserve,
         TokenReserve memory outTokenReserve,

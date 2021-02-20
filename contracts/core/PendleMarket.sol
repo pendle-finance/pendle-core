@@ -366,6 +366,10 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         return (inAmount, spotPriceAfter);
     }
 
+    function claimLpInterests(address account) override isBootstrapped onlyRouter public returns (uint256 interests) {
+        interests = _settleLpInterests(account);
+    }
+
     function getReserves()
         external
         view
@@ -580,20 +584,20 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
     // sends out any due interests to msg.sender if he's an LP holder
     // this should be called before any functions that change someone's LPs
-    function _settleLpInterests(address account) internal {
+    function _settleLpInterests(address account) internal returns (uint256 dueInterests) {
         _updateGlobalIncomeIndex();
         if (lastGlobalIncomeIndex[account] == 0) {
             lastGlobalIncomeIndex[account] = globalIncomeIndex;
-            return;
+            return 0;
         }
 
-        uint256 dueInterests =
+        dueInterests =
             balanceOf[account].mul(globalIncomeIndex - lastGlobalIncomeIndex[account]).div(
                 GLOBAL_INCOME_INDEX_MULTIPLIER
             );
 
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
-        if (dueInterests == 0) return;
+        if (dueInterests == 0) return 0;
         IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).safeTransfer(account, dueInterests);
     }
 
