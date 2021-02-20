@@ -59,7 +59,6 @@ describe("pendleLpFormula", async () => {
     await pendleRouter
       .connect(alice)
       .bootstrapMarket(
-        consts.FORGE_AAVE,
         consts.MARKET_FACTORY_AAVE,
         pendleXyt.address,
         testToken.address,
@@ -102,11 +101,11 @@ describe("pendleLpFormula", async () => {
     if (tokenAddress == testToken.address) {
       await pendleRouter
         .connect(user)
-        .addMarketLiquidityToken(
-          consts.FORGE_AAVE,
+        .addMarketLiquiditySingle(
           consts.MARKET_FACTORY_AAVE,
           pendleXyt.address,
           testToken.address,
+          false,
           amount,
           BN.from(0)
         );
@@ -114,11 +113,11 @@ describe("pendleLpFormula", async () => {
       // if (tokenAddress == pendleXyt.address) {
       await pendleRouter
         .connect(user)
-        .addMarketLiquidityXyt(
-          consts.FORGE_AAVE,
+        .addMarketLiquiditySingle(
           consts.MARKET_FACTORY_AAVE,
           pendleXyt.address,
           testToken.address,
+          true,
           amount,
           BN.from(0)
         );
@@ -136,11 +135,11 @@ describe("pendleLpFormula", async () => {
       initialBalance = await testToken.balanceOf(user.address);
       await pendleRouter
         .connect(user)
-        .removeMarketLiquidityToken(
-          consts.FORGE_AAVE,
+        .removeMarketLiquiditySingle(
           consts.MARKET_FACTORY_AAVE,
           pendleXyt.address,
           testToken.address,
+          false,
           amount,
           BN.from(0)
         );
@@ -150,11 +149,11 @@ describe("pendleLpFormula", async () => {
       initialBalance = await pendleXyt.balanceOf(user.address);
       await pendleRouter
         .connect(user)
-        .removeMarketLiquidityXyt(
-          consts.FORGE_AAVE,
+        .removeMarketLiquiditySingle(
           consts.MARKET_FACTORY_AAVE,
           pendleXyt.address,
           testToken.address,
+          true,
           amount,
           BN.from(0)
         );
@@ -370,8 +369,7 @@ describe("pendleLpFormula", async () => {
 
     await pendleRouter
       .connect(bob)
-      .addMarketLiquidity(
-        consts.FORGE_AAVE,
+      .addMarketLiquidityAll(
         consts.MARKET_FACTORY_AAVE,
         pendleXyt.address,
         testToken.address,
@@ -422,8 +420,7 @@ describe("pendleLpFormula", async () => {
     let initialXytBalance: BN = await pendleXyt.balanceOf(alice.address);
     let initialTokenBalance: BN = await testToken.balanceOf(alice.address);
 
-    await pendleRouter.removeMarketLiquidity(
-      consts.FORGE_AAVE,
+    await pendleRouter.removeMarketLiquidityAll(
       consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
       testToken.address,
