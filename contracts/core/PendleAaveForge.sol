@@ -124,7 +124,7 @@ contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
         IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         redeemedAmount = tokens.ot.balanceOf(_account);
-        
+
         uint256 currentNormalizedIncome =
             aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
 
