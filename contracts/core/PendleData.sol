@@ -69,12 +69,12 @@ contract PendleData is IPendleData, Permissions {
     address[] private allMarkets;
 
     constructor(address _governance, address _treasury) Permissions(_governance) {
-        require(_treasury != address(0), "zero address");
+        require(_treasury != address(0), "ZERO_ADDRESS");
         treasury = _treasury;
     }
 
     modifier onlyRouter() {
-        require(msg.sender == address(router), "only router");
+        require(msg.sender == address(router), "ONLY_ROUTER");
         _;
     }
 
@@ -89,15 +89,15 @@ contract PendleData is IPendleData, Permissions {
     }
 
     function initialize(IPendleRouter _router) external {
-        require(msg.sender == initializer, "forbidden");
-        require(address(_router) != address(0), "zero address");
+        require(msg.sender == initializer, "FORBIDDEN");
+        require(address(_router) != address(0), "ZERO_ADDRESS");
 
         initializer = address(0);
         router = _router;
     }
 
     function setRouter(IPendleRouter _router) external override initialized onlyGovernance {
-        require(address(_router) != address(0), "zero address");
+        require(address(_router) != address(0), "ZERO_ADDRESS");
 
         router = _router;
 
@@ -105,7 +105,7 @@ contract PendleData is IPendleData, Permissions {
     }
 
     function setTreasury(address _treasury) external override initialized onlyGovernance {
-        require(_treasury != address(0), "zero address");
+        require(_treasury != address(0), "ZERO_ADDRESS");
 
         treasury = _treasury;
         emit TreasurySet(_treasury);

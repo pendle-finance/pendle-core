@@ -111,7 +111,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     mapping(address => UserExpiries) private userExpiries;
 
     modifier isFunded() {
-        require(funded, "not funded");
+        require(funded, "NOT_FUNDED");
         _;
     }
 
@@ -129,7 +129,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         uint256 _numberOfEpochs,
         uint256 _vestingEpochs
     ) Permissions(_governance) {
-        require(_startTime > block.timestamp, "startTime is over");
+        require(_startTime > block.timestamp, "START_TIME_OVER");
         //TODO: add more sanity checks:
         //  - ...
         pendleAddress = _pendleAddress;
@@ -159,8 +159,8 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     }
 
     function fund() public {
-        require(!funded, "already funded");
-        require(currentSettingId > 0, "must set allocationSetting");
+        require(!funded, "ALREADY_FUNDED");
+        require(currentSettingId > 0, "NO_ALLOC_SETTING");
         funded = true;
         IERC20(pendleAddress).safeTransferFrom(
             msg.sender,
@@ -215,14 +215,14 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         returns (address newLpHoldingContract)
     {
         uint256 _epoch = _currentEpoch();
-        require(_epoch > 0, "not started");
-        require(_epoch <= numberOfEpochs, "end of incentives");
+        require(_epoch > 0, "NOT_STARTED");
+        require(_epoch <= numberOfEpochs, "INCENTIVES_PERIOD_OVER");
         _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, _epoch);
 
         address xyt = address(pendleData.xytTokens(forgeId, underlyingAsset, expiry));
         address marketAddress = pendleData.getMarket(forgeId, marketFactoryId, xyt, baseToken);
-        require(xyt != address(0), "xyt not found");
-        require(marketAddress != address(0), "market not found");
+        require(xyt != address(0), "XYT_NOT_FOUND");
+        require(marketAddress != address(0), "MARKET_NOT_FOUND");
 
         if (!hasExpiry[expiry]) {
             newLpHoldingContract = _addNewExpiry(expiry, xyt, marketAddress);
@@ -241,9 +241,9 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
     function withdraw(uint256 expiry, uint256 amount) public override nonReentrant isFunded {
         uint256 _epoch = _currentEpoch();
-        require(_epoch > 0, "not started");
+        require(_epoch > 0, "NOT_STARTED");
         /* console.log("Balance, amount = ", balances[msg.sender][expiry], amount); */
-        require(balances[msg.sender][expiry] >= amount, "insufficient balance");
+        require(balances[msg.sender][expiry] >= amount, "INSUFFICIENT_BALANCE");
         _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, _epoch);
 
         // _pushLpToken must happens before currentTotalStakeForExpiry and balances are updated
@@ -255,7 +255,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
     function claimRewards() public override nonReentrant returns (uint256[] memory rewards) {
         uint256 _epoch = _currentEpoch(); //!!! what if currentEpoch > final epoch?
-        require(_epoch > 0, "not started");
+        require(_epoch > 0, "NOT_STARTED");
 
         rewards = new uint256[](vestingEpochs);
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
@@ -553,7 +553,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
     // this function should be called whenver the total amount of LP_expiry changes
     function _updateGlobalIncomeIndex(uint256 expiry) internal {
-        require(hasExpiry[expiry], "invalid expiry");
+        require(hasExpiry[expiry], "INVALID_EXPIRY");
         address xyt = address(pendleData.xytTokens(forgeId, underlyingAsset, expiry));
 
         uint256 currentUnderlyingYieldTokenBalance =
