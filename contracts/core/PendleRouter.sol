@@ -257,10 +257,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         _transferIn(asset, _exactInAsset);
 
         asset = _isETH(_token) ? address(weth) : _token;
-        IPendleMarket market =
-            IPendleMarket(
-                data.getMarket(_marketFactoryId, _xyt, asset)
-            );
+        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, asset));
         require(address(market) != address(0), "Pendle: market not found");
 
         asset = _forXyt ? _xyt : asset;
@@ -299,8 +296,7 @@ contract PendleRouter is IPendleRouter, Permissions {
     ) public override {
         address asset = _isETH(_token) ? address(weth) : _token;
 
-        IPendleMarket market =
-            IPendleMarket(data.getMarket(_marketFactoryId, _xyt, asset));
+        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, asset));
         require(address(market) != address(0), "Pendle: market not found");
 
         _transferIn(address(market), _exactInLp);

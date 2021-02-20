@@ -46,10 +46,7 @@ interface IPendleMarketFactory {
      * @param token Token address of an ERC20 token as quote asset.
      * @return market Returns the address of the newly created market.
      **/
-    function createMarket(
-        address xyt,
-        address token
-    ) external returns (address market);
+    function createMarket(address xyt, address token) external returns (address market);
 
     /**
      * @notice Gets a reference to the PendleRouter contract.

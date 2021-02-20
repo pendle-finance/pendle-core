@@ -21,7 +21,6 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-
 library Factory {
     function createContract(
         bytes memory bytecode,
