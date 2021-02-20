@@ -79,7 +79,7 @@ contract PendleData is IPendleData, Permissions {
     }
 
     modifier onlyForge(bytes32 _forgeId) {
-        require(getForgeAddress[_forgeId] == msg.sender, "only forge");
+        require(getForgeAddress[_forgeId] == msg.sender, "ONLY_FORGE");
         _;
     }
 

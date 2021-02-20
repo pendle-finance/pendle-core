@@ -55,7 +55,7 @@ abstract contract Permissions {
      */
     function withdrawEther(uint256 amount, address payable sendTo) external onlyGovernance {
         (bool success, ) = sendTo.call{value: amount}("");
-        require(success, "withdraw failed");
+        require(success, "WITHDRAW_FAILED");
         emit EtherWithdraw(amount, sendTo);
     }
 
