@@ -1,8 +1,8 @@
-import { Contract, Wallet } from 'ethers'
-import LendingPoolCore from "../../../build/artifacts/contracts/interfaces/IAaveLendingPoolCore.sol/IAaveLendingPoolCore.json";
+import { Contract, Wallet } from 'ethers';
 import LendingPool from "../../../build/artifacts/contracts/interfaces/IAaveLendingPool.sol/IAaveLendingPool.json";
+import LendingPoolCore from "../../../build/artifacts/contracts/interfaces/IAaveLendingPoolCore.sol/IAaveLendingPoolCore.json";
+import { consts } from "../../helpers/Constants";
 
-import { consts } from "../../helpers/Constants"
 
 export interface AaveFixture {
   lendingPoolCore: Contract

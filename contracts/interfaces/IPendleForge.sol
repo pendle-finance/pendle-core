@@ -27,12 +27,6 @@ import "./IPendleRouter.sol";
 
 interface IPendleForge {
     /**
-     * @notice Emitted when the PendleRouter address has been updated.
-     * @param router The address of the new router contract.
-     **/
-    event RouterSet(address router);
-
-    /**
      * @dev Emitted when the Forge has minted the OT and XYT tokens.
      * @param underlyingYieldToken The address of the underlying yield token.
      * @param amount The amount to be minted.
@@ -115,12 +109,6 @@ interface IPendleForge {
         uint256 amountToTokenize,
         address to
     ) external returns (address ot, address xyt);
-
-    /**
-     * @notice Sets the PendleRouter contract address.
-     * @param _router Address of the new router contract.
-     **/
-    function setRouter(IPendleRouter _router) external;
 
     /**
      * @notice Gets a reference to the PendleRouter contract.

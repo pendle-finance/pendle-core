@@ -125,7 +125,6 @@ contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         redeemedAmount = tokens.ot.balanceOf(_account);
 
-        aToken.transfer(_to, redeemedAmount);
         uint256 currentNormalizedIncome =
             aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
 
@@ -137,7 +136,7 @@ contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
                 .mul(redeemedAmount)
                 .div(lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry])
                 .sub(redeemedAmount);
-        aToken.transfer(_to, interestsAfterExpiry);
+        aToken.transfer(_to, interestsAfterExpiry.add(redeemedAmount));
 
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
         tokens.ot.burn(_account, redeemedAmount);
@@ -205,13 +204,6 @@ contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
 
         emit MintYieldToken(_underlyingAsset, _amountToTokenize, _expiry);
         return (address(tokens.ot), address(tokens.xyt));
-    }
-
-    function setRouter(IPendleRouter _router) external override onlyGovernance {
-        require(address(_router) != address(0), "Pendle: zero address");
-
-        router = _router;
-        emit RouterSet(address(_router));
     }
 
     function getYieldBearingToken(address _underlyingAsset)
