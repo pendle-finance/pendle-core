@@ -28,22 +28,10 @@ import "./IPendleYieldToken.sol";
 
 interface IPendleData {
     /**
-     * @notice Emitted when the PendleRouter address has been updated.
-     * @param router The address of the new router contract.
-     **/
-    event RouterSet(address router);
-
-    /**
      * @notice Emitted when Pendle and PendleFactory addresses have been updated.
      * @param treasury The address of the new treasury contract.
      **/
     event TreasurySet(address treasury);
-
-    /**
-     * @notice Sets the PendleRouter contract address.
-     * @param _router Address of the new router contract.
-     **/
-    function setRouter(IPendleRouter _router) external;
 
     /**
      * @notice Sets the PendleTreasury contract addresses.
@@ -125,14 +113,18 @@ interface IPendleData {
      **/
     function getForgeAddress(bytes32 forgeId) external view returns (address forgeAddress);
 
-    function isRelatedForgeXYT(bytes32 forgeId, address xyt) external view returns (bool);
-
     /**
      * @notice Checks if an XYT token is valid.
-     * @param xyt Address of the XYT toke.
+     * @param forgeAddress The address of the added forge.
+     * @param underlyingAsset Token address of the underlying asset.
+     * @param expiry Yield contract expiry in epoch time.
      * @return True if valid, false otherwise.
      **/
-    function isValidXYT(address xyt) external view returns (bool);
+    function isValidXYT(
+        address forgeAddress,
+        address underlyingAsset,
+        uint256 expiry
+    ) external view returns (bool);
 
     /**
      * @notice Gets a reference to a specific OT.
@@ -171,37 +163,24 @@ interface IPendleData {
     function isMarket(address _addr) external view returns (bool result);
 
     function addMarket(
-        bytes32 forgeId,
         bytes32 marketFactoryId,
         address xyt,
         address token,
         address market
     ) external;
 
-    function purgeMarketsEffectiveLiquidity(
-        address xyt,
-        address token,
-        address[] memory markets
-    ) external returns (uint256[] memory effectiveLiquidity);
-
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
 
-    function sortMarkets(
-        address[] calldata xyts,
-        address[] calldata tokens,
-        uint256 lengthLimit
-    ) external;
-
-    function sortMarketsWithPurge(
-        address[] calldata xyts,
-        address[] calldata tokens,
-        uint256 lengthLimit
+    function updateMarketInfo(
+        address xyt,
+        address token,
+        address marketFactory
     ) external;
 
     function updateMarketInfo(
-        address _xyt,
-        address _token,
-        address _market
+        address xyt,
+        address token,
+        bytes32 marketFactoryId
     ) external;
 
     /**
@@ -218,32 +197,19 @@ interface IPendleData {
      **/
     function getAllMarkets() external view returns (address[] calldata);
 
-    function getBestMarkets(address source, address destination)
-        external
-        view
-        returns (address[] memory bestMarkets);
-
-    function getBestMarketsWithLimit(
-        address source,
-        address destination,
-        uint256 limit
-    ) external view returns (address[] memory bestMarkets);
-
-    function getEffectiveLiquidityForMarkets(
-        address _xyt,
-        address _token,
-        address[] memory _markets
-    ) external view returns (uint256[] memory effectiveLiquidity);
+    function getEffectiveLiquidityForMarket(
+        address xyt,
+        address token,
+        bytes32 marketFactoryId
+    ) external view returns (uint256 effectiveLiquidity);
 
     /**
      * @notice Gets a market given a future yield token and an ERC20 token.
-     * @param forgeId Forge and protocol identifier.
      * @param xyt Token address of the future yield token as base asset.
      * @param token Token address of an ERC20 token as quote asset.
      * @return market Returns the market address.
      **/
     function getMarket(
-        bytes32 forgeId,
         bytes32 marketFactoryId,
         address xyt,
         address token
@@ -269,10 +235,16 @@ interface IPendleData {
         view
         returns (address marketFactoryAddress);
 
+    function getMarketFromKey(
+        address xyt,
+        address token,
+        bytes32 marketFactoryId
+    ) external view returns (address market);
+
     function getMarketInfo(
-        address market,
-        address source,
-        address destination
+        address xyt,
+        address token,
+        bytes32 marketFactoryId
     )
         external
         view
@@ -281,12 +253,6 @@ interface IPendleData {
             uint256 tokenWeight,
             uint256 liquidity
         );
-
-    function getMarketsWithLimit(
-        address source,
-        address destination,
-        uint256 limit
-    ) external view returns (address[] memory result);
 
     function swapFee() external view returns (uint256);
 }

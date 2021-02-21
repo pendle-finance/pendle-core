@@ -206,13 +206,6 @@ contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
         return (address(tokens.ot), address(tokens.xyt));
     }
 
-    function setRouter(IPendleRouter _router) external override onlyGovernance {
-        require(address(_router) != address(0), "Pendle: zero address");
-
-        router = _router;
-        emit RouterSet(address(_router));
-    }
-
     function getYieldBearingToken(address _underlyingAsset)
         public
         view

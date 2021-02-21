@@ -47,7 +47,6 @@ export async function pendleMarketFixture(
   await pendleRouter.addMarketFactory(consts.MARKET_FACTORY_AAVE, pendleMarketFactory.address);
 
   await pendleRouter.createMarket(
-    consts.FORGE_AAVE,
     consts.MARKET_FACTORY_AAVE,
     pendleFutureYieldToken.address,
     testToken.address,
@@ -55,7 +54,6 @@ export async function pendleMarketFixture(
   );
 
   const pendleMarketAddress = await pendleData.getMarket(
-    consts.FORGE_AAVE,
     consts.MARKET_FACTORY_AAVE,
     pendleFutureYieldToken.address,
     testToken.address

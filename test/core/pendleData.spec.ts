@@ -58,7 +58,6 @@ describe("PendleData", async () => {
   it("getAllMarkets", async () => {
     let filter = pendleMarketFactory.filters.MarketCreated();
     let tx = await pendleRouter.createMarket(
-      consts.FORGE_AAVE,
       consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
       tokenUSDT.address,
@@ -71,12 +70,6 @@ describe("PendleData", async () => {
     });
     let allMarkets = await pendleData.getAllMarkets();
     expect(allMarkets).to.have.members(expectedMarkets);
-  });
-
-  it("should be able to setRouter", async () => {
-    await expect(pendleData.setRouter(pendleRouter.address))
-      .to.emit(pendleData, "RouterSet")
-      .withArgs(pendleRouter.address);
   });
 
   it("Should be able to setTreasury", async () => {

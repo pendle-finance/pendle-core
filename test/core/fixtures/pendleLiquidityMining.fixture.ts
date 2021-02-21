@@ -68,7 +68,6 @@ export async function pendleLiquidityMiningFixture(
   const amountToTokenize = amountToWei(tokens.USDT, BN.from(100));
 
   await pendleRouter.bootstrapMarket(
-    consts.FORGE_AAVE,
     consts.MARKET_FACTORY_AAVE,
     pendleXyt.address,
     testToken.address,
