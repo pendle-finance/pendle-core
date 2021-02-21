@@ -20,7 +20,7 @@ describe("pendleMarketFactory", async () => {
     globalSnapshotId = await evm_snapshot();
 
     const fixture = await loadFixture(pendleCoreFixture);
-    pendleMarketFactory = fixture.pendleMarketFactory;
+    pendleMarketFactory = fixture.pendleAMarketFactory;
     pendleRouter = fixture.pendleRouter;
     snapshotId = await evm_snapshot();
   });
@@ -32,11 +32,5 @@ describe("pendleMarketFactory", async () => {
   beforeEach(async () => {
     await evm_revert(snapshotId);
     snapshotId = await evm_snapshot();
-  });
-
-  it("should be able to setRouter", async () => {
-    await expect(pendleMarketFactory.setRouter(pendleRouter.address))
-      .to.emit(pendleMarketFactory, "RouterSet")
-      .withArgs(pendleRouter.address);
   });
 });

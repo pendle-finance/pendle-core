@@ -26,7 +26,6 @@ describe("PendleRouter", async () => {
 
   let pendleRouter: Contract;
   let pendleTreasury: Contract;
-  let pendleMarketFactory: Contract;
   let pendleData: Contract;
   let pendleAOt: Contract;
   let pendleAXyt: Contract;
@@ -49,7 +48,6 @@ describe("PendleRouter", async () => {
     const fixture = await loadFixture(pendleFixture);
     pendleRouter = fixture.core.pendleRouter;
     pendleTreasury = fixture.core.pendleTreasury;
-    pendleMarketFactory = fixture.core.pendleMarketFactory;
     pendleData = fixture.core.pendleData;
     pendleAOt = fixture.aForge.pendleOwnershipToken;
     pendleCOt = fixture.cForge.pendleOwnershipToken;

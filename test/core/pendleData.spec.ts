@@ -27,7 +27,7 @@ describe("PendleData", async () => {
     pendleRouter = fixture.core.pendleRouter;
     pendleTreasury = fixture.core.pendleTreasury;
     pendleData = fixture.core.pendleData;
-    pendleMarketFactory = fixture.core.pendleMarketFactory;
+    pendleMarketFactory = fixture.core.pendleAMarketFactory;
     pendleXyt = fixture.aForge.pendleFutureYieldAToken;
     tokenUSDT = tokens.USDT;
     snapshotId = await evm_snapshot();
@@ -58,8 +58,7 @@ describe("PendleData", async () => {
   it("getAllMarkets", async () => {
     let filter = pendleMarketFactory.filters.MarketCreated();
     let tx = await pendleRouter.createMarket(
-      consts.FORGE_AAVE,
-      consts.MARKET_FACTORY,
+      consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
       tokenUSDT.address,
       consts.HIGH_GAS_OVERRIDE
@@ -71,12 +70,6 @@ describe("PendleData", async () => {
     });
     let allMarkets = await pendleData.getAllMarkets();
     expect(allMarkets).to.have.members(expectedMarkets);
-  });
-
-  it("should be able to setRouter", async () => {
-    await expect(pendleData.setRouter(pendleRouter.address))
-      .to.emit(pendleData, "RouterSet")
-      .withArgs(pendleRouter.address);
   });
 
   it("Should be able to setTreasury", async () => {

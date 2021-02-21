@@ -147,7 +147,6 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
         redeemedAmount = tokens.ot.balanceOf(_msgSender);
 
         uint256 cTokensToRedeem = redeemedAmount.mul(cToken.exchangeRateCurrent()).div(expScale);
-        cToken.transfer(_to, cTokensToRedeem);
         uint256 currentIncome =
             cToken.balanceOfUnderlying(address(this)).sub(
                 lastUnderlyingBeforeExpiry[_underlyingAsset][_expiry]
@@ -160,9 +159,9 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
                 .mul(redeemedAmount)
                 .div(lastIncomeBeforeExpiry[_underlyingAsset][_expiry])
                 .sub(redeemedAmount);
-        cToken.transfer(_to, interestsAfterExpiry);
+        cToken.transfer(_to, interestsAfterExpiry.add(cTokensToRedeem));
 
-        //_settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
         tokens.ot.burn(_msgSender, redeemedAmount);
 
         emit RedeemYieldToken(_underlyingAsset, redeemedAmount, _expiry);
@@ -212,13 +211,6 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
 
         emit MintYieldToken(_underlyingAsset, _amountToTokenize, _expiry);
         return (address(tokens.ot), address(tokens.xyt));
-    }
-
-    function setRouter(IPendleRouter _router) external override onlyGovernance {
-        require(address(_router) != address(0), "Pendle: zero address");
-
-        router = _router;
-        emit RouterSet(address(_router));
     }
 
     function getYieldBearingToken(address _underlyingAsset)

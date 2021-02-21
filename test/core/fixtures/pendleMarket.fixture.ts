@@ -31,7 +31,7 @@ export async function pendleMarketFixture(
   const aForge = await pendleAaveForgeFixture(alice, provider, core, governance);
   const cForge = await pendleCompoundForgeFixture(alice, provider, core, governance);
   const aave = await aaveFixture(alice);
-  const { pendleRouter, pendleMarketFactory, pendleData } = core;
+  const { pendleRouter, pendleAMarketFactory, pendleCMarketFactory, pendleData } = core;
   const { pendleAaveForge, pendleFutureYieldAToken } = aForge;
   const { pendleCompoundForge, pendleFutureYieldCToken } = cForge;
   const token = tokens.USDT
@@ -49,19 +49,19 @@ export async function pendleMarketFixture(
     await testToken.transfer(person.address, totalSupply.div(4))
   }
 
-  await pendleRouter.addMarketFactory(consts.MARKET_FACTORY, pendleMarketFactory.address);
+  await pendleRouter.addMarketFactory(consts.MARKET_FACTORY_AAVE, pendleAMarketFactory.address);
+  await pendleRouter.addMarketFactory(consts.MARKET_FACTORY_COMPOUND, pendleCMarketFactory.address);
+
 
   await pendleRouter.createMarket(
-    consts.FORGE_AAVE,
-    consts.MARKET_FACTORY,
+    consts.MARKET_FACTORY_AAVE,
     pendleFutureYieldAToken.address,
     testToken.address,
     consts.HIGH_GAS_OVERRIDE
   );
 
   await pendleRouter.createMarket(
-    consts.FORGE_COMPOUND,
-    consts.MARKET_FACTORY,
+    consts.MARKET_FACTORY_COMPOUND,
     pendleFutureYieldCToken.address,
     testToken.address,
     consts.HIGH_GAS_OVERRIDE
@@ -69,14 +69,14 @@ export async function pendleMarketFixture(
 
   const pendleAMarketAddress = await pendleData.getMarket(
     consts.FORGE_AAVE,
-    consts.MARKET_FACTORY,
+    consts.MARKET_FACTORY_AAVE,
     pendleFutureYieldAToken.address,
     testToken.address
   );
 
   const pendleCMarketAddress = await pendleData.getMarket(
     consts.FORGE_COMPOUND,
-    consts.MARKET_FACTORY,
+    consts.MARKET_FACTORY_COMPOUND,
     pendleFutureYieldCToken.address,
     testToken.address
   );

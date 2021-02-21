@@ -70,12 +70,12 @@ export async function pendleLiquidityMiningFixture(
   let pendleCompoundForge = cForge.pendleCompoundForge;
   let pendleAXyt = aForge.pendleFutureYieldAToken;
   let pendleCXyt = cForge.pendleFutureYieldCToken;
-  let pendleMarketFactory = core.pendleMarketFactory;
+  let pendleAMarketFactory = core.pendleAMarketFactory;
+  let pendleCMarketFactory = core.pendleCMarketFactory;
   const amountToTokenize = amountToWei(tokens.USDT, BN.from(100));
 
   await pendleRouter.bootstrapMarket(
-    consts.FORGE_AAVE,
-    consts.MARKET_FACTORY,
+    consts.MARKET_FACTORY_AAVE,
     pendleAXyt.address,
     testToken.address,
     amountToTokenize,
@@ -84,8 +84,7 @@ export async function pendleLiquidityMiningFixture(
   );
 
   await pendleRouter.bootstrapMarket(
-    consts.FORGE_COMPOUND,
-    consts.MARKET_FACTORY,
+    consts.MARKET_FACTORY_COMPOUND,
     pendleCXyt.address,
     testToken.address,
     amountToTokenize,
@@ -102,7 +101,7 @@ export async function pendleLiquidityMiningFixture(
       alice.address,
       pdl.address,
       pendleData.address,
-      pendleMarketFactory.address,
+      pendleAMarketFactory.address,
       pendleAaveForge.address,
       tokens.USDT.address,
       testToken.address,
@@ -121,7 +120,7 @@ export async function pendleLiquidityMiningFixture(
       alice.address,
       pdl.address,
       pendleData.address,
-      pendleMarketFactory.address,
+      pendleCMarketFactory.address,
       pendleCompoundForge.address,
       tokens.USDT.address,
       testToken.address,

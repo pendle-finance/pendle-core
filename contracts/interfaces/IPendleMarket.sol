@@ -70,33 +70,31 @@ interface IPendleMarket is IPendleBaseToken {
         external
         returns (uint256);
 
-    function joinMarketByAll(
+    function addMarketLiquidityAll(
         uint256 exactOutLp,
         uint256 maxInXyt,
         uint256 maxInToken
     ) external returns (uint256 amountXytUsed, uint256 amountTokenUsed);
 
-    function exitMarketByAll(
-        uint256 inLp,
-        uint256 minOutXyt,
-        uint256 minOutToken
-    ) external returns (uint256 xytOut, uint256 tokenOut);
-
-    //function interestDistribute(address lp) returns (uint interestReturn);
-
-    function exitMarketSingleToken(
-        address outToken,
-        uint256 exactInLp,
-        uint256 minOutToken
-    ) external returns (uint256 exactOutToken);
-
-    function joinMarketSingleToken(
+    function addMarketLiquiditySingle(
         address inToken,
         uint256 inAmount,
         uint256 minOutLp
     ) external returns (uint256 exactOutLp);
 
-    function swapAmountExactIn(
+    function removeMarketLiquidityAll(
+        uint256 inLp,
+        uint256 minOutXyt,
+        uint256 minOutToken
+    ) external returns (uint256 xytOut, uint256 tokenOut);
+
+    function removeMarketLiquiditySingle(
+        address outToken,
+        uint256 exactInLp,
+        uint256 minOutToken
+    ) external returns (uint256 exactOutToken);
+
+    function swapExactIn(
         address inToken,
         uint256 inAmount,
         address outToken,
@@ -104,7 +102,7 @@ interface IPendleMarket is IPendleBaseToken {
         uint256 maxPrice
     ) external returns (uint256 outAmount, uint256 spotPriceAfter);
 
-    function swapAmountExactOut(
+    function swapExactOut(
         address inToken,
         uint256 maxInAmount,
         address outToken,

@@ -25,7 +25,6 @@ pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "../interfaces/IPENDLE.sol";
-import "hardhat/console.sol";
 
 contract PENDLE is IPENDLE {
     /// @notice A checkpoint for marking number of votes from a given block
@@ -134,7 +133,6 @@ contract PENDLE is IPENDLE {
         address dst,
         uint256 rawAmount
     ) external returns (bool) {
-        console.log("TransferFrom");
         address spender = msg.sender;
         uint96 spenderAllowance = allowances[src][spender];
         uint96 amount = safe96(rawAmount, "Pendle::approve: amount exceeds 96 bits");
