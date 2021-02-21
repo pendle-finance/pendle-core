@@ -6,16 +6,16 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-truffle5";
 import "@tenderly/hardhat-tenderly";
-import "hardhat-gas-reporter";
+// import "hardhat-gas-reporter";
 import "hardhat-typechain";
 import "solidity-coverage";
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
-  gasReporter: {
-    currency: 'USD',
-    gasPrice: 100
-  },
+  // gasReporter: {
+  //   currency: 'USD',
+  //   gasPrice: 100
+  // },
   paths: {
     sources: './contracts',
     tests: './test/core/',

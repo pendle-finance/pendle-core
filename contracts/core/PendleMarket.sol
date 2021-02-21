@@ -31,6 +31,7 @@ import "../tokens/PendleBaseToken.sol";
 import "../libraries/PendleLibrary.sol";
 import {Math} from "../libraries/PendleLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "hardhat/console.sol";
 
 contract PendleMarket is IPendleMarket, PendleBaseToken {
     using Math for uint256;
@@ -52,7 +53,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     uint256 private priceLast = Math.FORMULA_PRECISION;
     uint256 private blockNumLast;
 
-    uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**8;
+    uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**30;
     mapping(address => uint256) public lastGlobalIncomeIndex;
     mapping(address => TokenReserve) private reserves;
 
@@ -93,6 +94,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     {
         require(!bootstrapped, "Pendle: already bootstrapped");
 
+        // console.log("97",initialXytLiquidity,initialTokenLiquidity);
         _transferIn(xyt, initialXytLiquidity);
         _transferIn(token, initialTokenLiquidity);
 
@@ -591,6 +593,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             return 0;
         }
 
+        // console.log(account,balanceOf[account],globalIncomeIndex,lastGlobalIncomeIndex[account]);
         dueInterests =
             balanceOf[account].mul(globalIncomeIndex - lastGlobalIncomeIndex[account]).div(
                 GLOBAL_INCOME_INDEX_MULTIPLIER
@@ -598,6 +601,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
         if (dueInterests == 0) return 0;
+        lastUnderlyingYieldTokenBalance = lastUnderlyingYieldTokenBalance.sub(dueInterests);
         IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).safeTransfer(account, dueInterests);
     }
 
@@ -608,11 +612,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this));
         uint256 interestsEarned =
             currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance;
+        // console.log("616",interestsEarned,currentUnderlyingYieldTokenBalance,IPendleYieldToken(xyt).underlyingYieldToken());
         lastUnderlyingYieldTokenBalance = currentUnderlyingYieldTokenBalance;
 
         globalIncomeIndex = globalIncomeIndex.add(
             interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(totalSupply)
         );
+        // console.log("\tglobalIncomeIndex, totalSupply = ", globalIncomeIndex, totalSupply);
     }
 
     function _beforeTokenTransfer(address from, address to) internal override {

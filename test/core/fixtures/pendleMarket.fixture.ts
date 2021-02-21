@@ -23,7 +23,7 @@ export async function pendleMarketFixture(
   wallets: Wallet[],
   provider: providers.Web3Provider
 ): Promise<PendleMarketFixture> {
-  const [alice, bob, charlie] = wallets
+  const [alice, bob, charlie, dave, eve] = wallets
   const core = await pendleCoreFixture(wallets, provider);
   const governance = await pendleGovernanceFixture(wallets, provider);
   const forge = await pendleAaveForgeFixture(alice, provider, core, governance);
@@ -69,7 +69,7 @@ export async function pendleMarketFixture(
   const pendleStdMarket = new Contract(pendleStdMarketAddress, PendleMarket.abi, alice)
   const pendleEthMarket = new Contract(pendleEthMarketAddress, PendleMarket.abi, alice)
 
-  for (var person of [alice, bob, charlie]) {
+  for (var person of [alice, bob, charlie, dave]) {
     await testToken.connect(person).approve(pendleRouter.address, totalSupply);
     await pendleFutureYieldToken.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
     await pendleStdMarket.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);

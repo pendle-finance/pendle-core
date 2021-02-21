@@ -86,7 +86,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     mapping(uint256 => uint256) public globalIncomeIndexForExpiry;
     mapping(uint256 => mapping(address => uint256)) public lastGlobalIncomeIndexForExpiry;
     mapping(uint256 => uint256) public lastUnderlyingYieldTokenBalance;
-    uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**8;
+    uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**30;
 
     // balances[account][expiry] is the amount of LP_expiry that the account has staked
     mapping(address => mapping(uint256 => uint256)) public override balances;
@@ -481,6 +481,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
         lastGlobalIncomeIndexForExpiry[expiry][account] = globalIncomeIndexForExpiry[expiry];
         if (dueInterests == 0) return 0;
+        lastUnderlyingYieldTokenBalance[expiry] = lastUnderlyingYieldTokenBalance[expiry].sub(dueInterests);
         PendleLpHolder(lpHolderForExpiry[expiry]).sendInterests(account, dueInterests);
     }
 

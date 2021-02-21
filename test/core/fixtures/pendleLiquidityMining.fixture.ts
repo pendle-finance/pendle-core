@@ -58,7 +58,7 @@ export async function pendleLiquidityMiningFixture(
   wallets: Wallet[],
   provider: providers.Web3Provider,
 ): Promise<PendleLiquidityMiningFixture> {
-  let [alice, bob, charlie, dave] = wallets;
+  let [alice, bob, charlie, dave, eve] = wallets;
   let { core, forge, aave, testToken, pendleStdMarket } = await pendleMarketFixture(wallets, provider);
   let pendleRouter = core.pendleRouter;
   let pendleData = core.pendleData;
@@ -117,7 +117,7 @@ export async function pendleLiquidityMiningFixture(
   await pendleLiquidityMining.fund();
   await pdl.transfer(pendleLiquidityMining.address, await pdl.balanceOf(alice.address));
 
-  for (var person of [bob, charlie, dave]) {
+  for (var person of [bob, charlie, dave, eve]) {
     await pendleStdMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);
   }
 
