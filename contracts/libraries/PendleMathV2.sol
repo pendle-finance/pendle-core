@@ -65,8 +65,8 @@ library Math {
         uint256 two = 2 * one;
         uint256 addition = one;
 
-        require((_x >= one) && (_x < two), "INVALID_PARAM");
-        require(PRECISION_BITS < 125, "PRECISION_BITS_TOO_LARGE");
+        require((_x >= one) && (_x < two), "MATH_ERROR");
+        require(PRECISION_BITS < 125, "MATH_ERROR");
 
         for (uint256 i = PRECISION_BITS; i > 0; i--) {
             _x = (_x * _x) / one;
@@ -93,10 +93,10 @@ library Math {
             n = log2Int(_p, _q);
         }
 
-        require(n * RONE <= BIG_NUMBER, "INVALID_PARAM");
-        require(!checkMultOverflow(_p, RONE), "OVERFLOW");
-        require(!checkMultOverflow(n, RONE), "OVERFLOW");
-        require(!checkMultOverflow(uint256(1) << n, _q), "OVERFLOW");
+        require(n * RONE <= BIG_NUMBER, "MATH_ERROR");
+        require(!checkMultOverflow(_p, RONE), "MATH_ERROR");
+        require(!checkMultOverflow(n, RONE), "MATH_ERROR");
+        require(!checkMultOverflow(uint256(1) << n, _q), "MATH_ERROR");
 
         uint256 y = (_p * RONE) / (_q * (uint256(1) << n));
         uint256 log2Small = log2ForSmallNumber(y);
@@ -118,7 +118,7 @@ library Math {
 
         uint256 log2x = logBase2(p, q);
 
-        require(!checkMultOverflow(ln2Numerator, log2x), "OVERFLOW");
+        require(!checkMultOverflow(ln2Numerator, log2x), "MATH_ERROR");
 
         return (ln2Numerator * log2x) / ln2Denomerator;
     }
@@ -173,7 +173,7 @@ library Math {
                 to converge.
                 the most extreme case is rpow(1,RONE-1) (equal to rpow(0.00...01,0.99..9))
                 */
-                revert("rpowe slow converge");
+                revert("RPOWE_SLOW_CONVERGE");
             }
         }
 
