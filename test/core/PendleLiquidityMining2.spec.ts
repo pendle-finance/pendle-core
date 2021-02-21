@@ -13,7 +13,7 @@ import {
   startOfEpoch,
   getAContract,
   tokens,
-  mint
+  mint,
 } from "../helpers";
 import {
   liqParams,
@@ -246,17 +246,24 @@ describe("PendleLiquidityMining-beta tests", async () => {
       await setTimeNextBlock(provider, action.time);
       if (action.isStaking) {
         await doStake(wallets[action.id], action.amount); // acess users directly by their id instead of names
-        expectedLpBalance[action.id] = expectedLpBalance[action.id].sub(action.amount);
-      } else { // withdrawing
+        expectedLpBalance[action.id] = expectedLpBalance[action.id].sub(
+          action.amount
+        );
+      } else {
+        // withdrawing
         await doWithdraw(wallets[action.id], action.amount);
-        expectedLpBalance[action.id] = expectedLpBalance[action.id].add(action.amount);
+        expectedLpBalance[action.id] = expectedLpBalance[action.id].add(
+          action.amount
+        );
       }
     }
 
     /* check Lp balances*/
     let actualLpBalance: BN[] = await getLpBalanceOfAllUsers();
-    expect(expectedLpBalance, "lp balances don't match expected lp balances").to.be.eql(actualLpBalance);
-
+    expect(
+      expectedLpBalance,
+      "lp balances don't match expected lp balances"
+    ).to.be.eql(actualLpBalance);
   }
 
   async function checkEqualRewards(
@@ -306,9 +313,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
     // console.log(`\taToken balance of market = ${await aUSDT.balanceOf(pendleStdMarket.address)}`);
     // console.log(`\tXYT balance of market = ${await pendleXyt.balanceOf(pendleStdMarket.address)}`);
     // console.log(`\tbaseToken balance of market = ${await baseToken.balanceOf(pendleStdMarket.address)}`);
-    await pendleRouter.connect(eve).claimLpInterests(
-      [pendleStdMarket.address]
-    );
+    await pendleRouter.connect(eve).claimLpInterests([pendleStdMarket.address]);
     setTimeNextBlock(provider, consts.T0.add(consts.THREE_MONTH));
 
     // some dummy trade
@@ -328,9 +333,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
     // console.log(`\t+3m, baseToken balance of market = ${await baseToken.balanceOf(pendleStdMarket.address)}`);
     // console.log(`\t\tDid a dummy trade`);
 
-    await pendleRouter.connect(eve).claimLpInterests(
-      [pendleStdMarket.address]
-    );
+    await pendleRouter.connect(eve).claimLpInterests([pendleStdMarket.address]);
 
     // console.log(`\tclaimed LP interests: LP balance of eve = ${await pendleStdMarket.balanceOf(eve.address)}`);
     // console.log(`\tclaimed LP interests: aToken balance of market = ${await aUSDT.balanceOf(pendleStdMarket.address)}`);

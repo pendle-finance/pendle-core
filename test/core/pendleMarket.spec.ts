@@ -108,7 +108,7 @@ describe("PendleMarket", async () => {
     expect(testTokenBalance).to.be.equal(amountToTokenize);
   });
 
-  it("should be able to join a bootstrapped pool", async () => {
+  it("should be able to join a bootstrapped pool by dual tokens", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
 
     await bootstrapSampleMarket(amountToTokenize);
@@ -235,7 +235,7 @@ describe("PendleMarket", async () => {
     );
   });
 
-  it("should be able to exit a pool", async () => {
+  it("should be able to exit a pool by dual tokens", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
     await bootstrapSampleMarket(amountToTokenize);
     await advanceTime(provider, consts.ONE_MONTH);
@@ -262,35 +262,103 @@ describe("PendleMarket", async () => {
     );
   });
 
-  // it("should be able to exit a pool with a single xyt token", async () => {
-  //   const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+  // it.only("shouldn't be able to add liquidity by dual tokens after xyt has expired", async () => {
+  //   const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
+
   //   await bootstrapSampleMarket(amountToTokenize);
 
-  //   const initialFutureYieldTokenBalance = await pendleXyt.balanceOf(
-  //     alice.address
-  //   );
   //   const totalSupply = await pendleStdMarket.totalSupply();
 
-  //   await advanceTime(provider, consts.ONE_MONTH);
+  //   advanceTime(provider, consts.ONE_YEAR);
+  //   await expect(pendleRouter
+  //     .connect(bob)
+  //     .addMarketLiquidityAll(
+  //       consts.MARKET_FACTORY_AAVE,
+  //       pendleXyt.address,
+  //       testToken.address,
+  //       amountToTokenize,
+  //       amountToTokenize,
+  //       totalSupply,
+  //       consts.HIGH_GAS_OVERRIDE
+  //     )).to.be.reverted;
+  // });
 
-  //   await pendleRouter.removeMarketLiquidityXyt(
-  //     consts.FORGE_AAVE,
+  // it.only("shouldn't be able to add liquidity by xyt after xyt has expired", async () => {
+  //   const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
+
+  //   await bootstrapSampleMarket(amountToTokenize);
+  //   await testToken.approve(pendleStdMarket.address, consts.MAX_ALLOWANCE);
+
+  //   let initalLpTokenBal = await pendleStdMarket.balanceOf(alice.address);
+  //   let initalXytBal = await pendleXyt.balanceOf(alice.address);
+  //   let initalTestTokenBal = await testToken.balanceOf(alice.address);
+
+  //   let totalSupply = await pendleStdMarket.totalSupply();
+  //   await advanceTime(provider, consts.ONE_YEAR);
+  //   await pendleRouter.addMarketLiquiditySingle( // will fail but by an unintended error
   //     consts.MARKET_FACTORY_AAVE,
   //     pendleXyt.address,
   //     testToken.address,
+  //     false,
+  //     amountToTokenize.div(10),
+  //     totalSupply.div(21),
+  //     consts.HIGH_GAS_OVERRIDE
+  //   );
+
+  //   let currentLpTokenBal = await pendleStdMarket.balanceOf(alice.address);
+  //   let currentXytBal = await pendleXyt.balanceOf(alice.address);
+  //   let currentTestTokenBal = await testToken.balanceOf(alice.address);
+
+  //   expect(currentLpTokenBal).to.be.gt(initalLpTokenBal);
+  //   expect(currentTestTokenBal).to.be.lt(initalTestTokenBal);
+  //   expect(currentXytBal).to.be.equal(initalXytBal);
+  //   // TODO: change gt,lt to approximate @Long
+  // });
+
+  // it.only("should be able to exit market by baseToken after the market has expired", async () => {
+  //   const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+  //   await bootstrapSampleMarket(amountToTokenize);
+
+  //   const totalSupply = await pendleStdMarket.totalSupply();
+
+  //   await advanceTime(provider, consts.ONE_YEAR);
+
+  //   await pendleRouter.removeMarketLiquiditySingle(
+  //     consts.MARKET_FACTORY_AAVE,
+  //     pendleXyt.address,
+  //     testToken.address,
+  //     false,
   //     totalSupply.div(4),
   //     amountToTokenize.div(6),
   //     consts.HIGH_GAS_OVERRIDE
   //   );
+  // });
 
-  //   const currentFutureYieldTokenBalance = await pendleXyt.balanceOf(
-  //     alice.address
+  // it.only("should be able to exit a pool by dual tokens after xyt has expired", async () => {
+  //   const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+  //   await bootstrapSampleMarket(amountToTokenize);
+  //   await advanceTime(provider, consts.ONE_YEAR);
+  //   const totalSupply = await pendleStdMarket.totalSupply();
+
+  //   await pendleRouter.removeMarketLiquidityAll(
+  //     consts.MARKET_FACTORY_AAVE,
+  //     pendleXyt.address,
+  //     testToken.address,
+  //     totalSupply.div(10),
+  //     amountToTokenize.div(10),
+  //     amountToTokenize.div(10),
+  //     consts.HIGH_GAS_OVERRIDE
   //   );
-  //   const expectedDifference = 43750000;
 
-  //   expect(
-  //     currentFutureYieldTokenBalance.sub(initialFutureYieldTokenBalance)
-  //   ).to.be.equal(expectedDifference);
+  //   let yieldTokenBalance = await pendleXyt.balanceOf(pendleStdMarket.address);
+  //   let testTokenBalance = await testToken.balanceOf(pendleStdMarket.address);
+
+  //   expect(yieldTokenBalance).to.be.equal(
+  //     amountToTokenize.sub(amountToTokenize.div(10))
+  //   );
+  //   expect(testTokenBalance).to.be.equal(
+  //     amountToTokenize.sub(amountToTokenize.div(10))
+  //   );
   // });
 
   it("should be able to getReserves", async () => {
@@ -356,67 +424,6 @@ describe("PendleMarket", async () => {
 
     expect(result[1].toNumber()).to.be.approximately(9090909, 100);
   });
-
-  // it("should be able to removeMarketLiquidityXyt", async () => {
-  //   // correct but strange
-  //   const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
-  //   await bootstrapSampleMarket(amountToTokenize);
-
-  //   const initialFutureYieldTokenBalance = await pendleXyt.balanceOf(
-  //     alice.address
-  //   );
-  //   const totalSupply = await pendleStdMarket.totalSupply();
-
-  //   await advanceTime(provider, consts.ONE_MONTH);
-
-  //   await pendleRouter.removeMarketLiquidityXyt(
-  //     consts.FORGE_AAVE,
-  //     consts.MARKET_FACTORY_AAVE,
-  //     pendleXyt.address,
-  //     testToken.address,
-  //     totalSupply.div(4),
-  //     amountToTokenize.div(6),
-  //     consts.HIGH_GAS_OVERRIDE
-  //   );
-
-  //   const currentFutureYieldTokenBalance = await pendleXyt.balanceOf(
-  //     alice.address
-  //   );
-  //   const expectedDifference = 43750000;
-
-  //   expect(
-  //     currentFutureYieldTokenBalance.sub(initialFutureYieldTokenBalance)
-  //   ).to.be.equal(expectedDifference);
-  // });
-
-  // it("should be able to removeMarketLiquidityToken", async () => {
-  //   // maybe correct but wrong name
-  //   const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
-
-  //   await bootstrapSampleMarket(amountToTokenize);
-
-  //   const initialTestTokenBalance = await testToken.balanceOf(alice.address);
-  //   const totalSupply = await pendleStdMarket.totalSupply();
-
-  //   await advanceTime(provider, consts.ONE_MONTH);
-
-  //   await pendleRouter.removeMarketLiquidityToken(
-  //     consts.FORGE_AAVE,
-  //     consts.MARKET_FACTORY_AAVE,
-  //     pendleXyt.address,
-  //     testToken.address,
-  //     totalSupply.div(4),
-  //     amountToTokenize.div(6),
-  //     consts.HIGH_GAS_OVERRIDE
-  //   );
-
-  //   const currentTestTokenBalance = await testToken.balanceOf(alice.address);
-  //   const expectedDifference = 43750000;
-
-  //   expect(currentTestTokenBalance.sub(initialTestTokenBalance)).to.be.equal(
-  //     expectedDifference
-  //   );
-  // });
 
   it("should be able to add market liquidity for a token", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));

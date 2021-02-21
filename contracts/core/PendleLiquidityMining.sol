@@ -481,7 +481,9 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
         lastGlobalIncomeIndexForExpiry[expiry][account] = globalIncomeIndexForExpiry[expiry];
         if (dueInterests == 0) return 0;
-        lastUnderlyingYieldTokenBalance[expiry] = lastUnderlyingYieldTokenBalance[expiry].sub(dueInterests);
+        lastUnderlyingYieldTokenBalance[expiry] = lastUnderlyingYieldTokenBalance[expiry].sub(
+            dueInterests
+        );
         PendleLpHolder(lpHolderForExpiry[expiry]).sendInterests(account, dueInterests);
     }
 
