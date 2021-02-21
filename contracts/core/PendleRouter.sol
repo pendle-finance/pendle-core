@@ -315,6 +315,9 @@ contract PendleRouter is IPendleRouter, Permissions {
     ) public override returns (address market) {
         require(_xyt != address(0), "Pendle: zero address");
         require(_token != address(0), "Pendle: zero address");
+        try IPendleYieldToken(_token).forge() returns (address) {
+            revert("XYT_QUOTE_PAIR_FORBIDDEN");
+        } catch {}
 
         IPendleMarketFactory factory =
             IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));
