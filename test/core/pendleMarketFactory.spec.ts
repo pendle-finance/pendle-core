@@ -33,10 +33,4 @@ describe("pendleMarketFactory", async () => {
     await evm_revert(snapshotId);
     snapshotId = await evm_snapshot();
   });
-
-  it("should be able to setRouter", async () => {
-    await expect(pendleMarketFactory.setRouter(pendleRouter.address))
-      .to.emit(pendleMarketFactory, "RouterSet")
-      .withArgs(pendleRouter.address);
-  });
 });

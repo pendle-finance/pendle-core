@@ -47,32 +47,20 @@ export async function pendleMarketFixture(
 
   await pendleRouter.addMarketFactory(consts.MARKET_FACTORY_AAVE, pendleMarketFactory.address);
 
-  await pendleRouter.createMarket( // create market for XYT-Test Token (any token conforms to IERC20 standard)
-    consts.FORGE_AAVE,
+  await pendleRouter.createMarket(
     consts.MARKET_FACTORY_AAVE,
     pendleFutureYieldToken.address,
     testToken.address,
     consts.HIGH_GAS_OVERRIDE
   );
 
-  await pendleRouter.createMarket( // create market for XYT-WETH
-    consts.FORGE_AAVE,
-    consts.MARKET_FACTORY_AAVE,
-    pendleFutureYieldToken.address,
-    tokens.WETH.address,
-    consts.HIGH_GAS_OVERRIDE
-  );
-
-  // pendleStdMarketAddress = pendleStandardMarket
   const pendleStdMarketAddress = await pendleData.getMarket(
-    consts.FORGE_AAVE,
     consts.MARKET_FACTORY_AAVE,
     pendleFutureYieldToken.address,
     testToken.address
   );
 
   const pendleEthMarketAddress = await pendleData.getMarket(
-    consts.FORGE_AAVE,
     consts.MARKET_FACTORY_AAVE,
     pendleFutureYieldToken.address,
     tokens.WETH.address,
