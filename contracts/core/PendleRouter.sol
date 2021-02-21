@@ -536,7 +536,11 @@ contract PendleRouter is IPendleRouter, Permissions {
         _transferOut(_tokenIn, change);
     }
 
-    function claimLpInterests(address[] calldata markets) public override returns (uint256[] memory interests) {
+    function claimLpInterests(address[] calldata markets)
+        public
+        override
+        returns (uint256[] memory interests)
+    {
         interests = new uint256[](markets.length);
         for (uint256 i = 0; i < markets.length; i++) {
             require(data.isMarket(markets[i]), "invalid market");

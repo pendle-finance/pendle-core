@@ -368,7 +368,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         return (inAmount, spotPriceAfter);
     }
 
-    function claimLpInterests(address account) override isBootstrapped onlyRouter public returns (uint256 interests) {
+    function claimLpInterests(address account)
+        public
+        override
+        isBootstrapped
+        onlyRouter
+        returns (uint256 interests)
+    {
         interests = _settleLpInterests(account);
     }
 
@@ -594,10 +600,9 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         }
 
         // console.log(account,balanceOf[account],globalIncomeIndex,lastGlobalIncomeIndex[account]);
-        dueInterests =
-            balanceOf[account].mul(globalIncomeIndex - lastGlobalIncomeIndex[account]).div(
-                GLOBAL_INCOME_INDEX_MULTIPLIER
-            );
+        dueInterests = balanceOf[account]
+            .mul(globalIncomeIndex - lastGlobalIncomeIndex[account])
+            .div(GLOBAL_INCOME_INDEX_MULTIPLIER);
 
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
         if (dueInterests == 0) return 0;

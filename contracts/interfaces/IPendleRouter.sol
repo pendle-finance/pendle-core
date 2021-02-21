@@ -216,7 +216,9 @@ interface IPendleRouter {
         uint256 maxInTotalAmount
     ) external payable returns (uint256 inTotalAmount);
 
-    function claimLpInterests(address[] calldata markets) external returns (uint256[] memory interests);
+    function claimLpInterests(address[] calldata markets)
+        external
+        returns (uint256[] memory interests);
 
     function getMarketRateExactIn(
         address tokenIn,
