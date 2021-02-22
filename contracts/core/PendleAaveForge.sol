@@ -22,7 +22,6 @@
  */
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import {ExpiryUtils, Factory} from "../libraries/PendleLibrary.sol";
 import "../interfaces/IAaveLendingPoolCore.sol";
@@ -33,7 +32,7 @@ import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
 
-contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
+contract PendleAaveForge is IPendleForge, Permissions {
     using ExpiryUtils for string;
     using SafeMath for uint256;
 
@@ -222,7 +221,7 @@ contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
         string memory _symbol,
         uint8 _decimals,
         uint256 _expiry
-    ) internal nonReentrant() returns (address xyt) {
+    ) internal returns (address xyt) {
         IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
 
         xyt = Factory.createContract(
@@ -247,7 +246,7 @@ contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
         string memory _symbol,
         uint8 _decimals,
         uint256 _expiry
-    ) internal nonReentrant() returns (address ot) {
+    ) internal returns (address ot) {
         IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
 
         ot = Factory.createContract(

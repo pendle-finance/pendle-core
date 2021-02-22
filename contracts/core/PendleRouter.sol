@@ -68,6 +68,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         override
         initialized
         onlyGovernance
+        nonReentrant
     {
         require(_forgeId != bytes32(0), "Pendle: zero bytes");
         require(_forgeAddress != address(0), "Pendle: zero address");
@@ -81,7 +82,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) public override returns (address ot, address xyt) {
+    ) public override nonReentrant returns (address ot, address xyt) {
         require(_forgeId != bytes32(0), "Pendle: zero bytes");
         require(_underlyingAsset != address(0), "Pendle: zero address");
 
@@ -100,7 +101,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         address _underlyingAsset,
         uint256 _expiry,
         address _to
-    ) public override returns (uint256 redeemedAmount) {
+    ) public override nonReentrant returns (uint256 redeemedAmount) {
         require(_forgeId != bytes32(0), "Pendle: zero bytes");
         require(_underlyingAsset != address(0), "Pendle: zero address");
         require(_to != address(0), "Pendle: zero address");
@@ -115,7 +116,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) public override returns (uint256 interests) {
+    ) public override nonReentrant returns (uint256 interests) {
         require(_forgeId != bytes32(0), "Pendle: zero bytes");
         require(_underlyingAsset != address(0), "Pendle: zero address");
 
@@ -131,7 +132,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _expiry,
         uint256 _amountToRedeem,
         address _to
-    ) public override returns (uint256 redeemedAmount) {
+    ) public override nonReentrant returns (uint256 redeemedAmount) {
         require(_forgeId != bytes32(0), "Pendle: zero bytes");
         require(_underlyingAsset != address(0), "Pendle: zero address");
 
@@ -157,6 +158,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
     )
         public
         override
+        nonReentrant
         returns (
             uint256 redeemedAmount,
             address ot,
@@ -184,7 +186,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _expiry,
         uint256 _amountToTokenize,
         address _to
-    ) public override returns (address ot, address xyt) {
+    ) public override nonReentrant returns (address ot, address xyt) {
         require(_forgeId != bytes32(0), "Pendle: zero bytes");
         require(_underlyingAsset != address(0), "Pendle: zero address");
 
@@ -206,6 +208,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         override
         initialized
         onlyGovernance
+        nonReentrant
     {
         require(_marketFactoryId != bytes32(0), "Pendle: zero bytes");
         require(_marketFactoryAddress != address(0), "Pendle: zero address");
@@ -554,6 +557,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
     function claimLpInterests(address[] calldata markets)
         public
         override
+        nonReentrant
         returns (uint256[] memory interests)
     {
         interests = new uint256[](markets.length);
