@@ -44,5 +44,9 @@ export async function pendleCompoundForgeFixture(
     const pendleOwnershipToken = new Contract(otTokenAddress, PendleOwnershipToken.abi, alice);
     const pendleFutureYieldCToken = new Contract(xytTokenAddress, PendleFutureYieldToken.abi, alice);
 
-    return { pendleCompoundForge, pendleOwnershipToken, pendleFutureYieldCToken };
+    return {
+        pendleCompoundForge,
+        pendleOwnershipToken,
+        pendleFutureYieldCToken,
+    };
 }

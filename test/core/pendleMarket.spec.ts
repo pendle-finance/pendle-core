@@ -27,6 +27,7 @@ describe("pendleAMarket", async () => {
   let pendleData: Contract;
   let pendleAOwnershipToken: Contract;
   let pendleAXyt: Contract;
+  let pendleAXyt2: Contract;
   let pendleCOwnershipToken: Contract;
   let pendleCXyt: Contract;
   let lendingPoolCore: Contract;
@@ -48,12 +49,13 @@ describe("pendleAMarket", async () => {
     pendleRouter = fixture.core.pendleRouter;
     pendleTreasury = fixture.core.pendleTreasury;
     pendleData = fixture.core.pendleData;
-    pendleAOwnershipToken = fixture.aForge.pendleOwnershipToken;
-    pendleAXyt = fixture.aForge.pendleFutureYieldAToken;
     pendleCOwnershipToken = fixture.cForge.pendleOwnershipToken;
     pendleCXyt = fixture.cForge.pendleFutureYieldCToken;
-    pendleAaveForge = fixture.aForge.pendleAaveForge;
     pendleCompoundForge = fixture.cForge.pendleCompoundForge;
+    pendleAOwnershipToken = fixture.aForge.pendleOwnershipToken;
+    pendleAXyt = fixture.aForge.pendleFutureYieldAToken;
+    pendleAXyt2 = fixture.aForge.pendleFutureYieldAToken2;
+    pendleAaveForge = fixture.aForge.pendleAaveForge;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     testToken = fixture.testToken;
     pendleAMarket = fixture.pendleAMarket;
@@ -504,6 +506,19 @@ describe("pendleAMarket", async () => {
         consts.HIGH_GAS_OVERRIDE
       )
     ).to.be.revertedWith("Pendle: market already exists");
+  });
+
+  it.only("shouldn't be able to create market with XYT as quote pair", async () => {
+    console.log(`xyt ${pendleAXyt.address}`);
+    console.log(`xyt2 ${pendleAXyt2.address}`);
+    await expect(
+      pendleRouter.createMarket(
+        consts.MARKET_FACTORY_AAVE,
+        pendleAXyt.address,
+        pendleAXyt2.address,
+        consts.HIGH_GAS_OVERRIDE
+      )
+    ).to.be.revertedWith("XYT_QUOTE_PAIR_FORBIDDEN");
   });
 
   it("AMM's formula should be correct", async () => {
