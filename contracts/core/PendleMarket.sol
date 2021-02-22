@@ -368,7 +368,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         return (inAmount, spotPriceAfter);
     }
 
-    function claimLpInterests(address account) override isBootstrapped onlyRouter public returns (uint256 interests) {
+    function claimLpInterests(address account)
+        public
+        override
+        isBootstrapped
+        onlyRouter
+        returns (uint256 interests)
+    {
         interests = _settleLpInterests(account);
     }
 
@@ -543,13 +549,15 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 xytWeight = xytReserve.weight;
         uint256 tokenWeight = tokenReserve.weight;
 
-        require((endTime - currentTime) <= duration, "Pendle: wrong duration");
+        uint256 timeLeft;
+        if (endTime >= currentTime) {
+            timeLeft = endTime - currentTime;
+        } else {
+            timeLeft = 0;
+        }
 
         uint256 timeToMature =
-            Math.rdiv(
-                (endTime - currentTime) * Math.FORMULA_PRECISION,
-                duration * Math.FORMULA_PRECISION
-            );
+            Math.rdiv(timeLeft * Math.FORMULA_PRECISION, duration * Math.FORMULA_PRECISION);
         uint256 priceNow =
             Math.rdiv(
                 Math.ln(
@@ -594,10 +602,9 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         }
 
         // console.log(account,balanceOf[account],globalIncomeIndex,lastGlobalIncomeIndex[account]);
-        dueInterests =
-            balanceOf[account].mul(globalIncomeIndex - lastGlobalIncomeIndex[account]).div(
-                GLOBAL_INCOME_INDEX_MULTIPLIER
-            );
+        dueInterests = balanceOf[account]
+            .mul(globalIncomeIndex - lastGlobalIncomeIndex[account])
+            .div(GLOBAL_INCOME_INDEX_MULTIPLIER);
 
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
         if (dueInterests == 0) return 0;
