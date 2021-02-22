@@ -183,6 +183,10 @@ library Math {
             // Anything to the 0 is 1
             return RONE;
         }
+        if (base==0){
+            // 0 to anything except 0 is 0
+            return 0;
+        }
 
         uint256 frac = fpart(exp); // get the fractional part
         uint256 whole = exp - frac;

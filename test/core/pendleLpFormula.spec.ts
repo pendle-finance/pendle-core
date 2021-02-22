@@ -320,7 +320,7 @@ describe("pendleLpFormula", async () => {
     );
   });
 
-  it("remove liquidity with single token test 3", async () => {
+  it.only("remove liquidity with single token test 3", async () => {
     const amountOfXyt = amountToWei(tokenUSDT, BN.from(45));
     const amountOfToken = amountToWei(tokenUSDT, BN.from(951));
     const T1 = consts.T0.add(consts.FIVE_MONTH);
@@ -342,18 +342,18 @@ describe("pendleLpFormula", async () => {
       consts.TEST_TOKEN_DELTA.toNumber()
     );
 
+    console.log((await pendleStdMarket.balanceOf(alice.address)).toString(), amountToRemove.toString());
     // weights: XYT weight: 245957533896
-    // TODO: Enable this part after the math lib is fixed
-    // await setTimeNextBlock(provider, T2);
-    // balanceDiff = await removeLiquiditySingleToken(
-    //   alice,
-    //   pendleXyt.address,
-    //   amountToRemove
-    // );
-    // expect(balanceDiff.toNumber()).to.be.approximately(
-    //   44877732,
-    //   consts.TEST_TOKEN_DELTA.toNumber()
-    // );
+    await setTimeNextBlock(provider, T2);
+    balanceDiff = await removeLiquiditySingleToken(
+      alice,
+      pendleXyt.address,
+      amountToRemove
+    );
+    expect(balanceDiff.toNumber()).to.be.approximately(
+      44877732,
+      consts.TEST_TOKEN_DELTA.toNumber()
+    );
   });
 
   it("add liquidity dual token test 1", async () => {

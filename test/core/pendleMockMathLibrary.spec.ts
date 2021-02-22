@@ -44,4 +44,8 @@ describe("Math tests", async () => {
       }
     }
   });
+
+  it("test rpow special cases", async () => {
+    expect((await math.rpow(BN.from(0), BN.from(4915181090268))).toNumber()).to.equal(0);
+  });
 });
