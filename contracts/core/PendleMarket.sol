@@ -585,14 +585,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 timeToMature =
             Math.rdiv(timeLeft * Math.FORMULA_PRECISION, duration * Math.FORMULA_PRECISION);
 
-        priceNow =
-            Math.rdiv(
-                Math.ln(
-                    Math.rmul(Math.PI, timeToMature).add(Math.FORMULA_PRECISION),
-                    Math.FORMULA_PRECISION
-                ),
-                Math.ln(Math.PI_PLUSONE, Math.FORMULA_PRECISION)
-            );
+        priceNow = Math.rdiv(
+            Math.ln(
+                Math.rmul(Math.PI, timeToMature).add(Math.FORMULA_PRECISION),
+                Math.FORMULA_PRECISION
+            ),
+            Math.ln(Math.PI_PLUSONE, Math.FORMULA_PRECISION)
+        );
 
         uint256 r = Math.rdiv(priceNow, priceLast);
         require(Math.FORMULA_PRECISION >= r, "Pendle: wrong r value");
