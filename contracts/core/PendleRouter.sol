@@ -25,6 +25,7 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Math} from "../libraries/PendleLibrary.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleData.sol";
@@ -33,7 +34,7 @@ import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../periphery/Permissions.sol";
 
-contract PendleRouter is IPendleRouter, Permissions {
+contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -226,7 +227,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         uint256 _maxInXyt,
         uint256 _maxInToken,
         uint256 _exactOutLp
-    ) public payable override {
+    ) public payable override nonReentrant {
         IPendleMarket market =
             IPendleMarket(
                 data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
@@ -252,7 +253,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         bool _forXyt,
         uint256 _exactInAsset,
         uint256 _minOutLp
-    ) public payable override {
+    ) public payable override nonReentrant {
         IPendleMarket market =
             IPendleMarket(
                 data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
@@ -276,7 +277,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         uint256 _exactInLp,
         uint256 _minOutXyt,
         uint256 _minOutToken
-    ) public override {
+    ) public override nonReentrant {
         IPendleMarket market =
             IPendleMarket(
                 data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
@@ -300,7 +301,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         bool _forXyt,
         uint256 _exactInLp,
         uint256 _minOutAsset
-    ) public override {
+    ) public override nonReentrant {
         IPendleMarket market =
             IPendleMarket(
                 data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
@@ -323,9 +324,12 @@ contract PendleRouter is IPendleRouter, Permissions {
         bytes32 _marketFactoryId,
         address _xyt,
         address _token
-    ) public override returns (address market) {
+    ) public override nonReentrant returns (address market) {
         require(_xyt != address(0), "Pendle: zero address");
         require(_token != address(0), "Pendle: zero address");
+        try IPendleYieldToken(_token).forge() returns (address) {
+            revert("XYT_QUOTE_PAIR_FORBIDDEN");
+        } catch {}
 
         IPendleMarketFactory factory =
             IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));
@@ -343,7 +347,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _token,
         uint256 _initialXytLiquidity,
         uint256 _initialTokenLiquidity
-    ) public payable override {
+    ) public payable override nonReentrant {
         require(_initialXytLiquidity > 0, "Pendle: initial XYT <= 0");
         require(_initialTokenLiquidity > 0, "Pendle: initial tokens <= 0");
 
@@ -373,7 +377,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         uint256 _minOutTotalAmount,
         uint256 _maxPrice,
         bytes32 _marketFactoryId
-    ) public payable override returns (uint256 outSwapAmount) {
+    ) public payable override nonReentrant returns (uint256 outSwapAmount) {
         _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
         _tokenOut = _isETH(_tokenOut) ? address(weth) : _tokenOut;
 
@@ -401,7 +405,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         uint256 _maxInTotalAmount,
         uint256 _maxPrice,
         bytes32 _marketFactoryId
-    ) public payable override returns (uint256 inSwapAmount) {
+    ) public payable override nonReentrant returns (uint256 inSwapAmount) {
         _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
         _tokenOut = _isETH(_tokenOut) ? address(weth) : _tokenOut;
         uint256 change = _maxInTotalAmount;
@@ -432,7 +436,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _tokenOut,
         uint256 _inTotalAmount,
         uint256 _minOutTotalAmount
-    ) public payable override returns (uint256 outTotalAmount) {
+    ) public payable override nonReentrant returns (uint256 outTotalAmount) {
         _transferIn(_tokenIn, _inTotalAmount);
 
         for (uint256 i = 0; i < _swapPath.length; i++) {
@@ -469,7 +473,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         address _tokenIn,
         address _tokenOut,
         uint256 _maxInTotalAmount
-    ) public payable override returns (uint256 inTotalAmount) {
+    ) public payable override nonReentrant returns (uint256 inTotalAmount) {
         uint256 outTotalAmount;
         uint256 change = _maxInTotalAmount;
 
