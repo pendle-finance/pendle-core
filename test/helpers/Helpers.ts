@@ -6,6 +6,7 @@ import CToken from "../../build/artifacts/contracts/interfaces/ICToken.sol/ICTok
 import TetherToken from "../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json";
 import { liqParams } from "../core/fixtures/";
 import { aaveFixture } from "../core/fixtures/aave.fixture";
+import { tokenToCTokenAddress } from "../core/fixtures/compound.fixture";
 import { consts, Token } from "./Constants";
 
 const hre = require("hardhat");
@@ -43,14 +44,14 @@ export async function mintOtAndXyt(
 ) {
   await mint(provider, token, alice, amount);
   await convertToAaveToken(token, alice, amount);
-  // await mint(provider, token, alice, amount);
-  // await convertToCompoundToken(token, alice, amount);
+  await mint(provider, token, alice, amount);
+  await convertToCompoundToken(token, alice, amount);
   const { lendingPoolCore } = await aaveFixture(alice);
 
   const aContract = await getAContract(alice, lendingPoolCore, token);
-  // const cContract = await getCContract(alice, token);
+  const cContract = await getCContract(alice, token);
   await aContract.approve(pendleRouter.address, consts.MAX_ALLOWANCE);
-  // await cContract.approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+  await cContract.approve(pendleRouter.address, consts.MAX_ALLOWANCE);
   await pendleRouter.tokenizeYield(
     consts.FORGE_AAVE,
     token.address,
@@ -58,13 +59,13 @@ export async function mintOtAndXyt(
     amount,
     alice.address
   );
-  // await pendleRouter.tokenizeYield(
-  //   consts.FORGE_COMPOUND,
-  //   token.address,
-  //   consts.T0.add(consts.ONE_MONTH),
-  //   amount,
-  //   alice.address
-  // );
+  await pendleRouter.tokenizeYield(
+    consts.FORGE_COMPOUND,
+    token.address,
+    consts.T0.add(consts.ONE_MONTH),
+    amount,
+    alice.address
+  );
 }
 
 export async function mint(
@@ -102,8 +103,24 @@ export async function convertToCompoundToken(
   amount: BN
 ) {
   const tokenAmount = amountToWei(token, amount);
+  if (!tokenToCTokenAddress) return;
+  /**
+   *  @notice tokenToCTokenAddress array only supports main net USDT
+   */
+  const cErc20Mapping = tokenToCTokenAddress.find(
+    (tokens) => tokens.tokenAddress === token.address
+  );
 
-  const cToken = new Contract(token.address, CToken.abi, alice);
+  if (!cErc20Mapping) {
+    console.log("No cToken for token: ", token.address);
+    return;
+  }
+  const cErc20Address = cErc20Mapping.cTokenAddress;
+
+  const erc20 = new Contract(token.address, ERC20.abi, alice);
+  await erc20.approve(cErc20Address, tokenAmount);
+
+  const cToken = new Contract(cErc20Address, CToken.abi, alice);
   await cToken.mint(tokenAmount);
 }
 
