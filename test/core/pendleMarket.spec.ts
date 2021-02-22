@@ -508,7 +508,7 @@ describe("PendleMarket", async () => {
     ).to.be.revertedWith("Pendle: market already exists");
   });
 
-  it.only("shouldn't be able to create market with XYT as quote pair", async () => {
+  it("shouldn't be able to create market with XYT as quote pair", async () => {
     console.log(`xyt ${pendleXyt.address}`);
     console.log(`xyt2 ${pendleXyt2.address}`);
     await expect(
