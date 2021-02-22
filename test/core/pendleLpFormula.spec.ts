@@ -454,6 +454,10 @@ describe("pendleLpFormula", async () => {
       BN.from(0),
       BN.from(0)
     );
-    approxBigNumber(await pendleStdMarket.totalSupply(), BN.from(0), BN.from(0));
+    approxBigNumber(
+      await pendleStdMarket.totalSupply(),
+      BN.from(0),
+      BN.from(0)
+    );
   });
 });
