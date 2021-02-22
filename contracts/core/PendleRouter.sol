@@ -232,6 +232,7 @@ contract PendleRouter is IPendleRouter, Permissions {
                 data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
             );
         require(address(market) != address(0), "Pendle: market not found");
+        // require(!_isMarketLocked(_xyt), "MARKET_LOCKED");
 
         _transferIn(_xyt, _maxInXyt);
         _transferIn(_token, _maxInToken);
@@ -252,15 +253,17 @@ contract PendleRouter is IPendleRouter, Permissions {
         uint256 _exactInAsset,
         uint256 _minOutLp
     ) public payable override {
-        address asset = _forXyt ? _xyt : _token;
+        IPendleMarket market =
+            IPendleMarket(
+                data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
+            );
+        require(address(market) != address(0), "Pendle: market not found");
+        // require(!_isMarketLocked(_xyt),"MARKET_LOCKED");
 
+        address asset = _forXyt ? _xyt : _token;
         _transferIn(asset, _exactInAsset);
 
-        asset = _isETH(_token) ? address(weth) : _token;
-        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, asset));
-        require(address(market) != address(0), "Pendle: market not found");
-
-        asset = _forXyt ? _xyt : asset;
+        asset = _isETH(_token) ? address(weth) : asset;
         uint256 exactOutLp = market.addMarketLiquiditySingle(asset, _exactInAsset, _minOutLp);
 
         _transferOut(address(market), exactOutLp);
@@ -274,8 +277,12 @@ contract PendleRouter is IPendleRouter, Permissions {
         uint256 _minOutXyt,
         uint256 _minOutToken
     ) public override {
-        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
+        IPendleMarket market =
+            IPendleMarket(
+                data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
+            );
         require(address(market) != address(0), "Pendle: market not found");
+        // require(!_isMarketLocked(_xyt),"MARKET_LOCKED"); // this operation will never be locked
 
         _transferIn(address(market), _exactInLp);
 
@@ -294,14 +301,18 @@ contract PendleRouter is IPendleRouter, Permissions {
         uint256 _exactInLp,
         uint256 _minOutAsset
     ) public override {
-        address asset = _isETH(_token) ? address(weth) : _token;
-
-        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, asset));
+        IPendleMarket market =
+            IPendleMarket(
+                data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
+            );
         require(address(market) != address(0), "Pendle: market not found");
+        // require(!_isMarketLocked(_xyt),"MARKET_LOCKED");
 
         _transferIn(address(market), _exactInLp);
 
-        asset = _forXyt ? _xyt : asset;
+        address asset = _forXyt ? _xyt : _token;
+        asset = _isETH(_token) ? address(weth) : asset;
+
         uint256 assetOut = market.removeMarketLiquiditySingle(asset, _exactInLp, _minOutAsset);
 
         asset = _forXyt ? _xyt : _token;
@@ -613,6 +624,11 @@ contract PendleRouter is IPendleRouter, Permissions {
         token = benmarkMarket.token();
         xyt = benmarkMarket.xyt();
     }
+
+    // function _isMarketLocked(address _xyt) internal pure returns (bool isLocked){
+    //     // To implement
+    //     isLocked = false; // never locked
+    // }
 
     /// @dev Inbound transfer from msg.sender to router
     function _transferIn(address _token, uint256 _amount) internal {
