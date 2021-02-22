@@ -135,7 +135,7 @@ describe("pendleLpFormula", async () => {
       initialBalance = await testToken.balanceOf(user.address);
       await pendleRouter
         .connect(user)
-        .removeMarketLiquidityToken(
+        .removeMarketLiquiditySingle(
           consts.MARKET_FACTORY_AAVE,
           pendleXyt.address,
           testToken.address,

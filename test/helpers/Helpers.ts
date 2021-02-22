@@ -43,14 +43,14 @@ export async function mintOtAndXyt(
 ) {
   await mint(provider, token, alice, amount);
   await convertToAaveToken(token, alice, amount);
-  await mint(provider, token, alice, amount);
-  await convertToCompoundToken(token, alice, amount);
+  // await mint(provider, token, alice, amount);
+  // await convertToCompoundToken(token, alice, amount);
   const { lendingPoolCore } = await aaveFixture(alice);
 
   const aContract = await getAContract(alice, lendingPoolCore, token);
-  const cContract = await getCContract(alice, token);
+  // const cContract = await getCContract(alice, token);
   await aContract.approve(pendleRouter.address, consts.MAX_ALLOWANCE);
-  await cContract.approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+  // await cContract.approve(pendleRouter.address, consts.MAX_ALLOWANCE);
   await pendleRouter.tokenizeYield(
     consts.FORGE_AAVE,
     token.address,
@@ -58,13 +58,13 @@ export async function mintOtAndXyt(
     amount,
     alice.address
   );
-  await pendleRouter.tokenizeYield(
-    consts.FORGE_COMPOUND,
-    token.address,
-    consts.T0.add(consts.ONE_MONTH),
-    amount,
-    alice.address
-  );
+  // await pendleRouter.tokenizeYield(
+  //   consts.FORGE_COMPOUND,
+  //   token.address,
+  //   consts.T0.add(consts.ONE_MONTH),
+  //   amount,
+  //   alice.address
+  // );
 }
 
 export async function mint(

@@ -28,13 +28,13 @@ describe("pendleAMarket", async () => {
   let pendleAOwnershipToken: Contract;
   let pendleAXyt: Contract;
   let pendleAXyt2: Contract;
-  let pendleCOwnershipToken: Contract;
-  let pendleCXyt: Contract;
+  // let pendleCOwnershipToken: Contract;
+  // let pendleCXyt: Contract;
   let lendingPoolCore: Contract;
   let pendleAaveForge: Contract;
-  let pendleCompoundForge: Contract;
+  // let pendleCompoundForge: Contract;
   let pendleAMarket: Contract;
-  let pendleCMarket: Contract;
+  // let pendleCMarket: Contract;
   let testToken: Contract;
   let aUSDT: Contract;
   let cUSDT: Contract;
@@ -49,9 +49,9 @@ describe("pendleAMarket", async () => {
     pendleRouter = fixture.core.pendleRouter;
     pendleTreasury = fixture.core.pendleTreasury;
     pendleData = fixture.core.pendleData;
-    pendleCOwnershipToken = fixture.cForge.pendleOwnershipToken;
-    pendleCXyt = fixture.cForge.pendleFutureYieldCToken;
-    pendleCompoundForge = fixture.cForge.pendleCompoundForge;
+    // pendleCOwnershipToken = fixture.cForge.pendleOwnershipToken;
+    // pendleCXyt = fixture.cForge.pendleFutureYieldCToken;
+    // pendleCompoundForge = fixture.cForge.pendleCompoundForge;
     pendleAOwnershipToken = fixture.aForge.pendleOwnershipToken;
     pendleAXyt = fixture.aForge.pendleFutureYieldAToken;
     pendleAXyt2 = fixture.aForge.pendleFutureYieldAToken2;
@@ -59,7 +59,7 @@ describe("pendleAMarket", async () => {
     lendingPoolCore = fixture.aave.lendingPoolCore;
     testToken = fixture.testToken;
     pendleAMarket = fixture.pendleAMarket;
-    pendleCMarket = fixture.pendleCMarket;
+    // pendleCMarket = fixture.pendleCMarket;
     tokenUSDT = tokens.USDT;
     aUSDT = await getAContract(alice, lendingPoolCore, tokenUSDT);
     cUSDT = await getCContract(alice, tokenUSDT);
@@ -508,7 +508,7 @@ describe("pendleAMarket", async () => {
     ).to.be.revertedWith("Pendle: market already exists");
   });
 
-  it.only("shouldn't be able to create market with XYT as quote pair", async () => {
+  it("shouldn't be able to create market with XYT as quote pair", async () => {
     console.log(`xyt ${pendleAXyt.address}`);
     console.log(`xyt2 ${pendleAXyt2.address}`);
     await expect(

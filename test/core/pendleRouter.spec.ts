@@ -44,21 +44,20 @@ describe("PendleRouter", async () => {
   let initialCUSDTbalance: BN;
   before(async () => {
     globalSnapshotId = await evm_snapshot();
-
     const fixture = await loadFixture(pendleFixture);
     pendleRouter = fixture.core.pendleRouter;
     pendleTreasury = fixture.core.pendleTreasury;
     pendleData = fixture.core.pendleData;
     pendleAOt = fixture.aForge.pendleOwnershipToken;
-    pendleCOt = fixture.cForge.pendleOwnershipToken;
+    // pendleCOt = fixture.cForge.pendleOwnershipToken;
     pendleAXyt = fixture.aForge.pendleFutureYieldAToken;
-    pendleCXyt = fixture.cForge.pendleFutureYieldCToken;
+    // pendleCXyt = fixture.cForge.pendleFutureYieldCToken;
     pendleAaveForge = fixture.aForge.pendleAaveForge;
-    pendleCompoundForge = fixture.cForge.pendleCompoundForge;
+    // pendleCompoundForge = fixture.cForge.pendleCompoundForge;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     tokenUSDT = tokens.USDT;
     aUSDT = await getAContract(alice, lendingPoolCore, tokenUSDT);
-    cUSDT = await getCContract(alice, tokenUSDT);
+    // cUSDT = await getCContract(alice, tokenUSDT);
     snapshotId = await evm_snapshot();
   });
 
@@ -71,7 +70,7 @@ describe("PendleRouter", async () => {
     snapshotId = await evm_snapshot();
     amountToTokenize = amountToWei(tokenUSDT, consts.INITIAL_AAVE_TOKEN_AMOUNT);
     initialAUSDTbalance = await aUSDT.balanceOf(alice.address);
-    initialCUSDTbalance = await cUSDT.balanceOf(alice.address);
+    // initialCUSDTbalance = await cUSDT.balanceOf(alice.address);
   });
 
   async function tokenizeYieldSample(amountToTokenize: BN) {
