@@ -572,11 +572,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 startTime = IPendleYieldToken(xyt).start();
         uint256 duration = endTime - startTime;
 
-        TokenReserve storage xytReserve = reserves[xyt];
-        TokenReserve storage tokenReserve = reserves[token];
-
-        uint256 xytWeight = xytReserve.weight;
-        uint256 tokenWeight = tokenReserve.weight;
+        uint256 xytWeight = reserves[xyt].weight;
+        uint256 tokenWeight = reserves[token].weight;
 
         uint256 timeLeft;
         if (endTime >= currentTime) {
@@ -587,7 +584,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         uint256 timeToMature =
             Math.rdiv(timeLeft * Math.FORMULA_PRECISION, duration * Math.FORMULA_PRECISION);
-        uint256 priceNow =
+
+        priceNow =
             Math.rdiv(
                 Math.ln(
                     Math.rmul(Math.PI, timeToMature).add(Math.FORMULA_PRECISION),
@@ -595,6 +593,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
                 ),
                 Math.ln(Math.PI_PLUSONE, Math.FORMULA_PRECISION)
             );
+
         uint256 r = Math.rdiv(priceNow, priceLast);
         require(Math.FORMULA_PRECISION >= r, "Pendle: wrong r value");
 
