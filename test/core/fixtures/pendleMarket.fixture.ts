@@ -45,7 +45,7 @@ export async function pendleMarketFixture(
     core,
     governance
   );
-  // const cForge = await pendleCompoundForgeFixture(alice, provider, core, governance);
+  const cForge = await pendleCompoundForgeFixture(alice, provider, core, governance);
   const aave = await aaveFixture(alice);
   const {
     pendleRouter,

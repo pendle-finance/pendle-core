@@ -86,7 +86,7 @@ describe("pendleAMarket", async () => {
     );
   }
 
-  it("should be able to join a bootstrapped market with a single token USDT", async () => {
+  it.only("should be able to join a bootstrapped market with a single token USDT", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
 
     await bootstrapSampleMarket(amountToTokenize);
