@@ -37,7 +37,7 @@ export async function pendleFixture(
 
   const aContract = await getAContract(alice, lendingPoolCore, tokens.USDT);
   await aContract.approve(core.pendleRouter.address, consts.MAX_ALLOWANCE);
-  const cContract = await getCContract(alice, tokens.UDST);
+  const cContract = await getCContract(alice, tokens.USDT);
   await cContract.approve(core.pendleRouter.address, consts.MAX_ALLOWANCE);
 
   return { core, aave, aForge, cForge }

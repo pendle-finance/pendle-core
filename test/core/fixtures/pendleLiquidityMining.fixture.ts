@@ -149,7 +149,7 @@ export async function pendleLiquidityMiningFixture(
     consts.HIGH_GAS_OVERRIDE
   );
   await pendleCLiquidityMining.setAllocationSetting(
-    [consts.T0.add(consts.ONE_MONTH)],
+    [consts.T1.add(consts.ONE_MONTH)],
     [params.TOTAL_NUMERATOR],
     consts.HIGH_GAS_OVERRIDE
   );
