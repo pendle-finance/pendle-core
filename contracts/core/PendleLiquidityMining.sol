@@ -22,7 +22,7 @@
  */
 pragma solidity 0.7.6;
 
-import {Factory} from "../libraries/PendleLibrary.sol";
+import "../libraries/FactoryLib.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleForge.sol";
