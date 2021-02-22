@@ -31,6 +31,7 @@ import "../tokens/PendleBaseToken.sol";
 import "../libraries/PendleLibrary.sol";
 import {Math} from "../libraries/PendleLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "hardhat/console.sol";
 
 contract PendleMarket is IPendleMarket, PendleBaseToken {
     using Math for uint256;
@@ -210,6 +211,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 _minOutXyt,
         uint256 _minOutToken
     ) external override isBootstrapped onlyRouter returns (uint256 xytOut, uint256 tokenOut) {
+        console.log("Removing Liquidity");
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
         uint256 exitFee = data.exitFee();
@@ -218,13 +220,15 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 inLpAfterExitFee = _inLp.sub(exitFee);
         uint256 ratio = Math.rdiv(inLpAfterExitFee, totalLp);
         require(ratio != 0, "Pendle: zero ratio");
-
+        console.log("Safe math hasn't failed");
         // Calc and withdraw xyt token.
         uint256 balanceToken = reserves[xyt].balance;
         uint256 outAmount = Math.rmul(ratio, balanceToken);
+        console.log("Safe math hasn't failed 2");
         require(outAmount != 0, "Pendle: math problem");
         require(outAmount >= _minOutXyt, "Pendle: beyond amount limit");
         reserves[xyt].balance = reserves[xyt].balance.sub(outAmount);
+        console.log("Safe math hasn't failed 3");
         xytOut = outAmount;
         emit Exit(xyt, outAmount);
         _transferOut(xyt, outAmount);
@@ -232,17 +236,25 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         // Calc and withdraw pair token.
         balanceToken = reserves[token].balance;
         outAmount = Math.rmul(ratio, balanceToken);
+        console.log("Safe math hasn't failed 4");
         require(outAmount != 0, "Pendle: math problem");
         require(outAmount >= _minOutToken, "Pendle: beyond amount limit");
         reserves[token].balance = reserves[token].balance.sub(outAmount);
         tokenOut = outAmount;
+        console.log("Safe math hasn't failed 5");
         emit Exit(token, outAmount);
         _transferOut(token, outAmount);
+        console.log("Safe math hasn't failed 6");
 
         // Deal with lp last.
         _transferInLp(_inLp);
+        console.log("Safe math hasn't failed 7");
+
         _collectFees(exitFees);
+        console.log("Safe math hasn't failed 8");
+
         _burnLp(inLpAfterExitFee);
+        console.log("Safe math hasn't failed 9");
     }
 
     function removeMarketLiquiditySingle(

@@ -66,14 +66,6 @@ describe("pendleCompoundMarket", async () => {
   });
 
   async function bootstrapSampleMarket(amountToTokenize: BN) {
-    console.log("amountToTokenize", amountToTokenize.toString());
-    console.log("pendleCXyt balanceOf");
-    console.log(
-      "testToken balanceOf",
-      await testToken
-        .balanceOf(alice.address)
-        .then((result: any) => result.toString())
-    );
     await pendleRouter.bootstrapMarket(
       consts.MARKET_FACTORY_COMPOUND,
       pendleCXyt.address,
@@ -86,14 +78,10 @@ describe("pendleCompoundMarket", async () => {
 
   it.only("should be able to join a bootstrapped market with a single token USDT", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
-    console.log("bootstrapping");
-    console.log("amountToTokenize", amountToTokenize.toString());
-
     await bootstrapSampleMarket(amountToTokenize);
 
     let totalSupply = await pendleCMarket.totalSupply();
     let initalWalletBalance = await pendleCMarket.balanceOf(alice.address);
-    console.log("addMarketLiquiditySingle");
     await pendleRouter.addMarketLiquiditySingle(
       consts.MARKET_FACTORY_COMPOUND,
       pendleCXyt.address,
@@ -104,7 +92,6 @@ describe("pendleCompoundMarket", async () => {
       consts.HIGH_GAS_OVERRIDE
     );
     let currentWalletBalance = await pendleCMarket.balanceOf(alice.address);
-    console.log("expecting");
     expect(currentWalletBalance).to.be.gt(initalWalletBalance);
   });
 
@@ -248,10 +235,34 @@ describe("pendleCompoundMarket", async () => {
 
   it.only("should be able to exit a pool", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    console.log("bootstrapSampleMarket");
+    console.log("test");
     await bootstrapSampleMarket(amountToTokenize);
     await advanceTime(provider, consts.ONE_MONTH);
-    const totalSupply = await pendleCMarket.totalSupply();
+    console.log("test 2");
 
+    /**
+     * Check contract balance
+     * Check wallet blanace
+     */
+    const totalSupply = await pendleCMarket.totalSupply();
+    const marketReserves = await pendleRouter.getMarketReserves(
+      consts.MARKET_FACTORY_COMPOUND,
+      pendleCXyt.address,
+      testToken.address
+    );
+    const lpBalance = await pendleCMarket.balanceOf(alice.address);
+    console.log("pendleCMarket totalSupply", totalSupply.toString());
+    console.log(
+      "pendleCMarket xytAmount:",
+      marketReserves.xytAmount.toString()
+    );    
+    console.log(
+      "pendleCMarket tokenAmount:",
+      marketReserves.tokenAmount.toString()
+    );
+    console.log("lpBalance:", lpBalance.toString());
+    console.log("removeMarketLiquidityAll");
     await pendleRouter.removeMarketLiquidityAll(
       consts.MARKET_FACTORY_COMPOUND,
       pendleCXyt.address,
@@ -261,6 +272,7 @@ describe("pendleCompoundMarket", async () => {
       amountToTokenize.div(10),
       consts.HIGH_GAS_OVERRIDE
     );
+    console.log("removeMarketLiquidityAll done");
 
     let yieldTokenBalance = await pendleCXyt.balanceOf(pendleCMarket.address);
     let testTokenBalance = await testToken.balanceOf(pendleCMarket.address);
@@ -523,7 +535,7 @@ describe("pendleCompoundMarket", async () => {
     ).to.be.revertedWith("XYT_QUOTE_PAIR_FORBIDDEN");
   });
 
-  it("AMM's formula should be correct", async () => {
+  it.only("AMM's formula should be correct", async () => {
     await AMMTest(
       pendleRouter,
       pendleCMarket,

@@ -33,6 +33,7 @@ import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../periphery/Permissions.sol";
+import "hardhat/console.sol";
 
 contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -283,8 +284,12 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         (uint256 xytAmount, uint256 tokenAmount) =
             market.removeMarketLiquidityAll(_exactInLp, _minOutXyt, _minOutToken);
 
+        console.log("Safe math hasn't failed 10");
+        console.log("xytAmount %s", xytAmount);
         _transferOut(_xyt, xytAmount);
+        console.log("Safe math hasn't failed 11");
         _transferOut(_token, tokenAmount);
+        console.log("Safe math hasn't failed 12");
     }
 
     function removeMarketLiquiditySingle(
