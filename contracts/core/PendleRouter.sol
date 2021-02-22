@@ -220,6 +220,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         data.addMarketFactory(_marketFactoryId, _marketFactoryAddress);
     }
 
+    // add market liquidity by xyt and base tokens
     function addMarketLiquidityAll(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -245,6 +246,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         _transferOut(_token, _maxInToken - amountTokenUsed); // transfer unused Token back to user
     }
 
+    // add market liquidity by xyt or base token
     function addMarketLiquiditySingle(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -267,6 +269,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         _transferOut(address(market), exactOutLp);
     }
 
+    // remove market liquidity by xyt and base tokens
     function removeMarketLiquidityAll(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -287,6 +290,8 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         _transferOut(_token, tokenAmount);
     }
 
+    
+    // remove market liquidity by xyt or base tokens
     function removeMarketLiquiditySingle(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -359,6 +364,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         data.updateMarketInfo(_xyt, _token, _marketFactoryId);
     }
 
+    // trade by swap exact amount of token into market
     function swapExactIn(
         address _tokenIn,
         address _tokenOut,
@@ -387,6 +393,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         _transferOut(_tokenOut, outSwapAmount);
     }
 
+    // trade by swap exact amount of token out of market
     function swapExactOut(
         address _tokenIn,
         address _tokenOut,
