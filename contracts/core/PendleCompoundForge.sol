@@ -22,7 +22,6 @@
  */
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import {ExpiryUtils, Factory} from "../libraries/PendleLibrary.sol";
 import "../interfaces/ICToken.sol";
@@ -33,7 +32,7 @@ import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
 
-contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
+contract PendleCompoundForge is IPendleForge, Permissions {
     using ExpiryUtils for string;
     using SafeMath for uint256;
 
@@ -90,8 +89,9 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
     }
 
     function newYieldContracts(address _underlyingAsset, uint256 _expiry)
-        public
+        external
         override
+        onlyRouter
         returns (address ot, address xyt)
     {
         address cToken = underlyingToCToken[_underlyingAsset];
@@ -232,7 +232,7 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
         string memory _symbol,
         uint8 _decimals,
         uint256 _expiry
-    ) internal nonReentrant() returns (address xyt) {
+    ) internal returns (address xyt) {
         ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
 
         xyt = Factory.createContract(
@@ -257,7 +257,7 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
         string memory _symbol,
         uint8 _decimals,
         uint256 _expiry
-    ) internal nonReentrant() returns (address ot) {
+    ) internal returns (address ot) {
         ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
 
         ot = Factory.createContract(
