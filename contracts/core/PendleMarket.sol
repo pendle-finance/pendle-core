@@ -417,7 +417,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     }
 
     // will do weight update (dry run) before reading token weights, to prevent the case
-    // that weight is outdated 
+    // that weight is outdated
     function getWeight(address asset) external view override returns (uint256) {
         (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) =
             _updateWeightDry();
@@ -536,7 +536,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         _mint(address(this), amount);
     }
 
-    // update the token reserve storage 
+    // update the token reserve storage
     function _updateWeight() internal {
         uint256 xytWeight = reserves[xyt].weight;
         uint256 tokenWeight = reserves[token].weight;

@@ -290,7 +290,6 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         _transferOut(_token, tokenAmount);
     }
 
-    
     // remove market liquidity by xyt or base tokens
     function removeMarketLiquiditySingle(
         bytes32 _marketFactoryId,
