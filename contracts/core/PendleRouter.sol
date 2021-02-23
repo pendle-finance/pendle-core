@@ -336,9 +336,9 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         require(address(factory) != address(0), "ZERO_ADDRESS");
 
         market = factory.createMarket(_xyt, _token);
-        IERC20(_xyt).safeApprove(market, Math.UINT_MAX_VALUE);
-        IERC20(_token).safeApprove(market, Math.UINT_MAX_VALUE);
-        IERC20(market).safeApprove(market, Math.UINT_MAX_VALUE);
+        IERC20(_xyt).safeApprove(market, type(uint256).max);
+        IERC20(_token).safeApprove(market, type(uint256).max);
+        IERC20(market).safeApprove(market, type(uint256).max);
     }
 
     function bootstrapMarket(
@@ -582,7 +582,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             tokenOut: _tokenOut,
             swapAmount: _inSwapAmount,
             limitReturnAmount: 0,
-            maxPrice: Math.UINT_MAX_VALUE
+            maxPrice: type(uint256).max
         });
 
         return (swap, outSwapAmount);
@@ -604,8 +604,8 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             tokenIn: _tokenIn,
             tokenOut: _tokenOut,
             swapAmount: inSwapAmount,
-            limitReturnAmount: Math.UINT_MAX_VALUE,
-            maxPrice: Math.UINT_MAX_VALUE
+            limitReturnAmount: type(uint256).max,
+            maxPrice: type(uint256).max
         });
 
         return (swap, inSwapAmount);

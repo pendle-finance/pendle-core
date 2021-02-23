@@ -24,7 +24,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 library Math {
     using SafeMath for uint256;
 
-    uint256 internal constant UINT_MAX_VALUE = uint256(-1);
     uint256 internal constant WAD = 1e18;
     uint256 internal constant BIG_NUMBER = (uint256(1) << uint256(200));
     uint256 internal constant PRECISION_BITS = 40;

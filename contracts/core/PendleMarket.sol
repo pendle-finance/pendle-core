@@ -586,7 +586,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         );
 
         uint256 r = Math.rdiv(priceNow, priceLast);
-        require(Math.FORMULA_PRECISION >= r, "MATH_ERROR");
+        require(Math.RONE >= r, "MATH_ERROR");
 
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
