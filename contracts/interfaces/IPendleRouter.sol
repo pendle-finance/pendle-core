@@ -91,6 +91,12 @@ interface IPendleRouter {
         uint256 expiry
     ) external returns (uint256 interests);
 
+    function redeemDueInterestsMultiple(
+        bytes32[] calldata _forgeIds,
+        address[] calldata _underlyingAssets,
+        uint256[] calldata _expiries
+    ) external returns (uint256[] memory interests);
+
     function redeemUnderlying(
         bytes32 forgeId,
         address underlyingAsset,
