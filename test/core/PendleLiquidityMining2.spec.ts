@@ -4,12 +4,16 @@ import { BigNumber as BN, Contract, Wallet } from "ethers";
 import PendleLiquidityMining from "../../build/artifacts/contracts/core/PendleLiquidityMining.sol/PendleLiquidityMining.json";
 import {
   approxBigNumber,
+  amountToWei,
   consts,
   evm_revert,
   evm_snapshot,
   setTime,
   setTimeNextBlock,
   startOfEpoch,
+  getAContract,
+  tokens,
+  mint,
 } from "../helpers";
 import {
   liqParams,
@@ -138,14 +142,20 @@ function calExpectedRewards(
   return rewards;
 }
 
-// TODO: test set allocation, interest of Lp
+// TODO:interest of Lp, pull&push of tokens
 describe("PendleLiquidityMining-beta tests", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
-  const [alice, bob, charlie, dave] = wallets;
+  const [alice, bob, charlie, dave, eve] = wallets;
   let pendleLiq: Contract;
+  let pendleRouter: Contract;
+  let pendleStdMarket: Contract;
+  let pendleXyt: Contract;
+  let baseToken: Contract;
   let pdl: Contract;
   let params: liqParams;
+  let lendingPoolCore: Contract;
+  let aUSDT: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
   let pendleLiqWeb3: any; // TODO: move this to fixture
@@ -153,8 +163,14 @@ describe("PendleLiquidityMining-beta tests", async () => {
     globalSnapshotId = await evm_snapshot();
     const fixture = await loadFixture(pendleLiquidityMiningFixture);
     pendleLiq = fixture.pendleLiquidityMining;
+    pendleRouter = fixture.core.pendleRouter;
+    baseToken = fixture.testToken;
+    pendleStdMarket = fixture.pendleStdMarket;
+    pendleXyt = fixture.forge.pendleFutureYieldToken;
     params = fixture.params;
     pdl = fixture.pdl;
+    lendingPoolCore = fixture.aave.lendingPoolCore;
+    aUSDT = await getAContract(alice, lendingPoolCore, tokens.USDT);
     pendleLiqWeb3 = new hre.web3.eth.Contract(
       PendleLiquidityMining.abi,
       pendleLiq.address
@@ -192,9 +208,20 @@ describe("PendleLiquidityMining-beta tests", async () => {
       .claimRewards()
       .call({ from: user.address });
   }
+
+  async function getLpBalanceOfAllUsers(): Promise<BN[]> {
+    let res: BN[] = [];
+    for (let i = 0; i < wallets.length; i++) {
+      res.push(await pendleStdMarket.balanceOf(wallets[i].address));
+    }
+    return res;
+  }
+
   // [epochs][user][transaction]
+
   async function doSequence(userStakingData: userStakeAction[][][]) {
     let flatData: userStakeAction[] = [];
+    let expectedLpBalance: BN[] = await getLpBalanceOfAllUsers();
 
     userStakingData.forEach((epochData) => {
       epochData.forEach((userData) => {
@@ -210,7 +237,6 @@ describe("PendleLiquidityMining-beta tests", async () => {
       return a.time.sub(b.time).toNumber();
     });
 
-    // console.log(flatData);
     for (let i = 0; i < flatData.length; i++) {
       let action: userStakeAction = flatData[i];
       if (i != 0) {
@@ -220,11 +246,24 @@ describe("PendleLiquidityMining-beta tests", async () => {
       await setTimeNextBlock(provider, action.time);
       if (action.isStaking) {
         await doStake(wallets[action.id], action.amount); // acess users directly by their id instead of names
+        expectedLpBalance[action.id] = expectedLpBalance[action.id].sub(
+          action.amount
+        );
       } else {
         // withdrawing
         await doWithdraw(wallets[action.id], action.amount);
+        expectedLpBalance[action.id] = expectedLpBalance[action.id].add(
+          action.amount
+        );
       }
     }
+
+    /* check Lp balances*/
+    let actualLpBalance: BN[] = await getLpBalanceOfAllUsers();
+    expect(
+      expectedLpBalance,
+      "lp balances don't match expected lp balances"
+    ).to.be.eql(actualLpBalance);
   }
 
   async function checkEqualRewards(
@@ -247,13 +286,9 @@ describe("PendleLiquidityMining-beta tests", async () => {
       approxBigNumber(
         await pdl.balanceOf(wallets[userId].address),
         expectedRewards[userId][0].div(allocationRateDiv),
-        BN.from(100),
+        BN.from(100), // 100 is much better than necessary, but usually the differences are 0
         false
       );
-      // expect(expectedRewards[userId][0].toNumber()).to.be.approximately(
-      // (await pdl.balanceOf(wallets[userId].address)).toNumber(),
-      // 100 // 100 is much better than necessary, but usually the differences are 0
-      // );
     }
     // console.log(await claimRewardsWeb3(wallets[0]));
     // console.log(await claimRewardsWeb3(wallets[1]));
@@ -272,6 +307,40 @@ describe("PendleLiquidityMining-beta tests", async () => {
       );
     }
   }
+
+  it("beta", async () => {
+    // console.log(`\tLP balance of eve = ${await pendleStdMarket.balanceOf(eve.address)}`);
+    // console.log(`\taToken balance of market = ${await aUSDT.balanceOf(pendleStdMarket.address)}`);
+    // console.log(`\tXYT balance of market = ${await pendleXyt.balanceOf(pendleStdMarket.address)}`);
+    // console.log(`\tbaseToken balance of market = ${await baseToken.balanceOf(pendleStdMarket.address)}`);
+    await pendleRouter.connect(eve).claimLpInterests([pendleStdMarket.address]);
+    setTimeNextBlock(provider, consts.T0.add(consts.THREE_MONTH));
+
+    // some dummy trade
+    const testAmount = amountToWei(tokens.USDT, BN.from(1));
+    await pendleRouter.swapExactOut(
+      baseToken.address,
+      pendleXyt.address,
+      testAmount,
+      testAmount.mul(BN.from(10)),
+      consts.MAX_ALLOWANCE,
+      consts.MARKET_FACTORY_AAVE,
+      consts.HIGH_GAS_OVERRIDE
+    );
+    // console.log(`\t+3m, LP balance of eve = ${await pendleStdMarket.balanceOf(eve.address)}`);
+    // console.log(`\t+3m, aToken balance of market = ${await aUSDT.balanceOf(pendleStdMarket.address)}`);
+    // console.log(`\t+3m, XYT balance of market = ${await pendleXyt.balanceOf(pendleStdMarket.address)}`);
+    // console.log(`\t+3m, baseToken balance of market = ${await baseToken.balanceOf(pendleStdMarket.address)}`);
+    // console.log(`\t\tDid a dummy trade`);
+
+    await pendleRouter.connect(eve).claimLpInterests([pendleStdMarket.address]);
+
+    // console.log(`\tclaimed LP interests: LP balance of eve = ${await pendleStdMarket.balanceOf(eve.address)}`);
+    // console.log(`\tclaimed LP interests: aToken balance of market = ${await aUSDT.balanceOf(pendleStdMarket.address)}`);
+    // console.log(`\tclaimed LP interests: aToken balance of eve = ${await aUSDT.balanceOf(eve.address)}`);
+    // console.log(`\tclaimed LP interests: XYT balance of market = ${await pendleXyt.balanceOf(pendleStdMarket.address)}`);
+    // console.log(`\tclaimed LP interests: baseToken balance of market = ${await baseToken.balanceOf(pendleStdMarket.address)}`);
+  });
 
   it("test 1", async () => {
     let userStakingData: userStakeAction[][][] = scenario.scenario01(params);

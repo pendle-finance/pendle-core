@@ -22,7 +22,6 @@
  */
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import {ExpiryUtils, Factory} from "../libraries/PendleLibrary.sol";
 import "../interfaces/IAaveLendingPoolCore.sol";
@@ -33,7 +32,7 @@ import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
 
-contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
+contract PendleAaveForge is IPendleForge, Permissions {
     using ExpiryUtils for string;
     using SafeMath for uint256;
 
@@ -125,7 +124,6 @@ contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         redeemedAmount = tokens.ot.balanceOf(_account);
 
-        aToken.transfer(_to, redeemedAmount);
         uint256 currentNormalizedIncome =
             aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
 
@@ -137,7 +135,7 @@ contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
                 .mul(redeemedAmount)
                 .div(lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry])
                 .sub(redeemedAmount);
-        aToken.transfer(_to, interestsAfterExpiry);
+        aToken.transfer(_to, interestsAfterExpiry.add(redeemedAmount));
 
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
         tokens.ot.burn(_account, redeemedAmount);
@@ -207,13 +205,6 @@ contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
         return (address(tokens.ot), address(tokens.xyt));
     }
 
-    function setRouter(IPendleRouter _router) external override onlyGovernance {
-        require(address(_router) != address(0), "ZERO_ADDRESS");
-
-        router = _router;
-        emit RouterSet(address(_router));
-    }
-
     function getYieldBearingToken(address _underlyingAsset)
         public
         view
@@ -230,7 +221,7 @@ contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
         string memory _symbol,
         uint8 _decimals,
         uint256 _expiry
-    ) internal nonReentrant() returns (address xyt) {
+    ) internal returns (address xyt) {
         IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
 
         xyt = Factory.createContract(
@@ -255,7 +246,7 @@ contract PendleAaveForge is IPendleForge, Permissions, ReentrancyGuard {
         string memory _symbol,
         uint8 _decimals,
         uint256 _expiry
-    ) internal nonReentrant() returns (address ot) {
+    ) internal returns (address ot) {
         IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
 
         ot = Factory.createContract(

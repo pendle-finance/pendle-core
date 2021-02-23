@@ -26,8 +26,6 @@ pragma experimental ABIEncoderV2;
 
 import "../interfaces/IPENDLE.sol";
 
-// // import "hardhat/console.sol";
-
 contract PENDLE is IPENDLE {
     /// @notice A checkpoint for marking number of votes from a given block
     struct Checkpoint {
@@ -135,18 +133,12 @@ contract PENDLE is IPENDLE {
         address dst,
         uint256 rawAmount
     ) external returns (bool) {
-        // console.log("TransferFrom");
         address spender = msg.sender;
         uint96 spenderAllowance = allowances[src][spender];
         uint96 amount = safe96(rawAmount, "AMOUNT_EXCEED_96_BITS");
 
         if (spender != src && spenderAllowance != uint96(-1)) {
-            uint96 newAllowance =
-                sub96(
-                    spenderAllowance,
-                    amount,
-                    "TRANSFER_EXCEED_BALANCE"
-                );
+            uint96 newAllowance = sub96(spenderAllowance, amount, "TRANSFER_EXCEED_BALANCE");
             allowances[src][spender] = newAllowance;
 
             emit Approval(src, spender, newAllowance);

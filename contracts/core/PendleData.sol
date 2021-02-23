@@ -23,7 +23,7 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import {Enumerable, Math} from "../libraries/PendleLibrary.sol";
+import {Math} from "../libraries/PendleLibrary.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
@@ -31,7 +31,6 @@ import "../periphery/Permissions.sol";
 
 contract PendleData is IPendleData, Permissions {
     using SafeMath for uint256;
-    using Enumerable for Enumerable.AddressSet;
 
     struct MarketInfo {
         uint80 xytWeight;
@@ -39,20 +38,12 @@ contract PendleData is IPendleData, Permissions {
         uint256 liquidity;
     }
 
-    struct SortedMarkets {
-        Enumerable.AddressSet markets;
-        bytes32 indices;
-    }
-
     mapping(address => bytes32) public override getForgeId;
     mapping(bytes32 => address) public override getForgeAddress;
     mapping(address => bytes32) public override getMarketFactoryId;
     mapping(bytes32 => address) public override getMarketFactoryAddress;
 
-    // getMarket[forgeId][marketFactoryId][xyt][token]
-    mapping(bytes32 => mapping(bytes32 => mapping(address => mapping(address => address))))
-        public
-        override getMarket;
+    mapping(bytes32 => mapping(address => mapping(address => address))) public override getMarket; // getMarket[marketFactoryId][xyt][token]
     mapping(bytes32 => mapping(address => mapping(uint256 => IPendleYieldToken)))
         public
         override otTokens; // [forgeId][underlyingAsset][expiry]
@@ -64,8 +55,8 @@ contract PendleData is IPendleData, Permissions {
     IPendleRouter public override router;
     address public override treasury;
     mapping(address => bool) public override isMarket;
-    mapping(bytes32 => SortedMarkets) private markets;
-    mapping(address => mapping(bytes32 => MarketInfo)) private infos;
+    mapping(bytes32 => address) private markets;
+    mapping(bytes32 => MarketInfo) private marketInfo;
     address[] private allMarkets;
 
     constructor(address _governance, address _treasury) Permissions(_governance) {
@@ -94,14 +85,6 @@ contract PendleData is IPendleData, Permissions {
 
         initializer = address(0);
         router = _router;
-    }
-
-    function setRouter(IPendleRouter _router) external override initialized onlyGovernance {
-        require(address(_router) != address(0), "ZERO_ADDRESS");
-
-        router = _router;
-
-        emit RouterSet(address(_router));
     }
 
     function setTreasury(address _treasury) external override initialized onlyGovernance {
@@ -147,19 +130,14 @@ contract PendleData is IPendleData, Permissions {
         xyt = xytTokens[_forgeId][_underlyingAsset][_expiry];
     }
 
-    function isRelatedForgeXYT(bytes32 _forgeId, address _xyt)
-        external
-        view
-        override
-        returns (bool)
-    {
-        bytes32 forgeId = getForgeId[IPendleYieldToken(_xyt).forge()];
-        return forgeId == _forgeId;
-    }
-
-    function isValidXYT(address _xyt) external view override returns (bool) {
-        address forge = IPendleYieldToken(_xyt).forge();
-        return getForgeId[forge] != bytes32(0);
+    function isValidXYT(
+        address _forge,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) external view override returns (bool) {
+        bytes32 forgeId = getForgeId[_forge];
+        return (forgeId != bytes32(0) &&
+            address(xytTokens[forgeId][_underlyingAsset][_expiry]) != address(0));
     }
 
     /***********
@@ -176,7 +154,6 @@ contract PendleData is IPendleData, Permissions {
     }
 
     function addMarket(
-        bytes32 _forgeId,
         bytes32 _marketFactoryId,
         address _xyt,
         address _token,
@@ -184,10 +161,10 @@ contract PendleData is IPendleData, Permissions {
     ) external override initialized onlyMarketFactory(_marketFactoryId) {
         allMarkets.push(_market);
 
-        bytes32 key = _createKey(_xyt, _token);
-        markets[key].markets.add(_market);
+        bytes32 key = _createKey(_xyt, _token, _marketFactoryId);
+        markets[key] = _market;
 
-        getMarket[_forgeId][_marketFactoryId][_xyt][_token] = _market;
+        getMarket[_marketFactoryId][_xyt][_token] = _market;
         isMarket[_market] = true;
 
         emit MarketPairAdded(_market, _xyt, _token);
@@ -198,117 +175,40 @@ contract PendleData is IPendleData, Permissions {
         exitFee = _exitFee;
     }
 
-    function sortMarkets(
-        address[] calldata xyts,
-        address[] calldata tokens,
-        uint256 lengthLimit
-    ) external override {
-        bytes32 key;
-        bytes32 indices;
-        address[] memory fetchedMarkets;
-        uint256[] memory effectiveLiquidity;
-
-        for (uint256 i = 0; i < xyts.length; i++) {
-            for (uint256 j = 0; j < tokens.length; j++) {
-                key = _createKey(xyts[i], tokens[j]);
-                fetchedMarkets = getMarketsWithLimit(
-                    xyts[i],
-                    tokens[j],
-                    Math.min(256, lengthLimit)
-                );
-                effectiveLiquidity = getEffectiveLiquidityForMarkets(
-                    xyts[i],
-                    tokens[j],
-                    fetchedMarkets
-                );
-                indices = _buildSortIndices(effectiveLiquidity);
-                if (indices != markets[key].indices) markets[key].indices = indices;
-            }
-        }
-    }
-
-    function sortMarketsWithPurge(
-        address[] calldata xyts,
-        address[] calldata tokens,
-        uint256 lengthLimit
-    ) external override {
-        bytes32 key;
-        address[] memory fetchedMarkets;
-        uint256[] memory effectiveLiquidity;
-        bytes32 indices;
-
-        for (uint256 i = 0; i < xyts.length; i++) {
-            for (uint256 j = 0; j < tokens.length; j++) {
-                key = _createKey(tokens[i], tokens[j]);
-                fetchedMarkets = getMarketsWithLimit(
-                    xyts[i],
-                    tokens[j],
-                    Math.min(256, lengthLimit)
-                );
-                effectiveLiquidity = purgeMarketsEffectiveLiquidity(
-                    xyts[i],
-                    tokens[j],
-                    fetchedMarkets
-                );
-                indices = _buildSortIndices(effectiveLiquidity);
-                if (indices != markets[key].indices) markets[key].indices = indices;
-            }
-        }
-    }
-
-    /// @dev Purge any market that aren't greater than threshold (10% of total)
-    function purgeMarketsEffectiveLiquidity(
+    function updateMarketInfo(
         address _xyt,
         address _token,
-        address[] memory _markets
-    ) public override returns (uint256[] memory effectiveLiquidity) {
-        uint256 totalLiq = 0;
-        bytes32 key = _createKey(_xyt, _token);
-
-        for (uint256 i = 0; i < _markets.length; i++) {
-            MarketInfo memory info = infos[_markets[i]][key];
-
-            infos[_markets[i]][key].liquidity = Math.rdiv(
-                uint256(info.xytWeight),
-                uint256(info.xytWeight).add(uint256(info.tokenWeight))
-            );
-            infos[_markets[i]][key].liquidity = infos[_markets[i]][key].liquidity.mul(
-                IPendleMarket(_markets[i]).getBalance(_token)
-            );
-            totalLiq = totalLiq.add(infos[_markets[i]][key].liquidity);
-        }
-
-        uint256 threshold = Math.rmul(totalLiq, ((10 * Math.FORMULA_PRECISION) / 100));
-
-        for (uint256 i = 0; i < markets[key].markets.length(); i++) {
-            if (infos[markets[key].markets.values[i]][key].liquidity < threshold) {
-                markets[key].markets.remove(markets[key].markets.values[i]);
-            }
-        }
-
-        effectiveLiquidity = new uint256[](markets[key].markets.length());
-
-        for (uint256 i = 0; i < markets[key].markets.length(); i++) {
-            effectiveLiquidity[i] = infos[markets[key].markets.values[i]][key].liquidity;
-        }
+        address _marketFactory
+    ) public override {
+        bytes32 marketFactoryId = getMarketFactoryId[_marketFactory];
+        _updateMarketInfo(_xyt, _token, marketFactoryId);
     }
 
     function updateMarketInfo(
         address _xyt,
         address _token,
-        address _market
+        bytes32 _marketFactoryId
     ) public override {
-        bytes32 key = _createKey(_xyt, _token);
-        MarketInfo memory info = infos[_market][key];
+        _updateMarketInfo(_xyt, _token, _marketFactoryId);
+    }
 
-        info.xytWeight = uint80(IPendleMarket(_market).getWeight(_xyt));
-        info.tokenWeight = uint80(IPendleMarket(_market).getWeight(_token));
+    function _updateMarketInfo(
+        address _xyt,
+        address _token,
+        bytes32 _marketFactoryId
+    ) internal {
+        bytes32 key = _createKey(_xyt, _token, _marketFactoryId);
+        address market = markets[key];
+        MarketInfo memory info = marketInfo[key];
+
+        info.xytWeight = uint80(IPendleMarket(market).getWeight(_xyt));
+        info.tokenWeight = uint80(IPendleMarket(market).getWeight(_token));
         info.liquidity = Math.rdiv(
             uint256(info.xytWeight),
             uint256(info.xytWeight).add(uint256(info.tokenWeight))
         );
 
-        infos[_market][key] = info;
+        marketInfo[key] = info;
     }
 
     function allMarketsLength() external view override returns (uint256) {
@@ -319,19 +219,19 @@ contract PendleData is IPendleData, Permissions {
         return allMarkets;
     }
 
-    function getBestMarkets(address source, address destination)
-        external
-        view
-        override
-        returns (address[] memory bestMarkets)
-    {
-        return getBestMarketsWithLimit(source, destination, 3);
+    function getMarketFromKey(
+        address _tokenIn,
+        address _tokenOut,
+        bytes32 _marketFactoryId
+    ) external view override returns (address market) {
+        bytes32 key = _createKey(_tokenIn, _tokenOut, _marketFactoryId);
+        market = markets[key];
     }
 
     function getMarketInfo(
-        address market,
-        address source,
-        address destination
+        address _tokenIn,
+        address _tokenOut,
+        bytes32 _marketFactoryId
     )
         external
         view
@@ -342,94 +242,37 @@ contract PendleData is IPendleData, Permissions {
             uint256 liquidity
         )
     {
-        bytes32 key = _createKey(source, destination);
-        MarketInfo memory info = infos[market][key];
+        bytes32 key = _createKey(_tokenIn, _tokenOut, _marketFactoryId);
+        MarketInfo memory info = marketInfo[key];
+
         xytWeight = info.xytWeight;
         tokenWeight = info.tokenWeight;
         liquidity = info.liquidity;
     }
 
-    function getBestMarketsWithLimit(
+    function getEffectiveLiquidityForMarket(
         address _tokenIn,
         address _tokenOut,
-        uint256 _limit
-    ) public view override returns (address[] memory bestMarkets) {
-        bytes32 key = _createKey(_tokenIn, _tokenOut);
-        bytes32 indices = markets[key].indices;
-        uint256 len = 0;
-        while (indices[len] > 0 && len < Math.min(_limit, indices.length)) {
-            len++;
-        }
+        bytes32 _marketFactoryId
+    ) public view override returns (uint256 effectiveLiquidity) {
+        bytes32 key = _createKey(_tokenIn, _tokenOut, _marketFactoryId);
+        address market = markets[key];
+        MarketInfo memory info = marketInfo[key];
 
-        bestMarkets = new address[](len);
-        for (uint256 i = 0; i < len; i++) {
-            uint256 index = uint256(uint8(indices[i])).sub(1);
-            bestMarkets[i] = markets[key].markets.values[index];
-        }
+        effectiveLiquidity = Math.rdiv(
+            uint256(info.xytWeight),
+            uint256(info.xytWeight).add(uint256(info.tokenWeight))
+        );
+        effectiveLiquidity = effectiveLiquidity.mul(IPendleMarket(market).getBalance(_tokenOut));
     }
 
-    function getEffectiveLiquidityForMarkets(
-        address _xyt,
-        address _token,
-        address[] memory _markets
-    ) public view override returns (uint256[] memory effectiveLiquidity) {
-        effectiveLiquidity = new uint256[](_markets.length);
-        for (uint256 i = 0; i < _markets.length; i++) {
-            bytes32 key = _createKey(_xyt, _token);
-            MarketInfo memory info = infos[_markets[i]][key];
-            effectiveLiquidity[i] = Math.rdiv(
-                uint256(info.xytWeight),
-                uint256(info.xytWeight).add(uint256(info.tokenWeight))
-            );
-            effectiveLiquidity[i] = effectiveLiquidity[i].mul(
-                IPendleMarket(_markets[i]).getBalance(_token)
-            );
-        }
-    }
-
-    function getMarketsWithLimit(
-        address source,
-        address destination,
-        uint256 limit
-    ) public view override returns (address[] memory result) {
-        bytes32 key = _createKey(source, destination);
-        result = new address[](Math.min(limit, markets[key].markets.values.length));
-        for (uint256 i = 0; i < result.length; i++) {
-            result[i] = markets[key].markets.values[i];
-        }
-    }
-
-    function _buildSortIndices(uint256[] memory effectiveLiquidity)
-        internal
-        pure
-        returns (bytes32)
-    {
-        uint256 bestIndex;
-        uint256 result = 0;
-        uint256 prevEffectiveLiquidity = uint256(-1);
-        for (uint256 i = 0; i < Math.min(effectiveLiquidity.length, 32); i++) {
-            bestIndex = 0;
-            for (uint256 j = 0; j < effectiveLiquidity.length; j++) {
-                if (
-                    (effectiveLiquidity[j] > effectiveLiquidity[bestIndex] &&
-                        effectiveLiquidity[j] < prevEffectiveLiquidity) ||
-                    effectiveLiquidity[bestIndex] >= prevEffectiveLiquidity
-                ) {
-                    bestIndex = j;
-                }
-            }
-            prevEffectiveLiquidity = effectiveLiquidity[bestIndex];
-            result |= (bestIndex + 1) << (248 - i * 8);
-        }
-
-        return bytes32(result);
-    }
-
-    function _createKey(address xyt, address token) internal pure returns (bytes32) {
-        return
-            bytes32(
-                (uint256(uint128((xyt < token) ? xyt : token)) << 128) |
-                    (uint256(uint128((xyt < token) ? token : xyt)))
-            );
+    function _createKey(
+        address _tokenA,
+        address _tokenB,
+        bytes32 _factoryId
+    ) internal pure returns (bytes32) {
+        (address tokenX, address tokenY) =
+            _tokenA < _tokenB ? (_tokenA, _tokenB) : (_tokenB, _tokenA);
+        return keccak256(abi.encode(tokenX, tokenY, _factoryId));
     }
 }

@@ -16,7 +16,7 @@ interface PendleLiquidityMiningFixture {
   aave: AaveFixture,
   testToken: Contract,
   pdl: Contract,
-  pendleMarket: Contract,
+  pendleStdMarket: Contract,
   pendleLiquidityMining: Contract,
   params: liqParams,
 }
@@ -58,8 +58,8 @@ export async function pendleLiquidityMiningFixture(
   wallets: Wallet[],
   provider: providers.Web3Provider,
 ): Promise<PendleLiquidityMiningFixture> {
-  let [alice, bob, charlie, dave] = wallets;
-  let { core, forge, aave, testToken, pendleMarket } = await pendleMarketFixture(wallets, provider);
+  let [alice, bob, charlie, dave, eve] = wallets;
+  let { core, forge, aave, testToken, pendleStdMarket } = await pendleMarketFixture(wallets, provider);
   let pendleRouter = core.pendleRouter;
   let pendleData = core.pendleData;
   let pendleAaveForge = forge.pendleAaveForge;
@@ -68,7 +68,6 @@ export async function pendleLiquidityMiningFixture(
   const amountToTokenize = amountToWei(tokens.USDT, BN.from(100));
 
   await pendleRouter.bootstrapMarket(
-    consts.FORGE_AAVE,
     consts.MARKET_FACTORY_AAVE,
     pendleXyt.address,
     testToken.address,
@@ -99,7 +98,7 @@ export async function pendleLiquidityMiningFixture(
   );
 
   await pdl.approve(pendleLiquidityMining.address, consts.MAX_ALLOWANCE);
-  await pendleMarket.approve(
+  await pendleStdMarket.approve(
     pendleLiquidityMining.address,
     consts.MAX_ALLOWANCE
   );
@@ -110,7 +109,7 @@ export async function pendleLiquidityMiningFixture(
   );
 
   for (var person of [bob, charlie, dave]) {
-    await pendleMarket
+    await pendleStdMarket
       .connect(person)
       .approve(pendleLiquidityMining.address, consts.MAX_ALLOWANCE);
   }
@@ -118,9 +117,9 @@ export async function pendleLiquidityMiningFixture(
   await pendleLiquidityMining.fund();
   await pdl.transfer(pendleLiquidityMining.address, await pdl.balanceOf(alice.address));
 
-  for (var person of [bob, charlie, dave]) {
-    await pendleMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);
+  for (var person of [bob, charlie, dave, eve]) {
+    await pendleStdMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);
   }
 
-  return { core, forge, aave, testToken, pdl, pendleMarket, pendleLiquidityMining, params };
+  return { core, forge, aave, testToken, pdl, pendleStdMarket, pendleLiquidityMining, params };
 }
