@@ -23,7 +23,8 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import {ExpiryUtils, Factory} from "../libraries/PendleLibrary.sol";
+import "../libraries/ExpiryUtilsLib.sol";
+import "../libraries/FactoryLib.sol";
 import "../interfaces/IAaveLendingPoolCore.sol";
 import "../interfaces/IPendleBaseToken.sol";
 import "../interfaces/IPendleData.sol";

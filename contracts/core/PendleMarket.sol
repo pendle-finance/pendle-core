@@ -28,8 +28,8 @@ import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleYieldToken.sol";
 import "../tokens/PendleBaseToken.sol";
-import "../libraries/PendleLibrary.sol";
-import {Math} from "../libraries/PendleLibrary.sol";
+import "../libraries/MathLib.sol";
+import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 contract PendleMarket is IPendleMarket, PendleBaseToken {
@@ -49,7 +49,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     string private constant SYMBOL = "PENDLE-LPT";
     uint256 private constant INITIAL_LP = 10**18; // arbitrary number
     uint8 private constant DECIMALS = 18;
-    uint256 private priceLast = Math.FORMULA_PRECISION;
+    uint256 private priceLast = Math.RONE;
     uint256 private blockNumLast;
 
     uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**30;
@@ -98,9 +98,9 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         _transferIn(token, initialTokenLiquidity);
 
         reserves[xyt].balance = initialXytLiquidity;
-        reserves[xyt].weight = Math.FORMULA_PRECISION / 2;
+        reserves[xyt].weight = Math.RONE / 2;
         reserves[token].balance = initialTokenLiquidity;
-        reserves[token].weight = Math.FORMULA_PRECISION / 2;
+        reserves[token].weight = Math.RONE / 2;
 
         _mintLp(INITIAL_LP);
         _transferOutLp(INITIAL_LP);
@@ -401,8 +401,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 y = Math.rdiv(outTokenReserve.balance, diff);
         uint256 foo = Math.rpow(y, weightRatio);
 
-        foo = foo.sub(Math.FORMULA_PRECISION);
-        exactIn = Math.FORMULA_PRECISION.sub(swapFee);
+        foo = foo.sub(Math.RONE);
+        exactIn = Math.RONE.sub(swapFee);
         exactIn = Math.rdiv(Math.rmul(inTokenReserve.balance, foo), exactIn);
     }
 
@@ -413,11 +413,11 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 swapFee
     ) public pure override returns (uint256 exactOut) {
         uint256 weightRatio = Math.rdiv(inTokenReserve.weight, outTokenReserve.weight);
-        uint256 adjustedIn = Math.FORMULA_PRECISION.sub(swapFee);
+        uint256 adjustedIn = Math.RONE.sub(swapFee);
         adjustedIn = Math.rmul(exactIn, adjustedIn);
         uint256 y = Math.rdiv(inTokenReserve.balance, inTokenReserve.balance.add(adjustedIn));
         uint256 foo = Math.rpow(y, weightRatio);
-        uint256 bar = Math.FORMULA_PRECISION.sub(foo);
+        uint256 bar = Math.RONE.sub(foo);
 
         exactOut = Math.rmul(outTokenReserve.balance, bar);
     }
@@ -460,7 +460,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 numer = Math.rdiv(inTokenReserve.balance, inTokenReserve.weight);
         uint256 denom = Math.rdiv(outTokenReserve.balance, outTokenReserve.weight);
         uint256 ratio = Math.rdiv(numer, denom);
-        uint256 scale = Math.rdiv(Math.FORMULA_PRECISION, Math.FORMULA_PRECISION.sub(swapFee));
+        uint256 scale = Math.rdiv(Math.RONE, Math.RONE.sub(swapFee));
 
         spot = Math.rmul(ratio, scale);
     }
@@ -473,8 +473,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 totalWeight
     ) internal pure returns (uint256 exactOutLp) {
         uint256 nWeight = Math.rdiv(inTokenReserve.weight, totalWeight);
-        uint256 feePortion = Math.rmul(Math.FORMULA_PRECISION.sub(nWeight), swapFee);
-        uint256 inAmoutAfterFee = Math.rmul(inAmount, Math.FORMULA_PRECISION.sub(feePortion));
+        uint256 feePortion = Math.rmul(Math.RONE.sub(nWeight), swapFee);
+        uint256 inAmoutAfterFee = Math.rmul(inAmount, Math.RONE.sub(feePortion));
 
         uint256 inBalanceUpdated = inTokenReserve.balance.add(inAmoutAfterFee);
         uint256 inTokenRatio = Math.rdiv(inBalanceUpdated, inTokenReserve.balance);
@@ -493,20 +493,17 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 inLp
     ) internal view returns (uint256 exactOutToken) {
         uint256 nWeight = Math.rdiv(outTokenReserve.weight, totalWeight);
-        uint256 inLpAfterExitFee = Math.rmul(inLp, Math.FORMULA_PRECISION.sub(data.exitFee()));
+        uint256 inLpAfterExitFee = Math.rmul(inLp, Math.RONE.sub(data.exitFee()));
         uint256 totalSupplyLpUpdated = totalSupplyLp.sub(inLpAfterExitFee);
         uint256 lpRatio = Math.rdiv(totalSupplyLpUpdated, totalSupplyLp);
 
-        uint256 outTokenRatio = Math.rpow(lpRatio, Math.rdiv(Math.FORMULA_PRECISION, nWeight));
+        uint256 outTokenRatio = Math.rpow(lpRatio, Math.rdiv(Math.RONE, nWeight));
         uint256 outTokenBalanceUpdated = Math.rmul(outTokenRatio, outTokenReserve.balance);
 
         uint256 outAmountTOkenBeforeSwapFee = outTokenReserve.balance.sub(outTokenBalanceUpdated);
 
-        uint256 feePortion = Math.rmul(Math.FORMULA_PRECISION.sub(nWeight), data.swapFee());
-        exactOutToken = Math.rmul(
-            outAmountTOkenBeforeSwapFee,
-            Math.FORMULA_PRECISION.sub(feePortion)
-        );
+        uint256 feePortion = Math.rmul(Math.RONE.sub(nWeight), data.swapFee());
+        exactOutToken = Math.rmul(outAmountTOkenBeforeSwapFee, Math.RONE.sub(feePortion));
         return exactOutToken;
     }
 
@@ -581,22 +578,17 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             timeLeft = 0;
         }
 
-        uint256 timeToMature =
-            Math.rdiv(timeLeft * Math.FORMULA_PRECISION, duration * Math.FORMULA_PRECISION);
+        uint256 timeToMature = Math.rdiv(timeLeft * Math.RONE, duration * Math.RONE);
 
         priceNow = Math.rdiv(
-            Math.ln(
-                Math.rmul(Math.PI, timeToMature).add(Math.FORMULA_PRECISION),
-                Math.FORMULA_PRECISION
-            ),
-            Math.ln(Math.PI_PLUSONE, Math.FORMULA_PRECISION)
+            Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RONE), Math.RONE),
+            Math.ln(Math.PI_PLUSONE, Math.RONE)
         );
 
         uint256 r = Math.rdiv(priceNow, priceLast);
-        require(Math.FORMULA_PRECISION >= r, "Pendle: wrong r value");
+        require(Math.RONE >= r, "Pendle: wrong r value");
 
-        uint256 thetaNumerator =
-            Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.FORMULA_PRECISION.sub(r));
+        uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
 
         uint256 theta = Math.rdiv(thetaNumerator, thetaDenominator);

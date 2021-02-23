@@ -26,7 +26,7 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Math} from "../libraries/PendleLibrary.sol";
+import "../libraries/MathLib.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleForge.sol";
@@ -749,10 +749,10 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 tokenWeightOut
     ) internal pure returns (uint256 effectiveLiquidity) {
         effectiveLiquidity = tokenWeightIn
-            .mul(Math.FORMULA_PRECISION)
+            .mul(Math.RONE)
             .div(tokenWeightOut.add(tokenWeightIn))
             .mul(tokenBalanceOut)
-            .div(Math.FORMULA_PRECISION);
+            .div(Math.RONE);
 
         return effectiveLiquidity;
     }
