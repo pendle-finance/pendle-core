@@ -47,12 +47,8 @@ export async function pendleMarketFixture(
   );
   // const cForge = await pendleCompoundForgeFixture(alice, provider, core, governance);
   const aave = await aaveFixture(alice);
-  const {
-    pendleRouter,
-    pendleAMarketFactory,
-    pendleCMarketFactory,
-    pendleData,
-  } = core;
+  const { pendleRouter, pendleAMarketFactory, pendleCMarketFactory, pendleData } = core;
+
   const {
     pendleAaveForge,
     pendleFutureYieldAToken,
@@ -110,12 +106,12 @@ export async function pendleMarketFixture(
     testToken.address
   );
 
-  // const pendleCMarketAddress = await pendleData.getMarket(
-  //   consts.FORGE_COMPOUND,
-  //   consts.MARKET_FACTORY_COMPOUND,
-  //   pendleFutureYieldCToken.address,
-  //   testToken.address
-  // );
+  const pendleCMarketAddress = await pendleData.getMarket(
+    consts.MARKET_FACTORY_COMPOUND,
+    pendleFutureYieldCToken.address,
+    testToken.address
+  );
+
   const pendleAMarket = new Contract(
     pendleAMarketAddress,
     PendleMarket.abi,

@@ -58,13 +58,13 @@ export async function mintOtAndXyt(
     amount,
     alice.address
   );
-  // await pendleRouter.tokenizeYield(
-  //   consts.FORGE_COMPOUND,
-  //   token.address,
-  //   consts.T0.add(consts.ONE_MONTH),
-  //   amount,
-  //   alice.address
-  // );
+  await pendleRouter.tokenizeYield(
+    consts.FORGE_COMPOUND,
+    token.address,
+    consts.T1.add(consts.ONE_MONTH),
+    amount,
+    alice.address
+  );
 }
 
 export async function mint(
@@ -103,7 +103,10 @@ export async function convertToCompoundToken(
 ) {
   const tokenAmount = amountToWei(token, amount);
 
-  const cToken = new Contract(token.address, CToken.abi, alice);
+  const cToken = new Contract(token.compound, CToken.abi, alice);
+  const erc20 = new Contract(token.address, ERC20.abi, alice);
+  await erc20.approve(cToken.address, tokenAmount);
+
   await cToken.mint(tokenAmount);
 }
 
