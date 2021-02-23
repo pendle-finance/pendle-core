@@ -60,38 +60,35 @@ contract PendleData is IPendleData, Permissions {
     address[] private allMarkets;
 
     constructor(address _governance, address _treasury) Permissions(_governance) {
-        require(_treasury != address(0), "Pendle: zero address");
+        require(_treasury != address(0), "ZERO_ADDRESS");
         treasury = _treasury;
     }
 
     modifier onlyRouter() {
-        require(msg.sender == address(router), "Pendle: only router");
+        require(msg.sender == address(router), "ONLY_ROUTER");
         _;
     }
 
     modifier onlyForge(bytes32 _forgeId) {
-        require(getForgeAddress[_forgeId] == msg.sender, "Pendle: only forge");
+        require(getForgeAddress[_forgeId] == msg.sender, "ONLY_FORGE");
         _;
     }
 
     modifier onlyMarketFactory(bytes32 _marketFactoryId) {
-        require(
-            msg.sender == getMarketFactoryAddress[_marketFactoryId],
-            "Pendle: only market factory"
-        );
+        require(msg.sender == getMarketFactoryAddress[_marketFactoryId], "ONLY_MARKET_FACTORY");
         _;
     }
 
     function initialize(IPendleRouter _router) external {
-        require(msg.sender == initializer, "Pendle: forbidden");
-        require(address(_router) != address(0), "Pendle: zero address");
+        require(msg.sender == initializer, "FORBIDDEN");
+        require(address(_router) != address(0), "ZERO_ADDRESS");
 
         initializer = address(0);
         router = _router;
     }
 
     function setTreasury(address _treasury) external override initialized onlyGovernance {
-        require(_treasury != address(0), "Pendle: zero address");
+        require(_treasury != address(0), "ZERO_ADDRESS");
 
         treasury = _treasury;
         emit TreasurySet(_treasury);

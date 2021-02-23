@@ -39,13 +39,13 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions {
     }
 
     modifier onlyRouter() {
-        require(msg.sender == address(router), "Pendle: only router");
+        require(msg.sender == address(router), "ONLY_ROUTER");
         _;
     }
 
     function initialize(IPendleRouter _router) external {
-        require(msg.sender == initializer, "Pendle: forbidden");
-        require(address(_router) != address(0), "Pendle: zero address");
+        require(msg.sender == initializer, "FORBIDDEN");
+        require(address(_router) != address(0), "ZERO_ADDRESS");
 
         initializer = address(0);
         router = _router;
@@ -58,19 +58,16 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions {
         onlyRouter
         returns (address market)
     {
-        require(_xyt != _token, "Pendle: similar tokens");
-        require(_xyt != address(0) || _token != address(0), "Pendle: zero address");
+        require(_xyt != _token, "INVALID_PAIR_XYT_TOKEN");
+        require(_xyt != address(0) || _token != address(0), "ZERO_ADDRESS");
 
         IPendleData data = router.data();
-        require(
-            data.getMarket(marketFactoryId, _xyt, _token) == address(0),
-            "Pendle: market already exists"
-        );
+        require(data.getMarket(marketFactoryId, _xyt, _token) == address(0), "EXISTED_MARKET");
 
         address forgeAddress = IPendleYieldToken(_xyt).forge();
         address underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
         uint256 expiry = IPendleYieldToken(_xyt).expiry();
-        require(data.isValidXYT(forgeAddress, underlyingAsset, expiry), "Pendle: invalid XYT");
+        require(data.isValidXYT(forgeAddress, underlyingAsset, expiry), "INVALID_XYT");
 
         market = Factory.createContract(
             type(PendleMarket).creationCode,
