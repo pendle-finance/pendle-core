@@ -32,6 +32,7 @@ import "../interfaces/IPendleForge.sol";
 import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
+import "hardhat/console.sol";
 
 contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
     using ExpiryUtils for string;
@@ -300,14 +301,22 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
         if (ix == 0) {
             return 0;
         }
+        console.log("settling due interest 4");
+        console.log("income: %s", income);
+        console.log("ix: %s", ix);
+        console.log("principal: %s", principal);
+        console.log("principal.mul(income): %s", principal.mul(income));
+        console.log("principal.mul(income).div(ix): %s", principal.mul(income).div(ix));
 
         uint256 dueInterests = principal.mul(income).div(ix).sub(principal);
+        console.log("settling due interest 5");
 
         if (dueInterests > 0) {
             cToken.transfer(_account, dueInterests);
 
             emit DueInterestSettled(_underlyingAsset, _account, dueInterests, _expiry);
         }
+        console.log("settling due interest 6");
 
         return dueInterests;
     }
