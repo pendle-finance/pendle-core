@@ -41,15 +41,15 @@ contract PendleTreasury is IPendleTreasury, Permissions {
     }
 
     function initialize(IERC20 _fundToken) external {
-        require(msg.sender == initializer, "Pendle: forbidden");
-        require(address(_fundToken) != address(0), "Pendle: zero address");
+        require(msg.sender == initializer, "FORBIDDEN");
+        require(address(_fundToken) != address(0), "ZERO_ADDRESS");
 
         initializer = address(0);
         fundToken = _fundToken;
     }
 
     function setFundPercentage(uint256 _fundPercentage) external override onlyGovernance {
-        require(_fundPercentage <= MAX_FUND_PERCENTAGE, "Pendle: exceeded max%");
+        require(_fundPercentage <= MAX_FUND_PERCENTAGE, "EXCEEDED_MAX%");
         fundPercentage = _fundPercentage;
     }
 
@@ -58,7 +58,7 @@ contract PendleTreasury is IPendleTreasury, Permissions {
     }
 
     function withdraw(uint256 amount, address withdrawAddress) external override onlyGovernance {
-        require(balanceOf(fundToken) >= amount, "Pendle: insufficient funds");
+        require(balanceOf(fundToken) >= amount, "INSUFFICIENT_FUND");
         fundToken.safeTransfer(withdrawAddress, amount);
     }
 
