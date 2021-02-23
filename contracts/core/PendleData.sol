@@ -143,6 +143,13 @@ contract PendleData is IPendleData, Permissions {
             address(xytTokens[forgeId][_underlyingAsset][_expiry]) != address(0));
     }
 
+    function isValidXYT(
+        bytes32 _forgeId,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) external view override returns (bool) {
+        return address(xytTokens[_forgeId][_underlyingAsset][_expiry]) != address(0);
+    }
     /***********
      *  MARKET *
      ***********/

@@ -116,14 +116,19 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) public override nonReentrant returns (uint256 interests) {
-        require(_forgeId != bytes32(0), "Pendle: zero bytes");
-        require(_underlyingAsset != address(0), "Pendle: zero address");
+    ) public nonReentrant override returns (uint256 interests) {
+        interests = _redeemDueInterestsInternal(_forgeId, _underlyingAsset, _expiry);
+    }
 
-        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), "Pendle: forge does not exist");
-
-        interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
+    function redeemDueInterestsMultiple(
+        bytes32[] calldata _forgeIds,
+        address[] calldata _underlyingAssets,
+        uint256[] calldata _expiries
+    ) public nonReentrant override returns (uint256[] memory interests) {
+        interests = new uint256[](_forgeIds.length);
+        for (uint256 i = 0; i < _forgeIds.length; i++) {
+            interests[i] = _redeemDueInterestsInternal(_forgeIds[i], _underlyingAssets[i], _expiries[i]);
+        }
     }
 
     function redeemUnderlying(
@@ -759,5 +764,17 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
 
     function _isETH(address token) internal pure returns (bool) {
         return (token == ETH_ADDRESS);
+    }
+
+    function _redeemDueInterestsInternal(
+        bytes32 _forgeId,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) internal returns (uint256 interests) {
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry));
+        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
+        require(address(forge) != address(0), "Pendle: forge does not exist");
+
+        interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
     }
 }
