@@ -28,6 +28,7 @@ describe("pendleCompoundMarket", async () => {
   let pendleAXyt2: Contract;
   let pendleCOwnershipToken: Contract;
   let pendleCXyt: Contract;
+  let pendleCXyt2: Contract;
   let lendingPoolCore: Contract;
   let pendleCompoundForge: Contract;
   let pendleCMarket: Contract;
@@ -47,6 +48,7 @@ describe("pendleCompoundMarket", async () => {
     pendleData = fixture.core.pendleData;
     pendleCOwnershipToken = fixture.cForge.pendleOwnershipToken;
     pendleCXyt = fixture.cForge.pendleFutureYieldCToken;
+    pendleCXyt2 = fixture.cForge.pendleFutureYieldCToken2;
     pendleCompoundForge = fixture.cForge.pendleCompoundForge;
     testToken = fixture.testToken;
     pendleCMarket = fixture.pendleCMarket;
@@ -498,13 +500,11 @@ describe("pendleCompoundMarket", async () => {
   });
 
   it("shouldn't be able to create market with XYT as quote pair", async () => {
-    console.log(`xyt ${pendleCXyt.address}`);
-    console.log(`xyt2 ${pendleAXyt2.address}`);
     await expect(
       pendleRouter.createMarket(
         consts.MARKET_FACTORY_COMPOUND,
         pendleCXyt.address,
-        pendleAXyt2.address,
+        pendleCXyt2.address,
         consts.HIGH_GAS_OVERRIDE
       )
     ).to.be.revertedWith("XYT_QUOTE_PAIR_FORBIDDEN");
