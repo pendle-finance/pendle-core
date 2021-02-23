@@ -218,13 +218,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 exitFees = Math.rmul(_inLp, exitFee);
         uint256 inLpAfterExitFee = _inLp.sub(exitFee);
         uint256 ratio = Math.rdiv(inLpAfterExitFee, totalLp);
-        require(ratio != 0, "Pendle: zero ratio");
+        require(ratio != 0, "ZERO_RATIO");
 
         // Calc and withdraw xyt token.
         uint256 balanceToken = reserves[xyt].balance;
         uint256 outAmount = Math.rmul(ratio, balanceToken);
-        require(outAmount != 0, "Pendle: math problem");
-        require(outAmount >= _minOutXyt, "Pendle: beyond amount limit");
+        require(outAmount != 0, "MATH_ERROR");
+        require(outAmount >= _minOutXyt, "INSUFFICIENT_XYT_OUT");
         reserves[xyt].balance = reserves[xyt].balance.sub(outAmount);
         xytOut = outAmount;
         emit Exit(xyt, outAmount);
@@ -233,8 +233,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         // Calc and withdraw pair token.
         balanceToken = reserves[token].balance;
         outAmount = Math.rmul(ratio, balanceToken);
-        require(outAmount != 0, "Pendle: math problem");
-        require(outAmount >= _minOutToken, "Pendle: beyond amount limit");
+        require(outAmount != 0, "MATH_ERROR");
+        require(outAmount >= _minOutToken, "INSUFFICIENT_TOKEN_OUT");
         reserves[token].balance = reserves[token].balance.sub(outAmount);
         tokenOut = outAmount;
         emit Exit(token, outAmount);
@@ -263,7 +263,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
 
         outAmountToken = _calcOutAmountToken(data, outTokenReserve, totalLp, totalWeight, _inLp);
-        require(outAmountToken >= _minOutAmountToken, "Pendle: bad token out amount");
+        require(outAmountToken >= _minOutAmountToken, "INSUFFICIENT_TOKEN_OUT");
 
         // Update reserves and operate underlying LP and outToken
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmountToken);

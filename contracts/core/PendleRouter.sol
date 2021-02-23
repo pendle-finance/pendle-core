@@ -91,7 +91,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
 
         ot = address(data.otTokens(_forgeId, _underlyingAsset, _expiry));
         xyt = address(data.xytTokens(_forgeId, _underlyingAsset, _expiry));
-        require(ot == address(0) && xyt == address(0), "duplicate yield contracts");
+        require(ot == address(0) && xyt == address(0), "DUPLICATE_YIELD_CONTRACT");
 
         (ot, xyt) = forge.newYieldContracts(_underlyingAsset, _expiry);
     }
@@ -393,7 +393,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             _maxPrice
         );
 
-        require(outSwapAmount >= _minOutTotalAmount, "Pendle: limit out error");
+        require(outSwapAmount >= _minOutTotalAmount, "INSUFFICIENT_OUT_AMOUNT");
 
         _transferOut(_tokenOut, outSwapAmount);
     }
@@ -422,7 +422,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             _maxPrice
         );
 
-        require(inSwapAmount <= _maxInTotalAmount, "Pendle: limit in error");
+        require(inSwapAmount <= _maxInTotalAmount, "IN_AMOUNT_EXCEED_LIMIT");
         change = change.sub(inSwapAmount);
 
         _transferOut(_tokenOut, _outTotalAmount);
@@ -560,7 +560,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
     {
         interests = new uint256[](markets.length);
         for (uint256 i = 0; i < markets.length; i++) {
-            require(data.isMarket(markets[i]), "invalid market");
+            require(data.isMarket(markets[i]), "INVALID_MARKET");
             interests[i] = IPendleMarket(markets[i]).claimLpInterests(msg.sender);
         }
     }
@@ -666,7 +666,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         if (_isETH(_token)) {
             weth.withdraw(_amount);
             (bool success, ) = msg.sender.call{value: _amount}("");
-            require(success, "transfer failed");
+            require(success, "TRANSFER_FAILED");
         } else {
             IERC20(_token).safeTransfer(msg.sender, _amount);
         }

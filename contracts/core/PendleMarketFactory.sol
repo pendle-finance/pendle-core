@@ -67,7 +67,7 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions {
         address forgeAddress = IPendleYieldToken(_xyt).forge();
         address underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
         uint256 expiry = IPendleYieldToken(_xyt).expiry();
-        require(data.isValidXYT(forgeAddress, underlyingAsset, expiry), "Pendle: invalid XYT");
+        require(data.isValidXYT(forgeAddress, underlyingAsset, expiry), "INVALID_XYT");
 
         market = Factory.createContract(
             type(PendleMarket).creationCode,
