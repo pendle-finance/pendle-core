@@ -25,6 +25,7 @@ export async function pendleCoreFixture(
   const pendleData = await deployContract(alice, PendleData, [alice.address, pendleTreasury.address]);
 
   await pendleMarketFactory.initialize(pendleRouter.address);
+
   await pendleData.initialize(pendleRouter.address);
   await pendleRouter.initialize(pendleData.address);
 

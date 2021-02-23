@@ -5,8 +5,6 @@ import { aaveFixture, AaveFixture } from './aave.fixture';
 import { PendleAaveFixture, pendleAaveForgeFixture } from './pendleAaveForge.fixture';
 import { pendleCoreFixture, PendleCoreFixture } from './pendleCore.fixture';
 import { pendleGovernanceFixture } from './pendleGovernance.fixture';
-const { waffle } = require("hardhat");
-const { provider, deployContract } = waffle;
 interface PendleFixture {
   core: PendleCoreFixture,
   forge: PendleAaveFixture,
@@ -23,7 +21,6 @@ export async function pendleFixture(
   const forge = await pendleAaveForgeFixture(alice, provider, core, governance);
   const aave = await aaveFixture(alice);
 
-  const { pendleAaveForge } = forge;
   const { lendingPoolCore } = aave;
 
   await mint(provider, tokens.USDT, alice, consts.INITIAL_USDT_AMOUNT);

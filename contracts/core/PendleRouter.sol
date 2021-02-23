@@ -68,6 +68,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         override
         initialized
         onlyGovernance
+        nonReentrant
     {
         require(_forgeId != bytes32(0), "Pendle: zero bytes");
         require(_forgeAddress != address(0), "Pendle: zero address");
@@ -81,7 +82,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) public override returns (address ot, address xyt) {
+    ) public override nonReentrant returns (address ot, address xyt) {
         require(_forgeId != bytes32(0), "Pendle: zero bytes");
         require(_underlyingAsset != address(0), "Pendle: zero address");
 
@@ -100,7 +101,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         address _underlyingAsset,
         uint256 _expiry,
         address _to
-    ) public override returns (uint256 redeemedAmount) {
+    ) public override nonReentrant returns (uint256 redeemedAmount) {
         require(_forgeId != bytes32(0), "Pendle: zero bytes");
         require(_underlyingAsset != address(0), "Pendle: zero address");
         require(_to != address(0), "Pendle: zero address");
@@ -115,7 +116,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) public override returns (uint256 interests) {
+    ) public override nonReentrant returns (uint256 interests) {
         require(_forgeId != bytes32(0), "Pendle: zero bytes");
         require(_underlyingAsset != address(0), "Pendle: zero address");
 
@@ -131,7 +132,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _expiry,
         uint256 _amountToRedeem,
         address _to
-    ) public override returns (uint256 redeemedAmount) {
+    ) public override nonReentrant returns (uint256 redeemedAmount) {
         require(_forgeId != bytes32(0), "Pendle: zero bytes");
         require(_underlyingAsset != address(0), "Pendle: zero address");
 
@@ -157,6 +158,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
     )
         public
         override
+        nonReentrant
         returns (
             uint256 redeemedAmount,
             address ot,
@@ -184,7 +186,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _expiry,
         uint256 _amountToTokenize,
         address _to
-    ) public override returns (address ot, address xyt) {
+    ) public override nonReentrant returns (address ot, address xyt) {
         require(_forgeId != bytes32(0), "Pendle: zero bytes");
         require(_underlyingAsset != address(0), "Pendle: zero address");
 
@@ -206,6 +208,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         override
         initialized
         onlyGovernance
+        nonReentrant
     {
         require(_marketFactoryId != bytes32(0), "Pendle: zero bytes");
         require(_marketFactoryAddress != address(0), "Pendle: zero address");
@@ -233,6 +236,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
                 data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
             );
         require(address(market) != address(0), "Pendle: market not found");
+        // require(!_isMarketLocked(_xyt), "MARKET_LOCKED");
 
         _transferIn(_xyt, _maxInXyt);
         _transferIn(_token, _maxInToken);
@@ -253,15 +257,17 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _exactInAsset,
         uint256 _minOutLp
     ) public payable override nonReentrant {
-        address asset = _forXyt ? _xyt : _token;
+        IPendleMarket market =
+            IPendleMarket(
+                data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
+            );
+        require(address(market) != address(0), "Pendle: market not found");
+        // require(!_isMarketLocked(_xyt),"MARKET_LOCKED");
 
+        address asset = _forXyt ? _xyt : _token;
         _transferIn(asset, _exactInAsset);
 
-        asset = _isETH(_token) ? address(weth) : _token;
-        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, asset));
-        require(address(market) != address(0), "Pendle: market not found");
-
-        asset = _forXyt ? _xyt : asset;
+        asset = _isETH(_token) ? address(weth) : asset;
         uint256 exactOutLp = market.addMarketLiquiditySingle(asset, _exactInAsset, _minOutLp);
 
         _transferOut(address(market), exactOutLp);
@@ -275,8 +281,12 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _minOutXyt,
         uint256 _minOutToken
     ) public override nonReentrant {
-        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
+        IPendleMarket market =
+            IPendleMarket(
+                data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
+            );
         require(address(market) != address(0), "Pendle: market not found");
+        // require(!_isMarketLocked(_xyt),"MARKET_LOCKED"); // this operation will never be locked
 
         _transferIn(address(market), _exactInLp);
 
@@ -295,14 +305,18 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _exactInLp,
         uint256 _minOutAsset
     ) public override nonReentrant {
-        address asset = _isETH(_token) ? address(weth) : _token;
-
-        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, asset));
+        IPendleMarket market =
+            IPendleMarket(
+                data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
+            );
         require(address(market) != address(0), "Pendle: market not found");
+        // require(!_isMarketLocked(_xyt),"MARKET_LOCKED");
 
         _transferIn(address(market), _exactInLp);
 
-        asset = _forXyt ? _xyt : asset;
+        address asset = _forXyt ? _xyt : _token;
+        asset = _isETH(_token) ? address(weth) : asset;
+
         uint256 assetOut = market.removeMarketLiquiditySingle(asset, _exactInLp, _minOutAsset);
 
         asset = _forXyt ? _xyt : _token;
@@ -540,6 +554,19 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         _transferOut(_tokenIn, change);
     }
 
+    function claimLpInterests(address[] calldata markets)
+        public
+        override
+        nonReentrant
+        returns (uint256[] memory interests)
+    {
+        interests = new uint256[](markets.length);
+        for (uint256 i = 0; i < markets.length; i++) {
+            require(data.isMarket(markets[i]), "invalid market");
+            interests[i] = IPendleMarket(markets[i]).claimLpInterests(msg.sender);
+        }
+    }
+
     function getMarketRateExactIn(
         address _tokenIn,
         address _tokenOut,
@@ -617,6 +644,11 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         token = benmarkMarket.token();
         xyt = benmarkMarket.xyt();
     }
+
+    // function _isMarketLocked(address _xyt) internal pure returns (bool isLocked){
+    //     // To implement
+    //     isLocked = false; // never locked
+    // }
 
     /// @dev Inbound transfer from msg.sender to router
     function _transferIn(address _token, uint256 _amount) internal {
