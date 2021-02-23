@@ -125,6 +125,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         address[] calldata _underlyingAssets,
         uint256[] calldata _expiries
     ) public override nonReentrant returns (uint256[] memory interests) {
+        require(_forgeIds.length == _underlyingAssets.length && _forgeIds.length == _expiries.length, "INVALID_ARRAYS");
         interests = new uint256[](_forgeIds.length);
         for (uint256 i = 0; i < _forgeIds.length; i++) {
             interests[i] = _redeemDueInterestsInternal(
@@ -773,9 +774,8 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         address _underlyingAsset,
         uint256 _expiry
     ) internal returns (uint256 interests) {
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry));
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), "FORGE_NOT_EXIST");
 
         interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
     }
