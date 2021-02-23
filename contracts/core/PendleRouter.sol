@@ -116,7 +116,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) public nonReentrant override returns (uint256 interests) {
+    ) public override nonReentrant returns (uint256 interests) {
         interests = _redeemDueInterestsInternal(_forgeId, _underlyingAsset, _expiry);
     }
 
@@ -124,10 +124,14 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         bytes32[] calldata _forgeIds,
         address[] calldata _underlyingAssets,
         uint256[] calldata _expiries
-    ) public nonReentrant override returns (uint256[] memory interests) {
+    ) public override nonReentrant returns (uint256[] memory interests) {
         interests = new uint256[](_forgeIds.length);
         for (uint256 i = 0; i < _forgeIds.length; i++) {
-            interests[i] = _redeemDueInterestsInternal(_forgeIds[i], _underlyingAssets[i], _expiries[i]);
+            interests[i] = _redeemDueInterestsInternal(
+                _forgeIds[i],
+                _underlyingAssets[i],
+                _expiries[i]
+            );
         }
     }
 
