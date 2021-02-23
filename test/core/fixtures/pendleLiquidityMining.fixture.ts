@@ -116,6 +116,7 @@ export async function pendleLiquidityMiningFixture(
 
   await pendleLiquidityMining.fund();
   await pdl.transfer(pendleLiquidityMining.address, await pdl.balanceOf(alice.address));
+  await pendleData.setReentrancyWhitelist([pendleLiquidityMining.address], [true]);
 
   for (var person of [bob, charlie, dave, eve]) {
     await pendleStdMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);

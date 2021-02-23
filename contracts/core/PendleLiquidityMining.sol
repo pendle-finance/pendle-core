@@ -483,6 +483,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         uint256 expiry,
         uint256 amount
     ) internal {
+
         _settleLpInterests(expiry, msg.sender);
         IERC20(marketAddress).safeTransferFrom(msg.sender, lpHolderForExpiry[expiry], amount);
     }
@@ -496,6 +497,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         internal
         returns (uint256 dueInterests)
     {
+        PendleLpHolder(lpHolderForExpiry[expiry]).claimLpInterests();
         // calculate interest for each expiry
         _updateGlobalIncomeIndex(expiry);
         if (lastGlobalIncomeIndexForExpiry[expiry][account] == 0) {
@@ -547,10 +549,11 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     ) internal returns (address newLpHoldingContract) {
         expiries.push(expiry);
         hasExpiry[expiry] = true;
+        address underlyingYieldToken = IPendleYieldToken(xyt).underlyingYieldToken();
         newLpHoldingContract = Factory.createContract(
             type(PendleLpHolder).creationCode,
-            abi.encodePacked(marketAddress, xyt),
-            abi.encode(marketAddress, xyt)
+            abi.encodePacked(marketAddress, pendleMarketFactory.router(), underlyingYieldToken),
+            abi.encode(marketAddress, pendleMarketFactory.router(), underlyingYieldToken)
         );
         lpHolderForExpiry[expiry] = newLpHoldingContract;
         globalIncomeIndexForExpiry[expiry] = 1;

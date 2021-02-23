@@ -80,6 +80,8 @@ export async function pendleMarketFixture(
     tokens.WETH.address,
   );
 
+  await pendleData.setReentrancyWhitelist([pendleStdMarketAddress, pendleEthMarketAddress], [true, true]);
+
   const pendleStdMarket = new Contract(pendleStdMarketAddress, PendleMarket.abi, alice)
   const pendleEthMarket = new Contract(pendleEthMarketAddress, PendleMarket.abi, alice)
 
