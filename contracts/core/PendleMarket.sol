@@ -504,10 +504,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 outAmountTOkenBeforeSwapFee = outTokenReserve.balance.sub(outTokenBalanceUpdated);
 
         uint256 feePortion = Math.rmul(Math.RONE.sub(nWeight), data.swapFee());
-        exactOutToken = Math.rmul(
-            outAmountTOkenBeforeSwapFee,
-            Math.RONE.sub(feePortion)
-        );
+        exactOutToken = Math.rmul(outAmountTOkenBeforeSwapFee, Math.RONE.sub(feePortion));
         return exactOutToken;
     }
 
@@ -582,22 +579,17 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             timeLeft = 0;
         }
 
-        uint256 timeToMature =
-            Math.rdiv(timeLeft * Math.RONE, duration * Math.RONE);
+        uint256 timeToMature = Math.rdiv(timeLeft * Math.RONE, duration * Math.RONE);
 
         priceNow = Math.rdiv(
-            Math.ln(
-                Math.rmul(Math.PI, timeToMature).add(Math.RONE),
-                Math.RONE
-            ),
+            Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RONE), Math.RONE),
             Math.ln(Math.PI_PLUSONE, Math.RONE)
         );
 
         uint256 r = Math.rdiv(priceNow, priceLast);
         require(Math.RONE >= r, "Pendle: wrong r value");
 
-        uint256 thetaNumerator =
-            Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
+        uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
 
         uint256 theta = Math.rdiv(thetaNumerator, thetaDenominator);

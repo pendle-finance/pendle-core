@@ -40,12 +40,17 @@ describe("Math tests", async () => {
       // if diff < 10, then the difference is minimal
       if (diff.gte(10)) {
         // diff * toleranceRatio <= expectedResult
-        expect(diff.mul(toleranceRatio).lte(expectedResult), "high precision error").to.be.true;
+        expect(
+          diff.mul(toleranceRatio).lte(expectedResult),
+          "high precision error"
+        ).to.be.true;
       }
     }
   });
 
   it("test rpow special cases", async () => {
-    expect((await math.rpow(BN.from(0), BN.from(4915181090268))).toNumber()).to.equal(0);
+    expect(
+      (await math.rpow(BN.from(0), BN.from(4915181090268))).toNumber()
+    ).to.equal(0);
   });
 });

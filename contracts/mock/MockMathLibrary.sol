@@ -25,7 +25,6 @@ pragma solidity ^0.7.0;
 import "../libraries/MathLib.sol";
 
 contract MockMathLibrary {
-
     function checkMultOverflow(uint256 _x, uint256 _y) public pure returns (bool) {
         return Math.checkMultOverflow(_x, _y);
     }
@@ -43,7 +42,7 @@ contract MockMathLibrary {
     }
 
     function ln(uint256 p, uint256 q) public pure returns (uint256) {
-        return Math.ln(p,q);
+        return Math.ln(p, q);
     }
 
     function fpart(uint256 value) public pure returns (uint256) {
@@ -71,18 +70,18 @@ contract MockMathLibrary {
     }
 
     function rdiv(uint256 x, uint256 y) public pure returns (uint256) {
-        return Math.rdiv(x,y);
+        return Math.rdiv(x, y);
     }
 
     function rmul(uint256 x, uint256 y) public pure returns (uint256) {
-        return Math.rmul(x,y);
+        return Math.rmul(x, y);
     }
 
     function max(uint256 a, uint256 b) public pure returns (uint256) {
-        return Math.max(a,b);
+        return Math.max(a, b);
     }
 
     function min(uint256 a, uint256 b) public pure returns (uint256) {
-        return Math.min(a,b);
+        return Math.min(a, b);
     }
 }

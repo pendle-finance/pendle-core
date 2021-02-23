@@ -13,7 +13,10 @@ import {
   tokens,
 } from "../helpers";
 import { pendleMarketFixture } from "./fixtures";
-import { TestAddLiq, TestRemoveLiq } from "./fixtures/pendleLpFormulaScenario.fixture";
+import {
+  TestAddLiq,
+  TestRemoveLiq,
+} from "./fixtures/pendleLpFormulaScenario.fixture";
 import * as scenario from "./fixtures/pendleLpFormulaScenario.fixture";
 
 const { waffle } = require("hardhat");
@@ -164,7 +167,10 @@ describe("pendleLpFormula", async () => {
   async function runTestAddLiqSingleToken(test: TestAddLiq) {
     const T1 = consts.T0.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
-    await bootstrapMarket(amountToWei(tokenUSDT, test.initXytBal), amountToWei(tokenUSDT, test.initTokenBal));
+    await bootstrapMarket(
+      amountToWei(tokenUSDT, test.initXytBal),
+      amountToWei(tokenUSDT, test.initTokenBal)
+    );
 
     await setTimeNextBlock(provider, T1);
 
@@ -187,7 +193,10 @@ describe("pendleLpFormula", async () => {
   async function runTestRemoveLiqSingleToken(test: TestRemoveLiq) {
     const T1 = consts.T0.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
-    await bootstrapMarket(amountToWei(tokenUSDT, test.initXytBal), amountToWei(tokenUSDT, test.initTokenBal));
+    await bootstrapMarket(
+      amountToWei(tokenUSDT, test.initXytBal),
+      amountToWei(tokenUSDT, test.initTokenBal)
+    );
 
     let lpBalanceAlice = await pendleStdMarket.balanceOf(alice.address);
     let amountToRemove = lpBalanceAlice.mul(test.ratioLpForToken).div(100);
