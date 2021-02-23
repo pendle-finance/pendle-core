@@ -51,10 +51,13 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions {
         router = _router;
     }
 
-    function createMarket(
-        address _xyt,
-        address _token
-    ) external override initialized onlyRouter returns (address market) {
+    function createMarket(address _xyt, address _token)
+        external
+        override
+        initialized
+        onlyRouter
+        returns (address market)
+    {
         require(_xyt != _token, "INVALID_PAIR_XYT_TOKEN");
         require(_xyt != address(0) || _token != address(0), "ZERO_ADDRESS");
 
