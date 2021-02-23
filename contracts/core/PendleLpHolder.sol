@@ -29,9 +29,9 @@ import "../interfaces/IPendleLpHolder.sol";
 contract PendleLpHolder is IPendleLpHolder {
     using SafeERC20 for IERC20;
 
-    address pendleLiquidityMining;
-    address underlyingYieldToken;
-    address pendleMarket;
+    address private pendleLiquidityMining;
+    address private underlyingYieldToken;
+    address private pendleMarket;
 
     constructor(address _pendleMarket, address _underlyingYieldToken) {
         pendleMarket = _pendleMarket;
@@ -40,12 +40,12 @@ contract PendleLpHolder is IPendleLpHolder {
     }
 
     function sendLp(address user, uint256 amount) public override {
-        require(msg.sender == pendleLiquidityMining, "Pendle: not authorized");
+        require(msg.sender == pendleLiquidityMining, "NOT_AUTHORIZED");
         IERC20(pendleMarket).safeTransfer(user, amount);
     }
 
     function sendInterests(address user, uint256 amount) public override {
-        require(msg.sender == pendleLiquidityMining, "Pendle: not authorized");
+        require(msg.sender == pendleLiquidityMining, "NOT_AUTHORIZED");
         IERC20(underlyingYieldToken).safeTransfer(user, amount);
     }
 }
