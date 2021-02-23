@@ -48,7 +48,7 @@ contract PendleRouter is IPendleRouter, Permissions {
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     modifier pendleNonReentrant() {
-        _checkNonReentrancy();  // use functions to reduce bytecode size
+        _checkNonReentrancy(); // use functions to reduce bytecode size
         _;
         // By storing the original value once again, a refund is triggered (see
         // https://eips.ethereum.org/EIPS/eip-2200)
@@ -140,7 +140,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) public pendleNonReentrant override returns (uint256 interests) {
+    ) public override pendleNonReentrant returns (uint256 interests) {
         interests = _redeemDueInterestsInternal(_forgeId, _underlyingAsset, _expiry);
     }
 

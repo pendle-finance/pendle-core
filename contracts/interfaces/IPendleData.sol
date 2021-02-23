@@ -193,7 +193,8 @@ interface IPendleData {
 
     function setDeltaT(uint256 _deltaT) external;
 
-    function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted) external;
+    function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
+        external;
 
     function updateMarketInfo(
         address xyt,

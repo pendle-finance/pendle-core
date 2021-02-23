@@ -119,7 +119,11 @@ describe("PendleLiquidityMining", async () => {
       expectedPdlBalanceOfUserAfter.toNumber() / 1000
     );
 
-    console.log(`\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(lpHolderContract)}`);
+    console.log(
+      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
+        lpHolderContract
+      )}`
+    );
 
     //stake using another user - alice, for the same amount as bob's stake now (amountToStake/2)
     await pendleLiquidityMining.stake(
@@ -150,7 +154,11 @@ describe("PendleLiquidityMining", async () => {
       .call({ from: alice.address });
     console.log(`\tInterests for alice = ${interestsData}`);
     console.log(`\tRewards available for epochs from now: ${rewardsData}`);
-    console.log(`\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(lpHolderContract)}`);
+    console.log(
+      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
+        lpHolderContract
+      )}`
+    );
 
     await pendleLiquidityMining
       .connect(bob)
@@ -170,7 +178,11 @@ describe("PendleLiquidityMining", async () => {
       `\tExpected PDL balance of user after 2nd withdraw: ${expectedPdlBalanceOfUsersAfter2ndTnx}`
     );
 
-    console.log(`\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(lpHolderContract)}`);
+    console.log(
+      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
+        lpHolderContract
+      )}`
+    );
 
     expect(pdlBalanceOfUserAfter2ndTnx.toNumber()).to.be.approximately(
       expectedPdlBalanceOfUsersAfter2ndTnx.toNumber(),

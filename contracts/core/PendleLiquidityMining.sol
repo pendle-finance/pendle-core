@@ -483,7 +483,6 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         uint256 expiry,
         uint256 amount
     ) internal {
-
         _settleLpInterests(expiry, msg.sender);
         IERC20(marketAddress).safeTransferFrom(msg.sender, lpHolderForExpiry[expiry], amount);
     }

@@ -104,7 +104,12 @@ contract PendleData is IPendleData, Permissions {
         emit DeltaTSet(_deltaT);
     }
 
-    function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted) external override initialized onlyGovernance {
+    function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
+        external
+        override
+        initialized
+        onlyGovernance
+    {
         for (uint256 i = 0; i < addresses.length; i++) {
             reentrancyWhitelisted[addresses[i]] = whitelisted[i];
         }

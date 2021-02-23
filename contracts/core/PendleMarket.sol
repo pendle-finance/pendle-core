@@ -516,7 +516,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     /// @dev Inbound transfer from router to market
     function _transferIn(address _token, uint256 _amount) internal {
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        if (_token == xyt) { // if its an XYT transfer, interests for the market is updated.
+        if (_token == xyt) {
+            // if its an XYT transfer, interests for the market is updated.
             lastInterestUpdate = block.timestamp;
         }
     }
@@ -524,7 +525,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     /// @dev Outbound transfer from market to router
     function _transferOut(address _token, uint256 _amount) internal {
         IERC20(_token).safeTransfer(msg.sender, _amount);
-        if (_token == xyt) { // if its an XYT transfer, interests for the market is updated.
+        if (_token == xyt) {
+            // if its an XYT transfer, interests for the market is updated.
             lastInterestUpdate = block.timestamp;
         }
     }
