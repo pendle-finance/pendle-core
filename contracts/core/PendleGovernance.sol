@@ -1,4 +1,5 @@
-/* solhint-disable reason-string*/
+/* solhint-disable*/
+// disable because governance is not being used at the moment
 // SPDX-License-Identifier: MIT
 /*
  * MIT License
@@ -32,9 +33,6 @@ import "../interfaces/ITimelock.sol";
 contract PendleGovernance is IPendleGovernance {
     using SafeMath for uint256;
 
-    /**
-     * @notice The name of this contract
-     **/
     string public constant NAME = "Pendle Governance";
 
     /**
@@ -199,27 +197,27 @@ contract PendleGovernance is IPendleGovernance {
     ) public returns (uint256) {
         require(
             pendle.getPriorVotes(msg.sender, block.number.sub(1)) > proposalThreshold(),
-            "Pendle: proposer votes below proposal threshold"
+            "proposer votes below proposal threshold"
         );
         require(
             targets.length == values.length &&
                 targets.length == signatures.length &&
                 targets.length == calldatas.length,
-            "Pendle: proposal function information arity mismatch"
+            "proposal function information arity mismatch"
         );
-        require(targets.length != 0, "Pendle: must provide actions");
-        require(targets.length <= proposalMaxOperations(), "Pendle: too many actions");
+        require(targets.length != 0, "must provide actions");
+        require(targets.length <= proposalMaxOperations(), "too many actions");
 
         uint256 latestProposalId = latestProposalIds[msg.sender];
         if (latestProposalId != 0) {
             ProposalState proposersLatestProposalState = state(latestProposalId);
             require(
                 proposersLatestProposalState != ProposalState.Active,
-                "Pendle: one live proposal per proposer, found an already active proposal"
+                "one live proposal per proposer, found an already active proposal"
             );
             require(
                 proposersLatestProposalState != ProposalState.Pending,
-                "Pendle: one live proposal per proposer, found an already pending proposal"
+                "one live proposal per proposer, found an already pending proposal"
             );
         }
 
@@ -261,7 +259,7 @@ contract PendleGovernance is IPendleGovernance {
     function queue(uint256 proposalId) public {
         require(
             state(proposalId) == ProposalState.Succeeded,
-            "Pendle: proposal can only be queued if it is succeeded"
+            "proposal can only be queued if it is succeeded"
         );
         Proposal storage proposal = proposals[proposalId];
         uint256 eta = block.timestamp.add(timelock.delay());
@@ -289,7 +287,7 @@ contract PendleGovernance is IPendleGovernance {
             !timelock.queuedTransactions(
                 keccak256(abi.encode(target, value, signature, data, eta))
             ),
-            "Pendle: proposal action already queued at eta"
+            "proposal action already queued at eta"
         );
         timelock.queueTransaction(target, value, signature, data, eta);
     }
@@ -297,7 +295,7 @@ contract PendleGovernance is IPendleGovernance {
     function execute(uint256 proposalId) public payable {
         require(
             state(proposalId) == ProposalState.Queued,
-            "Pendle: proposal can only be executed if it is queued"
+            "proposal can only be executed if it is queued"
         );
         Proposal storage proposal = proposals[proposalId];
         proposal.executed = true;
@@ -315,13 +313,13 @@ contract PendleGovernance is IPendleGovernance {
 
     function cancel(uint256 proposalId) public {
         ProposalState currentState = state(proposalId);
-        require(currentState != ProposalState.Executed, "Pendle: cannot cancel executed proposal");
+        require(currentState != ProposalState.Executed, "cannot cancel executed proposal");
 
         Proposal storage proposal = proposals[proposalId];
         require(
             msg.sender == guardian ||
                 pendle.getPriorVotes(proposal.proposer, block.number.sub(1)) < proposalThreshold(),
-            "Pendle: proposer above threshold"
+            "proposer above threshold"
         );
 
         proposal.canceled = true;
@@ -357,7 +355,7 @@ contract PendleGovernance is IPendleGovernance {
     }
 
     function state(uint256 proposalId) public view returns (ProposalState) {
-        require(proposalCount >= proposalId && proposalId > 0, "Pendle: invalid proposal id");
+        require(proposalCount >= proposalId && proposalId > 0, "invalid proposal id");
         Proposal storage proposal = proposals[proposalId];
         if (proposal.canceled) {
             return ProposalState.Canceled;
@@ -398,7 +396,7 @@ contract PendleGovernance is IPendleGovernance {
         bytes32 structHash = keccak256(abi.encode(BALLOT_TYPEHASH, proposalId, support));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), "Pendle: invalid signature");
+        require(signatory != address(0), "invalid signature");
         return _castVote(signatory, proposalId, support);
     }
 
@@ -407,7 +405,7 @@ contract PendleGovernance is IPendleGovernance {
         uint256 proposalId,
         bool support
     ) internal {
-        require(state(proposalId) == ProposalState.Active, "Pendle: voting is closed");
+        require(state(proposalId) == ProposalState.Active, "voting is closed");
         Proposal storage proposal = proposals[proposalId];
         Receipt storage receipt = proposal.receipts[voter];
         require(receipt.hasVoted == false, "Pendle::_castVote: voter already voted");
@@ -427,17 +425,17 @@ contract PendleGovernance is IPendleGovernance {
     }
 
     function __acceptAdmin() public {
-        require(msg.sender == guardian, "Pendle: sender must be gov guardian");
+        require(msg.sender == guardian, "sender must be gov guardian");
         timelock.acceptAdmin();
     }
 
     function __abdicate() public {
-        require(msg.sender == guardian, "Pendle: sender must be gov guardian");
+        require(msg.sender == guardian, "sender must be gov guardian");
         guardian = address(0);
     }
 
     function __queueSetTimelockPendingAdmin(address newPendingAdmin, uint256 eta) public {
-        require(msg.sender == guardian, "Pendle: sender must be gov guardian");
+        require(msg.sender == guardian, "sender must be gov guardian");
         timelock.queueTransaction(
             address(timelock),
             0,
@@ -448,7 +446,7 @@ contract PendleGovernance is IPendleGovernance {
     }
 
     function __executeSetTimelockPendingAdmin(address newPendingAdmin, uint256 eta) public {
-        require(msg.sender == guardian, "Pendle: sender must be gov guardian");
+        require(msg.sender == guardian, "sender must be gov guardian");
         timelock.executeTransaction(
             address(timelock),
             0,

@@ -1,3 +1,4 @@
+/* solhint-disable ordering*/
 // SPDX-License-Identifier: MIT
 /*
  * MIT License
