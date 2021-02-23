@@ -233,7 +233,7 @@ describe("pendleCompoundMarket", async () => {
     );
   });
 
-  it.only("should be able to exit a pool", async () => {
+  it("should be able to exit a pool", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
     await bootstrapSampleMarket(amountToTokenize);
     await advanceTime(provider, consts.ONE_MONTH);

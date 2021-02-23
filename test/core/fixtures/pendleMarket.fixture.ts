@@ -52,12 +52,8 @@ export async function pendleMarketFixture(
     governance
   );
   const aave = await aaveFixture(alice);
-  const {
-    pendleRouter,
-    pendleAMarketFactory,
-    pendleCMarketFactory,
-    pendleData,
-  } = core;
+  const { pendleRouter, pendleAMarketFactory, pendleCMarketFactory, pendleData } = core;
+
   const {
     pendleAaveForge,
     pendleFutureYieldAToken,

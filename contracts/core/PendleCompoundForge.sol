@@ -22,7 +22,6 @@
  */
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import {ExpiryUtils, Factory} from "../libraries/PendleLibrary.sol";
 import "../interfaces/ICToken.sol";
@@ -34,7 +33,7 @@ import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
 import "hardhat/console.sol";
 
-contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
+contract PendleCompoundForge is IPendleForge, Permissions {
     using ExpiryUtils for string;
     using SafeMath for uint256;
 
@@ -48,7 +47,7 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
     IPendleRouter public override router;
     bytes32 public immutable override forgeId;
 
-    mapping(address => ICToken) public underlyingToCToken;
+    mapping(address => address) public underlyingToCToken;
     mapping(address => mapping(uint256 => uint256)) public lastUnderlyingBeforeExpiry;
     mapping(address => mapping(uint256 => uint256)) public lastIncomeBeforeExpiry;
     mapping(address => mapping(uint256 => mapping(address => uint256))) public lastUnderlying;
@@ -56,6 +55,8 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
 
     string private constant OT = "OT";
     string private constant XYT = "XYT";
+
+    event RegisterToken(address indexed _underlyingAsset, address indexed _cToken);
 
     constructor(
         address _governance,
@@ -83,16 +84,18 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
         _;
     }
 
-    function registerToken(address _underlyingAsset, address _cToken) external onlyGovernance {
-        underlyingToCToken[_underlyingAsset] = ICToken(_cToken);
+    function registerToken(address _underlyingAsset, address _cToken) external {
+        underlyingToCToken[_underlyingAsset] = _cToken;
+        emit RegisterToken(_underlyingAsset, _cToken);
     }
 
     function newYieldContracts(address _underlyingAsset, uint256 _expiry)
-        public
+        external
         override
+        onlyRouter
         returns (address ot, address xyt)
     {
-        address cToken = address(underlyingToCToken[_underlyingAsset]);
+        address cToken = underlyingToCToken[_underlyingAsset];
         uint8 cTokenDecimals = IPendleBaseToken(cToken).decimals();
 
         ot = _forgeOwnershipToken(
@@ -143,7 +146,7 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
     ) public override returns (uint256 redeemedAmount) {
         require(block.timestamp > _expiry, "Pendle: must be after expiry");
 
-        ICToken cToken = underlyingToCToken[_underlyingAsset];
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         redeemedAmount = tokens.ot.balanceOf(_msgSender);
 
@@ -184,7 +187,7 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
             "Must have enough XYT tokens"
         );
 
-        ICToken cToken = underlyingToCToken[_underlyingAsset];
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
         uint256 cTokensToRedeem = _amountToRedeem.mul(cToken.exchangeRateCurrent()).div(expScale);
         cToken.transfer(_to, cTokensToRedeem);
 
@@ -204,7 +207,7 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
         address _to
     ) external override onlyRouter returns (address ot, address xyt) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        ICToken cToken = underlyingToCToken[_underlyingAsset];
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
 
         tokens.ot.mint(_to, _amountToTokenize);
         tokens.xyt.mint(_to, _amountToTokenize);
@@ -230,8 +233,8 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
         string memory _symbol,
         uint8 _decimals,
         uint256 _expiry
-    ) internal nonReentrant() returns (address xyt) {
-        ICToken cToken = underlyingToCToken[_underlyingAsset];
+    ) internal returns (address xyt) {
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
 
         xyt = Factory.createContract(
             type(PendleFutureYieldToken).creationCode,
@@ -255,8 +258,8 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
         string memory _symbol,
         uint8 _decimals,
         uint256 _expiry
-    ) internal nonReentrant() returns (address ot) {
-        ICToken cToken = underlyingToCToken[_underlyingAsset];
+    ) internal returns (address ot) {
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
 
         ot = Factory.createContract(
             type(PendleOwnershipToken).creationCode,
@@ -281,7 +284,7 @@ contract PendleCompoundForge is IPendleForge, Permissions, ReentrancyGuard {
     ) internal returns (uint256) {
         uint256 principal = _tokens.xyt.balanceOf(_account);
         uint256 ix = lastIncome[_underlyingAsset][_expiry][_account];
-        ICToken cToken = underlyingToCToken[_underlyingAsset];
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
         uint256 income;
         uint256 underlying;
 
