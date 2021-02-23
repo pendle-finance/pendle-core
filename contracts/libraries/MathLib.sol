@@ -80,8 +80,7 @@ library Math {
 
     /**
     @notice log2 of (p/q). returns result in FP form
-    @dev function is from Kyber. Long have verified this function
-            to be working correctly
+    @dev function is from Kyber.
      */
     function logBase2(uint256 _p, uint256 _q) internal pure returns (uint256) {
         uint256 n = 0;
@@ -105,8 +104,7 @@ library Math {
 
     /**
     @notice calculate ln(p/q). returned result >= 0
-    @dev function is from Kyber. Long have verified this function
-            to be working correctly
+    @dev function is from Kyber.
     */
     function ln(uint256 p, uint256 q) internal pure returns (uint256) {
         uint256 ln2Numerator = 6931471805599453094172;
@@ -160,11 +158,11 @@ library Math {
             if (curTerm == 0) {
                 break;
             }
-            if (n == 200) {
+            if (n == 500) {
                 /*
-                testing shows that in the most extreme case, it only takes 97 turns
-                to converge.
-                the most extreme case is rpow(1,RONE-1) (equal to rpow(0.00...01,0.99..9))
+                testing shows that in the most extreme case, it will take 430 turns to converge.
+                however, it's expected that the numbers will not exceed 2^120 in normal situation
+                the most extreme case is rpow((1<<256)-1,(1<<40)-1) (equal to rpow((2^256-1)/2^40,0.99..9))
                 */
                 revert("rpowe slow converge");
             }
@@ -214,8 +212,7 @@ library Math {
     @notice return base^exp with base in FP form and exp in Int
     @dev this function use a technique called: exponentiating by squaring
         complexity O(log(q))
-    @dev function is from Kyber. Long have verified this function
-            to be working correctly
+    @dev function is from Kyber.
      */
     function rpowi(uint256 base, uint256 exp) internal pure returns (uint256) {
         uint256 res = exp % 2 != 0 ? base : RONE;
