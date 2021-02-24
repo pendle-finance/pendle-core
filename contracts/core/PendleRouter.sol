@@ -32,8 +32,9 @@ import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../periphery/Permissions.sol";
+import "../periphery/Withdrawable.sol";
 
-contract PendleRouter is IPendleRouter, Permissions {
+contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -52,16 +53,6 @@ contract PendleRouter is IPendleRouter, Permissions {
         // By storing the original value once again, a refund is triggered (see
         // https://eips.ethereum.org/EIPS/eip-2200)
         _reentrancyStatus = _NOT_ENTERED;
-    }
-
-    function _checkNonReentrancy() internal {
-        if (!data.reentrancyWhitelisted(msg.sender)) {
-            // On the first call to pendleNonReentrant, _notEntered will be true
-            require(_reentrancyStatus != _ENTERED, "REENTRANT_CALL");
-
-            // Any calls to nonReentrant after this point will fail
-            _reentrancyStatus = _ENTERED;
-        }
     }
 
     constructor(address _governance, IWETH _weth) Permissions(_governance) {
@@ -724,6 +715,16 @@ contract PendleRouter is IPendleRouter, Permissions {
     //     // To implement
     //     isLocked = false; // never locked
     // }
+
+    function _checkNonReentrancy() internal {
+        if (!data.reentrancyWhitelisted(msg.sender)) {
+            // On the first call to pendleNonReentrant, _notEntered will be true
+            require(_reentrancyStatus != _ENTERED, "REENTRANT_CALL");
+
+            // Any calls to nonReentrant after this point will fail
+            _reentrancyStatus = _ENTERED;
+        }
+    }
 
     /// @dev Inbound transfer from msg.sender to router
     function _transferIn(address _token, uint256 _amount) internal {
