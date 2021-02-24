@@ -153,15 +153,17 @@ describe("PendleMarketEth", async () => {
       consts.MARKET_FACTORY_AAVE
     );
 
-    await pendleRouter.connect(bob).swapExactOut(
-      pendleXyt.address,
-      consts.ETH_ADDRESS,
-      amountToWei(tokenUSDT, BN.from(10)),
-      amountToWei(tokenUSDT, BN.from(100)),
-      consts.MAX_ALLOWANCE,
-      consts.MARKET_FACTORY_AAVE,
-      consts.HIGH_GAS_OVERRIDE
-    );
+    await pendleRouter
+      .connect(bob)
+      .swapExactOut(
+        pendleXyt.address,
+        consts.ETH_ADDRESS,
+        amountToWei(tokenUSDT, BN.from(10)),
+        amountToWei(tokenUSDT, BN.from(100)),
+        consts.MAX_ALLOWANCE,
+        consts.MARKET_FACTORY_AAVE,
+        consts.HIGH_GAS_OVERRIDE
+      );
 
     let yieldTokenBalance = await pendleXyt.balanceOf(pendleEthMarket.address);
     let ethBalance = await WETH.balanceOf(pendleEthMarket.address);
@@ -203,9 +205,8 @@ describe("PendleMarketEth", async () => {
     expect(ethBalance.toNumber()).to.be.approximately(
       amountToTokenize.sub(amountToTokenize.div(10)).toNumber(),
       amountToTokenize.div(100).toNumber()
-    )
+    );
   });
-
 
   it("should be able to get spot price", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
@@ -255,10 +256,7 @@ describe("PendleMarketEth", async () => {
 
     await bootstrapSampleMarket(amountToTokenize);
 
-    let [
-      xytReserve,
-      tokenReserve,
-    ] = await pendleEthMarket.getReserves();
+    let [xytReserve, tokenReserve] = await pendleEthMarket.getReserves();
     expect(xytReserve).to.be.equal(amountToTokenize);
     expect(tokenReserve).to.be.equal(amountToTokenize);
   });
@@ -275,7 +273,7 @@ describe("PendleMarketEth", async () => {
     ] = await pendleRouter.getMarketReserves(
       consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
-      consts.ETH_ADDRESS,
+      consts.ETH_ADDRESS
     );
     expect(xytReserve).to.be.equal(amountToTokenize);
     expect(tokenReserve).to.be.equal(amountToTokenize);

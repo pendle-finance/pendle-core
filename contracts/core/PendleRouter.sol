@@ -491,7 +491,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         _transferOut(originalTokenOut, outTotalAmount);
     }
 
-     /// @dev Needed for multi-path off-chain routing
+    /// @dev Needed for multi-path off-chain routing
     function swapPathExactOut(
         Swap[][] memory _swapPath,
         address _tokenIn,
