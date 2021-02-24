@@ -22,7 +22,7 @@
  */
 pragma solidity 0.7.6;
 
-import {Factory} from "../libraries/PendleLibrary.sol";
+import "../libraries/FactoryLib.sol";
 import "./PendleMarket.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleData.sol";

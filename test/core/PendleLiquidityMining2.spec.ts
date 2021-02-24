@@ -18,7 +18,7 @@ import {
 import {
   liqParams,
   pendleLiquidityMiningFixture,
-  userStakeAction,
+  UserStakeAction,
 } from "./fixtures";
 import * as scenario from "./fixtures/pendleLiquidityMiningScenario.fixture";
 
@@ -31,7 +31,7 @@ const { deployContract, provider } = waffle;
 //    rewards[userId][1] is the rewards withdrawable at currentEpoch + 1
 //    ...
 function calExpectedRewards(
-  userStakingData: userStakeAction[][][],
+  userStakingData: UserStakeAction[][][],
   params: liqParams,
   currentEpoch: number
 ): BN[][] {
@@ -79,7 +79,7 @@ function calExpectedRewards(
       userStakeSeconds.push(BN.from(0));
       let lastTimeUpdated = startOfEpoch(params, epochId);
       userData.push(
-        new userStakeAction(
+        new UserStakeAction(
           startOfEpoch(params, epochId + 1),
           BN.from(0),
           true,
@@ -219,8 +219,8 @@ describe("PendleLiquidityMining-beta tests", async () => {
 
   // [epochs][user][transaction]
 
-  async function doSequence(userStakingData: userStakeAction[][][]) {
-    let flatData: userStakeAction[] = [];
+  async function doSequence(userStakingData: UserStakeAction[][][]) {
+    let flatData: UserStakeAction[] = [];
     let expectedLpBalance: BN[] = await getLpBalanceOfAllUsers();
 
     userStakingData.forEach((epochData) => {
@@ -238,7 +238,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
     });
 
     for (let i = 0; i < flatData.length; i++) {
-      let action: userStakeAction = flatData[i];
+      let action: UserStakeAction = flatData[i];
       if (i != 0) {
         // console.log(flatData[i - 1], flatData[i]);
         assert(flatData[i - 1].time < flatData[i].time);
@@ -267,7 +267,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
   }
 
   async function checkEqualRewards(
-    userStakingData: userStakeAction[][][],
+    userStakingData: UserStakeAction[][][],
     epochToCheck: number,
     _allocationRateDiv?: number
   ) {
@@ -295,7 +295,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
   }
 
   async function checkEqualRewardsFourEpochs(
-    userStakingData: userStakeAction[][][],
+    userStakingData: UserStakeAction[][][],
     epochToCheck: number,
     _allocationRateDiv?: number
   ) {
@@ -343,7 +343,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
   });
 
   it("test 1", async () => {
-    let userStakingData: userStakeAction[][][] = scenario.scenario01(params);
+    let userStakingData: UserStakeAction[][][] = scenario.scenario01(params);
     await doSequence(userStakingData);
     await checkEqualRewardsFourEpochs(
       userStakingData,
@@ -352,7 +352,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
   });
 
   it("test 4", async () => {
-    let userStakingData: userStakeAction[][][] = scenario.scenario04(params);
+    let userStakingData: UserStakeAction[][][] = scenario.scenario04(params);
     await doSequence(userStakingData);
     await checkEqualRewardsFourEpochs(
       userStakingData,
@@ -366,7 +366,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
       [params.TOTAL_NUMERATOR.div(2), params.TOTAL_NUMERATOR.div(2)],
       consts.HIGH_GAS_OVERRIDE
     );
-    let userStakingData: userStakeAction[][][] = scenario.scenario04(params);
+    let userStakingData: UserStakeAction[][][] = scenario.scenario04(params);
     await doSequence(userStakingData);
     await checkEqualRewardsFourEpochs(
       userStakingData,

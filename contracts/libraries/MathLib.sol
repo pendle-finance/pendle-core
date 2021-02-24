@@ -24,8 +24,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 library Math {
     using SafeMath for uint256;
 
-    uint256 internal constant UINT_MAX_VALUE = uint256(-1);
-    uint256 internal constant WAD = 1e18;
     uint256 internal constant BIG_NUMBER = (uint256(1) << uint256(200));
     uint256 internal constant PRECISION_BITS = 40;
     uint256 internal constant RONE = uint256(1) << PRECISION_BITS;
@@ -82,8 +80,7 @@ library Math {
 
     /**
     @notice log2 of (p/q). returns result in FP form
-    @dev function is from Kyber. Long have verified this function
-            to be working correctly
+    @dev function is from Kyber.
     @dev _p & _q is FP, return a FP
      */
     function logBase2(uint256 _p, uint256 _q) internal pure returns (uint256) {
@@ -108,8 +105,7 @@ library Math {
 
     /**
     @notice calculate ln(p/q). returned result >= 0
-    @dev function is from Kyber. Long have verified this function
-            to be working correctly
+    @dev function is from Kyber.
     @dev _p & _q is FP, return a FP
     */
     function ln(uint256 p, uint256 q) internal pure returns (uint256) {
@@ -167,11 +163,11 @@ library Math {
             if (curTerm == 0) {
                 break;
             }
-            if (n == 200) {
+            if (n == 500) {
                 /*
-                testing shows that in the most extreme case, it only takes 97 turns
-                to converge.
-                the most extreme case is rpow(1,RONE-1) (equal to rpow(0.00...01,0.99..9))
+                testing shows that in the most extreme case, it will take 430 turns to converge.
+                however, it's expected that the numbers will not exceed 2^120 in normal situation
+                the most extreme case is rpow((1<<256)-1,(1<<40)-1) (equal to rpow((2^256-1)/2^40,0.99..9))
                 */
                 revert("RPOWE_SLOW_CONVERGE");
             }
@@ -190,6 +186,10 @@ library Math {
         if (exp == 0) {
             // Anything to the 0 is 1
             return RONE;
+        }
+        if (base == 0) {
+            // 0 to anything except 0 is 0
+            return 0;
         }
 
         uint256 frac = fpart(exp); // get the fractional part
@@ -218,8 +218,7 @@ library Math {
     @notice return base^exp with base in FP form and exp in Int
     @dev this function use a technique called: exponentiating by squaring
         complexity O(log(q))
-    @dev function is from Kyber. Long have verified this function
-            to be working correctly
+    @dev function is from Kyber.
     @dev base is a FP, exp is an Int, return a FP
      */
     function rpowi(uint256 base, uint256 exp) internal pure returns (uint256) {

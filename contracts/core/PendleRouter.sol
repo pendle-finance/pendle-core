@@ -26,7 +26,7 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Math} from "../libraries/PendleLibrary.sol";
+import "../libraries/MathLib.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleForge.sol";
@@ -117,13 +117,26 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         address _underlyingAsset,
         uint256 _expiry
     ) public override nonReentrant returns (uint256 interests) {
-        require(_forgeId != bytes32(0), "ZERO_BYTES");
-        require(_underlyingAsset != address(0), "ZERO_ADDRESS");
+        interests = _redeemDueInterestsInternal(_forgeId, _underlyingAsset, _expiry);
+    }
 
-        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), "FORGE_NOT_EXISTS");
-
-        interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
+    function redeemDueInterestsMultiple(
+        bytes32[] calldata _forgeIds,
+        address[] calldata _underlyingAssets,
+        uint256[] calldata _expiries
+    ) public override nonReentrant returns (uint256[] memory interests) {
+        require(
+            _forgeIds.length == _underlyingAssets.length && _forgeIds.length == _expiries.length,
+            "INVALID_ARRAYS"
+        );
+        interests = new uint256[](_forgeIds.length);
+        for (uint256 i = 0; i < _forgeIds.length; i++) {
+            interests[i] = _redeemDueInterestsInternal(
+                _forgeIds[i],
+                _underlyingAssets[i],
+                _expiries[i]
+            );
+        }
     }
 
     function redeemUnderlying(
@@ -340,9 +353,9 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         require(address(factory) != address(0), "ZERO_ADDRESS");
 
         market = factory.createMarket(_xyt, _token);
-        IERC20(_xyt).safeApprove(market, Math.UINT_MAX_VALUE);
-        IERC20(_token).safeApprove(market, Math.UINT_MAX_VALUE);
-        IERC20(market).safeApprove(market, Math.UINT_MAX_VALUE);
+        IERC20(_xyt).safeApprove(market, type(uint256).max);
+        IERC20(_token).safeApprove(market, type(uint256).max);
+        IERC20(market).safeApprove(market, type(uint256).max);
     }
 
     function bootstrapMarket(
@@ -588,7 +601,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             tokenOut: _tokenOut,
             swapAmount: _inSwapAmount,
             limitReturnAmount: 0,
-            maxPrice: Math.UINT_MAX_VALUE
+            maxPrice: type(uint256).max
         });
 
         return (swap, outSwapAmount);
@@ -610,8 +623,8 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             tokenIn: _tokenIn,
             tokenOut: _tokenOut,
             swapAmount: inSwapAmount,
-            limitReturnAmount: Math.UINT_MAX_VALUE,
-            maxPrice: Math.UINT_MAX_VALUE
+            limitReturnAmount: type(uint256).max,
+            maxPrice: type(uint256).max
         });
 
         return (swap, inSwapAmount);
@@ -753,15 +766,26 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 tokenWeightOut
     ) internal pure returns (uint256 effectiveLiquidity) {
         effectiveLiquidity = tokenWeightIn
-            .mul(Math.FORMULA_PRECISION)
+            .mul(Math.RONE)
             .div(tokenWeightOut.add(tokenWeightIn))
             .mul(tokenBalanceOut)
-            .div(Math.FORMULA_PRECISION);
+            .div(Math.RONE);
 
         return effectiveLiquidity;
     }
 
     function _isETH(address token) internal pure returns (bool) {
         return (token == ETH_ADDRESS);
+    }
+
+    function _redeemDueInterestsInternal(
+        bytes32 _forgeId,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) internal returns (uint256 interests) {
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
+
+        interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
     }
 }

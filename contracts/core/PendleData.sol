@@ -23,7 +23,7 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import {Math} from "../libraries/PendleLibrary.sol";
+import "../libraries/MathLib.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
@@ -138,6 +138,14 @@ contract PendleData is IPendleData, Permissions {
         bytes32 forgeId = getForgeId[_forge];
         return (forgeId != bytes32(0) &&
             address(xytTokens[forgeId][_underlyingAsset][_expiry]) != address(0));
+    }
+
+    function isValidXYT(
+        bytes32 _forgeId,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) external view override returns (bool) {
+        return address(xytTokens[_forgeId][_underlyingAsset][_expiry]) != address(0);
     }
 
     /***********
