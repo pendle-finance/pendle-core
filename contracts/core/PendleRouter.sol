@@ -57,7 +57,7 @@ contract PendleRouter is IPendleRouter, Permissions {
     function _checkNonReentrancy() internal {
         if (!data.reentrancyWhitelisted(msg.sender)) {
             // On the first call to pendleNonReentrant, _notEntered will be true
-            require(_reentrancyStatus != _ENTERED, "ReentrancyGuard: reentrant call");
+            require(_reentrancyStatus != _ENTERED, "REENTRANT_CALL");
 
             // Any calls to nonReentrant after this point will fail
             _reentrancyStatus = _ENTERED;

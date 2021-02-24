@@ -59,7 +59,7 @@ contract PendleData is IPendleData, Permissions {
     address[] private allMarkets;
 
     // Parameters to be set by governance;
-    uint256 public override deltaT; // if a market's interests have not been updated for deltaT, we will ping the forge to update the interests
+    uint256 public override interestUpdateDelta; // if a market's interests have not been updated for interestUpdateDelta, we will ping the forge to update the interests
     uint256 public override swapFee;
     uint256 public override exitFee;
     mapping(address => bool) public override reentrancyWhitelisted;
@@ -99,9 +99,9 @@ contract PendleData is IPendleData, Permissions {
         emit TreasurySet(_treasury);
     }
 
-    function setDeltaT(uint256 _deltaT) external override initialized onlyGovernance {
-        deltaT = _deltaT;
-        emit DeltaTSet(_deltaT);
+    function setDeltaT(uint256 _interestUpdateDelta) external override initialized onlyGovernance {
+        interestUpdateDelta = _interestUpdateDelta;
+        emit DeltaTSet(_interestUpdateDelta);
     }
 
     function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)

@@ -74,7 +74,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
         IPendleYieldToken xytContract = IPendleYieldToken(_xyt);
-        require(xytContract.expiry() == _expiry, "Pendle: invalid expiry");
+        require(xytContract.expiry() == _expiry, "INVALID_EXPIRY");
 
         factory = msg.sender;
         forge = _forge;
@@ -630,7 +630,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     // this function should be called whenver the total amount of LP changes
     //
     function _updateGlobalIncomeIndex() internal {
-        if (block.timestamp.sub(lastInterestUpdate) > data.deltaT()) {
+        if (block.timestamp.sub(lastInterestUpdate) > data.interestUpdateDelta()) {
             router.redeemDueInterests(forgeId, underlyingAsset, expiry); // get due interests for the XYT being held in the market
             lastInterestUpdate = block.timestamp;
         }

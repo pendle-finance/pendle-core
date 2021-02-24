@@ -35,10 +35,10 @@ interface IPendleData {
     event TreasurySet(address treasury);
 
     /**
-     * @notice Emitted when deltaT is changed
-     * @param deltaT new deltaT setting
+     * @notice Emitted when interestUpdateDelta is changed
+     * @param interestUpdateDelta new interestUpdateDelta setting
      **/
-    event DeltaTSet(uint256 deltaT);
+    event DeltaTSet(uint256 interestUpdateDelta);
 
     event ReentrancyWhitelistUpdated(address[] addresses, bool[] whitelisted);
 
@@ -193,7 +193,7 @@ interface IPendleData {
 
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
 
-    function setDeltaT(uint256 _deltaT) external;
+    function setDeltaT(uint256 _interestUpdateDelta) external;
 
     function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
         external;
@@ -218,7 +218,7 @@ interface IPendleData {
 
     function exitFee() external view returns (uint256);
 
-    function deltaT() external view returns (uint256);
+    function interestUpdateDelta() external view returns (uint256);
 
     function reentrancyWhitelisted(address a) external view returns (bool);
 
