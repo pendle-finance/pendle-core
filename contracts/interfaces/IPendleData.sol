@@ -42,14 +42,17 @@ interface IPendleData {
      **/
     event TreasurySet(address treasury);
 
-
     /**
      * @notice Set/update validity of a forge-factory pair
      * @param _forgeId the forge id
      * @param _marketFactoryId the market factory id
      * @param _valid valid or not
      **/
-    function setForgeFactoryValidity(bytes32 _forgeId, bytes32 _marketFactoryId, bool _valid) external;
+    function setForgeFactoryValidity(
+        bytes32 _forgeId,
+        bytes32 _marketFactoryId,
+        bool _valid
+    ) external;
 
     /**
      * @notice Sets the PendleTreasury contract addresses.
@@ -157,8 +160,10 @@ interface IPendleData {
         uint256 expiry
     ) external view returns (bool);
 
-    function validForgeFactoryPair(bytes32 _forgeId, bytes32 _marketFactoryId) external view returns (bool);
-
+    function validForgeFactoryPair(bytes32 _forgeId, bytes32 _marketFactoryId)
+        external
+        view
+        returns (bool);
 
     /**
      * @notice Gets a reference to a specific OT.
