@@ -141,7 +141,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
         tokens.ot.burn(_account, redeemedAmount);
 
-        emit RedeemYieldToken(_underlyingAsset, redeemedAmount, _expiry);
+        emit RedeemYieldToken(_underlyingAsset, _expiry, redeemedAmount);
     }
 
     function redeemDueInterests(
@@ -184,7 +184,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
         tokens.ot.burn(_account, _amountToRedeem);
         tokens.xyt.burn(_account, _amountToRedeem);
 
-        emit RedeemYieldToken(_underlyingAsset, _amountToRedeem, _expiry);
+        emit RedeemYieldToken(_underlyingAsset, _expiry, _amountToRedeem);
 
         return _amountToRedeem;
     }
@@ -202,7 +202,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
         lastNormalisedIncome[_underlyingAsset][_expiry][_to] = aaveLendingPoolCore
             .getReserveNormalizedIncome(address(_underlyingAsset));
 
-        emit MintYieldToken(_underlyingAsset, _amountToTokenize, _expiry);
+        emit MintYieldToken(_underlyingAsset, _expiry, _amountToTokenize);
         return (address(tokens.ot), address(tokens.xyt));
     }
 
@@ -294,7 +294,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
             IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
             IERC20(aToken).transfer(_account, dueInterests);
 
-            emit DueInterestSettled(_underlyingAsset, _account, dueInterests, _expiry);
+            emit DueInterestSettled(_underlyingAsset, _expiry, dueInterests, _account);
         }
 
         return dueInterests;

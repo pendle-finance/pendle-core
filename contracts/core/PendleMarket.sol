@@ -102,6 +102,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         reserves[token].balance = initialTokenLiquidity;
         reserves[token].weight = Math.RONE / 2;
 
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
+
         _mintLp(INITIAL_LP);
         _transferOutLp(INITIAL_LP);
 
@@ -138,7 +145,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(amountXytUsed != 0, "ZERO_XYT_IN_AMOUNT");
         require(amountXytUsed <= _maxInXyt, "LOW_XYT_IN_LIMIT");
         reserves[xyt].balance = reserves[xyt].balance.add(amountXytUsed);
-        emit Join(xyt, amountXytUsed);
         _transferIn(xyt, amountXytUsed);
 
         // Calc and inject pair token.
@@ -147,8 +153,14 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(amountTokenUsed != 0, "ZERO_TOKEN_IN_AMOUNT");
         require(amountTokenUsed <= _maxInToken, "LOW_TOKEN_IN_LIMIT");
         reserves[token].balance = reserves[token].balance.add(amountTokenUsed);
-        emit Join(token, amountTokenUsed);
         _transferIn(token, amountTokenUsed);
+
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
 
         // Mint and push LP token.
         _mintLp(_exactOutLp);
@@ -183,7 +195,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         // Update reserves and operate underlying LP and inToken.
         inTokenReserve.balance = inTokenReserve.balance.add(_exactIn);
-        emit Join(_inToken, _exactIn);
         _transferIn(_inToken, _exactIn);
 
         // Mint and push LP token.
@@ -227,7 +238,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(outAmount >= _minOutXyt, "INSUFFICIENT_XYT_OUT");
         reserves[xyt].balance = reserves[xyt].balance.sub(outAmount);
         xytOut = outAmount;
-        emit Exit(xyt, outAmount);
         _transferOut(xyt, outAmount);
 
         // Calc and withdraw pair token.
@@ -237,7 +247,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(outAmount >= _minOutToken, "INSUFFICIENT_TOKEN_OUT");
         reserves[token].balance = reserves[token].balance.sub(outAmount);
         tokenOut = outAmount;
-        emit Exit(token, outAmount);
         _transferOut(token, outAmount);
 
         // Deal with lp last.
@@ -267,8 +276,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         // Update reserves and operate underlying LP and outToken
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmountToken);
-
-        emit Exit(_outToken, outAmountToken);
 
         _transferInLp(_inLp);
         _collectFees(exitFee);
@@ -316,7 +323,12 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(spotPriceAfter <= maxPrice, "LOW_MAX_PRICE");
         require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "MATH_ERROR");
 
-        emit Swap(inToken, inAmount, outToken, outAmount);
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
 
         _transferIn(inToken, inAmount);
         _transferOut(outToken, outAmount);
@@ -362,7 +374,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(spotPriceAfter <= maxPrice, "LOW_MAX_PRICE");
         require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "MATH_ERROR");
 
-        emit Swap(inToken, inAmount, outToken, outAmount);
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
+
         _transferIn(inToken, inAmount);
         _transferOut(outToken, outAmount);
 
