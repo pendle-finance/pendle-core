@@ -351,6 +351,8 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         IPendleMarketFactory factory =
             IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));
         require(address(factory) != address(0), "ZERO_ADDRESS");
+        bytes32 forgeId = IPendleForge(IPendleYieldToken(_xyt).forge()).forgeId();
+        require(data.validForgeFactoryPair(forgeId, _marketFactoryId), "INVALID_FORGE_FACTORY");
 
         market = factory.createMarket(_xyt, _token);
         IERC20(_xyt).safeApprove(market, type(uint256).max);

@@ -29,10 +29,30 @@ import "./IPendleYieldToken.sol";
 
 interface IPendleData {
     /**
+     * @notice Emitted when validity of a forge-factory pair is updated
+     * @param _forgeId the forge id
+     * @param _marketFactoryId the market factory id
+     * @param _valid valid or not
+     **/
+    event ForgeFactoryValiditySet(bytes32 _forgeId, bytes32 _marketFactoryId, bool _valid);
+
+    /**
      * @notice Emitted when Pendle and PendleFactory addresses have been updated.
      * @param treasury The address of the new treasury contract.
      **/
     event TreasurySet(address treasury);
+
+    /**
+     * @notice Set/update validity of a forge-factory pair
+     * @param _forgeId the forge id
+     * @param _marketFactoryId the market factory id
+     * @param _valid valid or not
+     **/
+    function setForgeFactoryValidity(
+        bytes32 _forgeId,
+        bytes32 _marketFactoryId,
+        bool _valid
+    ) external;
 
     /**
      * @notice Sets the PendleTreasury contract addresses.
@@ -139,6 +159,11 @@ interface IPendleData {
         address underlyingAsset,
         uint256 expiry
     ) external view returns (bool);
+
+    function validForgeFactoryPair(bytes32 _forgeId, bytes32 _marketFactoryId)
+        external
+        view
+        returns (bool);
 
     /**
      * @notice Gets a reference to a specific OT.
