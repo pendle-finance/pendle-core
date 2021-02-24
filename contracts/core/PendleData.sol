@@ -38,6 +38,10 @@ contract PendleData is IPendleData, Permissions {
         uint256 liquidity;
     }
 
+    // It's not guaranteed that every market factory can work with
+    // every forge, so we need to check against this mapping
+    mapping(bytes32 => mapping(bytes32 => bool)) public override validForgeFactoryPair;
+
     mapping(address => bytes32) public override getForgeId;
     mapping(bytes32 => address) public override getForgeAddress;
     mapping(address => bytes32) public override getMarketFactoryId;
@@ -199,6 +203,15 @@ contract PendleData is IPendleData, Permissions {
         isMarket[_market] = true;
 
         emit MarketPairAdded(_market, _xyt, _token);
+    }
+
+    function setForgeFactoryValidity(
+        bytes32 _forgeId,
+        bytes32 _marketFactoryId,
+        bool _valid
+    ) external override initialized onlyGovernance {
+        validForgeFactoryPair[_forgeId][_marketFactoryId] = _valid;
+        emit ForgeFactoryValiditySet(_forgeId, _marketFactoryId, _valid);
     }
 
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external override onlyGovernance {

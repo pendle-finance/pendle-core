@@ -256,6 +256,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         data.addMarketFactory(_marketFactoryId, _marketFactoryAddress);
     }
 
+    // add market liquidity by xyt and base tokens
     function addMarketLiquidityAll(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -282,6 +283,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         _transferOut(_token, _maxInToken - amountTokenUsed); // transfer unused Token back to user
     }
 
+    // add market liquidity by xyt or base token
     function addMarketLiquiditySingle(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -306,6 +308,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         _transferOut(address(market), exactOutLp);
     }
 
+    // remove market liquidity by xyt and base tokens
     function removeMarketLiquidityAll(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -330,6 +333,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         _transferOut(_token, tokenAmount);
     }
 
+    // remove market liquidity by xyt or base tokens
     function removeMarketLiquiditySingle(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -370,6 +374,8 @@ contract PendleRouter is IPendleRouter, Permissions {
         IPendleMarketFactory factory =
             IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));
         require(address(factory) != address(0), "ZERO_ADDRESS");
+        bytes32 forgeId = IPendleForge(IPendleYieldToken(_xyt).forge()).forgeId();
+        require(data.validForgeFactoryPair(forgeId, _marketFactoryId), "INVALID_FORGE_FACTORY");
 
         market = factory.createMarket(_xyt, _token);
         IERC20(_xyt).safeApprove(market, type(uint256).max);
@@ -406,6 +412,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         data.updateMarketInfo(_xyt, _token, _marketFactoryId);
     }
 
+    // trade by swap exact amount of token into market
     function swapExactIn(
         address _tokenIn,
         address _tokenOut,
@@ -434,6 +441,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         _transferOut(_tokenOut, outSwapAmount);
     }
 
+    // trade by swap exact amount of token out of market
     function swapExactOut(
         address _tokenIn,
         address _tokenOut,
