@@ -99,9 +99,9 @@ contract PendleData is IPendleData, Permissions {
         emit TreasurySet(_treasury);
     }
 
-    function setDeltaT(uint256 _interestUpdateDelta) external override initialized onlyGovernance {
+    function setInterestUpdateDelta(uint256 _interestUpdateDelta) external override initialized onlyGovernance {
         interestUpdateDelta = _interestUpdateDelta;
-        emit DeltaTSet(_interestUpdateDelta);
+        emit InterestUpdateDeltaSet(_interestUpdateDelta);
     }
 
     function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)

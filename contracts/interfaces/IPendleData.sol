@@ -38,7 +38,7 @@ interface IPendleData {
      * @notice Emitted when interestUpdateDelta is changed
      * @param interestUpdateDelta new interestUpdateDelta setting
      **/
-    event DeltaTSet(uint256 interestUpdateDelta);
+    event InterestUpdateDeltaSet(uint256 interestUpdateDelta);
 
     event ReentrancyWhitelistUpdated(address[] addresses, bool[] whitelisted);
 
@@ -193,7 +193,7 @@ interface IPendleData {
 
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
 
-    function setDeltaT(uint256 _interestUpdateDelta) external;
+    function setInterestUpdateDelta(uint256 _interestUpdateDelta) external;
 
     function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
         external;
