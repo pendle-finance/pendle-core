@@ -338,7 +338,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
-        console.log("WOWOO");
+        console.log("341");
         _curveShift(data);
 
         TokenReserve storage inTokenReserve = reserves[inToken];
@@ -596,16 +596,16 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RONE), Math.RONE),
             Math.ln(Math.PI_PLUSONE, Math.RONE)
         );
-        console.log("WDAADADA %s %s", priceNow, priceLast);
+        console.log("[_updateWeightDry] priceNow= %s priceLast=%s", priceNow, priceLast);
         uint256 r = Math.rdiv(priceNow, priceLast);
         require(Math.RONE >= r, "MATH_ERROR");
 
-        console.log("KEEK");
+        console.log("[_updateWeightDry] after getting r = ", r);
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
 
         uint256 theta = Math.rdiv(thetaNumerator, thetaDenominator);
-        console.log("TOOO");
+        console.log("[_updateWeightDry] after getting theta = ", theta);
         xytWeightUpdated = xytWeight.sub(theta);
         tokenWeightUpdated = tokenWeight.add(theta);
     }

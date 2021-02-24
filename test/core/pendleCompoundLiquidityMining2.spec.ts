@@ -332,6 +332,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await pendleRouter.connect(eve).claimLpInterests([pendleStdMarket.address]);
     setTimeNextBlock(provider, consts.T0_C.add(consts.THREE_MONTH));
     console.log("LOL");
+    console.log("\tAbout to do dummy trade");
     // some dummy trade
     const testAmount = amountToWei(tokens.USDT, BN.from(1));
     await pendleRouter.swapExactOut(
@@ -343,6 +344,8 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
       consts.MARKET_FACTORY_COMPOUND,
       consts.HIGH_GAS_OVERRIDE
     );
+    console.log("\tDID a dummy trade");
+
     console.log(
       `\t+3m, LP balance of eve = ${await pendleStdMarket.balanceOf(
         eve.address
@@ -363,7 +366,6 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
         pendleStdMarket.address
       )}`
     );
-    console.log(`\t\tDid a dummy trade`);
 
     await pendleRouter.connect(eve).claimLpInterests([pendleStdMarket.address]);
 
