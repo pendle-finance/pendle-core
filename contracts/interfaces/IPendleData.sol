@@ -40,6 +40,8 @@ interface IPendleData {
      **/
     event DeltaTSet(uint256 deltaT);
 
+    event ReentrancyWhitelistUpdated(address[] addresses, bool[] whitelisted);
+
     /**
      * @notice Sets the PendleTreasury contract addresses.
      * @param newTreasury Address of new treasury contract.

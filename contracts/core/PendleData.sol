@@ -110,9 +110,11 @@ contract PendleData is IPendleData, Permissions {
         initialized
         onlyGovernance
     {
+        require(addresses.length == whitelisted.length, "INVALID_ARRAYS");
         for (uint256 i = 0; i < addresses.length; i++) {
             reentrancyWhitelisted[addresses[i]] = whitelisted[i];
         }
+        emit ReentrancyWhitelistUpdated(addresses, whitelisted);
     }
 
     /**********
