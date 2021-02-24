@@ -52,7 +52,7 @@ describe("PendleData", async () => {
 
   it("allMarketsLength", async () => {
     let allMarketsLength = await pendleData.allMarketsLength();
-    expect(allMarketsLength).to.be.eq(1);
+    expect(allMarketsLength).to.be.eq(2);
   });
 
   it("getAllMarkets", async () => {
