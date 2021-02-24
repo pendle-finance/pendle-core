@@ -68,6 +68,13 @@ export async function pendleMarketFixture(
     consts.HIGH_GAS_OVERRIDE
   );
 
+  await pendleRouter.createMarket(
+    consts.MARKET_FACTORY_AAVE,
+    pendleFutureYieldToken.address,
+    tokens.WETH.address,
+    consts.HIGH_GAS_OVERRIDE
+  );
+
   const pendleStdMarketAddress = await pendleData.getMarket(
     consts.MARKET_FACTORY_AAVE,
     pendleFutureYieldToken.address,

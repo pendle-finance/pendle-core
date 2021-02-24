@@ -18,6 +18,7 @@ export const consts = {
   ZERO_BYTES: utils.formatBytes32String(""),
   RANDOM_BYTES: utils.formatBytes32String("ZpTw6Y3Ft4ruk7pmwTJF"),
   ZERO_ADDRESS: "0x0000000000000000000000000000000000000000",
+  ETH_ADDRESS: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
   MAX_ALLOWANCE: BN.from(2).pow(256).sub(1),
   ONE_DAY: BN.from(86400),
   ONE_MONTH: BN.from(2592000),
