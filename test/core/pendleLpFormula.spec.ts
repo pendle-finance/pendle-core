@@ -23,7 +23,6 @@ const { waffle } = require("hardhat");
 const { provider } = waffle;
 
 // TODO: add tests that check for transfering unused tokens back to users
-// TODO: add tests to test new math lib
 describe("pendleLpFormula", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
@@ -202,7 +201,6 @@ describe("pendleLpFormula", async () => {
     let amountToRemove = lpBalanceAlice.mul(test.ratioLpForToken).div(100);
 
     await setTimeNextBlock(provider, T1);
-    // weights(Token,Xyt) 848215863334 XYT weight: 251295764442
     let balanceDiff: BN = await removeLiquiditySingleToken(
       alice,
       testToken.address,
@@ -213,7 +211,6 @@ describe("pendleLpFormula", async () => {
       consts.TEST_TOKEN_DELTA.toNumber()
     );
 
-    // weights: XYT weight: 245957533896
     await setTimeNextBlock(provider, T2);
     amountToRemove = lpBalanceAlice.mul(test.ratioLpForXyt).div(100);
     balanceDiff = await removeLiquiditySingleToken(

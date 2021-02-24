@@ -79,7 +79,14 @@ describe("PendleMarket", async () => {
     );
   }
 
-  it("should be able to join a bootstrapped market with a single standard token", async () => {
+  /*
+  READ ME!!!
+  All tests with "_sample" suffix are legacy tests. It's improved version is in other test files
+    Tests for adding/removing liquidity can be found in pendleLpFormula.spec.ts
+    Tests for swapping tokens can be found in AmmFormula.ts
+  */
+
+  it("should be able to join a bootstrapped market with a single standard token_sample", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
 
     await bootstrapSampleMarket(amountToTokenize);
@@ -98,7 +105,6 @@ describe("PendleMarket", async () => {
     let currentWalletBalance = await pendleStdMarket.balanceOf(alice.address);
     expect(currentWalletBalance).to.be.gt(initalWalletBalance);
   });
-
   it("should be able to bootstrap", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
 
@@ -110,7 +116,7 @@ describe("PendleMarket", async () => {
     expect(testTokenBalance).to.be.equal(amountToTokenize);
   });
 
-  it("should be able to join a bootstrapped pool by dual tokens", async () => {
+  it("should be able to join a bootstrapped pool by dual tokens_sample", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
 
     await bootstrapSampleMarket(amountToTokenize);
@@ -138,7 +144,7 @@ describe("PendleMarket", async () => {
     expect(totalSupplyBalance).to.be.equal(totalSupply.mul(2));
   });
 
-  it("should be able to swap amount out", async () => {
+  it("should be able to swap amount out_sample", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
 
     await bootstrapSampleMarket(amountToTokenize);
@@ -177,22 +183,10 @@ describe("PendleMarket", async () => {
     );
   });
 
-  it("should be able to swap amount in", async () => {
+  it("should be able to swap amount in_sample", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
 
     await bootstrapSampleMarket(amountToTokenize);
-
-    let yieldTokenBalanceBefore = await pendleXyt.balanceOf(
-      pendleStdMarket.address
-    );
-
-    // let result = await pendleRouter
-    //   .getMarketRateExactOut(
-    //     pendleXyt.address,
-    //     testToken.address,
-    //     amountToWei(tokenUSDT, BN.from(10)),
-    //     consts.MARKET_FACTORY_AAVE
-    //   );
 
     await pendleRouter
       .connect(bob)
@@ -214,7 +208,6 @@ describe("PendleMarket", async () => {
       30
     );
 
-    //TODO: calculates the exact expected amount based on curve shifting
     expect(testTokenBalance.toNumber()).to.be.approximately(
       amountToTokenize.sub(amountToTokenize.div(10)).toNumber(),
       amountToTokenize.div(100).toNumber()
@@ -237,7 +230,7 @@ describe("PendleMarket", async () => {
     );
   });
 
-  it("should be able to exit a pool by dual tokens", async () => {
+  it("should be able to exit a pool by dual tokens_sample", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
     await bootstrapSampleMarket(amountToTokenize);
     await advanceTime(provider, consts.ONE_MONTH);
@@ -314,7 +307,6 @@ describe("PendleMarket", async () => {
   //   expect(currentLpTokenBal).to.be.gt(initalLpTokenBal);
   //   expect(currentTestTokenBal).to.be.lt(initalTestTokenBal);
   //   expect(currentXytBal).to.be.equal(initalXytBal);
-  //   // TODO: change gt,lt to approximate @Long
   // });
 
   // it.only("should be able to exit market by baseToken after the market has expired", async () => {
@@ -375,7 +367,6 @@ describe("PendleMarket", async () => {
     ] = await pendleStdMarket.getReserves();
     expect(xytReserve).to.be.equal(amountToTokenize);
     expect(tokenReserve).to.be.equal(amountToTokenize);
-    // TODO: add expect for blockTimestamp @Long
   });
 
   it("should be able to getMarketReserve", async () => {
@@ -394,7 +385,6 @@ describe("PendleMarket", async () => {
     );
     expect(xytReserve).to.be.equal(amountToTokenize);
     expect(tokenReserve).to.be.equal(amountToTokenize);
-    // TODO: add expect for currentTIme @Long
   });
 
   it("should be able to getMarketRateExactOut", async () => {
@@ -427,7 +417,7 @@ describe("PendleMarket", async () => {
     expect(result[1].toNumber()).to.be.approximately(9090909, 100);
   });
 
-  it("should be able to add market liquidity for a token", async () => {
+  it("should be able to add market liquidity for a token_sample", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
 
     await bootstrapSampleMarket(amountToTokenize);
@@ -455,10 +445,9 @@ describe("PendleMarket", async () => {
     expect(currentLpTokenBal).to.be.gt(initalLpTokenBal);
     expect(currentTestTokenBal).to.be.lt(initalTestTokenBal);
     expect(currentXytBal).to.be.equal(initalXytBal);
-    // TODO: change gt,lt to approximate @Long
   });
 
-  it("should be able to add XYT market liquidity", async () => {
+  it("should be able to add XYT market liquidity_sample", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
 
     await bootstrapSampleMarket(amountToTokenize);
@@ -486,7 +475,6 @@ describe("PendleMarket", async () => {
     expect(currentLpTokenBal).to.be.gt(initalLpTokenBal);
     expect(currentTestTokenBal).to.be.equal(initalTestTokenBal);
     expect(currentXytBal).to.be.lt(initalXytBal);
-    // TODO: change gt,lt to approximate @Long
   });
 
   it("should be able to getMarketTokenAddresses", async () => {

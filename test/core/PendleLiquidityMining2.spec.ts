@@ -23,7 +23,6 @@ import {
 import * as scenario from "./fixtures/pendleLiquidityMiningScenario.fixture";
 
 const { waffle } = require("hardhat");
-const hre = require("hardhat");
 const { deployContract, provider } = waffle;
 
 // returns a rewards object = BN[][]
@@ -143,11 +142,12 @@ function calExpectedRewards(
 }
 
 // TODO:interest of Lp, pull&push of tokens
-describe("PendleLiquidityMining-beta tests", async () => {
+describe("PendleLiquidityMining tests", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
   let pendleLiq: Contract;
+  let pendleLiqWeb3: any;
   let pendleRouter: Contract;
   let pendleStdMarket: Contract;
   let pendleXyt: Contract;
@@ -158,11 +158,11 @@ describe("PendleLiquidityMining-beta tests", async () => {
   let aUSDT: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
-  let pendleLiqWeb3: any; // TODO: move this to fixture
   before(async () => {
     globalSnapshotId = await evm_snapshot();
     const fixture = await loadFixture(pendleLiquidityMiningFixture);
     pendleLiq = fixture.pendleLiquidityMining;
+    pendleLiqWeb3 = fixture.pendleLiquidityMiningWeb3;
     pendleRouter = fixture.core.pendleRouter;
     baseToken = fixture.testToken;
     pendleStdMarket = fixture.pendleStdMarket;
@@ -171,10 +171,6 @@ describe("PendleLiquidityMining-beta tests", async () => {
     pdl = fixture.pdl;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     aUSDT = await getAContract(alice, lendingPoolCore, tokens.USDT);
-    pendleLiqWeb3 = new hre.web3.eth.Contract(
-      PendleLiquidityMining.abi,
-      pendleLiq.address
-    );
     snapshotId = await evm_snapshot();
   });
 
