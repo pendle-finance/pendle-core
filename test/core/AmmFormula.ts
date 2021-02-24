@@ -12,7 +12,7 @@ export async function AMMTest(
   testToken: Contract,
   pendleXyt: Contract,
   bootstrapSampleMarket: Function,
-  useSwapIn: boolean, // if this is true, use swapExactIn. use swapExactOut otherwise.
+  useSwapIn: boolean // if this is true, use swapExactIn. use swapExactOut otherwise.
 ) {
   async function swapExactInTokenToXyt(inAmount: BN) {
     await pendleRouter.swapExactIn(
@@ -67,11 +67,9 @@ export async function AMMTest(
     await setTimeNextBlock(provider, time);
     if (useSwapIn) {
       await swapExactInTokenToXyt(tokenIn);
-    }
-    else {
+    } else {
       // tokenIn.mul(2): double the expected rate to make sure the transaction is successful.
       await swapExactOutTokenToXyt(xytOut, tokenIn.mul(2));
-
     }
     var { xytReserves, tokenReserves } = await pendleMarket.getReserves();
 
@@ -100,8 +98,7 @@ export async function AMMTest(
     await setTimeNextBlock(provider, time);
     if (useSwapIn) {
       await swapExactInXytToToken(xytIn);
-    }
-    else {
+    } else {
       // tokenIn.mul(2): double the expected rate to make sure the transaction is successful.
       await swapExactOutXytToToken(tokenOut, xytIn.mul(2));
     }
