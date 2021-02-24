@@ -248,8 +248,8 @@ describe("PendleMarket", async () => {
       pendleXyt.address,
       testToken.address,
       totalSupply.div(10),
-      amountToTokenize.div(10),
-      amountToTokenize.div(10),
+      BN.from(0),
+      BN.from(0),
       consts.HIGH_GAS_OVERRIDE
     );
 

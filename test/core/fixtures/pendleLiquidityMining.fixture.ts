@@ -30,7 +30,7 @@ export interface liqParams {
   TOTAL_NUMERATOR: BN,
   INITIAL_LP_AMOUNT: BN,
 }
-export class userStakeAction {
+export class UserStakeAction {
   time: BN;
   isStaking: boolean;
   amount: BN;

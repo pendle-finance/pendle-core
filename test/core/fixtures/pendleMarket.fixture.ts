@@ -1,4 +1,4 @@
-import { Wallet, providers, BigNumber, Contract } from "ethers";
+import { Wallet, providers, BigNumber as BN, Contract } from "ethers";
 import { pendleCoreFixture, PendleCoreFixture } from "./pendleCore.fixture";
 import {
   pendleAaveForgeFixture,
