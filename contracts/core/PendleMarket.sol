@@ -328,14 +328,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].weight
         );
 
-        uint256 exactInAmount = inAmount;
-        address exactInToken = inToken;
-        address exactOutToken = outToken;
-        uint256 exactOutAmount = outAmount;
-        // uint256 maxPrice
-
-        _transferIn(exactInToken, exactInAmount);
-        _transferOut(exactOutToken, exactOutAmount);
+        _transferIn(inToken, inAmount);
+        _transferOut(outToken, outAmount);
 
         return (outAmount, spotPriceAfter);
     }
