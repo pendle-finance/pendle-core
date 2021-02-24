@@ -521,14 +521,26 @@ describe("PendleMarket", async () => {
     ).to.be.revertedWith("XYT_QUOTE_PAIR_FORBIDDEN");
   });
 
-  it("AMM's formula should be correct", async () => {
+  it("AMM's formula should be correct for swapExactIn", async () => {
     await AMMTest(
       pendleRouter,
       pendleStdMarket,
       tokenUSDT,
       testToken,
       pendleXyt,
-      bootstrapSampleMarket
+      bootstrapSampleMarket,
+      true
+    );
+  });
+  it("AMM's formula should be correct for swapExactOut", async () => {
+    await AMMTest(
+      pendleRouter,
+      pendleStdMarket,
+      tokenUSDT,
+      testToken,
+      pendleXyt,
+      bootstrapSampleMarket,
+      false
     );
   });
 });

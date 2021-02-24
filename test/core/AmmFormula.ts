@@ -11,25 +11,48 @@ export async function AMMTest(
   tokenUSDT: Token,
   testToken: Contract,
   pendleXyt: Contract,
-  bootstrapSampleMarket: Function
+  bootstrapSampleMarket: Function,
+  useSwapIn: boolean, // if this is true, use swapExactIn. use swapExactOut otherwise.
 ) {
-  async function swapTokenToXyt(amount: BN) {
+  async function swapExactInTokenToXyt(inAmount: BN) {
     await pendleRouter.swapExactIn(
       testToken.address,
       pendleXyt.address,
-      amount,
+      inAmount,
       BN.from(0),
       consts.MAX_ALLOWANCE,
       consts.MARKET_FACTORY_AAVE
     );
   }
 
-  async function swapXytToToken(amount: BN) {
+  async function swapExactInXytToToken(inAmount: BN) {
     await pendleRouter.swapExactIn(
       pendleXyt.address,
       testToken.address,
-      amount,
+      inAmount,
       BN.from(0),
+      consts.MAX_ALLOWANCE,
+      consts.MARKET_FACTORY_AAVE
+    );
+  }
+
+  async function swapExactOutTokenToXyt(outAmount: BN, inAmountLimit: BN) {
+    await pendleRouter.swapExactOut(
+      testToken.address,
+      pendleXyt.address,
+      outAmount,
+      inAmountLimit,
+      consts.MAX_ALLOWANCE,
+      consts.MARKET_FACTORY_AAVE
+    );
+  }
+
+  async function swapExactOutXytToToken(outAmount: BN, inAmountLimit: BN) {
+    await pendleRouter.swapExactOut(
+      pendleXyt.address,
+      testToken.address,
+      outAmount,
+      inAmountLimit,
       consts.MAX_ALLOWANCE,
       consts.MARKET_FACTORY_AAVE
     );
@@ -42,16 +65,26 @@ export async function AMMTest(
     } = await pendleMarket.getReserves();
 
     await setTimeNextBlock(provider, time);
-    await swapTokenToXyt(tokenIn);
+    if (useSwapIn) {
+      await swapExactInTokenToXyt(tokenIn);
+    }
+    else {
+      // tokenIn.mul(2): double the expected rate to make sure the transaction is successful.
+      await swapExactOutTokenToXyt(xytOut, tokenIn.mul(2));
+
+    }
     var { xytReserves, tokenReserves } = await pendleMarket.getReserves();
 
     var actualXytOut = initialXytReserves.sub(xytReserves);
     var actualTokenIn = tokenReserves.sub(initialTokenReserves);
 
+    console.log("TestTokenToXyt");
+    console.log(tokenIn.toNumber(), actualTokenIn.toNumber());
     expect(tokenIn.toNumber()).to.be.approximately(
       actualTokenIn.toNumber(),
       consts.TEST_TOKEN_DELTA.toNumber()
     );
+    console.log(xytOut.toNumber(), actualXytOut.toNumber());
     expect(xytOut.toNumber()).to.be.approximately(
       actualXytOut.toNumber(),
       consts.TEST_TOKEN_DELTA.toNumber()
@@ -65,16 +98,25 @@ export async function AMMTest(
     } = await pendleMarket.getReserves();
 
     await setTimeNextBlock(provider, time);
-    await swapXytToToken(xytIn);
+    if (useSwapIn) {
+      await swapExactInXytToToken(xytIn);
+    }
+    else {
+      // tokenIn.mul(2): double the expected rate to make sure the transaction is successful.
+      await swapExactOutXytToToken(tokenOut, xytIn.mul(2));
+    }
     var { xytReserves, tokenReserves } = await pendleMarket.getReserves();
 
     var actualXytIn: BN = xytReserves.sub(initialXytReserves);
     var actualTokenOut: BN = initialTokenReserves.sub(tokenReserves);
 
+    console.log("TestXytToToken");
+    console.log(tokenOut.toNumber(), actualTokenOut.toNumber());
     expect(tokenOut.toNumber()).to.be.approximately(
       actualTokenOut.toNumber(),
       consts.TEST_TOKEN_DELTA.toNumber()
     );
+    console.log(xytIn.toNumber(), actualXytIn.toNumber());
     expect(xytIn.toNumber()).to.be.approximately(
       actualXytIn.toNumber(),
       consts.TEST_TOKEN_DELTA.toNumber()
@@ -132,8 +174,8 @@ export async function AMMTest(
     BN.from(80000000)
   );
   await runTestXytToToken(
-    consts.T0.add(15551400),
-    BN.from(800000000),
-    BN.from(42635)
+    consts.T0.add(15465600),
+    BN.from(800000016),
+    BN.from(6068470)
   );
 }
