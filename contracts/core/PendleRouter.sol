@@ -340,9 +340,8 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
     ) public override nonReentrant returns (address market) {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
-        // try IPendleYieldToken(_token).forge() returns (address) {
-        //     revert("XYT_QUOTE_PAIR_FORBIDDEN");
-        // } catch {}
+        require(data.isXyt(_token), "INVALID_XYT");
+        require(!data.isXyt(_token), "XYT_QUOTE_PAIR_FORBIDDEN");
 
         IPendleMarketFactory factory =
             IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));

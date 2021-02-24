@@ -176,6 +176,8 @@ interface IPendleData {
 
     function isMarket(address _addr) external view returns (bool result);
 
+    function isXyt(address _addr) external view returns (bool result);
+
     function addMarket(
         bytes32 marketFactoryId,
         address xyt,

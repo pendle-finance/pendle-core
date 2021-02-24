@@ -55,6 +55,7 @@ contract PendleData is IPendleData, Permissions {
     IPendleRouter public override router;
     address public override treasury;
     mapping(address => bool) public override isMarket;
+    mapping(address => bool) public override isXyt;
     mapping(bytes32 => address) private markets;
     mapping(bytes32 => MarketInfo) private marketInfo;
     address[] private allMarkets;
@@ -119,6 +120,7 @@ contract PendleData is IPendleData, Permissions {
     ) external override initialized onlyForge(_forgeId) {
         otTokens[_forgeId][_underlyingAsset][_expiry] = IPendleYieldToken(_ot);
         xytTokens[_forgeId][_underlyingAsset][_expiry] = IPendleYieldToken(_xyt);
+        isXyt[_xyt] = true;
     }
 
     function getPendleYieldTokens(
