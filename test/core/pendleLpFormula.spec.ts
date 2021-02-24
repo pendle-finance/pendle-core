@@ -237,7 +237,11 @@ describe("pendleLpFormula", async () => {
       amountToRemove
     );
     approxBigNumber(test.expectedXytDiff, balanceDiff, consts.TEST_TOKEN_DELTA);
-    approxBigNumber(lpBalanceAlice.sub(totalLpAmountRemoved), await pendleStdMarket.balanceOf(alice.address), BN.from(1)); // should remove the exact amount
+    approxBigNumber(
+      lpBalanceAlice.sub(totalLpAmountRemoved),
+      await pendleStdMarket.balanceOf(alice.address),
+      BN.from(1)
+    ); // should remove the exact amount
   }
 
   // TODO: Investigate why market can handle a large amount of token swapping in
