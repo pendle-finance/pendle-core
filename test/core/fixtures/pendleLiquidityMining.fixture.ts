@@ -84,9 +84,9 @@ export async function pendleLiquidityMiningFixture(
     [
       alice.address,
       pdl.address,
-      pendleData.address,
-      pendleMarketFactory.address,
-      pendleAaveForge.address,
+      pendleRouter.address,
+      consts.MARKET_FACTORY_AAVE,
+      consts.FORGE_AAVE,
       tokens.USDT.address,
       testToken.address,
       params.START_TIME,
