@@ -41,16 +41,12 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         IPendleYieldToken ot;
     }
 
-    uint256 constant expScale = 1e18;
-
     IPendleRouter public override router;
     bytes32 public immutable override forgeId;
-
+    uint256 private initialRate = 0;
     mapping(address => address) public underlyingToCToken;
-    mapping(address => mapping(uint256 => uint256)) public lastUnderlyingBeforeExpiry;
-    mapping(address => mapping(uint256 => uint256)) public lastIncomeBeforeExpiry;
-    mapping(address => mapping(uint256 => mapping(address => uint256))) public lastUnderlying;
-    mapping(address => mapping(uint256 => mapping(address => uint256))) public lastIncome;
+    mapping(address => mapping(uint256 => uint256)) public lastRateBeforeExpiry;
+    mapping(address => mapping(uint256 => mapping(address => uint256))) public lastRate;
 
     string private constant OT = "OT";
     string private constant XYT = "XYT";
@@ -83,7 +79,7 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         _;
     }
 
-    function registerToken(address _underlyingAsset, address _cToken) external {
+    function registerToken(address _underlyingAsset, address _cToken) external onlyGovernance {
         underlyingToCToken[_underlyingAsset] = _cToken;
         emit RegisterToken(_underlyingAsset, _cToken);
     }
@@ -148,26 +144,21 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         redeemedAmount = tokens.ot.balanceOf(_msgSender);
-
-        uint256 cTokensToRedeem = redeemedAmount.mul(cToken.exchangeRateCurrent()).div(expScale);
-        uint256 currentIncome =
-            cToken.balanceOfUnderlying(address(this)).sub(
-                lastUnderlyingBeforeExpiry[_underlyingAsset][_expiry]
-            );
+        uint256 currentRate = cToken.exchangeRateCurrent();
+        uint256 cTokensToRedeem = redeemedAmount.mul(initialRate).div(currentRate);
 
         // interests from the timestamp of the last XYT transfer (before expiry) to now is entitled to the OT holders
         // this means that the OT holders are getting some extra interests, at the expense of XYT holders
-        uint256 interestsAfterExpiry =
-            currentIncome
-                .mul(redeemedAmount)
-                .div(lastIncomeBeforeExpiry[_underlyingAsset][_expiry])
-                .sub(redeemedAmount);
-        cToken.transfer(_to, interestsAfterExpiry.add(cTokensToRedeem));
+        uint256 totalAfterExpiry =
+            currentRate
+                .mul(cTokensToRedeem)
+                .div(lastRateBeforeExpiry[_underlyingAsset][_expiry]);
+        cToken.transfer(_to, totalAfterExpiry);
 
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
         tokens.ot.burn(_msgSender, redeemedAmount);
 
-        emit RedeemYieldToken(_underlyingAsset, redeemedAmount, _expiry);
+        emit RedeemYieldToken(_underlyingAsset, cTokensToRedeem, _expiry);
     }
 
     // msg.sender needs to have both OT and XYT tokens
@@ -179,21 +170,21 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         address _to
     ) public override returns (uint256 redeemedAmount) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-
-        require(tokens.ot.balanceOf(_msgSender) >= _amountToRedeem, "Must have enough OT tokens");
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
+        uint256 currentRate = cToken.exchangeRateCurrent();
+        uint256 underlyingToRedeem = _amountToRedeem.mul(currentRate).div(initialRate);
+        require(tokens.ot.balanceOf(_msgSender) >= underlyingToRedeem, "Must have enough OT tokens");
         require(
-            tokens.xyt.balanceOf(_msgSender) >= _amountToRedeem,
+            tokens.xyt.balanceOf(_msgSender) >= underlyingToRedeem,
             "Must have enough XYT tokens"
         );
 
-        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
-        uint256 cTokensToRedeem = _amountToRedeem.mul(cToken.exchangeRateCurrent()).div(expScale);
-        cToken.transfer(_to, cTokensToRedeem);
+        cToken.transfer(_to, _amountToRedeem);
 
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
 
-        tokens.ot.burn(_msgSender, _amountToRedeem);
-        tokens.xyt.burn(_msgSender, _amountToRedeem);
+        tokens.ot.burn(_msgSender, underlyingToRedeem);
+        tokens.xyt.burn(_msgSender, underlyingToRedeem);
 
         emit RedeemYieldToken(_underlyingAsset, _amountToRedeem, _expiry);
         return _amountToRedeem;
@@ -207,12 +198,16 @@ contract PendleCompoundForge is IPendleForge, Permissions {
     ) external override onlyRouter returns (address ot, address xyt) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
+        uint256 currentRate = cToken.exchangeRateCurrent();
+        if (initialRate == 0) {
+            initialRate = currentRate;
+        }
+        uint256 amountToMint = _amountToTokenize.mul(currentRate).div(initialRate);
+        tokens.ot.mint(_to, amountToMint);
+        tokens.xyt.mint(_to, amountToMint);
+        lastRate[_underlyingAsset][_expiry][_to] = currentRate;
 
-        tokens.ot.mint(_to, _amountToTokenize);
-        tokens.xyt.mint(_to, _amountToTokenize);
-        lastUnderlying[_underlyingAsset][_expiry][_to] = cToken.balanceOfUnderlying(address(this));
-
-        emit MintYieldToken(_underlyingAsset, _amountToTokenize, _expiry);
+        emit MintYieldToken(_underlyingAsset, amountToMint, _expiry);
         return (address(tokens.ot), address(tokens.xyt));
     }
 
@@ -222,7 +217,7 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         override
         returns (address)
     {
-        return address(underlyingToCToken[_underlyingAsset]);
+        return underlyingToCToken[_underlyingAsset];
     }
 
     function _forgeFutureYieldToken(
@@ -282,30 +277,24 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         address _account
     ) internal returns (uint256) {
         uint256 principal = _tokens.xyt.balanceOf(_account);
-        uint256 ix = lastIncome[_underlyingAsset][_expiry][_account];
+        uint256 prevRate = lastRate[_underlyingAsset][_expiry][_account];
         ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
-        uint256 income;
-        uint256 underlying;
+        uint256 currentRate;
 
         if (block.timestamp >= _expiry) {
-            underlying = lastUnderlyingBeforeExpiry[_underlyingAsset][_expiry];
-            income = lastIncomeBeforeExpiry[_underlyingAsset][_expiry];
+            currentRate = lastRateBeforeExpiry[_underlyingAsset][_expiry];
         } else {
-            underlying = cToken.balanceOfUnderlying(address(this));
-            income = underlying.sub(lastUnderlyingBeforeExpiry[_underlyingAsset][_expiry]);
-            lastIncomeBeforeExpiry[_underlyingAsset][_expiry] = income;
-            lastUnderlyingBeforeExpiry[_underlyingAsset][_expiry] = underlying;
+            currentRate = cToken.exchangeRateCurrent();
+            lastRateBeforeExpiry[_underlyingAsset][_expiry] = currentRate;
         }
 
-        lastUnderlying[_underlyingAsset][_expiry][_account] = underlying;
-        lastIncome[_underlyingAsset][_expiry][_account] = income;
+        lastRate[_underlyingAsset][_expiry][_account] = currentRate;
         // first time getting XYT
-        if (ix == 0) {
+        if (prevRate == 0) {
             return 0;
         }
 
-        uint256 dueInterests = principal.mul(income).div(ix).sub(principal);
-
+        uint256 dueInterests = principal.mul(currentRate).div(prevRate).sub(principal).mul(initialRate).div(currentRate);
         if (dueInterests > 0) {
             cToken.transfer(_account, dueInterests);
 

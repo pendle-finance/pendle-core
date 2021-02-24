@@ -82,7 +82,6 @@ export async function pendleLiquidityMiningFixture(
     amountToTokenize,
     consts.HIGH_GAS_OVERRIDE
   );
-
   await pendleRouter.bootstrapMarket(
     consts.MARKET_FACTORY_COMPOUND,
     pendleCXyt.address,

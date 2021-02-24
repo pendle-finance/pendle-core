@@ -41,10 +41,8 @@ export async function mintOtAndXyt(
   amount: BN,
   pendleRouter: Contract
 ) {
-  await mint(provider, token, alice, amount);
-  await convertToAaveToken(token, alice, amount);
-  await mint(provider, token, alice, amount);
-  await convertToCompoundToken(token, alice, amount);
+  await mintAaveToken(provider, token, alice, amount);
+  await mintCompoundToken(provider, token, alice, amount);
   const { lendingPoolCore } = await aaveFixture(alice);
 
   const aContract = await getAContract(alice, lendingPoolCore, token);
@@ -108,6 +106,16 @@ export async function convertToCompoundToken(
   await erc20.approve(cToken.address, tokenAmount);
 
   await cToken.mint(tokenAmount);
+  /*const balanceTX = await cToken.balanceOfUnderlying(alice.address);
+  const balance = await cToken.callStatic.balanceOfUnderlying(alice.address);
+  const cTokens = await cToken.balanceOf(alice.address);
+  const rateTX = await cToken.exchangeRateCurrent();
+  const rate = await cToken.callStatic.exchangeRateCurrent();
+  console.log('Amount: ' + amount);
+  console.log('Balance: ' + balance);
+  console.log('Rate: ' + rate);
+  console.log('Ctokens: ' + cTokens);
+  console.log('Total: ' + cTokens * rate / (10 ** 18));*/
 }
 
 export async function mintAaveToken(

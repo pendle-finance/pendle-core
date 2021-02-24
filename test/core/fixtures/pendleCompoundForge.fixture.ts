@@ -21,7 +21,7 @@ export async function pendleCompoundForgeFixture(
     { pendleRouter, pendleData }: PendleCoreFixture,
     { pendle }: PendleGovernanceFixture
 ): Promise<PendleCompoundFixture> {
-    const pendleCompoundForge = await deployContract(alice, PendleCompoundForge, [pendle.address, pendleRouter.address, consts.FORGE_COMPOUND]);
+    const pendleCompoundForge = await deployContract(alice, PendleCompoundForge, [alice.address, pendleRouter.address, consts.FORGE_COMPOUND]);
     await pendleRouter.addForge(consts.FORGE_COMPOUND, pendleCompoundForge.address);
 
     await pendleCompoundForge.registerToken(tokens.USDT.address, tokens.USDT.compound);

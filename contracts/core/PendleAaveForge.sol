@@ -130,12 +130,11 @@ contract PendleAaveForge is IPendleForge, Permissions {
         // Interests from the timestamp of the last XYT transfer (before expiry)
         // to now is entitled to the OT holders. Rhis means that the OT holders
         // are getting some extra interests, at the expense of XYT holders
-        uint256 interestsAfterExpiry =
+        uint256 totalAfterExpiry =
             currentNormalizedIncome
                 .mul(redeemedAmount)
-                .div(lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry])
-                .sub(redeemedAmount);
-        aToken.transfer(_to, interestsAfterExpiry.add(redeemedAmount));
+                .div(lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry]);
+        aToken.transfer(_to, totalAfterExpiry);
 
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
         tokens.ot.burn(_account, redeemedAmount);
