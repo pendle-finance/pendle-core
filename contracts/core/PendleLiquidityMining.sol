@@ -137,10 +137,15 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         pendleAddress = _pendleAddress;
         pendleRouter = IPendleRouter(_pendleRouter);
         pendleData = pendleRouter.data();
-        require(pendleData.getMarketFactoryAddress(_pendleMarketFactoryId) != address(0), "INVALID_MARKET_FACTORY_ID");
+        require(
+            pendleData.getMarketFactoryAddress(_pendleMarketFactoryId) != address(0),
+            "INVALID_MARKET_FACTORY_ID"
+        );
         require(pendleData.getForgeAddress(_pendleForgeId) != address(0), "INVALID_FORGE_ID");
 
-        pendleMarketFactory = IPendleMarketFactory(pendleData.getMarketFactoryAddress(_pendleMarketFactoryId));
+        pendleMarketFactory = IPendleMarketFactory(
+            pendleData.getMarketFactoryAddress(_pendleMarketFactoryId)
+        );
         marketFactoryId = _pendleMarketFactoryId;
         forgeId = _pendleForgeId;
 
