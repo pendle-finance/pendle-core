@@ -1,14 +1,10 @@
-import chai, { expect } from 'chai'
-import { Wallet, providers, BigNumber } from 'ethers'
-import { pendleCoreFixture, PendleCoreFixture } from './pendleCore.fixture';
-import { pendleAaveForgeFixture, PendleAaveFixture } from './pendleAaveForge.fixture'
-import { pendleGovernanceFixture, PendleGovernanceFixture } from './pendleGovernance.fixture'
+import { providers, Wallet } from 'ethers';
+import { consts, convertToAaveToken, tokens } from "../../helpers";
+import { getAContract, mint } from "../../helpers/Helpers";
 import { aaveFixture, AaveFixture } from './aave.fixture';
-import { consts, tokens, convertToAaveToken } from "../../helpers"
-import { mint, mintAaveToken, getAContract, amountToWei } from "../../helpers/Helpers";
-const { waffle } = require("hardhat");
-const { provider, deployContract } = waffle;
-import { createFixtureLoader } from "ethereum-waffle";
+import { PendleAaveFixture, pendleAaveForgeFixture } from './pendleAaveForge.fixture';
+import { pendleCoreFixture, PendleCoreFixture } from './pendleCore.fixture';
+import { pendleGovernanceFixture } from './pendleGovernance.fixture';
 interface PendleFixture {
   core: PendleCoreFixture,
   forge: PendleAaveFixture,
@@ -25,7 +21,6 @@ export async function pendleFixture(
   const forge = await pendleAaveForgeFixture(alice, provider, core, governance);
   const aave = await aaveFixture(alice);
 
-  const { pendleAaveForge } = forge;
   const { lendingPoolCore } = aave;
 
   await mint(provider, tokens.USDT, alice, consts.INITIAL_USDT_AMOUNT);

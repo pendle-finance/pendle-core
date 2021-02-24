@@ -1,6 +1,6 @@
 import { expect } from "chai";
-import { Contract, constants } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
+import { constants, Contract } from "ethers";
 import { pendleGovernanceFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");

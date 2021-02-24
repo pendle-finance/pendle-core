@@ -22,14 +22,16 @@ export const consts = {
   ONE_DAY: BN.from(86400),
   ONE_MONTH: BN.from(2592000),
   THREE_MONTH: BN.from(2592000 * 3),
+  FIVE_MONTH: BN.from(2592000 * 5),
   SIX_MONTH: BN.from(2592000 * 6),
   ONE_YEAR: BN.from(31536000),
   T0: BN.from(4000000000),
   HIGH_GAS_OVERRIDE: { gasLimit: 40000000 },
   INITIAL_USDT_AMOUNT: BN.from(10 ** 5),
   INITIAL_AAVE_TOKEN_AMOUNT: BN.from(10 ** 4),
-  INITIAL_OT_XYT_AMOUNT: BN.from(10 ** 5),
-  AMM_DELTA: 10,
+  INITIAL_OT_XYT_AMOUNT: BN.from(10 ** 10),
+  TEST_TOKEN_DELTA: BN.from(10).pow(2),
+  TEST_LP_DELTA: BN.from(10).pow(11),
 };
 
 // export function setT0(time: BN) {

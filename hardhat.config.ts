@@ -18,7 +18,7 @@ const config: HardhatUserConfig = {
   },
   paths: {
     sources: './contracts',
-    tests: './test/core/',
+    tests: './test',
     artifacts: "./build/artifacts",
     cache: "./build/cache"
   },
@@ -59,7 +59,7 @@ const config: HardhatUserConfig = {
           balance: '100000000000000000000000000000000',
         },
       ],
-      allowUnlimitedContractSize: false,
+      allowUnlimitedContractSize: true,
       blockGasLimit: 40000000,
       gas: 40000000,
       gasPrice: 'auto',
@@ -92,11 +92,7 @@ const config: HardhatUserConfig = {
   },
   mocha: {
     timeout: 500000,
-  },
-  tenderly: {
-		username: "ayobuenavista",
-		project: "projects"
-	}
+  }
 };
 
 export default config;

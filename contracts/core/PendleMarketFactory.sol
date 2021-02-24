@@ -22,7 +22,7 @@
  */
 pragma solidity 0.7.6;
 
-import {Factory} from "../libraries/PendleLibrary.sol";
+import "../libraries/FactoryLib.sol";
 import "./PendleMarket.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleData.sol";
@@ -39,51 +39,43 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions {
     }
 
     modifier onlyRouter() {
-        require(msg.sender == address(router), "Pendle: only router");
+        require(msg.sender == address(router), "ONLY_ROUTER");
         _;
     }
 
     function initialize(IPendleRouter _router) external {
-        require(msg.sender == initializer, "Pendle: forbidden");
-        require(address(_router) != address(0), "Pendle: zero address");
+        require(msg.sender == initializer, "FORBIDDEN");
+        require(address(_router) != address(0), "ZERO_ADDRESS");
 
         initializer = address(0);
         router = _router;
     }
 
-    function createMarket(
-        bytes32 _forgeId,
-        address _xyt,
-        address _token
-    ) external override initialized onlyRouter returns (address market) {
-        require(_xyt != _token, "Pendle: similar tokens");
-        require(_xyt != address(0) || _token != address(0), "Pendle: zero address");
+    function createMarket(address _xyt, address _token)
+        external
+        override
+        initialized
+        onlyRouter
+        returns (address market)
+    {
+        require(_xyt != _token, "INVALID_PAIR_XYT_TOKEN");
+        require(_xyt != address(0) || _token != address(0), "ZERO_ADDRESS");
 
         IPendleData data = router.data();
-        require(
-            data.getMarket(_forgeId, marketFactoryId, _xyt, _token) == address(0),
-            "Pendle: market already exists"
-        );
-        require(data.isRelatedForgeXYT(_forgeId, _xyt), "Pendle: forge-xyt not related");
+        require(data.getMarket(marketFactoryId, _xyt, _token) == address(0), "EXISTED_MARKET");
 
-        address forgeAddress = data.getForgeAddress(_forgeId);
-        require(forgeAddress != address(0), "Pendle: zero address");
-
+        address forgeAddress = IPendleYieldToken(_xyt).forge();
+        address underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
         uint256 expiry = IPendleYieldToken(_xyt).expiry();
+        require(data.isValidXYT(forgeAddress, underlyingAsset, expiry), "INVALID_XYT");
+
         market = Factory.createContract(
             type(PendleMarket).creationCode,
             abi.encodePacked(forgeAddress, _xyt, _token, expiry),
             abi.encode(forgeAddress, _xyt, _token, expiry)
         );
-        data.addMarket(_forgeId, marketFactoryId, _xyt, _token, market);
+        data.addMarket(marketFactoryId, _xyt, _token, market);
 
         emit MarketCreated(marketFactoryId, _xyt, _token, market);
-    }
-
-    function setRouter(IPendleRouter _router) external override onlyGovernance {
-        require(address(_router) != address(0), "Pendle: zero address");
-
-        router = _router;
-        emit RouterSet(address(_router));
     }
 }

@@ -1,23 +1,18 @@
 import { expect } from "chai";
-import { Contract, BigNumber as BN, Wallet } from "ethers";
 import { createFixtureLoader } from "ethereum-waffle";
-
-import { pendleFixture } from "./fixtures";
+import { BigNumber as BN, Contract, Wallet } from "ethers";
 import {
-  consts,
-  tokens,
   amountToWei,
-  getAContract,
-  mintAaveToken,
-  advanceTime,
-  getLiquidityRate,
-  getGain,
+  consts,
   evm_revert,
   evm_snapshot,
-  Token,
+  getAContract,
+  mintAaveToken,
   setTimeNextBlock,
+  Token,
+  tokens,
 } from "../helpers";
-import { toUtf8CodePoints } from "ethers/lib/utils";
+import { pendleFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
@@ -156,7 +151,7 @@ describe("PendleRouter", async () => {
     );
   });
 
-  it("Another alice should be able to receive interests from XYT", async () => {
+  it("Another wallet should be able to receive interests from XYT", async () => {
     await startCalInterest(charlie, amountToTokenize);
 
     await tokenizeYieldSample(amountToTokenize);
@@ -268,9 +263,9 @@ describe("PendleRouter", async () => {
     );
 
     let allEvents = await pendleAaveForge.queryFilter(filter, tx.blockHash);
-    expect(allEvents.length).to.be.eq(2); // there is only one event of the same type before this event
-    expect(allEvents[1].args!.ot).to.not.eq(0);
-    expect(allEvents[1].args!.xyt).to.not.eq(0);
-    expect(allEvents[1].args!.expiry).to.eq(futureTime);
+    expect(allEvents.length).to.be.eq(3); // there is two events of the same type before this event
+    expect(allEvents[allEvents.length - 1].args!.ot).to.not.eq(0);
+    expect(allEvents[allEvents.length - 1].args!.xyt).to.not.eq(0);
+    expect(allEvents[allEvents.length - 1].args!.expiry).to.eq(futureTime);
   });
 });

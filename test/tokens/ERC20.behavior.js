@@ -106,7 +106,7 @@ function shouldBehaveLikeERC20(errorPrefix, initialSupply, initialHolder, recipi
             it('reverts', async function () {
               await expectRevert(
                 this.token.transferFrom(tokenOwner, to, amount, {from: spender}),
-                errMsg.TRANSFER_EXCEED_ALLOWENCE
+                errMsg.TRANSFER_EXCEED_ALLOWANCE
               );
             });
           });
