@@ -278,8 +278,10 @@ contract PendleRouter is IPendleRouter, Permissions {
             market.addMarketLiquidityAll(_exactOutLp, _maxInXyt, _maxInToken);
 
         _transferOut(address(market), _exactOutLp);
-        _transferOut(_xyt, _maxInXyt - amountXytUsed); // transfer unused XYT back to user
-        _transferOut(originalToken, _maxInToken - amountTokenUsed); // transfer unused Token back to user
+        // transfer unused XYT back to user
+        _transferOut(_xyt, _maxInXyt - amountXytUsed);
+        // transfer unused Token back to user
+        _transferOut(originalToken, _maxInToken - amountTokenUsed);
     }
 
     function addMarketLiquiditySingle(

@@ -58,7 +58,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     mapping(address => TokenReserve) private reserves;
     uint256 public lastInterestUpdate;
 
-    // these variables are used often, so we get them once in the constructor and save gas for retrieving them afterwards
+    /* these variables are used often, so we get them once in the constructor
+    and save gas for retrieving them afterwards */
     bytes32 private immutable forgeId;
     address private immutable underlyingAsset;
     IPendleData private immutable data;
@@ -631,7 +632,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     //
     function _updateGlobalIncomeIndex() internal {
         if (block.timestamp.sub(lastInterestUpdate) > data.deltaT()) {
-            router.redeemDueInterests(forgeId, underlyingAsset, expiry); // get due interests for the XYT being held in the market
+            // get due interests for the XYT being held in the market
+            router.redeemDueInterests(forgeId, underlyingAsset, expiry);
             lastInterestUpdate = block.timestamp;
         }
 
