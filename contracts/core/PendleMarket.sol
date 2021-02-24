@@ -596,16 +596,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RONE), Math.RONE),
             Math.ln(Math.PI_PLUSONE, Math.RONE)
         );
-        console.log("[_updateWeightDry] priceNow= %s priceLast=%s", priceNow, priceLast);
         uint256 r = Math.rdiv(priceNow, priceLast);
         require(Math.RONE >= r, "MATH_ERROR");
 
-        console.log("[_updateWeightDry] after getting r = ", r);
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
 
         uint256 theta = Math.rdiv(thetaNumerator, thetaDenominator);
-        console.log("[_updateWeightDry] after getting theta = ", theta);
         xytWeightUpdated = xytWeight.sub(theta);
         tokenWeightUpdated = tokenWeight.add(theta);
     }
@@ -645,7 +642,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 interestsEarned =
             currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance;
         lastUnderlyingYieldTokenBalance = currentUnderlyingYieldTokenBalance;
-        console.log("\tglobalIncomeIndex, totalSupply = ", globalIncomeIndex, totalSupply);
+        /* console.log("\tglobalIncomeIndex, totalSupply = ", globalIncomeIndex, totalSupply); */
 
         globalIncomeIndex = globalIncomeIndex.add(
             interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(totalSupply)

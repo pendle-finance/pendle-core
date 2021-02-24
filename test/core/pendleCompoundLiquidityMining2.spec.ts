@@ -310,7 +310,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     }
   }
 
-  it.only("beta", async () => {
+  it("beta", async () => {
     console.log(
       `\tLP balance of eve = ${await pendleStdMarket.balanceOf(eve.address)}`
     );
@@ -330,7 +330,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
       )}`
     );
     await pendleRouter.connect(eve).claimLpInterests([pendleStdMarket.address]);
-    setTimeNextBlock(provider, consts.T0_C.add(consts.THREE_MONTH));
+    setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
     console.log("LOL");
     console.log("\tAbout to do dummy trade");
     // some dummy trade
