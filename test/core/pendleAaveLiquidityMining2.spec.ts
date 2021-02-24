@@ -143,7 +143,7 @@ function calExpectedRewards(
 }
 
 // TODO:interest of Lp, pull&push of tokens
-describe("PendleLiquidityMining-beta tests", async () => {
+describe("PendleAaveLiquidityMining-beta tests", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;

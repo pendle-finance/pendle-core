@@ -33,6 +33,7 @@ import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../periphery/Permissions.sol";
+import "hardhat/console.sol";
 
 contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -571,6 +572,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         nonReentrant
         returns (uint256[] memory interests)
     {
+        console.log("length %s", markets.length);
         interests = new uint256[](markets.length);
         for (uint256 i = 0; i < markets.length; i++) {
             require(data.isMarket(markets[i]), "INVALID_MARKET");

@@ -31,6 +31,7 @@ import "../tokens/PendleBaseToken.sol";
 import "../libraries/MathLib.sol";
 import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "hardhat/console.sol";
 
 contract PendleMarket is IPendleMarket, PendleBaseToken {
     using Math for uint256;
@@ -337,7 +338,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
-
+        console.log("WOWOO");
         _curveShift(data);
 
         TokenReserve storage inTokenReserve = reserves[inToken];
@@ -358,6 +359,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         require(spotPriceAfter >= spotPriceBefore, "MATH_ERROR");
         require(spotPriceAfter <= maxPrice, "LOW_MAX_PRICE");
+        console.log("\toutAmount, inAmount", outAmount, inAmount);
         require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "MATH_ERROR");
 
         emit Swap(inToken, inAmount, outToken, outAmount);
@@ -395,14 +397,17 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         TokenReserve memory outTokenReserve,
         uint256 exactOut,
         uint256 swapFee
-    ) public pure override returns (uint256 exactIn) {
+    ) public view override returns (uint256 exactIn) {
+        console.log("inTokenReserve %s outTokenReserve %s", inTokenReserve.weight, outTokenReserve.weight);
         uint256 weightRatio = Math.rdiv(outTokenReserve.weight, inTokenReserve.weight);
         uint256 diff = outTokenReserve.balance.sub(exactOut);
+        console.log("diff %s", diff);
         uint256 y = Math.rdiv(outTokenReserve.balance, diff);
         uint256 foo = Math.rpow(y, weightRatio);
 
         foo = foo.sub(Math.RONE);
         exactIn = Math.RONE.sub(swapFee);
+        console.log("exactIn: %s", exactIn);
         exactIn = Math.rdiv(Math.rmul(inTokenReserve.balance, foo), exactIn);
     }
 
@@ -455,9 +460,14 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         TokenReserve memory inTokenReserve,
         TokenReserve memory outTokenReserve,
         uint256 swapFee
-    ) internal pure returns (uint256 spot) {
+    ) internal view returns (uint256 spot) {
+
+        console.log("inTokenReserve.weight %s", inTokenReserve.weight);
+        console.log("outTokenReserve.weight %s", outTokenReserve.weight);
         uint256 numer = Math.rdiv(inTokenReserve.balance, inTokenReserve.weight);
         uint256 denom = Math.rdiv(outTokenReserve.balance, outTokenReserve.weight);
+        console.log("denom %s", denom);
+        console.log("MATHRONE %s", Math.RONE.sub(swapFee));
         uint256 ratio = Math.rdiv(numer, denom);
         uint256 scale = Math.rdiv(Math.RONE, Math.RONE.sub(swapFee));
 
@@ -583,15 +593,16 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RONE), Math.RONE),
             Math.ln(Math.PI_PLUSONE, Math.RONE)
         );
-
+        console.log("WDAADADA %s %s", priceNow, priceLast);
         uint256 r = Math.rdiv(priceNow, priceLast);
         require(Math.RONE >= r, "MATH_ERROR");
 
+        console.log("KEEK");
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
 
         uint256 theta = Math.rdiv(thetaNumerator, thetaDenominator);
-
+        console.log("TOOO");
         xytWeightUpdated = xytWeight.sub(theta);
         tokenWeightUpdated = tokenWeight.add(theta);
     }
@@ -631,11 +642,11 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 interestsEarned =
             currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance;
         lastUnderlyingYieldTokenBalance = currentUnderlyingYieldTokenBalance;
+        console.log("\tglobalIncomeIndex, totalSupply = ", globalIncomeIndex, totalSupply);
 
         globalIncomeIndex = globalIncomeIndex.add(
             interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(totalSupply)
         );
-        // console.log("\tglobalIncomeIndex, totalSupply = ", globalIncomeIndex, totalSupply);
     }
 
     function _beforeTokenTransfer(address from, address to) internal override {

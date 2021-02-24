@@ -117,7 +117,7 @@ interface IPendleMarket is IPendleBaseToken {
         TokenReserve memory outTokenReserve,
         uint256 outAmount,
         uint256 swapFee
-    ) external pure returns (uint256 exactIn);
+    ) external view returns (uint256 exactIn);
 
     function calcExactOut(
         TokenReserve memory inTokenReserve,
