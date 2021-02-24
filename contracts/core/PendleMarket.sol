@@ -101,6 +101,16 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         _;
     }
 
+    modifier marketIsOpen() {
+        uint256 currentTime = block.timestamp;
+        uint256 endTime = expiry; // expiry of market = expiry of xyt
+        uint256 startTime = IPendleYieldToken(xyt).start();
+        uint256 duration = endTime - startTime;
+        uint256 lockDuration = duration * data.lockNumerator() / data.lockDenominator();
+        require(currentTime<endTime.sub(lockDuration),"MARKET_LOCKED");
+        _;
+    }
+
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
         override
@@ -109,7 +119,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     {
         require(!bootstrapped, "ALREADY_BOOTSTRAPPED");
 
-        // console.log("97",initialXytLiquidity,initialTokenLiquidity);
         _transferIn(xyt, initialXytLiquidity);
         _transferIn(token, initialTokenLiquidity);
 
@@ -142,6 +151,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         override
         isBootstrapped
         onlyRouter
+        marketIsOpen
         returns (uint256 amountXytUsed, uint256 amountTokenUsed)
     {
         uint256 totalLp = totalSupply;
@@ -177,7 +187,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address _inToken,
         uint256 _exactIn,
         uint256 _minOutLp
-    ) external override isBootstrapped onlyRouter returns (uint256 exactOutLp) {
+    ) external override isBootstrapped onlyRouter marketIsOpen returns (uint256 exactOutLp) {
         _curveShift(data);
 
         TokenReserve storage inTokenReserve = reserves[_inToken];
@@ -218,6 +228,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
      *         and getting back XYT and pair tokens.
      * @dev no curveShift to save gas because this function
                 doesn't depend on weights of tokens
+     * @dev this function will never be locked since we always let users withdraw
+                their funds
      */
     function removeMarketLiquidityAll(
         uint256 _inLp,
@@ -261,7 +273,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address _outToken,
         uint256 _inLp,
         uint256 _minOutAmountToken
-    ) external override isBootstrapped onlyRouter returns (uint256 outAmountToken) {
+    ) external override isBootstrapped onlyRouter marketIsOpen returns (uint256 outAmountToken) {
         _curveShift(data);
 
         TokenReserve storage outTokenReserve = reserves[_outToken];
@@ -297,6 +309,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         override
         isBootstrapped
         onlyRouter
+        marketIsOpen
         returns (uint256 outAmount, uint256 spotPriceAfter)
     {
         _curveShift(data);
@@ -338,6 +351,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         override
         isBootstrapped
         onlyRouter
+        marketIsOpen
         returns (uint256 inAmount, uint256 spotPriceAfter)
     {
         _curveShift(data);

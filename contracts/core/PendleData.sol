@@ -43,7 +43,8 @@ contract PendleData is IPendleData, Permissions {
     mapping(address => bytes32) public override getMarketFactoryId;
     mapping(bytes32 => address) public override getMarketFactoryAddress;
 
-    mapping(bytes32 => mapping(address => mapping(address => address))) public override getMarket; // getMarket[marketFactoryId][xyt][token]
+    // getMarket[marketFactoryId][xyt][token]
+    mapping(bytes32 => mapping(address => mapping(address => address))) public override getMarket;
     mapping(bytes32 => mapping(address => mapping(uint256 => IPendleYieldToken)))
         public
         override otTokens; // [forgeId][underlyingAsset][expiry]
@@ -60,9 +61,18 @@ contract PendleData is IPendleData, Permissions {
     address[] private allMarkets;
 
     // Parameters to be set by governance;
-    uint256 public override deltaT; // if a market's interests have not been updated for deltaT, we will ping the forge to update the interests
+
+    /*
+    if a market's interests have not been updated for deltaT, we will ping
+    the forge to update the interests
+    */
+    uint256 public override deltaT;
     uint256 public override swapFee;
     uint256 public override exitFee;
+    // lock duration = duration * lockNumerator / lockDenominator
+    uint256 public override lockNumerator;
+    uint256 public override lockDenominator;
+
     mapping(address => bool) public override reentrancyWhitelisted;
 
     constructor(address _governance, address _treasury) Permissions(_governance) {
@@ -103,6 +113,13 @@ contract PendleData is IPendleData, Permissions {
     function setDeltaT(uint256 _deltaT) external override initialized onlyGovernance {
         deltaT = _deltaT;
         emit DeltaTSet(_deltaT);
+    }
+
+    function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator) external override initialized onlyGovernance {
+        require(0<_lockNumerator&&_lockNumerator<_lockDenominator,"INVALID_LOCK_PARAMS");
+        lockNumerator = _lockNumerator;
+        lockDenominator = _lockDenominator;
+        emit LockParamsSet(_lockNumerator,_lockDenominator);
     }
 
     function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)

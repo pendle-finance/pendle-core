@@ -35,6 +35,11 @@ interface IPendleData {
     event TreasurySet(address treasury);
 
     /**
+     * @notice Emitted when LockParams is changed
+     **/
+    event LockParamsSet(uint256 lockNumerator, uint256 lockDenominator);
+
+    /**
      * @notice Emitted when deltaT is changed
      * @param deltaT new deltaT setting
      **/
@@ -197,6 +202,8 @@ interface IPendleData {
 
     function setDeltaT(uint256 _deltaT) external;
 
+    function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator) external;
+
     function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
         external;
 
@@ -221,6 +228,12 @@ interface IPendleData {
     function exitFee() external view returns (uint256);
 
     function deltaT() external view returns (uint256);
+
+    function lockNumerator() external view returns (uint256);
+
+    function lockDenominator() external view returns (uint256);
+
+    function swapFee() external view returns (uint256);
 
     function reentrancyWhitelisted(address a) external view returns (bool);
 
@@ -286,6 +299,4 @@ interface IPendleData {
             uint256 tokenWeight,
             uint256 liquidity
         );
-
-    function swapFee() external view returns (uint256);
 }

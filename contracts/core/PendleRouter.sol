@@ -269,7 +269,6 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
-        // require(!_isMarketLocked(_xyt), "MARKET_LOCKED");
 
         _transferIn(_xyt, _maxInXyt);
         _transferIn(originalToken, _maxInToken);
@@ -297,7 +296,6 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
-        // require(!_isMarketLocked(_xyt),"MARKET_LOCKED");
 
         address assetToTransferIn = _forXyt ? _xyt : originalToken;
         _transferIn(assetToTransferIn, _exactInAsset);
@@ -322,7 +320,6 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
-        // require(!_isMarketLocked(_xyt),"MARKET_LOCKED"); // this operation will never be locked
 
         _transferIn(address(market), _exactInLp);
 
@@ -346,7 +343,6 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
-        // require(!_isMarketLocked(_xyt),"MARKET_LOCKED");
 
         _transferIn(address(market), _exactInLp);
 
@@ -697,11 +693,6 @@ contract PendleRouter is IPendleRouter, Permissions {
         token = benmarkMarket.token();
         xyt = benmarkMarket.xyt();
     }
-
-    // function _isMarketLocked(address _xyt) internal pure returns (bool isLocked){
-    //     // To implement
-    //     isLocked = false; // never locked
-    // }
 
     /// @dev Inbound transfer from msg.sender to router
     function _transferIn(address _token, uint256 _amount) internal {
