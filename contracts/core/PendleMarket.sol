@@ -398,7 +398,11 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 exactOut,
         uint256 swapFee
     ) public view override returns (uint256 exactIn) {
-        console.log("inTokenReserve %s outTokenReserve %s", inTokenReserve.weight, outTokenReserve.weight);
+        console.log(
+            "inTokenReserve %s outTokenReserve %s",
+            inTokenReserve.weight,
+            outTokenReserve.weight
+        );
         uint256 weightRatio = Math.rdiv(outTokenReserve.weight, inTokenReserve.weight);
         uint256 diff = outTokenReserve.balance.sub(exactOut);
         console.log("diff %s", diff);
@@ -461,7 +465,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         TokenReserve memory outTokenReserve,
         uint256 swapFee
     ) internal view returns (uint256 spot) {
-
         console.log("inTokenReserve.weight %s", inTokenReserve.weight);
         console.log("outTokenReserve.weight %s", outTokenReserve.weight);
         uint256 numer = Math.rdiv(inTokenReserve.balance, inTokenReserve.weight);

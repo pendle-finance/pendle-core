@@ -311,13 +311,27 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
   }
 
   it.only("beta", async () => {
-    console.log(`\tLP balance of eve = ${await pendleStdMarket.balanceOf(eve.address)}`);
-    console.log(`\tсToken balance of market = ${await cUSDT.balanceOf(pendleStdMarket.address)}`);
-    console.log(`\tXYT balance of market = ${await pendleXyt.balanceOf(pendleStdMarket.address)}`);
-    console.log(`\tbaseToken balance of market = ${await baseToken.balanceOf(pendleStdMarket.address)}`);
+    console.log(
+      `\tLP balance of eve = ${await pendleStdMarket.balanceOf(eve.address)}`
+    );
+    console.log(
+      `\tсToken balance of market = ${await cUSDT.balanceOf(
+        pendleStdMarket.address
+      )}`
+    );
+    console.log(
+      `\tXYT balance of market = ${await pendleXyt.balanceOf(
+        pendleStdMarket.address
+      )}`
+    );
+    console.log(
+      `\tbaseToken balance of market = ${await baseToken.balanceOf(
+        pendleStdMarket.address
+      )}`
+    );
     await pendleRouter.connect(eve).claimLpInterests([pendleStdMarket.address]);
     setTimeNextBlock(provider, consts.T0_C.add(consts.THREE_MONTH));
-    console.log('LOL');
+    console.log("LOL");
     // some dummy trade
     const testAmount = amountToWei(tokens.USDT, BN.from(1));
     await pendleRouter.swapExactOut(
@@ -329,19 +343,55 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
       consts.MARKET_FACTORY_COMPOUND,
       consts.HIGH_GAS_OVERRIDE
     );
-    console.log(`\t+3m, LP balance of eve = ${await pendleStdMarket.balanceOf(eve.address)}`);
-    console.log(`\t+3m, cToken balance of market = ${await cUSDT.balanceOf(pendleStdMarket.address)}`);
-    console.log(`\t+3m, XYT balance of market = ${await pendleXyt.balanceOf(pendleStdMarket.address)}`);
-    console.log(`\t+3m, baseToken balance of market = ${await baseToken.balanceOf(pendleStdMarket.address)}`);
+    console.log(
+      `\t+3m, LP balance of eve = ${await pendleStdMarket.balanceOf(
+        eve.address
+      )}`
+    );
+    console.log(
+      `\t+3m, cToken balance of market = ${await cUSDT.balanceOf(
+        pendleStdMarket.address
+      )}`
+    );
+    console.log(
+      `\t+3m, XYT balance of market = ${await pendleXyt.balanceOf(
+        pendleStdMarket.address
+      )}`
+    );
+    console.log(
+      `\t+3m, baseToken balance of market = ${await baseToken.balanceOf(
+        pendleStdMarket.address
+      )}`
+    );
     console.log(`\t\tDid a dummy trade`);
 
     await pendleRouter.connect(eve).claimLpInterests([pendleStdMarket.address]);
 
-    console.log(`\tclaimed LP interests: LP balance of eve = ${await pendleStdMarket.balanceOf(eve.address)}`);
-    console.log(`\tclaimed LP interests: cToken balance of market = ${await cUSDT.balanceOf(pendleStdMarket.address)}`);
-    console.log(`\tclaimed LP interests: cToken balance of eve = ${await cUSDT.balanceOf(eve.address)}`);
-    console.log(`\tclaimed LP interests: XYT balance of market = ${await pendleXyt.balanceOf(pendleStdMarket.address)}`);
-    console.log(`\tclaimed LP interests: baseToken balance of market = ${await baseToken.balanceOf(pendleStdMarket.address)}`);
+    console.log(
+      `\tclaimed LP interests: LP balance of eve = ${await pendleStdMarket.balanceOf(
+        eve.address
+      )}`
+    );
+    console.log(
+      `\tclaimed LP interests: cToken balance of market = ${await cUSDT.balanceOf(
+        pendleStdMarket.address
+      )}`
+    );
+    console.log(
+      `\tclaimed LP interests: cToken balance of eve = ${await cUSDT.balanceOf(
+        eve.address
+      )}`
+    );
+    console.log(
+      `\tclaimed LP interests: XYT balance of market = ${await pendleXyt.balanceOf(
+        pendleStdMarket.address
+      )}`
+    );
+    console.log(
+      `\tclaimed LP interests: baseToken balance of market = ${await baseToken.balanceOf(
+        pendleStdMarket.address
+      )}`
+    );
   });
 
   it("test 1", async () => {
