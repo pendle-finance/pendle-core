@@ -22,9 +22,9 @@
  */
 pragma solidity 0.7.6;
 
-import {ExpiryUtils} from "../libraries/PendleLibrary.sol";
+import "../libraries/ExpiryUtilsLib.sol";
 
-contract MockPendleLibrary {
+contract MockExpiryUtilsLib {
     using ExpiryUtils for string;
 
     function concat(

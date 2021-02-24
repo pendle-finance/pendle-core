@@ -34,9 +34,9 @@ export const consts = {
   INITIAL_USDT_AMOUNT: BN.from(10 ** 5),
   INITIAL_AAVE_TOKEN_AMOUNT: BN.from(10 ** 4),
   INITIAL_COMPOUND_TOKEN_AMOUNT: BN.from(10 ** 4),
-  INITIAL_OT_XYT_AMOUNT: BN.from(10 ** 5),
+  INITIAL_OT_XYT_AMOUNT: BN.from(10 ** 10),
   TEST_TOKEN_DELTA: BN.from(10).pow(2),
-  TEST_LP_DELTA: BN.from(10).pow(10),
+  TEST_LP_DELTA: BN.from(10).pow(11),
 };
 
 // export function setT0(time: BN) {

@@ -13,6 +13,11 @@ import {
   tokens,
 } from "../helpers";
 import { pendleMarketFixture } from "./fixtures";
+import {
+  TestAddLiq,
+  TestRemoveLiq,
+} from "./fixtures/pendleLpFormulaScenario.fixture";
+import * as scenario from "./fixtures/pendleLpFormulaScenario.fixture";
 
 const { waffle } = require("hardhat");
 const { provider } = waffle;
@@ -26,7 +31,7 @@ describe("pendleLpFormula", async () => {
   let pendleRouter: Contract;
   let pendleData: Contract;
   let pendleXyt: Contract;
-  let pendleMarket: Contract;
+  let pendleStdMarket: Contract;
   let testToken: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
@@ -40,7 +45,7 @@ describe("pendleLpFormula", async () => {
     pendleData = fixture.core.pendleData;
     pendleXyt = fixture.aForge.pendleFutureYieldAToken;
     testToken = fixture.testToken;
-    pendleMarket = fixture.pendleAMarket;
+    pendleStdMarket = fixture.pendleAMarket;
     tokenUSDT = tokens.USDT;
     snapshotId = await evm_snapshot();
   });
@@ -68,28 +73,17 @@ describe("pendleLpFormula", async () => {
       );
   }
 
-  async function swapTokenToXyt(amount: BN) {
-    // TODO: merge this function and the same function in AmmFormula
-    await pendleRouter.swapExactIn(
-      testToken.address,
-      pendleXyt.address,
-      amount,
-      BN.from(0),
-      consts.MAX_ALLOWANCE
-    );
-  }
-
   async function printMarketData() {
     console.log(
-      `USDT weight: ${await pendleMarket.getWeight(
+      `USDT weight: ${await pendleStdMarket.getWeight(
         testToken.address
-      )} USDT balance: ${await pendleMarket.getBalance(
+      )} USDT balance: ${await pendleStdMarket.getBalance(
         testToken.address
-      )} XYT weight: ${await pendleMarket.getWeight(
+      )} XYT weight: ${await pendleStdMarket.getWeight(
         pendleXyt.address
-      )} XYT balance: ${await pendleMarket.getBalance(
+      )} XYT balance: ${await pendleStdMarket.getBalance(
         pendleXyt.address
-      )} totalLp: ${await pendleMarket.totalSupply()}`
+      )} totalLp: ${await pendleStdMarket.totalSupply()}`
     );
   }
 
@@ -164,196 +158,113 @@ describe("pendleLpFormula", async () => {
 
   async function checkLpBalance(user: Wallet, expected: BN) {
     approxBigNumber(
-      await pendleMarket.balanceOf(user.address),
+      await pendleStdMarket.balanceOf(user.address),
       expected,
       consts.TEST_LP_DELTA
     );
   }
 
-  // TODO: Investigate why market can handle a large amount of token swapping in
-  it("add liquidity with single token test 1", async () => {
-    const amountOfXyt = amountToWei(tokenUSDT, BN.from(331));
-    const amountOfToken = amountToWei(tokenUSDT, BN.from(891));
-    const T1 = consts.T0.add(consts.THREE_MONTH);
+  async function runTestAddLiqSingleToken(test: TestAddLiq) {
+    const T1 = consts.T0.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
-    await bootstrapMarket(amountOfXyt, amountOfToken);
+    await bootstrapMarket(
+      amountToWei(tokenUSDT, test.initXytBal),
+      amountToWei(tokenUSDT, test.initTokenBal)
+    );
 
     await setTimeNextBlock(provider, T1);
-    // weights: USDT: 660606624370, XYT: 438905003406
 
     await addLiquiditySingleToken(
       bob,
       testToken.address,
-      amountToWei(tokenUSDT, BN.from(50))
+      amountToWei(tokenUSDT, test.amountTokenChange)
     );
-    await checkLpBalance(bob, BN.from("33301790282170172"));
+    await checkLpBalance(bob, test.expectedLpBal1);
 
     await setTimeNextBlock(provider, T2);
     await addLiquiditySingleToken(
       charlie,
       pendleXyt.address,
-      amountToWei(tokenUSDT, BN.from(57))
+      amountToWei(tokenUSDT, test.amountXytChange)
     );
-    await checkLpBalance(charlie, BN.from("67220816465474392"));
-  });
+    await checkLpBalance(charlie, test.expectedLpBal2);
+  }
 
-  it("add liquidity with single token test 2", async () => {
-    const amountOfXyt = amountToWei(tokenUSDT, BN.from(167));
-    const amountOfToken = amountToWei(tokenUSDT, BN.from(381));
-    const T1 = consts.T0.add(consts.ONE_MONTH);
+  async function runTestRemoveLiqSingleToken(test: TestRemoveLiq) {
+    const T1 = consts.T0.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
-    await bootstrapMarket(amountOfXyt, amountOfToken);
+    await bootstrapMarket(
+      amountToWei(tokenUSDT, test.initXytBal),
+      amountToWei(tokenUSDT, test.initTokenBal)
+    );
+
+    let lpBalanceAlice = await pendleStdMarket.balanceOf(alice.address);
+    let amountToRemove = lpBalanceAlice.mul(test.ratioLpForToken).div(100);
 
     await setTimeNextBlock(provider, T1);
-    // weights: USDT weight: 577209185546 XYT weight: 522302442230
-
-    await addLiquiditySingleToken(
-      bob,
-      testToken.address,
-      amountToWei(tokenUSDT, BN.from(157))
-    );
-    await checkLpBalance(bob, BN.from("198283961837071968"));
-
-    await setTimeNextBlock(provider, T2);
-    await addLiquiditySingleToken(
-      charlie,
-      pendleXyt.address,
-      amountToWei(tokenUSDT, BN.from(36))
-    );
-    await checkLpBalance(charlie, BN.from("115989733684135088"));
-  });
-
-  it("add liquidity with single token test 3", async () => {
-    const amountOfXyt = amountToWei(tokenUSDT, BN.from(45));
-    const amountOfToken = amountToWei(tokenUSDT, BN.from(951));
-    const T1 = consts.T0.add(consts.FIVE_MONTH);
-    const T2 = T1.add(consts.ONE_DAY);
-    await bootstrapMarket(amountOfXyt, amountOfToken);
-
-    await setTimeNextBlock(provider, T1);
-    // weights: USDT weight: 848215863334 XYT weight: 251295764442
-
-    await addLiquiditySingleToken(
-      bob,
-      testToken.address,
-      amountToWei(tokenUSDT, BN.from(729))
-    );
-    await checkLpBalance(bob, BN.from("550710168310602816"));
-
-    await setTimeNextBlock(provider, T2);
-    await addLiquiditySingleToken(
-      charlie,
-      pendleXyt.address,
-      amountToWei(tokenUSDT, BN.from(12))
-    );
-    await checkLpBalance(charlie, BN.from("83998302108293488"));
-  });
-
-  it("remove liquidity with single token test 1", async () => {
-    const amountOfXyt = amountToWei(tokenUSDT, BN.from(331));
-    const amountOfToken = amountToWei(tokenUSDT, BN.from(891));
-    const T1 = consts.T0.add(consts.THREE_MONTH);
-    const T2 = T1.add(consts.ONE_DAY);
-    await bootstrapMarket(amountOfXyt, amountOfToken);
-
-    let lpBalanceAlice = await pendleMarket.balanceOf(alice.address);
-    let amountToRemove = lpBalanceAlice.div(7);
-
-    await setTimeNextBlock(provider, T1);
-    // weights: USDT: 660606624370, XYT: 438905003406
-
+    // weights(Token,Xyt) 848215863334 XYT weight: 251295764442
     let balanceDiff: BN = await removeLiquiditySingleToken(
       alice,
       testToken.address,
       amountToRemove
     );
     expect(balanceDiff.toNumber()).to.be.approximately(
-      201349414,
-      consts.TEST_TOKEN_DELTA.toNumber()
-    );
-
-    await setTimeNextBlock(provider, T2);
-    // weights: XYT weight: 436996733543
-    balanceDiff = await removeLiquiditySingleToken(
-      alice,
-      pendleXyt.address,
-      amountToRemove
-    );
-    expect(balanceDiff.toNumber()).to.be.approximately(
-      121523300,
-      consts.TEST_TOKEN_DELTA.toNumber()
-    );
-  });
-
-  it("remove liquidity with single token test 2", async () => {
-    const amountOfXyt = amountToWei(tokenUSDT, BN.from(167));
-    const amountOfToken = amountToWei(tokenUSDT, BN.from(381));
-    const T1 = consts.T0.add(consts.ONE_MONTH);
-    const T2 = T1.add(consts.ONE_DAY);
-    await bootstrapMarket(amountOfXyt, amountOfToken);
-
-    let lpBalanceAlice = await pendleMarket.balanceOf(alice.address);
-    let amountToRemove = lpBalanceAlice.div(15);
-
-    await setTimeNextBlock(provider, T1);
-    // weights: USDT weight: 577209185546 XYT weight: 522302442230
-    let balanceDiff: BN = await removeLiquiditySingleToken(
-      alice,
-      testToken.address,
-      amountToRemove
-    );
-    expect(balanceDiff.toNumber()).to.be.approximately(
-      46843304,
-      consts.TEST_TOKEN_DELTA.toNumber()
-    );
-
-    await setTimeNextBlock(provider, T2);
-    // weights: XYT weight: 521269347121
-    balanceDiff = await removeLiquiditySingleToken(
-      alice,
-      pendleXyt.address,
-      amountToRemove
-    );
-    expect(balanceDiff.toNumber()).to.be.approximately(
-      24122230,
-      consts.TEST_TOKEN_DELTA.toNumber()
-    );
-  });
-
-  it("remove liquidity with single token test 3", async () => {
-    const amountOfXyt = amountToWei(tokenUSDT, BN.from(45));
-    const amountOfToken = amountToWei(tokenUSDT, BN.from(951));
-    const T1 = consts.T0.add(consts.FIVE_MONTH);
-    const T2 = T1.add(consts.ONE_DAY);
-    await bootstrapMarket(amountOfXyt, amountOfToken);
-
-    let lpBalanceAlice = await pendleMarket.balanceOf(alice.address);
-    let amountToRemove = lpBalanceAlice.div(2);
-
-    await setTimeNextBlock(provider, T1);
-    // weights: USDT weight: 848215863334 XYT weight: 251295764442
-    let balanceDiff: BN = await removeLiquiditySingleToken(
-      alice,
-      testToken.address,
-      amountToRemove
-    );
-    expect(balanceDiff.toNumber()).to.be.approximately(
-      563321520,
+      test.expectedTokenDiff.toNumber(),
       consts.TEST_TOKEN_DELTA.toNumber()
     );
 
     // weights: XYT weight: 245957533896
-    // TODO: Enable this part after the math lib is fixed
-    // await setTimeNextBlock(provider, T2);
-    // balanceDiff = await removeLiquiditySingleToken(
-    //   alice,
-    //   pendleXyt.address,
-    //   amountToRemove
-    // );
-    // expect(balanceDiff.toNumber()).to.be.approximately(
-    //   44877732,
-    //   consts.TEST_TOKEN_DELTA.toNumber()
-    // );
+    await setTimeNextBlock(provider, T2);
+    amountToRemove = lpBalanceAlice.mul(test.ratioLpForXyt).div(100);
+    balanceDiff = await removeLiquiditySingleToken(
+      alice,
+      pendleXyt.address,
+      amountToRemove
+    );
+    expect(balanceDiff.toNumber()).to.be.approximately(
+      test.expectedXytDiff.toNumber(),
+      consts.TEST_TOKEN_DELTA.toNumber()
+    );
+  }
+  // TODO: Investigate why market can handle a large amount of token swapping in
+  it("add liquidity with single token test 1", async () => {
+    await runTestAddLiqSingleToken(scenario.scenarioAdd01());
+  });
+
+  it("add liquidity with single token test 2", async () => {
+    await runTestAddLiqSingleToken(scenario.scenarioAdd02());
+  });
+
+  it("add liquidity with single token test 3", async () => {
+    await runTestAddLiqSingleToken(scenario.scenarioAdd03());
+  });
+
+  it("add liquidity with single token test 4", async () => {
+    await runTestAddLiqSingleToken(scenario.scenarioAdd04());
+  });
+
+  it("add liquidity with single token test 5", async () => {
+    await runTestAddLiqSingleToken(scenario.scenarioAdd05());
+  });
+
+  it("remove liquidity with single token test 1", async () => {
+    await runTestRemoveLiqSingleToken(scenario.scenarioRemove01());
+  });
+
+  it("remove liquidity with single token test 2", async () => {
+    await runTestRemoveLiqSingleToken(scenario.scenarioRemove02());
+  });
+
+  it("remove liquidity with single token test 3", async () => {
+    await runTestRemoveLiqSingleToken(scenario.scenarioRemove03());
+  });
+
+  it("remove liquidity with single token test 4", async () => {
+    await runTestRemoveLiqSingleToken(scenario.scenarioRemove04());
+  });
+
+  it("remove liquidity with single token test 5", async () => {
+    await runTestRemoveLiqSingleToken(scenario.scenarioRemove04());
   });
 
   it("add liquidity dual token test 1", async () => {
@@ -361,8 +272,8 @@ describe("pendleLpFormula", async () => {
     const amountOfToken = amountToWei(tokenUSDT, BN.from(891));
     await bootstrapMarket(amountOfXyt, amountOfToken);
 
-    const totalSupply: BN = await pendleMarket.totalSupply();
-    // weights: USDT: 660606624370, XYT: 438905003406
+    const totalSupply: BN = await pendleStdMarket.totalSupply();
+    // weights: Token: 660606624370, XYT: 438905003406
 
     let initialXytBalance: BN = await pendleXyt.balanceOf(bob.address);
     let initialTokenBalance: BN = await testToken.balanceOf(bob.address);
@@ -393,17 +304,17 @@ describe("pendleLpFormula", async () => {
     );
 
     approxBigNumber(
-      await pendleXyt.balanceOf(pendleMarket.address),
+      await pendleXyt.balanceOf(pendleStdMarket.address),
       amountOfXyt.mul(4),
       BN.from(0)
     );
     approxBigNumber(
-      await testToken.balanceOf(pendleMarket.address),
+      await testToken.balanceOf(pendleStdMarket.address),
       amountOfToken.mul(4),
       BN.from(0)
     );
     approxBigNumber(
-      await pendleMarket.totalSupply(),
+      await pendleStdMarket.totalSupply(),
       totalSupply.mul(4),
       BN.from(0)
     );
@@ -414,8 +325,8 @@ describe("pendleLpFormula", async () => {
     const amountOfToken = amountToWei(tokenUSDT, BN.from(891));
     await bootstrapMarket(amountOfXyt, amountOfToken);
 
-    const totalSupply: BN = await pendleMarket.totalSupply();
-    // weights: USDT: 660606624370, XYT: 438905003406
+    const totalSupply: BN = await pendleStdMarket.totalSupply();
+    // weights: Token: 660606624370, XYT: 438905003406
 
     let initialXytBalance: BN = await pendleXyt.balanceOf(alice.address);
     let initialTokenBalance: BN = await testToken.balanceOf(alice.address);
@@ -445,15 +356,19 @@ describe("pendleLpFormula", async () => {
     );
 
     approxBigNumber(
-      await pendleXyt.balanceOf(pendleMarket.address),
+      await pendleXyt.balanceOf(pendleStdMarket.address),
       BN.from(0),
       BN.from(0)
     );
     approxBigNumber(
-      await testToken.balanceOf(pendleMarket.address),
+      await testToken.balanceOf(pendleStdMarket.address),
       BN.from(0),
       BN.from(0)
     );
-    approxBigNumber(await pendleMarket.totalSupply(), BN.from(0), BN.from(0));
+    approxBigNumber(
+      await pendleStdMarket.totalSupply(),
+      BN.from(0),
+      BN.from(0)
+    );
   });
 });

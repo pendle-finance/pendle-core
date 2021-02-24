@@ -23,7 +23,8 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import {ExpiryUtils, Factory} from "../libraries/PendleLibrary.sol";
+import "../libraries/ExpiryUtilsLib.sol";
+import "../libraries/FactoryLib.sol";
 import "../interfaces/IAaveLendingPoolCore.sol";
 import "../interfaces/IPendleBaseToken.sol";
 import "../interfaces/IPendleData.sol";
@@ -58,9 +59,9 @@ contract PendleAaveForge is IPendleForge, Permissions {
         IAaveLendingPoolCore _aaveLendingPoolCore,
         bytes32 _forgeId
     ) Permissions(_governance) {
-        require(address(_router) != address(0), "Pendle: zero address");
-        require(address(_aaveLendingPoolCore) != address(0), "Pendle: zero address");
-        require(_forgeId != 0x0, "Pendle: zero bytes");
+        require(address(_router) != address(0), "ZERO_ADDRESS");
+        require(address(_aaveLendingPoolCore) != address(0), "ZERO_ADDRESS");
+        require(_forgeId != 0x0, "ZERO_BYTES");
 
         router = _router;
         aaveLendingPoolCore = _aaveLendingPoolCore;
@@ -68,7 +69,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
     }
 
     modifier onlyRouter() {
-        require(msg.sender == address(router), "Pendle: only router");
+        require(msg.sender == address(router), "ONLY_ROUTER");
         _;
     }
 
@@ -76,7 +77,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
         IPendleData data = router.data();
         require(
             msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
-            "Pendle: only XYT"
+            "ONLY_XYT"
         );
         _;
     }
@@ -118,7 +119,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
         uint256 _expiry,
         address _to
     ) external override onlyRouter returns (uint256 redeemedAmount) {
-        require(block.timestamp > _expiry, "Pendle: must be after expiry");
+        require(block.timestamp > _expiry, "MUST_BE_AFTER_EXPIRY");
 
         IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
@@ -131,9 +132,9 @@ contract PendleAaveForge is IPendleForge, Permissions {
         // to now is entitled to the OT holders. Rhis means that the OT holders
         // are getting some extra interests, at the expense of XYT holders
         uint256 totalAfterExpiry =
-            currentNormalizedIncome
-                .mul(redeemedAmount)
-                .div(lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry]);
+            currentNormalizedIncome.mul(redeemedAmount).div(
+                lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry]
+            );
         aToken.transfer(_to, totalAfterExpiry);
 
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
@@ -170,8 +171,8 @@ contract PendleAaveForge is IPendleForge, Permissions {
     ) external override onlyRouter returns (uint256 redeemedAmount) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
 
-        require(tokens.ot.balanceOf(_account) >= _amountToRedeem, "Must have enough OT tokens");
-        require(tokens.xyt.balanceOf(_account) >= _amountToRedeem, "Must have enough XYT tokens");
+        require(tokens.ot.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_OT_AMOUNT");
+        require(tokens.xyt.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_XYT_AMOUNT");
 
         IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
 

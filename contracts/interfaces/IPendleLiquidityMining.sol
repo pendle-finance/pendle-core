@@ -36,7 +36,8 @@ interface IPendleLiquidityMining {
 
     /**
      * @notice Get the pending rewards for a user
-     * @return rewards Returns rewards[0] as the rewards available now, as well as rewards that can be claimed for subsequent epochs (size of rewards array is numberOfEpochs)
+     * @return rewards Returns rewards[0] as the rewards available now, as well as rewards
+     that can be claimed for subsequent epochs (size of rewards array is numberOfEpochs)
      **/
     function claimRewards() external returns (uint256[] memory rewards);
 

@@ -1,4 +1,4 @@
-import { Wallet, providers, BigNumber, Contract } from "ethers";
+import { Wallet, providers, BigNumber as BN, Contract } from "ethers";
 import { pendleCoreFixture, PendleCoreFixture } from "./pendleCore.fixture";
 import {
   pendleAaveForgeFixture,
@@ -28,13 +28,14 @@ interface PendleMarketFixture {
   testToken: Contract,
   pendleAMarket: Contract,
   pendleCMarket: Contract,
+  pendleEthMarket: Contract,
 }
 
 export async function pendleMarketFixture(
   wallets: Wallet[],
   provider: providers.Web3Provider
 ): Promise<PendleMarketFixture> {
-  const [alice, bob, charlie] = wallets;
+  const [alice, bob, charlie, dave, eve] = wallets
   const core = await pendleCoreFixture(wallets, provider);
   const governance = await pendleGovernanceFixture(wallets, provider);
   const aForge = await pendleAaveForgeFixture(alice, provider, core, governance);
@@ -43,12 +44,10 @@ export async function pendleMarketFixture(
   const { pendleRouter, pendleAMarketFactory, pendleCMarketFactory, pendleData } = core;
 
   const {
-    pendleAaveForge,
     pendleFutureYieldAToken,
     pendleFutureYieldAToken2,
   } = aForge;
   const {
-    pendleCompoundForge,
     pendleFutureYieldCToken,
   } = cForge;
   const token = tokens.USDT;
@@ -116,8 +115,15 @@ export async function pendleMarketFixture(
     PendleMarket.abi,
     alice
   );
+  const pendleEthMarketAddress = await pendleData.getMarket(
+    consts.MARKET_FACTORY_AAVE,
+    pendleFutureYieldAToken.address,
+    tokens.WETH.address,
+  );
 
-  for (var person of [alice, bob, charlie]) {
+  const pendleEthMarket = new Contract(pendleEthMarketAddress, PendleMarket.abi, alice)
+
+  for (var person of [alice, bob, charlie, dave]) {
     await testToken.connect(person).approve(pendleRouter.address, totalSupply);
     await pendleFutureYieldAToken
       .connect(person)
@@ -131,7 +137,8 @@ export async function pendleMarketFixture(
     await pendleCMarket
       .connect(person)
       .approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+    await pendleEthMarket.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
   }
 
-  return { core, aave, aForge, cForge, testToken, pendleAMarket, pendleCMarket }
+  return { core, aForge, cForge, aave, testToken, pendleAMarket, pendleCMarket, pendleEthMarket }
 }

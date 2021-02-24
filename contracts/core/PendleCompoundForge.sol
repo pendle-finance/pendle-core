@@ -23,7 +23,8 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import {ExpiryUtils, Factory} from "../libraries/PendleLibrary.sol";
+import "../libraries/ExpiryUtilsLib.sol";
+import "../libraries/FactoryLib.sol";
 import "../interfaces/ICToken.sol";
 import "../interfaces/IPendleBaseToken.sol";
 import "../interfaces/IPendleData.sol";
@@ -58,15 +59,15 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         IPendleRouter _router,
         bytes32 _forgeId
     ) Permissions(_governance) {
-        require(address(_router) != address(0), "Pendle: zero address");
-        require(_forgeId != 0x0, "Pendle: zero bytes");
+        require(address(_router) != address(0), "ZERO_ADDRESS");
+        require(_forgeId != 0x0, "ZERO_BYTES");
 
         router = _router;
         forgeId = _forgeId;
     }
 
     modifier onlyRouter() {
-        require(msg.sender == address(router), "Pendle: only router");
+        require(msg.sender == address(router), "ONLY_ROUTER");
         _;
     }
 
@@ -74,7 +75,7 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         IPendleData data = router.data();
         require(
             msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
-            "Pendle: only XYT"
+            "ONLY_XYT"
         );
         _;
     }
@@ -139,7 +140,7 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         uint256 _expiry,
         address _to
     ) public override returns (uint256 redeemedAmount) {
-        require(block.timestamp > _expiry, "Pendle: must be after expiry");
+        require(block.timestamp > _expiry, "MUST_BE_AFTER_EXPIRY");
 
         ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
@@ -150,9 +151,7 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         // interests from the timestamp of the last XYT transfer (before expiry) to now is entitled to the OT holders
         // this means that the OT holders are getting some extra interests, at the expense of XYT holders
         uint256 totalAfterExpiry =
-            currentRate
-                .mul(cTokensToRedeem)
-                .div(lastRateBeforeExpiry[_underlyingAsset][_expiry]);
+            currentRate.mul(cTokensToRedeem).div(lastRateBeforeExpiry[_underlyingAsset][_expiry]);
         cToken.transfer(_to, totalAfterExpiry);
 
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
@@ -173,11 +172,8 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
         uint256 currentRate = cToken.exchangeRateCurrent();
         uint256 underlyingToRedeem = _amountToRedeem.mul(currentRate).div(initialRate);
-        require(tokens.ot.balanceOf(_msgSender) >= underlyingToRedeem, "Must have enough OT tokens");
-        require(
-            tokens.xyt.balanceOf(_msgSender) >= underlyingToRedeem,
-            "Must have enough XYT tokens"
-        );
+        require(tokens.ot.balanceOf(_msgSender) >= underlyingToRedeem, "INSUFFICIENT_OT_AMOUNT");
+        require(tokens.xyt.balanceOf(_msgSender) >= underlyingToRedeem, "INSUFFICIENT_XYT_AMOUNT");
 
         cToken.transfer(_to, _amountToRedeem);
 
@@ -294,7 +290,10 @@ contract PendleCompoundForge is IPendleForge, Permissions {
             return 0;
         }
 
-        uint256 dueInterests = principal.mul(currentRate).div(prevRate).sub(principal).mul(initialRate).div(currentRate);
+        uint256 dueInterests =
+            principal.mul(currentRate).div(prevRate).sub(principal).mul(initialRate).div(
+                currentRate
+            );
         if (dueInterests > 0) {
             cToken.transfer(_account, dueInterests);
 

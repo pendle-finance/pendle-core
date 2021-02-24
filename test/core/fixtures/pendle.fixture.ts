@@ -6,8 +6,6 @@ import { PendleAaveFixture, pendleAaveForgeFixture } from './pendleAaveForge.fix
 import { pendleCompoundForgeFixture, PendleCompoundFixture } from './pendleCompoundForge.fixture'
 import { pendleCoreFixture, PendleCoreFixture } from './pendleCore.fixture';
 import { pendleGovernanceFixture } from './pendleGovernance.fixture';
-const { waffle } = require("hardhat");
-const { provider, deployContract } = waffle;
 interface PendleFixture {
   core: PendleCoreFixture,
   aave: AaveFixture,

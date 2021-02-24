@@ -273,9 +273,9 @@ describe("PendleRouter", async () => {
     );
 
     let allEvents = await pendleAaveForge.queryFilter(filter, tx.blockHash);
-    expect(allEvents.length).to.be.eq(3); // there is only one event of the same type before this event
-    expect(allEvents[2].args!.ot).to.not.eq(0);
-    expect(allEvents[2].args!.xyt).to.not.eq(0);
-    expect(allEvents[2].args!.expiry).to.eq(futureTime);
+    expect(allEvents.length).to.be.eq(3); // there is two events of the same type before this event
+    expect(allEvents[allEvents.length - 1].args!.ot).to.not.eq(0);
+    expect(allEvents[allEvents.length - 1].args!.xyt).to.not.eq(0);
+    expect(allEvents[allEvents.length - 1].args!.expiry).to.eq(futureTime);
   });
 });

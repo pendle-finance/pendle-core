@@ -34,7 +34,7 @@ export interface liqParams {
   TOTAL_NUMERATOR: BN,
   INITIAL_LP_AMOUNT: BN,
 }
-export class userStakeAction {
+export class UserStakeAction {
   time: BN;
   isStaking: boolean;
   amount: BN;
@@ -62,7 +62,7 @@ export async function pendleLiquidityMiningFixture(
   wallets: Wallet[],
   provider: providers.Web3Provider,
 ): Promise<PendleLiquidityMiningFixture> {
-  let [alice, bob, charlie, dave] = wallets;
+  let [alice, bob, charlie, dave, eve] = wallets;
   let { core, aForge, cForge, aave, testToken, pendleAMarket, pendleCMarket } = await pendleMarketFixture(wallets, provider);
   let pendleRouter = core.pendleRouter;
   let pendleData = core.pendleData;
