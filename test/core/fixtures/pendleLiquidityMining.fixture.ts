@@ -68,8 +68,8 @@ export async function pendleLiquidityMiningFixture(
   let pendleData = core.pendleData;
   let pendleAaveForge = aForge.pendleAaveForge;
   let pendleCompoundForge = cForge.pendleCompoundForge;
-  let pendleAXyt = aForge.pendleFutureYieldAToken;
-  let pendleCXyt = cForge.pendleFutureYieldCToken;
+  let pendleAXyt = aForge.pendleAFutureYieldToken;
+  let pendleCXyt = cForge.pendleCFutureYieldToken;
   let pendleAMarketFactory = core.pendleAMarketFactory;
   let pendleCMarketFactory = core.pendleCMarketFactory;
   const amountToTokenize = amountToWei(tokens.USDT, BN.from(100));
@@ -148,7 +148,7 @@ export async function pendleLiquidityMiningFixture(
     consts.HIGH_GAS_OVERRIDE
   );
   await pendleCLiquidityMining.setAllocationSetting(
-    [consts.T1.add(consts.ONE_MONTH)],
+    [consts.T0_C.add(consts.ONE_MONTH)],
     [params.TOTAL_NUMERATOR],
     consts.HIGH_GAS_OVERRIDE
   );

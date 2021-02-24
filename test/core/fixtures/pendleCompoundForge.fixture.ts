@@ -11,8 +11,8 @@ const { deployContract } = waffle;
 
 export interface PendleCompoundFixture {
     pendleCompoundForge: Contract
-    pendleOwnershipToken: Contract
-    pendleFutureYieldCToken: Contract
+    pendleCOwnershipToken: Contract
+    pendleCFutureYieldToken: Contract
 }
 
 export async function pendleCompoundForgeFixture(
@@ -26,27 +26,27 @@ export async function pendleCompoundForgeFixture(
 
     await pendleCompoundForge.registerToken(tokens.USDT.address, tokens.USDT.compound);
 
-    await setTimeNextBlock(provider, consts.T1); // set the minting time for the first OT and XYT
-    await pendleRouter.newYieldContracts(consts.FORGE_COMPOUND, tokens.USDT.address, consts.T1.add(consts.ONE_MONTH));
+    await setTimeNextBlock(provider, consts.T0_C); // set the minting time for the first OT and XYT
+    await pendleRouter.newYieldContracts(consts.FORGE_COMPOUND, tokens.USDT.address, consts.T0_C.add(consts.ONE_MONTH));
 
     const otTokenAddress = await pendleData.otTokens(
         consts.FORGE_COMPOUND,
         tokens.USDT.address,
-        consts.T1.add(consts.ONE_MONTH)
+        consts.T0_C.add(consts.ONE_MONTH)
     );
 
     const xytTokenAddress = await pendleData.xytTokens(
         consts.FORGE_COMPOUND,
         tokens.USDT.address,
-        consts.T1.add(consts.ONE_MONTH)
+        consts.T0_C.add(consts.ONE_MONTH)
     );
 
-    const pendleOwnershipToken = new Contract(otTokenAddress, PendleOwnershipToken.abi, alice);
-    const pendleFutureYieldCToken = new Contract(xytTokenAddress, PendleFutureYieldToken.abi, alice);
+    const pendleCOwnershipToken = new Contract(otTokenAddress, PendleOwnershipToken.abi, alice);
+    const pendleCFutureYieldToken = new Contract(xytTokenAddress, PendleFutureYieldToken.abi, alice);
 
     return {
         pendleCompoundForge,
-        pendleOwnershipToken,
-        pendleFutureYieldCToken,
+        pendleCOwnershipToken,
+        pendleCFutureYieldToken,
     };
 }

@@ -25,7 +25,7 @@ describe("PendleAaveMarket", async () => {
   let pendleTreasury: Contract;
   let pendleMarketFactory: Contract;
   let pendleData: Contract;
-  let pendleOwnershipToken: Contract;
+  let pendleAOwnershipToken: Contract;
   let pendleXyt: Contract;
   let pendleXyt2: Contract;
   let lendingPoolCore: Contract;
@@ -46,9 +46,9 @@ describe("PendleAaveMarket", async () => {
     pendleTreasury = fixture.core.pendleTreasury;
     pendleMarketFactory = fixture.core.pendleAMarketFactory;
     pendleData = fixture.core.pendleData;
-    pendleOwnershipToken = fixture.aForge.pendleOwnershipToken;
-    pendleXyt = fixture.aForge.pendleFutureYieldAToken;
-    pendleXyt2 = fixture.aForge.pendleFutureYieldAToken2;
+    pendleAOwnershipToken = fixture.aForge.pendleAOwnershipToken;
+    pendleXyt = fixture.aForge.pendleAFutureYieldToken;
+    pendleXyt2 = fixture.aForge.pendleAFutureYieldToken2;
     pendleAaveForge = fixture.aForge.pendleAaveForge;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     testToken = fixture.testToken;

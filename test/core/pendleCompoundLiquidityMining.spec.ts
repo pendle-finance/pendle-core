@@ -63,17 +63,17 @@ describe("PendleCompoundLiquidityMining", async () => {
     console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
     console.log(`\tLP balance of user before: ${pdlBalanceOfUser}`);
 
-    await advanceTime(provider, params.START_TIME.sub(consts.T1));
+    await advanceTime(provider, params.START_TIME.sub(consts.T0_C));
     await pendleLiquidityMining
       .connect(bob)
       .stake(
-        consts.T1.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.ONE_MONTH),
         amountToStake,
         consts.HIGH_GAS_OVERRIDE
       );
     console.log("\tStaked");
     const lpHolderContract = await pendleLiquidityMining.lpHolderForExpiry(
-      consts.T1.add(consts.ONE_MONTH)
+      consts.T0_C.add(consts.ONE_MONTH)
     );
     const cTokenBalanceOfLpHolderContract = await cUSDT.balanceOf(
       lpHolderContract
@@ -90,7 +90,7 @@ describe("PendleCompoundLiquidityMining", async () => {
     await pendleLiquidityMining
       .connect(bob)
       .withdraw(
-        consts.T1.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.ONE_MONTH),
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
@@ -116,7 +116,7 @@ describe("PendleCompoundLiquidityMining", async () => {
 
     //stake using another user - alice, for the same amount as bob's stake now (amountToStake/2)
     await pendleLiquidityMining.stake(
-      consts.T1.add(consts.ONE_MONTH),
+      consts.T0_C.add(consts.ONE_MONTH),
       amountToStake.div(2),
       consts.HIGH_GAS_OVERRIDE
     );
@@ -147,7 +147,7 @@ describe("PendleCompoundLiquidityMining", async () => {
     await pendleLiquidityMining
       .connect(bob)
       .withdraw(
-        consts.T1.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.ONE_MONTH),
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
@@ -168,7 +168,7 @@ describe("PendleCompoundLiquidityMining", async () => {
     );
 
     await pendleLiquidityMining.withdraw(
-      consts.T1.add(consts.ONE_MONTH),
+      consts.T0_C.add(consts.ONE_MONTH),
       amountToStake.div(2),
       consts.HIGH_GAS_OVERRIDE
     );

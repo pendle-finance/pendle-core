@@ -44,11 +44,11 @@ export async function pendleMarketFixture(
   const { pendleRouter, pendleAMarketFactory, pendleCMarketFactory, pendleData } = core;
 
   const {
-    pendleFutureYieldAToken,
-    pendleFutureYieldAToken2,
+    pendleAFutureYieldToken,
+    pendleAFutureYieldToken2,
   } = aForge;
   const {
-    pendleFutureYieldCToken,
+    pendleCFutureYieldToken,
   } = cForge;
   const token = tokens.USDT;
 
@@ -81,27 +81,27 @@ export async function pendleMarketFixture(
 
   await pendleRouter.createMarket(
     consts.MARKET_FACTORY_AAVE,
-    pendleFutureYieldAToken.address,
+    pendleAFutureYieldToken.address,
     testToken.address,
     consts.HIGH_GAS_OVERRIDE
   );
 
   await pendleRouter.createMarket(
     consts.MARKET_FACTORY_COMPOUND,
-    pendleFutureYieldCToken.address,
+    pendleCFutureYieldToken.address,
     testToken.address,
     consts.HIGH_GAS_OVERRIDE
   );
 
   const pendleAMarketAddress = await pendleData.getMarket(
     consts.MARKET_FACTORY_AAVE,
-    pendleFutureYieldAToken.address,
+    pendleAFutureYieldToken.address,
     testToken.address
   );
 
   const pendleCMarketAddress = await pendleData.getMarket(
     consts.MARKET_FACTORY_COMPOUND,
-    pendleFutureYieldCToken.address,
+    pendleCFutureYieldToken.address,
     testToken.address
   );
 
@@ -117,7 +117,7 @@ export async function pendleMarketFixture(
   );
   const pendleEthMarketAddress = await pendleData.getMarket(
     consts.MARKET_FACTORY_AAVE,
-    pendleFutureYieldAToken.address,
+    pendleAFutureYieldToken.address,
     tokens.WETH.address,
   );
 
@@ -125,10 +125,10 @@ export async function pendleMarketFixture(
 
   for (var person of [alice, bob, charlie, dave]) {
     await testToken.connect(person).approve(pendleRouter.address, totalSupply);
-    await pendleFutureYieldAToken
+    await pendleAFutureYieldToken
       .connect(person)
       .approve(pendleRouter.address, consts.MAX_ALLOWANCE);
-    await pendleFutureYieldCToken
+    await pendleCFutureYieldToken
       .connect(person)
       .approve(pendleRouter.address, consts.MAX_ALLOWANCE);
     await pendleAMarket

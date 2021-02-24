@@ -59,7 +59,7 @@ export async function mintOtAndXyt(
   await pendleRouter.tokenizeYield(
     consts.FORGE_COMPOUND,
     token.address,
-    consts.T1.add(consts.ONE_MONTH),
+    consts.T0_C.add(consts.ONE_MONTH),
     amount,
     alice.address
   );

@@ -30,7 +30,7 @@ describe("PendleData", async () => {
     pendleData = fixture.core.pendleData;
     pendleAMarketFactory = fixture.core.pendleAMarketFactory;
     pendleCMarketFactory = fixture.core.pendleCMarketFactory;
-    pendleXyt = fixture.aForge.pendleFutureYieldAToken;
+    pendleXyt = fixture.aForge.pendleAFutureYieldToken;
     tokenUSDT = tokens.USDT;
     snapshotId = await evm_snapshot();
   });
