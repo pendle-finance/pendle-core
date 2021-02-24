@@ -23,6 +23,7 @@ describe("PendleLiquidityMining", async () => {
   let lendingPoolCore: Contract;
   let pendleLiquidityMining: Contract;
   let pdl: Contract;
+  let pendleMarket: Contract;
   let aUSDT: Contract;
   let params: liqParams;
   let snapshotId: string;
@@ -37,6 +38,7 @@ describe("PendleLiquidityMining", async () => {
     params = fixture.params;
     aUSDT = await getAContract(alice, lendingPoolCore, tokens.USDT);
     pdl = fixture.pdl;
+    pendleMarket = fixture.pendleStdMarket;
     snapshotId = await evm_snapshot();
   });
 
@@ -58,12 +60,13 @@ describe("PendleLiquidityMining", async () => {
       pendleLiquidityMining.address
     );
     const pdlBalanceOfUser = await pdl.balanceOf(bob.address);
+    const lpBalanceOfUser = await pendleMarket.balanceOf(bob.address);
 
     console.log(
       `\tPDL balance of PendleLiquidityMining contract before: ${pdlBalanceOfContract}`
     );
     console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
-    console.log(`\tLP balance of user before: ${pdlBalanceOfUser}`);
+    console.log(`\tLP balance of user before: ${lpBalanceOfUser}`);
 
     await advanceTime(provider, params.START_TIME.sub(consts.T0));
     await pendleLiquidityMining
@@ -116,6 +119,12 @@ describe("PendleLiquidityMining", async () => {
       expectedPdlBalanceOfUserAfter.toNumber() / 1000
     );
 
+    console.log(
+      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
+        lpHolderContract
+      )}`
+    );
+
     //stake using another user - alice, for the same amount as bob's stake now (amountToStake/2)
     await pendleLiquidityMining.stake(
       consts.T0.add(consts.SIX_MONTH),
@@ -145,6 +154,11 @@ describe("PendleLiquidityMining", async () => {
       .call({ from: alice.address });
     console.log(`\tInterests for alice = ${interestsData}`);
     console.log(`\tRewards available for epochs from now: ${rewardsData}`);
+    console.log(
+      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
+        lpHolderContract
+      )}`
+    );
 
     await pendleLiquidityMining
       .connect(bob)
@@ -162,6 +176,12 @@ describe("PendleLiquidityMining", async () => {
     );
     console.log(
       `\tExpected PDL balance of user after 2nd withdraw: ${expectedPdlBalanceOfUsersAfter2ndTnx}`
+    );
+
+    console.log(
+      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
+        lpHolderContract
+      )}`
     );
 
     expect(pdlBalanceOfUserAfter2ndTnx.toNumber()).to.be.approximately(

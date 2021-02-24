@@ -84,9 +84,9 @@ export async function pendleLiquidityMiningFixture(
     [
       alice.address,
       pdl.address,
-      pendleData.address,
-      pendleMarketFactory.address,
-      pendleAaveForge.address,
+      pendleRouter.address,
+      consts.MARKET_FACTORY_AAVE,
+      consts.FORGE_AAVE,
       tokens.USDT.address,
       testToken.address,
       params.START_TIME,
@@ -116,6 +116,7 @@ export async function pendleLiquidityMiningFixture(
 
   await pendleLiquidityMining.fund();
   await pdl.transfer(pendleLiquidityMining.address, await pdl.balanceOf(alice.address));
+  await pendleData.setReentrancyWhitelist([pendleLiquidityMining.address], [true]);
 
   for (var person of [bob, charlie, dave, eve]) {
     await pendleStdMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);

@@ -68,9 +68,10 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     }
 
     /* IPendleData public pendleData; */
-    address public pendleAddress;
+    IPendleRouter public pendleRouter;
     IPendleMarketFactory public pendleMarketFactory;
     IPendleData public pendleData;
+    address public override pendleAddress;
     bytes32 public override forgeId;
     bytes32 public override marketFactoryId;
 
@@ -118,9 +119,9 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     constructor(
         address _governance,
         address _pendleAddress,
-        address _pendleData,
-        address _pendleMarketFactory,
-        address _pendleForge,
+        address _pendleRouter, // The router basically identify our Pendle instance.
+        bytes32 _pendleMarketFactoryId,
+        bytes32 _pendleForgeId,
         address _underlyingAsset,
         address _baseToken,
         uint256 _startTime,
@@ -130,11 +131,26 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         uint256 _vestingEpochs
     ) Permissions(_governance) {
         require(_startTime > block.timestamp, "START_TIME_OVER");
-        //TODO: add more sanity checks:
-        //  - ...
+        require(IERC20(_pendleAddress).totalSupply() > 0, "INVALID_ERC20");
+        require(IERC20(_underlyingAsset).totalSupply() > 0, "INVALID_ERC20");
+        require(IERC20(_baseToken).totalSupply() > 0, "INVALID_ERC20");
+        require(_numberOfEpochs > 0, "INVALID_NO_OF_EPOCHS");
+        require(_vestingEpochs > 0, "INVALID_VESTING_EPOCHS");
         pendleAddress = _pendleAddress;
-        pendleData = IPendleData(_pendleData);
-        pendleMarketFactory = IPendleMarketFactory(_pendleMarketFactory);
+        pendleRouter = IPendleRouter(_pendleRouter);
+        pendleData = pendleRouter.data();
+        require(
+            pendleData.getMarketFactoryAddress(_pendleMarketFactoryId) != address(0),
+            "INVALID_MARKET_FACTORY_ID"
+        );
+        require(pendleData.getForgeAddress(_pendleForgeId) != address(0), "INVALID_FORGE_ID");
+
+        pendleMarketFactory = IPendleMarketFactory(
+            pendleData.getMarketFactoryAddress(_pendleMarketFactoryId)
+        );
+        marketFactoryId = _pendleMarketFactoryId;
+        forgeId = _pendleForgeId;
+
         underlyingAsset = _underlyingAsset;
         baseToken = _baseToken;
         startTime = _startTime;
@@ -142,11 +158,6 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         rewardsPerEpoch = _rewardsPerEpoch;
         numberOfEpochs = _numberOfEpochs;
         vestingEpochs = _vestingEpochs;
-
-        marketFactoryId = pendleMarketFactory.marketFactoryId();
-        // TODO: add some functon to make sure this forgeId belongs to our system
-        // getForgeAddress  should be the same as the constructor params
-        forgeId = pendleData.getForgeId(_pendleForge);
     }
 
     function readUserExpiries(address user)
@@ -496,6 +507,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         internal
         returns (uint256 dueInterests)
     {
+        PendleLpHolder(lpHolderForExpiry[expiry]).claimLpInterests();
         // calculate interest for each expiry
         _updateGlobalIncomeIndex(expiry);
         if (lastGlobalIncomeIndexForExpiry[expiry][account] == 0) {
@@ -547,10 +559,11 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     ) internal returns (address newLpHoldingContract) {
         expiries.push(expiry);
         hasExpiry[expiry] = true;
+        address underlyingYieldToken = IPendleYieldToken(xyt).underlyingYieldToken();
         newLpHoldingContract = Factory.createContract(
             type(PendleLpHolder).creationCode,
-            abi.encodePacked(marketAddress, xyt),
-            abi.encode(marketAddress, xyt)
+            abi.encodePacked(marketAddress, pendleMarketFactory.router(), underlyingYieldToken),
+            abi.encode(marketAddress, pendleMarketFactory.router(), underlyingYieldToken)
         );
         lpHolderForExpiry[expiry] = newLpHoldingContract;
         globalIncomeIndexForExpiry[expiry] = 1;

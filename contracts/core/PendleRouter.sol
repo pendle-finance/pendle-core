@@ -25,7 +25,6 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../libraries/MathLib.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleData.sol";
@@ -34,16 +33,40 @@ import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../periphery/Permissions.sol";
 
-contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
+contract PendleRouter is IPendleRouter, Permissions {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
+
+    // Protection against reentrance;
+    uint256 private constant _NOT_ENTERED = 1;
+    uint256 private constant _ENTERED = 2;
+    uint256 private _reentrancyStatus;
 
     IWETH public immutable override weth;
     IPendleData public override data;
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
+    modifier pendleNonReentrant() {
+        _checkNonReentrancy(); // use functions to reduce bytecode size
+        _;
+        // By storing the original value once again, a refund is triggered (see
+        // https://eips.ethereum.org/EIPS/eip-2200)
+        _reentrancyStatus = _NOT_ENTERED;
+    }
+
+    function _checkNonReentrancy() internal {
+        if (!data.reentrancyWhitelisted(msg.sender)) {
+            // On the first call to pendleNonReentrant, _notEntered will be true
+            require(_reentrancyStatus != _ENTERED, "REENTRANT_CALL");
+
+            // Any calls to nonReentrant after this point will fail
+            _reentrancyStatus = _ENTERED;
+        }
+    }
+
     constructor(address _governance, IWETH _weth) Permissions(_governance) {
         weth = _weth;
+        _reentrancyStatus = _NOT_ENTERED;
     }
 
     /**
@@ -68,7 +91,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         override
         initialized
         onlyGovernance
-        nonReentrant
+        pendleNonReentrant
     {
         require(_forgeId != bytes32(0), "ZERO_BYTES");
         require(_forgeAddress != address(0), "ZERO_ADDRESS");
@@ -82,7 +105,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) public override nonReentrant returns (address ot, address xyt) {
+    ) public override pendleNonReentrant returns (address ot, address xyt) {
         require(_forgeId != bytes32(0), "ZERO_BYTES");
         require(_underlyingAsset != address(0), "ZERO_ADDRESS");
 
@@ -101,7 +124,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         address _underlyingAsset,
         uint256 _expiry,
         address _to
-    ) public override nonReentrant returns (uint256 redeemedAmount) {
+    ) public override pendleNonReentrant returns (uint256 redeemedAmount) {
         require(_forgeId != bytes32(0), "ZERO_BYTES");
         require(_underlyingAsset != address(0), "ZERO_ADDRESS");
         require(_to != address(0), "ZERO_ADDRESS");
@@ -116,7 +139,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) public override nonReentrant returns (uint256 interests) {
+    ) public override pendleNonReentrant returns (uint256 interests) {
         interests = _redeemDueInterestsInternal(_forgeId, _underlyingAsset, _expiry);
     }
 
@@ -124,7 +147,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         bytes32[] calldata _forgeIds,
         address[] calldata _underlyingAssets,
         uint256[] calldata _expiries
-    ) public override nonReentrant returns (uint256[] memory interests) {
+    ) public override pendleNonReentrant returns (uint256[] memory interests) {
         require(
             _forgeIds.length == _underlyingAssets.length && _forgeIds.length == _expiries.length,
             "INVALID_ARRAYS"
@@ -145,7 +168,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _expiry,
         uint256 _amountToRedeem,
         address _to
-    ) public override nonReentrant returns (uint256 redeemedAmount) {
+    ) public override pendleNonReentrant returns (uint256 redeemedAmount) {
         require(_forgeId != bytes32(0), "ZERO_BYTES");
         require(_underlyingAsset != address(0), "ZERO_ADDRESS");
 
@@ -171,7 +194,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
     )
         public
         override
-        nonReentrant
+        pendleNonReentrant
         returns (
             uint256 redeemedAmount,
             address ot,
@@ -199,7 +222,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _expiry,
         uint256 _amountToTokenize,
         address _to
-    ) public override nonReentrant returns (address ot, address xyt) {
+    ) public override pendleNonReentrant returns (address ot, address xyt) {
         require(_forgeId != bytes32(0), "ZERO_BYTES");
         require(_underlyingAsset != address(0), "ZERO_ADDRESS");
 
@@ -221,7 +244,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         override
         initialized
         onlyGovernance
-        nonReentrant
+        pendleNonReentrant
     {
         require(_marketFactoryId != bytes32(0), "ZERO_BYTES");
         require(_marketFactoryAddress != address(0), "ZERO_ADDRESS");
@@ -241,7 +264,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _maxInXyt,
         uint256 _maxInToken,
         uint256 _exactOutLp
-    ) public payable override nonReentrant {
+    ) public payable override pendleNonReentrant {
         IPendleMarket market =
             IPendleMarket(
                 data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
@@ -269,7 +292,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         bool _forXyt,
         uint256 _exactInAsset,
         uint256 _minOutLp
-    ) public payable override nonReentrant {
+    ) public payable override pendleNonReentrant {
         IPendleMarket market =
             IPendleMarket(
                 data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
@@ -300,7 +323,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _exactInLp,
         uint256 _minOutXyt,
         uint256 _minOutToken
-    ) public override nonReentrant {
+    ) public override pendleNonReentrant {
         IPendleMarket market =
             IPendleMarket(
                 data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
@@ -327,7 +350,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         bool _forXyt,
         uint256 _exactInLp,
         uint256 _minOutAsset
-    ) public override nonReentrant {
+    ) public override pendleNonReentrant {
         IPendleMarket market =
             IPendleMarket(
                 data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
@@ -356,7 +379,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         bytes32 _marketFactoryId,
         address _xyt,
         address _token
-    ) public override nonReentrant returns (address market) {
+    ) public override pendleNonReentrant returns (address market) {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
         try IPendleYieldToken(_token).forge() returns (address) {
@@ -381,7 +404,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         address _token,
         uint256 _initialXytLiquidity,
         uint256 _initialTokenLiquidity
-    ) public payable override nonReentrant {
+    ) public payable override pendleNonReentrant {
         require(_initialXytLiquidity > 0, "INVALID_XYT_AMOUNT");
         require(_initialTokenLiquidity > 0, "INVALID_TOKEN_AMOUNT");
 
@@ -412,7 +435,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _minOutTotalAmount,
         uint256 _maxPrice,
         bytes32 _marketFactoryId
-    ) public payable override nonReentrant returns (uint256 outSwapAmount) {
+    ) public payable override pendleNonReentrant returns (uint256 outSwapAmount) {
         _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
         _tokenOut = _isETH(_tokenOut) ? address(weth) : _tokenOut;
 
@@ -450,7 +473,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _maxInTotalAmount,
         uint256 _maxPrice,
         bytes32 _marketFactoryId
-    ) public payable override nonReentrant returns (uint256 inSwapAmount) {
+    ) public payable override pendleNonReentrant returns (uint256 inSwapAmount) {
         _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
         _tokenOut = _isETH(_tokenOut) ? address(weth) : _tokenOut;
         uint256 change = _maxInTotalAmount;
@@ -490,7 +513,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         address _tokenOut,
         uint256 _inTotalAmount,
         uint256 _minOutTotalAmount
-    ) public payable override nonReentrant returns (uint256 outTotalAmount) {
+    ) public payable override pendleNonReentrant returns (uint256 outTotalAmount) {
         _transferIn(_tokenIn, _inTotalAmount);
 
         for (uint256 i = 0; i < _swapPath.length; i++) {
@@ -527,7 +550,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         address _tokenIn,
         address _tokenOut,
         uint256 _maxInTotalAmount
-    ) public payable override nonReentrant returns (uint256 inTotalAmount) {
+    ) public payable override pendleNonReentrant returns (uint256 inTotalAmount) {
         uint256 outTotalAmount;
         uint256 change = _maxInTotalAmount;
 
@@ -609,7 +632,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
     function claimLpInterests(address[] calldata markets)
         public
         override
-        nonReentrant
+        pendleNonReentrant
         returns (uint256[] memory interests)
     {
         interests = new uint256[](markets.length);
