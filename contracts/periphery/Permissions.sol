@@ -67,8 +67,8 @@ abstract contract Permissions {
      */
     function transferGovernance(address _governance) public onlyGovernance {
         require(_governance != address(0), "ZERO_ADDRESS");
-        governance = _governance;
+        pendingGovernance = _governance;
 
-        emit TransferGovernancePending(_governance);
+        emit TransferGovernancePending(pendingGovernance);
     }
 }
