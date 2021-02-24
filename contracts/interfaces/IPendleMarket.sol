@@ -49,36 +49,6 @@ interface IPendleMarket is IPendleBaseToken {
         uint256 tokenWeightNew
     );
 
-    /**
-     * @notice Emitted when a swap happens on the market.
-     * @param trader The address of msg.sender.
-     * @param inToken The input token.
-     * @param outToken The output token.
-     * @param exactIn The exact amount being traded.
-     * @param exactOut The exact amount received.
-     **/
-    event Swap(
-        address indexed trader,
-        address inToken,
-        address outToken,
-        uint256 exactIn,
-        uint256 exactOut
-    );
-
-    /**
-     * @dev Emitted when user adds liquidity
-     * @param token0Amount the amount of token0 (xyt) provided by user
-     * @param token1Amount the amount of token1 provided by user
-     */
-    event Join(address indexed sender, uint256 token0Amount, uint256 token1Amount);
-
-    /**
-     * @dev Emitted when user removes liquidity
-     * @param token0Amount the amount of token0 (xyt) given to user
-     * @param token1Amount the amount of token1 given to user
-     */
-    event Exit(address indexed sender, uint256 token0Amount, uint256 token1Amount);
-
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
         returns (uint256);

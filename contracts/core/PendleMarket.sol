@@ -109,8 +109,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].weight
         );
 
-        emit Join(msg.sender, initialXytLiquidity, initialTokenLiquidity);
-
         _mintLp(INITIAL_LP);
         _transferOutLp(INITIAL_LP);
 
@@ -164,9 +162,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].weight
         );
 
-        // @TODO Double check if msg.sender is Pendle.sol or from the EOA that called the contract?
-        emit Join(msg.sender, amountXytUsed, amountTokenUsed);
-
         // Mint and push LP token.
         _mintLp(_exactOutLp);
         _transferOutLp(_exactOutLp);
@@ -213,12 +208,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].weight
         );
 
-        if (inToken == xyt) {
-            emit Join(msg.sender, exactIn, 0);
-        } else if (inToken == token) {
-            emit Join(msg.sender, 0, exactIn);
-        }
-
         return exactOutLp;
     }
 
@@ -249,7 +238,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(outAmount >= _minOutXyt, "INSUFFICIENT_XYT_OUT");
         reserves[xyt].balance = reserves[xyt].balance.sub(outAmount);
         xytOut = outAmount;
-        emit Exit(xyt, outAmount);
         _transferOut(xyt, outAmount);
 
         // Calc and withdraw pair token.
@@ -259,7 +247,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(outAmount >= _minOutToken, "INSUFFICIENT_TOKEN_OUT");
         reserves[token].balance = reserves[token].balance.sub(outAmount);
         tokenOut = outAmount;
-        emit Exit(token, outAmount);
         _transferOut(token, outAmount);
 
         // Deal with lp last.
@@ -289,8 +276,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         // Update reserves and operate underlying LP and outToken
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmountToken);
-
-        emit Exit(_outToken, outAmountToken);
 
         _transferInLp(_inLp);
         _collectFees(exitFee);
@@ -349,8 +334,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 exactOutAmount = outAmount;
         // uint256 maxPrice
 
-        emit Swap(msg.sender, exactInToken, exactOutToken, exactInAmount, exactOutAmount);
-
         _transferIn(exactInToken, exactInAmount);
         _transferOut(exactOutToken, exactOutAmount);
 
@@ -402,7 +385,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].weight
         );
 
-        emit Swap(msg.sender, inToken, outToken, inAmount, outAmount);
         _transferIn(inToken, inAmount);
         _transferOut(outToken, outAmount);
 

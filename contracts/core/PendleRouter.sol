@@ -253,6 +253,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
 
         (uint256 amountXytUsed, uint256 amountTokenUsed) =
             market.addMarketLiquidityAll(_exactOutLp, _maxInXyt, _maxInToken);
+        emit Join(msg.sender, amountXytUsed, amountTokenUsed, address(market));
 
         _transferOut(address(market), _exactOutLp);
         _transferOut(_xyt, _maxInXyt - amountXytUsed); // transfer unused XYT back to user
@@ -281,6 +282,12 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 exactOutLp = market.addMarketLiquiditySingle(asset, _exactInAsset, _minOutLp);
 
         _transferOut(address(market), exactOutLp);
+
+        if (_forXyt) {
+            emit Join(msg.sender, _exactInAsset, 0, address(market));
+        } else {
+            emit Join(msg.sender, 0, _exactInAsset, address(market));
+        }
     }
 
     function removeMarketLiquidityAll(
@@ -305,6 +312,8 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
 
         _transferOut(_xyt, xytAmount);
         _transferOut(_token, tokenAmount);
+
+        emit Exit(msg.sender, xytAmount, tokenAmount, address(market));
     }
 
     function removeMarketLiquiditySingle(
@@ -331,6 +340,12 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
 
         asset = _forXyt ? _xyt : _token;
         _transferOut(asset, assetOut);
+
+        if (_forXyt) {
+            emit Exit(msg.sender, assetOut, 0, address(market));
+        } else {
+            emit Exit(msg.sender, 0, assetOut, address(market));
+        }
     }
 
     function createMarket(
@@ -373,7 +388,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         _transferIn(_token, _initialTokenLiquidity);
 
         uint256 lpAmount = market.bootstrap(_initialXytLiquidity, _initialTokenLiquidity);
-
+        emit Join(msg.sender, _initialXytLiquidity, _initialTokenLiquidity, address(market));
         _transferOut(address(market), lpAmount);
 
         address[] memory xyts = new address[](1);
@@ -409,6 +424,15 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         require(outSwapAmount >= _minOutTotalAmount, "INSUFFICIENT_OUT_AMOUNT");
 
         _transferOut(_tokenOut, outSwapAmount);
+
+        emit SwapEvent(
+            msg.sender,
+            _tokenIn,
+            _tokenOut,
+            _inTotalAmount,
+            outSwapAmount,
+            address(market)
+        );
     }
 
     function swapExactOut(
@@ -440,6 +464,15 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
 
         _transferOut(_tokenOut, _outTotalAmount);
         _transferOut(_tokenIn, change);
+
+        emit SwapEvent(
+            msg.sender,
+            _tokenIn,
+            _tokenOut,
+            inSwapAmount,
+            _outTotalAmount,
+            address(market)
+        );
     }
 
     /// @dev Needed for multi-path off-chain routing
