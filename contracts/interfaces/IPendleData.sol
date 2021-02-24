@@ -35,6 +35,14 @@ interface IPendleData {
     event TreasurySet(address treasury);
 
     /**
+     * @notice Emitted when deltaT is changed
+     * @param deltaT new deltaT setting
+     **/
+    event DeltaTSet(uint256 deltaT);
+
+    event ReentrancyWhitelistUpdated(address[] addresses, bool[] whitelisted);
+
+    /**
      * @notice Sets the PendleTreasury contract addresses.
      * @param newTreasury Address of new treasury contract.
      **/
@@ -187,6 +195,11 @@ interface IPendleData {
 
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
 
+    function setDeltaT(uint256 _deltaT) external;
+
+    function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
+        external;
+
     function updateMarketInfo(
         address xyt,
         address token,
@@ -206,6 +219,10 @@ interface IPendleData {
     function allMarketsLength() external view returns (uint256);
 
     function exitFee() external view returns (uint256);
+
+    function deltaT() external view returns (uint256);
+
+    function reentrancyWhitelisted(address a) external view returns (bool);
 
     /**
      * @notice Gets all the markets.

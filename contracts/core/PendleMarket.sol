@@ -25,6 +25,7 @@ pragma experimental ABIEncoderV2;
 
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarket.sol";
+import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleYieldToken.sol";
 import "../tokens/PendleBaseToken.sol";
@@ -55,6 +56,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**30;
     mapping(address => uint256) public lastGlobalIncomeIndex;
     mapping(address => TokenReserve) private reserves;
+    uint256 public lastInterestUpdate;
+
+    // these variables are used often, so we get them once in the constructor and save gas for retrieving them afterwards
+    bytes32 private immutable forgeId;
+    address private immutable underlyingAsset;
+    IPendleData private immutable data;
+    IPendleRouter private immutable router;
 
     constructor(
         address _forge,
@@ -65,6 +73,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(_forge != address(0), "ZERO_ADDRESS");
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
+        IPendleYieldToken xytContract = IPendleYieldToken(_xyt);
+        require(xytContract.expiry() == _expiry, "Pendle: invalid expiry");
 
         factory = msg.sender;
         forge = _forge;
@@ -72,6 +82,12 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         token = _token;
         bootstrapped = false;
         globalIncomeIndex = 1;
+
+        forgeId = IPendleForge(_forge).forgeId();
+        underlyingAsset = xytContract.underlyingAsset();
+        expiry = _expiry;
+        router = IPendleMarketFactory(msg.sender).router();
+        data = IPendleMarketFactory(msg.sender).router().data();
     }
 
     modifier isBootstrapped {
@@ -80,8 +96,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     }
 
     modifier onlyRouter() {
-        address router = address(IPendleMarketFactory(factory).router());
-        require(msg.sender == router, "ONLY_ROUTER");
+        require(msg.sender == address(router), "ONLY_ROUTER");
         _;
     }
 
@@ -162,9 +177,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 _exactIn,
         uint256 _minOutLp
     ) external override isBootstrapped onlyRouter returns (uint256 exactOutLp) {
-        IPendleRouter router = IPendleMarketFactory(factory).router();
-        IPendleData data = router.data();
-
         _curveShift(data);
 
         TokenReserve storage inTokenReserve = reserves[_inToken];
@@ -211,8 +223,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 _minOutXyt,
         uint256 _minOutToken
     ) external override isBootstrapped onlyRouter returns (uint256 xytOut, uint256 tokenOut) {
-        IPendleRouter router = IPendleMarketFactory(factory).router();
-        IPendleData data = router.data();
         uint256 exitFee = data.exitFee();
         uint256 totalLp = totalSupply;
         uint256 exitFees = Math.rmul(_inLp, exitFee);
@@ -251,9 +261,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 _inLp,
         uint256 _minOutAmountToken
     ) external override isBootstrapped onlyRouter returns (uint256 outAmountToken) {
-        IPendleRouter router = IPendleMarketFactory(factory).router();
-        IPendleData data = router.data();
-
         _curveShift(data);
 
         TokenReserve storage outTokenReserve = reserves[_outToken];
@@ -262,7 +269,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 totalLp = totalSupply;
         uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
 
-        outAmountToken = _calcOutAmountToken(data, outTokenReserve, totalLp, totalWeight, _inLp);
+        outAmountToken = _calcOutAmountToken(outTokenReserve, totalLp, totalWeight, _inLp);
         require(outAmountToken >= _minOutAmountToken, "INSUFFICIENT_TOKEN_OUT");
 
         // Update reserves and operate underlying LP and outToken
@@ -291,9 +298,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         onlyRouter
         returns (uint256 outAmount, uint256 spotPriceAfter)
     {
-        IPendleRouter router = IPendleMarketFactory(factory).router();
-        IPendleData data = router.data();
-
         _curveShift(data);
 
         TokenReserve storage inTokenReserve = reserves[inToken];
@@ -335,9 +339,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         onlyRouter
         returns (uint256 inAmount, uint256 spotPriceAfter)
     {
-        IPendleRouter router = IPendleMarketFactory(factory).router();
-        IPendleData data = router.data();
-
         _curveShift(data);
 
         TokenReserve storage inTokenReserve = reserves[inToken];
@@ -444,8 +445,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         override
         returns (uint256 spot)
     {
-        IPendleRouter router = IPendleMarketFactory(factory).router();
-        IPendleData data = router.data();
         TokenReserve storage inTokenReserve = reserves[inToken];
         TokenReserve storage outTokenReserve = reserves[outToken];
 
@@ -486,7 +485,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     }
 
     function _calcOutAmountToken(
-        IPendleData data,
         TokenReserve memory outTokenReserve,
         uint256 totalSupplyLp,
         uint256 totalWeight,
@@ -509,20 +507,25 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
     /// @notice Sends fees as LP to Treasury
     function _collectFees(uint256 _amount) internal {
-        IPendleRouter router = IPendleMarketFactory(factory).router();
-        IPendleData data = router.data();
-
         IERC20(address(this)).safeTransfer(data.treasury(), _amount);
     }
 
     /// @dev Inbound transfer from router to market
     function _transferIn(address _token, uint256 _amount) internal {
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+        if (_token == xyt) {
+            // if its an XYT transfer, interests for the market is updated.
+            lastInterestUpdate = block.timestamp;
+        }
     }
 
     /// @dev Outbound transfer from market to router
     function _transferOut(address _token, uint256 _amount) internal {
         IERC20(_token).safeTransfer(msg.sender, _amount);
+        if (_token == xyt) {
+            // if its an XYT transfer, interests for the market is updated.
+            lastInterestUpdate = block.timestamp;
+        }
     }
 
     function _transferInLp(uint256 amount) internal {
@@ -564,7 +567,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         )
     {
         uint256 currentTime = block.timestamp;
-        uint256 endTime = IPendleYieldToken(xyt).expiry();
+        uint256 endTime = expiry;
         uint256 startTime = IPendleYieldToken(xyt).start();
         uint256 duration = endTime - startTime;
 
@@ -627,6 +630,11 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     // this function should be called whenver the total amount of LP changes
     //
     function _updateGlobalIncomeIndex() internal {
+        if (block.timestamp.sub(lastInterestUpdate) > data.deltaT()) {
+            router.redeemDueInterests(forgeId, underlyingAsset, expiry); // get due interests for the XYT being held in the market
+            lastInterestUpdate = block.timestamp;
+        }
+
         uint256 currentUnderlyingYieldTokenBalance =
             IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this));
         uint256 interestsEarned =

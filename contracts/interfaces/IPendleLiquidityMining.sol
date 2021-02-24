@@ -71,6 +71,8 @@ interface IPendleLiquidityMining {
 
     function underlyingAsset() external returns (address);
 
+    function pendleAddress() external returns (address);
+
     function marketFactoryId() external returns (bytes32);
 
     function forgeId() external returns (bytes32);
