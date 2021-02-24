@@ -1,5 +1,5 @@
 import { Contract, providers, Wallet } from 'ethers';
-import ExpiryUtils from '../../../build/artifacts/contracts/mock/MockPendleLibrary.sol/MockPendleLibrary.json';
+import ExpiryUtils from '../../../build/artifacts/contracts/mock/MockExpiryUtilsLib.sol/MockExpiryUtilsLib.json';
 
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;

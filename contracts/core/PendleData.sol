@@ -23,7 +23,7 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import {Math} from "../libraries/PendleLibrary.sol";
+import "../libraries/MathLib.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
