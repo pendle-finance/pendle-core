@@ -294,6 +294,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
 
+        // do curve shifting since we need updated weight for calculation
         _curveShift(data);
 
         TokenReserve storage inTokenReserve = reserves[inToken];
@@ -302,6 +303,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
         require(spotPriceBefore <= maxPrice, "LOW_MAX_PRICE");
 
+        // calc out amount of token to be swapped out
         outAmount = calcExactOut(inTokenReserve, outTokenReserve, inAmount, data.swapFee());
         require(outAmount >= minOutAmount, "HIGH_OUT_LIMIT");
 
@@ -337,7 +339,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     {
         IPendleRouter router = IPendleMarketFactory(factory).router();
         IPendleData data = router.data();
-
+        // do curve shifting since we need updated weight for calculation
         _curveShift(data);
 
         TokenReserve storage inTokenReserve = reserves[inToken];
@@ -426,6 +428,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         return reserves[asset].balance;
     }
 
+    // will do weight update (dry run) before reading token weights, to prevent the case
+    // that weight is outdated
     function getWeight(address asset) external view override returns (uint256) {
         (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) =
             _updateWeightDry();
@@ -541,6 +545,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         _mint(address(this), amount);
     }
 
+    // update the token reserve storage
     function _updateWeight() internal {
         uint256 xytWeight = reserves[xyt].weight;
         uint256 tokenWeight = reserves[token].weight;
@@ -554,6 +559,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         emit Shift(xytWeight, tokenWeight, xytWeightUpdated, tokenWeightUpdated);
     }
 
+    // do the weight update calucation but don't update the token reserve storage
     function _updateWeightDry()
         internal
         view
@@ -563,6 +569,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             uint256 priceNow
         )
     {
+        // get current timestamp currentTime
         uint256 currentTime = block.timestamp;
         uint256 endTime = IPendleYieldToken(xyt).expiry();
         uint256 startTime = IPendleYieldToken(xyt).start();
@@ -578,8 +585,10 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             timeLeft = 0;
         }
 
+        // get time_to_mature = (endTime - currentTime) / (endTime - startTime)
         uint256 timeToMature = Math.rdiv(timeLeft * Math.RONE, duration * Math.RONE);
 
+        // get price for now = ln(3.14 * t + 1) / ln(4.14)
         priceNow = Math.rdiv(
             Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RONE), Math.RONE),
             Math.ln(Math.PI_PLUSONE, Math.RONE)
@@ -591,12 +600,14 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
 
+        // calc weight changes theta
         uint256 theta = Math.rdiv(thetaNumerator, thetaDenominator);
 
         xytWeightUpdated = xytWeight.sub(theta);
         tokenWeightUpdated = tokenWeight.add(theta);
     }
 
+    //curve shift will be called before any calculation using weight
     function _curveShift(IPendleData _data) internal {
         if (block.number > blockNumLast) {
             _updateWeight();
