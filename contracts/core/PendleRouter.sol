@@ -52,8 +52,8 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
     receive() external payable {}
 
     function initialize(IPendleData _data) external {
-        require(msg.sender == initializer, "Pendle: forbidden");
-        require(address(_data) != address(0), "Pendle: zero address");
+        require(msg.sender == initializer, "FORBIDDEN");
+        require(address(_data) != address(0), "ZERO_ADDRESS");
 
         initializer = address(0);
         data = _data;
@@ -70,10 +70,10 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         onlyGovernance
         nonReentrant
     {
-        require(_forgeId != bytes32(0), "Pendle: zero bytes");
-        require(_forgeAddress != address(0), "Pendle: zero address");
-        require(_forgeId == IPendleForge(_forgeAddress).forgeId(), "Pendle: wrong id");
-        require(data.getForgeAddress(_forgeId) == address(0), "Pendle: existing id");
+        require(_forgeId != bytes32(0), "ZERO_BYTES");
+        require(_forgeAddress != address(0), "ZERO_ADDRESS");
+        require(_forgeId == IPendleForge(_forgeAddress).forgeId(), "INVALID_ID");
+        require(data.getForgeAddress(_forgeId) == address(0), "EXISTED_ID");
 
         data.addForge(_forgeId, _forgeAddress);
     }
@@ -83,15 +83,15 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         address _underlyingAsset,
         uint256 _expiry
     ) public override nonReentrant returns (address ot, address xyt) {
-        require(_forgeId != bytes32(0), "Pendle: zero bytes");
-        require(_underlyingAsset != address(0), "Pendle: zero address");
+        require(_forgeId != bytes32(0), "ZERO_BYTES");
+        require(_underlyingAsset != address(0), "ZERO_ADDRESS");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), "Pendle: forge does not exist");
+        require(address(forge) != address(0), "FORGE_NOT_EXISTS");
 
         ot = address(data.otTokens(_forgeId, _underlyingAsset, _expiry));
         xyt = address(data.xytTokens(_forgeId, _underlyingAsset, _expiry));
-        require(ot == address(0) && xyt == address(0), "Pendle: duplicate yield contracts");
+        require(ot == address(0) && xyt == address(0), "DUPLICATE_YIELD_CONTRACT");
 
         (ot, xyt) = forge.newYieldContracts(_underlyingAsset, _expiry);
     }
@@ -102,12 +102,12 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _expiry,
         address _to
     ) public override nonReentrant returns (uint256 redeemedAmount) {
-        require(_forgeId != bytes32(0), "Pendle: zero bytes");
-        require(_underlyingAsset != address(0), "Pendle: zero address");
-        require(_to != address(0), "Pendle: zero address");
+        require(_forgeId != bytes32(0), "ZERO_BYTES");
+        require(_underlyingAsset != address(0), "ZERO_ADDRESS");
+        require(_to != address(0), "ZERO_ADDRESS");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), "Pendle: forge does not exist");
+        require(address(forge) != address(0), "FORGE_NOT_EXISTS");
 
         redeemedAmount = forge.redeemAfterExpiry(msg.sender, _underlyingAsset, _expiry, _to);
     }
@@ -117,13 +117,26 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         address _underlyingAsset,
         uint256 _expiry
     ) public override nonReentrant returns (uint256 interests) {
-        require(_forgeId != bytes32(0), "Pendle: zero bytes");
-        require(_underlyingAsset != address(0), "Pendle: zero address");
+        interests = _redeemDueInterestsInternal(_forgeId, _underlyingAsset, _expiry);
+    }
 
-        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), "Pendle: forge does not exist");
-
-        interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
+    function redeemDueInterestsMultiple(
+        bytes32[] calldata _forgeIds,
+        address[] calldata _underlyingAssets,
+        uint256[] calldata _expiries
+    ) public override nonReentrant returns (uint256[] memory interests) {
+        require(
+            _forgeIds.length == _underlyingAssets.length && _forgeIds.length == _expiries.length,
+            "INVALID_ARRAYS"
+        );
+        interests = new uint256[](_forgeIds.length);
+        for (uint256 i = 0; i < _forgeIds.length; i++) {
+            interests[i] = _redeemDueInterestsInternal(
+                _forgeIds[i],
+                _underlyingAssets[i],
+                _expiries[i]
+            );
+        }
     }
 
     function redeemUnderlying(
@@ -133,11 +146,11 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _amountToRedeem,
         address _to
     ) public override nonReentrant returns (uint256 redeemedAmount) {
-        require(_forgeId != bytes32(0), "Pendle: zero bytes");
-        require(_underlyingAsset != address(0), "Pendle: zero address");
+        require(_forgeId != bytes32(0), "ZERO_BYTES");
+        require(_underlyingAsset != address(0), "ZERO_ADDRESS");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), "Pendle: forge does not exist");
+        require(address(forge) != address(0), "FORGE_NOT_EXISTS");
 
         redeemedAmount = forge.redeemUnderlying(
             msg.sender,
@@ -165,10 +178,10 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             address xyt
         )
     {
-        require(_forgeId != bytes32(0), "Pendle: zero bytes");
-        require(_underlyingAsset != address(0), "Pendle: zero address");
-        require(_newExpiry > _oldExpiry, "Pendle: new expiry > old expiry");
-        require(_yieldTo != address(0), "Pendle: zero address");
+        require(_forgeId != bytes32(0), "ZERO_BYTES");
+        require(_underlyingAsset != address(0), "ZERO_ADDRESS");
+        require(_newExpiry > _oldExpiry, "new expiry > old expiry");
+        require(_yieldTo != address(0), "ZERO_ADDRESS");
 
         redeemedAmount = redeemAfterExpiry(_forgeId, _underlyingAsset, _oldExpiry, msg.sender);
         (ot, xyt) = tokenizeYield(
@@ -187,11 +200,11 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _amountToTokenize,
         address _to
     ) public override nonReentrant returns (address ot, address xyt) {
-        require(_forgeId != bytes32(0), "Pendle: zero bytes");
-        require(_underlyingAsset != address(0), "Pendle: zero address");
+        require(_forgeId != bytes32(0), "ZERO_BYTES");
+        require(_underlyingAsset != address(0), "ZERO_ADDRESS");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), "Pendle: forge does not exist");
+        require(address(forge) != address(0), "FORGE_NOT_EXISTS");
 
         IERC20 aToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
         aToken.transferFrom(msg.sender, address(forge), _amountToTokenize);
@@ -210,16 +223,13 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         onlyGovernance
         nonReentrant
     {
-        require(_marketFactoryId != bytes32(0), "Pendle: zero bytes");
-        require(_marketFactoryAddress != address(0), "Pendle: zero address");
+        require(_marketFactoryId != bytes32(0), "ZERO_BYTES");
+        require(_marketFactoryAddress != address(0), "ZERO_ADDRESS");
         require(
             _marketFactoryId == IPendleMarketFactory(_marketFactoryAddress).marketFactoryId(),
-            "Pendle: wrong id"
+            "INVALID_FACTORY_ID"
         );
-        require(
-            data.getMarketFactoryAddress(_marketFactoryId) == address(0),
-            "Pendle: existing id"
-        );
+        require(data.getMarketFactoryAddress(_marketFactoryId) == address(0), "EXISTED_ID");
         data.addMarketFactory(_marketFactoryId, _marketFactoryAddress);
     }
 
@@ -235,7 +245,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             IPendleMarket(
                 data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
             );
-        require(address(market) != address(0), "Pendle: market not found");
+        require(address(market) != address(0), "MARKET_NOT_FOUND");
         // require(!_isMarketLocked(_xyt), "MARKET_LOCKED");
 
         _transferIn(_xyt, _maxInXyt);
@@ -261,7 +271,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             IPendleMarket(
                 data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
             );
-        require(address(market) != address(0), "Pendle: market not found");
+        require(address(market) != address(0), "MARKET_NOT_FOUND");
         // require(!_isMarketLocked(_xyt),"MARKET_LOCKED");
 
         address asset = _forXyt ? _xyt : _token;
@@ -285,7 +295,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             IPendleMarket(
                 data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
             );
-        require(address(market) != address(0), "Pendle: market not found");
+        require(address(market) != address(0), "MARKET_NOT_FOUND");
         // require(!_isMarketLocked(_xyt),"MARKET_LOCKED"); // this operation will never be locked
 
         _transferIn(address(market), _exactInLp);
@@ -309,7 +319,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             IPendleMarket(
                 data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
             );
-        require(address(market) != address(0), "Pendle: market not found");
+        require(address(market) != address(0), "MARKET_NOT_FOUND");
         // require(!_isMarketLocked(_xyt),"MARKET_LOCKED");
 
         _transferIn(address(market), _exactInLp);
@@ -328,20 +338,20 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         address _xyt,
         address _token
     ) public override nonReentrant returns (address market) {
-        require(_xyt != address(0), "Pendle: zero address");
-        require(_token != address(0), "Pendle: zero address");
+        require(_xyt != address(0), "ZERO_ADDRESS");
+        require(_token != address(0), "ZERO_ADDRESS");
         try IPendleYieldToken(_token).forge() returns (address) {
             revert("XYT_QUOTE_PAIR_FORBIDDEN");
         } catch {}
 
         IPendleMarketFactory factory =
             IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));
-        require(address(factory) != address(0), "Pendle: zero address");
+        require(address(factory) != address(0), "ZERO_ADDRESS");
 
         market = factory.createMarket(_xyt, _token);
-        IERC20(_xyt).safeApprove(market, Math.UINT_MAX_VALUE);
-        IERC20(_token).safeApprove(market, Math.UINT_MAX_VALUE);
-        IERC20(market).safeApprove(market, Math.UINT_MAX_VALUE);
+        IERC20(_xyt).safeApprove(market, type(uint256).max);
+        IERC20(_token).safeApprove(market, type(uint256).max);
+        IERC20(market).safeApprove(market, type(uint256).max);
     }
 
     function bootstrapMarket(
@@ -351,13 +361,13 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         uint256 _initialXytLiquidity,
         uint256 _initialTokenLiquidity
     ) public payable override nonReentrant {
-        require(_initialXytLiquidity > 0, "Pendle: initial XYT <= 0");
-        require(_initialTokenLiquidity > 0, "Pendle: initial tokens <= 0");
+        require(_initialXytLiquidity > 0, "INVALID_XYT_AMOUNT");
+        require(_initialTokenLiquidity > 0, "INVALID_TOKEN_AMOUNT");
 
         _token = _isETH(_token) ? address(weth) : _token;
 
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
-        require(address(market) != address(0), "Pendle: market not found");
+        require(address(market) != address(0), "MARKET_NOT_FOUND");
 
         _transferIn(_xyt, _initialXytLiquidity);
         _transferIn(_token, _initialTokenLiquidity);
@@ -396,7 +406,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             _maxPrice
         );
 
-        require(outSwapAmount >= _minOutTotalAmount, "Pendle: limit out error");
+        require(outSwapAmount >= _minOutTotalAmount, "INSUFFICIENT_OUT_AMOUNT");
 
         _transferOut(_tokenOut, outSwapAmount);
     }
@@ -425,7 +435,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             _maxPrice
         );
 
-        require(inSwapAmount <= _maxInTotalAmount, "Pendle: limit in error");
+        require(inSwapAmount <= _maxInTotalAmount, "IN_AMOUNT_EXCEED_LIMIT");
         change = change.sub(inSwapAmount);
 
         _transferOut(_tokenOut, _outTotalAmount);
@@ -465,7 +475,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             outTotalAmount = tokenAmountOut.add(outTotalAmount);
         }
 
-        require(outTotalAmount >= _minOutTotalAmount, "Pendle: limit out error");
+        require(outTotalAmount >= _minOutTotalAmount, "LIMIT_OUT_ERROR");
 
         _transferOut(_tokenOut, outTotalAmount);
     }
@@ -499,10 +509,11 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
                 );
                 outTotalAmount = outTotalAmount.add(swap.swapAmount);
             } else {
-                // Consider we are swapping A -> B and B -> C. The goal is to buy a given amount
-                // of token C. But first we need to buy B with A so we can then buy C with B
-                // To get the exact amount of C we then first need to calculate how much B
-                // we'll need:
+                /*
+                Consider we are swapping A -> B and B -> C. The goal is to buy a given amount
+                of token C. But first we need to buy B with A so we can then buy C with B
+                To get the exact amount of C we then first need to calculate how much B we'll need:
+                */
                 uint256 intermediateTokenAmount; // This would be token B as described above
                 Swap memory secondSwap = _swapPath[i][1];
                 IPendleMarket secondMarket = IPendleMarket(secondSwap.market);
@@ -547,7 +558,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             inTotalAmount = firstSwapTokenIn.add(inTotalAmount);
         }
 
-        require(inTotalAmount <= _maxInTotalAmount, "Pendle: limit in error");
+        require(inTotalAmount <= _maxInTotalAmount, "LIMIT_IN_ERROR");
         change = change.sub(inTotalAmount);
 
         _transferOut(_tokenOut, outTotalAmount);
@@ -562,7 +573,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
     {
         interests = new uint256[](markets.length);
         for (uint256 i = 0; i < markets.length; i++) {
-            require(data.isMarket(markets[i]), "invalid market");
+            require(data.isMarket(markets[i]), "INVALID_MARKET");
             interests[i] = IPendleMarket(markets[i]).claimLpInterests(msg.sender);
         }
     }
@@ -584,7 +595,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             tokenOut: _tokenOut,
             swapAmount: _inSwapAmount,
             limitReturnAmount: 0,
-            maxPrice: Math.UINT_MAX_VALUE
+            maxPrice: type(uint256).max
         });
 
         return (swap, outSwapAmount);
@@ -606,8 +617,8 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
             tokenIn: _tokenIn,
             tokenOut: _tokenOut,
             swapAmount: inSwapAmount,
-            limitReturnAmount: Math.UINT_MAX_VALUE,
-            maxPrice: Math.UINT_MAX_VALUE
+            limitReturnAmount: type(uint256).max,
+            maxPrice: type(uint256).max
         });
 
         return (swap, inSwapAmount);
@@ -628,7 +639,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         )
     {
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
-        require(address(market) != address(0), "Pendle: market not found");
+        require(address(market) != address(0), "MARKET_NOT_FOUND");
         (xytAmount, tokenAmount, currentTime) = market.getReserves();
     }
 
@@ -638,7 +649,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         override
         returns (address token, address xyt)
     {
-        require(address(_market) != address(0), "Pendle: market not found");
+        require(address(_market) != address(0), "MARKET_NOT_FOUND");
 
         IPendleMarket benmarkMarket = IPendleMarket(_market);
         token = benmarkMarket.token();
@@ -654,7 +665,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
     function _transferIn(address _token, uint256 _amount) internal {
         if (_amount == 0) return;
         if (_isETH(_token)) {
-            require(msg.value == _amount, "Pendle: eth sent mismatch");
+            require(msg.value == _amount, "ETH_SENT_MISMATCH");
             weth.deposit{value: msg.value}();
         } else {
             IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
@@ -668,7 +679,7 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
         if (_isETH(_token)) {
             weth.withdraw(_amount);
             (bool success, ) = msg.sender.call{value: _amount}("");
-            require(success, "Pendle: transfer failed");
+            require(success, "TRANSFER_FAILED");
         } else {
             IERC20(_token).safeTransfer(msg.sender, _amount);
         }
@@ -759,5 +770,16 @@ contract PendleRouter is IPendleRouter, Permissions, ReentrancyGuard {
 
     function _isETH(address token) internal pure returns (bool) {
         return (token == ETH_ADDRESS);
+    }
+
+    function _redeemDueInterestsInternal(
+        bytes32 _forgeId,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) internal returns (uint256 interests) {
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
+
+        interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
     }
 }

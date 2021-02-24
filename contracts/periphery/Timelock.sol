@@ -63,7 +63,7 @@ contract Timelock {
     /// @notice the length of time after the delay has passed that a transaction can be executed
     uint256 public constant GRACE_PERIOD = 14 days;
     /// @notice the minimum length of the timelock delay
-    uint256 public constant MINIMUM_DELAY = 12 hours + 2 * 60 * 15; // have to be present for 2 rebases
+    uint256 public constant MINIMUM_DELAY = 12 hours + 2 * 60 * 15; // must present for 2 rebases
     /// @notice the maximum length of the timelock delay
     uint256 public constant MAXIMUM_DELAY = 30 days;
 
@@ -75,8 +75,10 @@ contract Timelock {
     mapping(bytes32 => bool) public queuedTransactions;
 
     constructor() {
-        /* require(delay_ >= MINIMUM_DELAY, "Timelock::constructor: Delay must exceed minimum delay.");
-        require(delay_ <= MAXIMUM_DELAY, "Timelock::setDelay: Delay must not exceed maximum delay."); */
+        /*
+        require(delay_ >= MINIMUM_DELAY, "Delay must exceed minimum delay.");
+        require(delay_ <= MAXIMUM_DELAY, "Delay must not exceed maximum delay.");
+        */
 
         admin = msg.sender;
         delay = MINIMUM_DELAY;

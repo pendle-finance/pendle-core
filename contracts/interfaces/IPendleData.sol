@@ -1,3 +1,4 @@
+/* solhint-disable ordering*/
 // SPDX-License-Identifier: MIT
 /*
  * MIT License
@@ -122,6 +123,19 @@ interface IPendleData {
      **/
     function isValidXYT(
         address forgeAddress,
+        address underlyingAsset,
+        uint256 expiry
+    ) external view returns (bool);
+
+    /**
+     * @notice Checks if an XYT token is valid.
+     * @param forgeId The forgeId of the forge.
+     * @param underlyingAsset Token address of the underlying asset.
+     * @param expiry Yield contract expiry in epoch time.
+     * @return True if valid, false otherwise.
+     **/
+    function isValidXYT(
+        bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry
     ) external view returns (bool);

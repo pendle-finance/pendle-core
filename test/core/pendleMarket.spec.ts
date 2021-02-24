@@ -505,7 +505,7 @@ describe("PendleMarket", async () => {
         testToken.address,
         consts.HIGH_GAS_OVERRIDE
       )
-    ).to.be.revertedWith("Pendle: market already exists");
+    ).to.be.revertedWith("EXISTED_MARKET");
   });
 
   it("shouldn't be able to create market with XYT as quote pair", async () => {
