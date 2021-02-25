@@ -331,7 +331,6 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     );
     await pendleRouter.connect(eve).claimLpInterests([pendleStdMarket.address]);
     setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
-    console.log("LOL");
     console.log("\tAbout to do dummy trade");
     // some dummy trade
     const testAmount = amountToWei(tokens.USDT, BN.from(1));

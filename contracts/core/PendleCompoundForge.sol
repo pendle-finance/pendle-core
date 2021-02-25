@@ -52,7 +52,7 @@ contract PendleCompoundForge is IPendleForge, Permissions {
     string private constant OT = "OT";
     string private constant XYT = "XYT";
 
-    event RegisterToken(address indexed _underlyingAsset, address indexed _cToken);
+    event RegisterCTokens(address[] underlyingAssets, address[] cTokens);
 
     constructor(
         address _governance,
@@ -80,9 +80,17 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         _;
     }
 
-    function registerToken(address _underlyingAsset, address _cToken) external onlyGovernance {
-        underlyingToCToken[_underlyingAsset] = _cToken;
-        emit RegisterToken(_underlyingAsset, _cToken);
+    function registerCTokens(address[] calldata _underlyingAssets, address[] calldata _cTokens)
+        external
+        onlyGovernance
+    {
+        require(_underlyingAssets.length == _cTokens.length, "LENGTH_MISMATCH");
+
+        for (uint256 i = 0; i < _cTokens.length; ++i) {
+            underlyingToCToken[_underlyingAssets[i]] = _cTokens[i];
+        }
+
+        emit RegisterCTokens(_underlyingAssets, _cTokens);
     }
 
     function newYieldContracts(address _underlyingAsset, uint256 _expiry)
