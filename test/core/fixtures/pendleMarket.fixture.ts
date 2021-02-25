@@ -98,11 +98,11 @@ export async function pendleMarketFixture(
 
   await pendleRouter.createMarket(
     consts.MARKET_FACTORY_AAVE,
-    pendleFutureYieldToken.address,
+    pendleAFutureYieldToken.address,
     tokens.WETH.address,
     consts.HIGH_GAS_OVERRIDE
   );
-  
+
   const pendleAMarketAddress = await pendleData.getMarket(
     consts.MARKET_FACTORY_AAVE,
     pendleAFutureYieldToken.address,
@@ -115,6 +115,12 @@ export async function pendleMarketFixture(
     testToken.address
   );
 
+  const pendleEthMarketAddress = await pendleData.getMarket(
+    consts.MARKET_FACTORY_AAVE,
+    pendleAFutureYieldToken.address,
+    tokens.WETH.address,
+  );
+
   const pendleAMarket = new Contract(
     pendleAMarketAddress,
     PendleMarket.abi,
@@ -125,11 +131,6 @@ export async function pendleMarketFixture(
     PendleMarket.abi,
     alice
   );
-  const pendleEthMarketAddress = await pendleData.getMarket(
-    consts.MARKET_FACTORY_AAVE,
-    pendleAFutureYieldToken.address,
-    tokens.WETH.address,
-  );
   const pendleEthMarket = new Contract(
     pendleEthMarketAddress,
     PendleMarket.abi,
@@ -137,6 +138,7 @@ export async function pendleMarketFixture(
   );
 
   await pendleData.setReentrancyWhitelist([pendleAMarketAddress, pendleCMarketAddress, pendleEthMarketAddress], [true, true, true]);
+  await pendleData.setLockParams(BN.from(consts.LOCK_NUMERATOR), BN.from(consts.LOCK_DENOMINATOR); // lock market
 
   for (var person of [alice, bob, charlie, dave]) {
     await testToken.connect(person).approve(pendleRouter.address, totalSupply);

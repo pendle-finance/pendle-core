@@ -54,7 +54,7 @@ describe("PendleData", async () => {
 
   it("allMarketsLength", async () => {
     let allMarketsLength = await pendleData.allMarketsLength();
-    expect(allMarketsLength).to.be.eq(2);
+    expect(allMarketsLength).to.be.eq(3); // numbers of markets that have been created in pendleMarketFixture
   });
 
   it("getAllMarkets", async () => {

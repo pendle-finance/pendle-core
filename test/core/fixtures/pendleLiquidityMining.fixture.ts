@@ -179,8 +179,8 @@ export async function pendleLiquidityMiningFixture(
 
   let pendleLiquidityMiningWeb3 = new hre.web3.eth.Contract(
     PendleLiquidityMining.abi,
-    pendleLiquidityMining.address
+    pendleALiquidityMining.address
   );
 
-  return { core, aForge, cForge, aave, testToken, pdl, pendleAMarket, pendleCMarket, pendleALiquidityMining, pendleCLiquidityMining, pendleLiquidityMiningWeb3,params };
+  return { core, aForge, cForge, aave, testToken, pdl, pendleAMarket, pendleCMarket, pendleALiquidityMining, pendleCLiquidityMining, pendleLiquidityMiningWeb3, params };
 }

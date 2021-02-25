@@ -23,10 +23,6 @@ describe("PendleMarketEth", async () => {
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;
   let pendleRouter: Contract;
-  let pendleTreasury: Contract;
-  let pendleMarketFactory: Contract;
-  let pendleData: Contract;
-  let pendleOwnershipToken: Contract;
   let pendleXyt: Contract;
   let pendleXyt2: Contract;
   let lendingPoolCore: Contract;
@@ -43,13 +39,9 @@ describe("PendleMarketEth", async () => {
 
     const fixture = await loadFixture(pendleMarketFixture);
     pendleRouter = fixture.core.pendleRouter;
-    pendleTreasury = fixture.core.pendleTreasury;
-    pendleMarketFactory = fixture.core.pendleMarketFactory;
-    pendleData = fixture.core.pendleData;
-    pendleOwnershipToken = fixture.forge.pendleOwnershipToken;
-    pendleXyt = fixture.forge.pendleFutureYieldToken;
-    pendleXyt2 = fixture.forge.pendleFutureYieldToken2;
-    pendleAaveForge = fixture.forge.pendleAaveForge;
+    pendleXyt = fixture.aForge.pendleAFutureYieldToken;
+    pendleXyt2 = fixture.aForge.pendleAFutureYieldToken2;
+    pendleAaveForge = fixture.aForge.pendleAaveForge;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     pendleEthMarket = fixture.pendleEthMarket;
     WETH = new Contract(tokens.WETH.address, ERC20.abi, alice);
