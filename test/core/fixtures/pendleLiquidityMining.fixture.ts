@@ -9,6 +9,7 @@ import { PendleCoreFixture } from './pendleCore.fixture';
 import { pendleMarketFixture } from './pendleMarket.fixture';
 
 const { waffle } = require("hardhat");
+const hre = require("hardhat");
 const { deployContract } = waffle;
 
 interface PendleLiquidityMiningFixture {
@@ -22,6 +23,7 @@ interface PendleLiquidityMiningFixture {
   pendleCMarket: Contract,
   pendleALiquidityMining: Contract,
   pendleCLiquidityMining: Contract,
+  pendleLiquidityMiningWeb3: any
   params: liqParams,
 }
 
@@ -175,5 +177,10 @@ export async function pendleLiquidityMiningFixture(
     await pendleCMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);
   }
 
-  return { core, aForge, cForge, aave, testToken, pdl, pendleAMarket, pendleCMarket, pendleALiquidityMining, pendleCLiquidityMining, params };
+  let pendleLiquidityMiningWeb3 = new hre.web3.eth.Contract(
+    PendleLiquidityMining.abi,
+    pendleALiquidityMining.address
+  );
+
+  return { core, aForge, cForge, aave, testToken, pdl, pendleAMarket, pendleCMarket, pendleALiquidityMining, pendleCLiquidityMining, pendleLiquidityMiningWeb3, params };
 }

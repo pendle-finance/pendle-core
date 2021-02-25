@@ -16,7 +16,7 @@ const { waffle } = require("hardhat");
 const hre = require("hardhat");
 const { deployContract, provider } = waffle;
 
-describe("PendleAaveLiquidityMining", async () => {
+describe("PendleLiquidityMining manual tests", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;

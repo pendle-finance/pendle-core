@@ -2,16 +2,16 @@ import { consts } from "../../helpers";
 import { BigNumber as BN } from "ethers";
 export class TestAddLiq {
   timeOffset: BN;
-  initTokenBal: BN;
-  initXytBal: BN;
+  initTokenAmount: BN;
+  initXytAmount: BN;
   amountTokenChange: BN;
   amountXytChange: BN;
   expectedLpBal1: BN;
   expectedLpBal2: BN;
-  constructor(timeOffset: BN, initTokenBal: number, amountTokenChange: number, expectedLpBal1: string, initXytBal: number, amountXytChange: number, expectedLpBal2: string) {
+  constructor(timeOffset: BN, initTokenAmount: number, amountTokenChange: number, expectedLpBal1: string, initXytAmount: number, amountXytChange: number, expectedLpBal2: string) {
     this.timeOffset = timeOffset;
-    this.initTokenBal = BN.from(initTokenBal);
-    this.initXytBal = BN.from(initXytBal);
+    this.initTokenAmount = BN.from(initTokenAmount);
+    this.initXytAmount = BN.from(initXytAmount);
     this.amountTokenChange = BN.from(amountTokenChange);
     this.amountXytChange = BN.from(amountXytChange);
     this.expectedLpBal1 = BN.from(expectedLpBal1);
@@ -21,16 +21,16 @@ export class TestAddLiq {
 
 export class TestRemoveLiq {
   timeOffset: BN;
-  initTokenBal: BN;
+  initTokenAmount: BN;
   ratioLpForToken: BN;
   expectedTokenDiff: BN;
-  initXytBal: BN;
+  initXytAmount: BN;
   ratioLpForXyt: BN;
   expectedXytDiff: BN;
-  constructor(timeOffset: BN, initTokenBal: number | string, ratioLpForToken: number | string, expectedTokenDiff: number | string, initXytBal: number | string, ratioLpForXyt: number | string, expectedXytDiff: number | string) {
+  constructor(timeOffset: BN, initTokenAmount: number | string, ratioLpForToken: number | string, expectedTokenDiff: number | string, initXytAmount: number | string, ratioLpForXyt: number | string, expectedXytDiff: number | string) {
     this.timeOffset = timeOffset;
-    this.initTokenBal = BN.from(initTokenBal);
-    this.initXytBal = BN.from(initXytBal);
+    this.initTokenAmount = BN.from(initTokenAmount);
+    this.initXytAmount = BN.from(initXytAmount);
     this.ratioLpForToken = BN.from(ratioLpForToken);
     this.ratioLpForXyt = BN.from(ratioLpForXyt);
     this.expectedTokenDiff = BN.from(expectedTokenDiff);

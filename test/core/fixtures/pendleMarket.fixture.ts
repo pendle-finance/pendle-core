@@ -1,21 +1,18 @@
-import { Wallet, providers, BigNumber as BN, Contract } from "ethers";
-import { pendleCoreFixture, PendleCoreFixture } from "./pendleCore.fixture";
+import { BigNumber as BN, Contract, providers, Wallet } from "ethers";
+import PendleMarket from "../../../build/artifacts/contracts/core/PendleMarket.sol/PendleMarket.json";
+import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
+import { amountToWei, consts, mintOtAndXyt, tokens } from "../../helpers";
+import { aaveFixture, AaveFixture } from "./aave.fixture";
 import {
-  pendleAaveForgeFixture,
-  PendleAaveFixture,
+  PendleAaveFixture, pendleAaveForgeFixture
 } from "./pendleAaveForge.fixture";
 import {
-  pendleCompoundForgeFixture,
-  PendleCompoundFixture,
-} from './pendleCompoundForge.fixture'
+  PendleCompoundFixture, pendleCompoundForgeFixture
+} from './pendleCompoundForge.fixture';
+import { pendleCoreFixture, PendleCoreFixture } from "./pendleCore.fixture";
 import {
-  pendleGovernanceFixture,
-  PendleGovernanceFixture,
+  pendleGovernanceFixture
 } from "./pendleGovernance.fixture";
-import { aaveFixture, AaveFixture } from "./aave.fixture";
-import { consts, tokens, mintOtAndXyt, amountToWei } from "../../helpers";
-import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
-import PendleMarket from "../../../build/artifacts/contracts/core/PendleMarket.sol/PendleMarket.json";
 
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;
@@ -96,6 +93,13 @@ export async function pendleMarketFixture(
     consts.HIGH_GAS_OVERRIDE
   );
 
+  await pendleRouter.createMarket(
+    consts.MARKET_FACTORY_AAVE,
+    pendleAFutureYieldToken.address,
+    tokens.WETH.address,
+    consts.HIGH_GAS_OVERRIDE
+  );
+
   const pendleAMarketAddress = await pendleData.getMarket(
     consts.MARKET_FACTORY_AAVE,
     pendleAFutureYieldToken.address,
@@ -108,6 +112,12 @@ export async function pendleMarketFixture(
     testToken.address
   );
 
+  const pendleEthMarketAddress = await pendleData.getMarket(
+    consts.MARKET_FACTORY_AAVE,
+    pendleAFutureYieldToken.address,
+    tokens.WETH.address,
+  );
+
   const pendleAMarket = new Contract(
     pendleAMarketAddress,
     PendleMarket.abi,
@@ -118,11 +128,6 @@ export async function pendleMarketFixture(
     PendleMarket.abi,
     alice
   );
-  const pendleEthMarketAddress = await pendleData.getMarket(
-    consts.MARKET_FACTORY_AAVE,
-    pendleAFutureYieldToken.address,
-    tokens.WETH.address,
-  );
   const pendleEthMarket = new Contract(
     pendleEthMarketAddress,
     PendleMarket.abi,
@@ -130,6 +135,7 @@ export async function pendleMarketFixture(
   );
 
   await pendleData.setReentrancyWhitelist([pendleAMarketAddress, pendleCMarketAddress, pendleEthMarketAddress], [true, true, true]);
+  await pendleData.setLockParams(BN.from(consts.LOCK_NUMERATOR), BN.from(consts.LOCK_DENOMINATOR)); // lock market
 
   for (var person of [alice, bob, charlie, dave]) {
     await testToken.connect(person).approve(pendleRouter.address, totalSupply);

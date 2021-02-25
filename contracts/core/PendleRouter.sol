@@ -256,23 +256,24 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         uint256 _maxInToken,
         uint256 _exactOutLp
     ) public payable override pendleNonReentrant {
-        IPendleMarket market =
-            IPendleMarket(
-                data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
-            );
+        address originalToken = _token;
+        _token = _isETH(_token) ? address(weth) : _token;
+
+        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
-        // require(!_isMarketLocked(_xyt), "MARKET_LOCKED");
 
         _transferIn(_xyt, _maxInXyt);
-        _transferIn(_token, _maxInToken);
+        _transferIn(originalToken, _maxInToken);
 
         (uint256 amountXytUsed, uint256 amountTokenUsed) =
             market.addMarketLiquidityAll(_exactOutLp, _maxInXyt, _maxInToken);
         emit Join(msg.sender, amountXytUsed, amountTokenUsed, address(market));
 
         _transferOut(address(market), _exactOutLp);
-        _transferOut(_xyt, _maxInXyt - amountXytUsed); // transfer unused XYT back to user
-        _transferOut(_token, _maxInToken - amountTokenUsed); // transfer unused Token back to user
+        // transfer unused XYT back to user
+        _transferOut(_xyt, _maxInXyt - amountXytUsed);
+        // transfer unused Token back to user
+        _transferOut(originalToken, _maxInToken - amountTokenUsed);
     }
 
     // add market liquidity by xyt or base token
@@ -284,18 +285,18 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         uint256 _exactInAsset,
         uint256 _minOutLp
     ) public payable override pendleNonReentrant {
-        IPendleMarket market =
-            IPendleMarket(
-                data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
-            );
+        address originalToken = _token;
+        _token = _isETH(_token) ? address(weth) : _token;
+
+        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
-        // require(!_isMarketLocked(_xyt),"MARKET_LOCKED");
 
-        address asset = _forXyt ? _xyt : _token;
-        _transferIn(asset, _exactInAsset);
+        address assetToTransferIn = _forXyt ? _xyt : originalToken;
+        _transferIn(assetToTransferIn, _exactInAsset);
 
-        asset = _isETH(_token) ? address(weth) : asset;
-        uint256 exactOutLp = market.addMarketLiquiditySingle(asset, _exactInAsset, _minOutLp);
+        address assetForMarket = _forXyt ? _xyt : _token;
+        uint256 exactOutLp =
+            market.addMarketLiquiditySingle(assetForMarket, _exactInAsset, _minOutLp);
 
         _transferOut(address(market), exactOutLp);
 
@@ -315,12 +316,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         uint256 _minOutXyt,
         uint256 _minOutToken
     ) public override pendleNonReentrant {
-        IPendleMarket market =
-            IPendleMarket(
-                data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
-            );
+        address originalToken = _token;
+        _token = _isETH(_token) ? address(weth) : _token;
+
+        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
-        // require(!_isMarketLocked(_xyt),"MARKET_LOCKED"); // this operation will never be locked
 
         _transferIn(address(market), _exactInLp);
 
@@ -328,7 +328,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
             market.removeMarketLiquidityAll(_exactInLp, _minOutXyt, _minOutToken);
 
         _transferOut(_xyt, xytAmount);
-        _transferOut(_token, tokenAmount);
+        _transferOut(originalToken, tokenAmount);
 
         emit Exit(msg.sender, xytAmount, tokenAmount, address(market));
     }
@@ -342,22 +342,20 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         uint256 _exactInLp,
         uint256 _minOutAsset
     ) public override pendleNonReentrant {
-        IPendleMarket market =
-            IPendleMarket(
-                data.getMarket(_marketFactoryId, _xyt, _isETH(_token) ? address(weth) : _token)
-            );
+        address originalToken = _token;
+        _token = _isETH(_token) ? address(weth) : _token;
+
+        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
-        // require(!_isMarketLocked(_xyt),"MARKET_LOCKED");
 
         _transferIn(address(market), _exactInLp);
 
-        address asset = _forXyt ? _xyt : _token;
-        asset = _isETH(_token) ? address(weth) : asset;
+        address assetForMarket = _forXyt ? _xyt : _token;
+        uint256 assetOut =
+            market.removeMarketLiquiditySingle(assetForMarket, _exactInLp, _minOutAsset);
 
-        uint256 assetOut = market.removeMarketLiquiditySingle(asset, _exactInLp, _minOutAsset);
-
-        asset = _forXyt ? _xyt : _token;
-        _transferOut(asset, assetOut);
+        address assetToTransferOut = _forXyt ? _xyt : originalToken;
+        _transferOut(assetToTransferOut, assetOut);
 
         if (_forXyt) {
             emit Exit(msg.sender, assetOut, 0, address(market));
@@ -373,9 +371,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     ) public override pendleNonReentrant returns (address market) {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
-        try IPendleYieldToken(_token).forge() returns (address) {
-            revert("XYT_QUOTE_PAIR_FORBIDDEN");
-        } catch {}
+        require(data.isXyt(_xyt), "INVALID_XYT");
+        require(!data.isXyt(_token), "XYT_QUOTE_PAIR_FORBIDDEN");
 
         IPendleMarketFactory factory =
             IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));
@@ -389,6 +386,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         IERC20(market).safeApprove(market, type(uint256).max);
     }
 
+    /**
+     * @dev Users can either set _token as ETH or WETH to trade with XYT-WETH markets
+     * If they put in ETH, they must send ETH along and _token will be auto wrapped to WETH
+     * If they put in WETH, the function will run the same as other tokens
+     */
     function bootstrapMarket(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -399,13 +401,14 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         require(_initialXytLiquidity > 0, "INVALID_XYT_AMOUNT");
         require(_initialTokenLiquidity > 0, "INVALID_TOKEN_AMOUNT");
 
+        address originalToken = _token;
         _token = _isETH(_token) ? address(weth) : _token;
 
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
         _transferIn(_xyt, _initialXytLiquidity);
-        _transferIn(_token, _initialTokenLiquidity);
+        _transferIn(originalToken, _initialTokenLiquidity);
 
         uint256 lpAmount = market.bootstrap(_initialXytLiquidity, _initialTokenLiquidity);
         emit Join(msg.sender, _initialXytLiquidity, _initialTokenLiquidity, address(market));
@@ -427,10 +430,12 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         uint256 _maxPrice,
         bytes32 _marketFactoryId
     ) public payable override pendleNonReentrant returns (uint256 outSwapAmount) {
+        address originalTokenIn = _tokenIn;
+        address originalTokenOut = _tokenOut;
         _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
         _tokenOut = _isETH(_tokenOut) ? address(weth) : _tokenOut;
 
-        _transferIn(_tokenIn, _inTotalAmount);
+        _transferIn(originalTokenIn, _inTotalAmount);
 
         IPendleMarket market =
             IPendleMarket(data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId));
@@ -444,7 +449,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
 
         require(outSwapAmount >= _minOutTotalAmount, "INSUFFICIENT_OUT_AMOUNT");
 
-        _transferOut(_tokenOut, outSwapAmount);
+        _transferOut(originalTokenOut, outSwapAmount);
 
         emit SwapEvent(
             msg.sender,
@@ -465,11 +470,14 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         uint256 _maxPrice,
         bytes32 _marketFactoryId
     ) public payable override pendleNonReentrant returns (uint256 inSwapAmount) {
+        address originalTokenIn = _tokenIn;
+        address originalTokenOut = _tokenOut;
         _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
         _tokenOut = _isETH(_tokenOut) ? address(weth) : _tokenOut;
+
         uint256 change = _maxInTotalAmount;
 
-        _transferIn(_tokenIn, _maxInTotalAmount);
+        _transferIn(originalTokenIn, _maxInTotalAmount);
 
         IPendleMarket market =
             IPendleMarket(data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId));
@@ -484,8 +492,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         require(inSwapAmount <= _maxInTotalAmount, "IN_AMOUNT_EXCEED_LIMIT");
         change = change.sub(inSwapAmount);
 
-        _transferOut(_tokenOut, _outTotalAmount);
-        _transferOut(_tokenIn, change);
+        _transferOut(originalTokenOut, _outTotalAmount);
+        _transferOut(originalTokenIn, change);
 
         emit SwapEvent(
             msg.sender,
@@ -497,7 +505,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         );
     }
 
-    /// @dev Needed for multi-path off-chain routing
+    /**
+    * @dev Needed for multi-path off-chain routing
+    * @dev No "original" variables in this function since both _tokenIn and _tokenOut
+            will not be wrapped.
+     */
     function swapPathExactIn(
         Swap[][] memory _swapPath,
         address _tokenIn,
@@ -508,6 +520,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         _transferIn(_tokenIn, _inTotalAmount);
 
         for (uint256 i = 0; i < _swapPath.length; i++) {
+            require(
+                _swapPath[i][0].tokenIn == _tokenIn &&
+                    _swapPath[i][_swapPath[i].length - 1].tokenOut == _tokenOut,
+                "INVALID_PATH"
+            );
             uint256 tokenAmountOut;
             for (uint256 j = 0; j < _swapPath[i].length; j++) {
                 Swap memory swap = _swapPath[i][j];
@@ -535,7 +552,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         _transferOut(_tokenOut, outTotalAmount);
     }
 
-    /// @dev Needed for multi-path off-chain routing
+    /**
+    * @dev Needed for multi-path off-chain routing
+    * @dev No "original" variables in this function since both _tokenIn and _tokenOut
+            will not be wrapped.
+     */
     function swapPathExactOut(
         Swap[][] memory _swapPath,
         address _tokenIn,
@@ -548,6 +569,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         _transferIn(_tokenIn, _maxInTotalAmount);
 
         for (uint256 i = 0; i < _swapPath.length; i++) {
+            require(
+                _swapPath[i][0].tokenIn == _tokenIn &&
+                    _swapPath[i][_swapPath[i].length - 1].tokenOut == _tokenOut,
+                "INVALID_PATH"
+            );
             uint256 firstSwapTokenIn;
             // Specific code for a simple swap and a multihop (2 swaps in sequence)
             if (_swapPath[i].length == 1) {
@@ -633,6 +659,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         }
     }
 
+    /**
+    * @dev no wrapping here since users must be aware of the market they are querying against.
+        For example, if they want to query market WETH/XYT, they must pass in WETH & XYT
+        and not ETH & XYT
+     */
     function getMarketRateExactIn(
         address _tokenIn,
         address _tokenOut,
@@ -656,6 +687,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         return (swap, outSwapAmount);
     }
 
+    /**
+     * @dev no wrapping here for the same reason as getMarketRateExactIn
+     */
     function getMarketRateExactOut(
         address _tokenIn,
         address _tokenOut,
@@ -679,6 +713,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         return (swap, inSwapAmount);
     }
 
+    /**
+     * @dev no wrapping here for the same reason as getMarketRateExactIn
+     */
     function getMarketReserves(
         bytes32 _marketFactoryId,
         address _xyt,

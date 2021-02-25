@@ -21,6 +21,7 @@ export const consts = {
   ZERO_BYTES: utils.formatBytes32String(""),
   RANDOM_BYTES: utils.formatBytes32String("ZpTw6Y3Ft4ruk7pmwTJF"),
   ZERO_ADDRESS: "0x0000000000000000000000000000000000000000",
+  ETH_ADDRESS: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
   MAX_ALLOWANCE: BN.from(2).pow(256).sub(1),
   ONE_DAY: BN.from(86400),
   FIFTEEN_DAY: BN.from(86400 * 15),
@@ -38,6 +39,8 @@ export const consts = {
   INITIAL_OT_XYT_AMOUNT: BN.from(10 ** 10),
   TEST_TOKEN_DELTA: BN.from(10).pow(2),
   TEST_LP_DELTA: BN.from(10).pow(11),
+  LOCK_NUMERATOR: BN.from(1),
+  LOCK_DENOMINATOR: BN.from(180),
 };
 
 // export function setT0(time: BN) {
