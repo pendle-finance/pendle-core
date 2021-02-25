@@ -511,7 +511,12 @@ contract PendleRouter is IPendleRouter, Permissions {
         _transferOut(originalTokenOut, outTotalAmount);
     }
 
-    /// @dev Needed for multi-path off-chain routing
+    @dev
+    /**
+    * @dev Needed for multi-path off-chain routing
+    * @dev No "original" variables in this function since both _tokenIn and _tokenOut
+            will not be wrapped.
+     */
     function swapPathExactOut(
         Swap[][] memory _swapPath,
         address _tokenIn,
@@ -520,7 +525,7 @@ contract PendleRouter is IPendleRouter, Permissions {
     ) public payable override pendleNonReentrant returns (uint256 inTotalAmount) {
         uint256 outTotalAmount;
         uint256 change = _maxInTotalAmount;
-        // !!!!!: This function hasn't been fixed the ETH wrap bug yet
+
         _transferIn(_tokenIn, _maxInTotalAmount);
 
         for (uint256 i = 0; i < _swapPath.length; i++) {
