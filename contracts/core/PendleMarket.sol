@@ -58,12 +58,17 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     mapping(address => TokenReserve) private reserves;
     uint256 public lastInterestUpdate;
 
+    // the lockStartTime is set at the bootstrap time of the market, and will not
+    // be changed for the entire market duration
+    uint256 public lockStartTime;
+
     /* these variables are used often, so we get them once in the constructor
     and save gas for retrieving them afterwards */
     bytes32 private immutable forgeId;
     address private immutable underlyingAsset;
     IPendleData private immutable data;
     IPendleRouter private immutable router;
+    uint256 private immutable xytStartTime;
 
     constructor(
         address _forge,
@@ -89,6 +94,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         expiry = _expiry;
         router = IPendleMarketFactory(msg.sender).router();
         data = IPendleMarketFactory(msg.sender).router().data();
+        xytStartTime = IPendleYieldToken(_xyt).start();
     }
 
     modifier isBootstrapped {
@@ -102,10 +108,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     }
 
     modifier marketIsOpen() {
-        uint256 startTime = IPendleYieldToken(xyt).start();
-        uint256 duration = expiry - startTime;
-        uint256 lockDuration = (duration * data.lockNumerator()) / data.lockDenominator();
-        require(block.timestamp < expiry.sub(lockDuration), "MARKET_LOCKED");
+        require(block.timestamp < lockStartTime, "MARKET_LOCKED");
         _;
     }
 
@@ -116,6 +119,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         returns (uint256)
     {
         require(!bootstrapped, "ALREADY_BOOTSTRAPPED");
+        _initializeLock(); // market's lock params should be initialized at bootstrap time
 
         _transferIn(xyt, initialXytLiquidity);
         _transferIn(token, initialTokenLiquidity);
@@ -604,7 +608,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         // get current timestamp currentTime
         uint256 currentTime = block.timestamp;
         uint256 endTime = expiry;
-        uint256 startTime = IPendleYieldToken(xyt).start();
+        uint256 startTime = xytStartTime;
         uint256 duration = endTime - startTime;
 
         uint256 xytWeight = reserves[xyt].weight;
@@ -691,5 +695,11 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     function _beforeTokenTransfer(address from, address to) internal override {
         _settleLpInterests(from);
         _settleLpInterests(to);
+    }
+
+    function _initializeLock() internal {
+        uint256 duration = expiry - xytStartTime; // market expiry = xyt expiry
+        uint256 lockDuration = (duration * data.lockNumerator()) / data.lockDenominator();
+        lockStartTime = expiry - lockDuration;
     }
 }
