@@ -11,10 +11,10 @@ const { deployContract } = waffle;
 
 export interface PendleAaveFixture {
   pendleAaveForge: Contract;
-  pendleOwnershipToken: Contract;
-  pendleFutureYieldToken: Contract;
-  pendleOwnershipToken2: Contract;
-  pendleFutureYieldToken2: Contract;
+  pendleAOwnershipToken: Contract;
+  pendleAFutureYieldToken: Contract;
+  pendleAOwnershipToken2: Contract;
+  pendleAFutureYieldToken2: Contract;
 }
 
 export async function pendleAaveForgeFixture(
@@ -52,12 +52,12 @@ export async function pendleAaveForgeFixture(
     consts.T0.add(consts.SIX_MONTH)
   );
 
-  const pendleOwnershipToken = new Contract(
+  const pendleAOwnershipToken = new Contract(
     otTokenAddress,
     PendleOwnershipToken.abi,
     alice
   );
-  const pendleFutureYieldToken = new Contract(
+  const pendleAFutureYieldToken = new Contract(
     xytTokenAddress,
     PendleFutureYieldToken.abi,
     alice
@@ -82,12 +82,12 @@ export async function pendleAaveForgeFixture(
     consts.T0.add(consts.SIX_MONTH)
   );
 
-  const pendleOwnershipToken2 = new Contract(
+  const pendleAOwnershipToken2 = new Contract(
     otTokenAddress2,
     PendleOwnershipToken.abi,
     alice
   );
-  const pendleFutureYieldToken2 = new Contract(
+  const pendleAFutureYieldToken2 = new Contract(
     xytTokenAddress2,
     PendleFutureYieldToken.abi,
     alice
@@ -95,9 +95,9 @@ export async function pendleAaveForgeFixture(
 
   return {
     pendleAaveForge,
-    pendleOwnershipToken,
-    pendleFutureYieldToken,
-    pendleOwnershipToken2,
-    pendleFutureYieldToken2,
+    pendleAOwnershipToken,
+    pendleAFutureYieldToken,
+    pendleAOwnershipToken2,
+    pendleAFutureYieldToken2,
   };
 }

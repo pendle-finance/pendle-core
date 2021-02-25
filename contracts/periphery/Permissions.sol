@@ -25,11 +25,13 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 abstract contract Permissions {
-    address public immutable governance;
+    address public governance;
+    address public pendingGovernance;
     address internal initializer;
 
-    event EtherWithdraw(uint256 amount, address sendTo);
-    event TokenWithdraw(IERC20 token, uint256 amount, address sendTo);
+    event GovernanceClaimed(address newGovernance, address previousGovernance);
+
+    event TransferGovernancePending(address pendingGovernance);
 
     constructor(address _governance) {
         require(_governance != address(0), "ZERO_ADDRESS");
@@ -48,30 +50,24 @@ abstract contract Permissions {
     }
 
     /**
-     * @dev Allows governance to withdraw Ether in a Pendle contract
-     *      in case of accidental ETH transfer into the contract.
-     * @param amount The amount of Ether to withdraw.
-     * @param sendTo The recipient address.
+     * @dev Allows the pendingGovernance address to finalize the change governance process.
      */
-    function withdrawEther(uint256 amount, address payable sendTo) external onlyGovernance {
-        (bool success, ) = sendTo.call{value: amount}("");
-        require(success, "WITHDRAW_FAILED");
-        emit EtherWithdraw(amount, sendTo);
+    function claimGovernance() public {
+        require(pendingGovernance == msg.sender, "WRONG_GOVERNANCE");
+        governance = pendingGovernance;
+        pendingGovernance = address(0);
+
+        emit GovernanceClaimed(pendingGovernance, governance);
     }
 
     /**
-     * @dev Allows governance to withdraw all IERC20 compatible tokens in a Pendle
-     *      contract in case of accidental token transfer into the contract.
-     * @param token IERC20 The address of the token contract.
-     * @param amount The amount of IERC20 tokens to withdraw.
-     * @param sendTo The recipient address.
+     * @dev Allows the current governance to set the pendingGovernance address.
+     * @param _governance The address to transfer ownership to.
      */
-    function withdrawToken(
-        IERC20 token,
-        uint256 amount,
-        address sendTo
-    ) external onlyGovernance {
-        token.transfer(sendTo, amount);
-        emit TokenWithdraw(token, amount, sendTo);
+    function transferGovernance(address _governance) public onlyGovernance {
+        require(_governance != address(0), "ZERO_ADDRESS");
+        pendingGovernance = _governance;
+
+        emit TransferGovernancePending(pendingGovernance);
     }
 }

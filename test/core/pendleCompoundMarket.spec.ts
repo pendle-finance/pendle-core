@@ -7,7 +7,7 @@ import {
   consts,
   evm_revert,
   evm_snapshot,
-  getAContract,
+  getCContract,
   Token,
   tokens,
 } from "../helpers";
@@ -17,7 +17,7 @@ import { pendleMarketFixture } from "./fixtures";
 const { waffle } = require("hardhat");
 const { deployContract, provider } = waffle;
 
-describe("PendleMarket", async () => {
+describe("PendleCompoundMarket", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;
@@ -29,11 +29,11 @@ describe("PendleMarket", async () => {
   let pendleXyt: Contract;
   let pendleXyt2: Contract;
   let lendingPoolCore: Contract;
-  let pendleAaveForge: Contract;
+  let pendleCompoundForge: Contract;
   let pendleStdMarket: Contract;
   let pendleEthMarket: Contract;
   let testToken: Contract;
-  let aUSDT: Contract;
+  let cUSDT: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
   let tokenUSDT: Token;
@@ -44,18 +44,16 @@ describe("PendleMarket", async () => {
     const fixture = await loadFixture(pendleMarketFixture);
     pendleRouter = fixture.core.pendleRouter;
     pendleTreasury = fixture.core.pendleTreasury;
-    pendleMarketFactory = fixture.core.pendleMarketFactory;
+    pendleMarketFactory = fixture.core.pendleCMarketFactory;
     pendleData = fixture.core.pendleData;
-    pendleOwnershipToken = fixture.forge.pendleOwnershipToken;
-    pendleXyt = fixture.forge.pendleFutureYieldToken;
-    pendleXyt2 = fixture.forge.pendleFutureYieldToken2;
-    pendleAaveForge = fixture.forge.pendleAaveForge;
-    lendingPoolCore = fixture.aave.lendingPoolCore;
+    pendleOwnershipToken = fixture.cForge.pendleCOwnershipToken;
+    pendleXyt = fixture.cForge.pendleCFutureYieldToken;
+    pendleCompoundForge = fixture.cForge.pendleCompoundForge;
     testToken = fixture.testToken;
-    pendleStdMarket = fixture.pendleStdMarket;
+    pendleStdMarket = fixture.pendleCMarket;
     pendleEthMarket = fixture.pendleEthMarket;
     tokenUSDT = tokens.USDT;
-    aUSDT = await getAContract(alice, lendingPoolCore, tokenUSDT);
+    cUSDT = await getCContract(alice, tokenUSDT);
     snapshotId = await evm_snapshot();
   });
 
@@ -70,7 +68,7 @@ describe("PendleMarket", async () => {
 
   async function bootstrapSampleMarket(amountToTokenize: BN) {
     await pendleRouter.bootstrapMarket(
-      consts.MARKET_FACTORY_AAVE,
+      consts.MARKET_FACTORY_COMPOUND,
       pendleXyt.address,
       testToken.address,
       amountToTokenize,
@@ -79,14 +77,7 @@ describe("PendleMarket", async () => {
     );
   }
 
-  /*
-  READ ME!!!
-  All tests with "_sample" suffix are legacy tests. It's improved version is in other test files
-    Tests for adding/removing liquidity can be found in pendleLpFormula.spec.ts
-    Tests for swapping tokens can be found in AmmFormula.ts
-  */
-
-  it("should be able to join a bootstrapped market with a single standard token_sample", async () => {
+  it("should be able to join a bootstrapped market with a single standard token", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
 
     await bootstrapSampleMarket(amountToTokenize);
@@ -94,7 +85,7 @@ describe("PendleMarket", async () => {
     let totalSupply = await pendleStdMarket.totalSupply();
     let initalWalletBalance = await pendleStdMarket.balanceOf(alice.address);
     await pendleRouter.addMarketLiquiditySingle(
-      consts.MARKET_FACTORY_AAVE,
+      consts.MARKET_FACTORY_COMPOUND,
       pendleXyt.address,
       testToken.address,
       false,
@@ -105,6 +96,7 @@ describe("PendleMarket", async () => {
     let currentWalletBalance = await pendleStdMarket.balanceOf(alice.address);
     expect(currentWalletBalance).to.be.gt(initalWalletBalance);
   });
+
   it("should be able to bootstrap", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
 
@@ -116,7 +108,7 @@ describe("PendleMarket", async () => {
     expect(testTokenBalance).to.be.equal(amountToTokenize);
   });
 
-  it("should be able to join a bootstrapped pool by dual tokens_sample", async () => {
+  it("should be able to join a bootstrapped pool by dual tokens", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
 
     await bootstrapSampleMarket(amountToTokenize);
@@ -126,7 +118,7 @@ describe("PendleMarket", async () => {
     await pendleRouter
       .connect(bob)
       .addMarketLiquidityAll(
-        consts.MARKET_FACTORY_AAVE,
+        consts.MARKET_FACTORY_COMPOUND,
         pendleXyt.address,
         testToken.address,
         amountToTokenize,
@@ -144,7 +136,7 @@ describe("PendleMarket", async () => {
     expect(totalSupplyBalance).to.be.equal(totalSupply.mul(2));
   });
 
-  it("should be able to swap amount out_sample", async () => {
+  it("should be able to swap amount out", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
 
     await bootstrapSampleMarket(amountToTokenize);
@@ -157,7 +149,7 @@ describe("PendleMarket", async () => {
       pendleXyt.address,
       testToken.address,
       amountToWei(tokenUSDT, BN.from(10)),
-      consts.MARKET_FACTORY_AAVE
+      consts.MARKET_FACTORY_COMPOUND
     );
 
     await pendleRouter.connect(bob).swapExactOut(
@@ -167,7 +159,7 @@ describe("PendleMarket", async () => {
       amountToWei(tokenUSDT, BN.from(10)),
       amountToWei(tokenUSDT, BN.from(100)),
       consts.MAX_ALLOWANCE,
-      consts.MARKET_FACTORY_AAVE,
+      consts.MARKET_FACTORY_COMPOUND,
       consts.HIGH_GAS_OVERRIDE
     );
 
@@ -183,10 +175,22 @@ describe("PendleMarket", async () => {
     );
   });
 
-  it("should be able to swap amount in_sample", async () => {
+  it("should be able to swap amount in", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
 
     await bootstrapSampleMarket(amountToTokenize);
+
+    let yieldTokenBalanceBefore = await pendleXyt.balanceOf(
+      pendleStdMarket.address
+    );
+
+    // let result = await pendleRouter
+    //   .getMarketRateExactOut(
+    //     pendleXyt.address,
+    //     testToken.address,
+    //     amountToWei(tokenUSDT, BN.from(10)),
+    //     consts.MARKET_FACTORY_COMPOUND
+    //   );
 
     await pendleRouter
       .connect(bob)
@@ -196,7 +200,7 @@ describe("PendleMarket", async () => {
         amountToWei(tokenUSDT, BN.from(10)),
         BN.from(0),
         consts.MAX_ALLOWANCE,
-        consts.MARKET_FACTORY_AAVE,
+        consts.MARKET_FACTORY_COMPOUND,
         consts.HIGH_GAS_OVERRIDE
       );
 
@@ -208,6 +212,7 @@ describe("PendleMarket", async () => {
       30
     );
 
+    //TODO: calculates the exact expected amount based on curve shifting
     expect(testTokenBalance.toNumber()).to.be.approximately(
       amountToTokenize.sub(amountToTokenize.div(10)).toNumber(),
       amountToTokenize.div(100).toNumber()
@@ -230,14 +235,14 @@ describe("PendleMarket", async () => {
     );
   });
 
-  it("should be able to exit a pool by dual tokens_sample", async () => {
+  it("should be able to exit a pool by dual tokens", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
     await bootstrapSampleMarket(amountToTokenize);
     await advanceTime(provider, consts.ONE_MONTH);
     const totalSupply = await pendleStdMarket.totalSupply();
 
     await pendleRouter.removeMarketLiquidityAll(
-      consts.MARKET_FACTORY_AAVE,
+      consts.MARKET_FACTORY_COMPOUND,
       pendleXyt.address,
       testToken.address,
       totalSupply.div(10),
@@ -268,7 +273,7 @@ describe("PendleMarket", async () => {
   //   await expect(pendleRouter
   //     .connect(bob)
   //     .addMarketLiquidityAll(
-  //       consts.MARKET_FACTORY_AAVE,
+  //       consts.MARKET_FACTORY_COMPOUND,
   //       pendleXyt.address,
   //       testToken.address,
   //       amountToTokenize,
@@ -291,7 +296,7 @@ describe("PendleMarket", async () => {
   //   let totalSupply = await pendleStdMarket.totalSupply();
   //   await advanceTime(provider, consts.ONE_YEAR);
   //   await pendleRouter.addMarketLiquiditySingle( // will fail but by an unintended error
-  //     consts.MARKET_FACTORY_AAVE,
+  //     consts.MARKET_FACTORY_COMPOUND,
   //     pendleXyt.address,
   //     testToken.address,
   //     false,
@@ -307,6 +312,7 @@ describe("PendleMarket", async () => {
   //   expect(currentLpTokenBal).to.be.gt(initalLpTokenBal);
   //   expect(currentTestTokenBal).to.be.lt(initalTestTokenBal);
   //   expect(currentXytBal).to.be.equal(initalXytBal);
+  //   // TODO: change gt,lt to approximate @Long
   // });
 
   // it.only("should be able to exit market by baseToken after the market has expired", async () => {
@@ -318,7 +324,7 @@ describe("PendleMarket", async () => {
   //   await advanceTime(provider, consts.ONE_YEAR);
 
   //   await pendleRouter.removeMarketLiquiditySingle(
-  //     consts.MARKET_FACTORY_AAVE,
+  //     consts.MARKET_FACTORY_COMPOUND,
   //     pendleXyt.address,
   //     testToken.address,
   //     false,
@@ -335,7 +341,7 @@ describe("PendleMarket", async () => {
   //   const totalSupply = await pendleStdMarket.totalSupply();
 
   //   await pendleRouter.removeMarketLiquidityAll(
-  //     consts.MARKET_FACTORY_AAVE,
+  //     consts.MARKET_FACTORY_COMPOUND,
   //     pendleXyt.address,
   //     testToken.address,
   //     totalSupply.div(10),
@@ -367,6 +373,7 @@ describe("PendleMarket", async () => {
     ] = await pendleStdMarket.getReserves();
     expect(xytReserve).to.be.equal(amountToTokenize);
     expect(tokenReserve).to.be.equal(amountToTokenize);
+    // TODO: add expect for blockTimestamp @Long
   });
 
   it("should be able to getMarketReserve", async () => {
@@ -379,12 +386,13 @@ describe("PendleMarket", async () => {
       tokenReserve,
       currentTime,
     ] = await pendleRouter.getMarketReserves(
-      consts.MARKET_FACTORY_AAVE,
+      consts.MARKET_FACTORY_COMPOUND,
       pendleXyt.address,
       testToken.address
     );
     expect(xytReserve).to.be.equal(amountToTokenize);
     expect(tokenReserve).to.be.equal(amountToTokenize);
+    // TODO: add expect for currentTIme @Long
   });
 
   it("should be able to getMarketRateExactOut", async () => {
@@ -396,10 +404,10 @@ describe("PendleMarket", async () => {
       pendleXyt.address,
       testToken.address,
       amountToWei(tokenUSDT, BN.from(10)),
-      consts.MARKET_FACTORY_AAVE
+      consts.MARKET_FACTORY_COMPOUND
     );
 
-    expect(result[1].toNumber()).to.be.approximately(11111111, 100);
+    expect(result[1].toNumber()).to.be.approximately(11111280, 100);
   });
 
   it("should be able to getMarketRateExactIn", async () => {
@@ -411,13 +419,13 @@ describe("PendleMarket", async () => {
       testToken.address,
       pendleXyt.address,
       amountToWei(tokenUSDT, BN.from(10)),
-      consts.MARKET_FACTORY_AAVE
+      consts.MARKET_FACTORY_COMPOUND
     );
 
-    expect(result[1].toNumber()).to.be.approximately(9090909, 100);
+    expect(result[1].toNumber()).to.be.approximately(9091034, 100);
   });
 
-  it("should be able to add market liquidity for a token_sample", async () => {
+  it("should be able to add market liquidity for a token", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
 
     await bootstrapSampleMarket(amountToTokenize);
@@ -429,7 +437,7 @@ describe("PendleMarket", async () => {
 
     let totalSupply = await pendleStdMarket.totalSupply();
     await pendleRouter.addMarketLiquiditySingle(
-      consts.MARKET_FACTORY_AAVE,
+      consts.MARKET_FACTORY_COMPOUND,
       pendleXyt.address,
       testToken.address,
       false,
@@ -445,9 +453,10 @@ describe("PendleMarket", async () => {
     expect(currentLpTokenBal).to.be.gt(initalLpTokenBal);
     expect(currentTestTokenBal).to.be.lt(initalTestTokenBal);
     expect(currentXytBal).to.be.equal(initalXytBal);
+    // TODO: change gt,lt to approximate @Long
   });
 
-  it("should be able to add XYT market liquidity_sample", async () => {
+  it("should be able to add XYT market liquidity", async () => {
     const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
 
     await bootstrapSampleMarket(amountToTokenize);
@@ -459,7 +468,7 @@ describe("PendleMarket", async () => {
 
     let totalSupply = await pendleStdMarket.totalSupply();
     await pendleRouter.addMarketLiquiditySingle(
-      consts.MARKET_FACTORY_AAVE,
+      consts.MARKET_FACTORY_COMPOUND,
       pendleXyt.address,
       testToken.address,
       true,
@@ -475,6 +484,7 @@ describe("PendleMarket", async () => {
     expect(currentLpTokenBal).to.be.gt(initalLpTokenBal);
     expect(currentTestTokenBal).to.be.equal(initalTestTokenBal);
     expect(currentXytBal).to.be.lt(initalXytBal);
+    // TODO: change gt,lt to approximate @Long
   });
 
   it("should be able to getMarketTokenAddresses", async () => {
@@ -488,47 +498,11 @@ describe("PendleMarket", async () => {
   it("shouldn't be able to create duplicated markets", async () => {
     await expect(
       pendleRouter.createMarket(
-        consts.MARKET_FACTORY_AAVE,
+        consts.MARKET_FACTORY_COMPOUND,
         pendleXyt.address,
         testToken.address,
         consts.HIGH_GAS_OVERRIDE
       )
     ).to.be.revertedWith("EXISTED_MARKET");
-  });
-
-  it("shouldn't be able to create market with XYT as quote pair", async () => {
-    console.log(`xyt ${pendleXyt.address}`);
-    console.log(`xyt2 ${pendleXyt2.address}`);
-    await expect(
-      pendleRouter.createMarket(
-        consts.MARKET_FACTORY_AAVE,
-        pendleXyt.address,
-        pendleXyt2.address,
-        consts.HIGH_GAS_OVERRIDE
-      )
-    ).to.be.revertedWith("XYT_QUOTE_PAIR_FORBIDDEN");
-  });
-
-  it("AMM's formula should be correct for swapExactIn", async () => {
-    await AMMTest(
-      pendleRouter,
-      pendleStdMarket,
-      tokenUSDT,
-      testToken,
-      pendleXyt,
-      bootstrapSampleMarket,
-      true
-    );
-  });
-  it("AMM's formula should be correct for swapExactOut", async () => {
-    await AMMTest(
-      pendleRouter,
-      pendleStdMarket,
-      tokenUSDT,
-      testToken,
-      pendleXyt,
-      bootstrapSampleMarket,
-      false
-    );
   });
 });

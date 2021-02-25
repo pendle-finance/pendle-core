@@ -28,8 +28,9 @@ import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../periphery/Permissions.sol";
+import "../periphery/Withdrawable.sol";
 
-contract PendleData is IPendleData, Permissions {
+contract PendleData is IPendleData, Permissions, Withdrawable {
     using SafeMath for uint256;
 
     struct MarketInfo {

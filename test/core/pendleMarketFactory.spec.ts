@@ -20,7 +20,7 @@ describe("pendleMarketFactory", async () => {
     globalSnapshotId = await evm_snapshot();
 
     const fixture = await loadFixture(pendleCoreFixture);
-    pendleMarketFactory = fixture.pendleMarketFactory;
+    pendleMarketFactory = fixture.pendleAMarketFactory;
     pendleRouter = fixture.pendleRouter;
     snapshotId = await evm_snapshot();
   });

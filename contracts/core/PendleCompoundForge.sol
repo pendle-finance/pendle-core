@@ -25,7 +25,7 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../libraries/ExpiryUtilsLib.sol";
 import "../libraries/FactoryLib.sol";
-import "../interfaces/IAaveLendingPoolCore.sol";
+import "../interfaces/ICToken.sol";
 import "../interfaces/IPendleBaseToken.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleForge.sol";
@@ -33,7 +33,7 @@ import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
 
-contract PendleAaveForge is IPendleForge, Permissions {
+contract PendleCompoundForge is IPendleForge, Permissions {
     using ExpiryUtils for string;
     using SafeMath for uint256;
 
@@ -43,28 +43,26 @@ contract PendleAaveForge is IPendleForge, Permissions {
     }
 
     IPendleRouter public override router;
-    IAaveLendingPoolCore public immutable aaveLendingPoolCore;
     bytes32 public immutable override forgeId;
-
-    mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeBeforeExpiry;
-    mapping(address => mapping(uint256 => mapping(address => uint256)))
-        public lastNormalisedIncome; //lastNormalisedIncome[underlyingAsset][expiry][account]
+    uint256 private initialRate = 0;
+    mapping(address => address) public underlyingToCToken;
+    mapping(address => mapping(uint256 => uint256)) public lastRateBeforeExpiry;
+    mapping(address => mapping(uint256 => mapping(address => uint256))) public lastRate;
 
     string private constant OT = "OT";
     string private constant XYT = "XYT";
 
+    event RegisterCTokens(address[] underlyingAssets, address[] cTokens);
+
     constructor(
         address _governance,
         IPendleRouter _router,
-        IAaveLendingPoolCore _aaveLendingPoolCore,
         bytes32 _forgeId
     ) Permissions(_governance) {
         require(address(_router) != address(0), "ZERO_ADDRESS");
-        require(address(_aaveLendingPoolCore) != address(0), "ZERO_ADDRESS");
         require(_forgeId != 0x0, "ZERO_BYTES");
 
         router = _router;
-        aaveLendingPoolCore = _aaveLendingPoolCore;
         forgeId = _forgeId;
     }
 
@@ -82,28 +80,41 @@ contract PendleAaveForge is IPendleForge, Permissions {
         _;
     }
 
+    function registerCTokens(address[] calldata _underlyingAssets, address[] calldata _cTokens)
+        external
+        onlyGovernance
+    {
+        require(_underlyingAssets.length == _cTokens.length, "LENGTH_MISMATCH");
+
+        for (uint256 i = 0; i < _cTokens.length; ++i) {
+            underlyingToCToken[_underlyingAssets[i]] = _cTokens[i];
+        }
+
+        emit RegisterCTokens(_underlyingAssets, _cTokens);
+    }
+
     function newYieldContracts(address _underlyingAsset, uint256 _expiry)
         external
         override
         onlyRouter
         returns (address ot, address xyt)
     {
-        address aToken = aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset);
-        uint8 aTokenDecimals = IPendleBaseToken(aToken).decimals();
+        address cToken = underlyingToCToken[_underlyingAsset];
+        uint8 cTokenDecimals = IPendleBaseToken(cToken).decimals();
 
         ot = _forgeOwnershipToken(
             _underlyingAsset,
-            OT.concat(IPendleBaseToken(aToken).name(), _expiry, " "),
-            OT.concat(IPendleBaseToken(aToken).symbol(), _expiry, "-"),
-            aTokenDecimals,
+            OT.concat(IPendleBaseToken(cToken).name(), _expiry, " "),
+            OT.concat(IPendleBaseToken(cToken).symbol(), _expiry, "-"),
+            cTokenDecimals,
             _expiry
         );
         xyt = _forgeFutureYieldToken(
             _underlyingAsset,
             ot,
-            XYT.concat(IPendleBaseToken(aToken).name(), _expiry, " "),
-            XYT.concat(IPendleBaseToken(aToken).symbol(), _expiry, "-"),
-            aTokenDecimals,
+            XYT.concat(IPendleBaseToken(cToken).name(), _expiry, " "),
+            XYT.concat(IPendleBaseToken(cToken).symbol(), _expiry, "-"),
+            cTokenDecimals,
             _expiry
         );
 
@@ -114,69 +125,64 @@ contract PendleAaveForge is IPendleForge, Permissions {
     }
 
     function redeemAfterExpiry(
-        address _account,
+        address _msgSender,
         address _underlyingAsset,
         uint256 _expiry,
         address _to
     ) external override onlyRouter returns (uint256 redeemedAmount) {
         require(block.timestamp > _expiry, "MUST_BE_AFTER_EXPIRY");
 
-        IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        redeemedAmount = tokens.ot.balanceOf(_account);
+        redeemedAmount = tokens.ot.balanceOf(_msgSender);
+        uint256 currentRate = cToken.exchangeRateCurrent();
+        uint256 cTokensToRedeem = redeemedAmount.mul(initialRate).div(currentRate);
 
-        uint256 currentNormalizedIncome =
-            aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
-
-        // Interests from the timestamp of the last XYT transfer (before expiry)
-        // to now is entitled to the OT holders. Rhis means that the OT holders
-        // are getting some extra interests, at the expense of XYT holders
+        // interests from the timestamp of the last XYT transfer (before expiry) to now is entitled to the OT holders
+        // this means that the OT holders are getting some extra interests, at the expense of XYT holders
         uint256 totalAfterExpiry =
-            currentNormalizedIncome.mul(redeemedAmount).div(
-                lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry]
-            );
-        aToken.transfer(_to, totalAfterExpiry);
+            currentRate.mul(cTokensToRedeem).div(lastRateBeforeExpiry[_underlyingAsset][_expiry]);
+        cToken.transfer(_to, totalAfterExpiry);
 
-        _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
-        tokens.ot.burn(_account, redeemedAmount);
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
+        tokens.ot.burn(_msgSender, redeemedAmount);
 
-        emit RedeemYieldToken(_underlyingAsset, _expiry, redeemedAmount);
+        emit RedeemYieldToken(_underlyingAsset, cTokensToRedeem, _expiry);
     }
 
-    /// @dev msg.sender needs to have both OT and XYT tokens
+    // msg.sender needs to have both OT and XYT tokens
     function redeemUnderlying(
-        address _account,
+        address _msgSender,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToRedeem,
         address _to
-    ) external override returns (uint256 redeemedAmount) {
+    ) public override onlyRouter returns (uint256 redeemedAmount) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
+        uint256 currentRate = cToken.exchangeRateCurrent();
+        uint256 underlyingToRedeem = _amountToRedeem.mul(currentRate).div(initialRate);
+        require(tokens.ot.balanceOf(_msgSender) >= underlyingToRedeem, "INSUFFICIENT_OT_AMOUNT");
+        require(tokens.xyt.balanceOf(_msgSender) >= underlyingToRedeem, "INSUFFICIENT_XYT_AMOUNT");
 
-        require(tokens.ot.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_OT_AMOUNT");
-        require(tokens.xyt.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_XYT_AMOUNT");
+        cToken.transfer(_to, _amountToRedeem);
 
-        IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
 
-        aToken.transfer(_to, _amountToRedeem);
+        tokens.ot.burn(_msgSender, underlyingToRedeem);
+        tokens.xyt.burn(_msgSender, underlyingToRedeem);
 
-        _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
-
-        tokens.ot.burn(_account, _amountToRedeem);
-        tokens.xyt.burn(_account, _amountToRedeem);
-
-        emit RedeemYieldToken(_underlyingAsset, _expiry, _amountToRedeem);
-
+        emit RedeemYieldToken(_underlyingAsset, _amountToRedeem, _expiry);
         return _amountToRedeem;
     }
 
     function redeemDueInterests(
-        address _account,
+        address _msgSender,
         address _underlyingAsset,
         uint256 _expiry
     ) external override onlyRouter returns (uint256 interests) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
+        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
     }
 
     function redeemDueInterestsBeforeTransfer(
@@ -195,13 +201,17 @@ contract PendleAaveForge is IPendleForge, Permissions {
         address _to
     ) external override onlyRouter returns (address ot, address xyt) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
+        uint256 currentRate = cToken.exchangeRateCurrent();
+        if (initialRate == 0) {
+            initialRate = currentRate;
+        }
+        uint256 amountToMint = _amountToTokenize.mul(currentRate).div(initialRate);
+        tokens.ot.mint(_to, amountToMint);
+        tokens.xyt.mint(_to, amountToMint);
+        lastRate[_underlyingAsset][_expiry][_to] = currentRate;
 
-        tokens.ot.mint(_to, _amountToTokenize);
-        tokens.xyt.mint(_to, _amountToTokenize);
-        lastNormalisedIncome[_underlyingAsset][_expiry][_to] = aaveLendingPoolCore
-            .getReserveNormalizedIncome(address(_underlyingAsset));
-
-        emit MintYieldToken(_underlyingAsset, _expiry, _amountToTokenize);
+        emit MintYieldToken(_underlyingAsset, amountToMint, _expiry);
         return (address(tokens.ot), address(tokens.xyt));
     }
 
@@ -211,7 +221,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
         override
         returns (address)
     {
-        return aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset);
+        return underlyingToCToken[_underlyingAsset];
     }
 
     function _forgeFutureYieldToken(
@@ -222,15 +232,15 @@ contract PendleAaveForge is IPendleForge, Permissions {
         uint8 _decimals,
         uint256 _expiry
     ) internal returns (address xyt) {
-        IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
 
         xyt = Factory.createContract(
             type(PendleFutureYieldToken).creationCode,
-            abi.encodePacked(aToken, _underlyingAsset),
+            abi.encodePacked(cToken, _underlyingAsset),
             abi.encode(
                 _ot,
                 _underlyingAsset,
-                aToken,
+                cToken,
                 _name,
                 _symbol,
                 _decimals,
@@ -247,13 +257,13 @@ contract PendleAaveForge is IPendleForge, Permissions {
         uint8 _decimals,
         uint256 _expiry
     ) internal returns (address ot) {
-        IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
 
         ot = Factory.createContract(
             type(PendleOwnershipToken).creationCode,
-            abi.encodePacked(aToken, _underlyingAsset),
+            abi.encodePacked(cToken, _underlyingAsset),
             abi.encode(
-                aToken,
+                cToken,
                 _underlyingAsset,
                 _name,
                 _symbol,
@@ -271,27 +281,30 @@ contract PendleAaveForge is IPendleForge, Permissions {
         address _account
     ) internal returns (uint256) {
         uint256 principal = _tokens.xyt.balanceOf(_account);
-        uint256 ix = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
-        uint256 normalizedIncome;
+        uint256 prevRate = lastRate[_underlyingAsset][_expiry][_account];
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
+        uint256 currentRate;
 
         if (block.timestamp >= _expiry) {
-            normalizedIncome = lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
+            currentRate = lastRateBeforeExpiry[_underlyingAsset][_expiry];
         } else {
-            normalizedIncome = aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
-            lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = normalizedIncome;
+            currentRate = cToken.exchangeRateCurrent();
+            lastRateBeforeExpiry[_underlyingAsset][_expiry] = currentRate;
         }
+
+        lastRate[_underlyingAsset][_expiry][_account] = currentRate;
         // first time getting XYT
-        if (ix == 0) {
-            lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
+        if (prevRate == 0) {
             return 0;
         }
-        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
-
-        uint256 dueInterests = principal.mul(normalizedIncome).div(ix).sub(principal);
-
+        // dueInterests is a difference between yields where newer yield increased proportionally
+        // by currentExchangeRate / prevExchangeRate for cTokens to underyling asset
+        uint256 dueInterests =
+            principal.mul(currentRate).div(prevRate).sub(principal).mul(initialRate).div(
+                currentRate
+            );
         if (dueInterests > 0) {
-            IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
-            IERC20(aToken).transfer(_account, dueInterests);
+            cToken.transfer(_account, dueInterests);
 
             emit DueInterestSettled(_underlyingAsset, _expiry, dueInterests, _account);
         }
