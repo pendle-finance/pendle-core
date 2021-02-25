@@ -149,7 +149,7 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         uint256 _expiry,
         uint256 _amountToRedeem,
         address _to
-    ) public override returns (uint256 redeemedAmount) {
+    ) public override onlyRouter returns (uint256 redeemedAmount) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
         uint256 currentRate = cToken.exchangeRateCurrent();
