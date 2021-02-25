@@ -449,8 +449,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     // will do weight update (dry run) before reading token weights, to prevent the case
     // that weight is outdated
     function getWeight(address asset) external view override returns (uint256) {
-        (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) =
-            _updateWeightDry();
+        (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, ) = _updateWeightDry();
         if (asset == xyt) {
             return xytWeightUpdated;
         } else if (asset == token) {
