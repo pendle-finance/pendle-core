@@ -102,12 +102,10 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     }
 
     modifier marketIsOpen() {
-        uint256 currentTime = block.timestamp;
-        uint256 endTime = expiry; // expiry of market = expiry of xyt
         uint256 startTime = IPendleYieldToken(xyt).start();
-        uint256 duration = endTime - startTime;
+        uint256 duration = expiry - startTime;
         uint256 lockDuration = duration * data.lockNumerator() / data.lockDenominator();
-        require(currentTime<endTime.sub(lockDuration),"MARKET_LOCKED");
+        require(block.timestamp<expiry.sub(lockDuration),"MARKET_LOCKED");
         _;
     }
 

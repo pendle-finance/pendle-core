@@ -88,6 +88,7 @@ export async function pendleMarketFixture(
   );
 
   await pendleData.setReentrancyWhitelist([pendleStdMarketAddress, pendleEthMarketAddress], [true, true]);
+  await pendleData.setLockParams(BN.from(1), BN.from(180)); // lock market
 
   const pendleStdMarket = new Contract(pendleStdMarketAddress, PendleMarket.abi, alice)
   const pendleEthMarket = new Contract(pendleEthMarketAddress, PendleMarket.abi, alice)
@@ -98,6 +99,7 @@ export async function pendleMarketFixture(
     await pendleStdMarket.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
     await pendleEthMarket.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
   }
+
 
   return { core, aave, forge, testToken, pendleStdMarket, pendleEthMarket }
 }

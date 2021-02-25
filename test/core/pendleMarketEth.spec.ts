@@ -148,7 +148,7 @@ describe("PendleMarketEth", async () => {
 
     let result = await pendleRouter.getMarketRateExactOut(
       pendleXyt.address,
-      consts.ETH_ADDRESS,
+      WETH.address,
       amountToWei(tokenUSDT, BN.from(10)),
       consts.MARKET_FACTORY_AAVE
     );
@@ -273,7 +273,7 @@ describe("PendleMarketEth", async () => {
     ] = await pendleRouter.getMarketReserves(
       consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
-      consts.ETH_ADDRESS
+      WETH.address
     );
     expect(xytReserve).to.be.equal(amountToTokenize);
     expect(tokenReserve).to.be.equal(amountToTokenize);
@@ -286,7 +286,7 @@ describe("PendleMarketEth", async () => {
 
     let result = await pendleRouter.getMarketRateExactOut(
       pendleXyt.address,
-      consts.ETH_ADDRESS,
+      WETH.address,
       amountToWei(tokenUSDT, BN.from(10)),
       consts.MARKET_FACTORY_AAVE
     );
@@ -300,7 +300,7 @@ describe("PendleMarketEth", async () => {
     await bootstrapSampleMarket(amountToTokenize);
 
     let result = await pendleRouter.getMarketRateExactIn(
-      consts.ETH_ADDRESS,
+      WETH.address,
       pendleXyt.address,
       amountToWei(tokenUSDT, BN.from(10)),
       consts.MARKET_FACTORY_AAVE
