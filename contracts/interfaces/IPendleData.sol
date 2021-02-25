@@ -29,10 +29,38 @@ import "./IPendleYieldToken.sol";
 
 interface IPendleData {
     /**
+     * @notice Emitted when validity of a forge-factory pair is updated
+     * @param _forgeId the forge id
+     * @param _marketFactoryId the market factory id
+     * @param _valid valid or not
+     **/
+    event ForgeFactoryValiditySet(bytes32 _forgeId, bytes32 _marketFactoryId, bool _valid);
+
+    /**
      * @notice Emitted when Pendle and PendleFactory addresses have been updated.
      * @param treasury The address of the new treasury contract.
      **/
     event TreasurySet(address treasury);
+
+    /**
+     * @notice Emitted when interestUpdateDelta is changed
+     * @param interestUpdateDelta new interestUpdateDelta setting
+     **/
+    event InterestUpdateDeltaSet(uint256 interestUpdateDelta);
+
+    event ReentrancyWhitelistUpdated(address[] addresses, bool[] whitelisted);
+
+    /**
+     * @notice Set/update validity of a forge-factory pair
+     * @param _forgeId the forge id
+     * @param _marketFactoryId the market factory id
+     * @param _valid valid or not
+     **/
+    function setForgeFactoryValidity(
+        bytes32 _forgeId,
+        bytes32 _marketFactoryId,
+        bool _valid
+    ) external;
 
     /**
      * @notice Sets the PendleTreasury contract addresses.
@@ -140,6 +168,11 @@ interface IPendleData {
         uint256 expiry
     ) external view returns (bool);
 
+    function validForgeFactoryPair(bytes32 _forgeId, bytes32 _marketFactoryId)
+        external
+        view
+        returns (bool);
+
     /**
      * @notice Gets a reference to a specific OT.
      * @param forgeId Forge and protocol identifier.
@@ -185,6 +218,11 @@ interface IPendleData {
 
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
 
+    function setInterestUpdateDelta(uint256 _interestUpdateDelta) external;
+
+    function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
+        external;
+
     function updateMarketInfo(
         address xyt,
         address token,
@@ -204,6 +242,10 @@ interface IPendleData {
     function allMarketsLength() external view returns (uint256);
 
     function exitFee() external view returns (uint256);
+
+    function interestUpdateDelta() external view returns (uint256);
+
+    function reentrancyWhitelisted(address a) external view returns (bool);
 
     /**
      * @notice Gets all the markets.

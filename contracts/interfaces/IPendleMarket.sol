@@ -33,9 +33,6 @@ interface IPendleMarket is IPendleBaseToken {
         uint256 balance;
     }
 
-    event Join(address indexed token, uint256 amount);
-
-    event Exit(address indexed token, uint256 amount);
     /**
      * @notice Emitted when reserves pool has been updated
      * @param reserve0 The XYT reserves.
@@ -50,20 +47,6 @@ interface IPendleMarket is IPendleBaseToken {
         uint256 tokenWeightOld,
         uint256 xytWeightNew,
         uint256 tokenWeightNew
-    );
-
-    /**
-     * @notice Emitted when a swap happens on the market.
-     * @param inToken The source token being traded.
-     * @param inAmount The source amount being traded.
-     * @param outToken The destination token received.
-     * @param outAmount The destination amount received.
-     **/
-    event Swap(
-        address indexed inToken,
-        uint256 inAmount,
-        address indexed outToken,
-        uint256 outAmount
     );
 
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
@@ -117,7 +100,7 @@ interface IPendleMarket is IPendleBaseToken {
         TokenReserve memory outTokenReserve,
         uint256 outAmount,
         uint256 swapFee
-    ) external view returns (uint256 exactIn);
+    ) external pure returns (uint256 exactIn);
 
     function calcExactOut(
         TokenReserve memory inTokenReserve,

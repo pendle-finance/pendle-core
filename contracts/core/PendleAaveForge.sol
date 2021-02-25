@@ -140,7 +140,34 @@ contract PendleAaveForge is IPendleForge, Permissions {
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
         tokens.ot.burn(_account, redeemedAmount);
 
-        emit RedeemYieldToken(_underlyingAsset, redeemedAmount, _expiry);
+        emit RedeemYieldToken(_underlyingAsset, _expiry, redeemedAmount);
+    }
+
+    /// @dev msg.sender needs to have both OT and XYT tokens
+    function redeemUnderlying(
+        address _account,
+        address _underlyingAsset,
+        uint256 _expiry,
+        uint256 _amountToRedeem,
+        address _to
+    ) external override returns (uint256 redeemedAmount) {
+        PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+
+        require(tokens.ot.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_OT_AMOUNT");
+        require(tokens.xyt.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_XYT_AMOUNT");
+
+        IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
+
+        aToken.transfer(_to, _amountToRedeem);
+
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
+
+        tokens.ot.burn(_account, _amountToRedeem);
+        tokens.xyt.burn(_account, _amountToRedeem);
+
+        emit RedeemYieldToken(_underlyingAsset, _expiry, _amountToRedeem);
+
+        return _amountToRedeem;
     }
 
     function redeemDueInterests(
@@ -161,33 +188,6 @@ contract PendleAaveForge is IPendleForge, Permissions {
         return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
     }
 
-    /// @dev msg.sender needs to have both OT and XYT tokens
-    function redeemUnderlying(
-        address _account,
-        address _underlyingAsset,
-        uint256 _expiry,
-        uint256 _amountToRedeem,
-        address _to
-    ) external override onlyRouter returns (uint256 redeemedAmount) {
-        PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-
-        require(tokens.ot.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_OT_AMOUNT");
-        require(tokens.xyt.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_XYT_AMOUNT");
-
-        IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
-
-        aToken.transfer(_to, _amountToRedeem);
-
-        _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
-
-        tokens.ot.burn(_account, _amountToRedeem);
-        tokens.xyt.burn(_account, _amountToRedeem);
-
-        emit RedeemYieldToken(_underlyingAsset, _amountToRedeem, _expiry);
-
-        return _amountToRedeem;
-    }
-
     function tokenizeYield(
         address _underlyingAsset,
         uint256 _expiry,
@@ -201,7 +201,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
         lastNormalisedIncome[_underlyingAsset][_expiry][_to] = aaveLendingPoolCore
             .getReserveNormalizedIncome(address(_underlyingAsset));
 
-        emit MintYieldToken(_underlyingAsset, _amountToTokenize, _expiry);
+        emit MintYieldToken(_underlyingAsset, _expiry, _amountToTokenize);
         return (address(tokens.ot), address(tokens.xyt));
     }
 
@@ -293,7 +293,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
             IERC20 aToken = IERC20(getYieldBearingToken(_underlyingAsset));
             IERC20(aToken).transfer(_account, dueInterests);
 
-            emit DueInterestSettled(_underlyingAsset, _account, dueInterests, _expiry);
+            emit DueInterestSettled(_underlyingAsset, _expiry, dueInterests, _account);
         }
 
         return dueInterests;

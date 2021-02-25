@@ -38,6 +38,10 @@ contract PendleData is IPendleData, Permissions {
         uint256 liquidity;
     }
 
+    // It's not guaranteed that every market factory can work with
+    // every forge, so we need to check against this mapping
+    mapping(bytes32 => mapping(bytes32 => bool)) public override validForgeFactoryPair;
+
     mapping(address => bytes32) public override getForgeId;
     mapping(bytes32 => address) public override getForgeAddress;
     mapping(address => bytes32) public override getMarketFactoryId;
@@ -50,14 +54,19 @@ contract PendleData is IPendleData, Permissions {
     mapping(bytes32 => mapping(address => mapping(uint256 => IPendleYieldToken)))
         public
         override xytTokens; // [forgeId][underlyingAsset][expiry]
-    uint256 public override swapFee;
-    uint256 public override exitFee;
+
     IPendleRouter public override router;
     address public override treasury;
     mapping(address => bool) public override isMarket;
     mapping(bytes32 => address) private markets;
     mapping(bytes32 => MarketInfo) private marketInfo;
     address[] private allMarkets;
+
+    // Parameters to be set by governance;
+    uint256 public override interestUpdateDelta; // if a market's interests have not been updated for interestUpdateDelta, we will ping the forge to update the interests
+    uint256 public override swapFee;
+    uint256 public override exitFee;
+    mapping(address => bool) public override reentrancyWhitelisted;
 
     constructor(address _governance, address _treasury) Permissions(_governance) {
         require(_treasury != address(0), "ZERO_ADDRESS");
@@ -92,6 +101,29 @@ contract PendleData is IPendleData, Permissions {
 
         treasury = _treasury;
         emit TreasurySet(_treasury);
+    }
+
+    function setInterestUpdateDelta(uint256 _interestUpdateDelta)
+        external
+        override
+        initialized
+        onlyGovernance
+    {
+        interestUpdateDelta = _interestUpdateDelta;
+        emit InterestUpdateDeltaSet(_interestUpdateDelta);
+    }
+
+    function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
+        external
+        override
+        initialized
+        onlyGovernance
+    {
+        require(addresses.length == whitelisted.length, "INVALID_ARRAYS");
+        for (uint256 i = 0; i < addresses.length; i++) {
+            reentrancyWhitelisted[addresses[i]] = whitelisted[i];
+        }
+        emit ReentrancyWhitelistUpdated(addresses, whitelisted);
     }
 
     /**********
@@ -176,6 +208,15 @@ contract PendleData is IPendleData, Permissions {
         isMarket[_market] = true;
 
         emit MarketPairAdded(_market, _xyt, _token);
+    }
+
+    function setForgeFactoryValidity(
+        bytes32 _forgeId,
+        bytes32 _marketFactoryId,
+        bool _valid
+    ) external override initialized onlyGovernance {
+        validForgeFactoryPair[_forgeId][_marketFactoryId] = _valid;
+        emit ForgeFactoryValiditySet(_forgeId, _marketFactoryId, _valid);
     }
 
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external override onlyGovernance {

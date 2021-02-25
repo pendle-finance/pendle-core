@@ -22,6 +22,7 @@ describe("PendleCompoundLiquidityMining", async () => {
   const [alice, bob] = wallets;
   let pendleLiquidityMining: Contract;
   let pdl: Contract;
+  let pendleMarket: Contract;
   let cUSDT: Contract;
   let params: liqParams;
   let snapshotId: string;
@@ -35,6 +36,7 @@ describe("PendleCompoundLiquidityMining", async () => {
     params = fixture.params;
     cUSDT = await getCContract(alice, tokens.USDT);
     pdl = fixture.pdl;
+    pendleMarket = fixture.pendleCMarket;
     snapshotId = await evm_snapshot();
   });
 
@@ -56,12 +58,13 @@ describe("PendleCompoundLiquidityMining", async () => {
       pendleLiquidityMining.address
     );
     const pdlBalanceOfUser = await pdl.balanceOf(bob.address);
+    const lpBalanceOfUser = await pendleMarket.balanceOf(bob.address);
 
     console.log(
       `\tPDL balance of PendleLiquidityMining contract before: ${pdlBalanceOfContract}`
     );
     console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
-    console.log(`\tLP balance of user before: ${pdlBalanceOfUser}`);
+    console.log(`\tLP balance of user before: ${lpBalanceOfUser}`);
 
     await advanceTime(provider, params.START_TIME.sub(consts.T0_C));
     await pendleLiquidityMining

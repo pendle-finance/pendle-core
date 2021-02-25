@@ -116,30 +116,12 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         emit NewYieldContracts(ot, xyt, _expiry);
     }
 
-    function redeemDueInterests(
-        address _msgSender,
-        address _underlyingAsset,
-        uint256 _expiry
-    ) public override returns (uint256 interests) {
-        PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
-    }
-
-    function redeemDueInterestsBeforeTransfer(
-        address _underlyingAsset,
-        uint256 _expiry,
-        address _account
-    ) public override onlyXYT(_underlyingAsset, _expiry) returns (uint256 interests) {
-        PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
-    }
-
     function redeemAfterExpiry(
         address _msgSender,
         address _underlyingAsset,
         uint256 _expiry,
         address _to
-    ) public override returns (uint256 redeemedAmount) {
+    ) external override onlyRouter returns (uint256 redeemedAmount) {
         require(block.timestamp > _expiry, "MUST_BE_AFTER_EXPIRY");
 
         ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
@@ -184,6 +166,24 @@ contract PendleCompoundForge is IPendleForge, Permissions {
 
         emit RedeemYieldToken(_underlyingAsset, _amountToRedeem, _expiry);
         return _amountToRedeem;
+    }
+
+    function redeemDueInterests(
+        address _msgSender,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) external override onlyRouter returns (uint256 interests) {
+        PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
+    }
+
+    function redeemDueInterestsBeforeTransfer(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) external override onlyXYT(_underlyingAsset, _expiry) returns (uint256 interests) {
+        PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
     }
 
     function tokenizeYield(
@@ -297,7 +297,7 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         if (dueInterests > 0) {
             cToken.transfer(_account, dueInterests);
 
-            emit DueInterestSettled(_underlyingAsset, _account, dueInterests, _expiry);
+            emit DueInterestSettled(_underlyingAsset, _expiry, dueInterests, _account);
         }
 
         return dueInterests;

@@ -25,6 +25,7 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../interfaces/IPendleLpHolder.sol";
+import "../interfaces/IPendleRouter.sol";
 
 contract PendleLpHolder is IPendleLpHolder {
     using SafeERC20 for IERC20;
@@ -32,9 +33,15 @@ contract PendleLpHolder is IPendleLpHolder {
     address private pendleLiquidityMining;
     address private underlyingYieldToken;
     address private pendleMarket;
+    address private router;
 
-    constructor(address _pendleMarket, address _underlyingYieldToken) {
+    constructor(
+        address _pendleMarket,
+        address _router,
+        address _underlyingYieldToken
+    ) {
         pendleMarket = _pendleMarket;
+        router = _router;
         pendleLiquidityMining = msg.sender;
         underlyingYieldToken = _underlyingYieldToken;
     }
@@ -47,5 +54,12 @@ contract PendleLpHolder is IPendleLpHolder {
     function sendInterests(address user, uint256 amount) public override {
         require(msg.sender == pendleLiquidityMining, "NOT_AUTHORIZED");
         IERC20(underlyingYieldToken).safeTransfer(user, amount);
+    }
+
+    function claimLpInterests() public override {
+        require(msg.sender == pendleLiquidityMining, "NOT_AUTHORIZED");
+        address[] memory array = new address[](1);
+        array[0] = pendleMarket;
+        IPendleRouter(router).claimLpInterests(array);
     }
 }

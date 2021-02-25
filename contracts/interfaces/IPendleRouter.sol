@@ -30,6 +30,42 @@ import "./IPendleData.sol";
 import "./IPendleMarketFactory.sol";
 
 interface IPendleRouter {
+    /**
+     * @notice Emitted when a swap happens on the market.
+     * @param trader The address of msg.sender.
+     * @param inToken The input token.
+     * @param outToken The output token.
+     * @param exactIn The exact amount being traded.
+     * @param exactOut The exact amount received.
+     * @param market The market address.
+     **/
+    event SwapEvent(
+        address indexed trader,
+        address inToken,
+        address outToken,
+        uint256 exactIn,
+        uint256 exactOut,
+        address market
+    );
+
+    /**
+     * @dev Emitted when user adds liquidity
+     * @param sender The user who added liquidity.
+     * @param token0Amount the amount of token0 (xyt) provided by user
+     * @param token1Amount the amount of token1 provided by user
+     * @param market The market address.
+     */
+    event Join(address indexed sender, uint256 token0Amount, uint256 token1Amount, address market);
+
+    /**
+     * @dev Emitted when user removes liquidity
+     * @param sender The user who removed liquidity.
+     * @param token0Amount the amount of token0 (xyt) given to user
+     * @param token1Amount the amount of token1 given to user
+     * @param market The market address.
+     */
+    event Exit(address indexed sender, uint256 token0Amount, uint256 token1Amount, address market);
+
     struct Market {
         address market;
         uint256 tokenBalanceIn;
