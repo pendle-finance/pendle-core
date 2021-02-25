@@ -57,7 +57,7 @@ contract PendleLpHolder is IPendleLpHolder {
     }
 
     function claimLpInterests() public override {
-        require(msg.sender == pendleLiquidityMining, "Pendle: not authorized");
+        require(msg.sender == pendleLiquidityMining, "NOT_AUTHORIZED");
         address[] memory array = new address[](1);
         array[0] = pendleMarket;
         IPendleRouter(router).claimLpInterests(array);

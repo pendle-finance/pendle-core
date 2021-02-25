@@ -29,6 +29,14 @@ import "./IPendleYieldToken.sol";
 
 interface IPendleData {
     /**
+     * @notice Emitted when validity of a forge-factory pair is updated
+     * @param _forgeId the forge id
+     * @param _marketFactoryId the market factory id
+     * @param _valid valid or not
+     **/
+    event ForgeFactoryValiditySet(bytes32 _forgeId, bytes32 _marketFactoryId, bool _valid);
+
+    /**
      * @notice Emitted when Pendle and PendleFactory addresses have been updated.
      * @param treasury The address of the new treasury contract.
      **/
@@ -40,12 +48,24 @@ interface IPendleData {
     event LockParamsSet(uint256 lockNumerator, uint256 lockDenominator);
 
     /**
-     * @notice Emitted when deltaT is changed
-     * @param deltaT new deltaT setting
+     * @notice Emitted when interestUpdateDelta is changed
+     * @param interestUpdateDelta new interestUpdateDelta setting
      **/
-    event DeltaTSet(uint256 deltaT);
+    event InterestUpdateDeltaSet(uint256 interestUpdateDelta);
 
     event ReentrancyWhitelistUpdated(address[] addresses, bool[] whitelisted);
+
+    /**
+     * @notice Set/update validity of a forge-factory pair
+     * @param _forgeId the forge id
+     * @param _marketFactoryId the market factory id
+     * @param _valid valid or not
+     **/
+    function setForgeFactoryValidity(
+        bytes32 _forgeId,
+        bytes32 _marketFactoryId,
+        bool _valid
+    ) external;
 
     /**
      * @notice Sets the PendleTreasury contract addresses.
@@ -153,6 +173,11 @@ interface IPendleData {
         uint256 expiry
     ) external view returns (bool);
 
+    function validForgeFactoryPair(bytes32 _forgeId, bytes32 _marketFactoryId)
+        external
+        view
+        returns (bool);
+
     /**
      * @notice Gets a reference to a specific OT.
      * @param forgeId Forge and protocol identifier.
@@ -200,7 +225,7 @@ interface IPendleData {
 
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
 
-    function setDeltaT(uint256 _deltaT) external;
+    function setInterestUpdateDelta(uint256 _interestUpdateDelta) external;
 
     function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator) external;
 
@@ -227,7 +252,7 @@ interface IPendleData {
 
     function exitFee() external view returns (uint256);
 
-    function deltaT() external view returns (uint256);
+    function interestUpdateDelta() external view returns (uint256);
 
     function lockNumerator() external view returns (uint256);
 

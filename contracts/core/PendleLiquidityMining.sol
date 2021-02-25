@@ -134,6 +134,8 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         require(IERC20(_pendleAddress).totalSupply() > 0, "INVALID_ERC20");
         require(IERC20(_underlyingAsset).totalSupply() > 0, "INVALID_ERC20");
         require(IERC20(_baseToken).totalSupply() > 0, "INVALID_ERC20");
+        require(_numberOfEpochs > 0, "INVALID_NO_OF_EPOCHS");
+        require(_vestingEpochs > 0, "INVALID_VESTING_EPOCHS");
         pendleAddress = _pendleAddress;
         pendleRouter = IPendleRouter(_pendleRouter);
         pendleData = pendleRouter.data();
@@ -149,8 +151,6 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         marketFactoryId = _pendleMarketFactoryId;
         forgeId = _pendleForgeId;
 
-        require(_numberOfEpochs > 0, "INVALID_NO_OF_EPOCHS");
-        require(_vestingEpochs > 0, "INVALID_VESTING_EPOCHS");
         underlyingAsset = _underlyingAsset;
         baseToken = _baseToken;
         startTime = _startTime;

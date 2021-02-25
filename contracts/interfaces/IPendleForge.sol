@@ -28,15 +28,11 @@ import "./IPendleRouter.sol";
 interface IPendleForge {
     /**
      * @dev Emitted when the Forge has minted the OT and XYT tokens.
-     * @param underlyingYieldToken The address of the underlying yield token.
-     * @param amount The amount to be minted.
+     * @param underlyingAsset The address of the underlying yield token.
      * @param expiry The expiry of the XYT token
+     * @param amount The amount to be minted.
      **/
-    event MintYieldToken(
-        address indexed underlyingYieldToken,
-        uint256 amount,
-        uint256 indexed expiry
-    );
+    event MintYieldToken(address indexed underlyingAsset, uint256 indexed expiry, uint256 amount);
 
     /**
      * @dev Emitted when the Forge has created new yield token contracts.
@@ -48,28 +44,28 @@ interface IPendleForge {
 
     /**
      * @dev Emitted when the Forge has redeemed the OT and XYT tokens.
-     * @param underlyingYieldToken The address of the underlying yield token.
-     * @param amount The amount to be redeemed.
+     * @param underlyingAsset the address of the underlying asset
      * @param expiry The expiry of the XYT token
+     * @param amount The amount to be redeemed.
      **/
     event RedeemYieldToken(
-        address indexed underlyingYieldToken,
-        uint256 amount,
-        uint256 indexed expiry
+        address indexed underlyingAsset,
+        uint256 indexed expiry,
+        uint256 amount
     );
 
     /**
      * @dev Emitted when interest claim is settled
-     * @param underlyingYieldToken The address of the underlying yield token.
+     * @param underlyingAsset the address of the underlying asset
+     * @param expiry The expiry of the XYT token
      * @param receiver Interest receiver Address
      * @param amount The amount of interest claimed
-     * @param expiry The expiry of the XYT token
      **/
     event DueInterestSettled(
-        address indexed underlyingYieldToken,
-        address indexed receiver,
+        address indexed underlyingAsset,
+        uint256 indexed expiry,
         uint256 amount,
-        uint256 indexed expiry
+        address indexed receiver
     );
 
     function newYieldContracts(address underlyingAsset, uint256 expiry)

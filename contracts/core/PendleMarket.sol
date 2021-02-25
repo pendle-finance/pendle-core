@@ -75,7 +75,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
         IPendleYieldToken xytContract = IPendleYieldToken(_xyt);
-        require(xytContract.expiry() == _expiry, "Pendle: invalid expiry");
+        require(xytContract.expiry() == _expiry, "INVALID_EXPIRY");
 
         factory = msg.sender;
         forge = _forge;
@@ -125,6 +125,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         reserves[token].balance = initialTokenLiquidity;
         reserves[token].weight = Math.RONE / 2;
 
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
+
         _mintLp(INITIAL_LP);
         _transferOutLp(INITIAL_LP);
 
@@ -162,7 +169,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(amountXytUsed != 0, "ZERO_XYT_IN_AMOUNT");
         require(amountXytUsed <= _maxInXyt, "LOW_XYT_IN_LIMIT");
         reserves[xyt].balance = reserves[xyt].balance.add(amountXytUsed);
-        emit Join(xyt, amountXytUsed);
         _transferIn(xyt, amountXytUsed);
 
         // Calc and inject pair token.
@@ -171,8 +177,14 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(amountTokenUsed != 0, "ZERO_TOKEN_IN_AMOUNT");
         require(amountTokenUsed <= _maxInToken, "LOW_TOKEN_IN_LIMIT");
         reserves[token].balance = reserves[token].balance.add(amountTokenUsed);
-        emit Join(token, amountTokenUsed);
         _transferIn(token, amountTokenUsed);
+
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
 
         // Mint and push LP token.
         _mintLp(_exactOutLp);
@@ -204,7 +216,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         // Update reserves and operate underlying LP and inToken.
         inTokenReserve.balance = inTokenReserve.balance.add(_exactIn);
-        emit Join(_inToken, _exactIn);
         _transferIn(_inToken, _exactIn);
 
         // Mint and push LP token.
@@ -248,7 +259,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(outAmount >= _minOutXyt, "INSUFFICIENT_XYT_OUT");
         reserves[xyt].balance = reserves[xyt].balance.sub(outAmount);
         xytOut = outAmount;
-        emit Exit(xyt, outAmount);
         _transferOut(xyt, outAmount);
 
         // Calc and withdraw pair token.
@@ -258,7 +268,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(outAmount >= _minOutToken, "INSUFFICIENT_TOKEN_OUT");
         reserves[token].balance = reserves[token].balance.sub(outAmount);
         tokenOut = outAmount;
-        emit Exit(token, outAmount);
         _transferOut(token, outAmount);
 
         // Deal with lp last.
@@ -285,8 +294,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         // Update reserves and operate underlying LP and outToken
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmountToken);
-
-        emit Exit(_outToken, outAmountToken);
 
         _transferInLp(_inLp);
         _collectFees(exitFee);
@@ -318,6 +325,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
         require(spotPriceBefore <= maxPrice, "LOW_MAX_PRICE");
 
+        // calc out amount of token to be swapped out
         outAmount = calcExactOut(inTokenReserve, outTokenReserve, inAmount, data.swapFee());
         require(outAmount >= minOutAmount, "HIGH_OUT_LIMIT");
 
@@ -330,7 +338,12 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(spotPriceAfter <= maxPrice, "LOW_MAX_PRICE");
         require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "MATH_ERROR");
 
-        emit Swap(inToken, inAmount, outToken, outAmount);
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
 
         _transferIn(inToken, inAmount);
         _transferOut(outToken, outAmount);
@@ -374,7 +387,13 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         require(spotPriceAfter <= maxPrice, "LOW_MAX_PRICE");
         require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "MATH_ERROR");
 
-        emit Swap(inToken, inAmount, outToken, outAmount);
+        emit Sync(
+            reserves[xyt].balance,
+            reserves[xyt].weight,
+            reserves[token].balance,
+            reserves[token].weight
+        );
+
         _transferIn(inToken, inAmount);
         _transferOut(outToken, outAmount);
 
@@ -440,6 +459,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         return reserves[asset].balance;
     }
 
+    // will do weight update (dry run) before reading token weights, to prevent the case
+    // that weight is outdated
     function getWeight(address asset) external view override returns (uint256) {
         (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) =
             _updateWeightDry();
@@ -557,6 +578,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         _mint(address(this), amount);
     }
 
+    // update the token reserve storage
     function _updateWeight() internal {
         uint256 xytWeight = reserves[xyt].weight;
         uint256 tokenWeight = reserves[token].weight;
@@ -570,6 +592,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         emit Shift(xytWeight, tokenWeight, xytWeightUpdated, tokenWeightUpdated);
     }
 
+    // do the weight update calucation but don't update the token reserve storage
     function _updateWeightDry()
         internal
         view
@@ -579,6 +602,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             uint256 priceNow
         )
     {
+        // get current timestamp currentTime
         uint256 currentTime = block.timestamp;
         uint256 endTime = expiry;
         uint256 startTime = IPendleYieldToken(xyt).start();
@@ -594,8 +618,10 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             timeLeft = 0;
         }
 
+        // get time_to_mature = (endTime - currentTime) / (endTime - startTime)
         uint256 timeToMature = Math.rdiv(timeLeft * Math.RONE, duration * Math.RONE);
 
+        // get price for now = ln(3.14 * t + 1) / ln(4.14)
         priceNow = Math.rdiv(
             Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RONE), Math.RONE),
             Math.ln(Math.PI_PLUSONE, Math.RONE)
@@ -607,12 +633,14 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
 
+        // calc weight changes theta
         uint256 theta = Math.rdiv(thetaNumerator, thetaDenominator);
 
         xytWeightUpdated = xytWeight.sub(theta);
         tokenWeightUpdated = tokenWeight.add(theta);
     }
 
+    //curve shift will be called before any calculation using weight
     function _curveShift(IPendleData _data) internal {
         if (block.number > blockNumLast) {
             _updateWeight();
@@ -643,9 +671,9 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     // this function should be called whenver the total amount of LP changes
     //
     function _updateGlobalIncomeIndex() internal {
-        if (block.timestamp.sub(lastInterestUpdate) > data.deltaT()) {
+        if (block.timestamp.sub(lastInterestUpdate) > data.interestUpdateDelta()) {
             // get due interests for the XYT being held in the market
-            router.redeemDueInterests(forgeId, underlyingAsset, expiry);
+            router.redeemDueInterests(forgeId, underlyingAsset, expiry); 
             lastInterestUpdate = block.timestamp;
         }
 

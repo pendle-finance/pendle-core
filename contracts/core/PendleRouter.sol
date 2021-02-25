@@ -57,7 +57,7 @@ contract PendleRouter is IPendleRouter, Permissions {
     function _checkNonReentrancy() internal {
         if (!data.reentrancyWhitelisted(msg.sender)) {
             // On the first call to pendleNonReentrant, _notEntered will be true
-            require(_reentrancyStatus != _ENTERED, "ReentrancyGuard: reentrant call");
+            require(_reentrancyStatus != _ENTERED, "REENTRANT_CALL");
 
             // Any calls to nonReentrant after this point will fail
             _reentrancyStatus = _ENTERED;
@@ -256,6 +256,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         data.addMarketFactory(_marketFactoryId, _marketFactoryAddress);
     }
 
+    // add market liquidity by xyt and base tokens
     function addMarketLiquidityAll(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -275,6 +276,7 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         (uint256 amountXytUsed, uint256 amountTokenUsed) =
             market.addMarketLiquidityAll(_exactOutLp, _maxInXyt, _maxInToken);
+        emit Join(msg.sender, amountXytUsed, amountTokenUsed, address(market));
 
         _transferOut(address(market), _exactOutLp);
         // transfer unused XYT back to user
@@ -283,6 +285,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         _transferOut(originalToken, _maxInToken - amountTokenUsed);
     }
 
+    // add market liquidity by xyt or base token
     function addMarketLiquiditySingle(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -305,8 +308,15 @@ contract PendleRouter is IPendleRouter, Permissions {
             market.addMarketLiquiditySingle(assetForMarket, _exactInAsset, _minOutLp);
 
         _transferOut(address(market), exactOutLp);
+
+        if (_forXyt) {
+            emit Join(msg.sender, _exactInAsset, 0, address(market));
+        } else {
+            emit Join(msg.sender, 0, _exactInAsset, address(market));
+        }
     }
 
+    // remove market liquidity by xyt and base tokens
     function removeMarketLiquidityAll(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -328,8 +338,11 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         _transferOut(_xyt, xytAmount);
         _transferOut(originalToken, tokenAmount);
+
+        emit Exit(msg.sender, xytAmount, tokenAmount, address(market));
     }
 
+    // remove market liquidity by xyt or base tokens
     function removeMarketLiquiditySingle(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -352,6 +365,12 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         address assetToTransferOut = _forXyt ? _xyt : originalToken;
         _transferOut(assetToTransferOut, assetOut);
+
+        if (_forXyt) {
+            emit Exit(msg.sender, assetOut, 0, address(market));
+        } else {
+            emit Exit(msg.sender, 0, assetOut, address(market));
+        }
     }
 
     function createMarket(
@@ -367,6 +386,8 @@ contract PendleRouter is IPendleRouter, Permissions {
         IPendleMarketFactory factory =
             IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));
         require(address(factory) != address(0), "ZERO_ADDRESS");
+        bytes32 forgeId = IPendleForge(IPendleYieldToken(_xyt).forge()).forgeId();
+        require(data.validForgeFactoryPair(forgeId, _marketFactoryId), "INVALID_FORGE_FACTORY");
 
         market = factory.createMarket(_xyt, _token);
         IERC20(_xyt).safeApprove(market, type(uint256).max);
@@ -399,7 +420,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         _transferIn(originalToken, _initialTokenLiquidity);
 
         uint256 lpAmount = market.bootstrap(_initialXytLiquidity, _initialTokenLiquidity);
-
+        emit Join(msg.sender, _initialXytLiquidity, _initialTokenLiquidity, address(market));
         _transferOut(address(market), lpAmount);
 
         address[] memory xyts = new address[](1);
@@ -409,6 +430,7 @@ contract PendleRouter is IPendleRouter, Permissions {
         data.updateMarketInfo(_xyt, _token, _marketFactoryId);
     }
 
+    // trade by swap exact amount of token into market
     function swapExactIn(
         address _tokenIn,
         address _tokenOut,
@@ -437,8 +459,18 @@ contract PendleRouter is IPendleRouter, Permissions {
         require(outSwapAmount >= _minOutTotalAmount, "INSUFFICIENT_OUT_AMOUNT");
 
         _transferOut(originalTokenOut, outSwapAmount);
+
+        emit SwapEvent(
+            msg.sender,
+            _tokenIn,
+            _tokenOut,
+            _inTotalAmount,
+            outSwapAmount,
+            address(market)
+        );
     }
 
+    // trade by swap exact amount of token out of market
     function swapExactOut(
         address _tokenIn,
         address _tokenOut,
@@ -471,6 +503,15 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         _transferOut(originalTokenOut, _outTotalAmount);
         _transferOut(originalTokenIn, change);
+
+        emit SwapEvent(
+            msg.sender,
+            _tokenIn,
+            _tokenOut,
+            inSwapAmount,
+            _outTotalAmount,
+            address(market)
+        );
     }
 
     /**
