@@ -40,7 +40,7 @@ export const consts = {
   TEST_TOKEN_DELTA: BN.from(10).pow(2),
   TEST_LP_DELTA: BN.from(10).pow(11),
   LOCK_NUMERATOR: BN.from(1),
-  LOCK_DENOMINATOR: BN.from(180)
+  LOCK_DENOMINATOR: BN.from(180),
 };
 
 // export function setT0(time: BN) {
