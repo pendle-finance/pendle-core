@@ -76,13 +76,10 @@ export async function AMMTest(
     var actualXytOut = initialXytReserves.sub(xytReserves);
     var actualTokenIn = tokenReserves.sub(initialTokenReserves);
 
-    console.log("TestTokenToXyt");
-    console.log(tokenIn.toNumber(), actualTokenIn.toNumber());
     expect(tokenIn.toNumber()).to.be.approximately(
       actualTokenIn.toNumber(),
       consts.TEST_TOKEN_DELTA.toNumber()
     );
-    console.log(xytOut.toNumber(), actualXytOut.toNumber());
     expect(xytOut.toNumber()).to.be.approximately(
       actualXytOut.toNumber(),
       consts.TEST_TOKEN_DELTA.toNumber()
@@ -107,13 +104,10 @@ export async function AMMTest(
     var actualXytIn: BN = xytReserves.sub(initialXytReserves);
     var actualTokenOut: BN = initialTokenReserves.sub(tokenReserves);
 
-    console.log("TestXytToToken");
-    console.log(tokenOut.toNumber(), actualTokenOut.toNumber());
     expect(tokenOut.toNumber()).to.be.approximately(
       actualTokenOut.toNumber(),
       consts.TEST_TOKEN_DELTA.toNumber()
     );
-    console.log(xytIn.toNumber(), actualXytIn.toNumber());
     expect(xytIn.toNumber()).to.be.approximately(
       actualXytIn.toNumber(),
       consts.TEST_TOKEN_DELTA.toNumber()
@@ -171,8 +165,8 @@ export async function AMMTest(
     BN.from(80000000)
   );
   await runTestXytToToken(
-    consts.T0.add(15465600),
+    consts.T0.add(15379200),
     BN.from(800000016),
-    BN.from(6068470)
+    BN.from(11997610)
   );
 }
