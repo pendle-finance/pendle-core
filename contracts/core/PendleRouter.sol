@@ -375,9 +375,9 @@ contract PendleRouter is IPendleRouter, Permissions {
     }
 
     /**
-    * @dev Users can either set _token as ETH or WETH to trade with XYT-WETH markets
-        * If they put in ETH, they must send ETH along and _token will be auto wrapped to WETH
-        * If they put in WETH, the function will run the same as other tokens
+     * @dev Users can either set _token as ETH or WETH to trade with XYT-WETH markets
+     * If they put in ETH, they must send ETH along and _token will be auto wrapped to WETH
+     * If they put in WETH, the function will run the same as other tokens
      */
     function bootstrapMarket(
         bytes32 _marketFactoryId,
@@ -485,7 +485,6 @@ contract PendleRouter is IPendleRouter, Permissions {
         uint256 _inTotalAmount,
         uint256 _minOutTotalAmount
     ) public payable override pendleNonReentrant returns (uint256 outTotalAmount) {
-
         _transferIn(_tokenIn, _inTotalAmount);
 
         for (uint256 i = 0; i < _swapPath.length; i++) {
@@ -647,7 +646,7 @@ contract PendleRouter is IPendleRouter, Permissions {
     }
 
     /**
-    * @dev no wrapping here for the same reason as getMarketRateExactIn
+     * @dev no wrapping here for the same reason as getMarketRateExactIn
      */
     function getMarketRateExactOut(
         address _tokenIn,
@@ -673,8 +672,8 @@ contract PendleRouter is IPendleRouter, Permissions {
     }
 
     /**
-    * @dev no wrapping here for the same reason as getMarketRateExactIn
-    */
+     * @dev no wrapping here for the same reason as getMarketRateExactIn
+     */
     function getMarketReserves(
         bytes32 _marketFactoryId,
         address _xyt,

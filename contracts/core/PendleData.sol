@@ -115,11 +115,16 @@ contract PendleData is IPendleData, Permissions {
         emit DeltaTSet(_deltaT);
     }
 
-    function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator) external override initialized onlyGovernance {
-        require(0<_lockNumerator&&_lockNumerator<_lockDenominator,"INVALID_LOCK_PARAMS");
+    function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator)
+        external
+        override
+        initialized
+        onlyGovernance
+    {
+        require(0 < _lockNumerator && _lockNumerator < _lockDenominator, "INVALID_LOCK_PARAMS");
         lockNumerator = _lockNumerator;
         lockDenominator = _lockDenominator;
-        emit LockParamsSet(_lockNumerator,_lockDenominator);
+        emit LockParamsSet(_lockNumerator, _lockDenominator);
     }
 
     function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
