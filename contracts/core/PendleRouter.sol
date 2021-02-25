@@ -520,7 +520,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         _transferIn(_tokenIn, _inTotalAmount);
 
         for (uint256 i = 0; i < _swapPath.length; i++) {
-            require(_swapPath[i][0].tokenIn == _tokenIn && _swapPath[i][_swapPath[i].length - 1].tokenOut == _tokenOut, "INVALID_PATH");
+            require(
+                _swapPath[i][0].tokenIn == _tokenIn &&
+                    _swapPath[i][_swapPath[i].length - 1].tokenOut == _tokenOut,
+                "INVALID_PATH"
+            );
             uint256 tokenAmountOut;
             for (uint256 j = 0; j < _swapPath[i].length; j++) {
                 Swap memory swap = _swapPath[i][j];
@@ -565,7 +569,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         _transferIn(_tokenIn, _maxInTotalAmount);
 
         for (uint256 i = 0; i < _swapPath.length; i++) {
-            require(_swapPath[i][0].tokenIn == _tokenIn && _swapPath[i][_swapPath[i].length - 1].tokenOut == _tokenOut, "INVALID_PATH");
+            require(
+                _swapPath[i][0].tokenIn == _tokenIn &&
+                    _swapPath[i][_swapPath[i].length - 1].tokenOut == _tokenOut,
+                "INVALID_PATH"
+            );
             uint256 firstSwapTokenIn;
             // Specific code for a simple swap and a multihop (2 swaps in sequence)
             if (_swapPath[i].length == 1) {
