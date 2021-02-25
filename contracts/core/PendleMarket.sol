@@ -673,7 +673,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     function _updateGlobalIncomeIndex() internal {
         if (block.timestamp.sub(lastInterestUpdate) > data.interestUpdateDelta()) {
             // get due interests for the XYT being held in the market
-            router.redeemDueInterests(forgeId, underlyingAsset, expiry); 
+            router.redeemDueInterests(forgeId, underlyingAsset, expiry);
             lastInterestUpdate = block.timestamp;
         }
 

@@ -69,7 +69,7 @@ contract PendleData is IPendleData, Permissions {
     if a market's interests have not been updated for deltaT, we will ping
     the forge to update the interests
     */
-    uint256 public override interestUpdateDelta; 
+    uint256 public override interestUpdateDelta;
     uint256 public override swapFee;
     uint256 public override exitFee;
     // lock duration = duration * lockNumerator / lockDenominator

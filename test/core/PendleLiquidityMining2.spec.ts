@@ -141,8 +141,8 @@ function calExpectedRewards(
   return rewards;
 }
 
-// TODO:interest of Lp, pull&push of tokens
-describe("PendleLiquidityMining tests", async () => {
+// TODO:interest of Lp
+describe("PendleLiquidityMining systemic tests", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
@@ -286,8 +286,6 @@ describe("PendleLiquidityMining tests", async () => {
         false
       );
     }
-    // console.log(await claimRewardsWeb3(wallets[0]));
-    // console.log(await claimRewardsWeb3(wallets[1]));
   }
 
   async function checkEqualRewardsFourEpochs(
@@ -304,7 +302,7 @@ describe("PendleLiquidityMining tests", async () => {
     }
   }
 
-  it("beta", async () => {
+  it("should be able to claimLpInterest", async () => {
     // console.log(`\tLP balance of eve = ${await pendleStdMarket.balanceOf(eve.address)}`);
     // console.log(`\taToken balance of market = ${await aUSDT.balanceOf(pendleStdMarket.address)}`);
     // console.log(`\tXYT balance of market = ${await pendleXyt.balanceOf(pendleStdMarket.address)}`);
