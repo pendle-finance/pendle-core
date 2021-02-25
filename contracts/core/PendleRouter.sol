@@ -374,6 +374,11 @@ contract PendleRouter is IPendleRouter, Permissions {
         IERC20(market).safeApprove(market, type(uint256).max);
     }
 
+    /**
+    * @dev Users can either set _token as ETH or WETH to trade with XYT-WETH markets
+        * If they put in ETH, they must send ETH along and _token will be auto wrapped to WETH
+        * If they put in WETH, the function will run the same as other tokens
+     */
     function bootstrapMarket(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -468,7 +473,11 @@ contract PendleRouter is IPendleRouter, Permissions {
         _transferOut(originalTokenIn, change);
     }
 
-    /// @dev Needed for multi-path off-chain routing
+    /**
+    * @dev Needed for multi-path off-chain routing
+    * @dev No "original" variables in this function since both _tokenIn and _tokenOut
+            will not be wrapped.
+     */
     function swapPathExactIn(
         Swap[][] memory _swapPath,
         address _tokenIn,
@@ -476,12 +485,8 @@ contract PendleRouter is IPendleRouter, Permissions {
         uint256 _inTotalAmount,
         uint256 _minOutTotalAmount
     ) public payable override pendleNonReentrant returns (uint256 outTotalAmount) {
-        address originalTokenIn = _tokenIn;
-        address originalTokenOut = _tokenOut;
-        _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
-        _tokenOut = _isETH(_tokenOut) ? address(weth) : _tokenOut;
 
-        _transferIn(originalTokenIn, _inTotalAmount);
+        _transferIn(_tokenIn, _inTotalAmount);
 
         for (uint256 i = 0; i < _swapPath.length; i++) {
             uint256 tokenAmountOut;
@@ -508,10 +513,9 @@ contract PendleRouter is IPendleRouter, Permissions {
 
         require(outTotalAmount >= _minOutTotalAmount, "LIMIT_OUT_ERROR");
 
-        _transferOut(originalTokenOut, outTotalAmount);
+        _transferOut(_tokenOut, outTotalAmount);
     }
 
-    @dev
     /**
     * @dev Needed for multi-path off-chain routing
     * @dev No "original" variables in this function since both _tokenIn and _tokenOut
@@ -614,15 +618,17 @@ contract PendleRouter is IPendleRouter, Permissions {
         }
     }
 
+    /**
+    * @dev no wrapping here since users must be aware of the market they are querying against.
+        For example, if they want to query market WETH/XYT, they must pass in WETH & XYT
+        and not ETH & XYT
+     */
     function getMarketRateExactIn(
         address _tokenIn,
         address _tokenOut,
         uint256 _inSwapAmount,
         bytes32 _marketFactoryId
     ) public view override returns (Swap memory swap, uint256 outSwapAmount) {
-        _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
-        _tokenOut = _isETH(_tokenOut) ? address(weth) : _tokenOut;
-
         address market = data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId);
         Market memory marketData = _getMarketData(_tokenIn, _tokenOut, market);
 
@@ -640,15 +646,15 @@ contract PendleRouter is IPendleRouter, Permissions {
         return (swap, outSwapAmount);
     }
 
+    /**
+    * @dev no wrapping here for the same reason as getMarketRateExactIn
+     */
     function getMarketRateExactOut(
         address _tokenIn,
         address _tokenOut,
         uint256 _outSwapAmount,
         bytes32 _marketFactoryId
     ) public view override returns (Swap memory swap, uint256 inSwapAmount) {
-        _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
-        _tokenOut = _isETH(_tokenOut) ? address(weth) : _tokenOut;
-
         address market = data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId);
         Market memory marketData = _getMarketData(_tokenIn, _tokenOut, market);
 
@@ -666,6 +672,9 @@ contract PendleRouter is IPendleRouter, Permissions {
         return (swap, inSwapAmount);
     }
 
+    /**
+    * @dev no wrapping here for the same reason as getMarketRateExactIn
+    */
     function getMarketReserves(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -680,7 +689,6 @@ contract PendleRouter is IPendleRouter, Permissions {
             uint256 currentTime
         )
     {
-        _token = _isETH(_token) ? address(weth) : _token;
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
         (xytAmount, tokenAmount, currentTime) = market.getReserves();
