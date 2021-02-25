@@ -43,9 +43,9 @@ describe("pendleLpFormula", async () => {
     const fixture = await loadFixture(pendleMarketFixture);
     pendleRouter = fixture.core.pendleRouter;
     pendleData = fixture.core.pendleData;
-    pendleXyt = fixture.forge.pendleFutureYieldToken;
+    pendleXyt = fixture.aForge.pendleAFutureYieldToken;
     testToken = fixture.testToken;
-    pendleStdMarket = fixture.pendleStdMarket;
+    pendleStdMarket = fixture.pendleAMarket;
     tokenUSDT = tokens.USDT;
     snapshotId = await evm_snapshot();
   });

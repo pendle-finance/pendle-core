@@ -11,7 +11,8 @@ const { provider, deployContract } = waffle;
 export interface PendleCoreFixture {
   pendleRouter: Contract
   pendleTreasury: Contract
-  pendleMarketFactory: Contract
+  pendleAMarketFactory: Contract
+  pendleCMarketFactory: Contract
   pendleData: Contract
 }
 
@@ -21,13 +22,14 @@ export async function pendleCoreFixture(
 ): Promise<PendleCoreFixture> {
   const pendleRouter = await deployContract(alice, PendleRouter, [alice.address, tokens.WETH.address]);
   const pendleTreasury = await deployContract(alice, PendleTreasury, [alice.address]);
-  const pendleMarketFactory = await deployContract(alice, PendleMarketFactory, [alice.address, consts.MARKET_FACTORY_AAVE]);
+  const pendleAMarketFactory = await deployContract(alice, PendleMarketFactory, [alice.address, consts.MARKET_FACTORY_AAVE]);
+  const pendleCMarketFactory = await deployContract(alice, PendleMarketFactory, [alice.address, consts.MARKET_FACTORY_COMPOUND]);
   const pendleData = await deployContract(alice, PendleData, [alice.address, pendleTreasury.address]);
 
-  await pendleMarketFactory.initialize(pendleRouter.address);
-
+  await pendleAMarketFactory.initialize(pendleRouter.address);
+  await pendleCMarketFactory.initialize(pendleRouter.address);
   await pendleData.initialize(pendleRouter.address);
   await pendleRouter.initialize(pendleData.address);
 
-  return { pendleRouter, pendleTreasury, pendleMarketFactory, pendleData }
+  return { pendleRouter, pendleTreasury, pendleAMarketFactory, pendleCMarketFactory, pendleData }
 }

@@ -3,11 +3,13 @@ import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
 import {
   amountToWei,
+  getAContract,
+  getCContract,
+  mintAaveToken,
+  mintCompoundToken,
   consts,
   evm_revert,
   evm_snapshot,
-  getAContract,
-  mintAaveToken,
   setTimeNextBlock,
   Token,
   tokens,
@@ -24,32 +26,39 @@ describe("PendleRouter", async () => {
 
   let pendleRouter: Contract;
   let pendleTreasury: Contract;
-  let pendleMarketFactory: Contract;
   let pendleData: Contract;
-  let pendleOt: Contract;
-  let pendleXyt: Contract;
+  let pendleAOt: Contract;
+  let pendleAXyt: Contract;
+  let pendleCOt: Contract;
+  let pendleCXyt: Contract;
   let lendingPoolCore: Contract;
   let pendleAaveForge: Contract;
+  let pendleCompoundForge: Contract;
   let aUSDT: Contract;
+  let cUSDT: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
   let tokenUSDT: Token;
   let amountToTokenize: BN;
   let initialAUSDTbalance: BN;
+  let initialCUSDTbalance: BN;
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
     const fixture = await loadFixture(pendleFixture);
     pendleRouter = fixture.core.pendleRouter;
     pendleTreasury = fixture.core.pendleTreasury;
-    pendleMarketFactory = fixture.core.pendleMarketFactory;
     pendleData = fixture.core.pendleData;
-    pendleOt = fixture.forge.pendleOwnershipToken;
-    pendleXyt = fixture.forge.pendleFutureYieldToken;
-    pendleAaveForge = fixture.forge.pendleAaveForge;
+    pendleAOt = fixture.aForge.pendleAOwnershipToken;
+    pendleCOt = fixture.cForge.pendleCOwnershipToken;
+    pendleAXyt = fixture.aForge.pendleAFutureYieldToken;
+    pendleCXyt = fixture.cForge.pendleCFutureYieldToken;
+    pendleAaveForge = fixture.aForge.pendleAaveForge;
+    pendleCompoundForge = fixture.cForge.pendleCompoundForge;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     tokenUSDT = tokens.USDT;
     aUSDT = await getAContract(alice, lendingPoolCore, tokenUSDT);
+    cUSDT = await getCContract(alice, tokens.USDT);
     snapshotId = await evm_snapshot();
   });
 
@@ -62,6 +71,7 @@ describe("PendleRouter", async () => {
     snapshotId = await evm_snapshot();
     amountToTokenize = amountToWei(tokenUSDT, consts.INITIAL_AAVE_TOKEN_AMOUNT);
     initialAUSDTbalance = await aUSDT.balanceOf(alice.address);
+    initialCUSDTbalance = await cUSDT.balanceOf(alice.address);
   });
 
   async function tokenizeYieldSample(amountToTokenize: BN) {
@@ -94,8 +104,8 @@ describe("PendleRouter", async () => {
 
   it("should be able to deposit aUSDT to get back OT and XYT", async () => {
     await tokenizeYieldSample(amountToTokenize);
-    const balanceOwnershipToken = await pendleOt.balanceOf(alice.address);
-    const balanceFutureYieldToken = await pendleXyt.balanceOf(alice.address);
+    const balanceOwnershipToken = await pendleAOt.balanceOf(alice.address);
+    const balanceFutureYieldToken = await pendleAXyt.balanceOf(alice.address);
     expect(balanceOwnershipToken).to.be.eq(amountToTokenize);
     expect(balanceFutureYieldToken).to.be.eq(amountToTokenize);
   });
@@ -128,8 +138,8 @@ describe("PendleRouter", async () => {
     await tokenizeYieldSample(amountToTokenize);
     await startCalInterest(charlie, amountToTokenize);
 
-    const balance = await pendleOt.balanceOf(alice.address);
-    await pendleOt.transfer(bob.address, balance);
+    const balance = await pendleAOt.balanceOf(alice.address);
+    await pendleAOt.transfer(bob.address, balance);
 
     const afterLendingAUSDTbalance = await aUSDT.balanceOf(alice.address);
 
@@ -155,7 +165,7 @@ describe("PendleRouter", async () => {
     await startCalInterest(charlie, amountToTokenize);
 
     await tokenizeYieldSample(amountToTokenize);
-    await pendleXyt.transfer(bob.address, amountToTokenize);
+    await pendleAXyt.transfer(bob.address, amountToTokenize);
 
     const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
@@ -181,7 +191,7 @@ describe("PendleRouter", async () => {
     await startCalInterest(charlie, amountToTokenize);
 
     await tokenizeYieldSample(amountToTokenize);
-    await pendleXyt.transfer(bob.address, amountToTokenize);
+    await pendleAXyt.transfer(bob.address, amountToTokenize);
 
     const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
@@ -220,7 +230,7 @@ describe("PendleRouter", async () => {
     await startCalInterest(charlie, amountToTokenize);
 
     await tokenizeYieldSample(amountToTokenize);
-    await pendleXyt.transfer(bob.address, amountToTokenize);
+    await pendleAXyt.transfer(bob.address, amountToTokenize);
 
     const T1 = consts.T0.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);

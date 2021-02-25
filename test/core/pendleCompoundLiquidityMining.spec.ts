@@ -7,7 +7,7 @@ import {
   consts,
   evm_revert,
   evm_snapshot,
-  getAContract,
+  getCContract,
   tokens,
 } from "../helpers";
 import { liqParams, pendleLiquidityMiningFixture } from "./fixtures";
@@ -16,15 +16,14 @@ const { waffle } = require("hardhat");
 const hre = require("hardhat");
 const { deployContract, provider } = waffle;
 
-describe("PendleLiquidityMining", async () => {
+describe("PendleCompoundLiquidityMining", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;
-  let lendingPoolCore: Contract;
   let pendleLiquidityMining: Contract;
   let pdl: Contract;
   let pendleMarket: Contract;
-  let aUSDT: Contract;
+  let cUSDT: Contract;
   let params: liqParams;
   let snapshotId: string;
   let globalSnapshotId: string;
@@ -33,12 +32,11 @@ describe("PendleLiquidityMining", async () => {
     globalSnapshotId = await evm_snapshot();
 
     const fixture = await loadFixture(pendleLiquidityMiningFixture);
-    lendingPoolCore = fixture.aave.lendingPoolCore;
-    pendleLiquidityMining = fixture.pendleLiquidityMining;
+    pendleLiquidityMining = fixture.pendleCLiquidityMining;
     params = fixture.params;
-    aUSDT = await getAContract(alice, lendingPoolCore, tokens.USDT);
+    cUSDT = await getCContract(alice, tokens.USDT);
     pdl = fixture.pdl;
-    pendleMarket = fixture.pendleStdMarket;
+    pendleMarket = fixture.pendleCMarket;
     snapshotId = await evm_snapshot();
   });
 
@@ -68,34 +66,34 @@ describe("PendleLiquidityMining", async () => {
     console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
     console.log(`\tLP balance of user before: ${lpBalanceOfUser}`);
 
-    await advanceTime(provider, params.START_TIME.sub(consts.T0));
+    await advanceTime(provider, params.START_TIME.sub(consts.T0_C));
     await pendleLiquidityMining
       .connect(bob)
       .stake(
-        consts.T0.add(consts.SIX_MONTH),
+        consts.T0_C.add(consts.ONE_MONTH),
         amountToStake,
         consts.HIGH_GAS_OVERRIDE
       );
     console.log("\tStaked");
     const lpHolderContract = await pendleLiquidityMining.lpHolderForExpiry(
-      consts.T0.add(consts.SIX_MONTH)
+      consts.T0_C.add(consts.ONE_MONTH)
     );
-    const aTokenBalanceOfLpHolderContract = await aUSDT.balanceOf(
+    const cTokenBalanceOfLpHolderContract = await cUSDT.balanceOf(
       lpHolderContract
     );
-    const aTokenBalanceOfUser = await aUSDT.balanceOf(bob.address);
+    const cTokenBalanceOfUser = await cUSDT.balanceOf(bob.address);
     console.log(
-      `\t[LP interests] aUSDT balance of LpHolder after first staking = ${aTokenBalanceOfLpHolderContract}`
+      `\t[LP interests] cUSDT balance of LpHolder after first staking = ${cTokenBalanceOfLpHolderContract}`
     );
     console.log(
-      `\t[LP interests] aUSDT balance of User after first staking = ${aTokenBalanceOfUser}`
+      `\t[LP interests] cUSDT balance of User after first staking = ${cTokenBalanceOfUser}`
     );
 
     await advanceTime(provider, FIFTEEN_DAYS);
     await pendleLiquidityMining
       .connect(bob)
       .withdraw(
-        consts.T0.add(consts.SIX_MONTH),
+        consts.T0_C.add(consts.ONE_MONTH),
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
@@ -119,15 +117,9 @@ describe("PendleLiquidityMining", async () => {
       expectedPdlBalanceOfUserAfter.toNumber() / 1000
     );
 
-    console.log(
-      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
-        lpHolderContract
-      )}`
-    );
-
     //stake using another user - alice, for the same amount as bob's stake now (amountToStake/2)
     await pendleLiquidityMining.stake(
-      consts.T0.add(consts.SIX_MONTH),
+      consts.T0_C.add(consts.ONE_MONTH),
       amountToStake.div(2),
       consts.HIGH_GAS_OVERRIDE
     );
@@ -154,16 +146,11 @@ describe("PendleLiquidityMining", async () => {
       .call({ from: alice.address });
     console.log(`\tInterests for alice = ${interestsData}`);
     console.log(`\tRewards available for epochs from now: ${rewardsData}`);
-    console.log(
-      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
-        lpHolderContract
-      )}`
-    );
 
     await pendleLiquidityMining
       .connect(bob)
       .withdraw(
-        consts.T0.add(consts.SIX_MONTH),
+        consts.T0_C.add(consts.ONE_MONTH),
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
@@ -178,33 +165,27 @@ describe("PendleLiquidityMining", async () => {
       `\tExpected PDL balance of user after 2nd withdraw: ${expectedPdlBalanceOfUsersAfter2ndTnx}`
     );
 
-    console.log(
-      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
-        lpHolderContract
-      )}`
-    );
-
     expect(pdlBalanceOfUserAfter2ndTnx.toNumber()).to.be.approximately(
       expectedPdlBalanceOfUsersAfter2ndTnx.toNumber(),
       expectedPdlBalanceOfUsersAfter2ndTnx.toNumber() / 1000
     );
 
     await pendleLiquidityMining.withdraw(
-      consts.T0.add(consts.SIX_MONTH),
+      consts.T0_C.add(consts.ONE_MONTH),
       amountToStake.div(2),
       consts.HIGH_GAS_OVERRIDE
     );
-    const aTokenBalanceOfLpHolderContractAfter = await aUSDT.balanceOf(
+    const cTokenBalanceOfLpHolderContractAfter = await cUSDT.balanceOf(
       lpHolderContract
     );
-    const aTokenBalanceOfUserAfter = await aUSDT.balanceOf(bob.address);
+    const cTokenBalanceOfUserAfter = await cUSDT.balanceOf(bob.address);
 
-    //now, the LP holding contract should hold almost 0 aUSDT. This means that we have calculated and gave the Lp interests back to the users properly
+    //now, the LP holding contract should hold almost 0 cUSDT. This means that we have calculated and gave the Lp interests back to the users properly
     console.log(
-      `\t[LP interests] aUSDT balance of LpHolder after withdrawing all = ${aTokenBalanceOfLpHolderContractAfter}`
+      `\t[LP interests] cUSDT balance of LpHolder after withdrawing all = ${cTokenBalanceOfLpHolderContractAfter}`
     );
     console.log(
-      `\t[LP interests] aUSDT balance of user after withdrawing all = ${aTokenBalanceOfUserAfter}`
+      `\t[LP interests] cUSDT balance of user after withdrawing all = ${cTokenBalanceOfUserAfter}`
     );
   });
 });
