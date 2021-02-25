@@ -289,7 +289,8 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         if (prevRate == 0) {
             return 0;
         }
-
+        // dueInterests is a difference between yields where newer yield increased proportionally
+        // by currentExchangeRate / prevExchangeRate for cTokens to underyling asset
         uint256 dueInterests =
             principal.mul(currentRate).div(prevRate).sub(principal).mul(initialRate).div(
                 currentRate
