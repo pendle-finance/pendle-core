@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
-experimental ABIEncoderV2;
+pragma experimental ABIEncoderV2;
 
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarket.sol";
