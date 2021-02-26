@@ -34,6 +34,8 @@ import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
 import "hardhat/console.sol";
 
+// Common contract base for a forge implementation.
+// Each specific forge implementation will need to implement the virtual functions
 contract PendleForgeBase is IPendleForge, Permissions {
     using ExpiryUtils for string;
     using SafeMath for uint256;
@@ -130,13 +132,6 @@ contract PendleForgeBase is IPendleForge, Permissions {
         emit RedeemYieldToken(_underlyingAsset, _expiry, redeemedAmount);
     }
 
-    function _calcTotalAfterExpiry(
-        address yieldTokenAddress,
-        address _underlyingAsset,
-        uint256 _expiry,
-        uint256 redeemedAmount
-    ) internal virtual returns (uint256 totalAfterExpiry) {}
-
     /// @dev msg.sender needs to have both OT and XYT tokens
     function redeemUnderlying(
         address _account,
@@ -163,14 +158,6 @@ contract PendleForgeBase is IPendleForge, Permissions {
         emit RedeemYieldToken(_underlyingAsset, _expiry, _amountToRedeem);
 
         return _amountToRedeem;
-    }
-
-    function _calcUnderlyingToRedeem(address, uint256 _amountToRedeem)
-        internal
-        virtual
-        returns (uint256 underlyingToRedeem)
-    {
-        underlyingToRedeem = _amountToRedeem;
     }
 
     function redeemDueInterests(
@@ -208,21 +195,6 @@ contract PendleForgeBase is IPendleForge, Permissions {
         emit MintYieldToken(_underlyingAsset, _expiry, _amountToTokenize);
         return (address(tokens.ot), address(tokens.xyt));
     }
-
-    function _calcAmountToMint(address, uint256 _amountToTokenize)
-        internal
-        virtual
-        returns (uint256 amountToMint)
-    {
-        amountToMint = _amountToTokenize;
-    }
-
-    function _getYieldBearingToken(address _underlyingAsset)
-        internal
-        view
-        virtual
-        returns (address)
-    {}
 
     function getYieldBearingToken(address _underlyingAsset)
         public
@@ -301,13 +273,6 @@ contract PendleForgeBase is IPendleForge, Permissions {
         return dueInterests;
     }
 
-    function _calcDueInterests(
-        uint256 principal,
-        address _underlyingAsset,
-        uint256 _expiry,
-        address _account
-    ) internal virtual returns (uint256 dueInterests) {}
-
     function _getTokens(address _underlyingAsset, uint256 _expiry)
         internal
         view
@@ -315,4 +280,42 @@ contract PendleForgeBase is IPendleForge, Permissions {
     {
         (_tokens.ot, _tokens.xyt) = data.getPendleYieldTokens(forgeId, _underlyingAsset, _expiry);
     }
+
+    // internal functions to be overrided by the specific forge implementation
+    function _calcDueInterests(
+        uint256 principal,
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) internal virtual returns (uint256 dueInterests) {}
+
+    function _calcTotalAfterExpiry(
+        address yieldTokenAddress,
+        address _underlyingAsset,
+        uint256 _expiry,
+        uint256 redeemedAmount
+    ) internal virtual returns (uint256 totalAfterExpiry) {}
+
+    function _calcUnderlyingToRedeem(address, uint256 _amountToRedeem)
+        internal
+        virtual
+        returns (uint256 underlyingToRedeem)
+    {
+        underlyingToRedeem = _amountToRedeem;
+    }
+
+    function _calcAmountToMint(address, uint256 _amountToTokenize)
+        internal
+        virtual
+        returns (uint256 amountToMint)
+    {
+        amountToMint = _amountToTokenize;
+    }
+
+    function _getYieldBearingToken(address _underlyingAsset)
+        internal
+        view
+        virtual
+        returns (address)
+    {}
 }
