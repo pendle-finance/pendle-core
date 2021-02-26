@@ -28,27 +28,43 @@ import "./IPendleRouter.sol";
 interface IPendleForge {
     /**
      * @dev Emitted when the Forge has minted the OT and XYT tokens.
+     * @param forgeId The forgeId
      * @param underlyingAsset The address of the underlying yield token.
      * @param expiry The expiry of the XYT token
      * @param amount The amount to be minted.
      **/
-    event MintYieldToken(address indexed underlyingAsset, uint256 indexed expiry, uint256 amount);
+    event MintYieldToken(
+        bytes32 forgeId,
+        address indexed underlyingAsset,
+        uint256 indexed expiry,
+        uint256 amount
+    );
 
     /**
      * @dev Emitted when the Forge has created new yield token contracts.
+     * @param forgeId The forgeId
+     * @param underlyingAsset The address of the underlying asset.
+     * @param expiry The date in epoch time when the contract will expire.
      * @param ot The address of the ownership token.
      * @param xyt The address of the new future yield token.
-     * @param expiry The date in epoch time when the contract will expire.
      **/
-    event NewYieldContracts(address indexed ot, address indexed xyt, uint256 indexed expiry);
+    event NewYieldContracts(
+        bytes32 forgeId,
+        address indexed underlyingAsset,
+        uint256 indexed expiry,
+        address ot,
+        address xyt
+    );
 
     /**
      * @dev Emitted when the Forge has redeemed the OT and XYT tokens.
+     * @param forgeId The forgeId
      * @param underlyingAsset the address of the underlying asset
      * @param expiry The expiry of the XYT token
      * @param amount The amount to be redeemed.
      **/
     event RedeemYieldToken(
+        bytes32 forgeId,
         address indexed underlyingAsset,
         uint256 indexed expiry,
         uint256 amount

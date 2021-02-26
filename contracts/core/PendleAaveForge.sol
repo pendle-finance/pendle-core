@@ -110,7 +110,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
         IPendleData data = router.data();
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
-        emit NewYieldContracts(ot, xyt, _expiry);
+        emit NewYieldContracts(forgeId, _underlyingAsset, _expiry, ot, xyt);
     }
 
     function redeemAfterExpiry(
@@ -141,7 +141,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
         tokens.ot.burn(_account, redeemedAmount);
 
-        emit RedeemYieldToken(_underlyingAsset, _expiry, redeemedAmount);
+        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, redeemedAmount);
     }
 
     function redeemDueInterests(
@@ -184,7 +184,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
         tokens.ot.burn(_account, _amountToRedeem);
         tokens.xyt.burn(_account, _amountToRedeem);
 
-        emit RedeemYieldToken(_underlyingAsset, _expiry, _amountToRedeem);
+        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem);
 
         return _amountToRedeem;
     }
@@ -202,7 +202,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
         lastNormalisedIncome[_underlyingAsset][_expiry][_to] = aaveLendingPoolCore
             .getReserveNormalizedIncome(address(_underlyingAsset));
 
-        emit MintYieldToken(_underlyingAsset, _expiry, _amountToTokenize);
+        emit MintYieldToken(forgeId, _underlyingAsset, _expiry, _amountToTokenize);
         return (address(tokens.ot), address(tokens.xyt));
     }
 
