@@ -99,6 +99,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     ) public override pendleNonReentrant returns (address ot, address xyt) {
         require(_forgeId != bytes32(0), "ZERO_BYTES");
         require(_underlyingAsset != address(0), "ZERO_ADDRESS");
+        require(_expiry > block.timestamp, "INVALID_EXPIRY");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         require(address(forge) != address(0), "FORGE_NOT_EXISTS");
