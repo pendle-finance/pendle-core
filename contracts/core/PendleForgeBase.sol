@@ -120,7 +120,8 @@ contract PendleForgeBase is IPendleForge, Permissions {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         redeemedAmount = tokens.ot.balanceOf(_account);
 
-        uint256 totalAfterExpiry = _calcTotalAfterExpiry(address(yieldToken), _underlyingAsset, _expiry, redeemedAmount);
+        uint256 totalAfterExpiry =
+            _calcTotalAfterExpiry(address(yieldToken), _underlyingAsset, _expiry, redeemedAmount);
         yieldToken.transfer(_to, totalAfterExpiry);
 
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
@@ -129,7 +130,12 @@ contract PendleForgeBase is IPendleForge, Permissions {
         emit RedeemYieldToken(_underlyingAsset, _expiry, redeemedAmount);
     }
 
-    function _calcTotalAfterExpiry(address yieldTokenAddress, address _underlyingAsset, uint256 _expiry, uint256 redeemedAmount) internal virtual returns (uint256 totalAfterExpiry) {}
+    function _calcTotalAfterExpiry(
+        address yieldTokenAddress,
+        address _underlyingAsset,
+        uint256 _expiry,
+        uint256 redeemedAmount
+    ) internal virtual returns (uint256 totalAfterExpiry) {}
 
     /// @dev msg.sender needs to have both OT and XYT tokens
     function redeemUnderlying(
@@ -144,11 +150,8 @@ contract PendleForgeBase is IPendleForge, Permissions {
 
         uint256 underlyingToRedeem = _calcUnderlyingToRedeem(address(yieldToken), _amountToRedeem);
 
-
         require(tokens.ot.balanceOf(_account) >= underlyingToRedeem, "INSUFFICIENT_OT_AMOUNT");
         require(tokens.xyt.balanceOf(_account) >= underlyingToRedeem, "INSUFFICIENT_XYT_AMOUNT");
-
-
 
         yieldToken.transfer(_to, _amountToRedeem);
 
@@ -162,7 +165,11 @@ contract PendleForgeBase is IPendleForge, Permissions {
         return _amountToRedeem;
     }
 
-    function _calcUnderlyingToRedeem(address, uint256 _amountToRedeem) internal virtual returns(uint256 underlyingToRedeem) {
+    function _calcUnderlyingToRedeem(address, uint256 _amountToRedeem)
+        internal
+        virtual
+        returns (uint256 underlyingToRedeem)
+    {
         underlyingToRedeem = _amountToRedeem;
     }
 
@@ -191,7 +198,7 @@ contract PendleForgeBase is IPendleForge, Permissions {
         address _to
     ) external override onlyRouter returns (address ot, address xyt) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        _settleDueInterests(tokens, _underlyingAsset, _expiry,  _to);
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, _to);
 
         uint256 amountToMint = _calcAmountToMint(_underlyingAsset, _amountToTokenize);
 
@@ -202,7 +209,11 @@ contract PendleForgeBase is IPendleForge, Permissions {
         return (address(tokens.ot), address(tokens.xyt));
     }
 
-    function _calcAmountToMint(address, uint256 _amountToTokenize) internal virtual returns (uint256 amountToMint) {
+    function _calcAmountToMint(address, uint256 _amountToTokenize)
+        internal
+        virtual
+        returns (uint256 amountToMint)
+    {
         amountToMint = _amountToTokenize;
     }
 
@@ -221,7 +232,6 @@ contract PendleForgeBase is IPendleForge, Permissions {
     {
         return _getYieldBearingToken(_underlyingAsset);
     }
-
 
     function _forgeFutureYieldToken(
         address _underlyingAsset,
@@ -291,7 +301,12 @@ contract PendleForgeBase is IPendleForge, Permissions {
         return dueInterests;
     }
 
-    function _calcDueInterests(uint256 principal, address _underlyingAsset, uint256 _expiry, address _account) internal virtual returns (uint256 dueInterests) {}
+    function _calcDueInterests(
+        uint256 principal,
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) internal virtual returns (uint256 dueInterests) {}
 
     function _getTokens(address _underlyingAsset, uint256 _expiry)
         internal

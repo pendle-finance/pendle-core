@@ -64,22 +64,36 @@ contract PendleCompoundForge is PendleForgeBase {
         emit RegisterCTokens(_underlyingAssets, _cTokens);
     }
 
-    function _calcTotalAfterExpiry(address cTokenAddress, address _underlyingAsset, uint256 _expiry, uint256 redeemedAmount) internal override returns (uint256 totalAfterExpiry) {
+    function _calcTotalAfterExpiry(
+        address cTokenAddress,
+        address _underlyingAsset,
+        uint256 _expiry,
+        uint256 redeemedAmount
+    ) internal override returns (uint256 totalAfterExpiry) {
         uint256 currentRate = ICToken(cTokenAddress).exchangeRateCurrent();
         uint256 cTokensToRedeem = redeemedAmount.mul(initialRate).div(currentRate);
 
         // interests from the timestamp of the last XYT transfer (before expiry) to now is entitled to the OT holders
         // this means that the OT holders are getting some extra interests, at the expense of XYT holders
-        totalAfterExpiry =
-        currentRate.mul(cTokensToRedeem).div(lastRateBeforeExpiry[_underlyingAsset][_expiry]);
+        totalAfterExpiry = currentRate.mul(cTokensToRedeem).div(
+            lastRateBeforeExpiry[_underlyingAsset][_expiry]
+        );
     }
 
-    function _calcUnderlyingToRedeem(address cTokenAddress, uint256 _amountToRedeem) internal override returns(uint256 underlyingToRedeem) {
+    function _calcUnderlyingToRedeem(address cTokenAddress, uint256 _amountToRedeem)
+        internal
+        override
+        returns (uint256 underlyingToRedeem)
+    {
         uint256 currentRate = ICToken(cTokenAddress).exchangeRateCurrent();
         underlyingToRedeem = _amountToRedeem.mul(currentRate).div(initialRate);
     }
 
-    function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize) internal override returns (uint256 amountToMint) {
+    function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)
+        internal
+        override
+        returns (uint256 amountToMint)
+    {
         ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
         uint256 currentRate = cToken.exchangeRateCurrent();
         if (initialRate == 0) {
@@ -103,7 +117,12 @@ contract PendleCompoundForge is PendleForgeBase {
         ICToken cToken;
     }
 
-    function _calcDueInterests(uint256 principal, address _underlyingAsset, uint256 _expiry, address _account) internal override returns (uint256 dueInterests) {
+    function _calcDueInterests(
+        uint256 principal,
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) internal override returns (uint256 dueInterests) {
         InterestVariables memory interestVariables;
 
         interestVariables.prevRate = lastRate[_underlyingAsset][_expiry][_account];
@@ -123,9 +142,11 @@ contract PendleCompoundForge is PendleForgeBase {
         }
         // dueInterests is a difference between yields where newer yield increased proportionally
         // by currentExchangeRate / prevExchangeRate for cTokens to underyling asset
-        dueInterests =
-            principal.mul(interestVariables.currentRate).div(interestVariables.prevRate).sub(principal).mul(initialRate).div(
-                interestVariables.currentRate
-            );
+        dueInterests = principal
+            .mul(interestVariables.currentRate)
+            .div(interestVariables.prevRate)
+            .sub(principal)
+            .mul(initialRate)
+            .div(interestVariables.currentRate);
     }
 }

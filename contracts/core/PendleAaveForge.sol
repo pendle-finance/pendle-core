@@ -56,12 +56,17 @@ contract PendleAaveForge is PendleForgeBase {
         aaveLendingPoolCore = _aaveLendingPoolCore;
     }
 
-    function _calcTotalAfterExpiry(address, address _underlyingAsset, uint256 _expiry, uint256 redeemedAmount) internal view override returns (uint256 totalAfterExpiry) {
-        uint256 currentNormalizedIncome = aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
-        totalAfterExpiry =
-            currentNormalizedIncome
-                .mul(redeemedAmount)
-                .div(lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry]);
+    function _calcTotalAfterExpiry(
+        address,
+        address _underlyingAsset,
+        uint256 _expiry,
+        uint256 redeemedAmount
+    ) internal view override returns (uint256 totalAfterExpiry) {
+        uint256 currentNormalizedIncome =
+            aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
+        totalAfterExpiry = currentNormalizedIncome.mul(redeemedAmount).div(
+            lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry]
+        );
     }
 
     function _getYieldBearingToken(address _underlyingAsset)
@@ -73,7 +78,12 @@ contract PendleAaveForge is PendleForgeBase {
         return aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset);
     }
 
-    function _calcDueInterests(uint256 principal, address _underlyingAsset, uint256 _expiry, address _account) internal override returns (uint256 dueInterests) {
+    function _calcDueInterests(
+        uint256 principal,
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) internal override returns (uint256 dueInterests) {
         uint256 ix = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
         uint256 normalizedIncome;
 
@@ -92,5 +102,4 @@ contract PendleAaveForge is PendleForgeBase {
 
         dueInterests = principal.mul(normalizedIncome).div(ix).sub(principal);
     }
-
 }
