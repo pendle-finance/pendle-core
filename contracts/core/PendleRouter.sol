@@ -99,6 +99,8 @@ contract PendleRouter is IPendleRouter, Permissions {
         require(data.getForgeAddress(_forgeId) == address(0), "EXISTED_ID");
 
         data.addForge(_forgeId, _forgeAddress);
+
+        emit NewForge(_forgeId, _forgeAddress);
     }
 
     function newYieldContracts(
