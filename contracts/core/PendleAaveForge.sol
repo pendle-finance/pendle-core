@@ -112,7 +112,6 @@ contract PendleAaveForge is IPendleForge, Permissions {
         );
         console.log("done deploy ot, xyt = ", ot, xyt);
 
-
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
         emit NewYieldContracts(ot, xyt, _expiry);
