@@ -101,6 +101,7 @@ contract PendleCompoundForge is IPendleForge, Permissions {
     {
         address cToken = underlyingToCToken[_underlyingAsset];
         uint8 cTokenDecimals = IPendleBaseToken(cToken).decimals();
+        require(cToken != address(0), "INVALID_ASSET");
 
         ot = _forgeOwnershipToken(
             _underlyingAsset,
@@ -111,7 +112,6 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         );
         xyt = _forgeFutureYieldToken(
             _underlyingAsset,
-            ot,
             XYT.concat(IPendleBaseToken(cToken).name(), _expiry, " "),
             XYT.concat(IPendleBaseToken(cToken).symbol(), _expiry, "-"),
             cTokenDecimals,
@@ -226,7 +226,6 @@ contract PendleCompoundForge is IPendleForge, Permissions {
 
     function _forgeFutureYieldToken(
         address _underlyingAsset,
-        address _ot,
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
@@ -238,7 +237,6 @@ contract PendleCompoundForge is IPendleForge, Permissions {
             type(PendleFutureYieldToken).creationCode,
             abi.encodePacked(cToken, _underlyingAsset),
             abi.encode(
-                _ot,
                 _underlyingAsset,
                 cToken,
                 _name,
@@ -263,8 +261,8 @@ contract PendleCompoundForge is IPendleForge, Permissions {
             type(PendleOwnershipToken).creationCode,
             abi.encodePacked(cToken, _underlyingAsset),
             abi.encode(
-                cToken,
                 _underlyingAsset,
+                cToken,
                 _name,
                 _symbol,
                 _decimals,

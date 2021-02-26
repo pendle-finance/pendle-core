@@ -30,11 +30,10 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldToken {
     address public override forge;
     address public override underlyingAsset;
     address public override underlyingYieldToken;
-    address public ot;
+
     mapping(address => uint256) public lastNormalisedIncome;
 
     constructor(
-        address _ot,
         address _underlyingAsset,
         address _underlyingYieldToken,
         string memory _name,
@@ -44,7 +43,6 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldToken {
         uint256 _expiry
     ) PendleBaseToken(_name, _symbol, _underlyingYieldTokenDecimals, _start, _expiry) {
         forge = msg.sender;
-        ot = _ot;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;
     }

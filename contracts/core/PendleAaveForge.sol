@@ -32,6 +32,7 @@ import "../interfaces/IPendleForge.sol";
 import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
+import "hardhat/console.sol";
 
 contract PendleAaveForge is IPendleForge, Permissions {
     using ExpiryUtils for string;
@@ -43,6 +44,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
     }
 
     IPendleRouter public override router;
+    IPendleData private data;
     IAaveLendingPoolCore public immutable aaveLendingPoolCore;
     bytes32 public immutable override forgeId;
 
@@ -66,6 +68,7 @@ contract PendleAaveForge is IPendleForge, Permissions {
         router = _router;
         aaveLendingPoolCore = _aaveLendingPoolCore;
         forgeId = _forgeId;
+        data = _router.data();
     }
 
     modifier onlyRouter() {
@@ -74,7 +77,6 @@ contract PendleAaveForge is IPendleForge, Permissions {
     }
 
     modifier onlyXYT(address _underlyingAsset, uint256 _expiry) {
-        IPendleData data = router.data();
         require(
             msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
             "ONLY_XYT"
@@ -90,7 +92,8 @@ contract PendleAaveForge is IPendleForge, Permissions {
     {
         address aToken = aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset);
         uint8 aTokenDecimals = IPendleBaseToken(aToken).decimals();
-
+        require(aToken != address(0), "INVALID_ASSET");
+        console.log("about to deploy ot");
         ot = _forgeOwnershipToken(
             _underlyingAsset,
             OT.concat(IPendleBaseToken(aToken).name(), _expiry, " "),
@@ -98,16 +101,18 @@ contract PendleAaveForge is IPendleForge, Permissions {
             aTokenDecimals,
             _expiry
         );
+        console.log("about to deploy xyt");
+
         xyt = _forgeFutureYieldToken(
             _underlyingAsset,
-            ot,
             XYT.concat(IPendleBaseToken(aToken).name(), _expiry, " "),
             XYT.concat(IPendleBaseToken(aToken).symbol(), _expiry, "-"),
             aTokenDecimals,
             _expiry
         );
+        console.log("done deploy ot, xyt = ", ot, xyt);
 
-        IPendleData data = router.data();
+
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
         emit NewYieldContracts(ot, xyt, _expiry);
@@ -216,7 +221,6 @@ contract PendleAaveForge is IPendleForge, Permissions {
 
     function _forgeFutureYieldToken(
         address _underlyingAsset,
-        address _ot,
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
@@ -228,7 +232,6 @@ contract PendleAaveForge is IPendleForge, Permissions {
             type(PendleFutureYieldToken).creationCode,
             abi.encodePacked(aToken, _underlyingAsset),
             abi.encode(
-                _ot,
                 _underlyingAsset,
                 aToken,
                 _name,
@@ -253,8 +256,8 @@ contract PendleAaveForge is IPendleForge, Permissions {
             type(PendleOwnershipToken).creationCode,
             abi.encodePacked(aToken, _underlyingAsset),
             abi.encode(
-                aToken,
                 _underlyingAsset,
+                aToken,
                 _name,
                 _symbol,
                 _decimals,
@@ -304,7 +307,6 @@ contract PendleAaveForge is IPendleForge, Permissions {
         view
         returns (PendleTokens memory _tokens)
     {
-        IPendleData data = router.data();
         (_tokens.ot, _tokens.xyt) = data.getPendleYieldTokens(forgeId, _underlyingAsset, _expiry);
     }
 }
