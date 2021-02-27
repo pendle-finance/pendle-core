@@ -58,11 +58,17 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     mapping(address => TokenReserve) private reserves;
     uint256 public lastInterestUpdate;
 
-    // these variables are used often, so we get them once in the constructor and save gas for retrieving them afterwards
+    // the lockStartTime is set at the bootstrap time of the market, and will not
+    // be changed for the entire market duration
+    uint256 public lockStartTime;
+
+    /* these variables are used often, so we get them once in the constructor
+    and save gas for retrieving them afterwards */
     bytes32 private immutable forgeId;
     address private immutable underlyingAsset;
     IPendleData private immutable data;
     IPendleRouter private immutable router;
+    uint256 private immutable xytStartTime;
 
     constructor(
         address _forge,
@@ -88,6 +94,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         expiry = _expiry;
         router = IPendleMarketFactory(msg.sender).router();
         data = IPendleMarketFactory(msg.sender).router().data();
+        xytStartTime = IPendleYieldToken(_xyt).start();
     }
 
     modifier isBootstrapped {
@@ -100,6 +107,11 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         _;
     }
 
+    modifier marketIsOpen() {
+        require(block.timestamp < lockStartTime, "MARKET_LOCKED");
+        _;
+    }
+
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
         override
@@ -107,8 +119,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         returns (uint256)
     {
         require(!bootstrapped, "ALREADY_BOOTSTRAPPED");
+        _initializeLock(); // market's lock params should be initialized at bootstrap time
 
-        // console.log("97",initialXytLiquidity,initialTokenLiquidity);
         _transferIn(xyt, initialXytLiquidity);
         _transferIn(token, initialTokenLiquidity);
 
@@ -148,6 +160,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         override
         isBootstrapped
         onlyRouter
+        marketIsOpen
         returns (uint256 amountXytUsed, uint256 amountTokenUsed)
     {
         uint256 totalLp = totalSupply;
@@ -188,7 +201,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address _inToken,
         uint256 _exactIn,
         uint256 _minOutLp
-    ) external override isBootstrapped onlyRouter returns (uint256 exactOutLp) {
+    ) external override isBootstrapped onlyRouter marketIsOpen returns (uint256 exactOutLp) {
         _curveShift(data);
 
         TokenReserve storage inTokenReserve = reserves[_inToken];
@@ -228,6 +241,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
      *         and getting back XYT and pair tokens.
      * @dev no curveShift to save gas because this function
                 doesn't depend on weights of tokens
+     * @dev this function will never be locked since we always let users withdraw
+                their funds
      */
     function removeMarketLiquidityAll(
         uint256 _inLp,
@@ -269,7 +284,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address _outToken,
         uint256 _inLp,
         uint256 _minOutAmountToken
-    ) external override isBootstrapped onlyRouter returns (uint256 outAmountToken) {
+    ) external override isBootstrapped onlyRouter marketIsOpen returns (uint256 outAmountToken) {
         _curveShift(data);
 
         TokenReserve storage outTokenReserve = reserves[_outToken];
@@ -303,6 +318,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         override
         isBootstrapped
         onlyRouter
+        marketIsOpen
         returns (uint256 outAmount, uint256 spotPriceAfter)
     {
         _curveShift(data);
@@ -350,6 +366,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         override
         isBootstrapped
         onlyRouter
+        marketIsOpen
         returns (uint256 inAmount, uint256 spotPriceAfter)
     {
         _curveShift(data);
@@ -449,8 +466,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     // will do weight update (dry run) before reading token weights, to prevent the case
     // that weight is outdated
     function getWeight(address asset) external view override returns (uint256) {
-        (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) =
-            _updateWeightDry();
+        (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, ) = _updateWeightDry();
         if (asset == xyt) {
             return xytWeightUpdated;
         } else if (asset == token) {
@@ -592,7 +608,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         // get current timestamp currentTime
         uint256 currentTime = block.timestamp;
         uint256 endTime = expiry;
-        uint256 startTime = IPendleYieldToken(xyt).start();
+        uint256 startTime = xytStartTime;
         uint256 duration = endTime - startTime;
 
         uint256 xytWeight = reserves[xyt].weight;
@@ -659,7 +675,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     //
     function _updateGlobalIncomeIndex() internal {
         if (block.timestamp.sub(lastInterestUpdate) > data.interestUpdateDelta()) {
-            router.redeemDueInterests(forgeId, underlyingAsset, expiry); // get due interests for the XYT being held in the market
+            // get due interests for the XYT being held in the market
+            router.redeemDueInterests(forgeId, underlyingAsset, expiry);
             lastInterestUpdate = block.timestamp;
         }
 
@@ -678,5 +695,11 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     function _beforeTokenTransfer(address from, address to) internal override {
         _settleLpInterests(from);
         _settleLpInterests(to);
+    }
+
+    function _initializeLock() internal {
+        uint256 duration = expiry - xytStartTime; // market expiry = xyt expiry
+        uint256 lockDuration = (duration * data.lockNumerator()) / data.lockDenominator();
+        lockStartTime = expiry - lockDuration;
     }
 }

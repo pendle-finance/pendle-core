@@ -1,28 +1,31 @@
-import { Wallet, providers, BigNumber as BN, Contract } from "ethers";
-import { pendleCoreFixture, PendleCoreFixture } from "./pendleCore.fixture";
+import { BigNumber as BN, Contract, providers, Wallet } from "ethers";
+import PendleMarket from "../../../build/artifacts/contracts/core/PendleMarket.sol/PendleMarket.json";
+import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
+import { amountToWei, consts, mintOtAndXyt, tokens } from "../../helpers";
+import { aaveFixture, AaveFixture } from "./aave.fixture";
 import {
-  pendleAaveForgeFixture,
-  PendleAaveFixture,
+  PendleAaveFixture, pendleAaveForgeFixture
 } from "./pendleAaveForge.fixture";
 import {
-  pendleGovernanceFixture,
-  PendleGovernanceFixture,
+  PendleCompoundFixture, pendleCompoundForgeFixture
+} from './pendleCompoundForge.fixture';
+import { pendleCoreFixture, PendleCoreFixture } from "./pendleCore.fixture";
+import {
+  pendleGovernanceFixture
 } from "./pendleGovernance.fixture";
-import { aaveFixture, AaveFixture } from "./aave.fixture";
-import { consts, tokens, mintOtAndXyt, amountToWei } from "../../helpers";
-import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
-import PendleMarket from "../../../build/artifacts/contracts/core/PendleMarket.sol/PendleMarket.json";
 
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;
 
 interface PendleMarketFixture {
   core: PendleCoreFixture,
-  forge: PendleAaveFixture,
+  aForge: PendleAaveFixture,
+  cForge: PendleCompoundFixture,
   aave: AaveFixture,
   testToken: Contract,
-  pendleStdMarket: Contract
-  pendleEthMarket: Contract
+  pendleAMarket: Contract,
+  pendleCMarket: Contract,
+  pendleEthMarket: Contract,
 }
 
 export async function pendleMarketFixture(
@@ -32,11 +35,19 @@ export async function pendleMarketFixture(
   const [alice, bob, charlie, dave, eve] = wallets
   const core = await pendleCoreFixture(wallets, provider);
   const governance = await pendleGovernanceFixture(wallets, provider);
-  const forge = await pendleAaveForgeFixture(alice, provider, core, governance);
+  const aForge = await pendleAaveForgeFixture(alice, provider, core, governance);
+  const cForge = await pendleCompoundForgeFixture(alice, provider, core, governance);
   const aave = await aaveFixture(alice);
-  const { pendleRouter, pendleMarketFactory, pendleData } = core;
-  const { pendleFutureYieldToken } = forge;
-  const token = tokens.USDT
+  const { pendleRouter, pendleAMarketFactory, pendleCMarketFactory, pendleData } = core;
+
+  const {
+    pendleAFutureYieldToken,
+    pendleAFutureYieldToken2,
+  } = aForge;
+  const {
+    pendleCFutureYieldToken,
+  } = cForge;
+  const token = tokens.USDT;
 
   const amount = amountToWei(token, consts.INITIAL_OT_XYT_AMOUNT);
 
@@ -58,41 +69,90 @@ export async function pendleMarketFixture(
 
   await pendleRouter.addMarketFactory(
     consts.MARKET_FACTORY_AAVE,
-    pendleMarketFactory.address
+    pendleAMarketFactory.address
+  );
+  await pendleRouter.addMarketFactory(
+    consts.MARKET_FACTORY_COMPOUND,
+    pendleCMarketFactory.address
   );
 
   await pendleData.setForgeFactoryValidity(consts.FORGE_AAVE, consts.MARKET_FACTORY_AAVE, true);
+  await pendleData.setForgeFactoryValidity(consts.FORGE_COMPOUND, consts.MARKET_FACTORY_COMPOUND, true);
 
   await pendleRouter.createMarket(
     consts.MARKET_FACTORY_AAVE,
-    pendleFutureYieldToken.address,
+    pendleAFutureYieldToken.address,
     testToken.address,
     consts.HIGH_GAS_OVERRIDE
   );
 
-  const pendleStdMarketAddress = await pendleData.getMarket(
+  await pendleRouter.createMarket(
+    consts.MARKET_FACTORY_COMPOUND,
+    pendleCFutureYieldToken.address,
+    testToken.address,
+    consts.HIGH_GAS_OVERRIDE
+  );
+
+  await pendleRouter.createMarket(
     consts.MARKET_FACTORY_AAVE,
-    pendleFutureYieldToken.address,
+    pendleAFutureYieldToken.address,
+    tokens.WETH.address,
+    consts.HIGH_GAS_OVERRIDE
+  );
+
+  const pendleAMarketAddress = await pendleData.getMarket(
+    consts.MARKET_FACTORY_AAVE,
+    pendleAFutureYieldToken.address,
+    testToken.address
+  );
+
+  const pendleCMarketAddress = await pendleData.getMarket(
+    consts.MARKET_FACTORY_COMPOUND,
+    pendleCFutureYieldToken.address,
     testToken.address
   );
 
   const pendleEthMarketAddress = await pendleData.getMarket(
     consts.MARKET_FACTORY_AAVE,
-    pendleFutureYieldToken.address,
+    pendleAFutureYieldToken.address,
     tokens.WETH.address,
   );
 
-  await pendleData.setReentrancyWhitelist([pendleStdMarketAddress, pendleEthMarketAddress], [true, true]);
+  const pendleAMarket = new Contract(
+    pendleAMarketAddress,
+    PendleMarket.abi,
+    alice
+  );
+  const pendleCMarket = new Contract(
+    pendleCMarketAddress,
+    PendleMarket.abi,
+    alice
+  );
+  const pendleEthMarket = new Contract(
+    pendleEthMarketAddress,
+    PendleMarket.abi,
+    alice
+  );
 
-  const pendleStdMarket = new Contract(pendleStdMarketAddress, PendleMarket.abi, alice)
-  const pendleEthMarket = new Contract(pendleEthMarketAddress, PendleMarket.abi, alice)
+  await pendleData.setReentrancyWhitelist([pendleAMarketAddress, pendleCMarketAddress, pendleEthMarketAddress], [true, true, true]);
+  await pendleData.setLockParams(BN.from(consts.LOCK_NUMERATOR), BN.from(consts.LOCK_DENOMINATOR)); // lock market
 
   for (var person of [alice, bob, charlie, dave]) {
     await testToken.connect(person).approve(pendleRouter.address, totalSupply);
-    await pendleFutureYieldToken.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
-    await pendleStdMarket.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+    await pendleAFutureYieldToken
+      .connect(person)
+      .approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+    await pendleCFutureYieldToken
+      .connect(person)
+      .approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+    await pendleAMarket
+      .connect(person)
+      .approve(pendleRouter.address, consts.MAX_ALLOWANCE);
+    await pendleCMarket
+      .connect(person)
+      .approve(pendleRouter.address, consts.MAX_ALLOWANCE);
     await pendleEthMarket.connect(person).approve(pendleRouter.address, consts.MAX_ALLOWANCE);
   }
 
-  return { core, aave, forge, testToken, pendleStdMarket, pendleEthMarket }
+  return { core, aForge, cForge, aave, testToken, pendleAMarket, pendleCMarket, pendleEthMarket }
 }

@@ -22,8 +22,6 @@ import * as scenario from "./fixtures/pendleLpFormulaScenario.fixture";
 const { waffle } = require("hardhat");
 const { provider } = waffle;
 
-// TODO: add tests that check for transfering unused tokens back to users
-// TODO: add tests to test new math lib
 describe("pendleLpFormula", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
@@ -43,9 +41,9 @@ describe("pendleLpFormula", async () => {
     const fixture = await loadFixture(pendleMarketFixture);
     pendleRouter = fixture.core.pendleRouter;
     pendleData = fixture.core.pendleData;
-    pendleXyt = fixture.forge.pendleFutureYieldToken;
+    pendleXyt = fixture.aForge.pendleAFutureYieldToken;
     testToken = fixture.testToken;
-    pendleStdMarket = fixture.pendleStdMarket;
+    pendleStdMarket = fixture.pendleAMarket;
     tokenUSDT = tokens.USDT;
     snapshotId = await evm_snapshot();
   });
@@ -168,12 +166,14 @@ describe("pendleLpFormula", async () => {
     const T1 = consts.T0.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
     await bootstrapMarket(
-      amountToWei(tokenUSDT, test.initXytBal),
-      amountToWei(tokenUSDT, test.initTokenBal)
+      amountToWei(tokenUSDT, test.initXytAmount),
+      amountToWei(tokenUSDT, test.initTokenAmount)
     );
 
     await setTimeNextBlock(provider, T1);
 
+    let initialTokenBalance: BN = await testToken.balanceOf(bob.address);
+    let initialXytBalance: BN = await pendleXyt.balanceOf(bob.address);
     await addLiquiditySingleToken(
       bob,
       testToken.address,
@@ -183,49 +183,67 @@ describe("pendleLpFormula", async () => {
 
     await setTimeNextBlock(provider, T2);
     await addLiquiditySingleToken(
-      charlie,
+      bob,
       pendleXyt.address,
       amountToWei(tokenUSDT, test.amountXytChange)
     );
-    await checkLpBalance(charlie, test.expectedLpBal2);
+    await checkLpBalance(bob, test.expectedLpBal1.add(test.expectedLpBal2));
+
+    let finalTokenBalance: BN = await testToken.balanceOf(bob.address);
+    let finalXytBalance: BN = await pendleXyt.balanceOf(bob.address);
+    approxBigNumber(
+      amountToWei(tokenUSDT, test.amountTokenChange),
+      initialTokenBalance.sub(finalTokenBalance),
+      consts.TEST_TOKEN_DELTA
+    );
+    approxBigNumber(
+      amountToWei(tokenUSDT, test.amountXytChange),
+      initialXytBalance.sub(finalXytBalance),
+      consts.TEST_TOKEN_DELTA
+    );
   }
 
   async function runTestRemoveLiqSingleToken(test: TestRemoveLiq) {
     const T1 = consts.T0.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
     await bootstrapMarket(
-      amountToWei(tokenUSDT, test.initXytBal),
-      amountToWei(tokenUSDT, test.initTokenBal)
+      amountToWei(tokenUSDT, test.initXytAmount),
+      amountToWei(tokenUSDT, test.initTokenAmount)
     );
 
-    let lpBalanceAlice = await pendleStdMarket.balanceOf(alice.address);
-    let amountToRemove = lpBalanceAlice.mul(test.ratioLpForToken).div(100);
+    let lpBalanceAlice: BN = await pendleStdMarket.balanceOf(alice.address);
+    let totalLpAmountRemoved: BN = BN.from(0);
+    let amountToRemove: BN = lpBalanceAlice.mul(test.ratioLpForToken).div(100);
+    totalLpAmountRemoved = totalLpAmountRemoved.add(amountToRemove);
 
     await setTimeNextBlock(provider, T1);
-    // weights(Token,Xyt) 848215863334 XYT weight: 251295764442
     let balanceDiff: BN = await removeLiquiditySingleToken(
       alice,
       testToken.address,
       amountToRemove
     );
-    expect(balanceDiff.toNumber()).to.be.approximately(
-      test.expectedTokenDiff.toNumber(),
-      consts.TEST_TOKEN_DELTA.toNumber()
+    approxBigNumber(
+      test.expectedTokenDiff,
+      balanceDiff,
+      consts.TEST_TOKEN_DELTA
     );
 
-    // weights: XYT weight: 245957533896
     await setTimeNextBlock(provider, T2);
     amountToRemove = lpBalanceAlice.mul(test.ratioLpForXyt).div(100);
+    totalLpAmountRemoved = totalLpAmountRemoved.add(amountToRemove);
     balanceDiff = await removeLiquiditySingleToken(
       alice,
       pendleXyt.address,
       amountToRemove
     );
-    expect(balanceDiff.toNumber()).to.be.approximately(
-      test.expectedXytDiff.toNumber(),
-      consts.TEST_TOKEN_DELTA.toNumber()
-    );
+    approxBigNumber(test.expectedXytDiff, balanceDiff, consts.TEST_TOKEN_DELTA);
+    approxBigNumber(
+      lpBalanceAlice.sub(totalLpAmountRemoved),
+      await pendleStdMarket.balanceOf(alice.address),
+      BN.from(1)
+    ); // should remove the exact amount
   }
+
   // TODO: Investigate why market can handle a large amount of token swapping in
   it("add liquidity with single token test 1", async () => {
     await runTestAddLiqSingleToken(scenario.scenarioAdd01());

@@ -15,6 +15,7 @@ lib-cov
 .coverageArtifacts
 coverage
 coverage.json
+__pycache__/
 
 # nyc test coverage
 .nyc_output

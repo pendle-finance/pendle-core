@@ -28,8 +28,9 @@ import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../periphery/Permissions.sol";
+import "../periphery/Withdrawable.sol";
 
-contract PendleData is IPendleData, Permissions {
+contract PendleData is IPendleData, Permissions, Withdrawable {
     using SafeMath for uint256;
 
     struct MarketInfo {
@@ -47,7 +48,8 @@ contract PendleData is IPendleData, Permissions {
     mapping(address => bytes32) public override getMarketFactoryId;
     mapping(bytes32 => address) public override getMarketFactoryAddress;
 
-    mapping(bytes32 => mapping(address => mapping(address => address))) public override getMarket; // getMarket[marketFactoryId][xyt][token]
+    // getMarket[marketFactoryId][xyt][token]
+    mapping(bytes32 => mapping(address => mapping(address => address))) public override getMarket;
     mapping(bytes32 => mapping(address => mapping(uint256 => IPendleYieldToken)))
         public
         override otTokens; // [forgeId][underlyingAsset][expiry]
@@ -58,14 +60,23 @@ contract PendleData is IPendleData, Permissions {
     IPendleRouter public override router;
     address public override treasury;
     mapping(address => bool) public override isMarket;
+    mapping(address => bool) public override isXyt;
     mapping(bytes32 => address) private markets;
     mapping(bytes32 => MarketInfo) private marketInfo;
     address[] private allMarkets;
 
     // Parameters to be set by governance;
-    uint256 public override interestUpdateDelta; // if a market's interests have not been updated for interestUpdateDelta, we will ping the forge to update the interests
+    /*
+    if a market's interests have not been updated for deltaT, we will ping
+    the forge to update the interests
+    */
+    uint256 public override interestUpdateDelta;
     uint256 public override swapFee;
     uint256 public override exitFee;
+    // lock duration = duration * lockNumerator / lockDenominator
+    uint256 public override lockNumerator;
+    uint256 public override lockDenominator;
+
     mapping(address => bool) public override reentrancyWhitelisted;
 
     constructor(address _governance, address _treasury) Permissions(_governance) {
@@ -113,6 +124,18 @@ contract PendleData is IPendleData, Permissions {
         emit InterestUpdateDeltaSet(_interestUpdateDelta);
     }
 
+    function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator)
+        external
+        override
+        initialized
+        onlyGovernance
+    {
+        require(0 < _lockNumerator && _lockNumerator < _lockDenominator, "INVALID_LOCK_PARAMS");
+        lockNumerator = _lockNumerator;
+        lockDenominator = _lockDenominator;
+        emit LockParamsSet(_lockNumerator, _lockDenominator);
+    }
+
     function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
         external
         override
@@ -151,6 +174,7 @@ contract PendleData is IPendleData, Permissions {
     ) external override initialized onlyForge(_forgeId) {
         otTokens[_forgeId][_underlyingAsset][_expiry] = IPendleYieldToken(_ot);
         xytTokens[_forgeId][_underlyingAsset][_expiry] = IPendleYieldToken(_xyt);
+        isXyt[_xyt] = true;
     }
 
     function getPendleYieldTokens(

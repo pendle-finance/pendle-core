@@ -23,7 +23,6 @@ import {
 import * as scenario from "./fixtures/pendleLiquidityMiningScenario.fixture";
 
 const { waffle } = require("hardhat");
-const hre = require("hardhat");
 const { deployContract, provider } = waffle;
 
 // returns a rewards object = BN[][]
@@ -142,12 +141,13 @@ function calExpectedRewards(
   return rewards;
 }
 
-// TODO:interest of Lp, pull&push of tokens
-describe("PendleLiquidityMining-beta tests", async () => {
+// TODO:interest of Lp
+describe("PendleAaveLiquidityMining systemic tests", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
   let pendleLiq: Contract;
+  let pendleLiqWeb3: any;
   let pendleRouter: Contract;
   let pendleStdMarket: Contract;
   let pendleXyt: Contract;
@@ -158,23 +158,19 @@ describe("PendleLiquidityMining-beta tests", async () => {
   let aUSDT: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
-  let pendleLiqWeb3: any; // TODO: move this to fixture
   before(async () => {
     globalSnapshotId = await evm_snapshot();
     const fixture = await loadFixture(pendleLiquidityMiningFixture);
-    pendleLiq = fixture.pendleLiquidityMining;
+    pendleLiq = fixture.pendleALiquidityMining;
+    pendleLiqWeb3 = fixture.pendleLiquidityMiningWeb3;
     pendleRouter = fixture.core.pendleRouter;
     baseToken = fixture.testToken;
-    pendleStdMarket = fixture.pendleStdMarket;
-    pendleXyt = fixture.forge.pendleFutureYieldToken;
+    pendleStdMarket = fixture.pendleAMarket;
+    pendleXyt = fixture.aForge.pendleAFutureYieldToken;
     params = fixture.params;
     pdl = fixture.pdl;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     aUSDT = await getAContract(alice, lendingPoolCore, tokens.USDT);
-    pendleLiqWeb3 = new hre.web3.eth.Contract(
-      PendleLiquidityMining.abi,
-      pendleLiq.address
-    );
     snapshotId = await evm_snapshot();
   });
 
@@ -290,8 +286,6 @@ describe("PendleLiquidityMining-beta tests", async () => {
         false
       );
     }
-    // console.log(await claimRewardsWeb3(wallets[0]));
-    // console.log(await claimRewardsWeb3(wallets[1]));
   }
 
   async function checkEqualRewardsFourEpochs(
@@ -308,7 +302,7 @@ describe("PendleLiquidityMining-beta tests", async () => {
     }
   }
 
-  it("beta", async () => {
+  it("should be able to claimLpInterest", async () => {
     // console.log(`\tLP balance of eve = ${await pendleStdMarket.balanceOf(eve.address)}`);
     // console.log(`\taToken balance of market = ${await aUSDT.balanceOf(pendleStdMarket.address)}`);
     // console.log(`\tXYT balance of market = ${await pendleXyt.balanceOf(pendleStdMarket.address)}`);

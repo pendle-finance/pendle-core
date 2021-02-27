@@ -4,20 +4,26 @@ import PENDLE from "../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.
 import { amountToWei, consts, tokens } from '../../helpers/';
 import { AaveFixture } from './aave.fixture';
 import { PendleAaveFixture } from './pendleAaveForge.fixture';
+import { PendleCompoundFixture } from './pendleCompoundForge.fixture';
 import { PendleCoreFixture } from './pendleCore.fixture';
 import { pendleMarketFixture } from './pendleMarket.fixture';
 
 const { waffle } = require("hardhat");
+const hre = require("hardhat");
 const { deployContract } = waffle;
 
 interface PendleLiquidityMiningFixture {
   core: PendleCoreFixture,
-  forge: PendleAaveFixture,
+  aForge: PendleAaveFixture,
+  cForge: PendleCompoundFixture,
   aave: AaveFixture,
   testToken: Contract,
   pdl: Contract,
-  pendleStdMarket: Contract,
-  pendleLiquidityMining: Contract,
+  pendleAMarket: Contract,
+  pendleCMarket: Contract,
+  pendleALiquidityMining: Contract,
+  pendleCLiquidityMining: Contract,
+  pendleLiquidityMiningWeb3: any
   params: liqParams,
 }
 
@@ -59,17 +65,28 @@ export async function pendleLiquidityMiningFixture(
   provider: providers.Web3Provider,
 ): Promise<PendleLiquidityMiningFixture> {
   let [alice, bob, charlie, dave, eve] = wallets;
-  let { core, forge, aave, testToken, pendleStdMarket } = await pendleMarketFixture(wallets, provider);
+  let { core, aForge, cForge, aave, testToken, pendleAMarket, pendleCMarket } = await pendleMarketFixture(wallets, provider);
   let pendleRouter = core.pendleRouter;
   let pendleData = core.pendleData;
-  let pendleAaveForge = forge.pendleAaveForge;
-  let pendleXyt = forge.pendleFutureYieldToken;
-  let pendleMarketFactory = core.pendleMarketFactory;
+  let pendleAaveForge = aForge.pendleAaveForge;
+  let pendleCompoundForge = cForge.pendleCompoundForge;
+  let pendleAXyt = aForge.pendleAFutureYieldToken;
+  let pendleCXyt = cForge.pendleCFutureYieldToken;
+  let pendleAMarketFactory = core.pendleAMarketFactory;
+  let pendleCMarketFactory = core.pendleCMarketFactory;
   const amountToTokenize = amountToWei(tokens.USDT, BN.from(100));
 
   await pendleRouter.bootstrapMarket(
     consts.MARKET_FACTORY_AAVE,
-    pendleXyt.address,
+    pendleAXyt.address,
+    testToken.address,
+    amountToTokenize,
+    amountToTokenize,
+    consts.HIGH_GAS_OVERRIDE
+  );
+  await pendleRouter.bootstrapMarket(
+    consts.MARKET_FACTORY_COMPOUND,
+    pendleCXyt.address,
     testToken.address,
     amountToTokenize,
     amountToTokenize,
@@ -78,7 +95,7 @@ export async function pendleLiquidityMiningFixture(
 
   let pdl = await deployContract(alice, PENDLE, [alice.address]);
 
-  let pendleLiquidityMining = await deployContract(
+  let pendleALiquidityMining = await deployContract(
     alice,
     PendleLiquidityMining,
     [
@@ -97,30 +114,73 @@ export async function pendleLiquidityMiningFixture(
     ]
   );
 
-  await pdl.approve(pendleLiquidityMining.address, consts.MAX_ALLOWANCE);
-  await pendleStdMarket.approve(
-    pendleLiquidityMining.address,
+  let pendleCLiquidityMining = await deployContract(
+    alice,
+    PendleLiquidityMining,
+    [
+      alice.address,
+      pdl.address,
+      pendleRouter.address,
+      consts.MARKET_FACTORY_COMPOUND,
+      consts.FORGE_COMPOUND,
+      tokens.USDT.address,
+      testToken.address,
+      params.START_TIME,
+      params.EPOCH_DURATION,
+      params.REWARDS_PER_EPOCH,
+      params.NUMBER_OF_EPOCHS,
+      params.VESTING_EPOCHS,
+    ]
+  );
+
+  await pdl.approve(pendleALiquidityMining.address, consts.MAX_ALLOWANCE);
+  await pdl.approve(pendleCLiquidityMining.address, consts.MAX_ALLOWANCE);
+
+  await pendleAMarket.approve(
+    pendleALiquidityMining.address,
     consts.MAX_ALLOWANCE
   );
-  await pendleLiquidityMining.setAllocationSetting(
+  await pendleCMarket.approve(
+    pendleCLiquidityMining.address,
+    consts.MAX_ALLOWANCE
+  );
+  await pendleALiquidityMining.setAllocationSetting(
     [consts.T0.add(consts.SIX_MONTH)],
     [params.TOTAL_NUMERATOR],
     consts.HIGH_GAS_OVERRIDE
   );
+  await pendleCLiquidityMining.setAllocationSetting(
+    [consts.T0_C.add(consts.ONE_MONTH)],
+    [params.TOTAL_NUMERATOR],
+    consts.HIGH_GAS_OVERRIDE
+  );
+
 
   for (var person of [bob, charlie, dave]) {
-    await pendleStdMarket
+    await pendleAMarket
       .connect(person)
-      .approve(pendleLiquidityMining.address, consts.MAX_ALLOWANCE);
+      .approve(pendleALiquidityMining.address, consts.MAX_ALLOWANCE);
+    await pendleCMarket
+      .connect(person)
+      .approve(pendleCLiquidityMining.address, consts.MAX_ALLOWANCE);
   }
 
-  await pendleLiquidityMining.fund();
-  await pdl.transfer(pendleLiquidityMining.address, await pdl.balanceOf(alice.address));
-  await pendleData.setReentrancyWhitelist([pendleLiquidityMining.address], [true]);
+  await pendleALiquidityMining.fund();
+  await pendleCLiquidityMining.fund();
+  await pdl.transfer(pendleALiquidityMining.address, await pdl.balanceOf(alice.address));
+  await pdl.transfer(pendleCLiquidityMining.address, await pdl.balanceOf(alice.address));
+  await pendleData.setReentrancyWhitelist([pendleALiquidityMining.address], [true]);
+  await pendleData.setReentrancyWhitelist([pendleCLiquidityMining.address], [true]);
 
-  for (var person of [bob, charlie, dave, eve]) {
-    await pendleStdMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);
+  for (var person of [bob, charlie, dave]) {
+    await pendleAMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);
+    await pendleCMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);
   }
 
-  return { core, forge, aave, testToken, pdl, pendleStdMarket, pendleLiquidityMining, params };
+  let pendleLiquidityMiningWeb3 = new hre.web3.eth.Contract(
+    PendleLiquidityMining.abi,
+    pendleALiquidityMining.address
+  );
+
+  return { core, aForge, cForge, aave, testToken, pdl, pendleAMarket, pendleCMarket, pendleALiquidityMining, pendleCLiquidityMining, pendleLiquidityMiningWeb3, params };
 }

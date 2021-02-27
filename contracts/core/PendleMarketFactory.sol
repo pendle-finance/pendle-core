@@ -29,8 +29,9 @@ import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleYieldToken.sol";
 import "../periphery/Permissions.sol";
+import "../periphery/Withdrawable.sol";
 
-contract PendleMarketFactory is IPendleMarketFactory, Permissions {
+contract PendleMarketFactory is IPendleMarketFactory, Permissions, Withdrawable {
     IPendleRouter public override router;
     bytes32 public immutable override marketFactoryId;
 

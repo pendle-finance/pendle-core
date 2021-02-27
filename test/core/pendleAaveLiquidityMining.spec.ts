@@ -16,7 +16,7 @@ const { waffle } = require("hardhat");
 const hre = require("hardhat");
 const { deployContract, provider } = waffle;
 
-describe("PendleLiquidityMining", async () => {
+describe("PendleLiquidityMining manual tests", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;
@@ -34,11 +34,11 @@ describe("PendleLiquidityMining", async () => {
 
     const fixture = await loadFixture(pendleLiquidityMiningFixture);
     lendingPoolCore = fixture.aave.lendingPoolCore;
-    pendleLiquidityMining = fixture.pendleLiquidityMining;
+    pendleLiquidityMining = fixture.pendleALiquidityMining;
     params = fixture.params;
     aUSDT = await getAContract(alice, lendingPoolCore, tokens.USDT);
     pdl = fixture.pdl;
-    pendleMarket = fixture.pendleStdMarket;
+    pendleMarket = fixture.pendleAMarket;
     snapshotId = await evm_snapshot();
   });
 

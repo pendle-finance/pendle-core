@@ -12,7 +12,8 @@ describe("PendleData", async () => {
   const loadFixture = createFixtureLoader(wallets, provider);
 
   let pendleRouter: Contract;
-  let pendleMarketFactory: Contract;
+  let pendleAMarketFactory: Contract;
+  let pendleCMarketFactory: Contract;
   let pendleData: Contract;
   let pendleTreasury: Contract;
   let pendleXyt: Contract;
@@ -27,8 +28,9 @@ describe("PendleData", async () => {
     pendleRouter = fixture.core.pendleRouter;
     pendleTreasury = fixture.core.pendleTreasury;
     pendleData = fixture.core.pendleData;
-    pendleMarketFactory = fixture.core.pendleMarketFactory;
-    pendleXyt = fixture.forge.pendleFutureYieldToken;
+    pendleAMarketFactory = fixture.core.pendleAMarketFactory;
+    pendleCMarketFactory = fixture.core.pendleCMarketFactory;
+    pendleXyt = fixture.aForge.pendleAFutureYieldToken;
     tokenUSDT = tokens.USDT;
     snapshotId = await evm_snapshot();
   });
@@ -52,19 +54,27 @@ describe("PendleData", async () => {
 
   it("allMarketsLength", async () => {
     let allMarketsLength = await pendleData.allMarketsLength();
-    expect(allMarketsLength).to.be.eq(1);
+    expect(allMarketsLength).to.be.eq(3); // numbers of markets that have been created in pendleMarketFixture
   });
 
   it("getAllMarkets", async () => {
-    let filter = pendleMarketFactory.filters.MarketCreated();
+    let filter = pendleAMarketFactory.filters.MarketCreated();
     let tx = await pendleRouter.createMarket(
       consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
       tokenUSDT.address,
       consts.HIGH_GAS_OVERRIDE
     );
-    let allEvents = await pendleMarketFactory.queryFilter(filter, tx.blockHash);
+    let allEvents = await pendleAMarketFactory.queryFilter(
+      filter,
+      tx.blockHash
+    );
     let expectedMarkets: string[] = [];
+    allEvents.forEach((event) => {
+      expectedMarkets.push(event.args!.market);
+    });
+    filter = pendleCMarketFactory.filters.MarketCreated();
+    allEvents = await pendleCMarketFactory.queryFilter(filter, tx.blockHash);
     allEvents.forEach((event) => {
       expectedMarkets.push(event.args!.market);
     });
