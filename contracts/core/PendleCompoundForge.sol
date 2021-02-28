@@ -121,7 +121,7 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         IPendleData data = router.data();
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
-        emit NewYieldContracts(ot, xyt, _expiry);
+        emit NewYieldContracts(forgeId, _underlyingAsset, _expiry, ot, xyt);
     }
 
     function redeemAfterExpiry(
@@ -147,7 +147,7 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _msgSender);
         tokens.ot.burn(_msgSender, redeemedAmount);
 
-        emit RedeemYieldToken(_underlyingAsset, cTokensToRedeem, _expiry);
+        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, cTokensToRedeem);
     }
 
     // msg.sender needs to have both OT and XYT tokens
@@ -172,7 +172,7 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         tokens.ot.burn(_msgSender, underlyingToRedeem);
         tokens.xyt.burn(_msgSender, underlyingToRedeem);
 
-        emit RedeemYieldToken(_underlyingAsset, _amountToRedeem, _expiry);
+        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem);
         return _amountToRedeem;
     }
 
@@ -211,7 +211,7 @@ contract PendleCompoundForge is IPendleForge, Permissions {
         tokens.xyt.mint(_to, amountToMint);
         lastRate[_underlyingAsset][_expiry][_to] = currentRate;
 
-        emit MintYieldToken(_underlyingAsset, amountToMint, _expiry);
+        emit MintYieldToken(forgeId, _underlyingAsset, _expiry, amountToMint);
         return (address(tokens.ot), address(tokens.xyt));
     }
 
