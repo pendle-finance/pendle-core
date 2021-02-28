@@ -73,6 +73,13 @@ interface IPendleRouter {
      */
     event NewForge(bytes32 indexed forgeId, address indexed forgeAddress);
 
+  /**
+     * @dev Emitted when new forge is added
+     * @param marketFactoryId Human Readable Market Factory ID in Bytes
+     * @param forgeAddress The Market Factory Address
+     */
+    event NewMarketFactory(bytes32 indexed marketFactoryId, address indexed marketFactoryAddress);
+
     struct Market {
         address market;
         uint256 tokenBalanceIn;
