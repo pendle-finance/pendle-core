@@ -96,6 +96,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         data.addForge(_forgeId, _forgeAddress);
     }
 
+    //done
     function newYieldContracts(
         bytes32 _forgeId,
         address _underlyingAsset,
@@ -158,6 +159,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         }
     }
 
+    // this function is called to redeem OT+XYT to get back the underlying, before the expiry
     function redeemUnderlying(
         bytes32 _forgeId,
         address _underlyingAsset,
@@ -167,6 +169,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     ) public override pendleNonReentrant returns (uint256 redeemedAmount) {
         require(_forgeId != bytes32(0), "ZERO_BYTES");
         require(_underlyingAsset != address(0), "ZERO_ADDRESS");
+        require(block.timestamp < _expiry, "EXPIRY_IS_OVER");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         require(address(forge) != address(0), "FORGE_NOT_EXISTS");
@@ -212,6 +215,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         );
     }
 
+    //done
     function tokenizeYield(
         bytes32 _forgeId,
         address _underlyingAsset,

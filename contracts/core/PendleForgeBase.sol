@@ -52,6 +52,7 @@ contract PendleForgeBase is IPendleForge, Permissions {
     string private constant OT = "OT";
     string private constant XYT = "XYT";
 
+    //done
     constructor(
         address _governance,
         IPendleRouter _router,
@@ -65,11 +66,13 @@ contract PendleForgeBase is IPendleForge, Permissions {
         data = _router.data();
     }
 
+    //done
     modifier onlyRouter() {
         require(msg.sender == address(router), "ONLY_ROUTER");
         _;
     }
 
+    //done
     modifier onlyXYT(address _underlyingAsset, uint256 _expiry) {
         require(
             msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
@@ -78,6 +81,8 @@ contract PendleForgeBase is IPendleForge, Permissions {
         _;
     }
 
+
+    //done
     function newYieldContracts(address _underlyingAsset, uint256 _expiry)
         external
         override
@@ -155,7 +160,7 @@ contract PendleForgeBase is IPendleForge, Permissions {
         tokens.ot.burn(_account, underlyingToRedeem);
         tokens.xyt.burn(_account, underlyingToRedeem);
 
-        emit RedeemYieldToken(_underlyingAsset, _expiry, _amountToRedeem);
+        emit RedeemYieldToken(_underlyingAsset, _expiry, underlyingToRedeem);
 
         return _amountToRedeem;
     }
@@ -178,6 +183,7 @@ contract PendleForgeBase is IPendleForge, Permissions {
         return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
     }
 
+    //done
     function tokenizeYield(
         address _underlyingAsset,
         uint256 _expiry,
@@ -192,7 +198,7 @@ contract PendleForgeBase is IPendleForge, Permissions {
         tokens.ot.mint(_to, amountToMint);
         tokens.xyt.mint(_to, amountToMint);
 
-        emit MintYieldToken(_underlyingAsset, _expiry, _amountToTokenize);
+        emit MintYieldToken(_underlyingAsset, _expiry, amountToMint);
         return (address(tokens.ot), address(tokens.xyt));
     }
 
@@ -253,6 +259,7 @@ contract PendleForgeBase is IPendleForge, Permissions {
         );
     }
 
+    // Invariant: this function must be called before a user's XYT balance is changed
     function _settleDueInterests(
         PendleTokens memory _tokens,
         address _underlyingAsset,
