@@ -1,19 +1,18 @@
 import { assert, expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
-import PendleLiquidityMining from "../../build/artifacts/contracts/core/PendleLiquidityMining.sol/PendleLiquidityMining.json";
 import {
-  approxBigNumber,
+  advanceTime,
   amountToWei,
+  approxBigNumber,
   consts,
   evm_revert,
   evm_snapshot,
+  getAContract,
   setTime,
   setTimeNextBlock,
   startOfEpoch,
-  getAContract,
   tokens,
-  mint,
 } from "../helpers";
 import {
   liqParams,
@@ -418,5 +417,154 @@ describe("PendleAaveLiquidityMining systemic tests", async () => {
       params.START_TIME.add(params.EPOCH_DURATION).add(params.EPOCH_DURATION)
     );
     await pendleLiq.connect(bob).claimRewards();
+  });
+
+  it("can stake and withdraw", async () => {
+    const FIFTEEN_DAYS = consts.ONE_DAY.mul(15);
+
+    const amountToStake = params.INITIAL_LP_AMOUNT; //1e17 LP = 0.1 LP
+
+    const pdlBalanceOfContract = await pdl.balanceOf(pendleLiq.address);
+    const pdlBalanceOfUser = await pdl.balanceOf(bob.address);
+    const lpBalanceOfUser = await pendleStdMarket.balanceOf(bob.address);
+
+    console.log(
+      `\tPDL balance of pendleLiq contract before: ${pdlBalanceOfContract}`
+    );
+    console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
+    console.log(`\tLP balance of user before: ${lpBalanceOfUser}`);
+
+    await advanceTime(provider, params.START_TIME.sub(consts.T0));
+    await pendleLiq
+      .connect(bob)
+      .stake(
+        consts.T0.add(consts.SIX_MONTH),
+        amountToStake,
+        consts.HIGH_GAS_OVERRIDE
+      );
+    console.log("\tStaked");
+    const lpHolderContract = await pendleLiq.lpHolderForExpiry(
+      consts.T0.add(consts.SIX_MONTH)
+    );
+    const aTokenBalanceOfLpHolderContract = await aUSDT.balanceOf(
+      lpHolderContract
+    );
+    const aTokenBalanceOfUser = await aUSDT.balanceOf(bob.address);
+    console.log(
+      `\t[LP interests] aUSDT balance of LpHolder after first staking = ${aTokenBalanceOfLpHolderContract}`
+    );
+    console.log(
+      `\t[LP interests] aUSDT balance of User after first staking = ${aTokenBalanceOfUser}`
+    );
+
+    await advanceTime(provider, FIFTEEN_DAYS);
+    await pendleLiq
+      .connect(bob)
+      .withdraw(
+        consts.T0.add(consts.SIX_MONTH),
+        amountToStake.div(BN.from(2)),
+        consts.HIGH_GAS_OVERRIDE
+      );
+
+    const pdlBalanceOfContractAfter = await pdl.balanceOf(pendleLiq.address);
+    const pdlBalanceOfUserAfter = await pdl.balanceOf(bob.address);
+    const expectedPdlBalanceOfUserAfter = params.REWARDS_PER_EPOCH.div(4);
+    console.log(
+      `\tPDL balance of pendleLiq contract after: ${pdlBalanceOfContractAfter}`
+    );
+    console.log(`\tPDL balance of user after: ${pdlBalanceOfUserAfter}`);
+    console.log(
+      `\tExpected PDL balance of user after: ${expectedPdlBalanceOfUserAfter}`
+    );
+
+    // we need to do this properly
+    expect(pdlBalanceOfUserAfter.toNumber()).to.be.approximately(
+      expectedPdlBalanceOfUserAfter.toNumber(),
+      expectedPdlBalanceOfUserAfter.toNumber() / 1000
+    );
+
+    console.log(
+      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
+        lpHolderContract
+      )}`
+    );
+
+    //stake using another user - alice, for the same amount as bob's stake now (amountToStake/2)
+    await pendleLiq.stake(
+      consts.T0.add(consts.SIX_MONTH),
+      amountToStake.div(2),
+      consts.HIGH_GAS_OVERRIDE
+    );
+
+    // Now we wait for another 15 days to withdraw (at the very start of epoch 4), then the rewards to be withdrawn for bob should be:
+    // From epoch 1: rewardsPerEpoch * 2/4    ( 1/4 is released at start of epoch 3, 1/4 is released at start of epoch 4)
+    // From epoch 2: (rewardsPerEpoch/2 + rewardsPerEpoch/2/2) * 2/4  ( first half: get all the rewards = rewardsPerEpoch/2, 2nd half: get half)
+    // From epoch 3: rewardsPerEpoch/2 * 1/4  ( two stakers with the same stake & duration => each gets rewardsPerEpoch/2)
+    //  Total: rewardsPerEpoch * (1/2 + 3/8 + 1/8) = rewardsPerEpoch
+    await advanceTime(provider, FIFTEEN_DAYS);
+
+    // console.log(`abi = ${pendleLiq.abi}`);
+    // console.log(pendleLiq);
+
+    const rewardsData = await pendleLiqWeb3.methods
+      .claimRewards()
+      .call({ from: alice.address });
+    const interestsData = await pendleLiqWeb3.methods
+      .claimLpInterests()
+      .call({ from: alice.address });
+    console.log(`\tInterests for alice = ${interestsData}`);
+    console.log(`\tRewards available for epochs from now: ${rewardsData}`);
+    console.log(
+      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
+        lpHolderContract
+      )}`
+    );
+
+    await pendleLiq
+      .connect(bob)
+      .withdraw(
+        consts.T0.add(consts.SIX_MONTH),
+        amountToStake.div(BN.from(2)),
+        consts.HIGH_GAS_OVERRIDE
+      );
+    const pdlBalanceOfUserAfter2ndTnx = await pdl.balanceOf(bob.address);
+    const expectedPdlBalanceOfUsersAfter2ndTnx = expectedPdlBalanceOfUserAfter.add(
+      params.REWARDS_PER_EPOCH
+    );
+    console.log(
+      `\tPDL balance of user after 2nd withdraw: ${pdlBalanceOfUserAfter2ndTnx}`
+    );
+    console.log(
+      `\tExpected PDL balance of user after 2nd withdraw: ${expectedPdlBalanceOfUsersAfter2ndTnx}`
+    );
+
+    console.log(
+      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
+        lpHolderContract
+      )}`
+    );
+
+    expect(pdlBalanceOfUserAfter2ndTnx.toNumber()).to.be.approximately(
+      expectedPdlBalanceOfUsersAfter2ndTnx.toNumber(),
+      expectedPdlBalanceOfUsersAfter2ndTnx.toNumber() / 1000
+    );
+
+    await pendleLiq.withdraw(
+      consts.T0.add(consts.SIX_MONTH),
+      amountToStake.div(2),
+      consts.HIGH_GAS_OVERRIDE
+    );
+    const aTokenBalanceOfLpHolderContractAfter = await aUSDT.balanceOf(
+      lpHolderContract
+    );
+    const aTokenBalanceOfUserAfter = await aUSDT.balanceOf(bob.address);
+
+    //now, the LP holding contract should hold almost 0 aUSDT. This means that we have calculated and gave the Lp interests back to the users properly
+    console.log(
+      `\t[LP interests] aUSDT balance of LpHolder after withdrawing all = ${aTokenBalanceOfLpHolderContractAfter}`
+    );
+    console.log(
+      `\t[LP interests] aUSDT balance of user after withdrawing all = ${aTokenBalanceOfUserAfter}`
+    );
   });
 });

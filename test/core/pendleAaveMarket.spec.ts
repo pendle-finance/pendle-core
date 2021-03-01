@@ -12,7 +12,7 @@ import {
   evm_snapshot,
   getAContract,
   Token,
-  tokens,
+  tokens
 } from "../helpers";
 import { AMMTest } from "./AmmFormula";
 import { pendleMarketFixture } from "./fixtures";
@@ -73,13 +73,13 @@ describe("PendleAaveMarket", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  async function bootstrapSampleMarket(amountToTokenize: BN) {
+  async function bootstrapSampleMarket(amount: BN) {
     await pendleRouter.bootstrapMarket(
       consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
       testToken.address,
-      amountToTokenize,
-      amountToTokenize,
+      amount,
+      amount,
       consts.HIGH_GAS_OVERRIDE
     );
   }
@@ -90,14 +90,14 @@ describe("PendleAaveMarket", async () => {
     return cloneObj;
   }
 
-  async function bootstrapSampleMarketEth(amountToTokenize: BN) {
+  async function bootstrapSampleMarketEth(amount: BN) {
     await pendleRouter.bootstrapMarket(
       consts.MARKET_FACTORY_AAVE,
       pendleXyt.address,
       consts.ETH_ADDRESS,
-      amountToTokenize,
-      amountToTokenize,
-      wrapEth(consts.HIGH_GAS_OVERRIDE, amountToTokenize)
+      amount,
+      amount,
+      wrapEth(consts.HIGH_GAS_OVERRIDE, amount)
     );
   }
 
@@ -109,9 +109,9 @@ describe("PendleAaveMarket", async () => {
   */
 
   it("should be able to join a bootstrapped market with a single standard token_sample", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarket(amountToTokenize);
+    await bootstrapSampleMarket(amount);
 
     let totalSupply = await pendleStdMarket.totalSupply();
     let initalWalletBalance = await pendleStdMarket.balanceOf(alice.address);
@@ -120,7 +120,7 @@ describe("PendleAaveMarket", async () => {
       pendleXyt.address,
       testToken.address,
       false,
-      amountToTokenize.div(10),
+      amount.div(10),
       totalSupply.div(21),
       consts.HIGH_GAS_OVERRIDE
     );
@@ -128,20 +128,20 @@ describe("PendleAaveMarket", async () => {
     expect(currentWalletBalance).to.be.gt(initalWalletBalance);
   });
   it("should be able to bootstrap", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarket(amountToTokenize);
+    await bootstrapSampleMarket(amount);
     let yieldTokenBalance = await pendleXyt.balanceOf(pendleStdMarket.address);
     let testTokenBalance = await testToken.balanceOf(pendleStdMarket.address);
 
-    expect(yieldTokenBalance).to.be.equal(amountToTokenize);
-    expect(testTokenBalance).to.be.equal(amountToTokenize);
+    expect(yieldTokenBalance).to.be.equal(amount);
+    expect(testTokenBalance).to.be.equal(amount);
   });
 
   it("should be able to join a bootstrapped pool by dual tokens_sample", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
+    const amount = amountToWei(tokenUSDT, BN.from(10));
 
-    await bootstrapSampleMarket(amountToTokenize);
+    await bootstrapSampleMarket(amount);
 
     const totalSupply = await pendleStdMarket.totalSupply();
 
@@ -151,8 +151,8 @@ describe("PendleAaveMarket", async () => {
         consts.MARKET_FACTORY_AAVE,
         pendleXyt.address,
         testToken.address,
-        amountToTokenize,
-        amountToTokenize,
+        amount,
+        amount,
         totalSupply,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -161,15 +161,15 @@ describe("PendleAaveMarket", async () => {
     let testTokenBalance = await testToken.balanceOf(pendleStdMarket.address);
     let totalSupplyBalance = await pendleStdMarket.totalSupply();
 
-    expect(yieldTokenBalance).to.be.equal(amountToTokenize.mul(2));
-    expect(testTokenBalance).to.be.equal(amountToTokenize.mul(2));
+    expect(yieldTokenBalance).to.be.equal(amount.mul(2));
+    expect(testTokenBalance).to.be.equal(amount.mul(2));
     expect(totalSupplyBalance).to.be.equal(totalSupply.mul(2));
   });
 
   it("should be able to swap amount out_sample", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarket(amountToTokenize);
+    await bootstrapSampleMarket(amount);
 
     let yieldTokenBalanceBefore = await pendleXyt.balanceOf(
       pendleStdMarket.address
@@ -201,15 +201,13 @@ describe("PendleAaveMarket", async () => {
       yieldTokenBalanceBefore.add(BN.from(result[1])).toNumber(),
       20
     );
-    expect(testTokenBalance).to.be.equal(
-      amountToTokenize.sub(amountToTokenize.div(10))
-    );
+    expect(testTokenBalance).to.be.equal(amount.sub(amount.div(10)));
   });
 
   it("should be able to swap amount in_sample", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarket(amountToTokenize);
+    await bootstrapSampleMarket(amount);
 
     await pendleRouter
       .connect(bob)
@@ -227,20 +225,20 @@ describe("PendleAaveMarket", async () => {
     let testTokenBalance = await testToken.balanceOf(pendleStdMarket.address);
 
     expect(yieldTokenBalance.toNumber()).to.be.approximately(
-      amountToTokenize.add(amountToTokenize.div(10)).toNumber(),
+      amount.add(amount.div(10)).toNumber(),
       30
     );
 
     expect(testTokenBalance.toNumber()).to.be.approximately(
-      amountToTokenize.sub(amountToTokenize.div(10)).toNumber(),
-      amountToTokenize.div(100).toNumber()
+      amount.sub(amount.div(10)).toNumber(),
+      amount.div(100).toNumber()
     );
   });
 
   it("should be able to get spot price", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarket(amountToTokenize);
+    await bootstrapSampleMarket(amount);
 
     let spotPrice = await pendleStdMarket.spotPrice(
       testToken.address,
@@ -254,8 +252,8 @@ describe("PendleAaveMarket", async () => {
   });
 
   it("should be able to exit a pool by dual tokens_sample", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
-    await bootstrapSampleMarket(amountToTokenize);
+    const amount = amountToWei(tokenUSDT, BN.from(100));
+    await bootstrapSampleMarket(amount);
     await advanceTime(provider, consts.ONE_MONTH);
     const totalSupply = await pendleStdMarket.totalSupply();
 
@@ -272,17 +270,13 @@ describe("PendleAaveMarket", async () => {
     let yieldTokenBalance = await pendleXyt.balanceOf(pendleStdMarket.address);
     let testTokenBalance = await testToken.balanceOf(pendleStdMarket.address);
 
-    expect(yieldTokenBalance).to.be.equal(
-      amountToTokenize.sub(amountToTokenize.div(10))
-    );
-    expect(testTokenBalance).to.be.equal(
-      amountToTokenize.sub(amountToTokenize.div(10))
-    );
+    expect(yieldTokenBalance).to.be.equal(amount.sub(amount.div(10)));
+    expect(testTokenBalance).to.be.equal(amount.sub(amount.div(10)));
   });
 
   it("shouldn't be able to add liquidity by dual tokens after xyt has expired", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
-    await bootstrapSampleMarket(amountToTokenize);
+    const amount = amountToWei(tokenUSDT, BN.from(10));
+    await bootstrapSampleMarket(amount);
     const totalSupply = await pendleStdMarket.totalSupply();
 
     advanceTime(provider, consts.ONE_YEAR);
@@ -293,8 +287,8 @@ describe("PendleAaveMarket", async () => {
           consts.MARKET_FACTORY_AAVE,
           pendleXyt.address,
           testToken.address,
-          amountToTokenize,
-          amountToTokenize,
+          amount,
+          amount,
           totalSupply,
           consts.HIGH_GAS_OVERRIDE
         )
@@ -302,9 +296,9 @@ describe("PendleAaveMarket", async () => {
   });
 
   it("shouldn't be able to add liquidity by xyt after xyt has expired", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
+    const amount = amountToWei(tokenUSDT, BN.from(10));
 
-    await bootstrapSampleMarket(amountToTokenize);
+    await bootstrapSampleMarket(amount);
 
     let totalSupply = await pendleStdMarket.totalSupply();
     await advanceTime(provider, consts.ONE_YEAR);
@@ -315,7 +309,7 @@ describe("PendleAaveMarket", async () => {
         pendleXyt.address,
         testToken.address,
         false,
-        amountToTokenize.div(10),
+        amount.div(10),
         totalSupply.div(21),
         consts.HIGH_GAS_OVERRIDE
       )
@@ -323,8 +317,8 @@ describe("PendleAaveMarket", async () => {
   });
 
   it("shouldn't be able to exit market by baseToken after the market has expired", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
-    await bootstrapSampleMarket(amountToTokenize);
+    const amount = amountToWei(tokenUSDT, BN.from(100));
+    await bootstrapSampleMarket(amount);
 
     const totalSupply = await pendleStdMarket.totalSupply();
 
@@ -337,7 +331,7 @@ describe("PendleAaveMarket", async () => {
         testToken.address,
         false,
         totalSupply.div(4),
-        amountToTokenize.div(6),
+        amount.div(6),
         consts.HIGH_GAS_OVERRIDE
       )
     ).to.be.revertedWith(errMsg.MARKET_LOCKED);
@@ -349,15 +343,15 @@ describe("PendleAaveMarket", async () => {
         testToken.address,
         true,
         totalSupply.div(4),
-        amountToTokenize.div(6),
+        amount.div(6),
         consts.HIGH_GAS_OVERRIDE
       )
     ).to.be.revertedWith(errMsg.MARKET_LOCKED);
   });
 
   it("should be able to exit a pool by dual tokens after xyt has expired", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
-    await bootstrapSampleMarket(amountToTokenize);
+    const amount = amountToWei(tokenUSDT, BN.from(100));
+    await bootstrapSampleMarket(amount);
     await advanceTime(provider, consts.ONE_YEAR);
     const totalSupply = await pendleStdMarket.totalSupply();
 
@@ -366,40 +360,36 @@ describe("PendleAaveMarket", async () => {
       pendleXyt.address,
       testToken.address,
       totalSupply.div(10),
-      amountToTokenize.div(10),
-      amountToTokenize.div(10),
+      amount.div(10),
+      amount.div(10),
       consts.HIGH_GAS_OVERRIDE
     );
 
     let yieldTokenBalance = await pendleXyt.balanceOf(pendleStdMarket.address);
     let testTokenBalance = await testToken.balanceOf(pendleStdMarket.address);
 
-    expect(yieldTokenBalance).to.be.equal(
-      amountToTokenize.sub(amountToTokenize.div(10))
-    );
-    expect(testTokenBalance).to.be.equal(
-      amountToTokenize.sub(amountToTokenize.div(10))
-    );
+    expect(yieldTokenBalance).to.be.equal(amount.sub(amount.div(10)));
+    expect(testTokenBalance).to.be.equal(amount.sub(amount.div(10)));
   });
 
   it("should be able to getReserves", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarket(amountToTokenize);
+    await bootstrapSampleMarket(amount);
 
     let [
       xytReserve,
       tokenReserve,
       blockTimestamp,
     ] = await pendleStdMarket.getReserves();
-    expect(xytReserve).to.be.equal(amountToTokenize);
-    expect(tokenReserve).to.be.equal(amountToTokenize);
+    expect(xytReserve).to.be.equal(amount);
+    expect(tokenReserve).to.be.equal(amount);
   });
 
   it("should be able to getMarketReserve", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarket(amountToTokenize);
+    await bootstrapSampleMarket(amount);
 
     let [
       xytReserve,
@@ -410,14 +400,14 @@ describe("PendleAaveMarket", async () => {
       pendleXyt.address,
       testToken.address
     );
-    expect(xytReserve).to.be.equal(amountToTokenize);
-    expect(tokenReserve).to.be.equal(amountToTokenize);
+    expect(xytReserve).to.be.equal(amount);
+    expect(tokenReserve).to.be.equal(amount);
   });
 
   it("should be able to getMarketRateExactOut", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarket(amountToTokenize);
+    await bootstrapSampleMarket(amount);
 
     let result = await pendleRouter.getMarketRateExactOut(
       pendleXyt.address,
@@ -430,9 +420,9 @@ describe("PendleAaveMarket", async () => {
   });
 
   it("should be able to getMarketRateExactIn", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarket(amountToTokenize);
+    await bootstrapSampleMarket(amount);
 
     let result = await pendleRouter.getMarketRateExactIn(
       testToken.address,
@@ -445,9 +435,9 @@ describe("PendleAaveMarket", async () => {
   });
 
   it("should be able to add market liquidity for a token_sample", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
+    const amount = amountToWei(tokenUSDT, BN.from(10));
 
-    await bootstrapSampleMarket(amountToTokenize);
+    await bootstrapSampleMarket(amount);
     await testToken.approve(pendleStdMarket.address, consts.MAX_ALLOWANCE);
 
     let initalLpTokenBal = await pendleStdMarket.balanceOf(alice.address);
@@ -460,7 +450,7 @@ describe("PendleAaveMarket", async () => {
       pendleXyt.address,
       testToken.address,
       false,
-      amountToTokenize.div(10),
+      amount.div(10),
       totalSupply.div(21),
       consts.HIGH_GAS_OVERRIDE
     );
@@ -475,9 +465,9 @@ describe("PendleAaveMarket", async () => {
   });
 
   it("should be able to add XYT market liquidity_sample", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
+    const amount = amountToWei(tokenUSDT, BN.from(10));
 
-    await bootstrapSampleMarket(amountToTokenize);
+    await bootstrapSampleMarket(amount);
     await testToken.approve(pendleStdMarket.address, consts.MAX_ALLOWANCE);
 
     let initalLpTokenBal = await pendleStdMarket.balanceOf(alice.address);
@@ -490,7 +480,7 @@ describe("PendleAaveMarket", async () => {
       pendleXyt.address,
       testToken.address,
       true,
-      amountToTokenize.div(10),
+      amount.div(10),
       totalSupply.div(21),
       consts.HIGH_GAS_OVERRIDE
     );
@@ -524,10 +514,10 @@ describe("PendleAaveMarket", async () => {
   });
 
   it("should be able to swapPathExactIn", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarket(amountToTokenize);
-    await bootstrapSampleMarketEth(amountToTokenize);
+    await bootstrapSampleMarket(amount);
+    await bootstrapSampleMarketEth(amount);
 
     await pendleRouter.swapPathExactIn(
       [
@@ -536,7 +526,7 @@ describe("PendleAaveMarket", async () => {
             market: pendleStdMarket.address,
             tokenIn: testToken.address,
             tokenOut: pendleXyt.address,
-            swapAmount: amountToTokenize,
+            swapAmount: amount,
             limitReturnAmount: BN.from(0), // TODO: change to some reasonable amount?
             maxPrice: consts.MAX_ALLOWANCE,
           },
@@ -552,8 +542,9 @@ describe("PendleAaveMarket", async () => {
       ],
       testToken.address,
       WETH.address,
-      amountToTokenize,
-      BN.from(0)
+      amount,
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
     );
 
     let tokenBalance1: BN = await testToken.balanceOf(alice.address);
@@ -562,14 +553,14 @@ describe("PendleAaveMarket", async () => {
     await evm_revert(snapshotId);
     snapshotId = await evm_snapshot();
 
-    await bootstrapSampleMarket(amountToTokenize);
-    await bootstrapSampleMarketEth(amountToTokenize);
+    await bootstrapSampleMarket(amount);
+    await bootstrapSampleMarketEth(amount);
 
     let initialXytBalance: BN = await pendleXyt.balanceOf(alice.address);
     await pendleRouter.swapExactIn(
       testToken.address,
       pendleXyt.address,
-      amountToTokenize,
+      amount,
       BN.from(0),
       consts.MAX_ALLOWANCE,
       consts.MARKET_FACTORY_AAVE
@@ -593,10 +584,10 @@ describe("PendleAaveMarket", async () => {
 
   // Enable this test after the bug is fixed.
   xit("shouldn't be able to swapPathExactIn with invalid params", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarket(amountToTokenize);
-    await bootstrapSampleMarketEth(amountToTokenize);
+    await bootstrapSampleMarket(amount);
+    await bootstrapSampleMarketEth(amount);
 
     await expect(
       pendleRouter.swapPathExactIn(
@@ -606,7 +597,7 @@ describe("PendleAaveMarket", async () => {
               market: pendleStdMarket.address,
               tokenIn: testToken.address,
               tokenOut: pendleXyt.address,
-              swapAmount: amountToTokenize,
+              swapAmount: amount,
               limitReturnAmount: BN.from(0),
               maxPrice: consts.MAX_ALLOWANCE,
             },
@@ -622,7 +613,7 @@ describe("PendleAaveMarket", async () => {
         ],
         testToken.address,
         WETH.address,
-        amountToTokenize.mul(2),
+        amount.mul(2),
         BN.from(0)
       )
     ).to.be.reverted;
@@ -640,14 +631,14 @@ describe("PendleAaveMarket", async () => {
   });
 
   it("Aave-ETH should be able to bootstrap", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
-    await bootstrapSampleMarketEth(amountToTokenize);
+    const amount = amountToWei(tokenUSDT, BN.from(100));
+    await bootstrapSampleMarketEth(amount);
   });
 
   it("Aave-ETH should be able to join a bootstrapped market with a single standard token_sample", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarketEth(amountToTokenize);
+    await bootstrapSampleMarketEth(amount);
 
     let totalSupply = await pendleEthMarket.totalSupply();
     let initalWalletBalance = await pendleEthMarket.balanceOf(alice.address);
@@ -656,18 +647,18 @@ describe("PendleAaveMarket", async () => {
       pendleXyt.address,
       consts.ETH_ADDRESS,
       false,
-      amountToTokenize.div(10),
+      amount.div(10),
       totalSupply.div(21),
-      wrapEth(consts.HIGH_GAS_OVERRIDE, amountToTokenize.div(10))
+      wrapEth(consts.HIGH_GAS_OVERRIDE, amount.div(10))
     );
     let currentWalletBalance = await pendleEthMarket.balanceOf(alice.address);
     expect(currentWalletBalance).to.be.gt(initalWalletBalance);
   });
 
   it("Aave-ETH should be able to join a bootstrapped pool by dual tokens_sample", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
+    const amount = amountToWei(tokenUSDT, BN.from(10));
 
-    await bootstrapSampleMarketEth(amountToTokenize);
+    await bootstrapSampleMarketEth(amount);
 
     const totalSupply = await pendleEthMarket.totalSupply();
 
@@ -677,25 +668,25 @@ describe("PendleAaveMarket", async () => {
         consts.MARKET_FACTORY_AAVE,
         pendleXyt.address,
         consts.ETH_ADDRESS,
-        amountToTokenize,
-        amountToTokenize,
+        amount,
+        amount,
         totalSupply,
-        wrapEth(consts.HIGH_GAS_OVERRIDE, amountToTokenize)
+        wrapEth(consts.HIGH_GAS_OVERRIDE, amount)
       );
 
     let yieldTokenBalance = await pendleXyt.balanceOf(pendleEthMarket.address);
     let ethBalance = await WETH.balanceOf(pendleEthMarket.address);
     let totalSupplyBalance = await pendleEthMarket.totalSupply();
 
-    expect(yieldTokenBalance).to.be.equal(amountToTokenize.mul(2));
-    expect(ethBalance).to.be.equal(amountToTokenize.mul(2));
+    expect(yieldTokenBalance).to.be.equal(amount.mul(2));
+    expect(ethBalance).to.be.equal(amount.mul(2));
     expect(totalSupplyBalance).to.be.equal(totalSupply.mul(2));
   });
 
   it("Aave-ETH should be able to swap amount out_sample", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarketEth(amountToTokenize);
+    await bootstrapSampleMarketEth(amount);
 
     let yieldTokenBalanceBefore = await pendleXyt.balanceOf(
       pendleEthMarket.address
@@ -727,15 +718,13 @@ describe("PendleAaveMarket", async () => {
       yieldTokenBalanceBefore.add(BN.from(result[1])).toNumber(),
       20
     );
-    expect(ethBalance).to.be.equal(
-      amountToTokenize.sub(amountToTokenize.div(10))
-    );
+    expect(ethBalance).to.be.equal(amount.sub(amount.div(10)));
   });
 
   it("Aave-ETH should be able to swap amount in_sample", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarketEth(amountToTokenize);
+    await bootstrapSampleMarketEth(amount);
 
     await pendleRouter
       .connect(bob)
@@ -753,20 +742,20 @@ describe("PendleAaveMarket", async () => {
     let ethBalance = await WETH.balanceOf(pendleEthMarket.address);
 
     expect(yieldTokenBalance.toNumber()).to.be.approximately(
-      amountToTokenize.add(amountToTokenize.div(10)).toNumber(),
+      amount.add(amount.div(10)).toNumber(),
       30
     );
 
     expect(ethBalance.toNumber()).to.be.approximately(
-      amountToTokenize.sub(amountToTokenize.div(10)).toNumber(),
-      amountToTokenize.div(100).toNumber()
+      amount.sub(amount.div(10)).toNumber(),
+      amount.div(100).toNumber()
     );
   });
 
   it("Aave-ETH should be able to get spot price", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarketEth(amountToTokenize);
+    await bootstrapSampleMarketEth(amount);
 
     let spotPrice = await pendleEthMarket.spotPrice(
       WETH.address,
@@ -780,8 +769,8 @@ describe("PendleAaveMarket", async () => {
   });
 
   it("Aave-ETH should be able to exit a pool by dual tokens_sample", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
-    await bootstrapSampleMarketEth(amountToTokenize);
+    const amount = amountToWei(tokenUSDT, BN.from(100));
+    await bootstrapSampleMarketEth(amount);
     await advanceTime(provider, consts.ONE_MONTH);
     const totalSupply = await pendleEthMarket.totalSupply();
 
@@ -798,28 +787,24 @@ describe("PendleAaveMarket", async () => {
     let yieldTokenBalance = await pendleXyt.balanceOf(pendleEthMarket.address);
     let testTokenBalance = await WETH.balanceOf(pendleEthMarket.address);
 
-    expect(yieldTokenBalance).to.be.equal(
-      amountToTokenize.sub(amountToTokenize.div(10))
-    );
-    expect(testTokenBalance).to.be.equal(
-      amountToTokenize.sub(amountToTokenize.div(10))
-    );
+    expect(yieldTokenBalance).to.be.equal(amount.sub(amount.div(10)));
+    expect(testTokenBalance).to.be.equal(amount.sub(amount.div(10)));
   });
 
   it("Aave-ETH should be able to getReserves", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarketEth(amountToTokenize);
+    await bootstrapSampleMarketEth(amount);
 
     let [xytReserve, tokenReserve] = await pendleEthMarket.getReserves();
-    expect(xytReserve).to.be.equal(amountToTokenize);
-    expect(tokenReserve).to.be.equal(amountToTokenize);
+    expect(xytReserve).to.be.equal(amount);
+    expect(tokenReserve).to.be.equal(amount);
   });
 
   it("Aave-ETH should be able to getMarketReserve", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarketEth(amountToTokenize);
+    await bootstrapSampleMarketEth(amount);
 
     let [
       xytReserve,
@@ -830,14 +815,14 @@ describe("PendleAaveMarket", async () => {
       pendleXyt.address,
       WETH.address
     );
-    expect(xytReserve).to.be.equal(amountToTokenize);
-    expect(tokenReserve).to.be.equal(amountToTokenize);
+    expect(xytReserve).to.be.equal(amount);
+    expect(tokenReserve).to.be.equal(amount);
   });
 
   it("Aave-ETH should be able to getMarketRateExactOut", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarketEth(amountToTokenize);
+    await bootstrapSampleMarketEth(amount);
 
     let result = await pendleRouter.getMarketRateExactOut(
       pendleXyt.address,
@@ -850,9 +835,9 @@ describe("PendleAaveMarket", async () => {
   });
 
   it("Aave-ETH should be able to getMarketRateExactIn", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(100));
+    const amount = amountToWei(tokenUSDT, BN.from(100));
 
-    await bootstrapSampleMarketEth(amountToTokenize);
+    await bootstrapSampleMarketEth(amount);
 
     let result = await pendleRouter.getMarketRateExactIn(
       WETH.address,
@@ -865,9 +850,9 @@ describe("PendleAaveMarket", async () => {
   });
 
   it("Aave-ETH should be able to add market liquidity for a token_sample", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
+    const amount = amountToWei(tokenUSDT, BN.from(10));
 
-    await bootstrapSampleMarketEth(amountToTokenize);
+    await bootstrapSampleMarketEth(amount);
 
     let initalLpTokenBal = await pendleEthMarket.balanceOf(alice.address);
     let initalXytBal = await pendleXyt.balanceOf(alice.address);
@@ -879,9 +864,9 @@ describe("PendleAaveMarket", async () => {
       pendleXyt.address,
       consts.ETH_ADDRESS,
       false,
-      amountToTokenize.div(10),
+      amount.div(10),
       totalSupply.div(21),
-      wrapEth(consts.HIGH_GAS_OVERRIDE, amountToTokenize.div(10))
+      wrapEth(consts.HIGH_GAS_OVERRIDE, amount.div(10))
     );
 
     let currentLpTokenBal = await pendleEthMarket.balanceOf(alice.address);
@@ -894,9 +879,9 @@ describe("PendleAaveMarket", async () => {
   });
 
   it("Aave-ETH should be able to add XYT market liquidity_sample", async () => {
-    const amountToTokenize = amountToWei(tokenUSDT, BN.from(10));
+    const amount = amountToWei(tokenUSDT, BN.from(10));
 
-    await bootstrapSampleMarketEth(amountToTokenize);
+    await bootstrapSampleMarketEth(amount);
 
     let initalLpTokenBal = await pendleEthMarket.balanceOf(alice.address);
     let initalXytBal = await pendleXyt.balanceOf(alice.address);
@@ -908,7 +893,7 @@ describe("PendleAaveMarket", async () => {
       pendleXyt.address,
       consts.ETH_ADDRESS,
       true,
-      amountToTokenize.div(10),
+      amount.div(10),
       totalSupply.div(21),
       consts.HIGH_GAS_OVERRIDE
     );

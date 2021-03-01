@@ -74,22 +74,22 @@ export async function pendleLiquidityMiningFixture(
   let pendleCXyt = cForge.pendleCFutureYieldToken;
   let pendleAMarketFactory = core.pendleAMarketFactory;
   let pendleCMarketFactory = core.pendleCMarketFactory;
-  const amountToTokenize = amountToWei(tokens.USDT, BN.from(100));
+  const amount = amountToWei(tokens.USDT, BN.from(100));
 
   await pendleRouter.bootstrapMarket(
     consts.MARKET_FACTORY_AAVE,
     pendleAXyt.address,
     testToken.address,
-    amountToTokenize,
-    amountToTokenize,
+    amount,
+    amount,
     consts.HIGH_GAS_OVERRIDE
   );
   await pendleRouter.bootstrapMarket(
     consts.MARKET_FACTORY_COMPOUND,
     pendleCXyt.address,
     testToken.address,
-    amountToTokenize,
-    amountToTokenize,
+    amount,
+    amount,
     consts.HIGH_GAS_OVERRIDE
   );
 
