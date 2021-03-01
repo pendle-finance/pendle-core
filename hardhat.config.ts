@@ -1,14 +1,14 @@
-import * as dotenv from "dotenv";
-dotenv.config();
-
-import { HardhatUserConfig } from "hardhat/types";
+import "@nomiclabs/hardhat-truffle5";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
-import "@nomiclabs/hardhat-truffle5";
 import "@tenderly/hardhat-tenderly";
+import * as dotenv from "dotenv";
 import "hardhat-gas-reporter";
 import "hardhat-typechain";
+import { HardhatUserConfig } from "hardhat/types";
 import "solidity-coverage";
+dotenv.config();
+
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -60,8 +60,8 @@ const config: HardhatUserConfig = {
         },
       ],
       allowUnlimitedContractSize: true,
-      blockGasLimit: 40000000,
-      gas: 40000000,
+      blockGasLimit: 4000000000,
+      gas: 4000000000,
       gasPrice: 'auto',
       loggingEnabled: false,
     },

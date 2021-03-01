@@ -12,7 +12,7 @@ import {
   evm_snapshot,
   getAContract,
   Token,
-  tokens
+  tokens,
 } from "../helpers";
 import { AMMTest } from "./AmmFormula";
 import { pendleMarketFixture } from "./fixtures";
@@ -513,7 +513,7 @@ describe("PendleAaveMarket", async () => {
     ).to.be.revertedWith("EXISTED_MARKET");
   });
 
-  it("should be able to swapPathExactIn", async () => {
+  it.only("should be able to swapPathExactIn", async () => {
     const amount = amountToWei(tokenUSDT, BN.from(100));
 
     await bootstrapSampleMarket(amount);
@@ -578,8 +578,8 @@ describe("PendleAaveMarket", async () => {
     let tokenBalance2: BN = await testToken.balanceOf(alice.address);
     let wethBalance2: BN = await WETH.balanceOf(alice.address);
 
-    approxBigNumber(tokenBalance2, tokenBalance1, BN.from(10));
-    approxBigNumber(wethBalance2, wethBalance1, BN.from(10));
+    approxBigNumber(tokenBalance2, tokenBalance1, consts.TEST_TOKEN_DELTA);
+    approxBigNumber(wethBalance2, wethBalance1, consts.TEST_TOKEN_DELTA);
   });
 
   // Enable this test after the bug is fixed.
