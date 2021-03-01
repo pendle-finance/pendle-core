@@ -10,4 +10,5 @@ export const errMsg = {
   SENDER_ZERO_ADDR: prefix + " " + "SENDER_ZERO_ADDR",
   RECEIVER_ZERO_ADDR: prefix + " " + "RECEIVER_ZERO_ADDR",
   OWNER_ZERO_ADDR: prefix + " " + "OWNER_ZERO_ADDR",
+  MARKET_LOCKED: prefix + " " + "MARKET_LOCKED",
 };
