@@ -52,6 +52,7 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions, Withdrawable 
         router = _router;
     }
 
+    //done
     function createMarket(address _xyt, address _token)
         external
         override
@@ -59,9 +60,6 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions, Withdrawable 
         onlyRouter
         returns (address market)
     {
-        require(_xyt != _token, "INVALID_PAIR_XYT_TOKEN");
-        require(_xyt != address(0) || _token != address(0), "ZERO_ADDRESS");
-
         IPendleData data = router.data();
         require(data.getMarket(marketFactoryId, _xyt, _token) == address(0), "EXISTED_MARKET");
 

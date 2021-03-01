@@ -52,7 +52,6 @@ contract PendleForgeBase is IPendleForge, Permissions {
     string private constant OT = "OT";
     string private constant XYT = "XYT";
 
-    //done
     constructor(
         address _governance,
         IPendleRouter _router,
@@ -66,13 +65,11 @@ contract PendleForgeBase is IPendleForge, Permissions {
         data = _router.data();
     }
 
-    //done
     modifier onlyRouter() {
         require(msg.sender == address(router), "ONLY_ROUTER");
         _;
     }
 
-    //done
     modifier onlyXYT(address _underlyingAsset, uint256 _expiry) {
         require(
             msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
@@ -82,7 +79,6 @@ contract PendleForgeBase is IPendleForge, Permissions {
     }
 
 
-    //done
     function newYieldContracts(address _underlyingAsset, uint256 _expiry)
         external
         override
@@ -126,11 +122,14 @@ contract PendleForgeBase is IPendleForge, Permissions {
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         redeemedAmount = tokens.ot.balanceOf(_account);
+        require(redeemedAmount > 0, "NOTHING_TO_REDEEM");
 
+        // _to will get the principal + the interests from last action before expiry to now
         uint256 totalAfterExpiry =
             _calcTotalAfterExpiry(address(yieldToken), _underlyingAsset, _expiry, redeemedAmount);
         yieldToken.transfer(_to, totalAfterExpiry);
 
+        // the msg.sender (_account) gets the interest up until the last action before expiry
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
         tokens.ot.burn(_account, redeemedAmount);
 
@@ -183,7 +182,6 @@ contract PendleForgeBase is IPendleForge, Permissions {
         return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
     }
 
-    //done
     function tokenizeYield(
         address _underlyingAsset,
         uint256 _expiry,

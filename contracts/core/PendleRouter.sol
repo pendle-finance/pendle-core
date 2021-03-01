@@ -47,7 +47,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     IPendleData public override data;
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
-    //done
     modifier pendleNonReentrant() {
         _checkNonReentrancy(); // use functions to reduce bytecode size
         _;
@@ -56,7 +55,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         _reentrancyStatus = _NOT_ENTERED;
     }
 
-    //done
     constructor(address _governance, IWETH _weth) Permissions(_governance) {
         weth = _weth;
         _reentrancyStatus = _NOT_ENTERED;
@@ -67,7 +65,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
      **/
     receive() external payable {}
 
-    //done
     function initialize(IPendleData _data) external {
         require(msg.sender == initializer, "FORBIDDEN");
         require(address(_data) != address(0), "ZERO_ADDRESS");
@@ -80,7 +77,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
      *  FORGE  *
      ***********/
 
-    //done
     function addForge(bytes32 _forgeId, address _forgeAddress)
         external
         override
@@ -96,7 +92,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         data.addForge(_forgeId, _forgeAddress);
     }
 
-    //done
     function newYieldContracts(
         bytes32 _forgeId,
         address _underlyingAsset,
@@ -215,7 +210,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         );
     }
 
-    //done
     function tokenizeYield(
         bytes32 _forgeId,
         address _underlyingAsset,
@@ -423,10 +417,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         emit Join(msg.sender, _initialXytLiquidity, _initialTokenLiquidity, address(market));
         _transferOut(address(market), lpAmount);
 
-        address[] memory xyts = new address[](1);
-        address[] memory tokens = new address[](1);
-        xyts[0] = _xyt;
-        tokens[0] = _token;
         data.updateMarketInfo(_xyt, _token, _marketFactoryId);
     }
 

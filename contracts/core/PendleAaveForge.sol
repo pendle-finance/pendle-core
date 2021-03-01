@@ -56,6 +56,7 @@ contract PendleAaveForge is PendleForgeBase {
         aaveLendingPoolCore = _aaveLendingPoolCore;
     }
 
+    //calculate the (principal + interest) from the last action before expiry to now.
     function _calcTotalAfterExpiry(
         address,
         address _underlyingAsset,

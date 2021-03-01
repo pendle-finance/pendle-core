@@ -153,7 +153,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
      *  FORGE *
      **********/
 
-    //done
     function addForge(bytes32 _forgeId, address _forgeAddress)
         external
         override
@@ -166,7 +165,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         emit ForgeAdded(_forgeId, _forgeAddress);
     }
 
-    //done
     function storeTokens(
         bytes32 _forgeId,
         address _ot,
