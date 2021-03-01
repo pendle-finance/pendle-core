@@ -34,8 +34,8 @@ import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
 import "hardhat/console.sol";
 
-// Common contract base for a forge implementation.
-// Each specific forge implementation will need to implement the virtual functions
+/// @notice Common contract base for a forge implementation.
+/// @dev Each specific forge implementation will need to implement the virtual functions
 contract PendleForgeBase is IPendleForge, Permissions {
     using ExpiryUtils for string;
     using SafeMath for uint256;
@@ -78,7 +78,10 @@ contract PendleForgeBase is IPendleForge, Permissions {
         _;
     }
 
-
+    /**
+     * @notice Create a new pair of OT + XYT tokens to represent the
+     * principal and interest for an underlying asset, until an expiry
+     **/
     function newYieldContracts(address _underlyingAsset, uint256 _expiry)
         external
         override
@@ -111,6 +114,13 @@ contract PendleForgeBase is IPendleForge, Permissions {
         emit NewYieldContracts(ot, xyt, _expiry);
     }
 
+    /**
+     * @notice After an expiry, redeem OT tokens to get back the underlyingYieldToken
+     *         and also any interests
+     * @dev The interest from "the last global action before expiry" until the expiry
+     *      is given to the OT holders. This is to simplify accounting. An assumption
+     *      is that the last global action before expiry will be close to the expiry
+     **/
     function redeemAfterExpiry(
         address _account,
         address _underlyingAsset,
@@ -136,7 +146,10 @@ contract PendleForgeBase is IPendleForge, Permissions {
         emit RedeemYieldToken(_underlyingAsset, _expiry, redeemedAmount);
     }
 
-    /// @dev msg.sender needs to have both OT and XYT tokens
+    /**
+     * @notice Before the expiry, a user can redeem the same amount of OT+XYT to get back
+     *       the underlying yield token
+     **/
     function redeemUnderlying(
         address _account,
         address _underlyingAsset,
@@ -164,6 +177,10 @@ contract PendleForgeBase is IPendleForge, Permissions {
         return _amountToRedeem;
     }
 
+    /**
+     * @notice Before the expiry, a user can redeem the same amount of OT+XYT to get back
+     *       the underlying yield token
+     **/
     function redeemDueInterests(
         address _account,
         address _underlyingAsset,

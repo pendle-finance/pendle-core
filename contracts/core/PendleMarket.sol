@@ -31,7 +31,6 @@ import "../interfaces/IPendleYieldToken.sol";
 import "../tokens/PendleBaseToken.sol";
 import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-/* import "hardhat/console.sol"; */
 
 contract PendleMarket is IPendleMarket, PendleBaseToken {
     using Math for uint256;
@@ -561,32 +560,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         IERC20(address(this)).safeTransfer(data.treasury(), _amount);
     }
 
-    /// @dev Inbound transfer from router to market
-    /* function _transferIn(address _token, uint256 _amount) internal {
-        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        if (_token == xyt) {
-            // if its an XYT transfer, interests for the market is updated.
-            lastInterestUpdate = block.timestamp;
-        }
-    } */
-
-    /// @dev Outbound transfer from market to router
-    /* function _transferOut(address _token, uint256 _amount) internal {
-        IERC20(_token).safeTransfer(msg.sender, _amount);
-        if (_token == xyt) {
-            // if its an XYT transfer, interests for the market is updated.
-            lastInterestUpdate = block.timestamp;
-        }
-    } */
-
-    /* function _transferInLp(uint256 amount) internal {
-        _transferIn(address(this), amount);
-    } */
-
-    /* function _transferOutLp(uint256 amount) internal {
-        _transferOut(address(this), amount);
-    } */
-
     function _burnLp(uint256 amount) internal {
         _burn(address(this), amount);
     }
@@ -668,6 +641,15 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
     // sends out any due interests to msg.sender if he's an LP holder
     // this should be called before any functions that change someone's LPs
+    //
+    // How we keep track of LP interests:
+    //    - Whenever there is new interests iNew1 into the Market, it is distributed equally
+    //      to the Lp holders. Alice who has lpBalance will be entitled to lpBalance/totalLpSupply1*iNew1
+    //    - If there is another interest iNew2, or if totalLpSupply changes, Alice will receive an additional
+    //      lpBalance/totalSupply2*iNew2.
+    //    - Therefore, we can just keep track of globalIncomeIndex = iNew1/totalSupply1 + iNew2/totalSupply2
+    //      as well as the lastGlobalIncomeIndex of each user, when they last received interests.
+    //    - When Alice wants to redeem her interests, it will be lpBalance * (globalIncomeIndex - lastGlobalIncomeIndex[Alice])
     function _settleLpInterests(address account) internal returns (uint256 dueInterests) {
         _updateGlobalIncomeIndex();
         if (lastGlobalIncomeIndex[account] == 0) {
@@ -686,10 +668,10 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     }
 
     // this function should be called whenver the total amount of LP changes
-    //
     function _updateGlobalIncomeIndex() internal {
         if (block.timestamp.sub(lastInterestUpdate) > data.interestUpdateDelta()) {
-            // get due interests for the XYT being held in the market
+            // get due interests for the XYT being held in the market if it has not been updated
+            // for interestUpdateDelta seconds
             router.redeemDueInterests(forgeId, underlyingAsset, expiry);
             lastInterestUpdate = block.timestamp;
         }
@@ -703,9 +685,9 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         globalIncomeIndex = globalIncomeIndex.add(
             interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(totalSupply)
         );
-        // console.log("\tglobalIncomeIndex, totalSupply = ", globalIncomeIndex, totalSupply);
     }
 
+    // before we send LPs, we need to settle due interests for both the to and from addresses
     function _beforeTokenTransfer(address from, address to) internal override {
         _settleLpInterests(from);
         _settleLpInterests(to);
