@@ -115,8 +115,8 @@ export async function AMMTest(
   }
 
   /*-------------------------------------------------------------*/
-  const amountToTokenize = amountToWei(tokenUSDT, BN.from(1000));
-  await bootstrapSampleMarket(amountToTokenize);
+  const amount = amountToWei(tokenUSDT, BN.from(1000));
+  await bootstrapSampleMarket(amount);
   await testToken.approve(pendleMarket.address, consts.MAX_ALLOWANCE);
 
   await runTestTokenToXyt(
