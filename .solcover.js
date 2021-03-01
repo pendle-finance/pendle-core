@@ -2,6 +2,10 @@ const shell = require('shelljs');
 
 module.exports = {
   skipFiles: ['core/PendleTreasury.sol', 'core/PendleGovernance.sol', 'periphery/Timelock.sol', 'tokens/WETH9.sol', 'tokens/PENDLE.sol'],
+  providerOptions: {
+    gasLimit: "0x1fffffffffffff",
+    allowUnlimitedContractSize: true,
+  },
   // We need to do this because solcover generates bespoke artifacts.
   onIstanbulComplete: async function (_config) {
     shell.rm("-rf", "./artifacts"); // Or your config.paths.artifacts path
