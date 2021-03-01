@@ -78,7 +78,6 @@ contract PendleForgeBase is IPendleForge, Permissions {
         _;
     }
 
-
     function newYieldContracts(address _underlyingAsset, uint256 _expiry)
         external
         override

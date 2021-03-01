@@ -682,8 +682,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             lastInterestUpdate = block.timestamp;
         }
 
-        uint256 currentUnderlyingYieldTokenBalance =
-            underlyingYieldToken.balanceOf(address(this));
+        uint256 currentUnderlyingYieldTokenBalance = underlyingYieldToken.balanceOf(address(this));
         uint256 interestsEarned =
             currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance;
         lastUnderlyingYieldTokenBalance = currentUnderlyingYieldTokenBalance;
