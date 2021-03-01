@@ -46,7 +46,7 @@ contract PendleForgeBase is IPendleForge, Permissions {
     }
 
     IPendleRouter public override router;
-    IPendleData private data;
+    IPendleData public override data;
     bytes32 public immutable override forgeId;
 
     string private constant OT = "OT";
