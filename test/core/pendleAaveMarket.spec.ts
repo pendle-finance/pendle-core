@@ -578,8 +578,8 @@ describe("PendleAaveMarket", async () => {
     let tokenBalance2: BN = await testToken.balanceOf(alice.address);
     let wethBalance2: BN = await WETH.balanceOf(alice.address);
 
-    approxBigNumber(tokenBalance2, tokenBalance1, BN.from(10));
-    approxBigNumber(wethBalance2, wethBalance1, BN.from(10));
+    approxBigNumber(tokenBalance2, tokenBalance1, consts.TEST_TOKEN_DELTA);
+    approxBigNumber(wethBalance2, wethBalance1, consts.TEST_TOKEN_DELTA);
   });
 
   // Enable this test after the bug is fixed.
