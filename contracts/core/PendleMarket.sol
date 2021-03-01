@@ -116,7 +116,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
         override
-
         returns (PendingTransfer[3] memory transfers)
     {
         checkOnlyRouter();
@@ -158,12 +157,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 _exactOutLp,
         uint256 _maxInXyt,
         uint256 _maxInToken
-    )
-        external
-        override
-        marketIsOpen
-        returns (PendingTransfer[3] memory transfers)
-    {
+    ) external override marketIsOpen returns (PendingTransfer[3] memory transfers) {
         checkIsBootstrapped();
         checkOnlyRouter();
         uint256 totalLp = totalSupply;
@@ -215,13 +209,8 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
 
         // Calc out amount of LP token.
-        uint256 exactOutLp = _calcOutAmountLp(
-            _exactIn,
-            inTokenReserve,
-            data.swapFee(),
-            totalLp,
-            totalWeight
-        );
+        uint256 exactOutLp =
+            _calcOutAmountLp(_exactIn, inTokenReserve, data.swapFee(), totalLp, totalWeight);
         require(exactOutLp >= _minOutLp, "HIGH_LP_OUT_LIMIT");
 
         // Update reserves and operate underlying LP and inToken.
@@ -330,7 +319,11 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         external
         override
         marketIsOpen
-        returns (uint256 outAmount, uint256 spotPriceAfter, PendingTransfer[3] memory transfers)
+        returns (
+            uint256 outAmount,
+            uint256 spotPriceAfter,
+            PendingTransfer[3] memory transfers
+        )
     {
         checkIsBootstrapped();
         checkOnlyRouter();
@@ -378,7 +371,11 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         external
         override
         marketIsOpen
-        returns (uint256 inAmount, uint256 spotPriceAfter, PendingTransfer[3] memory transfers)
+        returns (
+            uint256 inAmount,
+            uint256 spotPriceAfter,
+            PendingTransfer[3] memory transfers
+        )
     {
         checkIsBootstrapped();
         checkOnlyRouter();
@@ -417,11 +414,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         transfers[1].isOut = true;
     }
 
-    function claimLpInterests(address account)
-        public
-        override
-        returns (uint256 interests)
-    {
+    function claimLpInterests(address account) public override returns (uint256 interests) {
         checkIsBootstrapped();
         checkOnlyRouter();
         interests = _settleLpInterests(account);
@@ -676,8 +669,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             lastInterestUpdate = block.timestamp;
         }
 
-        uint256 currentUnderlyingYieldTokenBalance =
-            underlyingYieldToken.balanceOf(address(this));
+        uint256 currentUnderlyingYieldTokenBalance = underlyingYieldToken.balanceOf(address(this));
         uint256 interestsEarned =
             currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance;
         lastUnderlyingYieldTokenBalance = currentUnderlyingYieldTokenBalance;

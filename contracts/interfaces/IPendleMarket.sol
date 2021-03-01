@@ -84,7 +84,13 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
         address outToken,
         uint256 minOutAmount,
         uint256 maxPrice
-    ) external returns (uint256 outAmount, uint256 spotPriceAfter, PendingTransfer[3] memory transfers);
+    )
+        external
+        returns (
+            uint256 outAmount,
+            uint256 spotPriceAfter,
+            PendingTransfer[3] memory transfers
+        );
 
     function swapExactOut(
         address inToken,
@@ -92,7 +98,13 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
         address outToken,
         uint256 outAmount,
         uint256 maxPrice
-    ) external returns (uint256 inAmount, uint256 spotPriceAfter, PendingTransfer[3] memory transfers);
+    )
+        external
+        returns (
+            uint256 inAmount,
+            uint256 spotPriceAfter,
+            PendingTransfer[3] memory transfers
+        );
 
     function claimLpInterests(address account) external returns (uint256 interests);
 
