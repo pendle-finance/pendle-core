@@ -2,15 +2,15 @@ import { providers, Wallet } from 'ethers';
 import { consts, convertToAaveToken, convertToCompoundToken, tokens } from "../../helpers";
 import { getAContract, getCContract, mint } from "../../helpers/Helpers";
 import { aaveFixture, AaveFixture } from './aave.fixture';
-import { PendleAaveFixture, pendleAaveForgeFixture } from './pendleAaveForge.fixture';
-import { pendleCompoundForgeFixture, PendleCompoundFixture } from './pendleCompoundForge.fixture'
-import { pendleCoreFixture, PendleCoreFixture } from './pendleCore.fixture';
-import { pendleGovernanceFixture } from './pendleGovernance.fixture';
+import { aaveForgeFixture, AaveForgeFixture } from './aaveForge.fixture';
+import { CompoundFixture, compoundForgeFixture } from './compoundForge.fixture';
+import { coreFixture, CoreFixture } from './core.fixture';
+import { governanceFixture } from './governance.fixture';
 interface PendleFixture {
-  core: PendleCoreFixture,
+  core: CoreFixture,
   aave: AaveFixture,
-  aForge: PendleAaveFixture,
-  cForge: PendleCompoundFixture,
+  aForge: AaveForgeFixture,
+  cForge: CompoundFixture,
 }
 
 export async function pendleFixture(
@@ -18,14 +18,12 @@ export async function pendleFixture(
   provider: providers.Web3Provider
 ): Promise<PendleFixture> {
   const [alice] = wallets;
-  const core = await pendleCoreFixture(wallets, provider);
-  const governance = await pendleGovernanceFixture(wallets, provider);
-  const aForge = await pendleAaveForgeFixture(alice, provider, core, governance);
-  const cForge = await pendleCompoundForgeFixture(alice, provider, core, governance);
+  const core = await coreFixture(wallets, provider);
+  const governance = await governanceFixture(wallets, provider);
+  const aForge = await aaveForgeFixture(alice, provider, core, governance);
+  const cForge = await compoundForgeFixture(alice, provider, core, governance);
   const aave = await aaveFixture(alice);
 
-  const { pendleAaveForge } = aForge;
-  const { pendleCompoundForge } = cForge;
   const { lendingPoolCore } = aave;
 
   await mint(provider, tokens.USDT, alice, consts.INITIAL_USDT_AMOUNT);
@@ -34,9 +32,9 @@ export async function pendleFixture(
   await convertToCompoundToken(tokens.USDT, alice, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
 
   const aContract = await getAContract(alice, lendingPoolCore, tokens.USDT);
-  await aContract.approve(core.pendleRouter.address, consts.MAX_ALLOWANCE);
+  await aContract.approve(core.router.address, consts.MAX_ALLOWANCE);
   const cContract = await getCContract(alice, tokens.USDT);
-  await cContract.approve(core.pendleRouter.address, consts.MAX_ALLOWANCE);
+  await cContract.approve(core.router.address, consts.MAX_ALLOWANCE);
 
   return { core, aave, aForge, cForge }
 }
