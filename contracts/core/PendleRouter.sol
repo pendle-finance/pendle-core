@@ -188,7 +188,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     ) public override pendleNonReentrant returns (uint256 redeemedAmount) {
         require(_forgeId != bytes32(0), "ZERO_BYTES");
         require(_underlyingAsset != address(0), "ZERO_ADDRESS");
-        require(block.timestamp < _expiry, "EXPIRY_IS_OVER");
+        require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         require(address(forge) != address(0), "FORGE_NOT_EXISTS");
