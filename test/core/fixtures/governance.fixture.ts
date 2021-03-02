@@ -6,24 +6,24 @@ import PENDLE from '../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;
 
-export interface PendleGovernanceFixture {
+export interface GovernanceFixture {
   pendle: Contract
   timelock: Contract
-  pendleGovernor: Contract
+  governor: Contract
 }
 
-export async function pendleGovernanceFixture(
+export async function governanceFixture(
   [alice]: Wallet[],
   provider: providers.Web3Provider
-): Promise<PendleGovernanceFixture> {
+): Promise<GovernanceFixture> {
   // deploy PDL, sending the total supply to the deployer.
   const pendle = await deployContract(alice, PENDLE, [alice.address])
 
   // deploy timelock, controlled by what will be the governor
   const timelock = await deployContract(alice, Timelock, [])
 
-  // deploy pendleGovernor
-  const pendleGovernor = await deployContract(alice, PendleGovernance, [pendle.address, timelock.address, alice.address])
+  // deploy governor
+  const governor = await deployContract(alice, PendleGovernance, [pendle.address, timelock.address, alice.address])
 
-  return { pendle, timelock, pendleGovernor }
+  return { pendle, timelock, governor }
 }

@@ -1,5 +1,5 @@
-import { BigNumber as BN, Contract, providers, Wallet } from "ethers";
 import { expect } from "chai";
+import { BigNumber as BN, Contract, providers, Wallet } from "ethers";
 import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
 import AToken from "../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json";
 import CToken from "../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json";
@@ -39,7 +39,7 @@ export async function mintOtAndXyt(
   token: Token,
   alice: Wallet,
   amount: BN,
-  pendleRouter: Contract
+  router: Contract
 ) {
   await mintAaveToken(provider, token, alice, amount);
   await mintCompoundToken(provider, token, alice, amount);
@@ -47,16 +47,16 @@ export async function mintOtAndXyt(
 
   const aContract = await getAContract(alice, lendingPoolCore, token);
   const cContract = await getCContract(alice, token);
-  await aContract.approve(pendleRouter.address, consts.MAX_ALLOWANCE);
-  await cContract.approve(pendleRouter.address, consts.MAX_ALLOWANCE);
-  await pendleRouter.tokenizeYield(
+  await aContract.approve(router.address, consts.MAX_ALLOWANCE);
+  await cContract.approve(router.address, consts.MAX_ALLOWANCE);
+  await router.tokenizeYield(
     consts.FORGE_AAVE,
     token.address,
     consts.T0.add(consts.SIX_MONTH),
     amount,
     alice.address
   );
-  await pendleRouter.tokenizeYield(
+  await router.tokenizeYield(
     consts.FORGE_COMPOUND,
     token.address,
     consts.T0_C.add(consts.ONE_MONTH),
