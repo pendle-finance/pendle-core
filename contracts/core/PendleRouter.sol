@@ -99,6 +99,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     ) public override pendleNonReentrant returns (address ot, address xyt) {
         require(_forgeId != bytes32(0), "ZERO_BYTES");
         require(_underlyingAsset != address(0), "ZERO_ADDRESS");
+        require(_expiry > block.timestamp, "INVALID_EXPIRY");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         require(address(forge) != address(0), "FORGE_NOT_EXISTS");
@@ -153,6 +154,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         }
     }
 
+    // this function is called to redeem OT+XYT to get back the underlying, before the expiry
     function redeemUnderlying(
         bytes32 _forgeId,
         address _underlyingAsset,
@@ -162,6 +164,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     ) public override pendleNonReentrant returns (uint256 redeemedAmount) {
         require(_forgeId != bytes32(0), "ZERO_BYTES");
         require(_underlyingAsset != address(0), "ZERO_ADDRESS");
+        require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         require(address(forge) != address(0), "FORGE_NOT_EXISTS");
@@ -414,10 +417,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         emit Join(msg.sender, _initialXytLiquidity, _initialTokenLiquidity, address(market));
         _transferOut(address(market), lpAmount);
 
-        address[] memory xyts = new address[](1);
-        address[] memory tokens = new address[](1);
-        xyts[0] = _xyt;
-        tokens[0] = _token;
         data.updateMarketInfo(_xyt, _token, _marketFactoryId);
     }
 

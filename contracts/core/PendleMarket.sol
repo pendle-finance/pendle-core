@@ -66,6 +66,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     and save gas for retrieving them afterwards */
     bytes32 private immutable forgeId;
     address private immutable underlyingAsset;
+    IERC20 private immutable underlyingYieldToken;
     IPendleData private immutable data;
     IPendleRouter private immutable router;
     uint256 private immutable xytStartTime;
@@ -91,6 +92,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         forgeId = IPendleForge(_forge).forgeId();
         underlyingAsset = xytContract.underlyingAsset();
+        underlyingYieldToken = IERC20(IPendleYieldToken(_xyt).underlyingYieldToken());
         expiry = _expiry;
         router = IPendleMarketFactory(msg.sender).router();
         data = IPendleMarketFactory(msg.sender).router().data();
@@ -662,7 +664,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         }
 
         dueInterests = balanceOf[account]
-            .mul(globalIncomeIndex - lastGlobalIncomeIndex[account])
+            .mul(globalIncomeIndex.sub(lastGlobalIncomeIndex[account]))
             .div(GLOBAL_INCOME_INDEX_MULTIPLIER);
 
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
@@ -680,8 +682,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             lastInterestUpdate = block.timestamp;
         }
 
-        uint256 currentUnderlyingYieldTokenBalance =
-            IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this));
+        uint256 currentUnderlyingYieldTokenBalance = underlyingYieldToken.balanceOf(address(this));
         uint256 interestsEarned =
             currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance;
         lastUnderlyingYieldTokenBalance = currentUnderlyingYieldTokenBalance;
@@ -689,7 +690,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         globalIncomeIndex = globalIncomeIndex.add(
             interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(totalSupply)
         );
-        // console.log("\tglobalIncomeIndex, totalSupply = ", globalIncomeIndex, totalSupply);
     }
 
     function _beforeTokenTransfer(address from, address to) internal override {

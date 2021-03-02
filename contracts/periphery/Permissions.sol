@@ -54,10 +54,9 @@ abstract contract Permissions {
      */
     function claimGovernance() public {
         require(pendingGovernance == msg.sender, "WRONG_GOVERNANCE");
+        emit GovernanceClaimed(pendingGovernance, governance);
         governance = pendingGovernance;
         pendingGovernance = address(0);
-
-        emit GovernanceClaimed(pendingGovernance, governance);
     }
 
     /**
