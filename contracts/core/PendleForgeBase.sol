@@ -109,7 +109,6 @@ contract PendleForgeBase is IPendleForge, Permissions {
         emit NewYieldContracts(ot, xyt, _expiry);
     }
 
-
     function redeemAfterExpiry(
         address _account,
         address _underlyingAsset,
@@ -161,7 +160,6 @@ contract PendleForgeBase is IPendleForge, Permissions {
 
         return _amountToRedeem;
     }
-
 
     function redeemDueInterests(
         address _account,
