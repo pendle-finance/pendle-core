@@ -493,7 +493,7 @@ describe("PendleAaveMarket", async () => {
     ).to.be.revertedWith("EXISTED_MARKET");
   });
 
-  it("should be able to swapPathExactIn", async () => {
+  it("should be able to swapPathExactIn [ @skip-on-coverage ]", async () => {
     const amount = amountToWei(BN.from(100), 6);
 
     await bootstrapSampleMarket(amount);
@@ -562,7 +562,7 @@ describe("PendleAaveMarket", async () => {
     approxBigNumber(wethBalance2, wethBalance1, consts.TEST_TOKEN_DELTA);
   });
 
-  it("should be able to swapPathExactOut", async () => {
+  it("should be able to swapPathExactOut [ @skip-on-coverage ]", async () => {
     const amount = amountToWei(BN.from(100), 6);
     const swapAmount = amount.div(BN.from(10));
 
@@ -664,9 +664,10 @@ describe("PendleAaveMarket", async () => {
         testToken.address,
         WETH.address,
         amount.mul(2),
-        BN.from(0)
+        BN.from(0),
+        consts.HIGH_GAS_OVERRIDE
       )
-    ).to.be.reverted;
+    ).to.be.revertedWith(errMsg.INVALID_AMOUNTS);
   });
 
   it("shouldn't be able to create market with XYT as quote pair", async () => {

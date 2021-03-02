@@ -13,4 +13,5 @@ export const errMsg = {
   MARKET_LOCKED: prefix + " " + "MARKET_LOCKED",
   INVALID_EXPIRY: prefix + " " + "INVALID_EXPIRY",
   YIELD_CONTRACT_EXPIRED: prefix + " " + "YIELD_CONTRACT_EXPIRED",
+  INVALID_AMOUNTS: prefix + " " + "INVALID_AMOUNTS",
 };
