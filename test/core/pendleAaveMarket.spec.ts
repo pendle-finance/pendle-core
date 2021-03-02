@@ -563,6 +563,79 @@ describe("PendleAaveMarket", async () => {
   });
 
   // Enable this test after the bug is fixed.
+  xit("should be able to swapPathExactOut", async () => {
+    const amount = amountToWei(tokenUSDT, BN.from(100));
+    const swapAmount = amount.div(BN.from(10));
+
+    await bootstrapSampleMarket(amount);
+    await bootstrapSampleMarketEth(amount);
+
+    await router.swapPathExactOut(
+      [
+        [
+          {
+            market: stdMarket.address,
+            tokenIn: testToken.address,
+            tokenOut: xyt.address,
+            swapAmount: BN.from(0),
+            limitReturnAmount: consts.MAX_ALLOWANCE, // TODO: change to some reasonable amount?
+            maxPrice: consts.MAX_ALLOWANCE,
+          },
+          {
+            market: ethMarket.address,
+            tokenIn: xyt.address,
+            tokenOut: WETH.address,
+            swapAmount: swapAmount,
+            limitReturnAmount: consts.MAX_ALLOWANCE,
+            maxPrice: consts.MAX_ALLOWANCE,
+          },
+        ],
+      ],
+      testToken.address,
+      WETH.address,
+      consts.MAX_ALLOWANCE,
+      consts.HIGH_GAS_OVERRIDE
+    );
+
+    let tokenBalance1: BN = await testToken.balanceOf(alice.address);
+    let wethBalance1: BN = await WETH.balanceOf(alice.address);
+
+    await evm_revert(snapshotId);
+    snapshotId = await evm_snapshot();
+
+    await bootstrapSampleMarket(amount);
+    await bootstrapSampleMarketEth(amount);
+
+    let initialXytBalance: BN = await xyt.balanceOf(alice.address);
+
+    await router.swapExactOut(
+      xyt.address,
+      WETH.address,
+      swapAmount,
+      consts.MAX_ALLOWANCE,
+      consts.MAX_ALLOWANCE,
+      consts.MARKET_FACTORY_AAVE
+    );
+    let postXytBalance: BN = await xyt.balanceOf(alice.address);
+
+
+    await router.swapExactOut(
+      testToken.address,
+      xyt.address,
+      initialXytBalance.sub(postXytBalance),
+      consts.MAX_ALLOWANCE,
+      consts.MAX_ALLOWANCE,
+      consts.MARKET_FACTORY_AAVE
+    );
+
+    let tokenBalance2: BN = await testToken.balanceOf(alice.address);
+    let wethBalance2: BN = await WETH.balanceOf(alice.address);
+
+    approxBigNumber(tokenBalance2, tokenBalance1, consts.TEST_TOKEN_DELTA);
+    approxBigNumber(wethBalance2, wethBalance1, consts.TEST_TOKEN_DELTA);
+  });
+
+  // Enable this test after the bug is fixed.
   xit("shouldn't be able to swapPathExactIn with invalid params", async () => {
     const amount = amountToWei(tokenUSDT, BN.from(100));
 
