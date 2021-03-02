@@ -70,7 +70,7 @@ export async function liquidityMiningFixture(
   let data = core.data;
   let aXyt = aForge.aFutureYieldToken;
   let cXyt = cForge.cFutureYieldToken;
-  const amount = amountToWei(tokens.USDT, BN.from(100));
+  const amount = amountToWei(BN.from(100), 6);
 
   await router.bootstrapMarket(
     consts.MARKET_FACTORY_AAVE,

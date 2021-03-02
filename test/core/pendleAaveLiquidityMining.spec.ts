@@ -304,7 +304,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
     setTimeNextBlock(provider, consts.T0.add(consts.THREE_MONTH));
 
     // some dummy trade
-    const testAmount = amountToWei(tokens.USDT, BN.from(1));
+    const testAmount = amountToWei(BN.from(1), 6);
     await router.swapExactOut(
       baseToken.address,
       xyt.address,

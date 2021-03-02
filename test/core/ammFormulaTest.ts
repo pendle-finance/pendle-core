@@ -115,7 +115,7 @@ export async function AMMTest(
   }
 
   /*-------------------------------------------------------------*/
-  const amount = amountToWei(tokenUSDT, BN.from(1000));
+  const amount = amountToWei(BN.from(1000), 6);
   await bootstrapSampleMarket(amount);
   await testToken.approve(market.address, consts.MAX_ALLOWANCE);
 

@@ -165,8 +165,8 @@ describe("lpFormula", async () => {
     const T1 = consts.T0.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
     await bootstrapMarket(
-      amountToWei(tokenUSDT, test.initXytAmount),
-      amountToWei(tokenUSDT, test.initTokenAmount)
+      amountToWei(test.initXytAmount, 6),
+      amountToWei(test.initTokenAmount, 6)
     );
 
     await setTimeNextBlock(provider, T1);
@@ -176,7 +176,7 @@ describe("lpFormula", async () => {
     await addLiquiditySingleToken(
       bob,
       testToken.address,
-      amountToWei(tokenUSDT, test.amountTokenChange)
+      amountToWei(test.amountTokenChange, 6)
     );
     await checkLpBalance(bob, test.expectedLpBal1);
 
@@ -184,19 +184,19 @@ describe("lpFormula", async () => {
     await addLiquiditySingleToken(
       bob,
       xyt.address,
-      amountToWei(tokenUSDT, test.amountXytChange)
+      amountToWei(test.amountXytChange, 6)
     );
     await checkLpBalance(bob, test.expectedLpBal1.add(test.expectedLpBal2));
 
     let finalTokenBalance: BN = await testToken.balanceOf(bob.address);
     let finalXytBalance: BN = await xyt.balanceOf(bob.address);
     approxBigNumber(
-      amountToWei(tokenUSDT, test.amountTokenChange),
+      amountToWei(test.amountTokenChange, 6),
       initialTokenBalance.sub(finalTokenBalance),
       consts.TEST_TOKEN_DELTA
     );
     approxBigNumber(
-      amountToWei(tokenUSDT, test.amountXytChange),
+      amountToWei(test.amountXytChange, 6),
       initialXytBalance.sub(finalXytBalance),
       consts.TEST_TOKEN_DELTA
     );
@@ -206,8 +206,8 @@ describe("lpFormula", async () => {
     const T1 = consts.T0.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
     await bootstrapMarket(
-      amountToWei(tokenUSDT, test.initXytAmount),
-      amountToWei(tokenUSDT, test.initTokenAmount)
+      amountToWei(test.initXytAmount, 6),
+      amountToWei(test.initTokenAmount, 6)
     );
 
     let lpBalanceAlice: BN = await stdMarket.balanceOf(alice.address);
@@ -285,8 +285,8 @@ describe("lpFormula", async () => {
   });
 
   it("add liquidity dual token test 1", async () => {
-    const amountOfXyt = amountToWei(tokenUSDT, BN.from(331));
-    const amountOfToken = amountToWei(tokenUSDT, BN.from(891));
+    const amountOfXyt = amountToWei(BN.from(331), 6);
+    const amountOfToken = amountToWei(BN.from(891), 6);
     await bootstrapMarket(amountOfXyt, amountOfToken);
 
     const totalSupply: BN = await stdMarket.totalSupply();
@@ -338,8 +338,8 @@ describe("lpFormula", async () => {
   });
 
   it("remove liquidity dual token test 1", async () => {
-    const amountOfXyt = amountToWei(tokenUSDT, BN.from(331));
-    const amountOfToken = amountToWei(tokenUSDT, BN.from(891));
+    const amountOfXyt = amountToWei(BN.from(331), 6);
+    const amountOfToken = amountToWei(BN.from(891), 6);
     await bootstrapMarket(amountOfXyt, amountOfToken);
 
     const totalSupply: BN = await stdMarket.totalSupply();
