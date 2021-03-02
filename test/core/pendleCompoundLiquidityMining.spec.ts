@@ -320,7 +320,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
     console.log("\tAbout to do dummy trade");
     // some dummy trade
-    const testAmount = amountToWei(tokens.USDT, BN.from(1));
+    const testAmount = amountToWei(BN.from(1), 6);
     await router.swapExactOut(
       baseToken.address,
       xyt.address,

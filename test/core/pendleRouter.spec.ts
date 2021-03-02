@@ -58,7 +58,7 @@ describe("PendleRouter", async () => {
   beforeEach(async () => {
     await evm_revert(snapshotId);
     snapshotId = await evm_snapshot();
-    amount = amountToWei(tokenUSDT, consts.INITIAL_AAVE_TOKEN_AMOUNT);
+    amount = amountToWei(consts.INITIAL_AAVE_TOKEN_AMOUNT, 6);
     initialAUSDTbalance = await aUSDT.balanceOf(alice.address);
   });
 

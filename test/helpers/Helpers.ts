@@ -75,7 +75,7 @@ export async function mint(
   const signer = await provider.getSigner(token.owner!);
 
   const contractToken = new Contract(token.address, TetherToken.abi, signer);
-  const tokenAmount = amountToWei(token, amount);
+  const tokenAmount = amountToWei(amount, token.decimal);
   await contractToken.issue(tokenAmount);
   await contractToken.transfer(alice.address, tokenAmount);
 }
@@ -86,7 +86,7 @@ export async function convertToAaveToken(
   amount: BN
 ) {
   const { lendingPool, lendingPoolCore } = await aaveFixture(alice);
-  const tokenAmount = amountToWei(token, amount);
+  const tokenAmount = amountToWei(amount, token.decimal);
 
   const erc20 = new Contract(token.address, ERC20.abi, alice);
   await erc20.approve(lendingPoolCore.address, tokenAmount);
@@ -99,7 +99,7 @@ export async function convertToCompoundToken(
   alice: Wallet,
   amount: BN
 ) {
-  const tokenAmount = amountToWei(token, amount);
+  const tokenAmount = amountToWei(amount, token.decimal);
 
   const cToken = new Contract(token.compound, CToken.abi, alice);
   const erc20 = new Contract(token.address, ERC20.abi, alice);
@@ -172,7 +172,12 @@ export async function getERC20Contract(
   return new Contract(token.address, AToken.abi, alice);
 }
 
-export function amountToWei({ decimal }: Token, amount: BN) {
+/**
+ * convert an amount to Wei
+ * @param inp if inp is number => inp is the number of decimal digits
+ *            if inp is Token => the number of decimal digits will be extracted from Token
+ */
+export function amountToWei(amount: BN, decimal: number) {
   return BN.from(10 ** decimal).mul(amount);
 }
 
