@@ -35,7 +35,7 @@ import "../periphery/Permissions.sol";
 
 /// @notice Common contract base for a forge implementation.
 /// @dev Each specific forge implementation will need to implement the virtual functions
-contract PendleForgeBase is IPendleForge, Permissions {
+abstract contract PendleForgeBase is IPendleForge, Permissions {
     using ExpiryUtils for string;
     using SafeMath for uint256;
 

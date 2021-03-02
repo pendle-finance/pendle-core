@@ -554,12 +554,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
             );
             sumInAmount = sumInAmount.add(_swapPath[i][0].swapAmount);
             uint256 tokenAmountOut;
-            // sends in the exactAmount into the market of the first swap
-            _settleTokenTransfer(
-                _tokenIn,
-                PendingTransfer({amount: _swapPath[i][0].swapAmount, isOut: false}),
-                _swapPath[i][0].market
-            );
+
 
             for (uint256 j = 0; j < _swapPath[i].length; j++) {
                 Swap memory swap = _swapPath[i][j];
@@ -588,6 +583,12 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
                 );
             }
 
+            // sends in the exactAmount into the market of the first swap
+            _settleTokenTransfer(
+                _tokenIn,
+                PendingTransfer({amount: _swapPath[i][0].swapAmount, isOut: false}),
+                _swapPath[i][0].market
+            );
             // gets the tokenOut from the market of the last swap
             _settleTokenTransfer(
                 _tokenOut,
@@ -618,15 +619,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
                 "INVALID_PATH"
             );
             uint256 tokenAmountIn;
-            // its ok to just send out _tokenOut, since we will update balances in the market anyway
-            _settleTokenTransfer(
-                _tokenOut,
-                PendingTransfer({
-                    amount: _swapPath[i][swapRouteLength - 1].swapAmount,
-                    isOut: true
-                }),
-                _swapPath[i][swapRouteLength - 1].market
-            );
+
 
             for (uint256 j = _swapPath[i].length - 1; j >= 0; j--) {
                 Swap memory swap = _swapPath[i][j];
@@ -657,6 +650,16 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
                 _tokenIn,
                 PendingTransfer({amount: tokenAmountIn, isOut: false}),
                 _swapPath[i][0].market
+            );
+
+            // send out _tokenOut last
+            _settleTokenTransfer(
+                _tokenOut,
+                PendingTransfer({
+                    amount: _swapPath[i][swapRouteLength - 1].swapAmount,
+                    isOut: true
+                }),
+                _swapPath[i][swapRouteLength - 1].market
             );
             inTotalAmount = tokenAmountIn.add(inTotalAmount);
         }
