@@ -143,6 +143,8 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
      **/
     function factory() external view returns (address);
 
+    function factoryId() external view returns (bytes32);
+
     function token() external view returns (address);
 
     function xyt() external view returns (address);

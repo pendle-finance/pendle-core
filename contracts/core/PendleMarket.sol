@@ -38,6 +38,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     using SafeERC20 for IERC20;
 
     address public immutable override factory;
+    bytes32 public immutable override factoryId;
     address private immutable forge;
     address public immutable override token;
     address public immutable override xyt;
@@ -94,6 +95,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         router = IPendleRouter(routerAddress);
         data = IPendleForge(_forge).data();
         xytStartTime = IPendleYieldToken(_xyt).start();
+        factoryId = IPendleMarketFactory(msg.sender).marketFactoryId();
 
         _approve(address(this), routerAddress, type(uint256).max);
         IERC20(_xyt).safeApprove(routerAddress, type(uint256).max);

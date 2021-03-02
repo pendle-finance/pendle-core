@@ -555,7 +555,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
             sumInAmount = sumInAmount.add(_swapPath[i][0].swapAmount);
             uint256 tokenAmountOut;
 
-
             for (uint256 j = 0; j < _swapPath[i].length; j++) {
                 Swap memory swap = _swapPath[i][j];
                 swap.tokenIn = _getMarketToken(swap.tokenIn); // make it weth if its eth
@@ -572,7 +571,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
                 }
 
                 IPendleMarket market = IPendleMarket(swap.market);
-                require(data.isMarket(swap.market), "INVALID_MARKET");
+                _checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
 
                 (tokenAmountOut, , ) = market.swapExactIn(
                     swap.tokenIn,
@@ -620,7 +619,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
             );
             uint256 tokenAmountIn;
 
-
             for (uint256 j = _swapPath[i].length - 1; j >= 0; j--) {
                 Swap memory swap = _swapPath[i][j];
                 swap.tokenIn = _getMarketToken(swap.tokenIn); // make it weth if its eth
@@ -635,8 +633,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
                 }
 
                 IPendleMarket market = IPendleMarket(swap.market);
-                require(data.isMarket(swap.market), "INVALID_MARKET");
 
+                _checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
                 (tokenAmountIn, , ) = market.swapExactOut(
                     swap.tokenIn,
                     swap.limitReturnAmount,
@@ -661,6 +659,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
                 }),
                 _swapPath[i][swapRouteLength - 1].market
             );
+
             inTotalAmount = tokenAmountIn.add(inTotalAmount);
         }
         require(inTotalAmount <= _maxInTotalAmount, "LIMIT_IN_ERROR");
@@ -931,6 +930,18 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
                 IERC20(token).safeTransferFrom(msg.sender, market, transfer.amount);
             }
         }
+    }
+
+    function _checkMarketTokens(
+        address token1,
+        address token2,
+        IPendleMarket market
+    ) internal view {
+        require(data.isMarket(address(market)), "INVALID_MARKET");
+        require(
+            data.getMarketFromKey(token1, token2, market.factoryId()) == address(market),
+            "INVALID_MARKET"
+        );
     }
 
     /**
