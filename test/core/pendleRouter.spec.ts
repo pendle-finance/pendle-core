@@ -12,7 +12,7 @@ import {
   setTimeNextBlock,
   Token,
   tokens,
-  errMsg
+  errMsg,
 } from "../helpers";
 import { pendleFixture } from "./fixtures";
 
@@ -106,17 +106,19 @@ describe("PendleRouter", async () => {
   });
 
   it("underlying asset's address should match the original asset", async () => {
-    expect((await aOt.underlyingAsset()).toLowerCase()).to.be.equal(tokens.USDT.address.toLowerCase());
-    expect((await aXyt.underlyingAsset()).toLowerCase()).to.be.equal(tokens.USDT.address.toLowerCase());
+    expect((await aOt.underlyingAsset()).toLowerCase()).to.be.equal(
+      tokens.USDT.address.toLowerCase()
+    );
+    expect((await aXyt.underlyingAsset()).toLowerCase()).to.be.equal(
+      tokens.USDT.address.toLowerCase()
+    );
   });
 
   it("shouldn't be able to do newYieldContract with an expiry in the past", async () => {
     let futureTime = consts.T0.sub(consts.ONE_MONTH);
-    await expect(router.newYieldContracts(
-      consts.FORGE_AAVE,
-      tokenUSDT.address,
-      futureTime
-    )).to.be.revertedWith(errMsg.INVALID_EXPIRY);
+    await expect(
+      router.newYieldContracts(consts.FORGE_AAVE, tokenUSDT.address, futureTime)
+    ).to.be.revertedWith(errMsg.INVALID_EXPIRY);
   });
 
   it("should be able to deposit aUSDT to get back OT and XYT", async () => {
@@ -133,14 +135,16 @@ describe("PendleRouter", async () => {
 
     await setTimeNextBlock(provider, consts.T0.add(consts.ONE_YEAR));
 
-    await expect(router.redeemUnderlying(
-      consts.FORGE_AAVE,
-      tokenUSDT.address,
-      consts.T0.add(consts.SIX_MONTH),
-      amount,
-      alice.address,
-      consts.HIGH_GAS_OVERRIDE
-    )).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
+    await expect(
+      router.redeemUnderlying(
+        consts.FORGE_AAVE,
+        tokenUSDT.address,
+        consts.T0.add(consts.SIX_MONTH),
+        amount,
+        alice.address,
+        consts.HIGH_GAS_OVERRIDE
+      )
+    ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
   });
 
   it("[After 1 month] should be able to redeem aUSDT to get back OT, XYT and interests $", async () => {

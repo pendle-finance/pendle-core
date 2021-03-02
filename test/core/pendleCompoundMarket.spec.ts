@@ -8,7 +8,7 @@ import {
   evm_revert,
   evm_snapshot,
   Token,
-  tokens
+  tokens,
 } from "../helpers";
 import { marketFixture } from "./fixtures";
 
@@ -132,15 +132,17 @@ describe("PendleCompoundMarket", async () => {
       consts.MARKET_FACTORY_COMPOUND
     );
 
-    await router.connect(bob).swapExactOut(
-      xyt.address,
-      testToken.address,
-      amountToWei(BN.from(10), 6),
-      amountToWei(BN.from(100), 6),
-      consts.MAX_ALLOWANCE,
-      consts.MARKET_FACTORY_COMPOUND,
-      consts.HIGH_GAS_OVERRIDE
-    );
+    await router
+      .connect(bob)
+      .swapExactOut(
+        xyt.address,
+        testToken.address,
+        amountToWei(BN.from(10), 6),
+        amountToWei(BN.from(100), 6),
+        consts.MAX_ALLOWANCE,
+        consts.MARKET_FACTORY_COMPOUND,
+        consts.HIGH_GAS_OVERRIDE
+      );
 
     let xytBalance = await xyt.balanceOf(stdMarket.address);
     let testTokenBalance = await testToken.balanceOf(stdMarket.address);
