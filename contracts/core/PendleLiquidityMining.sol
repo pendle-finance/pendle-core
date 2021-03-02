@@ -55,17 +55,10 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         mapping(uint256 => uint256) totalStakeSecondsForExpiry;
         mapping(uint256 => uint256) lastTimeStakeSecondsUpdatedForExpiry;
         mapping(address => mapping(uint256 => uint256)) userStakeSeconds;
-        // userStakeSeconds[user][expiry] = the stake * seconds for the user for LP_expiry
-        /*
-        mapping(uint256 => uint256) baseTokenReserve;
-        baseTokenReserve[expiry] = baseToken reserve of the market for LP_expiry
-        */
-        /* uint256 totalBaseTokenReserve; // sum of all baseTokenReserve */
         bool calculated;
         uint256 allocationSettingId;
     }
 
-    /* IPendleData public pendleData; */
     IPendleRouter public pendleRouter;
     IPendleMarketFactory public pendleMarketFactory;
     IPendleData public pendleData;

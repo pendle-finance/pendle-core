@@ -60,7 +60,6 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions, Withdrawable 
         returns (address market)
     {
         IPendleData data = router.data();
-        require(data.getMarket(marketFactoryId, _xyt, _token) == address(0), "EXISTED_MARKET");
 
         address forgeAddress = IPendleYieldToken(_xyt).forge();
         address underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();

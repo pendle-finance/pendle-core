@@ -46,6 +46,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     IWETH public immutable override weth;
     IPendleData public override data;
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+    address private constant DUMMY_ERC20 = address(0x123);
 
     modifier pendleNonReentrant() {
         _checkNonReentrancy(); // use functions to reduce bytecode size
@@ -77,6 +78,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
      *  FORGE  *
      ***********/
 
+    /**
+     * @notice forges are identified by forgeIds
+     **/
     function addForge(bytes32 _forgeId, address _forgeAddress)
         external
         override
@@ -92,6 +96,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         data.addForge(_forgeId, _forgeAddress);
     }
 
+    /**
+     * @notice Create a new pair of OT + XYT tokens to represent the
+     *   principal and interest for an underlying asset, until an expiry
+     **/
     function newYieldContracts(
         bytes32 _forgeId,
         address _underlyingAsset,
@@ -111,6 +119,13 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         (ot, xyt) = forge.newYieldContracts(_underlyingAsset, _expiry);
     }
 
+    /**
+     * @notice After an expiry, redeem OT tokens to get back the underlyingYieldToken
+     *         and also any interests
+     * @dev The interest from "the last global action before expiry" until the expiry
+     *      is given to the OT holders. This is to simplify accounting. An assumption
+     *      is that the last global action before expiry will be close to the expiry
+     **/
     function redeemAfterExpiry(
         bytes32 _forgeId,
         address _underlyingAsset,
@@ -127,6 +142,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         redeemedAmount = forge.redeemAfterExpiry(msg.sender, _underlyingAsset, _expiry, _to);
     }
 
+    /**
+     * @notice an XYT holder can redeem his acrued interests anytime
+     **/
     function redeemDueInterests(
         bytes32 _forgeId,
         address _underlyingAsset,
@@ -135,6 +153,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         interests = _redeemDueInterestsInternal(_forgeId, _underlyingAsset, _expiry);
     }
 
+    /**
+     * @notice redeem interests for multiple XYTs
+     **/
     function redeemDueInterestsMultiple(
         bytes32[] calldata _forgeIds,
         address[] calldata _underlyingAssets,
@@ -154,7 +175,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         }
     }
 
-    // this function is called to redeem OT+XYT to get back the underlying, before the expiry
+    /**
+     * @notice Before the expiry, a user can redeem the same amount of OT+XYT to get back
+     *       the underlying yield token
+     **/
     function redeemUnderlying(
         bytes32 _forgeId,
         address _underlyingAsset,
@@ -178,6 +202,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         );
     }
 
+    /**
+     * @notice redeemAfterExpiry and tokenizeYield to a different expiry
+     **/
     function renewYield(
         bytes32 _forgeId,
         uint256 _oldExpiry,
@@ -210,6 +237,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         );
     }
 
+    /**
+     * @notice tokenize a yield bearing token to get OT+XYT
+     * @dev each forge is for a yield protocol (for example: Aave, Compound)
+     **/
     function tokenizeYield(
         bytes32 _forgeId,
         address _underlyingAsset,
@@ -233,6 +264,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
      *  MARKET *
      ***********/
 
+    /**
+     * @notice market factories are identified by marketFactoryId
+     * @dev A market factory can work with XYTs from one or more Forges,
+     *     to be determined by data.validForgeFactoryPair mapping
+     **/
     function addMarketFactory(bytes32 _marketFactoryId, address _marketFactoryAddress)
         external
         override
@@ -265,18 +301,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
-        _transferIn(_xyt, _maxInXyt);
-        _transferIn(originalToken, _maxInToken);
-
-        (uint256 amountXytUsed, uint256 amountTokenUsed) =
+        PendingTransfer[3] memory transfers =
             market.addMarketLiquidityAll(_exactOutLp, _maxInXyt, _maxInToken);
-        emit Join(msg.sender, amountXytUsed, amountTokenUsed, address(market));
+        emit Join(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
 
-        _transferOut(address(market), _exactOutLp);
-        // transfer unused XYT back to user
-        _transferOut(_xyt, _maxInXyt - amountXytUsed);
-        // transfer unused Token back to user
-        _transferOut(originalToken, _maxInToken - amountTokenUsed);
+        _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
     }
 
     // add market liquidity by xyt or base token
@@ -295,13 +324,12 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
         address assetToTransferIn = _forXyt ? _xyt : originalToken;
-        _transferIn(assetToTransferIn, _exactInAsset);
 
         address assetForMarket = _forXyt ? _xyt : _token;
-        uint256 exactOutLp =
+        PendingTransfer[3] memory transfers =
             market.addMarketLiquiditySingle(assetForMarket, _exactInAsset, _minOutLp);
 
-        _transferOut(address(market), exactOutLp);
+        _settlePendingTransfers(transfers, assetToTransferIn, DUMMY_ERC20, address(market));
 
         if (_forXyt) {
             emit Join(msg.sender, _exactInAsset, 0, address(market));
@@ -325,15 +353,16 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
-        _transferIn(address(market), _exactInLp);
+        // since there is burning of LPs involved, we need to transfer in LP first
+        // otherwise the market might not have enough LPs to burn
+        PendingTransfer memory lpTransfer = PendingTransfer({amount: _exactInLp, isOut: false});
+        _settleTokenTransfer(address(market), lpTransfer, address(market));
 
-        (uint256 xytAmount, uint256 tokenAmount) =
+        PendingTransfer[3] memory transfers =
             market.removeMarketLiquidityAll(_exactInLp, _minOutXyt, _minOutToken);
 
-        _transferOut(_xyt, xytAmount);
-        _transferOut(originalToken, tokenAmount);
-
-        emit Exit(msg.sender, xytAmount, tokenAmount, address(market));
+        _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
+        emit Exit(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
     }
 
     // remove market liquidity by xyt or base tokens
@@ -351,19 +380,25 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
-        _transferIn(address(market), _exactInLp);
+        /* _transferIn(address(market), _exactInLp); */
 
         address assetForMarket = _forXyt ? _xyt : _token;
-        uint256 assetOut =
+
+        // since there is burning of LPs involved, we need to transfer in LP first
+        // otherwise the market might not have enough LPs to burn
+        PendingTransfer memory lpTransfer = PendingTransfer({amount: _exactInLp, isOut: false});
+        _settleTokenTransfer(address(market), lpTransfer, address(market));
+
+        PendingTransfer[3] memory transfers =
             market.removeMarketLiquiditySingle(assetForMarket, _exactInLp, _minOutAsset);
 
         address assetToTransferOut = _forXyt ? _xyt : originalToken;
-        _transferOut(assetToTransferOut, assetOut);
+        _settleTokenTransfer(assetToTransferOut, transfers[0], address(market));
 
         if (_forXyt) {
-            emit Exit(msg.sender, assetOut, 0, address(market));
+            emit Exit(msg.sender, transfers[0].amount, 0, address(market));
         } else {
-            emit Exit(msg.sender, 0, assetOut, address(market));
+            emit Exit(msg.sender, 0, transfers[0].amount, address(market));
         }
     }
 
@@ -376,6 +411,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         require(_token != address(0), "ZERO_ADDRESS");
         require(data.isXyt(_xyt), "INVALID_XYT");
         require(!data.isXyt(_token), "XYT_QUOTE_PAIR_FORBIDDEN");
+        require(data.getMarket(_marketFactoryId, _xyt, _token) == address(0), "EXISTED_MARKET");
 
         IPendleMarketFactory factory =
             IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));
@@ -410,14 +446,13 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
-        _transferIn(_xyt, _initialXytLiquidity);
-        _transferIn(originalToken, _initialTokenLiquidity);
+        PendingTransfer[3] memory transfers =
+            market.bootstrap(_initialXytLiquidity, _initialTokenLiquidity);
 
-        uint256 lpAmount = market.bootstrap(_initialXytLiquidity, _initialTokenLiquidity);
         emit Join(msg.sender, _initialXytLiquidity, _initialTokenLiquidity, address(market));
-        _transferOut(address(market), lpAmount);
 
         data.updateMarketInfo(_xyt, _token, _marketFactoryId);
+        _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
     }
 
     // trade by swap exact amount of token into market
@@ -434,11 +469,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
         _tokenOut = _isETH(_tokenOut) ? address(weth) : _tokenOut;
 
-        _transferIn(originalTokenIn, _inTotalAmount);
-
         IPendleMarket market =
             IPendleMarket(data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId));
-        (outSwapAmount, ) = market.swapExactIn(
+        PendingTransfer[3] memory transfers;
+        (outSwapAmount, , transfers) = market.swapExactIn(
             _tokenIn,
             _inTotalAmount,
             _tokenOut,
@@ -446,9 +480,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
             _maxPrice
         );
 
-        require(outSwapAmount >= _minOutTotalAmount, "INSUFFICIENT_OUT_AMOUNT");
-
-        _transferOut(originalTokenOut, outSwapAmount);
+        _settlePendingTransfers(transfers, originalTokenIn, originalTokenOut, address(market));
 
         emit SwapEvent(
             msg.sender,
@@ -474,13 +506,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
         _tokenOut = _isETH(_tokenOut) ? address(weth) : _tokenOut;
 
-        uint256 change = _maxInTotalAmount;
-
-        _transferIn(originalTokenIn, _maxInTotalAmount);
-
         IPendleMarket market =
             IPendleMarket(data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId));
-        (inSwapAmount, ) = market.swapExactOut(
+
+        PendingTransfer[3] memory transfers;
+        (inSwapAmount, , transfers) = market.swapExactOut(
             _tokenIn,
             _maxInTotalAmount,
             _tokenOut,
@@ -488,11 +518,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
             _maxPrice
         );
 
-        require(inSwapAmount <= _maxInTotalAmount, "IN_AMOUNT_EXCEED_LIMIT");
-        change = change.sub(inSwapAmount);
-
-        _transferOut(originalTokenOut, _outTotalAmount);
-        _transferOut(originalTokenIn, change);
+        _settlePendingTransfers(transfers, originalTokenIn, originalTokenOut, address(market));
 
         emit SwapEvent(
             msg.sender,
@@ -505,9 +531,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     }
 
     /**
-    * @dev Needed for multi-path off-chain routing
-    * @dev No "original" variables in this function since both _tokenIn and _tokenOut
-            will not be wrapped.
+     * @dev Needed for multi-path off-chain routing
+     * @dev _swapPath = [swapRoute1, swapRoute2] where swapRoute1 = [Swap1, swap2..] is a series of
+     *             swaps to convert from _tokenIn to _tokenOut
+     * @dev _tokenIn and _tokenOut can be ETH_ADDRESS, which means we will use ETH to trade
+     * @dev however, any tokens in between the swap route must be a real ERC20 address (so it should be WETH if ETH is involved)
      */
     function swapPathExactIn(
         Swap[][] memory _swapPath,
@@ -516,25 +544,36 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         uint256 _inTotalAmount,
         uint256 _minOutTotalAmount
     ) public payable override pendleNonReentrant returns (uint256 outTotalAmount) {
-        _transferIn(_tokenIn, _inTotalAmount);
-
+        uint256 sumInAmount;
         for (uint256 i = 0; i < _swapPath.length; i++) {
+            uint256 swapRouteLength = _swapPath[i].length;
             require(
                 _swapPath[i][0].tokenIn == _tokenIn &&
-                    _swapPath[i][_swapPath[i].length - 1].tokenOut == _tokenOut,
+                    _swapPath[i][swapRouteLength - 1].tokenOut == _tokenOut,
                 "INVALID_PATH"
             );
+            sumInAmount = sumInAmount.add(_swapPath[i][0].swapAmount);
             uint256 tokenAmountOut;
+
             for (uint256 j = 0; j < _swapPath[i].length; j++) {
                 Swap memory swap = _swapPath[i][j];
-
+                swap.tokenIn = _getMarketToken(swap.tokenIn); // make it weth if its eth
+                swap.tokenOut = _getMarketToken(swap.tokenOut); // make it weth if its eth
                 if (j >= 1) {
                     swap.swapAmount = tokenAmountOut;
+                    // if its not the first swap, then we need to send the output of the last swap
+                    // to the current market as input for the current swap
+                    IERC20(swap.tokenIn).safeTransferFrom(
+                        _swapPath[i][j - 1].market,
+                        swap.market,
+                        swap.swapAmount
+                    );
                 }
 
                 IPendleMarket market = IPendleMarket(swap.market);
+                _checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
 
-                (tokenAmountOut, ) = market.swapExactIn(
+                (tokenAmountOut, , ) = market.swapExactIn(
                     swap.tokenIn,
                     swap.swapAmount,
                     swap.tokenOut,
@@ -543,18 +582,27 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
                 );
             }
 
+            // sends in the exactAmount into the market of the first swap
+            _settleTokenTransfer(
+                _tokenIn,
+                PendingTransfer({amount: _swapPath[i][0].swapAmount, isOut: false}),
+                _swapPath[i][0].market
+            );
+            // gets the tokenOut from the market of the last swap
+            _settleTokenTransfer(
+                _tokenOut,
+                PendingTransfer({amount: tokenAmountOut, isOut: true}),
+                _swapPath[i][swapRouteLength - 1].market
+            );
             outTotalAmount = tokenAmountOut.add(outTotalAmount);
         }
-
+        require(sumInAmount == _inTotalAmount, "INVALID_AMOUNTS");
         require(outTotalAmount >= _minOutTotalAmount, "LIMIT_OUT_ERROR");
-
-        _transferOut(_tokenOut, outTotalAmount);
     }
 
     /**
-    * @dev Needed for multi-path off-chain routing
-    * @dev No "original" variables in this function since both _tokenIn and _tokenOut
-            will not be wrapped.
+     * @dev Needed for multi-path off-chain routing
+     * @dev Similarly to swapPathExactIn, but we do the swaps in reverse
      */
     function swapPathExactOut(
         Swap[][] memory _swapPath,
@@ -562,89 +610,65 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         address _tokenOut,
         uint256 _maxInTotalAmount
     ) public payable override pendleNonReentrant returns (uint256 inTotalAmount) {
-        uint256 outTotalAmount;
-        uint256 change = _maxInTotalAmount;
-
-        _transferIn(_tokenIn, _maxInTotalAmount);
-
         for (uint256 i = 0; i < _swapPath.length; i++) {
+            uint256 swapRouteLength = _swapPath[i].length;
             require(
                 _swapPath[i][0].tokenIn == _tokenIn &&
-                    _swapPath[i][_swapPath[i].length - 1].tokenOut == _tokenOut,
+                    _swapPath[i][swapRouteLength - 1].tokenOut == _tokenOut,
                 "INVALID_PATH"
             );
-            uint256 firstSwapTokenIn;
-            // Specific code for a simple swap and a multihop (2 swaps in sequence)
-            if (_swapPath[i].length == 1) {
-                Swap memory swap = _swapPath[i][0];
+            uint256 tokenAmountIn;
+
+            for (uint256 j = _swapPath[i].length - 1; j >= 0; j--) {
+                Swap memory swap = _swapPath[i][j];
+                swap.tokenIn = _getMarketToken(swap.tokenIn); // make it weth if its eth
+                swap.tokenOut = _getMarketToken(swap.tokenOut); // make it weth if its eth
+                if (j < _swapPath[i].length - 1) {
+                    swap.swapAmount = tokenAmountIn;
+                    IERC20(swap.tokenOut).safeTransferFrom(
+                        swap.market,
+                        _swapPath[i][j + 1].market,
+                        swap.swapAmount
+                    );
+                }
 
                 IPendleMarket market = IPendleMarket(swap.market);
 
-                (firstSwapTokenIn, ) = market.swapExactOut(
+                _checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
+                (tokenAmountIn, , ) = market.swapExactOut(
                     swap.tokenIn,
                     swap.limitReturnAmount,
                     swap.tokenOut,
                     swap.swapAmount,
                     swap.maxPrice
                 );
-                outTotalAmount = outTotalAmount.add(swap.swapAmount);
-            } else {
-                /*
-                Consider we are swapping A -> B and B -> C. The goal is to buy a given amount
-                of token C. But first we need to buy B with A so we can then buy C with B
-                To get the exact amount of C we then first need to calculate how much B we'll need:
-                */
-                uint256 intermediateTokenAmount; // This would be token B as described above
-                Swap memory secondSwap = _swapPath[i][1];
-                IPendleMarket secondMarket = IPendleMarket(secondSwap.market);
-                IPendleMarket.TokenReserve memory inTokenReserve;
-                IPendleMarket.TokenReserve memory outTokenReserve;
-
-                inTokenReserve.balance = secondMarket.getBalance(secondSwap.tokenIn);
-                inTokenReserve.weight = secondMarket.getWeight(secondSwap.tokenIn);
-                outTokenReserve.balance = secondMarket.getBalance(secondSwap.tokenOut);
-                outTokenReserve.weight = secondMarket.getWeight(secondSwap.tokenOut);
-
-                intermediateTokenAmount = secondMarket.calcExactOut(
-                    inTokenReserve,
-                    outTokenReserve,
-                    secondSwap.swapAmount,
-                    data.swapFee()
-                );
-
-                // Buy intermediateTokenAmount of token B with A in the first pool
-                Swap memory firstSwap = _swapPath[i][0];
-                IPendleMarket firstMarket = IPendleMarket(firstSwap.market);
-
-                (firstSwapTokenIn, ) = firstMarket.swapExactOut(
-                    firstSwap.tokenIn,
-                    firstSwap.limitReturnAmount,
-                    firstSwap.tokenOut,
-                    intermediateTokenAmount, // This is the amount of token B we need
-                    firstSwap.maxPrice
-                );
-
-                // Buy the final amount of token C desired
-                secondMarket.swapExactOut(
-                    secondSwap.tokenIn,
-                    secondSwap.limitReturnAmount,
-                    secondSwap.tokenOut,
-                    secondSwap.swapAmount,
-                    secondSwap.maxPrice
-                );
-                outTotalAmount = outTotalAmount.add(secondSwap.swapAmount);
+                if (j == 0) break;
             }
+            _settleTokenTransfer(
+                _tokenIn,
+                PendingTransfer({amount: tokenAmountIn, isOut: false}),
+                _swapPath[i][0].market
+            );
 
-            inTotalAmount = firstSwapTokenIn.add(inTotalAmount);
+            // send out _tokenOut last
+            _settleTokenTransfer(
+                _tokenOut,
+                PendingTransfer({
+                    amount: _swapPath[i][swapRouteLength - 1].swapAmount,
+                    isOut: true
+                }),
+                _swapPath[i][swapRouteLength - 1].market
+            );
+
+            inTotalAmount = tokenAmountIn.add(inTotalAmount);
         }
-
         require(inTotalAmount <= _maxInTotalAmount, "LIMIT_IN_ERROR");
-        change = change.sub(inTotalAmount);
-
-        _transferOut(_tokenOut, outTotalAmount);
-        _transferOut(_tokenIn, change);
     }
 
+    /**
+     * @notice Lp holders are entitled to receive the interests from the underlying XYTs
+     *        they can call this function to claim the acrued interests
+     */
     function claimLpInterests(address[] calldata markets)
         public
         override
@@ -747,11 +771,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         xyt = benmarkMarket.xyt();
     }
 
-    // function _isMarketLocked(address _xyt) internal pure returns (bool isLocked){
-    //     // To implement
-    //     isLocked = false; // never locked
-    // }
-
     function _checkNonReentrancy() internal {
         if (!data.reentrancyWhitelisted(msg.sender)) {
             // On the first call to pendleNonReentrant, _notEntered will be true
@@ -759,30 +778,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
 
             // Any calls to nonReentrant after this point will fail
             _reentrancyStatus = _ENTERED;
-        }
-    }
-
-    /// @dev Inbound transfer from msg.sender to router
-    function _transferIn(address _token, uint256 _amount) internal {
-        if (_amount == 0) return;
-        if (_isETH(_token)) {
-            require(msg.value == _amount, "ETH_SENT_MISMATCH");
-            weth.deposit{value: msg.value}();
-        } else {
-            IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        }
-    }
-
-    /// @dev Outbound transfer from router to msg.sender
-    function _transferOut(address _token, uint256 _amount) internal {
-        if (_amount == 0) return;
-
-        if (_isETH(_token)) {
-            weth.withdraw(_amount);
-            (bool success, ) = msg.sender.call{value: _amount}("");
-            require(success, "TRANSFER_FAILED");
-        } else {
-            IERC20(_token).safeTransfer(msg.sender, _amount);
         }
     }
 
@@ -882,5 +877,79 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
 
         interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
+    }
+
+    /**
+     * @notice This function takes in the standard array PendingTransfer[3] that represents
+     *        any pending transfers of tokens to be done between a market and msg.sender
+     * @dev transfers[0] and transfers[1] always represent the tokens that are traded
+     *      while transfers[2] always represent LP transfers
+     *    The convention is that:
+     *      - if its a function with xyt and baseToken, transfers[0] is always xyt
+     *      - if its a function with tokenIn and tokenOut, transfers[0] is always tokenOut
+     *
+     */
+    function _settlePendingTransfers(
+        PendingTransfer[3] memory transfers,
+        address firstToken,
+        address secondToken,
+        address market
+    ) internal {
+        _settleTokenTransfer(firstToken, transfers[0], market);
+        _settleTokenTransfer(secondToken, transfers[1], market);
+        _settleTokenTransfer(market, transfers[2], market);
+    }
+
+    /**
+     * @notice This function settles a PendingTransfer, where the token could be ETH_ADDRESS
+     *        a PendingTransfer is always between a market and msg.sender
+     */
+    function _settleTokenTransfer(
+        address token,
+        PendingTransfer memory transfer,
+        address market
+    ) internal {
+        if (transfer.amount == 0) {
+            return;
+        }
+        if (transfer.isOut) {
+            if (_isETH(token)) {
+                weth.transferFrom(market, address(this), transfer.amount);
+                weth.withdraw(transfer.amount);
+                (bool success, ) = msg.sender.call{value: transfer.amount}("");
+                require(success, "TRANSFER_FAILED");
+            } else {
+                IERC20(token).safeTransferFrom(market, msg.sender, transfer.amount);
+            }
+        } else {
+            if (_isETH(token)) {
+                require(msg.value == transfer.amount, "ETH_SENT_MISMATCH");
+                weth.deposit{value: msg.value}();
+                weth.transfer(market, transfer.amount);
+            } else {
+                IERC20(token).safeTransferFrom(msg.sender, market, transfer.amount);
+            }
+        }
+    }
+
+    function _checkMarketTokens(
+        address token1,
+        address token2,
+        IPendleMarket market
+    ) internal view {
+        require(data.isMarket(address(market)), "INVALID_MARKET");
+        require(
+            data.getMarketFromKey(token1, token2, market.factoryId()) == address(market),
+            "INVALID_MARKET"
+        );
+    }
+
+    /**
+     * @notice This function turns ETH_ADDRESS into WETH address if applicable
+     *    it is called "marketToken" because its the token address used in the markets
+     */
+    function _getMarketToken(address token) internal view returns (address) {
+        if (_isETH(token)) return address(weth);
+        return token;
     }
 }
