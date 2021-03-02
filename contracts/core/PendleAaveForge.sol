@@ -33,7 +33,6 @@ import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
 import "./PendleForgeBase.sol";
-import "hardhat/console.sol";
 
 contract PendleAaveForge is PendleForgeBase {
     using ExpiryUtils for string;

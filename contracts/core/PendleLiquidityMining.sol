@@ -36,8 +36,6 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../periphery/Permissions.sol";
 
-// import "hardhat/console.sol";
-
 /**
     @dev things that must hold in this contract:
      - If an account's stake information is updated (hence lastTimeUserStakeUpdated is changed),
