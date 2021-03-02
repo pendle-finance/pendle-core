@@ -3,61 +3,61 @@ import PendleAaveForge from "../../../build/artifacts/contracts/core/PendleAaveF
 import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
 import PendleOwnershipToken from "../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json";
 import { consts, setTimeNextBlock, tokens } from "../../helpers";
-import { PendleCoreFixture } from "./pendleCore.fixture";
-import { PendleGovernanceFixture } from "./pendleGovernance.fixture";
+import { CoreFixture } from "./core.fixture";
+import { GovernanceFixture } from "./governance.fixture";
 
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;
 
-export interface PendleAaveFixture {
-  pendleAaveForge: Contract;
-  pendleAOwnershipToken: Contract;
-  pendleAFutureYieldToken: Contract;
-  pendleAOwnershipToken2: Contract;
-  pendleAFutureYieldToken2: Contract;
+export interface AaveForgeFixture {
+  aaveForge: Contract;
+  aOwnershipToken: Contract;
+  aFutureYieldToken: Contract;
+  aOwnershipToken2: Contract;
+  aFutureYieldToken2: Contract;
 }
 
-export async function pendleAaveForgeFixture(
+export async function aaveForgeFixture(
   alice: Wallet,
   provider: providers.Web3Provider,
-  { pendleRouter, pendleData }: PendleCoreFixture,
-  { pendle }: PendleGovernanceFixture
-): Promise<PendleAaveFixture> {
-  const pendleAaveForge = await deployContract(alice, PendleAaveForge, [
+  { router, data }: CoreFixture,
+  { pendle }: GovernanceFixture
+): Promise<AaveForgeFixture> {
+  const aaveForge = await deployContract(alice, PendleAaveForge, [
     pendle.address,
-    pendleRouter.address,
+    router.address,
     consts.AAVE_LENDING_POOL_CORE_ADDRESS,
     consts.FORGE_AAVE,
   ]);
 
-  await pendleRouter.addForge(consts.FORGE_AAVE, pendleAaveForge.address);
+  await router.addForge(consts.FORGE_AAVE, aaveForge.address);
 
   await setTimeNextBlock(provider, consts.T0); // set the minting time for the first OT and XYT
 
   // USDT
-  await pendleRouter.newYieldContracts(
+  await router.newYieldContracts(
     consts.FORGE_AAVE,
     tokens.USDT.address,
     consts.T0.add(consts.SIX_MONTH)
   );
-  const otTokenAddress = await pendleData.otTokens(
-    consts.FORGE_AAVE,
-    tokens.USDT.address,
-    consts.T0.add(consts.SIX_MONTH)
-  );
-
-  const xytTokenAddress = await pendleData.xytTokens(
+  const otTokenAddress = await data.otTokens(
     consts.FORGE_AAVE,
     tokens.USDT.address,
     consts.T0.add(consts.SIX_MONTH)
   );
 
-  const pendleAOwnershipToken = new Contract(
+  const xytTokenAddress = await data.xytTokens(
+    consts.FORGE_AAVE,
+    tokens.USDT.address,
+    consts.T0.add(consts.SIX_MONTH)
+  );
+
+  const aOwnershipToken = new Contract(
     otTokenAddress,
     PendleOwnershipToken.abi,
     alice
   );
-  const pendleAFutureYieldToken = new Contract(
+  const aFutureYieldToken = new Contract(
     xytTokenAddress,
     PendleFutureYieldToken.abi,
     alice
@@ -65,39 +65,39 @@ export async function pendleAaveForgeFixture(
 
   // USDC
 
-  await pendleRouter.newYieldContracts(
+  await router.newYieldContracts(
     consts.FORGE_AAVE,
     tokens.USDC.address,
     consts.T0.add(consts.SIX_MONTH)
   );
-  const otTokenAddress2 = await pendleData.otTokens(
-    consts.FORGE_AAVE,
-    tokens.USDC.address,
-    consts.T0.add(consts.SIX_MONTH)
-  );
-
-  const xytTokenAddress2 = await pendleData.xytTokens(
+  const otTokenAddress2 = await data.otTokens(
     consts.FORGE_AAVE,
     tokens.USDC.address,
     consts.T0.add(consts.SIX_MONTH)
   );
 
-  const pendleAOwnershipToken2 = new Contract(
+  const xytTokenAddress2 = await data.xytTokens(
+    consts.FORGE_AAVE,
+    tokens.USDC.address,
+    consts.T0.add(consts.SIX_MONTH)
+  );
+
+  const aOwnershipToken2 = new Contract(
     otTokenAddress2,
     PendleOwnershipToken.abi,
     alice
   );
-  const pendleAFutureYieldToken2 = new Contract(
+  const aFutureYieldToken2 = new Contract(
     xytTokenAddress2,
     PendleFutureYieldToken.abi,
     alice
   );
 
   return {
-    pendleAaveForge,
-    pendleAOwnershipToken,
-    pendleAFutureYieldToken,
-    pendleAOwnershipToken2,
-    pendleAFutureYieldToken2,
+    aaveForge,
+    aOwnershipToken,
+    aFutureYieldToken,
+    aOwnershipToken2,
+    aFutureYieldToken2,
   };
 }
