@@ -4,12 +4,14 @@ import PendleMarketFactory from "../../../build/artifacts/contracts/core/PendleM
 import PendleRouter from '../../../build/artifacts/contracts/core/PendleRouter.sol/PendleRouter.json'
 import PendleTreasury from '../../../build/artifacts/contracts/core/PendleTreasury.sol/PendleTreasury.json'
 import { consts, tokens } from "../../helpers"
+const hre = require("hardhat");
 
 const { waffle } = require("hardhat");
 const { provider, deployContract } = waffle;
 
 export interface CoreFixture {
   router: Contract
+  routerWeb3: any
   treasury: Contract
   aMarketFactory: Contract
   cMarketFactory: Contract
@@ -31,5 +33,10 @@ export async function coreFixture(
   await data.initialize(router.address);
   await router.initialize(data.address);
 
-  return { router, treasury, aMarketFactory, cMarketFactory, data }
+  let routerWeb3 = new hre.web3.eth.Contract(
+    PendleRouter.abi,
+    router.address
+  );
+
+  return { router, routerWeb3, treasury, aMarketFactory, cMarketFactory, data }
 }
