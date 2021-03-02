@@ -562,8 +562,7 @@ describe("PendleAaveMarket", async () => {
     approxBigNumber(wethBalance2, wethBalance1, consts.TEST_TOKEN_DELTA);
   });
 
-  // Enable this test after the bug is fixed.
-  xit("should be able to swapPathExactOut", async () => {
+  it("should be able to swapPathExactOut", async () => {
     const amount = amountToWei(BN.from(100), 6);
     const swapAmount = amount.div(BN.from(10));
 
@@ -618,7 +617,6 @@ describe("PendleAaveMarket", async () => {
     );
     let postXytBalance: BN = await xyt.balanceOf(alice.address);
 
-
     await router.swapExactOut(
       testToken.address,
       xyt.address,
@@ -635,8 +633,7 @@ describe("PendleAaveMarket", async () => {
     approxBigNumber(wethBalance2, wethBalance1, consts.TEST_TOKEN_DELTA);
   });
 
-  // Enable this test after the bug is fixed.
-  xit("shouldn't be able to swapPathExactIn with invalid params", async () => {
+  it("shouldn't be able to swapPathExactIn with invalid params", async () => {
     const amount = amountToWei(BN.from(100), 6);
 
     await bootstrapSampleMarket(amount);
