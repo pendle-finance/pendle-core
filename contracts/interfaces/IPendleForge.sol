@@ -72,12 +72,14 @@ interface IPendleForge {
 
     /**
      * @dev Emitted when interest claim is settled
+     * @param forgeId The forgeId
      * @param underlyingAsset the address of the underlying asset
      * @param expiry The expiry of the XYT token
      * @param receiver Interest receiver Address
      * @param amount The amount of interest claimed
      **/
     event DueInterestSettled(
+        bytes32 forgeId,
         address indexed underlyingAsset,
         uint256 indexed expiry,
         uint256 amount,
