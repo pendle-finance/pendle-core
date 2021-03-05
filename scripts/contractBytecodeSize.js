@@ -12,6 +12,8 @@ const STAT = promisify(fs.stat);
 const LIST = [
   'PendleRouter.sol',
   'PendleAaveForge.sol',
+  'PendleCompoundForge.sol',
+  'PendleForgeBase.sol',
   'PendleData.sol',
   'PendleMarket.sol',
   'PendleMarketFactory.sol',

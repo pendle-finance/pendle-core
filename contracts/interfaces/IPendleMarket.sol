@@ -26,8 +26,9 @@ pragma experimental ABIEncoderV2;
 
 import "./IPendleRouter.sol";
 import "./IPendleBaseToken.sol";
+import "./IPendleStructs.sol";
 
-interface IPendleMarket is IPendleBaseToken {
+interface IPendleMarket is IPendleBaseToken, IPendleStructs {
     struct TokenReserve {
         uint256 weight;
         uint256 balance;
@@ -51,31 +52,31 @@ interface IPendleMarket is IPendleBaseToken {
 
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
-        returns (uint256);
+        returns (PendingTransfer[3] memory transfers);
 
     function addMarketLiquidityAll(
         uint256 exactOutLp,
         uint256 maxInXyt,
         uint256 maxInToken
-    ) external returns (uint256 amountXytUsed, uint256 amountTokenUsed);
+    ) external returns (PendingTransfer[3] memory transfers);
 
     function addMarketLiquiditySingle(
         address inToken,
         uint256 inAmount,
         uint256 minOutLp
-    ) external returns (uint256 exactOutLp);
+    ) external returns (PendingTransfer[3] memory transfers);
 
     function removeMarketLiquidityAll(
         uint256 inLp,
         uint256 minOutXyt,
         uint256 minOutToken
-    ) external returns (uint256 xytOut, uint256 tokenOut);
+    ) external returns (PendingTransfer[3] memory transfers);
 
     function removeMarketLiquiditySingle(
         address outToken,
         uint256 exactInLp,
         uint256 minOutToken
-    ) external returns (uint256 exactOutToken);
+    ) external returns (PendingTransfer[3] memory transfers);
 
     function swapExactIn(
         address inToken,
@@ -83,7 +84,13 @@ interface IPendleMarket is IPendleBaseToken {
         address outToken,
         uint256 minOutAmount,
         uint256 maxPrice
-    ) external returns (uint256 outAmount, uint256 spotPriceAfter);
+    )
+        external
+        returns (
+            uint256 outAmount,
+            uint256 spotPriceAfter,
+            PendingTransfer[3] memory transfers
+        );
 
     function swapExactOut(
         address inToken,
@@ -91,7 +98,13 @@ interface IPendleMarket is IPendleBaseToken {
         address outToken,
         uint256 outAmount,
         uint256 maxPrice
-    ) external returns (uint256 inAmount, uint256 spotPriceAfter);
+    )
+        external
+        returns (
+            uint256 inAmount,
+            uint256 spotPriceAfter,
+            PendingTransfer[3] memory transfers
+        );
 
     function claimLpInterests(address account) external returns (uint256 interests);
 
@@ -130,11 +143,7 @@ interface IPendleMarket is IPendleBaseToken {
      **/
     function factory() external view returns (address);
 
-    /**
-     * @notice Gets the forge address where the XYT was minted.
-     * @return Returns the forge address.
-     **/
-    function forge() external view returns (address);
+    function factoryId() external view returns (bytes32);
 
     function token() external view returns (address);
 

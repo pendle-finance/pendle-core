@@ -128,6 +128,8 @@ interface IPendleForge {
      **/
     function router() external view returns (IPendleRouter);
 
+    function data() external view returns (IPendleData);
+
     /**
      * @notice Gets the bytes32 ID of the forge.
      * @return Returns the forge and protocol identifier.

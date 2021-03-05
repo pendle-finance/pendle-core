@@ -30,7 +30,6 @@ import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleYieldToken.sol";
 import "../tokens/PendleBaseToken.sol";
 import "../libraries/MathLib.sol";
-import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 contract PendleMarket is IPendleMarket, PendleBaseToken {
@@ -39,10 +38,10 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     using SafeERC20 for IERC20;
 
     address public immutable override factory;
-    address public immutable override forge;
+    bytes32 public immutable override factoryId;
+    address private immutable forge;
     address public immutable override token;
     address public immutable override xyt;
-    uint256 public constant MIN_LIQUIDITY = 10**3;
     uint256 public lastUnderlyingYieldTokenBalance;
     uint256 public globalIncomeIndex;
     bool public bootstrapped;
@@ -66,6 +65,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     and save gas for retrieving them afterwards */
     bytes32 private immutable forgeId;
     address private immutable underlyingAsset;
+    IERC20 private immutable underlyingYieldToken;
     IPendleData private immutable data;
     IPendleRouter private immutable router;
     uint256 private immutable xytStartTime;
@@ -76,11 +76,9 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         address _token,
         uint256 _expiry
     ) PendleBaseToken(NAME, SYMBOL, DECIMALS, block.timestamp, _expiry) {
-        require(_forge != address(0), "ZERO_ADDRESS");
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
         IPendleYieldToken xytContract = IPendleYieldToken(_xyt);
-        require(xytContract.expiry() == _expiry, "INVALID_EXPIRY");
 
         factory = msg.sender;
         forge = _forge;
@@ -91,20 +89,25 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         forgeId = IPendleForge(_forge).forgeId();
         underlyingAsset = xytContract.underlyingAsset();
+        underlyingYieldToken = IERC20(IPendleYieldToken(_xyt).underlyingYieldToken());
         expiry = _expiry;
-        router = IPendleMarketFactory(msg.sender).router();
-        data = IPendleMarketFactory(msg.sender).router().data();
+        address routerAddress = address(IPendleMarketFactory(msg.sender).router());
+        router = IPendleRouter(routerAddress);
+        data = IPendleForge(_forge).data();
         xytStartTime = IPendleYieldToken(_xyt).start();
+        factoryId = IPendleMarketFactory(msg.sender).marketFactoryId();
+
+        _approve(address(this), routerAddress, type(uint256).max);
+        IERC20(_xyt).safeApprove(routerAddress, type(uint256).max);
+        IERC20(_token).safeApprove(routerAddress, type(uint256).max);
     }
 
-    modifier isBootstrapped {
+    function checkIsBootstrapped() internal view {
         require(bootstrapped, "NOT_BOOTSTRAPPED");
-        _;
     }
 
-    modifier onlyRouter() {
+    function checkOnlyRouter() internal view {
         require(msg.sender == address(router), "ONLY_ROUTER");
-        _;
     }
 
     modifier marketIsOpen() {
@@ -115,14 +118,11 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
         override
-        onlyRouter
-        returns (uint256)
+        returns (PendingTransfer[3] memory transfers)
     {
+        checkOnlyRouter();
         require(!bootstrapped, "ALREADY_BOOTSTRAPPED");
         _initializeLock(); // market's lock params should be initialized at bootstrap time
-
-        _transferIn(xyt, initialXytLiquidity);
-        _transferIn(token, initialTokenLiquidity);
 
         reserves[xyt].balance = initialXytLiquidity;
         reserves[xyt].weight = Math.RONE / 2;
@@ -137,12 +137,16 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         );
 
         _mintLp(INITIAL_LP);
-        _transferOutLp(INITIAL_LP);
+
+        transfers[0].amount = initialXytLiquidity;
+        transfers[0].isOut = false;
+        transfers[1].amount = initialTokenLiquidity;
+        transfers[1].isOut = false;
+        transfers[2].amount = INITIAL_LP;
+        transfers[2].isOut = true;
 
         blockNumLast = block.number;
         bootstrapped = true;
-
-        return INITIAL_LP;
     }
 
     /**
@@ -155,33 +159,30 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 _exactOutLp,
         uint256 _maxInXyt,
         uint256 _maxInToken
-    )
-        external
-        override
-        isBootstrapped
-        onlyRouter
-        marketIsOpen
-        returns (uint256 amountXytUsed, uint256 amountTokenUsed)
-    {
+    ) external override marketIsOpen returns (PendingTransfer[3] memory transfers) {
+        checkIsBootstrapped();
+        checkOnlyRouter();
         uint256 totalLp = totalSupply;
         uint256 ratio = Math.rdiv(_exactOutLp, totalLp);
         require(ratio != 0, "ZERO_RATIO");
 
         // Calc and inject XYT token.
         uint256 balanceXyt = reserves[xyt].balance;
-        amountXytUsed = Math.rmul(ratio, balanceXyt);
+        uint256 amountXytUsed = Math.rmul(ratio, balanceXyt);
         require(amountXytUsed != 0, "ZERO_XYT_IN_AMOUNT");
         require(amountXytUsed <= _maxInXyt, "LOW_XYT_IN_LIMIT");
         reserves[xyt].balance = reserves[xyt].balance.add(amountXytUsed);
-        _transferIn(xyt, amountXytUsed);
+        transfers[0].amount = amountXytUsed;
+        transfers[0].isOut = false;
 
         // Calc and inject pair token.
         uint256 balanceToken = reserves[token].balance;
-        amountTokenUsed = Math.rmul(ratio, balanceToken);
+        uint256 amountTokenUsed = Math.rmul(ratio, balanceToken);
         require(amountTokenUsed != 0, "ZERO_TOKEN_IN_AMOUNT");
         require(amountTokenUsed <= _maxInToken, "LOW_TOKEN_IN_LIMIT");
         reserves[token].balance = reserves[token].balance.add(amountTokenUsed);
-        _transferIn(token, amountTokenUsed);
+        transfers[1].amount = amountTokenUsed;
+        transfers[1].isOut = false;
 
         emit Sync(
             reserves[xyt].balance,
@@ -192,16 +193,17 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         // Mint and push LP token.
         _mintLp(_exactOutLp);
-        _transferOutLp(_exactOutLp);
-
-        return (amountXytUsed, amountTokenUsed);
+        transfers[2].amount = _exactOutLp;
+        transfers[2].isOut = true;
     }
 
     function addMarketLiquiditySingle(
         address _inToken,
         uint256 _exactIn,
         uint256 _minOutLp
-    ) external override isBootstrapped onlyRouter marketIsOpen returns (uint256 exactOutLp) {
+    ) external override marketIsOpen returns (PendingTransfer[3] memory transfers) {
+        checkIsBootstrapped();
+        checkOnlyRouter();
         _curveShift(data);
 
         TokenReserve storage inTokenReserve = reserves[_inToken];
@@ -209,22 +211,19 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
 
         // Calc out amount of LP token.
-        exactOutLp = _calcOutAmountLp(
-            _exactIn,
-            inTokenReserve,
-            data.swapFee(),
-            totalLp,
-            totalWeight
-        );
+        uint256 exactOutLp =
+            _calcOutAmountLp(_exactIn, inTokenReserve, data.swapFee(), totalLp, totalWeight);
         require(exactOutLp >= _minOutLp, "HIGH_LP_OUT_LIMIT");
 
         // Update reserves and operate underlying LP and inToken.
         inTokenReserve.balance = inTokenReserve.balance.add(_exactIn);
-        _transferIn(_inToken, _exactIn);
+        transfers[0].amount = _exactIn;
+        transfers[0].isOut = false;
 
         // Mint and push LP token.
         _mintLp(exactOutLp);
-        _transferOutLp(exactOutLp);
+        transfers[2].amount = exactOutLp;
+        transfers[2].isOut = true;
 
         emit Sync(
             reserves[xyt].balance,
@@ -232,13 +231,14 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].balance,
             reserves[token].weight
         );
-
-        return exactOutLp;
     }
 
     /**
      * @notice Exit the market by putting in the desired amount of LP tokens
      *         and getting back XYT and pair tokens.
+     * @dev With remove liquidity functions, LPs are always transfered in
+     *  first in the Router, to make sure we have enough LPs in the market to burn
+     *  as such, we don't need to set transfers[2]
      * @dev no curveShift to save gas because this function
                 doesn't depend on weights of tokens
      * @dev this function will never be locked since we always let users withdraw
@@ -248,7 +248,9 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 _inLp,
         uint256 _minOutXyt,
         uint256 _minOutToken
-    ) external override isBootstrapped onlyRouter returns (uint256 xytOut, uint256 tokenOut) {
+    ) external override returns (PendingTransfer[3] memory transfers) {
+        checkIsBootstrapped();
+        checkOnlyRouter();
         uint256 exitFee = data.exitFee();
         uint256 totalLp = totalSupply;
         uint256 exitFees = Math.rmul(_inLp, exitFee);
@@ -258,33 +260,37 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         // Calc and withdraw xyt token.
         uint256 balanceToken = reserves[xyt].balance;
-        uint256 outAmount = Math.rmul(ratio, balanceToken);
-        require(outAmount != 0, "MATH_ERROR");
-        require(outAmount >= _minOutXyt, "INSUFFICIENT_XYT_OUT");
-        reserves[xyt].balance = reserves[xyt].balance.sub(outAmount);
-        xytOut = outAmount;
-        _transferOut(xyt, outAmount);
+        uint256 xytOut = Math.rmul(ratio, balanceToken);
+        require(xytOut != 0, "MATH_ERROR");
+        require(xytOut >= _minOutXyt, "INSUFFICIENT_XYT_OUT");
+        reserves[xyt].balance = reserves[xyt].balance.sub(xytOut);
+        transfers[0].amount = xytOut;
+        transfers[0].isOut = true;
 
         // Calc and withdraw pair token.
         balanceToken = reserves[token].balance;
-        outAmount = Math.rmul(ratio, balanceToken);
-        require(outAmount != 0, "MATH_ERROR");
-        require(outAmount >= _minOutToken, "INSUFFICIENT_TOKEN_OUT");
-        reserves[token].balance = reserves[token].balance.sub(outAmount);
-        tokenOut = outAmount;
-        _transferOut(token, outAmount);
+        uint256 tokenOut = Math.rmul(ratio, balanceToken);
+        require(tokenOut != 0, "MATH_ERROR");
+        require(tokenOut >= _minOutToken, "INSUFFICIENT_TOKEN_OUT");
+        reserves[token].balance = reserves[token].balance.sub(tokenOut);
+        transfers[1].amount = tokenOut;
+        transfers[1].isOut = true;
 
         // Deal with lp last.
-        _transferInLp(_inLp);
         _collectFees(exitFees);
         _burnLp(inLpAfterExitFee);
     }
 
+    /// @dev With remove liquidity functions, LPs are always transfered in
+    /// first in the Router, to make sure we have enough LPs in the market to burn
+    /// as such, we don't need to set transfers[2]
     function removeMarketLiquiditySingle(
         address _outToken,
         uint256 _inLp,
         uint256 _minOutAmountToken
-    ) external override isBootstrapped onlyRouter marketIsOpen returns (uint256 outAmountToken) {
+    ) external override marketIsOpen returns (PendingTransfer[3] memory transfers) {
+        checkIsBootstrapped();
+        checkOnlyRouter();
         _curveShift(data);
 
         TokenReserve storage outTokenReserve = reserves[_outToken];
@@ -293,18 +299,16 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 totalLp = totalSupply;
         uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
 
-        outAmountToken = _calcOutAmountToken(outTokenReserve, totalLp, totalWeight, _inLp);
+        uint256 outAmountToken = _calcOutAmountToken(outTokenReserve, totalLp, totalWeight, _inLp);
         require(outAmountToken >= _minOutAmountToken, "INSUFFICIENT_TOKEN_OUT");
 
         // Update reserves and operate underlying LP and outToken
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmountToken);
 
-        _transferInLp(_inLp);
         _collectFees(exitFee);
         _burnLp(_inLp.sub(exitFees));
-        _transferOut(_outToken, outAmountToken);
-
-        return outAmountToken;
+        transfers[0].amount = outAmountToken;
+        transfers[0].isOut = true;
     }
 
     function swapExactIn(
@@ -316,11 +320,15 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        isBootstrapped
-        onlyRouter
         marketIsOpen
-        returns (uint256 outAmount, uint256 spotPriceAfter)
+        returns (
+            uint256 outAmount,
+            uint256 spotPriceAfter,
+            PendingTransfer[3] memory transfers
+        )
     {
+        checkIsBootstrapped();
+        checkOnlyRouter();
         _curveShift(data);
 
         TokenReserve storage inTokenReserve = reserves[inToken];
@@ -349,10 +357,10 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].weight
         );
 
-        _transferIn(inToken, inAmount);
-        _transferOut(outToken, outAmount);
-
-        return (outAmount, spotPriceAfter);
+        transfers[0].amount = inAmount;
+        transfers[0].isOut = false;
+        transfers[1].amount = outAmount;
+        transfers[1].isOut = true;
     }
 
     function swapExactOut(
@@ -364,11 +372,15 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        isBootstrapped
-        onlyRouter
         marketIsOpen
-        returns (uint256 inAmount, uint256 spotPriceAfter)
+        returns (
+            uint256 inAmount,
+            uint256 spotPriceAfter,
+            PendingTransfer[3] memory transfers
+        )
     {
+        checkIsBootstrapped();
+        checkOnlyRouter();
         _curveShift(data);
 
         TokenReserve storage inTokenReserve = reserves[inToken];
@@ -398,19 +410,15 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].weight
         );
 
-        _transferIn(inToken, inAmount);
-        _transferOut(outToken, outAmount);
-
-        return (inAmount, spotPriceAfter);
+        transfers[0].amount = inAmount;
+        transfers[0].isOut = false;
+        transfers[1].amount = outAmount;
+        transfers[1].isOut = true;
     }
 
-    function claimLpInterests(address account)
-        public
-        override
-        isBootstrapped
-        onlyRouter
-        returns (uint256 interests)
-    {
+    function claimLpInterests(address account) public override returns (uint256 interests) {
+        checkIsBootstrapped();
+        checkOnlyRouter();
         interests = _settleLpInterests(account);
     }
 
@@ -547,32 +555,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         IERC20(address(this)).safeTransfer(data.treasury(), _amount);
     }
 
-    /// @dev Inbound transfer from router to market
-    function _transferIn(address _token, uint256 _amount) internal {
-        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        if (_token == xyt) {
-            // if its an XYT transfer, interests for the market is updated.
-            lastInterestUpdate = block.timestamp;
-        }
-    }
-
-    /// @dev Outbound transfer from market to router
-    function _transferOut(address _token, uint256 _amount) internal {
-        IERC20(_token).safeTransfer(msg.sender, _amount);
-        if (_token == xyt) {
-            // if its an XYT transfer, interests for the market is updated.
-            lastInterestUpdate = block.timestamp;
-        }
-    }
-
-    function _transferInLp(uint256 amount) internal {
-        _transferIn(address(this), amount);
-    }
-
-    function _transferOutLp(uint256 amount) internal {
-        _transferOut(address(this), amount);
-    }
-
     function _burnLp(uint256 amount) internal {
         _burn(address(this), amount);
     }
@@ -654,6 +636,15 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
     // sends out any due interests to msg.sender if he's an LP holder
     // this should be called before any functions that change someone's LPs
+    //
+    // How we keep track of LP interests:
+    //    - Whenever there is new interests iNew1 into the Market, it is distributed equally
+    //      to the Lp holders. Alice who has lpBalance will be entitled to lpBalance/totalLpSupply1*iNew1
+    //    - If there is another interest iNew2, or if totalLpSupply changes, Alice will receive an additional
+    //      lpBalance/totalSupply2*iNew2.
+    //    - Therefore, we can just keep track of globalIncomeIndex = iNew1/totalSupply1 + iNew2/totalSupply2
+    //      as well as the lastGlobalIncomeIndex of each user, when they last received interests.
+    //    - When Alice wants to redeem her interests, it will be lpBalance * (globalIncomeIndex - lastGlobalIncomeIndex[Alice])
     function _settleLpInterests(address account) internal returns (uint256 dueInterests) {
         _updateGlobalIncomeIndex();
         if (lastGlobalIncomeIndex[account] == 0) {
@@ -662,7 +653,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         }
 
         dueInterests = balanceOf[account]
-            .mul(globalIncomeIndex - lastGlobalIncomeIndex[account])
+            .mul(globalIncomeIndex.sub(lastGlobalIncomeIndex[account]))
             .div(GLOBAL_INCOME_INDEX_MULTIPLIER);
 
         lastGlobalIncomeIndex[account] = globalIncomeIndex;
@@ -672,16 +663,15 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     }
 
     // this function should be called whenver the total amount of LP changes
-    //
     function _updateGlobalIncomeIndex() internal {
         if (block.timestamp.sub(lastInterestUpdate) > data.interestUpdateDelta()) {
-            // get due interests for the XYT being held in the market
+            // get due interests for the XYT being held in the market if it has not been updated
+            // for interestUpdateDelta seconds
             router.redeemDueInterests(forgeId, underlyingAsset, expiry);
             lastInterestUpdate = block.timestamp;
         }
 
-        uint256 currentUnderlyingYieldTokenBalance =
-            IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this));
+        uint256 currentUnderlyingYieldTokenBalance = underlyingYieldToken.balanceOf(address(this));
         uint256 interestsEarned =
             currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance;
         lastUnderlyingYieldTokenBalance = currentUnderlyingYieldTokenBalance;
@@ -689,9 +679,9 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         globalIncomeIndex = globalIncomeIndex.add(
             interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(totalSupply)
         );
-        // console.log("\tglobalIncomeIndex, totalSupply = ", globalIncomeIndex, totalSupply);
     }
 
+    // before we send LPs, we need to settle due interests for both the to and from addresses
     function _beforeTokenTransfer(address from, address to) internal override {
         _settleLpInterests(from);
         _settleLpInterests(to);

@@ -10,4 +10,8 @@ export const errMsg = {
   SENDER_ZERO_ADDR: prefix + " " + "SENDER_ZERO_ADDR",
   RECEIVER_ZERO_ADDR: prefix + " " + "RECEIVER_ZERO_ADDR",
   OWNER_ZERO_ADDR: prefix + " " + "OWNER_ZERO_ADDR",
+  MARKET_LOCKED: prefix + " " + "MARKET_LOCKED",
+  INVALID_EXPIRY: prefix + " " + "INVALID_EXPIRY",
+  YIELD_CONTRACT_EXPIRED: prefix + " " + "YIELD_CONTRACT_EXPIRED",
+  INVALID_AMOUNTS: prefix + " " + "INVALID_AMOUNTS",
 };

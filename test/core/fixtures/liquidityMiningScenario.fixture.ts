@@ -1,6 +1,6 @@
 import { BigNumber as BN } from "ethers";
 import { startOfEpoch } from "../../helpers";
-import { liqParams, UserStakeAction } from "./pendleLiquidityMining.fixture";
+import { liqParams, UserStakeAction } from "./liquidityMining.fixture";
 const SAME_AMOUNT: BN = BN.from(10000);
 
 export function scenario01(params: liqParams): UserStakeAction[][][] {

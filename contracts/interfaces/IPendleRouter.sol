@@ -27,9 +27,10 @@ pragma experimental ABIEncoderV2;
 
 import "../interfaces/IWETH.sol";
 import "./IPendleData.sol";
+import "./IPendleStructs.sol";
 import "./IPendleMarketFactory.sol";
 
-interface IPendleRouter {
+interface IPendleRouter is IPendleStructs {
     /**
      * @notice Emitted when a swap happens on the market.
      * @param trader The address of msg.sender.
