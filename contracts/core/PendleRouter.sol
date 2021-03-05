@@ -94,6 +94,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         require(data.getForgeAddress(_forgeId) == address(0), "EXISTED_ID");
 
         data.addForge(_forgeId, _forgeAddress);
+
+        emit NewForge(_forgeId, _forgeAddress);
     }
 
     /**
@@ -284,6 +286,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         );
         require(data.getMarketFactoryAddress(_marketFactoryId) == address(0), "EXISTED_ID");
         data.addMarketFactory(_marketFactoryId, _marketFactoryAddress);
+        emit NewMarketFactory(_marketFactoryId, _marketFactoryAddress);
     }
 
     // add market liquidity by xyt and base tokens

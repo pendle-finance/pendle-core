@@ -106,7 +106,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
-        emit NewYieldContracts(ot, xyt, _expiry);
+        emit NewYieldContracts(forgeId, _underlyingAsset, _expiry, ot, xyt);
     }
 
     function redeemAfterExpiry(
@@ -131,7 +131,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
         tokens.ot.burn(_account, redeemedAmount);
 
-        emit RedeemYieldToken(_underlyingAsset, _expiry, redeemedAmount);
+        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, redeemedAmount);
     }
 
     function redeemUnderlying(
@@ -156,7 +156,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         tokens.ot.burn(_account, underlyingToRedeem);
         tokens.xyt.burn(_account, underlyingToRedeem);
 
-        emit RedeemYieldToken(_underlyingAsset, _expiry, underlyingToRedeem);
+        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, underlyingToRedeem);
 
         return _amountToRedeem;
     }
@@ -193,7 +193,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         tokens.ot.mint(_to, amountToMint);
         tokens.xyt.mint(_to, amountToMint);
 
-        emit MintYieldToken(_underlyingAsset, _expiry, amountToMint);
+        emit MintYieldToken(forgeId, _underlyingAsset, _expiry, amountToMint);
         return (address(tokens.ot), address(tokens.xyt));
     }
 
@@ -269,7 +269,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
             IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
             IERC20(yieldToken).transfer(_account, dueInterests);
 
-            emit DueInterestSettled(_underlyingAsset, _expiry, dueInterests, _account);
+            emit DueInterestSettled(forgeId, _underlyingAsset, _expiry, dueInterests, _account);
         }
 
         return dueInterests;

@@ -67,6 +67,20 @@ interface IPendleRouter is IPendleStructs {
      */
     event Exit(address indexed sender, uint256 token0Amount, uint256 token1Amount, address market);
 
+    /**
+     * @dev Emitted when new forge is added
+     * @param forgeId Human Readable Forge ID in Bytes
+     * @param forgeAddress The Forge Address
+     */
+    event NewForge(bytes32 indexed forgeId, address indexed forgeAddress);
+
+    /**
+     * @dev Emitted when new forge is added
+     * @param marketFactoryId Human Readable Market Factory ID in Bytes
+     * @param marketFactoryAddress The Market Factory Address
+     */
+    event NewMarketFactory(bytes32 indexed marketFactoryId, address indexed marketFactoryAddress);
+
     struct Market {
         address market;
         uint256 tokenBalanceIn;
