@@ -19,7 +19,7 @@ import { pendleFixture } from "./fixtures";
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
-describe("PendleRouter", async () => {
+describe("PendleAaveRouter", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave] = wallets;
