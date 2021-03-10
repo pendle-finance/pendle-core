@@ -33,10 +33,11 @@ import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
 import "./PendleForgeBase.sol";
+import {WadRayMath} from "../libraries/WadRayMath.sol";
 
 contract PendleAaveForge is PendleForgeBase {
     using ExpiryUtils for string;
-    using SafeMath for uint256;
+    using WadRayMath for uint256;
 
     IAaveLendingPoolCore public immutable aaveLendingPoolCore;
 
@@ -64,7 +65,14 @@ contract PendleAaveForge is PendleForgeBase {
     ) internal view override returns (uint256 totalAfterExpiry) {
         uint256 currentNormalizedIncome =
             aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
-        totalAfterExpiry = currentNormalizedIncome.mul(redeemedAmount).div(
+        totalAfterExpiry = redeemedAmount
+            .wadToRay()
+            .rayMul(currentNormalizedIncome)
+            .rayDiv(lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry])
+            .rayToWad();
+        console.log(
+            "71",
+            currentNormalizedIncome,
             lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry]
         );
     }
@@ -93,13 +101,22 @@ contract PendleAaveForge is PendleForgeBase {
             normalizedIncome = aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
             lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = normalizedIncome;
         }
+        // console.log("NormalizedIncome & incomeIndex",aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset),_getIndex(_underlyingAsset));
         // first time getting XYT
         if (ix == 0) {
+            // console.log("FIRST TIME XYT");
             lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
             return 0;
         }
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
 
-        dueInterests = principal.mul(normalizedIncome).div(ix).sub(principal);
+        dueInterests =
+            principal.wadToRay().rayMul(normalizedIncome).rayDiv(ix).rayToWad() -
+            principal;
+        console.log(
+            "contractBalance and Interest",
+            IERC20(_getYieldBearingToken(_underlyingAsset)).balanceOf(address(this)),
+            dueInterests
+        );
     }
 }
