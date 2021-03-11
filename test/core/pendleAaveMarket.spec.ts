@@ -24,6 +24,7 @@ describe("PendleAaveMarket", async () => {
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;
   let router: Contract;
+  let marketReader: Contract;
   let xyt: Contract;
   let xyt2: Contract;
   let stdMarket: Contract;
@@ -39,6 +40,7 @@ describe("PendleAaveMarket", async () => {
 
     const fixture = await loadFixture(marketFixture);
     router = fixture.core.router;
+    marketReader = fixture.core.marketReader;
     xyt = fixture.aForge.aFutureYieldToken;
     xyt2 = fixture.aForge.aFutureYieldToken2;
     testToken = fixture.testToken;
@@ -158,7 +160,7 @@ describe("PendleAaveMarket", async () => {
 
     let xytBalanceBefore = await xyt.balanceOf(stdMarket.address);
 
-    let result = await router.getMarketRateExactOut(
+    let result = await marketReader.getMarketRateExactOut(
       xyt.address,
       testToken.address,
       amountToWei(BN.from(10), 6),
@@ -374,7 +376,7 @@ describe("PendleAaveMarket", async () => {
       xytReserve,
       tokenReserve,
       currentTime,
-    ] = await router.getMarketReserves(
+    ] = await marketReader.getMarketReserves(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address
@@ -388,7 +390,7 @@ describe("PendleAaveMarket", async () => {
 
     await bootstrapSampleMarket(amount);
 
-    let result = await router.getMarketRateExactOut(
+    let result = await marketReader.getMarketRateExactOut(
       xyt.address,
       testToken.address,
       amountToWei(BN.from(10), 6),
@@ -403,7 +405,7 @@ describe("PendleAaveMarket", async () => {
 
     await bootstrapSampleMarket(amount);
 
-    let result = await router.getMarketRateExactIn(
+    let result = await marketReader.getMarketRateExactIn(
       testToken.address,
       xyt.address,
       amountToWei(BN.from(10), 6),
@@ -477,7 +479,7 @@ describe("PendleAaveMarket", async () => {
     let {
       token: receivedToken,
       xyt: receivedXyt,
-    } = await router.getMarketTokenAddresses(stdMarket.address);
+    } = await marketReader.getMarketTokenAddresses(stdMarket.address);
     expect(receivedToken).to.be.equal(testToken.address);
     expect(receivedXyt).to.be.equal(xyt.address);
   });
@@ -741,7 +743,7 @@ describe("PendleAaveMarket", async () => {
 
     let xytBalanceBefore = await xyt.balanceOf(ethMarket.address);
 
-    let result = await router.getMarketRateExactOut(
+    let result = await marketReader.getMarketRateExactOut(
       xyt.address,
       WETH.address,
       amountToWei(BN.from(10), 6),
@@ -856,7 +858,7 @@ describe("PendleAaveMarket", async () => {
       xytReserve,
       tokenReserve,
       currentTime,
-    ] = await router.getMarketReserves(
+    ] = await marketReader.getMarketReserves(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       WETH.address
@@ -870,7 +872,7 @@ describe("PendleAaveMarket", async () => {
 
     await bootstrapSampleMarketEth(amount);
 
-    let result = await router.getMarketRateExactOut(
+    let result = await marketReader.getMarketRateExactOut(
       xyt.address,
       WETH.address,
       amountToWei(BN.from(10), 6),
@@ -885,7 +887,7 @@ describe("PendleAaveMarket", async () => {
 
     await bootstrapSampleMarketEth(amount);
 
-    let result = await router.getMarketRateExactIn(
+    let result = await marketReader.getMarketRateExactIn(
       WETH.address,
       xyt.address,
       amountToWei(BN.from(10), 6),
