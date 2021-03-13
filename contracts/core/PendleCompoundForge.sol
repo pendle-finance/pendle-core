@@ -80,12 +80,6 @@ contract PendleCompoundForge is PendleForgeBase {
         );
     }
 
-    function getReserveNormalizedIncome(address underlyingAsset)
-        external
-        override
-        returns (uint256 interests)
-    {}
-
     function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
         internal
         override

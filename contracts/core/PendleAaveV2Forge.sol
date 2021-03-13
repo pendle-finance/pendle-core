@@ -21,11 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../libraries/ExpiryUtilsLib.sol";
 import "../libraries/FactoryLib.sol";
-import "../interfaces/IAaveLendingPoolCore.sol";
+import "../interfaces/IAaveV2LendingPool.sol";
 import "../interfaces/IPendleBaseToken.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleForge.sol";
@@ -35,11 +36,11 @@ import "../periphery/Permissions.sol";
 import "./PendleForgeBase.sol";
 import {WadRayMath} from "../libraries/WadRayMath.sol";
 
-contract PendleAaveForge is PendleForgeBase {
+contract PendleAaveV2Forge is PendleForgeBase {
     using ExpiryUtils for string;
     using WadRayMath for uint256;
 
-    IAaveLendingPoolCore public immutable aaveLendingPoolCore;
+    IAaveV2LendingPool public immutable aaveLendingPool;
 
     mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeBeforeExpiry;
     mapping(address => mapping(uint256 => mapping(address => uint256)))
@@ -48,28 +49,12 @@ contract PendleAaveForge is PendleForgeBase {
     constructor(
         address _governance,
         IPendleRouter _router,
-        IAaveLendingPoolCore _aaveLendingPoolCore,
+        IAaveV2LendingPool _aaveLendingPool,
         bytes32 _forgeId
     ) PendleForgeBase(_governance, _router, _forgeId) {
-        require(address(_aaveLendingPoolCore) != address(0), "ZERO_ADDRESS");
+        require(address(_aaveLendingPool) != address(0), "ZERO_ADDRESS");
 
-        aaveLendingPoolCore = _aaveLendingPoolCore;
-    }
-
-    //calculate the (principal + interest) from the last action before expiry to now.
-    function _calcTotalAfterExpiry(
-        address,
-        address _underlyingAsset,
-        uint256 _expiry,
-        uint256 redeemedAmount
-    ) internal view override returns (uint256 totalAfterExpiry) {
-        uint256 currentNormalizedIncome =
-            aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
-        totalAfterExpiry = redeemedAmount
-            .wadToRay()
-            .rayMul(currentNormalizedIncome)
-            .rayDiv(lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry])
-            .rayToWad();
+        aaveLendingPool = _aaveLendingPool;
     }
 
     function _getYieldBearingToken(address _underlyingAsset)
@@ -78,7 +63,7 @@ contract PendleAaveForge is PendleForgeBase {
         override
         returns (address)
     {
-        return aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset);
+        return aaveLendingPool.getReserveData(_underlyingAsset).aTokenAddress;
     }
 
     function _calcDueInterests(
@@ -93,9 +78,10 @@ contract PendleAaveForge is PendleForgeBase {
         if (block.timestamp >= _expiry) {
             normalizedIncome = lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
         } else {
-            normalizedIncome = aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
+            normalizedIncome = aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset);
             lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = normalizedIncome;
         }
+
         // first time getting XYT
         if (ix == 0) {
             lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
@@ -103,8 +89,44 @@ contract PendleAaveForge is PendleForgeBase {
         }
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
 
-        dueInterests =
-            principal.wadToRay().rayMul(normalizedIncome).rayDiv(ix).rayToWad() -
-            principal;
+        // no overflow since normalizedIncome >= ix
+        dueInterests = principal.rayDiv(ix).rayMul(normalizedIncome) - principal;
+        dueInterests = WadRayMath.smooth(dueInterests,normalizedIncome);
+    }
+
+    //calculate the (principal + interest) from the last action before expiry to now.
+    function _calcTotalAfterExpiry(
+        address,
+        address _underlyingAsset,
+        uint256 _expiry,
+        uint256 redeemedAmount
+    ) internal view override returns (uint256 totalAfterExpiry) {
+        uint256 currentNormalizedIncome =
+            aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset);
+        totalAfterExpiry = redeemedAmount
+            .rayDiv(lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry])
+            .rayMul(currentNormalizedIncome);
+        totalAfterExpiry = WadRayMath.smooth(
+            totalAfterExpiry,
+            currentNormalizedIncome
+        );
+    }
+
+    function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
+        internal
+        override
+        view
+        returns (uint256 underlyingToRedeem)
+    {
+        underlyingToRedeem = WadRayMath.smooth(_amountToRedeem,aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset));
+    }
+
+    function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)
+        internal
+        override
+        view
+        returns (uint256 amountToMint)
+    {
+        amountToMint = WadRayMath.smooth(_amountToTokenize,aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset));
     }
 }

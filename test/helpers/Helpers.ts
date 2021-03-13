@@ -6,6 +6,7 @@ import CToken from "../../build/artifacts/contracts/interfaces/ICToken.sol/ICTok
 import TetherToken from "../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json";
 import { liqParams } from "../core/fixtures/";
 import { aaveFixture } from "../core/fixtures/aave.fixture";
+import { aaveV2Fixture } from "../core/fixtures/aaveV2.fixture";
 import { consts, Token } from "./Constants";
 
 const hre = require("hardhat");
@@ -94,6 +95,20 @@ export async function convertToAaveToken(
   await lendingPool.deposit(token.address, tokenAmount, 0);
 }
 
+export async function convertToAaveV2Token(
+  token: Token,
+  alice: Wallet,
+  amount: BN
+) {
+  const { lendingPool } = await aaveV2Fixture(alice);
+  const tokenAmount = amountToWei(amount, token.decimal);
+
+  const erc20 = new Contract(token.address, ERC20.abi, alice);
+  await erc20.approve(lendingPool.address, tokenAmount);
+
+  await lendingPool.deposit(token.address, tokenAmount, alice.address, 0);
+}
+
 export async function convertToCompoundToken(
   token: Token,
   alice: Wallet,
@@ -128,6 +143,16 @@ export async function mintAaveToken(
   await convertToAaveToken(token, alice, amount);
 }
 
+export async function mintAaveV2Token(
+  provider: providers.Web3Provider,
+  token: Token,
+  alice: Wallet,
+  amount: BN
+) {
+  await mint(provider, token, alice, amount);
+  await convertToAaveV2Token(token, alice, amount);
+}
+
 export async function mintCompoundToken(
   provider: providers.Web3Provider,
   token: Token,
@@ -147,6 +172,7 @@ export async function transferToken(
   const erc20 = new Contract(token.address, ERC20.abi, from);
   await erc20.transfer(to, amount);
 }
+
 export async function getAContract(
   alice: Wallet,
   lendingPoolCore: Contract,
@@ -156,6 +182,17 @@ export async function getAContract(
     token.address
   );
   return new Contract(aTokenAddress, ERC20.abi, alice);
+}
+
+export async function getA2Contract(
+  alice: Wallet,
+  aaveV2Forge: Contract,
+  token: Token
+): Promise<Contract> {
+  const aContractAddress = await aaveV2Forge.getYieldBearingToken(
+    token.address
+  );
+  return new Contract(aContractAddress, ERC20.abi, alice);
 }
 
 export async function getCContract(
