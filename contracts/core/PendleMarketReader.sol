@@ -33,13 +33,13 @@ contract PendleMarketReader {
     using SafeMath for uint256;
 
     struct Market {
-        address market;
         uint256 tokenBalanceIn;
         uint256 tokenWeightIn;
         uint256 tokenBalanceOut;
         uint256 tokenWeightOut;
         uint256 swapFee;
         uint256 effectiveLiquidity;
+        address market;
     }
 
     IPendleData public data;
@@ -130,9 +130,9 @@ contract PendleMarketReader {
     {
         require(address(_market) != address(0), "MARKET_NOT_FOUND");
 
-        IPendleMarket benmarkMarket = IPendleMarket(_market);
-        token = benmarkMarket.token();
-        xyt = benmarkMarket.xyt();
+        IPendleMarket pendleMarket = IPendleMarket(_market);
+        token = pendleMarket.token();
+        xyt = pendleMarket.xyt();
     }
 
     function _getMarketData(
