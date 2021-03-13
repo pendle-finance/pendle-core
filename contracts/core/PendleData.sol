@@ -34,9 +34,9 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     using SafeMath for uint256;
 
     struct MarketInfo {
+        uint256 liquidity;
         uint80 xytWeight;
         uint80 tokenWeight;
-        uint256 liquidity;
     }
 
     // It's not guaranteed that every market factory can work with

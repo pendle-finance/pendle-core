@@ -82,12 +82,12 @@ interface IPendleRouter is IPendleStructs {
     event NewMarketFactory(bytes32 indexed marketFactoryId, address indexed marketFactoryAddress);
 
     struct Swap {
-        address market;
-        address tokenIn;
-        address tokenOut;
         uint256 swapAmount;
         uint256 limitReturnAmount;
         uint256 maxPrice;
+        address market;
+        address tokenIn;
+        address tokenOut;
     }
 
     /**
