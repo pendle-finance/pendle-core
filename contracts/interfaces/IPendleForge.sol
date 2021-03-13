@@ -122,7 +122,13 @@ interface IPendleForge {
         uint256 expiry,
         uint256 amountToTokenize,
         address to
-    ) external returns (address ot, address xyt, uint256 amounTokenMinted);
+    )
+        external
+        returns (
+            address ot,
+            address xyt,
+            uint256 amounTokenMinted
+        );
 
     /**
      * @notice Gets a reference to the PendleRouter contract.

@@ -184,7 +184,16 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         uint256 _expiry,
         uint256 _amountToTokenize,
         address _to
-    ) external override onlyRouter returns (address ot, address xyt, uint256 amounTokenMinted) {
+    )
+        external
+        override
+        onlyRouter
+        returns (
+            address ot,
+            address xyt,
+            uint256 amounTokenMinted
+        )
+    {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _to);
 

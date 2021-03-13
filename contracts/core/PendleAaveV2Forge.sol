@@ -91,7 +91,7 @@ contract PendleAaveV2Forge is PendleForgeBase {
 
         // no overflow since normalizedIncome >= ix
         dueInterests = principal.rayDiv(ix).rayMul(normalizedIncome) - principal;
-        dueInterests = WadRayMath.smooth(dueInterests,normalizedIncome);
+        dueInterests = WadRayMath.smooth(dueInterests, normalizedIncome);
     }
 
     //calculate the (principal + interest) from the last action before expiry to now.
@@ -106,27 +106,30 @@ contract PendleAaveV2Forge is PendleForgeBase {
         totalAfterExpiry = redeemedAmount
             .rayDiv(lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry])
             .rayMul(currentNormalizedIncome);
-        totalAfterExpiry = WadRayMath.smooth(
-            totalAfterExpiry,
-            currentNormalizedIncome
-        );
+        totalAfterExpiry = WadRayMath.smooth(totalAfterExpiry, currentNormalizedIncome);
     }
 
     function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
         internal
-        override
         view
+        override
         returns (uint256 underlyingToRedeem)
     {
-        underlyingToRedeem = WadRayMath.smooth(_amountToRedeem,aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset));
+        underlyingToRedeem = WadRayMath.smooth(
+            _amountToRedeem,
+            aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset)
+        );
     }
 
     function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)
         internal
-        override
         view
+        override
         returns (uint256 amountToMint)
     {
-        amountToMint = WadRayMath.smooth(_amountToTokenize,aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset));
+        amountToMint = WadRayMath.smooth(
+            _amountToTokenize,
+            aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset)
+        );
     }
 }
