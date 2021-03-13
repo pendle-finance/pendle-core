@@ -144,12 +144,12 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
 
-        uint256 underlyingToRedeem = _calcUnderlyingToRedeem(address(yieldToken), _amountToRedeem);
+        uint256 underlyingToRedeem = _calcUnderlyingToRedeem(_underlyingAsset, _amountToRedeem);
 
         require(tokens.ot.balanceOf(_account) >= underlyingToRedeem, "INSUFFICIENT_OT_AMOUNT");
         require(tokens.xyt.balanceOf(_account) >= underlyingToRedeem, "INSUFFICIENT_XYT_AMOUNT");
 
-        yieldToken.transfer(_to, _amountToRedeem);
+        yieldToken.transfer(_to, underlyingToRedeem);
 
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
 
@@ -267,8 +267,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         if (dueInterests > 0) {
             IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
-            IERC20(yieldToken).transfer(_account, dueInterests);
-
+            yieldToken.transfer(_account, dueInterests);
             emit DueInterestSettled(forgeId, _underlyingAsset, _expiry, dueInterests, _account);
         }
 
