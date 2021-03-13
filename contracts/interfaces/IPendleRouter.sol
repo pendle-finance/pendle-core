@@ -81,23 +81,13 @@ interface IPendleRouter is IPendleStructs {
      */
     event NewMarketFactory(bytes32 indexed marketFactoryId, address indexed marketFactoryAddress);
 
-    struct Market {
-        address market;
-        uint256 tokenBalanceIn;
-        uint256 tokenWeightIn;
-        uint256 tokenBalanceOut;
-        uint256 tokenWeightOut;
-        uint256 swapFee;
-        uint256 effectiveLiquidity;
-    }
-
     struct Swap {
-        address market;
-        address tokenIn;
-        address tokenOut;
         uint256 swapAmount;
         uint256 limitReturnAmount;
         uint256 maxPrice;
+        address market;
+        address tokenIn;
+        address tokenOut;
     }
 
     /**
@@ -277,36 +267,4 @@ interface IPendleRouter is IPendleStructs {
     function claimLpInterests(address[] calldata markets)
         external
         returns (uint256[] memory interests);
-
-    function getMarketRateExactIn(
-        address tokenIn,
-        address tokenOut,
-        uint256 inSwapAmount,
-        bytes32 marketFactoryId
-    ) external view returns (Swap calldata swap, uint256 totalOutput);
-
-    function getMarketRateExactOut(
-        address tokenIn,
-        address tokenOut,
-        uint256 outSwapAmount,
-        bytes32 marketFactoryId
-    ) external view returns (Swap calldata swap, uint256 totalInput);
-
-    function getMarketReserves(
-        bytes32 marketFactoryId,
-        address xyt,
-        address token
-    )
-        external
-        view
-        returns (
-            uint256 xytAmount,
-            uint256 tokenAmount,
-            uint256 currentTime
-        );
-
-    function getMarketTokenAddresses(address market)
-        external
-        view
-        returns (address token, address xyt);
 }

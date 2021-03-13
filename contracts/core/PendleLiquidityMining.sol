@@ -55,8 +55,8 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         mapping(uint256 => uint256) totalStakeSecondsForExpiry;
         mapping(uint256 => uint256) lastTimeStakeSecondsUpdatedForExpiry;
         mapping(address => mapping(uint256 => uint256)) userStakeSeconds;
-        bool calculated;
         uint256 allocationSettingId;
+        bool calculated;
     }
 
     IPendleRouter public pendleRouter;
