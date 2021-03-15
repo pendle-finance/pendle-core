@@ -142,23 +142,24 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         address _to
     ) external override returns (uint256 redeemedAmount) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        require(tokens.ot.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_OT_AMOUNT");
+        require(tokens.xyt.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_XYT_AMOUNT");
+
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
 
         uint256 underlyingToRedeem = _calcUnderlyingToRedeem(_underlyingAsset, _amountToRedeem);
 
-        require(tokens.ot.balanceOf(_account) >= underlyingToRedeem, "INSUFFICIENT_OT_AMOUNT");
-        require(tokens.xyt.balanceOf(_account) >= underlyingToRedeem, "INSUFFICIENT_XYT_AMOUNT");
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
+
+        tokens.ot.burn(_account, _amountToRedeem);
+        tokens.xyt.burn(_account, _amountToRedeem);
 
         yieldToken.transfer(_to, underlyingToRedeem);
 
-        _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
 
-        tokens.ot.burn(_account, underlyingToRedeem);
-        tokens.xyt.burn(_account, underlyingToRedeem);
+        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem);
 
-        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, underlyingToRedeem);
-
-        return _amountToRedeem;
+        return underlyingToRedeem;
     }
 
     function redeemDueInterests(

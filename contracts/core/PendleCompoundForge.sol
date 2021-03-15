@@ -87,7 +87,7 @@ contract PendleCompoundForge is PendleForgeBase {
     {
         ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
         uint256 currentRate = cToken.exchangeRateCurrent();
-        underlyingToRedeem = _amountToRedeem.mul(currentRate).div(initialRate);
+        underlyingToRedeem = _amountToRedeem.mul(initialRate).div(currentRate);
     }
 
     function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)

@@ -49,13 +49,3 @@ export async function pendleFixture(
 
   return { core, aave, aaveV2, aForge, a2Forge, cForge }
 }
-
-// const { waffle } = require("hardhat");
-// const { deployContract } = waffle;
-// import { createFixtureLoader } from "ethereum-waffle";
-// const provider = waffle.provider;
-// it("beta", async () => {
-//   const wallets = provider.getWallets();
-//   const loadFixture = createFixtureLoader(wallets, provider);
-//   const fixture = await loadFixture(pendleFixture);
-// });

@@ -168,13 +168,28 @@ describe("pendleAaveV2Router", async () => {
       consts.HIGH_GAS_OVERRIDE
     );
 
-    // const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
+    const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
 
-    // const expectedGain = await getCurInterest(charlie, refAmount);
-    // expect(finalAUSDTbalance.toNumber()).to.be.approximately(
-    //   initialAUSDTbalance.add(expectedGain).toNumber(),
-    //   3000
-    // );
+    const expectedGain = await getCurInterest(charlie, refAmount);
+    expect(finalAUSDTbalance.toNumber()).to.be.approximately(
+      initialAUSDTbalance.add(expectedGain).toNumber(),
+      3000
+    );
+  });
+
+  it("should be able to redeemUnderlying with amountToRedeem = 0", async () => {
+    // just check that it doesn't crash
+    await tokenizeYield(alice, refAmount);
+    await setTimeNextBlock(provider, consts.T0_A2.add(consts.ONE_MONTH));
+
+    await router.redeemUnderlying(
+      consts.FORGE_AAVE_V2,
+      tokenUSDT.address,
+      consts.T0_A2.add(consts.SIX_MONTH),
+      BN.from(0),
+      alice.address,
+      consts.HIGH_GAS_OVERRIDE
+    );
   });
 
   it("[After 1 month] should be able to get due interests", async () => {
