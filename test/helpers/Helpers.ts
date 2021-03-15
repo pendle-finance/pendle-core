@@ -189,7 +189,7 @@ export async function getA2Contract(
   aaveV2Forge: Contract,
   token: Token
 ): Promise<Contract> {
-  const aContractAddress = await aaveV2Forge.getYieldBearingToken(
+  const aContractAddress = await aaveV2Forge.callStatic.getYieldBearingToken(
     token.address
   );
   return new Contract(aContractAddress, ERC20.abi, alice);

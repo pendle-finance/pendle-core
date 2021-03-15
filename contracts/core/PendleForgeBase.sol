@@ -156,7 +156,6 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         yieldToken.transfer(_to, underlyingToRedeem);
 
-
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem);
 
         return underlyingToRedeem;
@@ -185,7 +184,16 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         uint256 _expiry,
         uint256 _amountToTokenize,
         address _to
-    ) external override onlyRouter returns (address ot, address xyt, uint256 amounTokenMinted) {
+    )
+        external
+        override
+        onlyRouter
+        returns (
+            address ot,
+            address xyt,
+            uint256 amounTokenMinted
+        )
+    {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _to);
 
@@ -198,12 +206,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         return (address(tokens.ot), address(tokens.xyt), amounTokenMinted);
     }
 
-    function getYieldBearingToken(address _underlyingAsset)
-        public
-        view
-        override
-        returns (address)
-    {
+    function getYieldBearingToken(address _underlyingAsset) external override returns (address) {
         return _getYieldBearingToken(_underlyingAsset);
     }
 
@@ -314,10 +317,5 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         amountToMint = _amountToTokenize;
     }
 
-    function _getYieldBearingToken(address _underlyingAsset)
-        internal
-        view
-        virtual
-        returns (address)
-    {}
+    function _getYieldBearingToken(address _underlyingAsset) internal virtual returns (address) {}
 }

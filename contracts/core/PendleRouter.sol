@@ -272,7 +272,12 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
 
         // Due to possible precision error, we will only mint the amount of OT & XYT equals
         // to the amount of tokens that the contract receives
-        (ot, xyt, amounTokenMinted) = forge.tokenizeYield(_underlyingAsset, _expiry, _amountToTokenize, _to);
+        (ot, xyt, amounTokenMinted) = forge.tokenizeYield(
+            _underlyingAsset,
+            _expiry,
+            _amountToTokenize,
+            _to
+        );
     }
 
     /***********

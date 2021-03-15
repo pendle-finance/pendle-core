@@ -22,11 +22,11 @@ const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
 interface YieldTest {
-  type: string,
-  user: number,
-  amount: number,
-  timeDelta: number
-};
+  type: string;
+  user: number;
+  amount: number;
+  timeDelta: number;
+}
 
 describe("aaveInterest test", async () => {
   const wallets = provider.getWallets();
@@ -51,9 +51,24 @@ describe("aaveInterest test", async () => {
     tokenUSDT = tokens.USDT;
     aUSDT = await getA2Contract(alice, aaveForge, tokenUSDT);
 
-    await mintAaveToken(provider, tokens.USDT, bob, consts.INITIAL_AAVE_TOKEN_AMOUNT);
-    await mintAaveToken(provider, tokens.USDT, charlie, consts.INITIAL_AAVE_TOKEN_AMOUNT);
-    await mintAaveToken(provider, tokens.USDT, dave, consts.INITIAL_AAVE_TOKEN_AMOUNT);
+    await mintAaveToken(
+      provider,
+      tokens.USDT,
+      bob,
+      consts.INITIAL_AAVE_TOKEN_AMOUNT
+    );
+    await mintAaveToken(
+      provider,
+      tokens.USDT,
+      charlie,
+      consts.INITIAL_AAVE_TOKEN_AMOUNT
+    );
+    await mintAaveToken(
+      provider,
+      tokens.USDT,
+      dave,
+      consts.INITIAL_AAVE_TOKEN_AMOUNT
+    );
     await aUSDT.connect(bob).approve(router.address, consts.MAX_ALLOWANCE);
     await aUSDT.connect(charlie).approve(router.address, consts.MAX_ALLOWANCE);
 
@@ -69,7 +84,6 @@ describe("aaveInterest test", async () => {
     snapshotId = await evm_snapshot();
   });
 
-
   async function redeemDueInterests(user: Wallet) {
     await router
       .connect(user)
@@ -81,25 +95,29 @@ describe("aaveInterest test", async () => {
   }
 
   async function redeemUnderlying(user: Wallet, amount: BN) {
-    await router.connect(user).redeemUnderlying(
-      consts.FORGE_AAVE,
-      tokenUSDT.address,
-      consts.T0.add(consts.SIX_MONTH),
-      amount,
-      user.address,
-      consts.HIGH_GAS_OVERRIDE
-    );
+    await router
+      .connect(user)
+      .redeemUnderlying(
+        consts.FORGE_AAVE,
+        tokenUSDT.address,
+        consts.T0.add(consts.SIX_MONTH),
+        amount,
+        user.address,
+        consts.HIGH_GAS_OVERRIDE
+      );
   }
 
   async function tokenizeYield(user: Wallet, amount: BN) {
-    await router.connect(user).tokenizeYield(
-      consts.FORGE_AAVE,
-      tokenUSDT.address,
-      consts.T0.add(consts.SIX_MONTH),
-      amount,
-      user.address,
-      consts.HIGH_GAS_OVERRIDE
-    );
+    await router
+      .connect(user)
+      .tokenizeYield(
+        consts.FORGE_AAVE,
+        tokenUSDT.address,
+        consts.T0.add(consts.SIX_MONTH),
+        amount,
+        user.address,
+        consts.HIGH_GAS_OVERRIDE
+      );
   }
 
   async function runTest(yieldTest: YieldTest[]) {
@@ -112,22 +130,31 @@ describe("aaveInterest test", async () => {
       await setTimeNextBlock(provider, curTime);
       if (curTest.type == "redeemDueInterests") {
         await redeemDueInterests(user);
-      }
-      else if (curTest.type == "redeemUnderlying") {
+      } else if (curTest.type == "redeemUnderlying") {
         await redeemUnderlying(user, BN.from(curTest.amount));
-      }
-      else if (curTest.type == "tokenizeYield") {
+      } else if (curTest.type == "tokenizeYield") {
         await tokenizeYield(user, BN.from(curTest.amount));
-      }
-      else if (curTest.type == "redeemUnderlyingAll") {
+      } else if (curTest.type == "redeemUnderlyingAll") {
         let balance = await aOt.balanceOf(user.address);
         await redeemUnderlying(user, balance);
       }
     }
     const expectedBalance = await aUSDT.balanceOf(dave.address);
-    approxBigNumber((await aUSDT.balanceOf(alice.address)), expectedBalance, BN.from(3000));
-    approxBigNumber((await aUSDT.balanceOf(bob.address)), expectedBalance, BN.from(3000));
-    approxBigNumber((await aUSDT.balanceOf(charlie.address)), expectedBalance, BN.from(3000));
+    approxBigNumber(
+      await aUSDT.balanceOf(alice.address),
+      expectedBalance,
+      BN.from(3000)
+    );
+    approxBigNumber(
+      await aUSDT.balanceOf(bob.address),
+      expectedBalance,
+      BN.from(3000)
+    );
+    approxBigNumber(
+      await aUSDT.balanceOf(charlie.address),
+      expectedBalance,
+      BN.from(3000)
+    );
   }
   it("test 1", async () => {
     await runTest((<any>testData).test1);

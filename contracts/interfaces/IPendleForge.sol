@@ -122,7 +122,15 @@ interface IPendleForge {
         uint256 expiry,
         uint256 amountToTokenize,
         address to
-    ) external returns (address ot, address xyt, uint256 amounTokenMinted);
+    )
+        external
+        returns (
+            address ot,
+            address xyt,
+            uint256 amounTokenMinted
+        );
+
+    function getYieldBearingToken(address underlyingAsset) external returns (address);
 
     /**
      * @notice Gets a reference to the PendleRouter contract.
@@ -137,6 +145,4 @@ interface IPendleForge {
      * @return Returns the forge and protocol identifier.
      **/
     function forgeId() external view returns (bytes32);
-
-    function getYieldBearingToken(address underlyingAsset) external view returns (address);
 }

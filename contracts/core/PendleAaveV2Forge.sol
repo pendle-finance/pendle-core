@@ -45,6 +45,7 @@ contract PendleAaveV2Forge is PendleForgeBase {
     mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeBeforeExpiry;
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         public lastNormalisedIncome; //lastNormalisedIncome[underlyingAsset][expiry][account]
+    mapping(address => address) private reserveATokenAddress;
 
     constructor(
         address _governance,
@@ -57,13 +58,13 @@ contract PendleAaveV2Forge is PendleForgeBase {
         aaveLendingPool = _aaveLendingPool;
     }
 
-    function _getYieldBearingToken(address _underlyingAsset)
-        internal
-        view
-        override
-        returns (address)
-    {
-        return aaveLendingPool.getReserveData(_underlyingAsset).aTokenAddress;
+    function _getYieldBearingToken(address _underlyingAsset) internal override returns (address) {
+        if (reserveATokenAddress[_underlyingAsset] == address(0)) {
+            reserveATokenAddress[_underlyingAsset] = aaveLendingPool
+                .getReserveData(_underlyingAsset)
+                .aTokenAddress;
+        }
+        return reserveATokenAddress[_underlyingAsset];
     }
 
     function _calcDueInterests(
@@ -90,8 +91,8 @@ contract PendleAaveV2Forge is PendleForgeBase {
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
 
         dueInterests = principal.rayDiv(ix).rayMul(normalizedIncome);
-        dueInterests = (dueInterests>principal?dueInterests-principal:0);
-        dueInterests = WadRayMath.smooth(dueInterests,normalizedIncome);
+        dueInterests = (dueInterests > principal ? dueInterests - principal : 0);
+        dueInterests = WadRayMath.smooth(dueInterests, normalizedIncome);
     }
 
     //calculate the (principal + interest) from the last action before expiry to now.
@@ -106,27 +107,30 @@ contract PendleAaveV2Forge is PendleForgeBase {
         totalAfterExpiry = redeemedAmount
             .rayDiv(lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry])
             .rayMul(currentNormalizedIncome);
-        totalAfterExpiry = WadRayMath.smooth(
-            totalAfterExpiry,
-            currentNormalizedIncome
-        );
+        totalAfterExpiry = WadRayMath.smooth(totalAfterExpiry, currentNormalizedIncome);
     }
 
     function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
         internal
-        override
         view
+        override
         returns (uint256 underlyingToRedeem)
     {
-        underlyingToRedeem = WadRayMath.smooth(_amountToRedeem,aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset));
+        underlyingToRedeem = WadRayMath.smooth(
+            _amountToRedeem,
+            aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset)
+        );
     }
 
     function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)
         internal
-        override
         view
+        override
         returns (uint256 amountToMint)
     {
-        amountToMint = WadRayMath.smooth(_amountToTokenize,aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset));
+        amountToMint = WadRayMath.smooth(
+            _amountToTokenize,
+            aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset)
+        );
     }
 }

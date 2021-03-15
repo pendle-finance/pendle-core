@@ -43,6 +43,7 @@ contract PendleAaveForge is PendleForgeBase {
     mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeBeforeExpiry;
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         public lastNormalisedIncome; //lastNormalisedIncome[underlyingAsset][expiry][account]
+    mapping(address => address) private reserveATokenAddress;
 
     constructor(
         address _governance,
@@ -69,13 +70,13 @@ contract PendleAaveForge is PendleForgeBase {
         );
     }
 
-    function _getYieldBearingToken(address _underlyingAsset)
-        internal
-        view
-        override
-        returns (address)
-    {
-        return aaveLendingPoolCore.getReserveATokenAddress(_underlyingAsset);
+    function _getYieldBearingToken(address _underlyingAsset) internal override returns (address) {
+        if (reserveATokenAddress[_underlyingAsset] == address(0)) {
+            reserveATokenAddress[_underlyingAsset] = aaveLendingPoolCore.getReserveATokenAddress(
+                _underlyingAsset
+            );
+        }
+        return reserveATokenAddress[_underlyingAsset];
     }
 
     function _calcDueInterests(
