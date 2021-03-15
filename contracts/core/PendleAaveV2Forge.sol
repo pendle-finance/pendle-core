@@ -89,8 +89,8 @@ contract PendleAaveV2Forge is PendleForgeBase {
         }
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
 
-        // no overflow since normalizedIncome >= ix
-        dueInterests = principal.rayDiv(ix).rayMul(normalizedIncome) - principal;
+        dueInterests = principal.rayDiv(ix).rayMul(normalizedIncome);
+        dueInterests = (dueInterests>principal?dueInterests-principal:0);
         dueInterests = WadRayMath.smooth(dueInterests,normalizedIncome);
     }
 
