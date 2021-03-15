@@ -241,6 +241,13 @@ describe("PendleRouter", async () => {
         consts.T0.add(consts.SIX_MONTH)
       );
 
+    approxBigNumber(
+      await aUSDT.balanceOf(bob.address),
+      await getCurInterest(charlie, amount),
+      BN.from(2000),
+      false
+    );
+
     await startCalInterest(dave, amount);
 
     const T2 = T1.add(10);
@@ -279,6 +286,13 @@ describe("PendleRouter", async () => {
         tokenUSDT.address,
         consts.T0.add(consts.SIX_MONTH)
       );
+
+    approxBigNumber(
+      await aUSDT.balanceOf(bob.address),
+      await getCurInterest(charlie, amount),
+      BN.from(2000),
+      false
+    );
 
     await startCalInterest(dave, amount);
 
