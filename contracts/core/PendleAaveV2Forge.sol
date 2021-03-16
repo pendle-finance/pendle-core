@@ -91,7 +91,9 @@ contract PendleAaveV2Forge is PendleForgeBase {
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
 
         uint256 principalWithDueInterests = principal.rayDiv(ix).rayMul(normalizedIncome);
-        dueInterests = (principalWithDueInterests > principal ? principalWithDueInterests - principal : 0);
+        dueInterests = (
+            principalWithDueInterests > principal ? principalWithDueInterests - principal : 0
+        );
         dueInterests = WadRayMath.smooth(dueInterests, normalizedIncome);
     }
 
