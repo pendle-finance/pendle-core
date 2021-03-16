@@ -24,5 +24,5 @@
 pragma solidity 0.7.6;
 
 interface IPENDLE {
-    function getPriorVotes(address account, uint256 blockNumber) external view returns (uint96);
+    function getPriorVotes(address account, uint256 blockNumber) external view returns (uint192);
 }
