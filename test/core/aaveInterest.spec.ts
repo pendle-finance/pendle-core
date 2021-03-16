@@ -160,7 +160,7 @@ describe("aaveInterest test", async () => {
     await runTest((<any>testData).test1);
   });
   it("test 2", async () => {
-    await runTest((<any>testData).test1);
+    await runTest((<any>testData).test2);
   });
   xit("stress 1 [only enable when necessary]", async () => {
     await runTest((<any>testData).stress1);
