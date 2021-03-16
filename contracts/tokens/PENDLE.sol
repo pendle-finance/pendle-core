@@ -50,14 +50,14 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     uint216 private constant INITIAL_LIQUIDITY_EMISSION = 1200000 * 1e18;
     uint216 private constant CONFIG_DENOMINATOR = 72000000000;
     uint256 private constant CONFIG_CHANGES_TIME_LOCK = 7 days;
-    uint216 public emissionRateMultiplierNumerator;
-    uint216 public terminalInflationRateNumerator;
-    address public liquidityIncentivesRecipient;
-    uint216 public pendingEmissionRateMultiplierNumerator;
-    uint216 public pendingTerminalInflationRateNumerator;
-    address public pendingLiquidityIncentivesRecipient;
-    uint256 public configChangesInitiated;
-    uint256 public startTime;
+    uint216 public override emissionRateMultiplierNumerator;
+    uint216 public override terminalInflationRateNumerator;
+    address public override liquidityIncentivesRecipient;
+    uint216 public override pendingEmissionRateMultiplierNumerator;
+    uint216 public override pendingTerminalInflationRateNumerator;
+    address public override pendingLiquidityIncentivesRecipient;
+    uint256 public override configChangesInitiated;
+    uint256 public override startTime;
     uint216 public lastWeeklyEmission;
     uint256 public lastWeekEmissionSent;
 
@@ -434,7 +434,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         uint216 _emissionRateMultiplierNumerator,
         uint216 _terminalInflationRateNumerator,
         address _liquidityIncentivesRecipient
-    ) external onlyGovernance {
+    ) external override onlyGovernance {
         require(liquidityIncentivesRecipient != address(0), "ZERO_ADDRESS");
         pendingEmissionRateMultiplierNumerator = _emissionRateMultiplierNumerator;
         pendingTerminalInflationRateNumerator = _terminalInflationRateNumerator;
@@ -447,7 +447,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         configChangesInitiated = block.timestamp;
     }
 
-    function applyConfigChanges() external {
+    function applyConfigChanges() external override {
         require(configChangesInitiated != 0, "UNINITIATED_CONFIG_CHANGES");
         require(
             block.timestamp > configChangesInitiated + CONFIG_CHANGES_TIME_LOCK,
@@ -467,7 +467,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         );
     }
 
-    function claimLiquidityEmissions() external returns (uint256 totalEmissions) {
+    function claimLiquidityEmissions() external override returns (uint256 totalEmissions) {
         require(msg.sender == liquidityIncentivesRecipient, "NOT_INCENTIVES_RECIPIENT");
         totalEmissions = _mintLiquidityEmissions();
     }
