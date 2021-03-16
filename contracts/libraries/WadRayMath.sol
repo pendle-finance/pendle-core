@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
+// The library is copied from Aave: https://github.com/aave/protocol-v2/blob/master/contracts/protocol/libraries/math/WadRayMath.sol
+// with the exception of smooth functon
+
 pragma solidity 0.7.6;
 
 import {Errors} from "./AaveErrors.sol";
@@ -104,24 +107,24 @@ library WadRayMath {
     }
 
     /**
-     * @dev find the smallest dividen that rayDiv(dividen,divisor) = rayDiv(res,divisor);
+     * @dev find the smallest res that rayDiv(dividen,divisor) = rayDiv(res,divisor);
      * @dev the formula used it's the exact reverse of rayDiv's formula
      **/
     function smooth(uint256 dividen, uint256 divisor) internal pure returns (uint256) {
-        uint256 rayDividen = rayDiv(dividen, divisor);
+        uint256 rayQuotient = rayDiv(dividen, divisor);
         uint256 halfDivisor = divisor / 2;
 
         require(
-            rayDividen <= (type(uint256).max - (RAY - 1)) / divisor,
+            rayQuotient <= (type(uint256).max - (RAY - 1)) / divisor,
             Errors.MATH_MULTIPLICATION_OVERFLOW
         );
-        uint256 res = rayDividen * divisor + RAY - 1;
+        uint256 res = rayQuotient * divisor + RAY - 1;
         if (res < halfDivisor) {
             res = 0;
         } else {
             res = (res - halfDivisor) / RAY;
         }
-        assert(rayDiv(res, divisor) == rayDividen); // should be deleted when merged
+        assert(rayDiv(res, divisor) == rayQuotient); // should be deleted when merged
         return res;
     }
 
