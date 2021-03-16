@@ -35,6 +35,7 @@ describe("PendleCompoundRouter", async () => {
   let tokenUSDT: Token;
   let amount: BN;
   let initialUnderlyingBalance: BN;
+  let initialcUSDTbalance: BN;
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
@@ -61,6 +62,7 @@ describe("PendleCompoundRouter", async () => {
     initialUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
       alice.address
     );
+    initialcUSDTbalance = await cUSDT.balanceOf(alice.address);
   });
 
   async function tokenizeYield(user: Wallet, amount: BN) {
@@ -207,6 +209,7 @@ describe("PendleCompoundRouter", async () => {
     );
 
     const expectedGain = await getCurInterest(charlie, amount);
+    console.log(expectedGain);
     underlyingTx = await cUSDT.balanceOfUnderlying(alice.address);
     const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
       alice.address
@@ -277,7 +280,7 @@ describe("PendleCompoundRouter", async () => {
 
     const expectedGain = await getCurInterest(dave, amount);
 
-    let underlyingTx = await cUSDT.balanceOfUnderlying(alice.address);
+    const underlyingTx = await cUSDT.balanceOfUnderlying(alice.address);
     const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
       alice.address
     );
@@ -318,7 +321,7 @@ describe("PendleCompoundRouter", async () => {
     );
 
     const expectedGain = await getCurInterest(dave, amount);
-    let underlyingTx = await cUSDT.balanceOfUnderlying(alice.address);
+    const underlyingTx = await cUSDT.balanceOfUnderlying(alice.address);
     const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
       alice.address
     );
@@ -342,5 +345,35 @@ describe("PendleCompoundRouter", async () => {
     expect(allEvents[allEvents.length - 1].args!.ot).to.not.eq(0);
     expect(allEvents[allEvents.length - 1].args!.xyt).to.not.eq(0);
     expect(allEvents[allEvents.length - 1].args!.expiry).to.eq(futureTime);
+  });
+
+  it("should receive back exactly the same amount of cTokens", async () => {
+    await tokenizeYield(alice, amount);
+
+    await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
+
+    await router.redeemDueInterests(
+      consts.FORGE_COMPOUND,
+      tokenUSDT.address,
+      consts.T0_C.add(consts.ONE_MONTH)
+    );
+    const rate = await cUSDT.callStatic.exchangeRateCurrent();
+    const amt = amount
+      .mul(10 ** 9)
+      .mul(10 ** 9)
+      .div(rate);
+    await router.redeemUnderlying(
+      consts.FORGE_COMPOUND,
+      tokenUSDT.address,
+      consts.T0_C.add(consts.ONE_MONTH),
+      amt,
+      alice.address,
+      consts.HIGH_GAS_OVERRIDE
+    );
+    const curcUSDTbalanace = await cUSDT.balanceOf(alice.address);
+    expect(initialcUSDTbalance.toNumber()).to.be.approximately(
+      curcUSDTbalanace.toNumber(),
+      5
+    );
   });
 });

@@ -58,7 +58,9 @@ contract PendleCompoundForge is PendleForgeBase {
         require(_underlyingAssets.length == _cTokens.length, "LENGTH_MISMATCH");
 
         for (uint256 i = 0; i < _cTokens.length; ++i) {
-            underlyingToCToken[_underlyingAssets[i]] = _cTokens[i];
+            if (underlyingToCToken[_underlyingAssets[i]] == address(0)) {
+                underlyingToCToken[_underlyingAssets[i]] = _cTokens[i];
+            }
         }
 
         emit RegisterCTokens(_underlyingAssets, _cTokens);
