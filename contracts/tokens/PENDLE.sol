@@ -28,11 +28,15 @@ import "../interfaces/IPENDLE.sol";
 import "../periphery/Permissions.sol";
 import "../periphery/Withdrawable.sol";
 
+/**
+  * @notice The mechanics for delegating votes to other accounts is adapted from Compound
+  *   https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/Comp.sol
+***/
 contract PENDLE is IPENDLE, Permissions, Withdrawable {
     /// @notice A checkpoint for marking number of votes from a given block
     struct Checkpoint {
-        uint64 fromBlock;
-        uint192 votes;
+        uint40 fromBlock;
+        uint216 votes;
     }
 
     string public constant name = "Pendle";
@@ -40,32 +44,32 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     uint8 public constant decimals = 18;
     uint256 public totalSupply;
 
-    uint192 private constant TEAM_TOKEN_AMOUNT = 91602839 * 1e18;
-    uint192 private constant ECOSYSTEM_FUND_TOKEN_AMOUNT = 50 * 1_000_000 * 1e18;
-    uint192 private constant PUBLIC_SALES_TOKEN_AMOUNT = 15897161 * 1e18;
-    uint192 private constant INITIAL_LIQUIDITY_EMISSION = 1200000 * 1e18;
-    uint192 private constant CONFIG_DENOMINATOR = 72000000000;
+    uint216 private constant TEAM_TOKEN_AMOUNT = 91602839 * 1e18;
+    uint216 private constant ECOSYSTEM_FUND_TOKEN_AMOUNT = 50 * 1_000_000 * 1e18;
+    uint216 private constant PUBLIC_SALES_TOKEN_AMOUNT = 15897161 * 1e18;
+    uint216 private constant INITIAL_LIQUIDITY_EMISSION = 1200000 * 1e18;
+    uint216 private constant CONFIG_DENOMINATOR = 72000000000;
     uint256 private constant CONFIG_CHANGES_TIME_LOCK = 7 days;
-    uint192 public emissionRateMultiplierNumerator;
-    uint192 public terminalInflationRateNumerator;
+    uint216 public emissionRateMultiplierNumerator;
+    uint216 public terminalInflationRateNumerator;
     address public liquidityIncentivesRecipient;
-    uint192 public pendingEmissionRateMultiplierNumerator;
-    uint192 public pendingTerminalInflationRateNumerator;
+    uint216 public pendingEmissionRateMultiplierNumerator;
+    uint216 public pendingTerminalInflationRateNumerator;
     address public pendingLiquidityIncentivesRecipient;
     uint256 public configChangesInitiated;
     uint256 public startTime;
-    uint192 public lastWeeklyEmission;
+    uint216 public lastWeeklyEmission;
     uint256 public lastWeekEmissionSent;
 
-    mapping(address => mapping(address => uint192)) internal allowances;
-    mapping(address => uint192) internal balances;
+    mapping(address => mapping(address => uint216)) internal allowances;
+    mapping(address => uint216) internal balances;
     mapping(address => address) public delegates;
 
     /// @notice A record of votes checkpoints for each account, by index
-    mapping(address => mapping(uint64 => Checkpoint)) public checkpoints;
+    mapping(address => mapping(uint40 => Checkpoint)) public checkpoints;
 
     /// @notice The number of checkpoints for each account
-    mapping(address => uint64) public numCheckpoints;
+    mapping(address => uint40) public numCheckpoints;
 
     /// @notice The EIP-712 typehash for the contract's domain
     bytes32 public constant DOMAIN_TYPEHASH =
@@ -98,9 +102,9 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     /// @notice The standard EIP-20 approval event
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 
-    event PendingConfigChanges(uint192 pendingEmissionRateMultiplierNumerator, uint192 pendingTerminalInflationRateNumerator, address pendingLiquidityIncentivesRecipient);
+    event PendingConfigChanges(uint216 pendingEmissionRateMultiplierNumerator, uint216 pendingTerminalInflationRateNumerator, address pendingLiquidityIncentivesRecipient);
 
-    event ConfigsChanged(uint192 emissionRateMultiplierNumerator, uint192 terminalInflationRateNumerator, address liquidityIncentivesRecipient);
+    event ConfigsChanged(uint216 emissionRateMultiplierNumerator, uint216 terminalInflationRateNumerator, address liquidityIncentivesRecipient);
 
     /**
      * @notice Construct a new PENDLE token
@@ -127,11 +131,11 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
      * @return Whether or not the approval succeeded
      **/
     function approve(address spender, uint256 rawAmount) external returns (bool) {
-        uint192 amount;
+        uint216 amount;
         if (rawAmount == uint256(-1)) {
-            amount = uint192(-1);
+            amount = uint216(-1);
         } else {
-            amount = safe192(rawAmount, "AMOUNT_EXCEED_192_BITS");
+            amount = safe216(rawAmount, "AMOUNT_EXCEED_216_BITS");
         }
 
         allowances[msg.sender][spender] = amount;
@@ -147,7 +151,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
      * @return Whether or not the transfer succeeded
      */
     function transfer(address dst, uint256 rawAmount) external returns (bool) {
-        uint192 amount = safe192(rawAmount, "AMOUNT_EXCEED_192_BITS");
+        uint216 amount = safe216(rawAmount, "AMOUNT_EXCEED_216_BITS");
         _transferTokens(msg.sender, dst, amount);
         return true;
     }
@@ -165,11 +169,11 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         uint256 rawAmount
     ) external returns (bool) {
         address spender = msg.sender;
-        uint192 spenderAllowance = allowances[src][spender];
-        uint192 amount = safe192(rawAmount, "AMOUNT_EXCEED_192_BITS");
+        uint216 spenderAllowance = allowances[src][spender];
+        uint216 amount = safe216(rawAmount, "AMOUNT_EXCEED_216_BITS");
 
-        if (spender != src && spenderAllowance != uint192(-1)) {
-            uint192 newAllowance = sub192(spenderAllowance, amount, "TRANSFER_EXCEED_BALANCE");
+        if (spender != src && spenderAllowance != uint216(-1)) {
+            uint216 newAllowance = sub216(spenderAllowance, amount, "TRANSFER_EXCEED_BALANCE");
             allowances[src][spender] = newAllowance;
 
             emit Approval(src, spender, newAllowance);
@@ -203,8 +207,8 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
      * @param account The address to get votes balance
      * @return The number of current votes for `account`
      */
-    function getCurrentVotes(address account) external view returns (uint192) {
-        uint64 nCheckpoints = numCheckpoints[account];
+    function getCurrentVotes(address account) external view returns (uint216) {
+        uint40 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
 
@@ -258,11 +262,11 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         public
         view
         override
-        returns (uint192)
+        returns (uint216)
     {
         require(blockNumber < block.number, "NOT_YET_DETERMINED");
 
-        uint64 nCheckpoints = numCheckpoints[account];
+        uint40 nCheckpoints = numCheckpoints[account];
         if (nCheckpoints == 0) {
             return 0;
         }
@@ -277,10 +281,10 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
             return 0;
         }
 
-        uint64 lower = 0;
-        uint64 upper = nCheckpoints - 1;
+        uint40 lower = 0;
+        uint40 upper = nCheckpoints - 1;
         while (upper > lower) {
-            uint64 center = upper - (upper - lower) / 2; // ceil, avoiding overflow
+            uint40 center = upper - (upper - lower) / 2; // ceil, avoiding overflow
             Checkpoint memory cp = checkpoints[account][center];
             if (cp.fromBlock == blockNumber) {
                 return cp.votes;
@@ -295,7 +299,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
 
     function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = delegates[delegator];
-        uint192 delegatorBalance = balances[delegator];
+        uint216 delegatorBalance = balances[delegator];
         delegates[delegator] = delegatee;
 
         emit DelegateChanged(delegator, currentDelegate, delegatee);
@@ -306,13 +310,13 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     function _transferTokens(
         address src,
         address dst,
-        uint192 amount
+        uint216 amount
     ) internal {
         require(src != address(0), "SENDER_ZERO_ADDR");
         require(dst != address(0), "RECEIVER_ZERO_ADDR");
 
-        balances[src] = sub192(balances[src], amount, "TRANSFER_EXCEED_BALANCE");
-        balances[dst] = add192(balances[dst], amount, "TRANSFER_AMOUNT_OVERFLOW");
+        balances[src] = sub216(balances[src], amount, "TRANSFER_EXCEED_BALANCE");
+        balances[dst] = add216(balances[dst], amount, "TRANSFER_AMOUNT_OVERFLOW");
         emit Transfer(src, dst, amount);
 
         _moveDelegates(delegates[src], delegates[dst], amount);
@@ -321,20 +325,20 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     function _moveDelegates(
         address srcRep,
         address dstRep,
-        uint192 amount
+        uint216 amount
     ) internal {
         if (srcRep != dstRep && amount > 0) {
             if (srcRep != address(0)) {
-                uint64 srcRepNum = numCheckpoints[srcRep];
-                uint192 srcRepOld = srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
-                uint192 srcRepNew = sub192(srcRepOld, amount, "VOTE_AMOUNT_UNDERFLOW");
+                uint40 srcRepNum = numCheckpoints[srcRep];
+                uint216 srcRepOld = srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
+                uint216 srcRepNew = sub216(srcRepOld, amount, "VOTE_AMOUNT_UNDERFLOW");
                 _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
             }
 
             if (dstRep != address(0)) {
-                uint64 dstRepNum = numCheckpoints[dstRep];
-                uint192 dstRepOld = dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;
-                uint192 dstRepNew = add192(dstRepOld, amount, "VOTE_AMOUNT_OVERFLOW");
+                uint40 dstRepNum = numCheckpoints[dstRep];
+                uint216 dstRepOld = dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;
+                uint216 dstRepNew = add216(dstRepOld, amount, "VOTE_AMOUNT_OVERFLOW");
                 _writeCheckpoint(dstRep, dstRepNum, dstRepOld, dstRepNew);
             }
         }
@@ -342,11 +346,11 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
 
     function _writeCheckpoint(
         address delegatee,
-        uint64 nCheckpoints,
-        uint192 oldVotes,
-        uint192 newVotes
+        uint40 nCheckpoints,
+        uint216 oldVotes,
+        uint216 newVotes
     ) internal {
-        uint64 blockNumber = safe64(block.number, "BLOCK_NUM_EXCEED_32_BITS");
+        uint40 blockNumber = safe40(block.number, "BLOCK_NUM_EXCEED_32_BITS");
 
         if (
             nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber
@@ -360,58 +364,49 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
     }
 
-    function safe64(uint256 n, string memory errorMessage) internal pure returns (uint64) {
-        require(n < 2**64, errorMessage);
-        return uint64(n);
+    function safe40(uint256 n, string memory errorMessage) internal pure returns (uint40) {
+        require(n < 2**40, errorMessage);
+        return uint40(n);
     }
 
-    function safe192(uint256 n, string memory errorMessage) internal pure returns (uint192) {
-        require(n < 2**192, errorMessage);
-        return uint192(n);
+    function safe216(uint256 n, string memory errorMessage) internal pure returns (uint216) {
+        require(n < 2**216, errorMessage);
+        return uint216(n);
     }
 
-    function add192(
-        uint192 a,
-        uint192 b,
+    function add216(
+        uint216 a,
+        uint216 b,
         string memory errorMessage
-    ) internal pure returns (uint192) {
-        uint192 c = a + b;
+    ) internal pure returns (uint216) {
+        uint216 c = a + b;
         require(c >= a, errorMessage);
         return c;
     }
 
-    function sub192(
-        uint192 a,
-        uint192 b,
+    function sub216(
+        uint216 a,
+        uint216 b,
         string memory errorMessage
-    ) internal pure returns (uint192) {
+    ) internal pure returns (uint216) {
         require(b <= a, errorMessage);
         return a - b;
     }
 
-    function mul192(
-        uint192 a,
-        uint192 b,
+    function mul216(
+        uint216 a,
+        uint216 b,
         string memory errorMessage
-    ) internal pure returns (uint192) {
+    ) internal pure returns (uint216) {
         if (a == 0) {
             return 0;
         }
 
-        uint192 c = a * b;
+        uint216 c = a * b;
         require(c / a == b, errorMessage);
 
         return c;
     }
-
-    /* function div192(
-        uint192 a,
-        uint192 b,
-        string memory errorMessage
-    ) internal pure returns (uint192) {
-        require(b > 0, errorMessage);
-        return a / b;
-    } */
 
     function getChainId() internal pure returns (uint256) {
         uint256 chainId;
@@ -421,15 +416,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         return chainId;
     }
 
-    function _mint(address account, uint192 amount) internal {
-        require(account != address(0), "MINT_TO_ZERO_ADDR");
-
-        totalSupply = add192(safe192(totalSupply, "TOTAL_SUPPLY_EXCEEDS_UINT192"), amount, "TOTAL_SUPPLY_OVERFLOW");
-        balances[account] = add192(balances[account], amount, "BALANCES_OVERFLOW");
-        emit Transfer(address(0), account, amount);
-    }
-
-    function initiateConfigChanges(uint192 _emissionRateMultiplierNumerator, uint192 _terminalInflationRateNumerator, address _liquidityIncentivesRecipient) external onlyGovernance {
+    function initiateConfigChanges(uint216 _emissionRateMultiplierNumerator, uint216 _terminalInflationRateNumerator, address _liquidityIncentivesRecipient) external onlyGovernance {
         require(liquidityIncentivesRecipient != address(0), "ZERO_ADDRESS");
         pendingEmissionRateMultiplierNumerator = _emissionRateMultiplierNumerator;
         pendingTerminalInflationRateNumerator = _terminalInflationRateNumerator;
@@ -456,19 +443,19 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         totalEmissions = _mintLiquidityEmissions();
     }
 
-    function _mintLiquidityEmissions() internal returns (uint192 totalEmissions) {
+    function _mintLiquidityEmissions() internal returns (uint216 totalEmissions) {
         uint256 _currentWeek = _getCurrentWeek();
         if (_currentWeek <= lastWeekEmissionSent) {
             return 0;
         }
         for (uint256 i = lastWeekEmissionSent; i <= _currentWeek; i++) {
             if (_currentWeek <= 259) {
-                lastWeeklyEmission = mul192(lastWeeklyEmission, emissionRateMultiplierNumerator, "WEEKLY_EMISSION_MULTIPLICATION_OVERFLOW") / CONFIG_DENOMINATOR;
+                lastWeeklyEmission = mul216(lastWeeklyEmission, emissionRateMultiplierNumerator, "WEEKLY_EMISSION_MULTIPLICATION_OVERFLOW") / CONFIG_DENOMINATOR;
             } else {
-                lastWeeklyEmission = mul192(safe192(totalSupply, "TOTAL_SUPPLY_EXCEEDS_UINT192"), terminalInflationRateNumerator, "WEEKLY_EMISSION_MULTIPLICATION_OVERFLOW") / CONFIG_DENOMINATOR;
+                lastWeeklyEmission = mul216(safe216(totalSupply, "TOTAL_SUPPLY_EXCEEDS_UINT216"), terminalInflationRateNumerator, "WEEKLY_EMISSION_MULTIPLICATION_OVERFLOW") / CONFIG_DENOMINATOR;
             }
             _mint(liquidityIncentivesRecipient, lastWeeklyEmission);
-            totalEmissions = add192(totalEmissions, lastWeeklyEmission, "TOTAL_EMISSION_OVERFLOW");
+            totalEmissions = add216(totalEmissions, lastWeeklyEmission, "TOTAL_EMISSION_OVERFLOW");
         }
         lastWeekEmissionSent = _currentWeek;
     }
@@ -476,5 +463,13 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     // get current 1-indexed week id
     function _getCurrentWeek() internal view returns (uint256 weekId) {
         weekId = (block.timestamp - startTime) / (7 days) + 1;
+    }
+
+    function _mint(address account, uint216 amount) internal {
+        require(account != address(0), "MINT_TO_ZERO_ADDR");
+
+        totalSupply = add216(safe216(totalSupply, "TOTAL_SUPPLY_EXCEEDS_UINT216"), amount, "TOTAL_SUPPLY_OVERFLOW");
+        balances[account] = add216(balances[account], amount, "BALANCES_OVERFLOW");
+        emit Transfer(address(0), account, amount);
     }
 }

@@ -17,7 +17,7 @@ export async function governanceFixture(
   provider: providers.Web3Provider
 ): Promise<GovernanceFixture> {
   // deploy PDL, sending the total supply to the deployer.
-  const pendle = await deployContract(alice, PENDLE, [alice.address])
+  const pendle = await deployContract(alice, PENDLE, [alice.address, alice.address, alice.address, alice.address, alice.address])
 
   // deploy timelock, controlled by what will be the governor
   const timelock = await deployContract(alice, Timelock, [])
