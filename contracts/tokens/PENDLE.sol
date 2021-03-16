@@ -29,9 +29,9 @@ import "../periphery/Permissions.sol";
 import "../periphery/Withdrawable.sol";
 
 /**
-  * @notice The mechanics for delegating votes to other accounts is adapted from Compound
-  *   https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/Comp.sol
-***/
+ * @notice The mechanics for delegating votes to other accounts is adapted from Compound
+ *   https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/Comp.sol
+ ***/
 contract PENDLE is IPENDLE, Permissions, Withdrawable {
     /// @notice A checkpoint for marking number of votes from a given block
     struct Checkpoint {
@@ -102,14 +102,28 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     /// @notice The standard EIP-20 approval event
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 
-    event PendingConfigChanges(uint216 pendingEmissionRateMultiplierNumerator, uint216 pendingTerminalInflationRateNumerator, address pendingLiquidityIncentivesRecipient);
+    event PendingConfigChanges(
+        uint216 pendingEmissionRateMultiplierNumerator,
+        uint216 pendingTerminalInflationRateNumerator,
+        address pendingLiquidityIncentivesRecipient
+    );
 
-    event ConfigsChanged(uint216 emissionRateMultiplierNumerator, uint216 terminalInflationRateNumerator, address liquidityIncentivesRecipient);
+    event ConfigsChanged(
+        uint216 emissionRateMultiplierNumerator,
+        uint216 terminalInflationRateNumerator,
+        address liquidityIncentivesRecipient
+    );
 
     /**
      * @notice Construct a new PENDLE token
      */
-    constructor(address _governance, address pendleTeamTokens, address pendleEcosystemFund, address salesMultisig, address _liquidityIncentivesRecipient) Permissions(_governance) {
+    constructor(
+        address _governance,
+        address pendleTeamTokens,
+        address pendleEcosystemFund,
+        address salesMultisig,
+        address _liquidityIncentivesRecipient
+    ) Permissions(_governance) {
         _mint(pendleTeamTokens, TEAM_TOKEN_AMOUNT);
         _mint(pendleEcosystemFund, ECOSYSTEM_FUND_TOKEN_AMOUNT);
         _mint(salesMultisig, PUBLIC_SALES_TOKEN_AMOUNT);
@@ -416,18 +430,29 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         return chainId;
     }
 
-    function initiateConfigChanges(uint216 _emissionRateMultiplierNumerator, uint216 _terminalInflationRateNumerator, address _liquidityIncentivesRecipient) external onlyGovernance {
+    function initiateConfigChanges(
+        uint216 _emissionRateMultiplierNumerator,
+        uint216 _terminalInflationRateNumerator,
+        address _liquidityIncentivesRecipient
+    ) external onlyGovernance {
         require(liquidityIncentivesRecipient != address(0), "ZERO_ADDRESS");
         pendingEmissionRateMultiplierNumerator = _emissionRateMultiplierNumerator;
         pendingTerminalInflationRateNumerator = _terminalInflationRateNumerator;
         pendingLiquidityIncentivesRecipient = _liquidityIncentivesRecipient;
-        emit PendingConfigChanges(_emissionRateMultiplierNumerator, _terminalInflationRateNumerator, _liquidityIncentivesRecipient);
+        emit PendingConfigChanges(
+            _emissionRateMultiplierNumerator,
+            _terminalInflationRateNumerator,
+            _liquidityIncentivesRecipient
+        );
         configChangesInitiated = block.timestamp;
     }
 
     function applyConfigChanges() external {
         require(configChangesInitiated != 0, "UNINITIATED_CONFIG_CHANGES");
-        require(block.timestamp > configChangesInitiated + CONFIG_CHANGES_TIME_LOCK, "TIMELOCK_IS_NOT_OVER");
+        require(
+            block.timestamp > configChangesInitiated + CONFIG_CHANGES_TIME_LOCK,
+            "TIMELOCK_IS_NOT_OVER"
+        );
 
         _mintLiquidityEmissions(); // We must settle the pending liquidity emissions first, to make sure the weeks in the past follow the old configs
 
@@ -435,7 +460,11 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         terminalInflationRateNumerator = pendingTerminalInflationRateNumerator;
         liquidityIncentivesRecipient = pendingLiquidityIncentivesRecipient;
         configChangesInitiated = 0;
-        emit ConfigsChanged(emissionRateMultiplierNumerator, terminalInflationRateNumerator, liquidityIncentivesRecipient);
+        emit ConfigsChanged(
+            emissionRateMultiplierNumerator,
+            terminalInflationRateNumerator,
+            liquidityIncentivesRecipient
+        );
     }
 
     function claimLiquidityEmissions() external returns (uint256 totalEmissions) {
@@ -450,9 +479,21 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         }
         for (uint256 i = lastWeekEmissionSent; i <= _currentWeek; i++) {
             if (_currentWeek <= 259) {
-                lastWeeklyEmission = mul216(lastWeeklyEmission, emissionRateMultiplierNumerator, "WEEKLY_EMISSION_MULTIPLICATION_OVERFLOW") / CONFIG_DENOMINATOR;
+                lastWeeklyEmission =
+                    mul216(
+                        lastWeeklyEmission,
+                        emissionRateMultiplierNumerator,
+                        "WEEKLY_EMISSION_MULTIPLICATION_OVERFLOW"
+                    ) /
+                    CONFIG_DENOMINATOR;
             } else {
-                lastWeeklyEmission = mul216(safe216(totalSupply, "TOTAL_SUPPLY_EXCEEDS_UINT216"), terminalInflationRateNumerator, "WEEKLY_EMISSION_MULTIPLICATION_OVERFLOW") / CONFIG_DENOMINATOR;
+                lastWeeklyEmission =
+                    mul216(
+                        safe216(totalSupply, "TOTAL_SUPPLY_EXCEEDS_UINT216"),
+                        terminalInflationRateNumerator,
+                        "WEEKLY_EMISSION_MULTIPLICATION_OVERFLOW"
+                    ) /
+                    CONFIG_DENOMINATOR;
             }
             _mint(liquidityIncentivesRecipient, lastWeeklyEmission);
             totalEmissions = add216(totalEmissions, lastWeeklyEmission, "TOTAL_EMISSION_OVERFLOW");
@@ -468,7 +509,11 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     function _mint(address account, uint216 amount) internal {
         require(account != address(0), "MINT_TO_ZERO_ADDR");
 
-        totalSupply = add216(safe216(totalSupply, "TOTAL_SUPPLY_EXCEEDS_UINT216"), amount, "TOTAL_SUPPLY_OVERFLOW");
+        totalSupply = add216(
+            safe216(totalSupply, "TOTAL_SUPPLY_EXCEEDS_UINT216"),
+            amount,
+            "TOTAL_SUPPLY_OVERFLOW"
+        );
         balances[account] = add216(balances[account], amount, "BALANCES_OVERFLOW");
         emit Transfer(address(0), account, amount);
     }
