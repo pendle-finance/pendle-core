@@ -48,7 +48,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     uint216 private constant ECOSYSTEM_FUND_TOKEN_AMOUNT = 50 * 1_000_000 * 1e18;
     uint216 private constant PUBLIC_SALES_TOKEN_AMOUNT = 15897161 * 1e18;
     uint216 private constant INITIAL_LIQUIDITY_EMISSION = 1200000 * 1e18;
-    uint216 private constant CONFIG_DENOMINATOR = 72000000000;
+    uint216 private constant CONFIG_DENOMINATOR = 1_000_000_000_000;
     uint256 private constant CONFIG_CHANGES_TIME_LOCK = 7 days;
     uint216 public override emissionRateMultiplierNumerator;
     uint216 public override terminalInflationRateNumerator;
@@ -128,8 +128,8 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         _mint(pendleEcosystemFund, ECOSYSTEM_FUND_TOKEN_AMOUNT);
         _mint(salesMultisig, PUBLIC_SALES_TOKEN_AMOUNT);
         _mint(_liquidityIncentivesRecipient, INITIAL_LIQUIDITY_EMISSION * 26);
-        emissionRateMultiplierNumerator = 7120800000; // emission rate = 98.9% -> 1.1% decay
-        terminalInflationRateNumerator = 1440000; // terminal inflation rate = 2%
+        emissionRateMultiplierNumerator = (CONFIG_DENOMINATOR * 989) / 1000; // emission rate = 98.9% -> 1.1% decay
+        terminalInflationRateNumerator = 379848538; // terminal inflation rate = 2% => weekly inflation = 0.0379848538%
         liquidityIncentivesRecipient = _liquidityIncentivesRecipient;
         startTime = block.timestamp;
         lastWeeklyEmission = INITIAL_LIQUIDITY_EMISSION;
@@ -477,8 +477,8 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         if (_currentWeek <= lastWeekEmissionSent) {
             return 0;
         }
-        for (uint256 i = lastWeekEmissionSent; i <= _currentWeek; i++) {
-            if (_currentWeek <= 259) {
+        for (uint256 i = lastWeekEmissionSent + 1; i <= _currentWeek; i++) {
+            if (i <= 259) {
                 lastWeeklyEmission =
                     mul216(
                         lastWeeklyEmission,
