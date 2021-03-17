@@ -70,7 +70,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     address public override baseToken;
     uint256 public override startTime;
     uint256 public override epochDuration;
-    uint256 public override rewardsPerEpoch;
+    mapping(uint256 => uint256) public override rewardsPerEpoch;
     uint256 public override numberOfEpochs;
     uint256 public override vestingEpochs;
     bool public funded;
@@ -117,15 +117,12 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         address _baseToken,
         uint256 _startTime,
         uint256 _epochDuration,
-        uint256 _rewardsPerEpoch,
-        uint256 _numberOfEpochs,
         uint256 _vestingEpochs
     ) Permissions(_governance) {
         require(_startTime > block.timestamp, "START_TIME_OVER");
         require(IERC20(_pendleAddress).totalSupply() > 0, "INVALID_ERC20");
         require(IERC20(_underlyingAsset).totalSupply() > 0, "INVALID_ERC20");
         require(IERC20(_baseToken).totalSupply() > 0, "INVALID_ERC20");
-        require(_numberOfEpochs > 0, "INVALID_NO_OF_EPOCHS");
         require(_vestingEpochs > 0, "INVALID_VESTING_EPOCHS");
         pendleAddress = _pendleAddress;
         pendleRouter = IPendleRouter(_pendleRouter);
@@ -146,8 +143,6 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         baseToken = _baseToken;
         startTime = _startTime;
         epochDuration = _epochDuration;
-        rewardsPerEpoch = _rewardsPerEpoch;
-        numberOfEpochs = _numberOfEpochs;
         vestingEpochs = _vestingEpochs;
     }
 
@@ -160,14 +155,24 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         _expiries = userExpiries[user].expiries;
     }
 
-    function fund() public {
-        require(!funded, "ALREADY_FUNDED");
+    // fund a few epoches
+    function fund(uint256[] memory _rewards) onlyGovernance public {
         require(currentSettingId > 0, "NO_ALLOC_SETTING");
+        uint256 currentEpoch = _currentEpoch();
+        require(currentEpoch <= numberOfEpochs, "LAST_EPOCH_IS_OVER"); // we can only fund more if its still ongoing
+
+        uint256 totalFundedRewards;
+        uint256 nNewEpoches = _rewards.length;
+        for (uint256 i = 0; i < nNewEpoches; i++) {
+            totalFundedRewards = totalFundedRewards.add(_rewards[i]);
+            rewardsPerEpoch[numberOfEpochs + i + 1] = _rewards[i];
+        }
         funded = true;
+        numberOfEpochs = numberOfEpochs.add(nNewEpoches);
         IERC20(pendleAddress).safeTransferFrom(
             msg.sender,
             address(this),
-            rewardsPerEpoch.mul(numberOfEpochs)
+            totalFundedRewards
         );
     }
 
@@ -433,7 +438,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
                 : epochs[e].allocationSettingId;
             //TODO: think of a better way to update the epoch setting
 
-            vars.rewardsForMarket = rewardsPerEpoch
+            vars.rewardsForMarket = rewardsPerEpoch[e]
                 .mul(allocationSettings[vars.settingId][expiry])
                 .div(ALLOCATION_DENOMINATOR);
 

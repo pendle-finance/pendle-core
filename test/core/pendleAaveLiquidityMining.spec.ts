@@ -108,7 +108,7 @@ function calExpectedRewards(
     // console.log(`\t[calculateExpectedRewards] Epoch = ${epochId}, totalStakeSeconds = ${totalStakeSeconds}`);
 
     epochData.forEach((userData, userId) => {
-      const rewardsPerVestingEpoch = params.REWARDS_PER_EPOCH.mul(
+      const rewardsPerVestingEpoch = params.REWARDS_PER_EPOCH[epochId - 1].mul(
         userStakeSeconds[userId]
       )
         .div(totalStakeSeconds)
@@ -462,7 +462,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
 
     const pdlBalanceOfContractAfter = await pdl.balanceOf(liq.address);
     const pdlBalanceOfUserAfter = await pdl.balanceOf(bob.address);
-    const expectedPdlBalanceOfUserAfter = params.REWARDS_PER_EPOCH.div(4);
+    const expectedPdlBalanceOfUserAfter = params.REWARDS_PER_EPOCH[0].div(4);
     console.log(
       `\tPDL balance of liq contract after: ${pdlBalanceOfContractAfter}`
     );
@@ -523,7 +523,9 @@ describe("PendleAaveLiquidityMining tests", async () => {
       );
     const pdlBalanceOfUserAfter2ndTnx = await pdl.balanceOf(bob.address);
     const expectedPdlBalanceOfUsersAfter2ndTnx = expectedPdlBalanceOfUserAfter.add(
-      params.REWARDS_PER_EPOCH
+      params.REWARDS_PER_EPOCH[0].div(2)
+      .add(params.REWARDS_PER_EPOCH[1].mul(3).div(8))
+      .add(params.REWARDS_PER_EPOCH[2].div(8))
     );
     console.log(
       `\tPDL balance of user after 2nd withdraw: ${pdlBalanceOfUserAfter2ndTnx}`
