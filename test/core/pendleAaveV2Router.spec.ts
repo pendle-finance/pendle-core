@@ -93,22 +93,6 @@ describe("pendleAaveV2Router", async () => {
     return (await aUSDT.balanceOf(walletToUse.address)).sub(initialAmount);
   }
 
-  // TODO: optimize 3000
-  it("should receive the interest from xyt when do tokenizeYield", async () => {
-    await startCalInterest(charlie, refAmount);
-    await tokenizeYield(alice, refAmount.div(2));
-
-    await setTimeNextBlock(provider, consts.T0_A2.add(consts.ONE_MONTH));
-    await tokenizeYield(alice, refAmount.div(2));
-
-    const expectedGain = await getCurInterest(charlie, refAmount);
-
-    // because we have tokenized all aUSDT of alice, curAUSDTbalanace will equal to the interest
-    // she has received from her xyt
-    const curAUSDTbalance = await aUSDT.balanceOf(alice.address);
-    approxBigNumber(curAUSDTbalance, expectedGain, BN.from(3000));
-  });
-
   it("underlying asset's address should match the original asset", async () => {
     expect((await aOt.underlyingAsset()).toLowerCase()).to.be.equal(
       tokens.USDT.address.toLowerCase()
@@ -348,5 +332,63 @@ describe("pendleAaveV2Router", async () => {
     expect(allEvents[allEvents.length - 1].args!.ot).to.not.eq(0);
     expect(allEvents[allEvents.length - 1].args!.xyt).to.not.eq(0);
     expect(allEvents[allEvents.length - 1].args!.expiry).to.eq(futureTime);
+  });
+
+  it("Should be able to redeemDueInterestsMultiple", async () => {
+    await startCalInterest(dave, refAmount);
+    await router.newYieldContracts(
+      consts.FORGE_AAVE_V2,
+      tokenUSDT.address,
+      consts.T0_A2.add(consts.ONE_YEAR)
+    );
+    await tokenizeYield(alice, refAmount.div(2));
+    await router.tokenizeYield(
+      consts.FORGE_AAVE_V2,
+      tokenUSDT.address,
+      consts.T0_A2.add(consts.ONE_YEAR),
+      refAmount.div(2),
+      alice.address,
+      consts.HIGH_GAS_OVERRIDE
+    );
+    await setTimeNextBlock(provider, consts.T0_A2.add(consts.FIVE_MONTH));
+    await router.redeemDueInterestsMultiple(
+      [consts.FORGE_AAVE_V2, consts.FORGE_AAVE_V2],
+      [tokenUSDT.address, tokenUSDT.address],
+      [consts.T0_A2.add(consts.SIX_MONTH), consts.T0_A2.add(consts.ONE_YEAR)]
+    );
+    let actualGain = await aUSDT.balanceOf(alice.address);
+    let expectedGain = await getCurInterest(dave, refAmount);
+    approxBigNumber(actualGain, expectedGain, BN.from(3000));
+  });
+
+  it("Should be able to renewYield", async () => {
+    await router.newYieldContracts(
+      consts.FORGE_AAVE_V2,
+      tokenUSDT.address,
+      consts.T0_A2.add(consts.ONE_YEAR)
+    );
+    await startCalInterest(dave, refAmount);
+    let amount = await tokenizeYield(alice, refAmount);
+    await setTimeNextBlock(provider, consts.T0_A2.add(consts.ONE_MONTH.mul(7)));
+    await router.renewYield(
+      consts.FORGE_AAVE_V2,
+      consts.T0_A2.add(consts.SIX_MONTH),
+      tokenUSDT.address,
+      consts.T0_A2.add(consts.ONE_YEAR),
+      amount,
+      alice.address
+    );
+    await setTimeNextBlock(
+      provider,
+      consts.T0_A2.add(consts.ONE_MONTH.mul(11))
+    );
+    await router.redeemDueInterests(
+      consts.FORGE_AAVE_V2,
+      tokenUSDT.address,
+      consts.T0_A2.add(consts.ONE_YEAR)
+    );
+    let actualGain = await aUSDT.balanceOf(alice.address);
+    let expectedGain = await getCurInterest(dave, refAmount);
+    approxBigNumber(actualGain, expectedGain, BN.from(3000));
   });
 });
