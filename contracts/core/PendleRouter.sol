@@ -299,9 +299,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     }
 
     /**
-    * @notice add market liquidity by xyt and base tokens
-    * @dev no checks on _maxInXyt, _maxInToken, _exactOutLp
-    */
+     * @notice add market liquidity by xyt and base tokens
+     * @dev no checks on _maxInXyt, _maxInToken, _exactOutLp
+     */
     function addMarketLiquidityAll(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -324,9 +324,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     }
 
     /**
-    * @notice add market liquidity by xyt or base token
-    * @dev no checks on _exactInAsset, _minOutLp
-    */
+     * @notice add market liquidity by xyt or base token
+     * @dev no checks on _exactInAsset, _minOutLp
+     */
     function addMarketLiquiditySingle(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -357,9 +357,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     }
 
     /**
-    * @notice remove market liquidity by xyt and base tokens
-    * @dev no checks on _exactInLp, _minOutXyt, _minOutToken
-    */
+     * @notice remove market liquidity by xyt and base tokens
+     * @dev no checks on _exactInLp, _minOutXyt, _minOutToken
+     */
     function removeMarketLiquidityAll(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -387,9 +387,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     }
 
     /**
-    * @notice remove market liquidity by xyt or base tokens
-    * @dev no checks on _exactInLp, _minOutAsset
-    */
+     * @notice remove market liquidity by xyt or base tokens
+     * @dev no checks on _exactInLp, _minOutAsset
+     */
     function removeMarketLiquiditySingle(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -427,8 +427,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     }
 
     /**
-    * @notice create a new market for a pair of xyt & token
-    */
+     * @notice create a new market for a pair of xyt & token
+     */
     function createMarket(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -485,9 +485,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     }
 
     /**
-    * @notice trade by swap exact amount of token into market
-    * @dev no checks on _inTotalAmount, _minOutTotalAmount, _maxPrice
-    */
+     * @notice trade by swap exact amount of token into market
+     * @dev no checks on _inTotalAmount, _minOutTotalAmount, _maxPrice
+     */
     function swapExactIn(
         address _tokenIn,
         address _tokenOut,
@@ -527,9 +527,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     }
 
     /**
-    * @notice trade by swap exact amount of token out of market
-    * @dev no checks on _outTotalAmount, _maxInTotalAmount, _maxPrice
-    */
+     * @notice trade by swap exact amount of token out of market
+     * @dev no checks on _outTotalAmount, _maxInTotalAmount, _maxPrice
+     */
     function swapExactOut(
         address _tokenIn,
         address _tokenOut,

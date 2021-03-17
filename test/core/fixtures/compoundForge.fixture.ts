@@ -20,7 +20,7 @@ export async function compoundForgeFixture(
     { router, data }: CoreFixture,
     { pendle }: GovernanceFixture
 ): Promise<CompoundFixture> {
-    const compoundForge = await deployContract(alice, PendleCompoundForge, [alice.address, router.address, consts.FORGE_COMPOUND]);
+    const compoundForge = await deployContract(alice, PendleCompoundForge, [alice.address, router.address, consts.COMPOUND_COMPTROLLER_ADDRESS, consts.FORGE_COMPOUND,]);
     await router.addForge(consts.FORGE_COMPOUND, compoundForge.address);
 
     await compoundForge.registerCTokens([tokens.USDT.address], [tokens.USDT.compound]);
