@@ -169,7 +169,7 @@ interface IPendleRouter is IPendleStructs {
             uint256 redeemedAmount,
             address ot,
             address xyt,
-            uint256 amounTokenMinted
+            uint256 amountTokenMinted
         );
 
     function tokenizeYield(
@@ -183,7 +183,7 @@ interface IPendleRouter is IPendleStructs {
         returns (
             address ot,
             address xyt,
-            uint256 amounTokenMinted
+            uint256 amountTokenMinted
         );
 
     /***********

@@ -191,7 +191,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         returns (
             address ot,
             address xyt,
-            uint256 amounTokenMinted
+            uint256 amountTokenMinted
         )
     {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
@@ -203,7 +203,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         tokens.xyt.mint(_to, amountToMint);
 
         emit MintYieldToken(forgeId, _underlyingAsset, _expiry, amountToMint);
-        return (address(tokens.ot), address(tokens.xyt), amounTokenMinted);
+        return (address(tokens.ot), address(tokens.xyt), amountTokenMinted);
     }
 
     function getYieldBearingToken(address _underlyingAsset) external override returns (address) {
