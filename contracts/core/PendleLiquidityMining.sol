@@ -156,7 +156,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     }
 
     // fund a few epoches
-    function fund(uint256[] memory _rewards) onlyGovernance public {
+    function fund(uint256[] memory _rewards) public onlyGovernance {
         require(currentSettingId > 0, "NO_ALLOC_SETTING");
         uint256 currentEpoch = _currentEpoch();
         require(currentEpoch <= numberOfEpochs, "LAST_EPOCH_IS_OVER"); // we can only fund more if its still ongoing
@@ -169,11 +169,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         }
         funded = true;
         numberOfEpochs = numberOfEpochs.add(nNewEpoches);
-        IERC20(pendleAddress).safeTransferFrom(
-            msg.sender,
-            address(this),
-            totalFundedRewards
-        );
+        IERC20(pendleAddress).safeTransferFrom(msg.sender, address(this), totalFundedRewards);
     }
 
     /**

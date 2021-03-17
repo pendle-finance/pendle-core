@@ -110,9 +110,8 @@ function calExpectedRewards(
     // console.log(`\t[calculateExpectedRewards] Epoch = ${epochId}, totalStakeSeconds = ${totalStakeSeconds}`);
 
     epochData.forEach((userData, userId) => {
-      const rewardsPerVestingEpoch = params.REWARDS_PER_EPOCH[epochId - 1].mul(
-        userStakeSeconds[userId]
-      )
+      const rewardsPerVestingEpoch = params.REWARDS_PER_EPOCH[epochId - 1]
+        .mul(userStakeSeconds[userId])
         .div(totalStakeSeconds)
         .div(params.VESTING_EPOCHS);
       for (
@@ -530,9 +529,10 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
       );
     const pdlBalanceOfUserAfter2ndTnx = await pdl.balanceOf(bob.address);
     const expectedPdlBalanceOfUsersAfter2ndTnx = expectedPdlBalanceOfUserAfter.add(
-      params.REWARDS_PER_EPOCH[0].div(2)
-      .add(params.REWARDS_PER_EPOCH[1].mul(3).div(8))
-      .add(params.REWARDS_PER_EPOCH[2].div(8))
+      params.REWARDS_PER_EPOCH[0]
+        .div(2)
+        .add(params.REWARDS_PER_EPOCH[1].mul(3).div(8))
+        .add(params.REWARDS_PER_EPOCH[2].div(8))
     );
     console.log(
       `\tPDL balance of user after 2nd withdraw: ${pdlBalanceOfUserAfter2ndTnx}`
