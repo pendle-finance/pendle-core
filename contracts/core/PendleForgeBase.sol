@@ -267,7 +267,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         if (dueInterests > 0) {
             IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
-            IERC20(yieldToken).transfer(_account, dueInterests);
+            yieldToken.transfer(_account, dueInterests);
 
             emit DueInterestSettled(forgeId, _underlyingAsset, _expiry, dueInterests, _account);
         }

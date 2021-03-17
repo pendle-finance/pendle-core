@@ -8,6 +8,7 @@ import {
   evm_revert,
   evm_snapshot,
   getCContract,
+  mint,
   mintCompoundToken,
   setTimeNextBlock,
   Token,
@@ -34,7 +35,6 @@ describe("PendleCompoundRouter", async () => {
   let globalSnapshotId: string;
   let tokenUSDT: Token;
   let amount: BN;
-  let initialUnderlyingBalance: BN;
   let initialcUSDTbalance: BN;
   before(async () => {
     globalSnapshotId = await evm_snapshot();
@@ -58,64 +58,68 @@ describe("PendleCompoundRouter", async () => {
     await evm_revert(snapshotId);
     snapshotId = await evm_snapshot();
     amount = amountToWei(consts.INITIAL_COMPOUND_TOKEN_AMOUNT, 6);
-    const underlyingTx = await cUSDT.balanceOfUnderlying(alice.address);
-    initialUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
-      alice.address
-    );
     initialcUSDTbalance = await cUSDT.balanceOf(alice.address);
   });
 
   async function tokenizeYield(user: Wallet, amount: BN) {
-    const rate = await cUSDT.callStatic.exchangeRateCurrent();
-    const amt = amount
-      .mul(BN.from(10 ** 9))
-      .mul(BN.from(10 ** 9))
-      .div(rate);
     await router.tokenizeYield(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
       consts.T0_C.add(consts.ONE_MONTH),
-      amt,
+      amount,
       user.address,
       consts.HIGH_GAS_OVERRIDE
     );
   }
 
-  async function startCalInterest(walletToUse: Wallet, initialAmount: BN) {
-    // divide by 10^decimal since mintСompoundToken will multiply that number back
-    await mintCompoundToken(
-      provider,
-      tokenUSDT,
-      walletToUse,
-      initialAmount.div(10 ** tokenUSDT.decimal)
-    );
+  async function convertToCAmount(amount: BN) {
+    const curRate = await cUSDT.callStatic.exchangeRateCurrent();
+    return amount
+      .mul(BN.from(10 ** 9))
+      .mul(BN.from(10 ** 9))
+      .div(curRate);
+  }
+
+  async function borrow(amount: BN, user: Wallet) {
+    await mint(provider, tokens.USDT, user, amount);
+    const cToken = await getCContract(user, tokens.USDT);
+    await cToken.borrow(amount);
   }
 
   async function getCurInterest(
-    walletToUse: Wallet,
-    initialAmount: BN
+    initialCAmount: BN,
+    initialUnderlyingAmount: BN
   ): Promise<BN> {
-    const underlyingTx = await cUSDT.balanceOfUnderlying(walletToUse.address);
-    return (
-      await cUSDT.callStatic.balanceOfUnderlying(walletToUse.address)
-    ).sub(initialAmount);
+    const curRate = await cUSDT.callStatic.exchangeRateCurrent();
+    return initialCAmount
+      .mul(curRate)
+      .div(10 ** 9)
+      .div(10 ** 9)
+      .sub(initialUnderlyingAmount);
   }
 
   it("should receive the interest from xyt when do tokenizeYield", async () => {
-    await startCalInterest(charlie, amount);
-    await tokenizeYield(alice, amount.div(2));
-    await setTimeNextBlock(provider, consts.T0_C.add(consts.ONE_MONTH));
-    await tokenizeYield(alice, amount.div(2));
+    await tokenizeYield(alice, initialcUSDTbalance.div(2));
+    const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
+    const initialUnderlyingBalance = initialRate
+      .mul(initialcUSDTbalance)
+      .div(10 ** 9)
+      .div(10 ** 9);
+    await borrow(amount, charlie);
+    await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
+    await tokenizeYield(alice, initialcUSDTbalance.div(2));
 
-    const expectedGain = await getCurInterest(charlie, amount);
+    const expectedGain = await getCurInterest(
+      initialcUSDTbalance.div(2),
+      initialUnderlyingBalance.div(2)
+    );
 
     // because we have tokenized all cUSDT of alice, curcUSDTbalanace will equal to the interest
     // she has received from her xyt
-    const underlyingTx = await cUSDT.balanceOfUnderlying(alice.address);
     const curUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
       alice.address
     );
-    approxBigNumber(curUnderlyingBalance, expectedGain, BN.from(2000));
+    approxBigNumber(curUnderlyingBalance, expectedGain, BN.from(10));
   });
 
   it("underlying asset's address should match the original asset", async () => {
@@ -139,8 +143,7 @@ describe("PendleCompoundRouter", async () => {
   });
 
   it("shouldn't be able to call redeemUnderlying if the yield contract has expired", async () => {
-    await tokenizeYield(alice, amount);
-    await startCalInterest(charlie, amount);
+    await tokenizeYield(alice, initialcUSDTbalance);
 
     await setTimeNextBlock(provider, consts.T0_C.add(consts.ONE_YEAR));
 
@@ -157,48 +160,52 @@ describe("PendleCompoundRouter", async () => {
   });
 
   it("[After 1 month] should be able to redeem cUSDT to get back OT, XYT and interests $", async () => {
-    await tokenizeYield(alice, amount);
-    await startCalInterest(charlie, amount);
+    await tokenizeYield(alice, initialcUSDTbalance);
+    const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
+    const initialUnderlyingBalance = initialRate
+      .mul(initialcUSDTbalance)
+      .div(10 ** 9)
+      .div(10 ** 9);
+    await borrow(amount, charlie);
 
     await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
+    const curRate = BN.from("206501858126011");
+    const cTokensToRedeem = initialcUSDTbalance.mul(initialRate).div(curRate);
 
-    const rate = await cUSDT.callStatic.exchangeRateCurrent();
-    const amt = amount
-      .mul(BN.from(10 ** 9))
-      .mul(BN.from(10 ** 9))
-      .div(rate);
     await router.redeemUnderlying(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
       consts.T0_C.add(consts.ONE_MONTH),
-      amt,
+      cTokensToRedeem,
       alice.address,
       consts.HIGH_GAS_OVERRIDE
     );
 
-    const underlyingTx = await cUSDT.balanceOfUnderlying(alice.address);
     const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
       alice.address
     );
 
-    const expectedGain = await getCurInterest(charlie, amount);
+    const expectedGain = await getCurInterest(
+      initialcUSDTbalance,
+      initialUnderlyingBalance
+    );
     expect(finalUnderlyingBalance.toNumber()).to.be.approximately(
       initialUnderlyingBalance.add(expectedGain).toNumber(),
-      2000
+      10
     );
   });
 
   it("[After 1 month] should be able to get due interests", async () => {
-    await tokenizeYield(alice, amount);
-    await startCalInterest(charlie, amount);
+    await tokenizeYield(alice, initialcUSDTbalance);
+    const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
+    const initialUnderlyingBalance = initialRate
+      .mul(initialcUSDTbalance)
+      .div(10 ** 9)
+      .div(10 ** 9);
+    await borrow(amount, charlie);
 
     const balance = await cOt.balanceOf(alice.address);
     await cOt.transfer(bob.address, balance);
-
-    let underlyingTx = await cUSDT.balanceOfUnderlying(alice.address);
-    const afterLendingUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
-      alice.address
-    );
 
     await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
 
@@ -208,25 +215,29 @@ describe("PendleCompoundRouter", async () => {
       consts.T0_C.add(consts.ONE_MONTH)
     );
 
-    const expectedGain = await getCurInterest(charlie, amount);
-    console.log(expectedGain);
-    underlyingTx = await cUSDT.balanceOfUnderlying(alice.address);
+    const expectedGain = await getCurInterest(
+      initialcUSDTbalance,
+      initialUnderlyingBalance
+    );
     const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
       alice.address
     );
-
     expect(finalUnderlyingBalance).to.be.below(initialUnderlyingBalance);
     expect(finalUnderlyingBalance.toNumber()).to.be.approximately(
-      afterLendingUnderlyingBalance.add(expectedGain).toNumber(),
-      2000
+      expectedGain.toNumber(),
+      10
     );
   });
 
   it("Another wallet should be able to receive interests from XYT", async () => {
-    await startCalInterest(charlie, amount);
-
-    await tokenizeYield(alice, amount);
-    await cXyt.transfer(bob.address, amount);
+    await tokenizeYield(alice, initialcUSDTbalance);
+    await cXyt.transfer(bob.address, initialcUSDTbalance);
+    const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
+    const initialUnderlyingBalance = initialRate
+      .mul(initialcUSDTbalance)
+      .div(10 ** 9)
+      .div(10 ** 9);
+    await borrow(amount, charlie);
 
     const T1 = consts.T0_C.add(consts.ONE_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
@@ -238,22 +249,27 @@ describe("PendleCompoundRouter", async () => {
         tokenUSDT.address,
         consts.T0_C.add(consts.ONE_MONTH)
       );
-
-    const underlyingTx = await cUSDT.balanceOfUnderlying(bob.address);
     const actualGain = await cUSDT.callStatic.balanceOfUnderlying(bob.address);
-    const expectedGain = await getCurInterest(charlie, amount);
+    const expectedGain = await getCurInterest(
+      initialcUSDTbalance,
+      initialUnderlyingBalance
+    );
 
     expect(actualGain.toNumber()).to.be.approximately(
       expectedGain.toNumber(),
-      2000
+      10
     );
   });
 
   it("Short after expiry, should be able to redeem cUSDT from OT", async () => {
-    await startCalInterest(charlie, amount);
-
-    await tokenizeYield(alice, amount);
-    await cXyt.transfer(bob.address, amount);
+    await tokenizeYield(alice, initialcUSDTbalance);
+    await cXyt.transfer(bob.address, initialcUSDTbalance);
+    const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
+    const initialUnderlyingBalance = initialRate
+      .mul(initialcUSDTbalance)
+      .div(10 ** 9)
+      .div(10 ** 9);
+    await borrow(amount, charlie);
 
     const T1 = consts.T0_C.add(consts.ONE_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
@@ -265,8 +281,6 @@ describe("PendleCompoundRouter", async () => {
         tokenUSDT.address,
         consts.T0_C.add(consts.ONE_MONTH)
       );
-
-    await startCalInterest(dave, amount);
 
     const T2 = T1.add(10);
     await setTimeNextBlock(provider, T2);
@@ -278,24 +292,29 @@ describe("PendleCompoundRouter", async () => {
       alice.address
     );
 
-    const expectedGain = await getCurInterest(dave, amount);
-
-    const underlyingTx = await cUSDT.balanceOfUnderlying(alice.address);
+    const lastRate = await compoundForge.lastRateBeforeExpiry(
+      tokenUSDT.address,
+      consts.T0_C.add(consts.ONE_MONTH)
+    );
     const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
       alice.address
     );
-
+    const curRate = await cUSDT.callStatic.exchangeRateCurrent();
     expect(finalUnderlyingBalance.toNumber()).to.be.approximately(
-      initialUnderlyingBalance.add(expectedGain).toNumber(),
-      4000
+      initialUnderlyingBalance.mul(curRate).div(lastRate).toNumber(),
+      10
     );
   });
 
   it("One month after expiry, should be able to redeem cUSDT with intrest", async () => {
-    await startCalInterest(charlie, amount);
-
-    await tokenizeYield(alice, amount);
-    await cXyt.transfer(bob.address, amount);
+    await tokenizeYield(alice, initialcUSDTbalance);
+    await cXyt.transfer(bob.address, initialcUSDTbalance);
+    const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
+    const initialUnderlyingBalance = initialRate
+      .mul(initialcUSDTbalance)
+      .div(10 ** 9)
+      .div(10 ** 9);
+    await borrow(amount, charlie);
 
     const T1 = consts.T0_C.add(consts.ONE_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
@@ -308,8 +327,6 @@ describe("PendleCompoundRouter", async () => {
         consts.T0_C.add(consts.ONE_MONTH)
       );
 
-    await startCalInterest(dave, amount);
-
     const T2 = T1.add(consts.ONE_MONTH);
     await setTimeNextBlock(provider, T2);
 
@@ -320,14 +337,17 @@ describe("PendleCompoundRouter", async () => {
       alice.address
     );
 
-    const expectedGain = await getCurInterest(dave, amount);
-    const underlyingTx = await cUSDT.balanceOfUnderlying(alice.address);
+    const lastRate = await compoundForge.lastRateBeforeExpiry(
+      tokenUSDT.address,
+      consts.T0_C.add(consts.ONE_MONTH)
+    );
     const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
       alice.address
     );
+    const curRate = await cUSDT.callStatic.exchangeRateCurrent();
     expect(finalUnderlyingBalance.toNumber()).to.be.approximately(
-      initialUnderlyingBalance.add(expectedGain).toNumber(),
-      4000
+      initialUnderlyingBalance.mul(curRate).div(lastRate).toNumber(),
+      10
     );
   });
 
@@ -348,8 +368,12 @@ describe("PendleCompoundRouter", async () => {
   });
 
   it("should receive back exactly the same amount of cTokens", async () => {
-    await tokenizeYield(alice, amount);
-
+    await tokenizeYield(alice, initialcUSDTbalance);
+    const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
+    const initialUnderlyingBalance = initialRate
+      .mul(initialcUSDTbalance)
+      .div(10 ** 9)
+      .div(10 ** 9);
     await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
 
     await router.redeemDueInterests(
@@ -357,23 +381,22 @@ describe("PendleCompoundRouter", async () => {
       tokenUSDT.address,
       consts.T0_C.add(consts.ONE_MONTH)
     );
-    const rate = await cUSDT.callStatic.exchangeRateCurrent();
-    const amt = amount
-      .mul(10 ** 9)
-      .mul(10 ** 9)
-      .div(rate);
+    const curRate = BN.from("206501845461146");
+    const cTokensToRedeem = initialcUSDTbalance.mul(initialRate).div(curRate);
+
     await router.redeemUnderlying(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
       consts.T0_C.add(consts.ONE_MONTH),
-      amt,
+      cTokensToRedeem,
       alice.address,
       consts.HIGH_GAS_OVERRIDE
     );
+
     const curcUSDTbalanace = await cUSDT.balanceOf(alice.address);
     expect(initialcUSDTbalance.toNumber()).to.be.approximately(
       curcUSDTbalanace.toNumber(),
-      5
+      10
     );
   });
 });

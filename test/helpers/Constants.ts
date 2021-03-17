@@ -33,9 +33,10 @@ export const consts = {
   T0: BN.from(4000000000), // start time of all contracts
   T0_C: BN.from(4000000050), // the time that the first Compound_XYT is minted
   HIGH_GAS_OVERRIDE: { gasLimit: 40000000 },
-  INITIAL_USDT_AMOUNT: BN.from(10 ** 5),
+  INITIAL_AAVE_USDT_AMOUNT: BN.from(10 ** 5),
+  INITIAL_COMPOUND_USDT_AMOUNT: BN.from(10 ** 7),
   INITIAL_AAVE_TOKEN_AMOUNT: BN.from(10 ** 4),
-  INITIAL_COMPOUND_TOKEN_AMOUNT: BN.from(10 ** 4),
+  INITIAL_COMPOUND_TOKEN_AMOUNT: BN.from(10 ** 6),
   INITIAL_OT_XYT_AMOUNT: BN.from(10 ** 10),
   TEST_TOKEN_DELTA: BN.from(10).pow(2),
   TEST_LP_DELTA: BN.from(10).pow(11),
