@@ -49,6 +49,7 @@ export class UserStakeAction {
   }
 }
 
+// TOTAL_DURATION = 10 days * 20 = 200 days
 const params: liqParams = {
   START_TIME: consts.T0_C.add(1000), // starts in 1000s
   EPOCH_DURATION: BN.from(3600 * 24 * 10), //10 days
@@ -163,7 +164,8 @@ export async function liquidityMiningFixture(
   await data.setReentrancyWhitelist([aLiquidityMining.address], [true]);
   await data.setReentrancyWhitelist([cLiquidityMining.address], [true]);
 
-  for (var person of [bob, charlie, dave]) {
+  // originally alice has 1e18 LP tokens
+  for (var person of [bob, charlie, dave]) { // transfer some LP to each user
     await aMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);
     await cMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);
   }

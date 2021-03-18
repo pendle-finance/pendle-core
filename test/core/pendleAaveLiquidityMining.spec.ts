@@ -12,7 +12,9 @@ import {
   setTime,
   setTimeNextBlock,
   startOfEpoch,
+  mintAaveToken,
   tokens,
+  errMsg
 } from "../helpers";
 import { liqParams, liquidityMiningFixture, UserStakeAction } from "./fixtures";
 import * as scenario from "./fixtures/liquidityMiningScenario.fixture";
@@ -165,6 +167,13 @@ describe("PendleAaveLiquidityMining tests", async () => {
     pdl = fixture.pdl;
     lendingPoolCore = fixture.aave.lendingPoolCore;
     aUSDT = await getAContract(alice, lendingPoolCore, tokens.USDT);
+
+    // empty aUSDT and XYT balance
+    await emptyToken(aUSDT, bob);
+    await emptyToken(aUSDT, bob);
+    await emptyToken(xyt, charlie);
+    await emptyToken(aUSDT, charlie);
+    await emptyToken(aUSDT, charlie);
     snapshotId = await evm_snapshot();
   });
 
@@ -176,6 +185,11 @@ describe("PendleAaveLiquidityMining tests", async () => {
     await evm_revert(snapshotId);
     snapshotId = await evm_snapshot();
   });
+
+  async function emptyToken(tokenContract: Contract, person: Wallet) {
+    const bal = await tokenContract.balanceOf(person.address);
+    await tokenContract.connect(person).transfer(consts.DUMMY_GOVERNANCE_ADDRESS, bal);
+  }
 
   async function doStake(person: Wallet, amount: BN) {
     await liq
@@ -294,6 +308,46 @@ describe("PendleAaveLiquidityMining tests", async () => {
     }
   }
 
+
+  // Bob, Dave and Charlie all starts with 0 AUSDTs and 0 XYTs in their wallet
+  // Both Bob and Dave has 10% of LP of the Market
+  //  - Charlie will receive XYTs equivalent to 10% of whats in the market, and hold it
+  //  - Dave just holds the LP tokens
+  //  - Bob stake the LP tokens into liq-mining contract, in two transactions
+  //=> after 2 months, all three of them should get the same interests
+  it.only("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests", async () => {
+    await setTimeNextBlock(provider, params.START_TIME.add(100));
+    const xytBalanceOfMarket = await xyt.balanceOf(stdMarket.address);
+    // console.log(`\txyt bal of market = ${xytBalanceOfMarket}`);
+
+    // Charlie holds same equivalent amount of XYTs as 10% of the market
+    // which is the same as what Bob and Dave holds
+    await xyt.transfer(charlie.address, xytBalanceOfMarket.div(10));
+
+    let preBalanceBob = await aUSDT.balanceOf(bob.address);
+    let preBalanceDave = await aUSDT.balanceOf(dave.address);
+    let preBalanceCharlie = await aUSDT.balanceOf(charlie.address);
+    // console.log(`\tPrebalanceBob = ${preBalanceBob}, preBalanceDave = ${preBalanceDave}, preBalanceCharlie = ${preBalanceCharlie}`);
+    expect(preBalanceBob.mul(preBalanceDave).mul(preBalanceCharlie)).to.be.eq(BN.from(0));
+
+    await doStake(bob, params.INITIAL_LP_AMOUNT.div(2));
+    await advanceTime(provider, consts.ONE_MONTH);
+    await doStake(bob, params.INITIAL_LP_AMOUNT.div(2));
+    await advanceTime(provider, consts.ONE_MONTH);
+
+    await liq.connect(bob).claimLpInterests();
+    let actualGainBob = (await aUSDT.balanceOf(bob.address)).sub(preBalanceBob);
+
+    await router.connect(charlie).redeemDueInterests(consts.FORGE_AAVE, tokens.USDT.address, consts.T0.add(consts.SIX_MONTH));
+    const actualGainCharlie = (await aUSDT.balanceOf(charlie.address)).sub(preBalanceCharlie);
+
+    await router.connect(dave).claimLpInterests([stdMarket.address]);
+    let actualGainDave = (await aUSDT.balanceOf(dave.address)).sub(preBalanceDave);
+
+    approxBigNumber(actualGainBob, actualGainDave, consts.TEST_TOKEN_DELTA);
+    approxBigNumber(actualGainCharlie, actualGainDave, consts.TEST_TOKEN_DELTA);
+  });
+
   it("should be able to claimLpInterest", async () => {
     // console.log(`\tLP balance of eve = ${await stdMarket.balanceOf(eve.address)}`);
     // console.log(`\taToken balance of market = ${await aUSDT.balanceOf(stdMarket.address)}`);
@@ -328,7 +382,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
     // console.log(`\tclaimed LP interests: baseToken balance of market = ${await baseToken.balanceOf(stdMarket.address)}`);
   });
 
-  it("test 1", async () => {
+  it("should be able to receive enough PENDLE rewards - test 1", async () => {
     let userStakingData: UserStakeAction[][][] = scenario.scenario01(params);
     await doSequence(userStakingData);
     await checkEqualRewardsFourEpochs(
@@ -337,7 +391,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
     );
   });
 
-  it("test 4", async () => {
+  it("should be able to receive enough PENDLE rewards - test 2", async () => {
     let userStakingData: UserStakeAction[][][] = scenario.scenario04(params);
     await doSequence(userStakingData);
     await checkEqualRewardsFourEpochs(
@@ -346,7 +400,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
     );
   });
 
-  it("test 5", async () => {
+  it("should be able to receive enough PENDLE rewards - test 3", async () => {
     await liq.setAllocationSetting(
       [consts.T0.add(consts.SIX_MONTH), consts.T0.add(consts.THREE_MONTH)],
       [params.TOTAL_NUMERATOR.div(2), params.TOTAL_NUMERATOR.div(2)],
@@ -377,7 +431,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
         consts.HIGH_GAS_OVERRIDE
       )
     ).to.be.revertedWith(
-      "VM Exception while processing transaction: revert INVALID_ALLOCATION"
+      errMsg.INVALID_ALLOCATION
     );
   });
 
