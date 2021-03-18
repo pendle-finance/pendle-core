@@ -98,12 +98,9 @@ contract PendleCompoundForge is PendleForgeBase {
         uint256 _expiry,
         uint256 redeemedAmount
     ) internal override returns (uint256 totalAfterExpiry) {
-        uint256 currentRate = ICToken(cTokenAddress).exchangeRateCurrent();
-        uint256 cTokensToRedeem = redeemedAmount.mul(initialRate).div(currentRate);
-
         // interests from the timestamp of the last XYT transfer (before expiry) to now is entitled to the OT holders
         // this means that the OT holders are getting some extra interests, at the expense of XYT holders
-        totalAfterExpiry = currentRate.mul(cTokensToRedeem).div(
+        totalAfterExpiry = redeemedAmount.mul(initialRate).div(
             lastRateBeforeExpiry[_underlyingAsset][_expiry]
         );
     }
@@ -171,6 +168,9 @@ contract PendleCompoundForge is PendleForgeBase {
         }
         // dueInterests is a difference between yields where newer yield increased proportionally
         // by currentExchangeRate / prevExchangeRate for cTokens to underyling asset
+        if (interestVariables.currentRate <= interestVariables.prevRate) {
+            return 0;
+        }
         dueInterests = principal
             .mul(interestVariables.currentRate)
             .div(interestVariables.prevRate)

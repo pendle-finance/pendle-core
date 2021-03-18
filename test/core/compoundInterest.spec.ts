@@ -151,7 +151,7 @@ describe("compoundInterest test", async () => {
       await addFakeIncome(
         tokens.USDT,
         eve,
-        consts.INITIAL_COMPOUND_TOKEN_AMOUNT.mul(100)
+        consts.INITIAL_COMPOUND_TOKEN_AMOUNT
       );
     }
     await cUSDT.balanceOfUnderlying(cForge.address);
@@ -160,28 +160,25 @@ describe("compoundInterest test", async () => {
     await cUSDT.balanceOfUnderlying(dave.address);
     await cUSDT.balanceOfUnderlying(charlie.address);
 
-    // console.log("cTokenBalance of forge", (await cUSDT.callStatic.balanceOfUnderlying(cForge.address)));
-    // await cUSDT.connect(alice).redeem(amountToWei(consts.INITIAL_COMPOUND_TOKEN_AMOUNT, tokenUSDT.decimal));
-    // await cUSDT.connect(bob).redeem(amountToWei(consts.INITIAL_COMPOUND_TOKEN_AMOUNT, tokenUSDT.decimal));
-    // await cUSDT.connect(charlie).redeem(amountToWei(consts.INITIAL_COMPOUND_TOKEN_AMOUNT, tokenUSDT.decimal));
-    // await cUSDT.connect(dave).redeem(amountToWei(consts.INITIAL_COMPOUND_TOKEN_AMOUNT, tokenUSDT.decimal));
     const expectedBalance = await cUSDT.callStatic.balanceOfUnderlying(
       dave.address
     );
+    const allowedDelta = expectedBalance.div((10 ** 6) / 2); // 5e-5 % delta
+
     approxBigNumber(
       await cUSDT.callStatic.balanceOfUnderlying(alice.address),
       expectedBalance,
-      BN.from(100000)
+      BN.from(2 * 10 ** 6)
     );
     approxBigNumber(
       await cUSDT.callStatic.balanceOfUnderlying(bob.address),
       expectedBalance,
-      BN.from(100000)
+      BN.from(2 * 10 ** 6)
     );
     approxBigNumber(
       await cUSDT.callStatic.balanceOfUnderlying(charlie.address),
       expectedBalance,
-      BN.from(100000)
+      BN.from(2 * 10 ** 6)
     );
   }
   it("test 1", async () => {
