@@ -181,7 +181,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await liq
       .connect(person)
       .stake(
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amount,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -191,7 +191,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await liq
       .connect(person)
       .withdraw(
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amount,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -402,7 +402,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await liq
       .connect(bob)
       .stake(
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amountToStake,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -414,7 +414,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await liq
       .connect(bob)
       .withdraw(
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amountToStake,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -445,13 +445,13 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await liq
       .connect(bob)
       .stake(
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amountToStake,
         consts.HIGH_GAS_OVERRIDE
       );
     console.log("\tStaked");
     const lpHolderContract = await liq.lpHolderForExpiry(
-      consts.T0_C.add(consts.ONE_MONTH)
+      consts.T0_C.add(consts.SIX_MONTH)
     );
     const cTokenBalanceOfLpHolderContract = await cUSDT.balanceOf(
       lpHolderContract
@@ -468,7 +468,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await liq
       .connect(bob)
       .withdraw(
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
@@ -492,7 +492,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
 
     //stake using another user - alice, for the same amount as bob's stake now (amountToStake/2)
     await liq.stake(
-      consts.T0_C.add(consts.ONE_MONTH),
+      consts.T0_C.add(consts.SIX_MONTH),
       amountToStake.div(2),
       consts.HIGH_GAS_OVERRIDE
     );
@@ -523,7 +523,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await liq
       .connect(bob)
       .withdraw(
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
@@ -547,7 +547,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     );
 
     await liq.withdraw(
-      consts.T0_C.add(consts.ONE_MONTH),
+      consts.T0_C.add(consts.SIX_MONTH),
       amountToStake.div(2),
       consts.HIGH_GAS_OVERRIDE
     );

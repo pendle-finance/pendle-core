@@ -60,7 +60,7 @@ export async function mintOtAndXyt(
   await router.tokenizeYield(
     consts.FORGE_COMPOUND,
     token.address,
-    consts.T0_C.add(consts.ONE_MONTH),
+    consts.T0_C.add(consts.SIX_MONTH),
     amount,
     alice.address
   );
