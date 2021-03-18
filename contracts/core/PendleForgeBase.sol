@@ -146,17 +146,17 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         uint256 underlyingToRedeem = _calcUnderlyingToRedeem(address(yieldToken), _amountToRedeem);
 
-        require(tokens.ot.balanceOf(_account) >= underlyingToRedeem, "INSUFFICIENT_OT_AMOUNT");
-        require(tokens.xyt.balanceOf(_account) >= underlyingToRedeem, "INSUFFICIENT_XYT_AMOUNT");
+        require(tokens.ot.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_OT_AMOUNT");
+        require(tokens.xyt.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_XYT_AMOUNT");
 
-        yieldToken.transfer(_to, _amountToRedeem);
+        yieldToken.transfer(_to, underlyingToRedeem);
 
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
 
-        tokens.ot.burn(_account, underlyingToRedeem);
-        tokens.xyt.burn(_account, underlyingToRedeem);
+        tokens.ot.burn(_account, _amountToRedeem);
+        tokens.xyt.burn(_account, _amountToRedeem);
 
-        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, underlyingToRedeem);
+        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem);
 
         return _amountToRedeem;
     }

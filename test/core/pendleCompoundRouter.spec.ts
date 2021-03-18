@@ -169,14 +169,12 @@ describe("PendleCompoundRouter", async () => {
     await borrow(amount, charlie);
 
     await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
-    const curRate = BN.from("206501858126011");
-    const cTokensToRedeem = initialcUSDTbalance.mul(initialRate).div(curRate);
 
     await router.redeemUnderlying(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
       consts.T0_C.add(consts.ONE_MONTH),
-      cTokensToRedeem,
+      initialcUSDTbalance,
       alice.address,
       consts.HIGH_GAS_OVERRIDE
     );
@@ -381,14 +379,12 @@ describe("PendleCompoundRouter", async () => {
       tokenUSDT.address,
       consts.T0_C.add(consts.ONE_MONTH)
     );
-    const curRate = BN.from("206501845461146");
-    const cTokensToRedeem = initialcUSDTbalance.mul(initialRate).div(curRate);
 
     await router.redeemUnderlying(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
       consts.T0_C.add(consts.ONE_MONTH),
-      cTokensToRedeem,
+      initialcUSDTbalance,
       alice.address,
       consts.HIGH_GAS_OVERRIDE
     );
