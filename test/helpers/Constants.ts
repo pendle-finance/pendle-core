@@ -13,9 +13,12 @@ export const consts = {
 
   AAVE_LENDING_POOL_CORE_ADDRESS: "0x3dfd23A6c5E8BbcFc9581d2E864a68feb6a076d3",
   AAVE_LENDING_POOL_ADDRESS: "0x398ec7346dcd622edc5ae82352f02be94c62d119",
+  AAVE_V2_LENDING_POOL_ADDRESS: "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9",
   AAVE_DUMMY_REFERRAL_CODE: 0,
   FORGE_AAVE: utils.formatBytes32String("Aave"),
   MARKET_FACTORY_AAVE: utils.formatBytes32String("Aave"),
+  FORGE_AAVE_V2: utils.formatBytes32String("AaveV2"),
+  MARKET_FACTORY_AAVE_V2: utils.formatBytes32String("AaveV2"),
   FORGE_COMPOUND: utils.formatBytes32String("Compound"),
   MARKET_FACTORY_COMPOUND: utils.formatBytes32String("Compound"),
   ZERO_BYTES: utils.formatBytes32String(""),
@@ -31,7 +34,8 @@ export const consts = {
   SIX_MONTH: BN.from(2592000 * 6),
   ONE_YEAR: BN.from(31536000),
   T0: BN.from(4000000000), // start time of all contracts
-  T0_C: BN.from(4000000050), // the time that the first Compound_XYT is minted
+  T0_A2: BN.from(4000000050), // the time that the first AaveV2_XYT is minted
+  T0_C: BN.from(4000000100), // the time that the first Compound_XYT is minted
   HIGH_GAS_OVERRIDE: { gasLimit: 40000000 },
   INITIAL_USDT_AMOUNT: BN.from(10 ** 5),
   INITIAL_AAVE_TOKEN_AMOUNT: BN.from(10 ** 4),

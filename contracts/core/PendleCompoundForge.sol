@@ -80,13 +80,14 @@ contract PendleCompoundForge is PendleForgeBase {
         );
     }
 
-    function _calcUnderlyingToRedeem(address cTokenAddress, uint256 _amountToRedeem)
+    function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
         internal
         override
         returns (uint256 underlyingToRedeem)
     {
-        uint256 currentRate = ICToken(cTokenAddress).exchangeRateCurrent();
-        underlyingToRedeem = _amountToRedeem.mul(currentRate).div(initialRate);
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
+        uint256 currentRate = cToken.exchangeRateCurrent();
+        underlyingToRedeem = _amountToRedeem.mul(initialRate).div(currentRate);
     }
 
     function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)

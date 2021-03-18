@@ -158,7 +158,8 @@ interface IPendleRouter is IPendleStructs {
         returns (
             uint256 redeemedAmount,
             address ot,
-            address xyt
+            address xyt,
+            uint256 amounTokenMinted
         );
 
     function tokenizeYield(
@@ -167,7 +168,13 @@ interface IPendleRouter is IPendleStructs {
         uint256 expiry,
         uint256 amountToTokenize,
         address to
-    ) external returns (address ot, address xyt);
+    )
+        external
+        returns (
+            address ot,
+            address xyt,
+            uint256 amounTokenMinted
+        );
 
     /***********
      *  MARKET *

@@ -221,7 +221,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         returns (
             uint256 redeemedAmount,
             address ot,
-            address xyt
+            address xyt,
+            uint256 amounTokenMinted
         )
     {
         require(_forgeId != bytes32(0), "ZERO_BYTES");
@@ -230,7 +231,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         require(_yieldTo != address(0), "ZERO_ADDRESS");
 
         redeemedAmount = redeemAfterExpiry(_forgeId, _underlyingAsset, _oldExpiry, msg.sender);
-        (ot, xyt) = tokenizeYield(
+        (ot, xyt, amounTokenMinted) = tokenizeYield(
             _forgeId,
             _underlyingAsset,
             _newExpiry,
@@ -249,17 +250,34 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         uint256 _expiry,
         uint256 _amountToTokenize,
         address _to
-    ) public override pendleNonReentrant returns (address ot, address xyt) {
+    )
+        public
+        override
+        pendleNonReentrant
+        returns (
+            address ot,
+            address xyt,
+            uint256 amounTokenMinted
+        )
+    {
         require(_forgeId != bytes32(0), "ZERO_BYTES");
         require(_underlyingAsset != address(0), "ZERO_ADDRESS");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         require(address(forge) != address(0), "FORGE_NOT_EXISTS");
 
-        IERC20 aToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
-        aToken.transferFrom(msg.sender, address(forge), _amountToTokenize);
+        IERC20 underlyingToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
 
-        (ot, xyt) = forge.tokenizeYield(_underlyingAsset, _expiry, _amountToTokenize, _to);
+        underlyingToken.transferFrom(msg.sender, address(forge), _amountToTokenize);
+
+        // Due to possible precision error, we will only mint the amount of OT & XYT equals
+        // to the amount of tokens that the contract receives
+        (ot, xyt, amounTokenMinted) = forge.tokenizeYield(
+            _underlyingAsset,
+            _expiry,
+            _amountToTokenize,
+            _to
+        );
     }
 
     /***********
