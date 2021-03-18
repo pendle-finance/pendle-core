@@ -1,7 +1,8 @@
 const shell = require('shelljs');
 
 module.exports = {
-  skipFiles: ['core/PendleTreasury.sol', 'core/PendleGovernance.sol', 'periphery/Timelock.sol', 'tokens/WETH9.sol', 'tokens/PENDLE.sol'],
+  skipFiles: ['core/PendleTreasury.sol', 'core/PendleGovernance.sol', 'periphery/Timelock.sol',
+    'tokens/WETH9.sol', 'tokens/PENDLE.sol', 'WadRayMath.sol', 'AaveErrors.sol', 'mock/', 'periphery/'],
   mocha: {
     grep: "@skip-on-coverage", // Find everything with this tag
     invert: true,              // Run the grep's inverse set.

@@ -23,8 +23,8 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 library ExpiryUtils {
     struct PendingTransfer {
-        address token;
         uint256 amount;
+        address token;
         bool isOut;
     }
 
