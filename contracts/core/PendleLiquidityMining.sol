@@ -62,7 +62,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     IPendleRouter public pendleRouter;
     IPendleMarketFactory public pendleMarketFactory;
     IPendleData public pendleData;
-    address public override pendleAddress;
+    address public override pendleTokenAddress;
     bytes32 public override forgeId;
     bytes32 public override marketFactoryId;
 
@@ -70,7 +70,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     address public override baseToken;
     uint256 public override startTime;
     uint256 public override epochDuration;
-    mapping(uint256 => uint256) public override rewardsPerEpoch;
+    mapping(uint256 => uint256) public override rewardsForEpoch;
     uint256 public override numberOfEpochs;
     uint256 public override vestingEpochs;
     bool public funded;
@@ -109,7 +109,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
 
     constructor(
         address _governance,
-        address _pendleAddress,
+        address _pendleTokenAddress,
         address _pendleRouter, // The router basically identify our Pendle instance.
         bytes32 _pendleMarketFactoryId,
         bytes32 _pendleForgeId,
@@ -120,11 +120,11 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         uint256 _vestingEpochs
     ) Permissions(_governance) {
         require(_startTime > block.timestamp, "START_TIME_OVER");
-        require(IERC20(_pendleAddress).totalSupply() > 0, "INVALID_ERC20");
+        require(IERC20(_pendleTokenAddress).totalSupply() > 0, "INVALID_ERC20");
         require(IERC20(_underlyingAsset).totalSupply() > 0, "INVALID_ERC20");
         require(IERC20(_baseToken).totalSupply() > 0, "INVALID_ERC20");
         require(_vestingEpochs > 0, "INVALID_VESTING_EPOCHS");
-        pendleAddress = _pendleAddress;
+        pendleTokenAddress = _pendleTokenAddress;
         pendleRouter = IPendleRouter(_pendleRouter);
         pendleData = pendleRouter.data();
         require(
@@ -156,20 +156,21 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     }
 
     // fund a few epoches
+    // One the last epoch is over, the program is permanently over and cannot be extended anymore
     function fund(uint256[] memory _rewards) public onlyGovernance {
         require(currentSettingId > 0, "NO_ALLOC_SETTING");
         uint256 currentEpoch = _currentEpoch();
-        require(currentEpoch <= numberOfEpochs, "LAST_EPOCH_IS_OVER"); // we can only fund more if its still ongoing
+        require(currentEpoch <= numberOfEpochs, "LAST_EPOCH_OVER"); // we can only fund more if its still ongoing
 
         uint256 totalFundedRewards;
         uint256 nNewEpoches = _rewards.length;
         for (uint256 i = 0; i < nNewEpoches; i++) {
             totalFundedRewards = totalFundedRewards.add(_rewards[i]);
-            rewardsPerEpoch[numberOfEpochs + i + 1] = _rewards[i];
+            rewardsForEpoch[numberOfEpochs + i + 1] = _rewards[i];
         }
         funded = true;
         numberOfEpochs = numberOfEpochs.add(nNewEpoches);
-        IERC20(pendleAddress).safeTransferFrom(msg.sender, address(this), totalFundedRewards);
+        IERC20(pendleTokenAddress).safeTransferFrom(msg.sender, address(this), totalFundedRewards);
     }
 
     /**
@@ -404,16 +405,14 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
             }
         }
 
-        uint256 e;
-
         /* Go through epochs that were over
         to update epochs[..].userStakeSeconds and epochs[..].availableRewardsForEpoch
         */
-        for (e = _startEpoch; e < _endEpoch; e++) {
+        for (uint256 epochId = _startEpoch; epochId < _endEpoch; epochId++) {
             //// Update epochs[e].userStakeSeconds
             RewardsCalculation memory vars;
             vars.userStakeSeconds = 0; // making it explicit for readability
-            if (e == _startEpoch) {
+            if (epochId == _startEpoch) {
                 // if its the epoch where user staked,
                 // the user staked from lastTimeUserStakeUpdated[expiry] until end of that epoch
                 uint256 secondsStakedThisEpochSinceLastUpdate =
@@ -421,24 +420,24 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
                         _epochRelativeTime(lastTimeUserStakeUpdated[account][expiry])
                     );
                 // number of remaining seconds in this startEpoch (since the last action of user)
-                vars.userStakeSeconds = epochs[e].userStakeSeconds[account][expiry].add(
+                vars.userStakeSeconds = epochs[epochId].userStakeSeconds[account][expiry].add(
                     secondsStakedThisEpochSinceLastUpdate.mul(balances[account][expiry])
                 );
             } else {
                 vars.userStakeSeconds = epochDuration.mul(balances[account][expiry]);
             }
-            epochs[e].userStakeSeconds[account][expiry] = vars.userStakeSeconds;
+            epochs[epochId].userStakeSeconds[account][expiry] = vars.userStakeSeconds;
 
-            vars.settingId = e > lastEpochWithSettingId
+            vars.settingId = epochId > lastEpochWithSettingId
                 ? currentSettingId
-                : epochs[e].allocationSettingId;
+                : epochs[epochId].allocationSettingId;
             //TODO: think of a better way to update the epoch setting
 
-            vars.rewardsForMarket = rewardsPerEpoch[e]
+            vars.rewardsForMarket = rewardsForEpoch[epochId]
                 .mul(allocationSettings[vars.settingId][expiry])
                 .div(ALLOCATION_DENOMINATOR);
 
-            if (epochs[e].totalStakeSecondsForExpiry[expiry] == 0) {
+            if (epochs[epochId].totalStakeSecondsForExpiry[expiry] == 0) {
                 /*
                 Handle special case when no-one stake/unstake for this expiry during the epoch
                 I.e. Everyone staked before the start of the epoch and hold through the end
@@ -452,17 +451,19 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
                 }
 
                 // no one does anything in this epoch => totalStakeSecondsForExpiry = full epoch
-                epochs[e].totalStakeSecondsForExpiry[expiry] = currentTotalStakeForExpiry[expiry]
+                epochs[epochId].totalStakeSecondsForExpiry[expiry] = currentTotalStakeForExpiry[
+                    expiry
+                ]
                     .mul(epochDuration);
             }
             vars.rewardsPerVestingEpoch = vars
                 .rewardsForMarket
                 .mul(vars.userStakeSeconds)
-                .div(epochs[e].totalStakeSecondsForExpiry[expiry])
+                .div(epochs[epochId].totalStakeSecondsForExpiry[expiry])
                 .div(vestingEpochs);
 
             // Now we distribute this rewards over the vestingEpochs starting from e + 1
-            for (uint256 vestingE = e + 1; vestingE <= e + vestingEpochs; vestingE++) {
+            for (uint256 vestingE = epochId + 1; vestingE <= epochId + vestingEpochs; vestingE++) {
                 availableRewardsForEpoch[account][vestingE] = availableRewardsForEpoch[account][
                     vestingE
                 ]
@@ -470,15 +471,15 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
             }
         }
 
-        for (e = 2; e <= _currentE; e++) {
-            if (availableRewardsForEpoch[account][e] > 0) {
+        for (uint256 epochId = 2; epochId <= _currentE; epochId++) {
+            if (availableRewardsForEpoch[account][epochId] > 0) {
                 _rewardsWithdrawableNow = _rewardsWithdrawableNow.add(
-                    availableRewardsForEpoch[account][e]
+                    availableRewardsForEpoch[account][epochId]
                 );
-                availableRewardsForEpoch[account][e] = 0;
+                availableRewardsForEpoch[account][epochId] = 0;
             }
         }
-        IERC20(pendleAddress).safeTransfer(account, _rewardsWithdrawableNow);
+        IERC20(pendleTokenAddress).safeTransfer(account, _rewardsWithdrawableNow);
     }
 
     function _pullLpToken(
