@@ -48,7 +48,10 @@ export const consts = {
   LOCK_DENOMINATOR: BN.from(180),
 
   // Pendle token distribution
-  TEAM_TOKEN_AMOUNT: BN.from(91602839).mul(ONE_E_18),
+  INVESTOR_AMOUNT: BN.from(34102839).mul(ONE_E_18),
+  ADVISOR_AMOUNT: BN.from(2500000).mul(ONE_E_18),
+  TEAM_AMOUNT: BN.from(55000000).mul(ONE_E_18),
+  TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(91602839).mul(ONE_E_18),
   ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(50 * 1000000).mul(ONE_E_18),
   PUBLIC_SALES_TOKEN_AMOUNT: BN.from(15897161).mul(ONE_E_18),
   INITIAL_LIQUIDITY_EMISSION: BN.from(1200000).mul(ONE_E_18),
@@ -56,6 +59,7 @@ export const consts = {
   CONFIG_CHANGES_TIME_LOCK: BN.from(7 * 24 * 3600),
   PENDLE_START_TIME: BN.from(4000000000),
   INITIAL_WEEKLY_EMISSION: BN.from(1200000).mul(ONE_E_18),
+  ONE_QUARTER: BN.from(7884000),
 };
 
 // export function setT0(time: BN) {

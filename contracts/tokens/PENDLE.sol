@@ -48,7 +48,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     uint8 public constant decimals = 18;
     uint256 public override totalSupply;
 
-    uint256 private constant TEAM_TOKEN_AMOUNT = 91602839 * 1e18;
+    uint256 private constant TEAM_INVESTOR_ADVISOR_AMOUNT = 91602839 * 1e18;
     uint256 private constant ECOSYSTEM_FUND_TOKEN_AMOUNT = 50 * 1_000_000 * 1e18;
     uint256 private constant PUBLIC_SALES_TOKEN_AMOUNT = 15897161 * 1e18;
     uint256 private constant INITIAL_LIQUIDITY_EMISSION = 1200000 * 1e18;
@@ -122,7 +122,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         address salesMultisig,
         address _liquidityIncentivesRecipient
     ) Permissions(_governance) {
-        _mint(pendleTeamTokens, TEAM_TOKEN_AMOUNT);
+        _mint(pendleTeamTokens, TEAM_INVESTOR_ADVISOR_AMOUNT);
         _mint(pendleEcosystemFund, ECOSYSTEM_FUND_TOKEN_AMOUNT);
         _mint(salesMultisig, PUBLIC_SALES_TOKEN_AMOUNT);
         _mint(_liquidityIncentivesRecipient, INITIAL_LIQUIDITY_EMISSION * 26);

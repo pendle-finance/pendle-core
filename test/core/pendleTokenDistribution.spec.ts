@@ -2,6 +2,7 @@ import { expect } from "chai";
 import { BigNumber as BN, Contract } from "ethers";
 import { consts, evm_revert, evm_snapshot, setTimeNextBlock } from "../helpers";
 import PENDLE from "../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
+import PendleTokenDistribution from "../../build/artifacts/contracts/core/PendleTokenDistribution.sol/PendleTokenDistribution.json";
 
 const { waffle } = require("hardhat");
 const { provider, deployContract } = waffle;
@@ -10,8 +11,8 @@ describe("PENDLE", async () => {
   const wallets = provider.getWallets();
   const [
     governance,
-    teamTokens,
-    ecosystemFund,
+    bob,
+    charlie,
     salesMultisig,
     liqIncentivesRecipient,
   ] = wallets;
@@ -21,20 +22,66 @@ describe("PENDLE", async () => {
   const initiateConfigChangesTimestamp = consts.PENDLE_START_TIME.add(20000);
 
   let pendle: Contract;
+  let teamTokensContract: Contract;
+  let ecosystemFundContract: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
+    teamTokensContract = await deployContract(
+      governance,
+      PendleTokenDistribution,
+      [
+        governance.address,
+        [
+          consts.ONE_QUARTER,
+          consts.ONE_QUARTER.mul(2),
+          consts.ONE_QUARTER.mul(3),
+          consts.ONE_QUARTER.mul(4),
+          consts.ONE_QUARTER.mul(5),
+          consts.ONE_QUARTER.mul(6),
+          consts.ONE_QUARTER.mul(7),
+          consts.ONE_QUARTER.mul(8),
+        ],
+        [
+          consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
+          consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
+          consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
+          consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT)
+            .div(4)
+            .add(consts.TEAM_AMOUNT.div(2)),
+          consts.TEAM_AMOUNT.div(8),
+          consts.TEAM_AMOUNT.div(8),
+          consts.TEAM_AMOUNT.div(8),
+          consts.TEAM_AMOUNT.div(8),
+        ],
+      ]
+    );
+    ecosystemFundContract = await deployContract(
+      governance,
+      PendleTokenDistribution,
+      [
+        governance.address,
+        [BN.from(0), consts.ONE_QUARTER.mul(4)],
+        [
+          consts.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2),
+          consts.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2),
+        ],
+      ]
+    );
+
     await setTimeNextBlock(provider, consts.PENDLE_START_TIME);
     pendle = await deployContract(governance, PENDLE, [
       governance.address,
-      teamTokens.address,
-      ecosystemFund.address,
+      teamTokensContract.address,
+      ecosystemFundContract.address,
       salesMultisig.address,
       liqIncentivesRecipient.address,
     ]);
+    await teamTokensContract.initialize(pendle.address);
+    await ecosystemFundContract.initialize(pendle.address);
     snapshotId = await evm_snapshot();
   });
 
@@ -49,14 +96,18 @@ describe("PENDLE", async () => {
 
   it("should mint correct amounts after deployment", async () => {
     const totalSupply = await pendle.totalSupply();
-    const teamTokensBalance = await pendle.balanceOf(teamTokens.address);
-    const ecosystemFundBalance = await pendle.balanceOf(ecosystemFund.address);
+    const teamTokensBalance = await pendle.balanceOf(
+      teamTokensContract.address
+    );
+    const ecosystemFundBalance = await pendle.balanceOf(
+      ecosystemFundContract.address
+    );
     const salesMultisigBalance = await pendle.balanceOf(salesMultisig.address);
     const liqIncentivesRecipientBalance = await pendle.balanceOf(
       liqIncentivesRecipient.address
     );
 
-    expect(teamTokensBalance).to.be.eq(consts.TEAM_TOKEN_AMOUNT);
+    expect(teamTokensBalance).to.be.eq(consts.TEAM_INVESTOR_ADVISOR_AMOUNT);
     expect(ecosystemFundBalance).to.be.eq(consts.ECOSYSTEM_FUND_TOKEN_AMOUNT);
     expect(salesMultisigBalance).to.be.eq(consts.PUBLIC_SALES_TOKEN_AMOUNT);
     expect(liqIncentivesRecipientBalance).to.be.eq(
@@ -64,7 +115,7 @@ describe("PENDLE", async () => {
     );
     expect(totalSupply).to.be.eq(
       consts.INITIAL_LIQUIDITY_EMISSION.mul(26)
-        .add(consts.TEAM_TOKEN_AMOUNT)
+        .add(consts.TEAM_INVESTOR_ADVISOR_AMOUNT)
         .add(consts.ECOSYSTEM_FUND_TOKEN_AMOUNT)
         .add(consts.PUBLIC_SALES_TOKEN_AMOUNT)
     );
@@ -192,5 +243,39 @@ describe("PENDLE", async () => {
       .transfer(consts.DUMMY_ADDRESS, testAmount, consts.HIGH_GAS_OVERRIDE);
     const balanceAfter = await pendle.balanceOf(salesMultisig.address);
     expect(balanceAfter).to.be.eq(balanceBefore.sub(testAmount));
+  });
+  it("should be able to claim half ecosystem fund after launch, only once", async () => {
+    const balanceBefore = await pendle.balanceOf(governance.address);
+    await ecosystemFundContract.claimTokens(BN.from(0));
+    const balanceAfter = await pendle.balanceOf(governance.address);
+    expect(balanceAfter).to.be.eq(
+      balanceBefore.add(consts.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2))
+    );
+    await expect(
+      ecosystemFundContract.claimTokens(BN.from(0))
+    ).to.be.revertedWith(
+      "VM Exception while processing transaction: revert ALREADY_CLAIMED"
+    );
+  });
+  it("shouldn't be able to claim second half of ecosystem fund after launch", async () => {
+    await expect(
+      ecosystemFundContract.claimTokens(BN.from(1))
+    ).to.be.revertedWith(
+      "VM Exception while processing transaction: revert NOT_CLAIMABLE_YET"
+    );
+  });
+  it("should be able to claim team tokens after one quarter", async () => {
+    const balanceBefore = await pendle.balanceOf(governance.address);
+    await setTimeNextBlock(
+      provider,
+      consts.PENDLE_START_TIME.add(consts.ONE_QUARTER)
+    );
+    await teamTokensContract.claimTokens(BN.from(0));
+    const balanceAfter = await pendle.balanceOf(governance.address);
+    expect(balanceAfter).to.be.eq(
+      balanceBefore.add(
+        consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4)
+      )
+    );
   });
 });

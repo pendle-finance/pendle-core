@@ -65,6 +65,8 @@ contract PendleTokenDistribution is Permissions, IPendleTokenDistribution {
     function claimTokens(uint256 timeDurationIndex) public onlyGovernance {
         require(timeDurationIndex < numberOfDurations, "INVALID_INDEX");
         require(!claimed[timeDurationIndex], "ALREADY_CLAIMED");
+        claimed[timeDurationIndex] = true;
+
         uint256 claimableTimestamp = pendleToken.startTime().add(timeDurations[timeDurationIndex]);
         require(block.timestamp >= claimableTimestamp, "NOT_CLAIMABLE_YET");
         uint256 currentPendleBalance = pendleToken.balanceOf(address(this));
