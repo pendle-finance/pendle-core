@@ -23,6 +23,36 @@
 
 pragma solidity 0.7.6;
 
-interface IPENDLE {
-    function getPriorVotes(address account, uint256 blockNumber) external view returns (uint96);
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+interface IPENDLE is IERC20 {
+    function isPendleToken() external view returns (bool);
+
+    function getPriorVotes(address account, uint256 blockNumber) external view returns (uint256);
+
+    function startTime() external view returns (uint256);
+
+    function configChangesInitiated() external view returns (uint256);
+
+    function emissionRateMultiplierNumerator() external view returns (uint256);
+
+    function terminalInflationRateNumerator() external view returns (uint256);
+
+    function liquidityIncentivesRecipient() external view returns (address);
+
+    function pendingEmissionRateMultiplierNumerator() external view returns (uint256);
+
+    function pendingTerminalInflationRateNumerator() external view returns (uint256);
+
+    function pendingLiquidityIncentivesRecipient() external view returns (address);
+
+    function initiateConfigChanges(
+        uint256 _emissionRateMultiplierNumerator,
+        uint256 _terminalInflationRateNumerator,
+        address _liquidityIncentivesRecipient
+    ) external;
+
+    function applyConfigChanges() external;
+
+    function claimLiquidityEmissions() external returns (uint256 totalEmissions);
 }

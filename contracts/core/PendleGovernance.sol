@@ -114,7 +114,7 @@ contract PendleGovernance is IPendleGovernance {
     struct Receipt {
         bool hasVoted; // Whether or not a vote has been cast
         bool support; // Whether or not the voter supports the proposal
-        uint96 votes; // The number of votes the voter had, which were cast
+        uint256 votes; // The number of votes the voter had, which were cast
     }
 
     /**
@@ -409,7 +409,7 @@ contract PendleGovernance is IPendleGovernance {
         Proposal storage proposal = proposals[proposalId];
         Receipt storage receipt = proposal.receipts[voter];
         require(receipt.hasVoted == false, "Pendle::_castVote: voter already voted");
-        uint96 votes = pendle.getPriorVotes(voter, proposal.startBlock);
+        uint256 votes = pendle.getPriorVotes(voter, proposal.startBlock);
 
         if (support) {
             proposal.forVotes = proposal.forVotes.add(votes);
