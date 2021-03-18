@@ -108,9 +108,8 @@ function calExpectedRewards(
     // console.log(`\t[calculateExpectedRewards] Epoch = ${epochId}, totalStakeSeconds = ${totalStakeSeconds}`);
 
     epochData.forEach((userData, userId) => {
-      const rewardsPerVestingEpoch = params.REWARDS_PER_EPOCH.mul(
-        userStakeSeconds[userId]
-      )
+      const rewardsPerVestingEpoch = params.REWARDS_PER_EPOCH[epochId - 1]
+        .mul(userStakeSeconds[userId])
         .div(totalStakeSeconds)
         .div(params.VESTING_EPOCHS);
       for (
@@ -462,7 +461,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
 
     const pdlBalanceOfContractAfter = await pdl.balanceOf(liq.address);
     const pdlBalanceOfUserAfter = await pdl.balanceOf(bob.address);
-    const expectedPdlBalanceOfUserAfter = params.REWARDS_PER_EPOCH.div(4);
+    const expectedPdlBalanceOfUserAfter = params.REWARDS_PER_EPOCH[0].div(4);
     console.log(
       `\tPDL balance of liq contract after: ${pdlBalanceOfContractAfter}`
     );
@@ -491,10 +490,10 @@ describe("PendleAaveLiquidityMining tests", async () => {
     );
 
     // Now we wait for another 15 days to withdraw (at the very start of epoch 4), then the rewards to be withdrawn for bob should be:
-    // From epoch 1: rewardsPerEpoch * 2/4    ( 1/4 is released at start of epoch 3, 1/4 is released at start of epoch 4)
-    // From epoch 2: (rewardsPerEpoch/2 + rewardsPerEpoch/2/2) * 2/4  ( first half: get all the rewards = rewardsPerEpoch/2, 2nd half: get half)
-    // From epoch 3: rewardsPerEpoch/2 * 1/4  ( two stakers with the same stake & duration => each gets rewardsPerEpoch/2)
-    //  Total: rewardsPerEpoch * (1/2 + 3/8 + 1/8) = rewardsPerEpoch
+    // From epoch 1: rewardsForEpoch * 2/4    ( 1/4 is released at start of epoch 3, 1/4 is released at start of epoch 4)
+    // From epoch 2: (rewardsForEpoch/2 + rewardsForEpoch/2/2) * 2/4  ( first half: get all the rewards = rewardsForEpoch/2, 2nd half: get half)
+    // From epoch 3: rewardsForEpoch/2 * 1/4  ( two stakers with the same stake & duration => each gets rewardsForEpoch/2)
+    //  Total: rewardsForEpoch * (1/2 + 3/8 + 1/8) = rewardsForEpoch
     await advanceTime(provider, FIFTEEN_DAYS);
 
     // console.log(`abi = ${liq.abi}`);
@@ -523,7 +522,10 @@ describe("PendleAaveLiquidityMining tests", async () => {
       );
     const pdlBalanceOfUserAfter2ndTnx = await pdl.balanceOf(bob.address);
     const expectedPdlBalanceOfUsersAfter2ndTnx = expectedPdlBalanceOfUserAfter.add(
-      params.REWARDS_PER_EPOCH
+      params.REWARDS_PER_EPOCH[0]
+        .div(2)
+        .add(params.REWARDS_PER_EPOCH[1].mul(3).div(8))
+        .add(params.REWARDS_PER_EPOCH[2].div(8))
     );
     console.log(
       `\tPDL balance of user after 2nd withdraw: ${pdlBalanceOfUserAfter2ndTnx}`

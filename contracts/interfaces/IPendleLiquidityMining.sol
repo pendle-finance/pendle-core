@@ -61,7 +61,7 @@ interface IPendleLiquidityMining {
 
     function epochDuration() external returns (uint256);
 
-    function rewardsPerEpoch() external returns (uint256);
+    function rewardsForEpoch(uint256) external returns (uint256);
 
     function numberOfEpochs() external returns (uint256);
 
@@ -71,7 +71,7 @@ interface IPendleLiquidityMining {
 
     function underlyingAsset() external returns (address);
 
-    function pendleAddress() external returns (address);
+    function pendleTokenAddress() external returns (address);
 
     function marketFactoryId() external returns (bytes32);
 

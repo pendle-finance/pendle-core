@@ -30,7 +30,7 @@ interface LiquidityMiningFixture {
 export interface liqParams {
   START_TIME: BN,
   EPOCH_DURATION: BN,
-  REWARDS_PER_EPOCH: BN,
+  REWARDS_PER_EPOCH: BN[],
   NUMBER_OF_EPOCHS: BN,
   VESTING_EPOCHS: BN,
   TOTAL_NUMERATOR: BN,
@@ -50,14 +50,13 @@ export class UserStakeAction {
 }
 
 const params: liqParams = {
-  START_TIME: consts.T0.add(1000), // starts in 1000s
+  START_TIME: consts.T0_C.add(1000), // starts in 1000s
   EPOCH_DURATION: BN.from(3600 * 24 * 10), //10 days
-  REWARDS_PER_EPOCH: BN.from("10000000000"), // 1e10
+  REWARDS_PER_EPOCH: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map((a) => BN.from("10000000000").mul(a)), // = [10000000000, 20000000000, ..]
   NUMBER_OF_EPOCHS: BN.from(20),
   VESTING_EPOCHS: BN.from(4),
   TOTAL_NUMERATOR: BN.from(10 ** 9),
   INITIAL_LP_AMOUNT: BN.from(10).pow(17),
-
 };
 
 export async function liquidityMiningFixture(
@@ -104,8 +103,6 @@ export async function liquidityMiningFixture(
       testToken.address,
       params.START_TIME,
       params.EPOCH_DURATION,
-      params.REWARDS_PER_EPOCH,
-      params.NUMBER_OF_EPOCHS,
       params.VESTING_EPOCHS,
     ]
   );
@@ -123,8 +120,6 @@ export async function liquidityMiningFixture(
       testToken.address,
       params.START_TIME,
       params.EPOCH_DURATION,
-      params.REWARDS_PER_EPOCH,
-      params.NUMBER_OF_EPOCHS,
       params.VESTING_EPOCHS,
     ]
   );
@@ -161,8 +156,8 @@ export async function liquidityMiningFixture(
       .approve(cLiquidityMining.address, consts.MAX_ALLOWANCE);
   }
 
-  await aLiquidityMining.fund();
-  await cLiquidityMining.fund();
+  await aLiquidityMining.fund(params.REWARDS_PER_EPOCH);
+  await cLiquidityMining.fund(params.REWARDS_PER_EPOCH);
   await pdl.transfer(aLiquidityMining.address, await pdl.balanceOf(alice.address));
   await pdl.transfer(cLiquidityMining.address, await pdl.balanceOf(alice.address));
   await data.setReentrancyWhitelist([aLiquidityMining.address], [true]);
