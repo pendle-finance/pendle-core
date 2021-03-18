@@ -42,10 +42,11 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         uint256 votes;
     }
 
+    bool public constant override isPendleToken = true;
     string public constant name = "Pendle";
     string public constant symbol = "PENDLE";
     uint8 public constant decimals = 18;
-    uint256 public totalSupply;
+    uint256 public override totalSupply;
 
     uint256 private constant TEAM_TOKEN_AMOUNT = 91602839 * 1e18;
     uint256 private constant ECOSYSTEM_FUND_TOKEN_AMOUNT = 50 * 1_000_000 * 1e18;
@@ -99,12 +100,6 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         uint256 newBalance
     );
 
-    /// @notice The standard EIP-20 transfer event
-    event Transfer(address indexed from, address indexed to, uint256 amount);
-
-    /// @notice The standard EIP-20 approval event
-    event Approval(address indexed owner, address indexed spender, uint256 amount);
-
     event PendingConfigChanges(
         uint256 pendingEmissionRateMultiplierNumerator,
         uint256 pendingTerminalInflationRateNumerator,
@@ -147,7 +142,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
      * @param amount The number of tokens that are approved (2^256-1 means infinite)
      * @return Whether or not the approval succeeded
      **/
-    function approve(address spender, uint256 amount) external returns (bool) {
+    function approve(address spender, uint256 amount) external override returns (bool) {
         allowances[msg.sender][spender] = amount;
 
         emit Approval(msg.sender, spender, amount);
@@ -160,7 +155,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
      * @param amount The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transfer(address dst, uint256 amount) external returns (bool) {
+    function transfer(address dst, uint256 amount) external override returns (bool) {
         _transferTokens(msg.sender, dst, amount);
         return true;
     }
@@ -176,7 +171,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         address src,
         address dst,
         uint256 amount
-    ) external returns (bool) {
+    ) external override returns (bool) {
         address spender = msg.sender;
         uint256 spenderAllowance = allowances[src][spender];
 
@@ -197,7 +192,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
      * @param spender The address of the account spending the funds
      * @return The number of tokens approved
      **/
-    function allowance(address account, address spender) external view returns (uint256) {
+    function allowance(address account, address spender) external view override returns (uint256) {
         return allowances[account][spender];
     }
 
@@ -206,7 +201,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
      * @param account The address of the account to get the balance of
      * @return The number of tokens held
      */
-    function balanceOf(address account) external view returns (uint256) {
+    function balanceOf(address account) external view override returns (uint256) {
         return balances[account];
     }
 

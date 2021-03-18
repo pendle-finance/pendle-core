@@ -23,7 +23,11 @@
 
 pragma solidity 0.7.6;
 
-interface IPENDLE {
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+interface IPENDLE is IERC20 {
+    function isPendleToken() external view returns (bool);
+
     function getPriorVotes(address account, uint256 blockNumber) external view returns (uint256);
 
     function startTime() external view returns (uint256);
