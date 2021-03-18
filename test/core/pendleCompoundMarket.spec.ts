@@ -20,6 +20,7 @@ describe("PendleCompoundMarket", async () => {
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;
   let router: Contract;
+  let marketReader: Contract;
   let xyt: Contract;
   let stdMarket: Contract;
   let testToken: Contract;
@@ -32,6 +33,7 @@ describe("PendleCompoundMarket", async () => {
 
     const fixture = await loadFixture(marketFixture);
     router = fixture.core.router;
+    marketReader = fixture.core.marketReader;
     xyt = fixture.cForge.cFutureYieldToken;
     testToken = fixture.testToken;
     stdMarket = fixture.cMarket;
@@ -125,7 +127,7 @@ describe("PendleCompoundMarket", async () => {
 
     let xytBalanceBefore = await xyt.balanceOf(stdMarket.address);
 
-    let result = await router.getMarketRateExactOut(
+    let result = await marketReader.getMarketRateExactOut(
       xyt.address,
       testToken.address,
       amountToWei(BN.from(10), 6),
@@ -244,7 +246,7 @@ describe("PendleCompoundMarket", async () => {
       xytReserve,
       tokenReserve,
       currentTime,
-    ] = await router.getMarketReserves(
+    ] = await marketReader.getMarketReserves(
       consts.MARKET_FACTORY_COMPOUND,
       xyt.address,
       testToken.address
@@ -258,7 +260,7 @@ describe("PendleCompoundMarket", async () => {
 
     await bootstrapSampleMarket(amount);
 
-    let result = await router.getMarketRateExactOut(
+    let result = await marketReader.getMarketRateExactOut(
       xyt.address,
       testToken.address,
       amountToWei(BN.from(10), 6),
@@ -273,7 +275,7 @@ describe("PendleCompoundMarket", async () => {
 
     await bootstrapSampleMarket(amount);
 
-    let result = await router.getMarketRateExactIn(
+    let result = await marketReader.getMarketRateExactIn(
       testToken.address,
       xyt.address,
       amountToWei(BN.from(10), 6),
@@ -347,7 +349,7 @@ describe("PendleCompoundMarket", async () => {
     let {
       token: receivedToken,
       xyt: receivedXyt,
-    } = await router.getMarketTokenAddresses(stdMarket.address);
+    } = await marketReader.getMarketTokenAddresses(stdMarket.address);
     expect(receivedToken).to.be.equal(testToken.address);
     expect(receivedXyt).to.be.equal(xyt.address);
   });

@@ -61,7 +61,7 @@ interface IPendleLiquidityMining {
 
     function epochDuration() external returns (uint256);
 
-    function rewardsPerEpoch() external returns (uint256);
+    function rewardsPerEpoch(uint256) external returns (uint256);
 
     function numberOfEpochs() external returns (uint256);
 
