@@ -35,6 +35,8 @@ interface ICToken is IERC20 {
 
     function balanceOfUnderlying(address owner) external returns (uint256);
 
+    function borrow(uint256 borrowAmount) external returns (uint256);
+
     function getAccountSnapshot(address account)
         external
         view

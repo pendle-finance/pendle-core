@@ -33,11 +33,11 @@ export async function pendleFixture(
 
   const { lendingPoolCore } = aave;
 
-  await mint(provider, tokens.USDT, alice, consts.INITIAL_USDT_AMOUNT);
+  await mint(provider, tokens.USDT, alice, consts.INITIAL_AAVE_USDT_AMOUNT);
   await convertToAaveToken(tokens.USDT, alice, consts.INITIAL_AAVE_TOKEN_AMOUNT);
-  await mint(provider, tokens.USDT, alice, consts.INITIAL_USDT_AMOUNT);
+  await mint(provider, tokens.USDT, alice, consts.INITIAL_AAVE_USDT_AMOUNT);
   await convertToAaveV2Token(tokens.USDT, alice, consts.INITIAL_AAVE_TOKEN_AMOUNT);
-  await mint(provider, tokens.USDT, alice, consts.INITIAL_USDT_AMOUNT);
+  await mint(provider, tokens.USDT, alice, consts.INITIAL_COMPOUND_USDT_AMOUNT);
   await convertToCompoundToken(tokens.USDT, alice, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
 
   const aContract = await getAContract(alice, lendingPoolCore, tokens.USDT);
