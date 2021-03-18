@@ -115,8 +115,6 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         uint256 _expiry,
         address _to
     ) external override onlyRouter returns (uint256 redeemedAmount) {
-        require(block.timestamp > _expiry, "MUST_BE_AFTER_EXPIRY");
-
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         redeemedAmount = tokens.ot.balanceOf(_account);

@@ -931,6 +931,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     ) internal returns (uint256 redeemedAmount) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         require(_to != address(0), "ZERO_ADDRESS");
+        require(_expiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
+
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         redeemedAmount = forge.redeemAfterExpiry(msg.sender, _underlyingAsset, _expiry, _to);
     }
