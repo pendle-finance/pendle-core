@@ -24,27 +24,27 @@
 pragma solidity 0.7.6;
 
 interface IPENDLE {
-    function getPriorVotes(address account, uint256 blockNumber) external view returns (uint216);
+    function getPriorVotes(address account, uint256 blockNumber) external view returns (uint256);
 
     function startTime() external view returns (uint256);
 
     function configChangesInitiated() external view returns (uint256);
 
-    function emissionRateMultiplierNumerator() external view returns (uint216);
+    function emissionRateMultiplierNumerator() external view returns (uint256);
 
-    function terminalInflationRateNumerator() external view returns (uint216);
+    function terminalInflationRateNumerator() external view returns (uint256);
 
     function liquidityIncentivesRecipient() external view returns (address);
 
-    function pendingEmissionRateMultiplierNumerator() external view returns (uint216);
+    function pendingEmissionRateMultiplierNumerator() external view returns (uint256);
 
-    function pendingTerminalInflationRateNumerator() external view returns (uint216);
+    function pendingTerminalInflationRateNumerator() external view returns (uint256);
 
     function pendingLiquidityIncentivesRecipient() external view returns (address);
 
     function initiateConfigChanges(
-        uint216 _emissionRateMultiplierNumerator,
-        uint216 _terminalInflationRateNumerator,
+        uint256 _emissionRateMultiplierNumerator,
+        uint256 _terminalInflationRateNumerator,
         address _liquidityIncentivesRecipient
     ) external;
 
