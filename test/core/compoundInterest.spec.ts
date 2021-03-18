@@ -13,7 +13,7 @@ import {
   tokens,
   amountToWei,
   mint,
-  getERC20Contract
+  getERC20Contract,
 } from "../helpers";
 import testData from "./fixtures/yieldTokenizeAndRedeem.scenario.json";
 import { pendleFixture } from "./fixtures";
@@ -124,7 +124,10 @@ describe("compoundInterest test", async () => {
   async function addFakeIncome(token: Token, user: Wallet, amount: BN) {
     await mint(provider, token, user, amount);
     let USDTcontract = await getERC20Contract(user, token);
-    USDTcontract.connect(user).transfer(cUSDT.address, amountToWei(amount, token.decimal));
+    USDTcontract.connect(user).transfer(
+      cUSDT.address,
+      amountToWei(amount, token.decimal)
+    );
   }
 
   async function runTest(yieldTest: YieldTest[]) {
@@ -162,7 +165,9 @@ describe("compoundInterest test", async () => {
     // await cUSDT.connect(bob).redeem(amountToWei(consts.INITIAL_COMPOUND_TOKEN_AMOUNT, tokenUSDT.decimal));
     // await cUSDT.connect(charlie).redeem(amountToWei(consts.INITIAL_COMPOUND_TOKEN_AMOUNT, tokenUSDT.decimal));
     // await cUSDT.connect(dave).redeem(amountToWei(consts.INITIAL_COMPOUND_TOKEN_AMOUNT, tokenUSDT.decimal));
-    const expectedBalance = await cUSDT.callStatic.balanceOfUnderlying(dave.address);
+    const expectedBalance = await cUSDT.callStatic.balanceOfUnderlying(
+      dave.address
+    );
     approxBigNumber(
       await cUSDT.callStatic.balanceOfUnderlying(alice.address),
       expectedBalance,

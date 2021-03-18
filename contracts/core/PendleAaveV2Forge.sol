@@ -36,6 +36,35 @@ import "../periphery/Permissions.sol";
 import "./PendleForgeBase.sol";
 import {WadRayMath} from "../libraries/WadRayMath.sol";
 
+/**
+* @dev READ ME: In AaveV2, there are 2 types of balances: scaled balance & displayed balance
+    scaled balance (SBAL) is the balance received when scaledBalanceOf() is called. It is the
+        balance value that is actually stored in the contract
+    displayed balance (DBAL) is the balance received when balanceOf() is called. It is calculated
+        by SBAL * incomeIndex
+    Due to fixed point precision error, two different DBAL can have the exact same SBAL.
+        For example: 2 DBALs of 10^10 and 10^10-3, at the moment where the incomeIndex =
+        5877566951907055216799556412, has the exact same SBAL. => In the future, the two DBAL will
+        be equal again if the incomeIndex is appropriate
+    This led to the issue where user A transfer 10^10 to user B, then user A's DBAL decreased by
+        10^10, but user B's DBAL increased by only 10^10-3. Note that AaveV2's transfer actually
+        transfer by SBAL and not DBAL. As a result, the amount of SBAL user B receives will be
+        equal to the amount of SBAL that user A transfer.
+    Ironically, even if the amounts of SBAL are equal, user B cannot immediately transfer back
+        10^10 to user A since AaveV2 requires both the SBAL & DBAL to be >= the amount of SBAL
+        & DBAL that B wants to transfer, and it's clear that user B, despite having enough SBAL
+        , only have 10^10-3 in DBAL and therefore cannot transfer back
+* @dev The smooth function used in this contract aims to resolve the above issue. It finds the
+        smallest res that rayDiv(dividen,incomeIndex) = rayDiv(res,incomeIndex). So if multiple
+        DBAL correspond to the same value of SBAL, the smallest DBAL will be returned.
+        One very important thing to note is that the smooth function, for example smooth(X,Y)=Z,
+        doesn't change the amount of SBAL since X/Y = Z/Y, so the amount of SBAL transfered is
+        unchanged IF AND ONLY IF the transfer happens immediately (in the same transaction).
+        So for the 10^10 transfer above, user B will only acknowledge that he has received
+        smooth(10^10,incomeIndex) = 10^10-3, and when the time to pay back comes, user B will only
+        pay smooth(10^10-3,incomeIndex2) back. In both transactions, the amount of SBAL that B & A
+        will receive are not affected by smooth
+*/
 contract PendleAaveV2Forge is PendleForgeBase {
     using ExpiryUtils for string;
     using WadRayMath for uint256;
