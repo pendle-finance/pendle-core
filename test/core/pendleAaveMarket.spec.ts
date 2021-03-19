@@ -545,7 +545,8 @@ describe("PendleAaveMarket", async () => {
       amount,
       BN.from(0),
       consts.MAX_ALLOWANCE,
-      consts.MARKET_FACTORY_AAVE
+      consts.MARKET_FACTORY_AAVE,
+      consts.HIGH_GAS_OVERRIDE
     );
     let postXytBalance: BN = await xyt.balanceOf(alice.address);
     await router.swapExactIn(
@@ -554,7 +555,8 @@ describe("PendleAaveMarket", async () => {
       postXytBalance.sub(initialXytBalance),
       BN.from(0),
       consts.MAX_ALLOWANCE,
-      consts.MARKET_FACTORY_AAVE
+      consts.MARKET_FACTORY_AAVE,
+      consts.HIGH_GAS_OVERRIDE
     );
 
     let tokenBalance2: BN = await testToken.balanceOf(alice.address);
@@ -609,23 +611,25 @@ describe("PendleAaveMarket", async () => {
 
     let initialXytBalance: BN = await xyt.balanceOf(alice.address);
 
+    console.log("XYT", xyt.address);
     await router.swapExactOut(
       xyt.address,
       WETH.address,
       swapAmount,
       consts.MAX_ALLOWANCE,
       consts.MAX_ALLOWANCE,
-      consts.MARKET_FACTORY_AAVE
+      consts.MARKET_FACTORY_AAVE,
+      consts.HIGH_GAS_OVERRIDE
     );
     let postXytBalance: BN = await xyt.balanceOf(alice.address);
-
     await router.swapExactOut(
       testToken.address,
       xyt.address,
       initialXytBalance.sub(postXytBalance),
       consts.MAX_ALLOWANCE,
       consts.MAX_ALLOWANCE,
-      consts.MARKET_FACTORY_AAVE
+      consts.MARKET_FACTORY_AAVE,
+      consts.HIGH_GAS_OVERRIDE
     );
 
     let tokenBalance2: BN = await testToken.balanceOf(alice.address);
