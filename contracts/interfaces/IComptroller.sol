@@ -21,37 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
+pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+interface IComptroller {
+    struct Market {
+        bool isListed;
+        uint256 collateralFactorMantissa;
+    }
 
-/**
- * @title Compound ERC20 CToken
- *
- * @dev Implementation of the interest bearing token for the DLP protocol.
- * @author Compound
- */
-interface ICToken is IERC20 {
-    /*** User Interface ***/
-
-    function balanceOfUnderlying(address owner) external returns (uint256);
-
-    function isCToken() external returns (bool);
-
-    function underlying() external returns (address);
-
-    function mint(uint256 mintAmount) external returns (uint256);
-
-    function exchangeRateCurrent() external returns (uint256);
-
-    function borrow(uint256 borrowAmount) external returns (uint256);
-
-    function getAccountSnapshot(address account)
-        external
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        );
+    function markets(address) external returns (Market memory);
 }

@@ -65,7 +65,7 @@ describe("PendleCompoundRouter", async () => {
     await router.tokenizeYield(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
-      consts.T0_C.add(consts.ONE_MONTH),
+      consts.T0_C.add(consts.SIX_MONTH),
       amount,
       user.address,
       consts.HIGH_GAS_OVERRIDE
@@ -151,7 +151,7 @@ describe("PendleCompoundRouter", async () => {
       router.redeemUnderlying(
         consts.FORGE_COMPOUND,
         tokenUSDT.address,
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amount,
         alice.address,
         consts.HIGH_GAS_OVERRIDE
@@ -173,7 +173,7 @@ describe("PendleCompoundRouter", async () => {
     await router.redeemUnderlying(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
-      consts.T0_C.add(consts.ONE_MONTH),
+      consts.T0_C.add(consts.SIX_MONTH),
       initialcUSDTbalance,
       alice.address,
       consts.HIGH_GAS_OVERRIDE
@@ -210,7 +210,7 @@ describe("PendleCompoundRouter", async () => {
     await router.redeemDueInterests(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
-      consts.T0_C.add(consts.ONE_MONTH)
+      consts.T0_C.add(consts.SIX_MONTH)
     );
 
     const expectedGain = await getCurInterest(
@@ -237,7 +237,7 @@ describe("PendleCompoundRouter", async () => {
       .div(10 ** 9);
     await borrow(amount, charlie);
 
-    const T1 = consts.T0_C.add(consts.ONE_MONTH).sub(1);
+    const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
     await router
@@ -245,14 +245,14 @@ describe("PendleCompoundRouter", async () => {
       .redeemDueInterests(
         consts.FORGE_COMPOUND,
         tokenUSDT.address,
-        consts.T0_C.add(consts.ONE_MONTH)
+        consts.T0_C.add(consts.SIX_MONTH)
       );
     const actualGain = await cUSDT.callStatic.balanceOfUnderlying(bob.address);
     const expectedGain = await getCurInterest(
       initialcUSDTbalance,
       initialUnderlyingBalance
     );
-
+    console.log(actualGain.toString());
     expect(actualGain.toNumber()).to.be.approximately(
       expectedGain.toNumber(),
       10
@@ -269,7 +269,7 @@ describe("PendleCompoundRouter", async () => {
       .div(10 ** 9);
     await borrow(amount, charlie);
 
-    const T1 = consts.T0_C.add(consts.ONE_MONTH).sub(1);
+    const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
     await router
@@ -277,7 +277,7 @@ describe("PendleCompoundRouter", async () => {
       .redeemDueInterests(
         consts.FORGE_COMPOUND,
         tokenUSDT.address,
-        consts.T0_C.add(consts.ONE_MONTH)
+        consts.T0_C.add(consts.SIX_MONTH)
       );
 
     const T2 = T1.add(10);
@@ -286,13 +286,13 @@ describe("PendleCompoundRouter", async () => {
     await router.redeemAfterExpiry(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
-      consts.T0_C.add(consts.ONE_MONTH),
+      consts.T0_C.add(consts.SIX_MONTH),
       alice.address
     );
 
     const lastRate = await compoundForge.lastRateBeforeExpiry(
       tokenUSDT.address,
-      consts.T0_C.add(consts.ONE_MONTH)
+      consts.T0_C.add(consts.SIX_MONTH)
     );
     const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
       alice.address
@@ -314,7 +314,7 @@ describe("PendleCompoundRouter", async () => {
       .div(10 ** 9);
     await borrow(amount, charlie);
 
-    const T1 = consts.T0_C.add(consts.ONE_MONTH).sub(1);
+    const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
     await router
@@ -322,7 +322,7 @@ describe("PendleCompoundRouter", async () => {
       .redeemDueInterests(
         consts.FORGE_COMPOUND,
         tokenUSDT.address,
-        consts.T0_C.add(consts.ONE_MONTH)
+        consts.T0_C.add(consts.SIX_MONTH)
       );
 
     const T2 = T1.add(consts.ONE_MONTH);
@@ -331,13 +331,13 @@ describe("PendleCompoundRouter", async () => {
     await router.redeemAfterExpiry(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
-      consts.T0_C.add(consts.ONE_MONTH),
+      consts.T0_C.add(consts.SIX_MONTH),
       alice.address
     );
 
     const lastRate = await compoundForge.lastRateBeforeExpiry(
       tokenUSDT.address,
-      consts.T0_C.add(consts.ONE_MONTH)
+      consts.T0_C.add(consts.SIX_MONTH)
     );
     const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
       alice.address
@@ -350,7 +350,7 @@ describe("PendleCompoundRouter", async () => {
   });
 
   it("Should be able to newYieldContracts", async () => {
-    let futureTime = consts.T0_C.add(consts.ONE_MONTH).add(consts.ONE_DAY);
+    let futureTime = consts.T0_C.add(consts.SIX_MONTH).add(consts.ONE_DAY);
     let filter = compoundForge.filters.NewYieldContracts();
     let tx = await router.newYieldContracts(
       consts.FORGE_COMPOUND,
@@ -377,13 +377,13 @@ describe("PendleCompoundRouter", async () => {
     await router.redeemDueInterests(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
-      consts.T0_C.add(consts.ONE_MONTH)
+      consts.T0_C.add(consts.SIX_MONTH)
     );
 
     await router.redeemUnderlying(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
-      consts.T0_C.add(consts.ONE_MONTH),
+      consts.T0_C.add(consts.SIX_MONTH),
       initialcUSDTbalance,
       alice.address,
       consts.HIGH_GAS_OVERRIDE

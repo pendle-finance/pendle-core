@@ -47,10 +47,8 @@ export async function marketFixture(
   } = cForge;
   const token = tokens.USDT;
 
-  const amount = amountToWei(consts.INITIAL_OT_XYT_AMOUNT, token.decimal);
-
   for (var person of [alice, bob, charlie]) {
-    await mintOtAndXyt(provider, token, person, amount, router);
+    await mintOtAndXyt(provider, token, person, consts.INITIAL_OT_XYT_AMOUNT, router);
   }
 
   const testToken = await deployContract(alice, TestToken, [

@@ -10,6 +10,7 @@ import {
   toFixedPoint,
   Token,
   tokens,
+  mintOtAndXyt,
 } from "../helpers";
 import { marketFixture } from "./fixtures";
 import * as scenario from "./fixtures/lpFormulaScenario.fixture";
@@ -44,6 +45,16 @@ describe("lpFormula", async () => {
     testToken = fixture.testToken;
     stdMarket = fixture.aMarket;
     tokenUSDT = tokens.USDT;
+    await data.setMarketFees(toFixedPoint("0.0035"), 0); // 0.35%
+    for (var person of [alice, bob, charlie]) {
+      await mintOtAndXyt(
+        provider,
+        tokenUSDT,
+        person,
+        BN.from(10).pow(10),
+        router
+      );
+    }
     snapshotId = await evm_snapshot();
   });
 
@@ -54,7 +65,6 @@ describe("lpFormula", async () => {
   beforeEach(async () => {
     await evm_revert(snapshotId);
     snapshotId = await evm_snapshot();
-    await data.setMarketFees(toFixedPoint("0.0035"), 0); // 0.35%
   });
 
   async function bootstrapMarket(amountOfXyt: BN, amountOfToken: BN) {
@@ -164,15 +174,17 @@ describe("lpFormula", async () => {
   async function runTestAddLiqSingleToken(test: TestAddLiq) {
     const T1 = consts.T0.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
+    // console.log((await xyt.balanceOf(alice.address)), (await testToken.balanceOf(alice.address)));
     await bootstrapMarket(
       amountToWei(test.initXytAmount, 6),
       amountToWei(test.initTokenAmount, 6)
     );
-
+    // console.log((await xyt.balanceOf(alice.address)), (await testToken.balanceOf(alice.address)));
     await setTimeNextBlock(provider, T1);
 
     let initialTokenBalance: BN = await testToken.balanceOf(bob.address);
     let initialXytBalance: BN = await xyt.balanceOf(bob.address);
+    // console.log((await testToken.balanceOf(bob.address)));
     await addLiquiditySingleToken(
       bob,
       testToken.address,
@@ -181,6 +193,8 @@ describe("lpFormula", async () => {
     await checkLpBalance(bob, test.expectedLpBal1);
 
     await setTimeNextBlock(provider, T2);
+    // console.log((await xyt.balanceOf(bob.address)));
+    // console.log(amountToWei(test.amountXytChange, 6));
     await addLiquiditySingleToken(
       bob,
       xyt.address,

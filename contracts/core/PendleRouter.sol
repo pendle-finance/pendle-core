@@ -33,8 +33,9 @@ import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../periphery/Permissions.sol";
 import "../periphery/Withdrawable.sol";
+import "../periphery/PendleNonReentrant.sol";
 
-contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
+contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReentrant {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -47,14 +48,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     IPendleData public override data;
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     address private constant DUMMY_ERC20 = address(0x123);
-
-    modifier pendleNonReentrant() {
-        _checkNonReentrancy(); // use functions to reduce bytecode size
-        _;
-        // By storing the original value once again, a refund is triggered (see
-        // https://eips.ethereum.org/EIPS/eip-2200)
-        _reentrancyStatus = _NOT_ENTERED;
-    }
 
     constructor(address _governance, IWETH _weth) Permissions(_governance) {
         weth = _weth;
@@ -107,7 +100,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         address _underlyingAsset,
         uint256 _expiry
     ) public override pendleNonReentrant returns (address ot, address xyt) {
-        require(_forgeId != bytes32(0), "ZERO_BYTES");
         require(_underlyingAsset != address(0), "ZERO_ADDRESS");
         require(_expiry > block.timestamp, "INVALID_EXPIRY");
 
@@ -124,9 +116,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     /**
      * @notice After an expiry, redeem OT tokens to get back the underlyingYieldToken
      *         and also any interests
+     * @notice This function acts as a proxy to the actual function
      * @dev The interest from "the last global action before expiry" until the expiry
      *      is given to the OT holders. This is to simplify accounting. An assumption
      *      is that the last global action before expiry will be close to the expiry
+     * @dev all validity checks are in the internal function
      **/
     function redeemAfterExpiry(
         bytes32 _forgeId,
@@ -134,18 +128,13 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         uint256 _expiry,
         address _to
     ) public override pendleNonReentrant returns (uint256 redeemedAmount) {
-        require(_forgeId != bytes32(0), "ZERO_BYTES");
-        require(_underlyingAsset != address(0), "ZERO_ADDRESS");
-        require(_to != address(0), "ZERO_ADDRESS");
-
-        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), "FORGE_NOT_EXISTS");
-
-        redeemedAmount = forge.redeemAfterExpiry(msg.sender, _underlyingAsset, _expiry, _to);
+        redeemedAmount = _redeemAfterExpiryInternal(_forgeId, _underlyingAsset, _expiry, _to);
     }
 
     /**
      * @notice an XYT holder can redeem his acrued interests anytime
+     * @notice This function acts as a proxy to the actual function
+     * @dev all validity checks are in the internal function
      **/
     function redeemDueInterests(
         bytes32 _forgeId,
@@ -157,6 +146,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
 
     /**
      * @notice redeem interests for multiple XYTs
+     * @dev all validity checks are in the internal function
      **/
     function redeemDueInterestsMultiple(
         bytes32[] calldata _forgeIds,
@@ -180,6 +170,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     /**
      * @notice Before the expiry, a user can redeem the same amount of OT+XYT to get back
      *       the underlying yield token
+     * @dev no check on _amountToRedeem
      **/
     function redeemUnderlying(
         bytes32 _forgeId,
@@ -188,13 +179,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         uint256 _amountToRedeem,
         address _to
     ) public override pendleNonReentrant returns (uint256 redeemedAmount) {
-        require(_forgeId != bytes32(0), "ZERO_BYTES");
-        require(_underlyingAsset != address(0), "ZERO_ADDRESS");
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
+        require(_to != address(0), "ZERO_ADDRESS");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), "FORGE_NOT_EXISTS");
-
         redeemedAmount = forge.redeemUnderlying(
             msg.sender,
             _underlyingAsset,
@@ -206,6 +195,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
 
     /**
      * @notice redeemAfterExpiry and tokenizeYield to a different expiry
+     * @dev checks for all params except _newExpiry are in internal functions
      **/
     function renewYield(
         bytes32 _forgeId,
@@ -222,16 +212,19 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
             uint256 redeemedAmount,
             address ot,
             address xyt,
-            uint256 amounTokenMinted
+            uint256 amountTokenMinted
         )
     {
-        require(_forgeId != bytes32(0), "ZERO_BYTES");
-        require(_underlyingAsset != address(0), "ZERO_ADDRESS");
-        require(_newExpiry > _oldExpiry, "new expiry > old expiry");
-        require(_yieldTo != address(0), "ZERO_ADDRESS");
+        require(_newExpiry > _oldExpiry, "INVALID_NEW_EXPIRY");
 
-        redeemedAmount = redeemAfterExpiry(_forgeId, _underlyingAsset, _oldExpiry, msg.sender);
-        (ot, xyt, amounTokenMinted) = tokenizeYield(
+        redeemedAmount = _redeemAfterExpiryInternal(
+            _forgeId,
+            _underlyingAsset,
+            _oldExpiry,
+            msg.sender
+        );
+
+        (ot, xyt, amountTokenMinted) = _tokenizeYieldInternal(
             _forgeId,
             _underlyingAsset,
             _newExpiry,
@@ -242,7 +235,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
 
     /**
      * @notice tokenize a yield bearing token to get OT+XYT
+     * @notice This function acts as a proxy to the actual function
      * @dev each forge is for a yield protocol (for example: Aave, Compound)
+     * @dev all checks are in the internal function
      **/
     function tokenizeYield(
         bytes32 _forgeId,
@@ -257,22 +252,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         returns (
             address ot,
             address xyt,
-            uint256 amounTokenMinted
+            uint256 amountTokenMinted
         )
     {
-        require(_forgeId != bytes32(0), "ZERO_BYTES");
-        require(_underlyingAsset != address(0), "ZERO_ADDRESS");
-
-        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        require(address(forge) != address(0), "FORGE_NOT_EXISTS");
-
-        IERC20 underlyingToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
-
-        underlyingToken.transferFrom(msg.sender, address(forge), _amountToTokenize);
-
-        // Due to possible precision error, we will only mint the amount of OT & XYT equals
-        // to the amount of tokens that the contract receives
-        (ot, xyt, amounTokenMinted) = forge.tokenizeYield(
+        (ot, xyt, amountTokenMinted) = _tokenizeYieldInternal(
+            _forgeId,
             _underlyingAsset,
             _expiry,
             _amountToTokenize,
@@ -307,7 +291,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         emit NewMarketFactory(_marketFactoryId, _marketFactoryAddress);
     }
 
-    // add market liquidity by xyt and base tokens
+    /**
+     * @notice add market liquidity by xyt and base tokens
+     * @dev no checks on _maxInXyt, _maxInToken, _exactOutLp
+     */
     function addMarketLiquidityAll(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -329,7 +316,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
     }
 
-    // add market liquidity by xyt or base token
+    /**
+     * @notice add market liquidity by xyt or base token
+     * @dev no checks on _exactInAsset, _minOutLp
+     */
     function addMarketLiquiditySingle(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -359,7 +349,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         }
     }
 
-    // remove market liquidity by xyt and base tokens
+    /**
+     * @notice remove market liquidity by xyt and base tokens
+     * @dev no checks on _exactInLp, _minOutXyt, _minOutToken
+     */
     function removeMarketLiquidityAll(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -387,7 +380,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         return (transfers[0].amount, transfers[1].amount);
     }
 
-    // remove market liquidity by xyt or base tokens
+    /**
+     * @notice remove market liquidity by xyt or base tokens
+     * @dev no checks on _exactInLp, _minOutAsset
+     */
     function removeMarketLiquiditySingle(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -426,6 +422,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         }
     }
 
+    /**
+     * @notice create a new market for a pair of xyt & token
+     */
     function createMarket(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -440,6 +439,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         IPendleMarketFactory factory =
             IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));
         require(address(factory) != address(0), "ZERO_ADDRESS");
+
         bytes32 forgeId = IPendleForge(IPendleYieldToken(_xyt).forge()).forgeId();
         require(data.validForgeFactoryPair(forgeId, _marketFactoryId), "INVALID_FORGE_FACTORY");
 
@@ -450,6 +450,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     }
 
     /**
+     * @notice bootstrap a market (aka the first one to add liquidity)
      * @dev Users can either set _token as ETH or WETH to trade with XYT-WETH markets
      * If they put in ETH, they must send ETH along and _token will be auto wrapped to WETH
      * If they put in WETH, the function will run the same as other tokens
@@ -479,7 +480,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
     }
 
-    // trade by swap exact amount of token into market
+    /**
+     * @notice trade by swap exact amount of token into market
+     * @dev no checks on _inTotalAmount, _minOutTotalAmount, _maxPrice
+     */
     function swapExactIn(
         address _tokenIn,
         address _tokenOut,
@@ -495,6 +499,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
 
         IPendleMarket market =
             IPendleMarket(data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId));
+        require(address(market) != address(0), "MARKET_NOT_FOUND");
+
         PendingTransfer[3] memory transfers;
         (outSwapAmount, , transfers) = market.swapExactIn(
             _tokenIn,
@@ -516,7 +522,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         );
     }
 
-    // trade by swap exact amount of token out of market
+    /**
+     * @notice trade by swap exact amount of token out of market
+     * @dev no checks on _outTotalAmount, _maxInTotalAmount, _maxPrice
+     */
     function swapExactOut(
         address _tokenIn,
         address _tokenOut,
@@ -532,6 +541,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
 
         IPendleMarket market =
             IPendleMarket(data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId));
+        require(address(market) != address(0), "MARKET_NOT_FOUND");
 
         PendingTransfer[3] memory transfers;
         (inSwapAmount, , transfers) = market.swapExactOut(
@@ -706,14 +716,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         }
     }
 
-    function _checkNonReentrancy() internal {
-        if (!data.reentrancyWhitelisted(msg.sender)) {
-            // On the first call to pendleNonReentrant, _notEntered will be true
-            require(_reentrancyStatus != _ENTERED, "REENTRANT_CALL");
-
-            // Any calls to nonReentrant after this point will fail
-            _reentrancyStatus = _ENTERED;
-        }
+    function _getData() internal view override returns (IPendleData) {
+        return data;
     }
 
     function _isETH(address token) internal pure returns (bool) {
@@ -727,8 +731,57 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     ) internal returns (uint256 interests) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-
         interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
+    }
+
+    function _redeemAfterExpiryInternal(
+        bytes32 _forgeId,
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _to
+    ) internal returns (uint256 redeemedAmount) {
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(_to != address(0), "ZERO_ADDRESS");
+        require(_expiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
+
+        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
+        redeemedAmount = forge.redeemAfterExpiry(msg.sender, _underlyingAsset, _expiry, _to);
+    }
+
+    /**
+     * @dev no check on _amountToTokenize
+     */
+    function _tokenizeYieldInternal(
+        bytes32 _forgeId,
+        address _underlyingAsset,
+        uint256 _expiry,
+        uint256 _amountToTokenize,
+        address _to
+    )
+        internal
+        returns (
+            address ot,
+            address xyt,
+            uint256 amountTokenMinted
+        )
+    {
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(_to != address(0), "ZERO_ADDRESS");
+
+        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
+
+        IERC20 underlyingToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
+
+        underlyingToken.transferFrom(msg.sender, address(forge), _amountToTokenize);
+
+        // Due to possible precision error, we will only mint the amount of OT & XYT equals
+        // to the amount of tokens that the contract receives
+        (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
+            _underlyingAsset,
+            _expiry,
+            _amountToTokenize,
+            _to
+        );
     }
 
     /**

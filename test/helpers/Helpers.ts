@@ -38,32 +38,43 @@ export async function evm_revert(snapshotId: string) {
 export async function mintOtAndXyt(
   provider: providers.Web3Provider,
   token: Token,
-  alice: Wallet,
+  user: Wallet,
   amount: BN,
   router: Contract
 ) {
-  await mintAaveToken(provider, token, alice, amount);
-  await mintCompoundToken(provider, token, alice, amount);
-  const { lendingPoolCore } = await aaveFixture(alice);
+  const { lendingPoolCore } = await aaveFixture(user);
+  const aContract = await getAContract(user, lendingPoolCore, token);
+  const cContract = await getCContract(user, token);
 
-  const aContract = await getAContract(alice, lendingPoolCore, token);
-  const cContract = await getCContract(alice, token);
+  let preATokenBal = await aContract.balanceOf(user.address);
+  let preCTokenBal = await cContract.balanceOf(user.address);
+
+  await mintAaveToken(provider, token, user, amount);
+  await mintCompoundToken(provider, token, user, amount);
   await aContract.approve(router.address, consts.MAX_ALLOWANCE);
   await cContract.approve(router.address, consts.MAX_ALLOWANCE);
-  await router.tokenizeYield(
-    consts.FORGE_AAVE,
-    token.address,
-    consts.T0.add(consts.SIX_MONTH),
-    amount,
-    alice.address
-  );
-  await router.tokenizeYield(
-    consts.FORGE_COMPOUND,
-    token.address,
-    consts.T0_C.add(consts.ONE_MONTH),
-    amount,
-    alice.address
-  );
+
+  let postATokenBal = await aContract.balanceOf(user.address);
+  let postCTokenBal = await cContract.balanceOf(user.address);
+
+  await router
+    .connect(user)
+    .tokenizeYield(
+      consts.FORGE_AAVE,
+      token.address,
+      consts.T0.add(consts.SIX_MONTH),
+      postATokenBal.sub(preATokenBal),
+      user.address
+    );
+  await router
+    .connect(user)
+    .tokenizeYield(
+      consts.FORGE_COMPOUND,
+      token.address,
+      consts.T0_C.add(consts.SIX_MONTH),
+      postCTokenBal.sub(preCTokenBal),
+      user.address
+    );
 }
 
 export async function mint(

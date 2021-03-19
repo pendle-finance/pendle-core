@@ -49,10 +49,11 @@ export class UserStakeAction {
   }
 }
 
+// TOTAL_DURATION = 10 days * 20 = 200 days
 const params: liqParams = {
   START_TIME: consts.T0_C.add(1000), // starts in 1000s
   EPOCH_DURATION: BN.from(3600 * 24 * 10), //10 days
-  REWARDS_PER_EPOCH: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map((a) => BN.from("10000000000").mul(a)), // = [10000000000, 20000000000, ..]
+  REWARDS_PER_EPOCH: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map((a) => BN.from("10000000000").mul(a)), // = [10000000000, 20000000000, ..]
   NUMBER_OF_EPOCHS: BN.from(20),
   VESTING_EPOCHS: BN.from(4),
   TOTAL_NUMERATOR: BN.from(10 ** 9),
@@ -141,7 +142,7 @@ export async function liquidityMiningFixture(
     consts.HIGH_GAS_OVERRIDE
   );
   await cLiquidityMining.setAllocationSetting(
-    [consts.T0_C.add(consts.ONE_MONTH)],
+    [consts.T0_C.add(consts.SIX_MONTH)],
     [params.TOTAL_NUMERATOR],
     consts.HIGH_GAS_OVERRIDE
   );
@@ -163,7 +164,8 @@ export async function liquidityMiningFixture(
   await data.setReentrancyWhitelist([aLiquidityMining.address], [true]);
   await data.setReentrancyWhitelist([cLiquidityMining.address], [true]);
 
-  for (var person of [bob, charlie, dave]) {
+  // originally alice has 1e18 LP tokens
+  for (var person of [bob, charlie, dave]) { // transfer some LP to each user
     await aMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);
     await cMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);
   }

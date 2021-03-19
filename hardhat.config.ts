@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import "@tenderly/hardhat-tenderly";
 import * as dotenv from "dotenv";
-import "hardhat-gas-reporter";
+// import "hardhat-gas-reporter";
 import "hardhat-typechain";
 import { HardhatUserConfig } from "hardhat/types";
 import "solidity-coverage";
@@ -12,10 +12,10 @@ dotenv.config();
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
-  gasReporter: {
-    currency: 'USD',
-    gasPrice: 100
-  },
+  // gasReporter: {
+  //   currency: 'USD',
+  //   gasPrice: 100
+  // },
   paths: {
     sources: './contracts',
     tests: './test',

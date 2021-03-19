@@ -138,7 +138,7 @@ function calExpectedRewards(
 }
 
 // TODO:Old version, not as updated as pendleAaveLiquidityMining
-describe("PendleCompoundLiquidityMining-beta tests", async () => {
+describe("PendleCompoundLiquidityMining tests", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
@@ -181,7 +181,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await liq
       .connect(person)
       .stake(
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amount,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -191,7 +191,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await liq
       .connect(person)
       .withdraw(
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amount,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -300,83 +300,6 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     }
   }
 
-  it("beta", async () => {
-    console.log(
-      `\tLP balance of eve = ${await stdMarket.balanceOf(eve.address)}`
-    );
-    console.log(
-      `\tсToken balance of market = ${await cUSDT.balanceOf(stdMarket.address)}`
-    );
-    console.log(
-      `\tXYT balance of market = ${await xyt.balanceOf(stdMarket.address)}`
-    );
-    console.log(
-      `\tbaseToken balance of market = ${await baseToken.balanceOf(
-        stdMarket.address
-      )}`
-    );
-    await router.connect(eve).claimLpInterests([stdMarket.address]);
-    setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
-    console.log("\tAbout to do dummy trade");
-    // some dummy trade
-    const testAmount = amountToWei(BN.from(1), 6);
-    await router.swapExactOut(
-      baseToken.address,
-      xyt.address,
-      testAmount,
-      testAmount.mul(BN.from(10)),
-      consts.MAX_ALLOWANCE,
-      consts.MARKET_FACTORY_COMPOUND,
-      consts.HIGH_GAS_OVERRIDE
-    );
-    console.log("\tDID a dummy trade");
-
-    console.log(
-      `\t+3m, LP balance of eve = ${await stdMarket.balanceOf(eve.address)}`
-    );
-    console.log(
-      `\t+3m, cToken balance of market = ${await cUSDT.balanceOf(
-        stdMarket.address
-      )}`
-    );
-    console.log(
-      `\t+3m, XYT balance of market = ${await xyt.balanceOf(stdMarket.address)}`
-    );
-    console.log(
-      `\t+3m, baseToken balance of market = ${await baseToken.balanceOf(
-        stdMarket.address
-      )}`
-    );
-
-    await router.connect(eve).claimLpInterests([stdMarket.address]);
-
-    console.log(
-      `\tclaimed LP interests: LP balance of eve = ${await stdMarket.balanceOf(
-        eve.address
-      )}`
-    );
-    console.log(
-      `\tclaimed LP interests: cToken balance of market = ${await cUSDT.balanceOf(
-        stdMarket.address
-      )}`
-    );
-    console.log(
-      `\tclaimed LP interests: cToken balance of eve = ${await cUSDT.balanceOf(
-        eve.address
-      )}`
-    );
-    console.log(
-      `\tclaimed LP interests: XYT balance of market = ${await xyt.balanceOf(
-        stdMarket.address
-      )}`
-    );
-    console.log(
-      `\tclaimed LP interests: baseToken balance of market = ${await baseToken.balanceOf(
-        stdMarket.address
-      )}`
-    );
-  });
-
   it("test 1", async () => {
     let userStakingData: UserStakeAction[][][] = scenario.scenario01(params);
     await doSequence(userStakingData);
@@ -402,7 +325,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await liq
       .connect(bob)
       .stake(
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amountToStake,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -414,7 +337,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await liq
       .connect(bob)
       .withdraw(
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amountToStake,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -445,13 +368,13 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await liq
       .connect(bob)
       .stake(
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amountToStake,
         consts.HIGH_GAS_OVERRIDE
       );
     console.log("\tStaked");
     const lpHolderContract = await liq.lpHolderForExpiry(
-      consts.T0_C.add(consts.ONE_MONTH)
+      consts.T0_C.add(consts.SIX_MONTH)
     );
     const cTokenBalanceOfLpHolderContract = await cUSDT.balanceOf(
       lpHolderContract
@@ -468,7 +391,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await liq
       .connect(bob)
       .withdraw(
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
@@ -492,7 +415,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
 
     //stake using another user - alice, for the same amount as bob's stake now (amountToStake/2)
     await liq.stake(
-      consts.T0_C.add(consts.ONE_MONTH),
+      consts.T0_C.add(consts.SIX_MONTH),
       amountToStake.div(2),
       consts.HIGH_GAS_OVERRIDE
     );
@@ -523,7 +446,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     await liq
       .connect(bob)
       .withdraw(
-        consts.T0_C.add(consts.ONE_MONTH),
+        consts.T0_C.add(consts.SIX_MONTH),
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
@@ -547,7 +470,7 @@ describe("PendleCompoundLiquidityMining-beta tests", async () => {
     );
 
     await liq.withdraw(
-      consts.T0_C.add(consts.ONE_MONTH),
+      consts.T0_C.add(consts.SIX_MONTH),
       amountToStake.div(2),
       consts.HIGH_GAS_OVERRIDE
     );

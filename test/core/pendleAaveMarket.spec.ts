@@ -495,7 +495,7 @@ describe("PendleAaveMarket", async () => {
     ).to.be.revertedWith("EXISTED_MARKET");
   });
 
-  it("should be able to swapPathExactIn [ @skip-on-coverage ]", async () => {
+  it("should be able to swapPathExactIn", async () => {
     const amount = amountToWei(BN.from(100), 6);
 
     await bootstrapSampleMarket(amount);
@@ -545,7 +545,8 @@ describe("PendleAaveMarket", async () => {
       amount,
       BN.from(0),
       consts.MAX_ALLOWANCE,
-      consts.MARKET_FACTORY_AAVE
+      consts.MARKET_FACTORY_AAVE,
+      consts.HIGH_GAS_OVERRIDE
     );
     let postXytBalance: BN = await xyt.balanceOf(alice.address);
     await router.swapExactIn(
@@ -554,7 +555,8 @@ describe("PendleAaveMarket", async () => {
       postXytBalance.sub(initialXytBalance),
       BN.from(0),
       consts.MAX_ALLOWANCE,
-      consts.MARKET_FACTORY_AAVE
+      consts.MARKET_FACTORY_AAVE,
+      consts.HIGH_GAS_OVERRIDE
     );
 
     let tokenBalance2: BN = await testToken.balanceOf(alice.address);
@@ -564,7 +566,7 @@ describe("PendleAaveMarket", async () => {
     approxBigNumber(wethBalance2, wethBalance1, consts.TEST_TOKEN_DELTA);
   });
 
-  it("should be able to swapPathExactOut [ @skip-on-coverage ]", async () => {
+  it("should be able to swapPathExactOut", async () => {
     const amount = amountToWei(BN.from(100), 6);
     const swapAmount = amount.div(BN.from(10));
 
@@ -609,23 +611,25 @@ describe("PendleAaveMarket", async () => {
 
     let initialXytBalance: BN = await xyt.balanceOf(alice.address);
 
+    console.log("XYT", xyt.address);
     await router.swapExactOut(
       xyt.address,
       WETH.address,
       swapAmount,
       consts.MAX_ALLOWANCE,
       consts.MAX_ALLOWANCE,
-      consts.MARKET_FACTORY_AAVE
+      consts.MARKET_FACTORY_AAVE,
+      consts.HIGH_GAS_OVERRIDE
     );
     let postXytBalance: BN = await xyt.balanceOf(alice.address);
-
     await router.swapExactOut(
       testToken.address,
       xyt.address,
       initialXytBalance.sub(postXytBalance),
       consts.MAX_ALLOWANCE,
       consts.MAX_ALLOWANCE,
-      consts.MARKET_FACTORY_AAVE
+      consts.MARKET_FACTORY_AAVE,
+      consts.HIGH_GAS_OVERRIDE
     );
 
     let tokenBalance2: BN = await testToken.balanceOf(alice.address);
@@ -879,7 +883,10 @@ describe("PendleAaveMarket", async () => {
       consts.MARKET_FACTORY_AAVE
     );
 
-    expect(result[1].toNumber()).to.be.approximately(11111111, 100);
+    expect(result[1].toNumber()).to.be.approximately(
+      11111111,
+      consts.TEST_TOKEN_DELTA.toNumber()
+    );
   });
 
   it("Aave-ETH should be able to getMarketRateExactIn", async () => {
@@ -894,7 +901,10 @@ describe("PendleAaveMarket", async () => {
       consts.MARKET_FACTORY_AAVE
     );
 
-    expect(result[1].toNumber()).to.be.approximately(9090909, 100);
+    expect(result[1].toNumber()).to.be.approximately(
+      9090909,
+      consts.TEST_TOKEN_DELTA.toNumber()
+    );
   });
 
   it("Aave-ETH should be able to add market liquidity for a token_sample", async () => {

@@ -33,8 +33,8 @@ import "../interfaces/IPendleLpHolder.sol";
 import "../core/PendleLpHolder.sol";
 import "../interfaces/IPendleLiquidityMining.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../periphery/Permissions.sol";
+import "../periphery/PendleNonReentrant.sol";
 
 /**
     @dev things that must hold in this contract:
@@ -42,7 +42,7 @@ import "../periphery/Permissions.sol";
         then his pending rewards are calculated as well
         (and saved in availableRewardsForEpoch[user][epochId])
  */
-contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, ReentrancyGuard {
+contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, PendleNonReentrant {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -211,7 +211,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         public
         override
         isFunded
-        nonReentrant
+        pendleNonReentrant
         returns (address newLpHoldingContract)
     {
         uint256 _epoch = _currentEpoch();
@@ -239,7 +239,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].add(amount);
     }
 
-    function withdraw(uint256 expiry, uint256 amount) public override nonReentrant isFunded {
+    function withdraw(uint256 expiry, uint256 amount) public override pendleNonReentrant isFunded {
         uint256 _epoch = _currentEpoch();
         require(_epoch > 0, "NOT_STARTED");
         require(balances[msg.sender][expiry] >= amount, "INSUFFICIENT_BALANCE");
@@ -252,7 +252,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].sub(amount);
     }
 
-    function claimRewards() public override nonReentrant returns (uint256[] memory rewards) {
+    function claimRewards() public override pendleNonReentrant returns (uint256[] memory rewards) {
         uint256 _epoch = _currentEpoch(); //!!! what if currentEpoch > final epoch?
         require(_epoch > 0, "NOT_STARTED");
 
@@ -266,7 +266,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
         }
     }
 
-    function claimLpInterests() public override nonReentrant returns (uint256 _interests) {
+    function claimLpInterests() public override pendleNonReentrant returns (uint256 _interests) {
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
             _interests = _interests.add(
                 _settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender)
@@ -275,6 +275,10 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, Reentranc
     }
 
     // internal functions
+
+    function _getData() internal view override returns (IPendleData) {
+        return pendleData;
+    }
 
     // 1-indexed
     function _currentEpoch() internal view returns (uint256) {

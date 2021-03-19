@@ -646,6 +646,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     //      as well as the lastGlobalIncomeIndex of each user, when they last received interests.
     //    - When Alice wants to redeem her interests, it will be lpBalance * (globalIncomeIndex - lastGlobalIncomeIndex[Alice])
     function _settleLpInterests(address account) internal returns (uint256 dueInterests) {
+        if (account == address(this)) return 0;
         _updateGlobalIncomeIndex();
         if (lastGlobalIncomeIndex[account] == 0) {
             lastGlobalIncomeIndex[account] = globalIncomeIndex;
@@ -667,6 +668,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         if (block.timestamp.sub(lastInterestUpdate) > data.interestUpdateDelta()) {
             // get due interests for the XYT being held in the market if it has not been updated
             // for interestUpdateDelta seconds
+
             router.redeemDueInterests(forgeId, underlyingAsset, expiry);
             lastInterestUpdate = block.timestamp;
         }
@@ -675,7 +677,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         uint256 interestsEarned =
             currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance;
         lastUnderlyingYieldTokenBalance = currentUnderlyingYieldTokenBalance;
-
         globalIncomeIndex = globalIncomeIndex.add(
             interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(totalSupply)
         );

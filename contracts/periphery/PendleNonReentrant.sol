@@ -21,37 +21,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
+pragma experimental ABIEncoderV2;
+import "../interfaces/IPendleData.sol";
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+abstract contract PendleNonReentrant {
+    uint256 private constant _NOT_ENTERED = 1;
+    uint256 private constant _ENTERED = 2;
+    uint256 private _reentrancyStatus;
 
-/**
- * @title Compound ERC20 CToken
- *
- * @dev Implementation of the interest bearing token for the DLP protocol.
- * @author Compound
- */
-interface ICToken is IERC20 {
-    /*** User Interface ***/
+    modifier pendleNonReentrant() {
+        _checkNonReentrancy(); // use functions to reduce bytecode size
+        _;
+        // By storing the original value once again, a refund is triggered (see
+        // https://eips.ethereum.org/EIPS/eip-2200)
+        _reentrancyStatus = _NOT_ENTERED;
+    }
 
-    function balanceOfUnderlying(address owner) external returns (uint256);
+    function _checkNonReentrancy() internal {
+        if (!_getData().reentrancyWhitelisted(msg.sender)) {
+            // On the first call to pendleNonReentrant, _notEntered will be true
+            require(_reentrancyStatus != _ENTERED, "REENTRANT_CALL");
 
-    function isCToken() external returns (bool);
+            // Any calls to nonReentrant after this point will fail
+            _reentrancyStatus = _ENTERED;
+        }
+    }
 
-    function underlying() external returns (address);
-
-    function mint(uint256 mintAmount) external returns (uint256);
-
-    function exchangeRateCurrent() external returns (uint256);
-
-    function borrow(uint256 borrowAmount) external returns (uint256);
-
-    function getAccountSnapshot(address account)
-        external
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        );
+    function _getData() internal view virtual returns (IPendleData);
 }

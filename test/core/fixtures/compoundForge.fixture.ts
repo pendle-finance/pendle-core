@@ -20,24 +20,24 @@ export async function compoundForgeFixture(
     { router, data }: CoreFixture,
     { pendle }: GovernanceFixture
 ): Promise<CompoundFixture> {
-    const compoundForge = await deployContract(alice, PendleCompoundForge, [alice.address, router.address, consts.FORGE_COMPOUND]);
+    const compoundForge = await deployContract(alice, PendleCompoundForge, [alice.address, router.address, consts.COMPOUND_COMPTROLLER_ADDRESS, consts.FORGE_COMPOUND,]);
     await router.addForge(consts.FORGE_COMPOUND, compoundForge.address);
 
     await compoundForge.registerCTokens([tokens.USDT.address], [tokens.USDT.compound]);
 
     await setTimeNextBlock(provider, consts.T0_C); // set the minting time for the first OT and XYT
-    await router.newYieldContracts(consts.FORGE_COMPOUND, tokens.USDT.address, consts.T0_C.add(consts.ONE_MONTH));
+    await router.newYieldContracts(consts.FORGE_COMPOUND, tokens.USDT.address, consts.T0_C.add(consts.SIX_MONTH));
 
     const otTokenAddress = await data.otTokens(
         consts.FORGE_COMPOUND,
         tokens.USDT.address,
-        consts.T0_C.add(consts.ONE_MONTH)
+        consts.T0_C.add(consts.SIX_MONTH)
     );
 
     const xytTokenAddress = await data.xytTokens(
         consts.FORGE_COMPOUND,
         tokens.USDT.address,
-        consts.T0_C.add(consts.ONE_MONTH)
+        consts.T0_C.add(consts.SIX_MONTH)
     );
 
     const cOwnershipToken = new Contract(otTokenAddress, PendleOwnershipToken.abi, alice);

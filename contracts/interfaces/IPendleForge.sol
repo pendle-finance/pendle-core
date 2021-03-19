@@ -127,7 +127,7 @@ interface IPendleForge {
         returns (
             address ot,
             address xyt,
-            uint256 amounTokenMinted
+            uint256 amountTokenMinted
         );
 
     function getYieldBearingToken(address underlyingAsset) external returns (address);

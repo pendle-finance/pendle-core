@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../libraries/ExpiryUtilsLib.sol";
@@ -29,6 +30,7 @@ import "../interfaces/ICToken.sol";
 import "../interfaces/IPendleBaseToken.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleForge.sol";
+import "../interfaces/IComptroller.sol";
 import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
@@ -37,6 +39,8 @@ import "./PendleForgeBase.sol";
 contract PendleCompoundForge is PendleForgeBase {
     using ExpiryUtils for string;
     using SafeMath for uint256;
+
+    IComptroller public immutable comptroller;
 
     uint256 private initialRate = 0;
     mapping(address => address) public underlyingToCToken;
@@ -48,8 +52,13 @@ contract PendleCompoundForge is PendleForgeBase {
     constructor(
         address _governance,
         IPendleRouter _router,
+        IComptroller _comptroller,
         bytes32 _forgeId
-    ) PendleForgeBase(_governance, _router, _forgeId) {}
+    ) PendleForgeBase(_governance, _router, _forgeId) {
+        require(address(_comptroller) != address(0), "ZERO_ADDRESS");
+
+        comptroller = _comptroller;
+    }
 
     function registerCTokens(address[] calldata _underlyingAssets, address[] calldata _cTokens)
         external
@@ -58,20 +67,37 @@ contract PendleCompoundForge is PendleForgeBase {
         require(_underlyingAssets.length == _cTokens.length, "LENGTH_MISMATCH");
 
         for (uint256 i = 0; i < _cTokens.length; ++i) {
-            if (underlyingToCToken[_underlyingAssets[i]] == address(0)) {
-                underlyingToCToken[_underlyingAssets[i]] = _cTokens[i];
-            }
+            // once the underlying CToken has been set, it cannot be changed
+            require(underlyingToCToken[_underlyingAssets[i]] == address(0), "FORBIDDEN");
+            require(_isValidCToken(_underlyingAssets[i], _cTokens[i]), "INVALID_CTOKEN_DATA");
+            underlyingToCToken[_underlyingAssets[i]] = _cTokens[i];
         }
 
         emit RegisterCTokens(_underlyingAssets, _cTokens);
     }
 
+    function _isValidCToken(address _underlyingAsset, address _cTokenAddress)
+        internal
+        returns (bool isValid)
+    {
+        if (comptroller.markets(_cTokenAddress).isListed != true) {
+            return false;
+        }
+        if (ICToken(_cTokenAddress).isCToken() != true) {
+            return false;
+        }
+        if (ICToken(_cTokenAddress).underlying() != _underlyingAsset) {
+            return false;
+        }
+        return true;
+    }
+
     function _calcTotalAfterExpiry(
-        address cTokenAddress,
+        address,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 redeemedAmount
-    ) internal override returns (uint256 totalAfterExpiry) {
+    ) internal view override returns (uint256 totalAfterExpiry) {
         // interests from the timestamp of the last XYT transfer (before expiry) to now is entitled to the OT holders
         // this means that the OT holders are getting some extra interests, at the expense of XYT holders
         totalAfterExpiry = redeemedAmount.mul(initialRate).div(
