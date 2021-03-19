@@ -163,7 +163,7 @@ describe("compoundInterest test", async () => {
     const expectedBalance = await cUSDT.callStatic.balanceOfUnderlying(
       dave.address
     );
-    const allowedDelta = expectedBalance.div((10 ** 6) / 2); // 5e-5 % delta
+    const allowedDelta = expectedBalance.div(10 ** 6 / 2); // 5e-5 % delta
 
     approxBigNumber(
       await cUSDT.callStatic.balanceOfUnderlying(alice.address),
