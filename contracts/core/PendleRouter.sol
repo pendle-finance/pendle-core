@@ -367,7 +367,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         uint256 _exactInLp,
         uint256 _minOutXyt,
         uint256 _minOutToken
-    ) public override pendleNonReentrant {
+    ) public override pendleNonReentrant returns (uint256 exactOutXyt, uint256 exactOutToken) {
         address originalToken = _token;
         _token = _isETH(_token) ? address(weth) : _token;
 
@@ -384,6 +384,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
 
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
         emit Exit(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
+        return (transfers[0].amount, transfers[1].amount);
     }
 
     // remove market liquidity by xyt or base tokens
@@ -394,7 +395,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         bool _forXyt,
         uint256 _exactInLp,
         uint256 _minOutAsset
-    ) public override pendleNonReentrant {
+    ) public override pendleNonReentrant returns (uint256 exactOutXyt, uint256 exactOutToken) {
         address originalToken = _token;
         _token = _isETH(_token) ? address(weth) : _token;
 
@@ -418,8 +419,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
 
         if (_forXyt) {
             emit Exit(msg.sender, transfers[0].amount, 0, address(market));
+            return (transfers[0].amount, 0);
         } else {
             emit Exit(msg.sender, 0, transfers[0].amount, address(market));
+            return (0, transfers[0].amount);
         }
     }
 
