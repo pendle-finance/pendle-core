@@ -33,8 +33,9 @@ import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../periphery/Permissions.sol";
 import "../periphery/Withdrawable.sol";
+import "../periphery/PendleNonReentrant.sol";
 
-contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
+contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReentrant {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -47,14 +48,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
     IPendleData public override data;
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     address private constant DUMMY_ERC20 = address(0x123);
-
-    modifier pendleNonReentrant() {
-        _checkNonReentrancy(); // use functions to reduce bytecode size
-        _;
-        // By storing the original value once again, a refund is triggered (see
-        // https://eips.ethereum.org/EIPS/eip-2200)
-        _reentrancyStatus = _NOT_ENTERED;
-    }
 
     constructor(address _governance, IWETH _weth) Permissions(_governance) {
         weth = _weth;
@@ -720,14 +713,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable {
         }
     }
 
-    function _checkNonReentrancy() internal {
-        if (!data.reentrancyWhitelisted(msg.sender)) {
-            // On the first call to pendleNonReentrant, _notEntered will be true
-            require(_reentrancyStatus != _ENTERED, "REENTRANT_CALL");
-
-            // Any calls to nonReentrant after this point will fail
-            _reentrancyStatus = _ENTERED;
-        }
+    function _getData() internal view override returns (IPendleData) {
+        return data;
     }
 
     function _isETH(address token) internal pure returns (bool) {
