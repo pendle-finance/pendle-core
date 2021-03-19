@@ -159,7 +159,7 @@ contract PendleAaveV2Forge is PendleForgeBase {
         );
     }
 
-    function _calcAmountToMint(address, uint256 _amountToTokenize)
+    function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)
         internal
         view
         override
