@@ -93,11 +93,11 @@ contract PendleCompoundForge is PendleForgeBase {
     }
 
     function _calcTotalAfterExpiry(
-        address cTokenAddress,
+        address,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 redeemedAmount
-    ) internal override returns (uint256 totalAfterExpiry) {
+    ) internal view override returns (uint256 totalAfterExpiry) {
         // interests from the timestamp of the last XYT transfer (before expiry) to now is entitled to the OT holders
         // this means that the OT holders are getting some extra interests, at the expense of XYT holders
         totalAfterExpiry = redeemedAmount.mul(initialRate).div(
