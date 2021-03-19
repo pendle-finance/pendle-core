@@ -879,7 +879,7 @@ describe("PendleAaveMarket", async () => {
       consts.MARKET_FACTORY_AAVE
     );
 
-    expect(result[1].toNumber()).to.be.approximately(11111111, 100);
+    expect(result[1].toNumber()).to.be.approximately(11111111, consts.TEST_TOKEN_DELTA.toNumber());
   });
 
   it("Aave-ETH should be able to getMarketRateExactIn", async () => {
@@ -894,7 +894,7 @@ describe("PendleAaveMarket", async () => {
       consts.MARKET_FACTORY_AAVE
     );
 
-    expect(result[1].toNumber()).to.be.approximately(9090909, 100);
+    expect(result[1].toNumber()).to.be.approximately(9090909, consts.TEST_TOKEN_DELTA.toNumber());
   });
 
   it("Aave-ETH should be able to add market liquidity for a token_sample", async () => {

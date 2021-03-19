@@ -267,7 +267,7 @@ describe("PendleCompoundMarket", async () => {
       consts.MARKET_FACTORY_COMPOUND
     );
 
-    expect(result[1].toNumber()).to.be.approximately(11111280, 100);
+    expect(result[1].toNumber()).to.be.approximately(11111111, consts.TEST_TOKEN_DELTA.toNumber());
   });
 
   it("should be able to getMarketRateExactIn", async () => {
@@ -282,7 +282,7 @@ describe("PendleCompoundMarket", async () => {
       consts.MARKET_FACTORY_COMPOUND
     );
 
-    expect(result[1].toNumber()).to.be.approximately(9091034, 100);
+    expect(result[1].toNumber()).to.be.approximately(9090909, consts.TEST_TOKEN_DELTA.toNumber());
   });
 
   it("should be able to add market liquidity for a token", async () => {
