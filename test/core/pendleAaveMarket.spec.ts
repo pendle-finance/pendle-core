@@ -495,7 +495,7 @@ describe("PendleAaveMarket", async () => {
     ).to.be.revertedWith("EXISTED_MARKET");
   });
 
-  it("should be able to swapPathExactIn [ @skip-on-coverage ]", async () => {
+  it("should be able to swapPathExactIn", async () => {
     const amount = amountToWei(BN.from(100), 6);
 
     await bootstrapSampleMarket(amount);
@@ -566,7 +566,7 @@ describe("PendleAaveMarket", async () => {
     approxBigNumber(wethBalance2, wethBalance1, consts.TEST_TOKEN_DELTA);
   });
 
-  it("should be able to swapPathExactOut [ @skip-on-coverage ]", async () => {
+  it("should be able to swapPathExactOut", async () => {
     const amount = amountToWei(BN.from(100), 6);
     const swapAmount = amount.div(BN.from(10));
 

@@ -57,13 +57,13 @@ import {WadRayMath} from "../libraries/WadRayMath.sol";
 * @dev The smooth function used in this contract aims to resolve the above issue. It finds the
         smallest res that rayDiv(dividen,incomeIndex) = rayDiv(res,incomeIndex). So if multiple
         DBAL correspond to the same value of SBAL, the smallest DBAL will be returned.
-        One very important thing to note is that the smooth function, for example smooth(X,Y)=Z,
+    One very important thing to note is that the smooth function, for example smooth(X,Y)=Z,
         doesn't change the amount of SBAL since X/Y = Z/Y, so the amount of SBAL transfered is
         unchanged IF AND ONLY IF the transfer happens immediately (in the same transaction).
-        So for the 10^10 transfer above, user B will only acknowledge that he has received
+    So for the 10^10 transfer above, user B will only acknowledge that he has received
         smooth(10^10,incomeIndex) = 10^10-3, and when the time to pay back comes, user B will only
         pay smooth(10^10-3,incomeIndex2) back. In both transactions, the amount of SBAL that B & A
-        will receive are not affected by smooth
+        will receive are not affected by smooth.
 */
 contract PendleAaveV2Forge is PendleForgeBase {
     using ExpiryUtils for string;
@@ -122,6 +122,10 @@ contract PendleAaveV2Forge is PendleForgeBase {
         uint256 principalWithDueInterests = principal.rayDiv(ix).rayMul(normalizedIncome);
         principalWithDueInterests = WadRayMath.smooth(principalWithDueInterests, normalizedIncome);
 
+        // theoratically the principal should be smooth too. But due to precision error, it was
+        // decided not to do so in order to leave a tiny bit of balance left in the contract
+        // in case future transactions from this user needs it (for example, redeem all the OT
+        // that he is holding)
         dueInterests = (
             principalWithDueInterests > principal ? principalWithDueInterests - principal : 0
         );
@@ -155,7 +159,7 @@ contract PendleAaveV2Forge is PendleForgeBase {
         );
     }
 
-    function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)
+    function _calcAmountToMint(address, uint256 _amountToTokenize)
         internal
         view
         override
