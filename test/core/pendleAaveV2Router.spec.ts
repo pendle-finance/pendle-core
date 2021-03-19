@@ -157,7 +157,7 @@ describe("pendleAaveV2Router", async () => {
     const expectedGain = await getCurInterest(charlie, refAmount);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       initialAUSDTbalance.add(expectedGain).toNumber(),
-      3000
+      10000
     );
   });
 
@@ -198,7 +198,7 @@ describe("pendleAaveV2Router", async () => {
     expect(finalAUSDTbalance).to.be.below(initialAUSDTbalance);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
       afterLendingAUSDTbalance.add(expectedGain).toNumber(),
-      3000
+      10000
     );
   });
 
@@ -224,7 +224,7 @@ describe("pendleAaveV2Router", async () => {
 
     expect(actualGain.toNumber()).to.be.approximately(
       expectedGain.toNumber(),
-      3000
+      10000
     );
   });
 
@@ -248,7 +248,7 @@ describe("pendleAaveV2Router", async () => {
     approxBigNumber(
       await aUSDT.balanceOf(bob.address),
       await getCurInterest(charlie, refAmount),
-      BN.from(3000),
+      BN.from(10000),
       false
     );
 
@@ -269,7 +269,7 @@ describe("pendleAaveV2Router", async () => {
     approxBigNumber(
       finalAUSDTbalance,
       initialAUSDTbalance.add(expectedGain),
-      BN.from(3000),
+      BN.from(10000),
       false
     );
   });
@@ -294,7 +294,7 @@ describe("pendleAaveV2Router", async () => {
     approxBigNumber(
       await aUSDT.balanceOf(bob.address),
       await getCurInterest(charlie, refAmount),
-      BN.from(3000),
+      BN.from(10000),
       true
     );
 
@@ -313,7 +313,7 @@ describe("pendleAaveV2Router", async () => {
     approxBigNumber(
       finalAUSDTbalance,
       initialAUSDTbalance.add(expectedGain),
-      BN.from(3000),
+      BN.from(10000),
       true
     );
   });
@@ -358,7 +358,7 @@ describe("pendleAaveV2Router", async () => {
     );
     let actualGain = await aUSDT.balanceOf(alice.address);
     let expectedGain = await getCurInterest(dave, refAmount);
-    approxBigNumber(actualGain, expectedGain, BN.from(3000));
+    approxBigNumber(actualGain, expectedGain, BN.from(10000));
   });
 
   it("Should be able to renewYield", async () => {
@@ -389,6 +389,6 @@ describe("pendleAaveV2Router", async () => {
     );
     let actualGain = await aUSDT.balanceOf(alice.address);
     let expectedGain = await getCurInterest(dave, refAmount);
-    approxBigNumber(actualGain, expectedGain, BN.from(3000));
+    approxBigNumber(actualGain, expectedGain, BN.from(10000));
   });
 });
