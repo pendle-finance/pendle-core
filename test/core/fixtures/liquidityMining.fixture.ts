@@ -89,7 +89,7 @@ export async function liquidityMiningFixture(
     consts.HIGH_GAS_OVERRIDE
   );
 
-  let pdl = await deployContract(alice, PENDLE, [alice.address]);
+  let pdl = await deployContract(alice, PENDLE, [alice.address, alice.address, alice.address, alice.address, alice.address]);
 
   let aLiquidityMining = await deployContract(
     alice,
