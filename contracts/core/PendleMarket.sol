@@ -715,11 +715,12 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             router.redeemDueInterests(forgeId, underlyingAsset, expiry);
             lastInterestUpdate = block.timestamp;
         }
-        uint256 nXyt = IPendleYieldToken(xyt).balanceOf(address(this));
         uint256 sTotal = totalSupply;
         uint256 paramI = _getParamI();
 
-        paramL = paramL.rmul(Math.RONE + paramI) + nXyt.mul(MULTIPLIER).rmul(paramI).rdiv(sTotal);
+        paramL =
+            paramL.rmul(Math.RONE + paramI) +
+            reserves[xyt].balance.mul(MULTIPLIER).rmul(paramI).rdiv(sTotal);
         paramN = paramN.rmul(Math.RONE + paramI);
         // console.log("time", block.timestamp);
         // console.log("I", paramI, "ratio", nXyt.mul(MULTIPLIER).rdiv(sTotal));
