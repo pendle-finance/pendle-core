@@ -283,11 +283,11 @@ describe("PendleAaveMarket", async () => {
       console.log((await aUSDT.balanceOf(user.address)).toString());
     }
 
-    // const acceptedDelta = BN.from(10000);
-    // approxBigNumber(await aUSDT.balanceOf(alice.address), BN.from(1309016354), acceptedDelta);
-    // approxBigNumber(await aUSDT.balanceOf(bob.address), BN.from(871918760), acceptedDelta);
-    // approxBigNumber(await aUSDT.balanceOf(charlie.address), BN.from(928448406), acceptedDelta);
-    // approxBigNumber(await aUSDT.balanceOf(dave.address), BN.from(1080957012), acceptedDelta);
+    const acceptedDelta = BN.from(10000);
+    approxBigNumber(await aUSDT.balanceOf(alice.address), BN.from(1952642702), acceptedDelta);
+    approxBigNumber(await aUSDT.balanceOf(bob.address), BN.from(743422701), acceptedDelta);
+    approxBigNumber(await aUSDT.balanceOf(charlie.address), BN.from(722918925), acceptedDelta);
+    approxBigNumber(await aUSDT.balanceOf(dave.address), BN.from(771345798), acceptedDelta);
   });
 
   // xit("beta", async () => {
