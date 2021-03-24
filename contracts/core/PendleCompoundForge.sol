@@ -137,6 +137,15 @@ contract PendleCompoundForge is PendleForgeBase {
         return underlyingToCToken[_underlyingAsset];
     }
 
+    function _getReserveNormalizedIncome(address _underlyingAsset)
+        internal
+        override
+        returns (uint256)
+    {
+        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
+        return cToken.exchangeRateCurrent();
+    }
+
     struct InterestVariables {
         uint256 prevRate;
         uint256 currentRate;

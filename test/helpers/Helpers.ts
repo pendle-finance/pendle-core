@@ -248,6 +248,19 @@ export async function getLiquidityRate(
   return liquidityRate;
 }
 
+export async function emptyToken(tokenContract: Contract, person: Wallet) {
+  let bal: BN = await tokenContract.balanceOf(person.address);
+  if (bal.eq(0)) return;
+  await tokenContract
+    .connect(person)
+    .transfer(consts.DUMMY_GOVERNANCE_ADDRESS, bal);
+  bal = await tokenContract.balanceOf(person.address);
+  if (bal.eq(0)) return;
+  await tokenContract
+    .connect(person)
+    .transfer(consts.DUMMY_GOVERNANCE_ADDRESS, bal);
+}
+
 export function getGain(amount: BN, rate: BN, duration: BN): BN {
   const precision = BN.from(10).pow(27);
   const rateForDuration = rate

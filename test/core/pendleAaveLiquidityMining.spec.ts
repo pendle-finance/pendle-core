@@ -12,9 +12,9 @@ import {
   setTime,
   setTimeNextBlock,
   startOfEpoch,
-  mintAaveToken,
   tokens,
   errMsg,
+  emptyToken,
 } from "../helpers";
 import { liqParams, liquidityMiningFixture, UserStakeAction } from "./fixtures";
 import * as scenario from "./fixtures/liquidityMiningScenario.fixture";
@@ -170,10 +170,10 @@ describe("PendleAaveLiquidityMining tests", async () => {
 
     // empty aUSDT and XYT balance
     await emptyToken(aUSDT, bob);
-    await emptyToken(aUSDT, bob);
+    // await emptyToken(aUSDT, bob);
     await emptyToken(xyt, charlie);
     await emptyToken(aUSDT, charlie);
-    await emptyToken(aUSDT, charlie);
+    // await emptyToken(aUSDT, charlie);
     snapshotId = await evm_snapshot();
   });
 
@@ -185,14 +185,6 @@ describe("PendleAaveLiquidityMining tests", async () => {
     await evm_revert(snapshotId);
     snapshotId = await evm_snapshot();
   });
-
-  async function emptyToken(tokenContract: Contract, person: Wallet) {
-    const bal: BN = await tokenContract.balanceOf(person.address);
-    if (bal.eq(0)) return;
-    await tokenContract
-      .connect(person)
-      .transfer(consts.DUMMY_GOVERNANCE_ADDRESS, bal);
-  }
 
   async function doStake(person: Wallet, amount: BN) {
     await liq
@@ -317,7 +309,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
   //  - Dave just holds the LP tokens
   //  - Bob stake the LP tokens into liq-mining contract, in two transactions
   //=> after 2 months, all three of them should get the same interests
-  xit("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests [skip because the bug is being investigated]", async () => {
+  it.only("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests [skip because the bug is being investigated]", async () => {
     // console.log(await stdMarket.balanceOf(stdMarket.address));
     await setTimeNextBlock(provider, params.START_TIME.add(100));
     const xytBalanceOfMarket = await xyt.balanceOf(stdMarket.address);
@@ -333,12 +325,12 @@ describe("PendleAaveLiquidityMining tests", async () => {
     // console.log(`\tPrebalanceBob = ${preBalanceBob}, preBalanceDave = ${preBalanceDave}, preBalanceCharlie = ${preBalanceCharlie}`);
     // console.log(await stdMarket.balanceOf(stdMarket.address));
     await doStake(bob, params.INITIAL_LP_AMOUNT.div(2));
-    await advanceTime(provider, consts.ONE_MONTH);
+    await setTimeNextBlock(provider, params.START_TIME.add(consts.ONE_MONTH));
     await doStake(bob, params.INITIAL_LP_AMOUNT.div(2));
-    await advanceTime(provider, consts.ONE_MONTH);
+    await setTimeNextBlock(provider, params.START_TIME.add(consts.ONE_MONTH.mul(2)));
 
-    await liq.connect(bob).claimLpInterests();
-    let actualGainBob = (await aUSDT.balanceOf(bob.address)).sub(preBalanceBob);
+    // await liq.connect(bob).claimLpInterests();
+    // let actualGainBob = (await aUSDT.balanceOf(bob.address)).sub(preBalanceBob);
 
     await router
       .connect(charlie)
@@ -356,8 +348,8 @@ describe("PendleAaveLiquidityMining tests", async () => {
       preBalanceDave
     );
 
-    // console.log(actualGainBob.toString(), actualGainCharlie.toString(), actualGainDave.toString());
-    approxBigNumber(actualGainBob, actualGainDave, consts.TEST_TOKEN_DELTA);
+    console.log(actualGainCharlie.toString(), actualGainDave.toString());
+    // approxBigNumber(actualGainBob, actualGainDave, consts.TEST_TOKEN_DELTA);
     approxBigNumber(actualGainCharlie, actualGainDave, consts.TEST_TOKEN_DELTA);
   });
 

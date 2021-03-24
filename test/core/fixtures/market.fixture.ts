@@ -58,9 +58,9 @@ export async function marketFixture(
   ]);
   const totalSupply = await testToken.totalSupply();
 
-  for (var person of [bob, charlie]) {
+  for (var person of [bob, charlie, dave, eve]) {
     // no alice since alice is holding all tokens
-    await testToken.transfer(person.address, totalSupply.div(4));
+    await testToken.transfer(person.address, totalSupply.div(5));
   }
 
   await router.addMarketFactory(
@@ -133,7 +133,7 @@ export async function marketFixture(
   await data.setReentrancyWhitelist([aMarketAddress, cMarketAddress, ethMarketAddress], [true, true, true]);
   await data.setLockParams(BN.from(consts.LOCK_NUMERATOR), BN.from(consts.LOCK_DENOMINATOR)); // lock market
 
-  for (var person of [alice, bob, charlie, dave]) {
+  for (var person of [alice, bob, charlie, dave, eve]) {
     await testToken.connect(person).approve(router.address, totalSupply);
     await aFutureYieldToken
       .connect(person)

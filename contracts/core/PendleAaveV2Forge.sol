@@ -96,6 +96,15 @@ contract PendleAaveV2Forge is PendleForgeBase {
         return reserveATokenAddress[_underlyingAsset];
     }
 
+    function _getReserveNormalizedIncome(address _underlyingAsset)
+        internal
+        view
+        override
+        returns (uint256)
+    {
+        return aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset);
+    }
+
     function _calcDueInterests(
         uint256 principal,
         address _underlyingAsset,

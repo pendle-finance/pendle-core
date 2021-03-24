@@ -131,3 +131,18 @@ def rpowi(base, exp):
             res = rmul(res, base)
         exp //= 2
     return res
+
+
+# print(rdiv(2000000000000000000000000000000, 2 * 10**18))
+# print(rmul((72750770401058916515193 - 8083955191624038924283), 10**18) / 10**20)
+preG = 808397410062
+I = 64194828410
+print(rmul(10**18, 6466681007636))
+print(rmul(2*10**10,I)/2)
+
+
+
+F = rmul(rdiv(2*10**10*10**10,2*10**18)+preG,I)
+G = preG+F
+print(F)
+print(G)

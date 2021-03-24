@@ -31,6 +31,7 @@ import "../interfaces/IPendleYieldToken.sol";
 import "../tokens/PendleBaseToken.sol";
 import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "hardhat/console.sol";
 
 contract PendleMarket is IPendleMarket, PendleBaseToken {
     using Math for uint256;
@@ -42,8 +43,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     address private immutable forge;
     address public immutable override token;
     address public immutable override xyt;
-    uint256 public lastUnderlyingYieldTokenBalance;
-    uint256 public globalIncomeIndex;
     bool public bootstrapped;
     string private constant NAME = "Pendle Market";
     string private constant SYMBOL = "PENDLE-LPT";
@@ -52,8 +51,16 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     uint256 private priceLast = Math.RONE;
     uint256 private blockNumLast;
 
-    uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**30;
-    mapping(address => uint256) public lastGlobalIncomeIndex;
+    // TODO: check visibility of variables
+    uint256 private lastNormalisedIncome;
+    uint256 private paramL = 0;
+    uint256 private paramN = Math.RONE;
+    mapping(address => uint256) private lastParamL;
+    mapping(address => uint256) private lastParamN;
+    mapping(address => bool) private stakeBefore;
+
+    uint256 private constant MULTIPLIER = 10**10;
+
     mapping(address => TokenReserve) private reserves;
     uint256 public lastInterestUpdate;
 
@@ -85,7 +92,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         xyt = _xyt;
         token = _token;
         bootstrapped = false;
-        globalIncomeIndex = 1;
 
         forgeId = IPendleForge(_forge).forgeId();
         underlyingAsset = xytContract.underlyingAsset();
@@ -96,7 +102,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         data = IPendleForge(_forge).data();
         xytStartTime = IPendleYieldToken(_xyt).start();
         factoryId = IPendleMarketFactory(msg.sender).marketFactoryId();
-
         _approve(address(this), routerAddress, type(uint256).max);
         IERC20(_xyt).safeApprove(routerAddress, type(uint256).max);
         IERC20(_token).safeApprove(routerAddress, type(uint256).max);
@@ -330,6 +335,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         _curveShift(data);
+        _updateParamLandN();
 
         TokenReserve storage inTokenReserve = reserves[inToken];
         TokenReserve storage outTokenReserve = reserves[outToken];
@@ -382,6 +388,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         _curveShift(data);
+        _updateParamLandN();
 
         TokenReserve storage inTokenReserve = reserves[inToken];
         TokenReserve storage outTokenReserve = reserves[outToken];
@@ -552,7 +559,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
     /// @notice Sends fees as LP to Treasury
     function _collectFees(uint256 _amount) internal {
-        IERC20(address(this)).safeTransfer(data.treasury(), _amount);
+        IERC20(address(this)).transfer(data.treasury(), _amount);
     }
 
     function _burnLp(uint256 amount) internal {
@@ -634,52 +641,85 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         }
     }
 
-    // sends out any due interests to msg.sender if he's an LP holder
-    // this should be called before any functions that change someone's LPs
-    //
-    // How we keep track of LP interests:
-    //    - Whenever there is new interests iNew1 into the Market, it is distributed equally
-    //      to the Lp holders. Alice who has lpBalance will be entitled to lpBalance/totalLpSupply1*iNew1
-    //    - If there is another interest iNew2, or if totalLpSupply changes, Alice will receive an additional
-    //      lpBalance/totalSupply2*iNew2.
-    //    - Therefore, we can just keep track of globalIncomeIndex = iNew1/totalSupply1 + iNew2/totalSupply2
-    //      as well as the lastGlobalIncomeIndex of each user, when they last received interests.
-    //    - When Alice wants to redeem her interests, it will be lpBalance * (globalIncomeIndex - lastGlobalIncomeIndex[Alice])
+    // function _getName(address account) internal pure returns (string memory) {
+    //     if (account == address(0x186e446fbd41dD51Ea2213dB2d3ae18B05A05ba8)) {
+    //         return "Alice";
+    //     } else if (account == address(0x6824c889f6EbBA8Dac4Dd4289746FCFaC772Ea56)) {
+    //         return "Bob";
+    //     } else if (account == address(0xCFf94465bd20C91C86b0c41e385052e61ed49f37)) {
+    //         return "Charlie";
+    //     } else if (account == address(0xEBAf3e0b7dBB0Eb41d66875Dd64d9F0F314651B3)) {
+    //         return "Dave";
+    //     } else return "Unknown";
+    // }
+
     function _settleLpInterests(address account) internal returns (uint256 dueInterests) {
         if (account == address(this)) return 0;
-        _updateGlobalIncomeIndex();
-        if (lastGlobalIncomeIndex[account] == 0) {
-            lastGlobalIncomeIndex[account] = globalIncomeIndex;
+        // console.log("------");
+
+        _updateParamLandN();
+        if (stakeBefore[account] == false) {
+            stakeBefore[account] = true;
+            lastParamL[account] = paramL;
+            lastParamN[account] = paramN;
             return 0;
         }
 
-        dueInterests = balanceOf[account]
-            .mul(globalIncomeIndex.sub(lastGlobalIncomeIndex[account]))
-            .div(GLOBAL_INCOME_INDEX_MULTIPLIER);
+        uint256 singleLpValue = _calSomething(account);
+        dueInterests = balanceOf[account].rmul(singleLpValue).div(MULTIPLIER);
+        uint256 yieldTokenBalance =
+            IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this));
 
-        lastGlobalIncomeIndex[account] = globalIncomeIndex;
+        lastParamL[account] = paramL;
+        lastParamN[account] = paramN;
+
+        // console.log("to", _getName(account), "dueInt", dueInterests);
+        // console.log("balAToken", yieldTokenBalance);
+        dueInterests = dueInterests.min(yieldTokenBalance);
+
+        // console.log("------");
         if (dueInterests == 0) return 0;
-        lastUnderlyingYieldTokenBalance = lastUnderlyingYieldTokenBalance.sub(dueInterests);
-        IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).safeTransfer(account, dueInterests);
+        IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).transfer(account, dueInterests);
+        console.log(
+            "postBal",
+            IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this))
+        );
+    }
+
+    function _calSomething(address account) internal view returns (uint256) {
+        return paramL - lastParamL[account].rmul(paramN).rdiv(lastParamN[account]);
+    }
+
+    function _getParamI() internal returns (uint256 paramI) {
+        uint256 curNormalisedIncome =
+            IPendleForge(forge).getReserveNormalizedIncome(underlyingAsset);
+        if (lastNormalisedIncome == 0) {
+            paramI = 0;
+        } else {
+            paramI = curNormalisedIncome.rdiv(lastNormalisedIncome) - Math.RONE;
+        }
+        lastNormalisedIncome = curNormalisedIncome;
+        return paramI;
     }
 
     // this function should be called whenver the total amount of LP changes
-    function _updateGlobalIncomeIndex() internal {
+    // !!! after done debugging, change it back to internal
+    function _updateParamLandN() public {
         if (block.timestamp.sub(lastInterestUpdate) > data.interestUpdateDelta()) {
             // get due interests for the XYT being held in the market if it has not been updated
             // for interestUpdateDelta seconds
-
             router.redeemDueInterests(forgeId, underlyingAsset, expiry);
             lastInterestUpdate = block.timestamp;
         }
+        uint256 nXyt = IPendleYieldToken(xyt).balanceOf(address(this));
+        uint256 sTotal = totalSupply;
+        uint256 paramI = _getParamI();
 
-        uint256 currentUnderlyingYieldTokenBalance = underlyingYieldToken.balanceOf(address(this));
-        uint256 interestsEarned =
-            currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance;
-        lastUnderlyingYieldTokenBalance = currentUnderlyingYieldTokenBalance;
-        globalIncomeIndex = globalIncomeIndex.add(
-            interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(totalSupply)
-        );
+        paramL = paramL.rmul(Math.RONE + paramI) + nXyt.mul(MULTIPLIER).rmul(paramI).rdiv(sTotal);
+        paramN = paramN.rmul(Math.RONE + paramI);
+        // console.log("time", block.timestamp);
+        // console.log("I", paramI, "ratio", nXyt.mul(MULTIPLIER).rdiv(sTotal));
+        // console.log("N", paramN, "L", paramL);
     }
 
     // before we send LPs, we need to settle due interests for both the to and from addresses

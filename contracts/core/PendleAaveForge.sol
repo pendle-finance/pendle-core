@@ -70,6 +70,15 @@ contract PendleAaveForge is PendleForgeBase {
         );
     }
 
+    function _getReserveNormalizedIncome(address _underlyingAsset)
+        internal
+        view
+        override
+        returns (uint256)
+    {
+        return aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
+    }
+
     function _getYieldBearingToken(address _underlyingAsset) internal override returns (address) {
         if (reserveATokenAddress[_underlyingAsset] == address(0)) {
             reserveATokenAddress[_underlyingAsset] = aaveLendingPoolCore.getReserveATokenAddress(
