@@ -135,6 +135,18 @@ describe("PendleAaveMarket", async () => {
     )
   }
 
+  async function addMarketLiquidityXyt(user: Wallet, amount: BN) {
+    await router.connect(user).addMarketLiquiditySingle(
+      consts.MARKET_FACTORY_AAVE,
+      xyt.address,
+      testToken.address,
+      true,
+      amount,
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
+    )
+  }
+
   async function mintOtAndXytUSDT(user: Wallet, amount: BN) {
     await mintOtAndXyt(
       provider,
@@ -178,7 +190,7 @@ describe("PendleAaveMarket", async () => {
   //   await xyt.connect(stdMarket.address).transfer(user.address, amount);
   // }
 
-  it.only("beta3", async () => {
+  it("beta3", async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
@@ -226,6 +238,56 @@ describe("PendleAaveMarket", async () => {
     approxBigNumber(await aUSDT.balanceOf(bob.address), BN.from(871918760), acceptedDelta);
     approxBigNumber(await aUSDT.balanceOf(charlie.address), BN.from(928448406), acceptedDelta);
     approxBigNumber(await aUSDT.balanceOf(dave.address), BN.from(1080957012), acceptedDelta);
+  });
+
+  it.only("beta4", async () => {
+    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+
+    await bootstrapSampleMarket(BN.from(10).pow(10));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addMarketLiquidityXyt(bob, amountXytRef.div(10));
+    await swapExactInXytToToken(eve, BN.from(10).pow(9));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addMarketLiquidityXyt(charlie, amountXytRef.div(5));
+    await swapExactInXytToToken(eve, BN.from(10).pow(9));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addMarketLiquidityXyt(dave, amountXytRef.div(2));
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await addMarketLiquidityXyt(dave, amountXytRef.div(3));
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addMarketLiquidityXyt(bob, amountXytRef.div(6));
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addMarketLiquidityXyt(bob, amountXytRef.div(2));
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addMarketLiquidityXyt(bob, amountXytRef.div(5));
+
+    for (let user of [alice, bob, charlie, dave]) {
+      await router.connect(user).claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
+      await router.connect(user).redeemDueInterests(consts.FORGE_AAVE, tokenUSDT.address, consts.T0.add(consts.SIX_MONTH), consts.HIGH_GAS_OVERRIDE);
+    }
+
+    for (let user of [alice, bob, charlie, dave]) {
+      console.log((await aUSDT.balanceOf(user.address)).toString());
+    }
+
+    // const acceptedDelta = BN.from(10000);
+    // approxBigNumber(await aUSDT.balanceOf(alice.address), BN.from(1309016354), acceptedDelta);
+    // approxBigNumber(await aUSDT.balanceOf(bob.address), BN.from(871918760), acceptedDelta);
+    // approxBigNumber(await aUSDT.balanceOf(charlie.address), BN.from(928448406), acceptedDelta);
+    // approxBigNumber(await aUSDT.balanceOf(dave.address), BN.from(1080957012), acceptedDelta);
   });
 
   // xit("beta", async () => {

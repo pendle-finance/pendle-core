@@ -674,7 +674,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         lastParamN[account] = paramN;
 
         // console.log("to", _getName(account), "dueInt", dueInterests);
-        // console.log("balAToken", yieldTokenBalance);
+        console.log("balAToken & dueInt", yieldTokenBalance, dueInterests);
         dueInterests = dueInterests.min(yieldTokenBalance);
 
         // console.log("------");
