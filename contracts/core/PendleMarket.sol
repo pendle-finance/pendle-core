@@ -167,6 +167,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     ) external override marketIsOpen returns (PendingTransfer[3] memory transfers) {
         checkIsBootstrapped();
         checkOnlyRouter();
+        _updateParamLandN();
         uint256 totalLp = totalSupply;
         uint256 ratio = Math.rdiv(_exactOutLp, totalLp);
         require(ratio != 0, "ZERO_RATIO");
@@ -210,6 +211,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         _curveShift(data);
+        _updateParamLandN();
 
         TokenReserve storage inTokenReserve = reserves[_inToken];
         uint256 totalLp = totalSupply;
@@ -256,6 +258,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     ) external override returns (PendingTransfer[3] memory transfers) {
         checkIsBootstrapped();
         checkOnlyRouter();
+        _updateParamLandN();
         uint256 exitFee = data.exitFee();
         uint256 totalLp = totalSupply;
         uint256 exitFees = Math.rmul(_inLp, exitFee);
@@ -297,6 +300,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         _curveShift(data);
+        _updateParamLandN();
 
         TokenReserve storage outTokenReserve = reserves[_outToken];
         uint256 exitFee = data.exitFee();
