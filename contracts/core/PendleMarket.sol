@@ -46,7 +46,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     bool public bootstrapped;
     string private constant NAME = "Pendle Market";
     string private constant SYMBOL = "PENDLE-LPT";
-    uint256 private constant INITIAL_LP = 10**18; // arbitrary number
+    uint256 private constant MINIMUM_LIQUIDITY = 10**3;
     uint8 private constant DECIMALS = 18;
     uint256 private priceLast = Math.RONE;
     uint256 private blockNumLast;
@@ -58,7 +58,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     mapping(address => uint256) private lastParamL;
     mapping(address => uint256) private lastParamN;
 
-    uint256 private constant MULTIPLIER = 10**10;
+    uint256 private constant MULTIPLIER = 10**20;
 
     mapping(address => TokenReserve) private reserves;
     uint256 public lastInterestUpdate;
@@ -140,13 +140,16 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             reserves[token].weight
         );
 
-        _mintLp(INITIAL_LP);
+        uint256 liquidity =
+            Math.sqrt(initialXytLiquidity.mul(initialTokenLiquidity)).sub(MINIMUM_LIQUIDITY);
+        console.log("LP", liquidity, initialXytLiquidity, initialTokenLiquidity);
+        _mintLp(MINIMUM_LIQUIDITY.add(liquidity));
 
         transfers[0].amount = initialXytLiquidity;
         transfers[0].isOut = false;
         transfers[1].amount = initialTokenLiquidity;
         transfers[1].isOut = false;
-        transfers[2].amount = INITIAL_LP;
+        transfers[2].amount = liquidity;
         transfers[2].isOut = true;
 
         blockNumLast = block.number;
@@ -679,7 +682,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         // console.log("to", _getName(account), "dueInt", dueInterests);
         console.log("balAToken & dueInt", yieldTokenBalance, dueInterests);
-        dueInterests = dueInterests.min(yieldTokenBalance);
+        // dueInterests = dueInterests.min(yieldTokenBalance);
 
         // console.log("------");
         if (dueInterests == 0) return 0;

@@ -39,7 +39,6 @@ describe("PendleAaveMarket", async () => {
   let lendingPoolCore: Contract;
   let aUSDT: Contract;
   let tokenUSDT: Token;
-  const amountLPRef = BN.from(10).pow(18);
   const amountXytRef = BN.from(10).pow(10);
 
   before(async () => {
