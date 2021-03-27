@@ -57,7 +57,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     uint256 private paramN = Math.RONE;
     mapping(address => uint256) private lastParamL;
     mapping(address => uint256) private lastParamN;
-    mapping(address => bool) private stakeBefore;
 
     uint256 private constant MULTIPLIER = 10**10;
 
@@ -662,8 +661,9 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         // console.log("------");
 
         _updateParamLandN();
-        if (stakeBefore[account] == false) {
-            stakeBefore[account] = true;
+        // if lastParamN is 0 then it's certain that this is the first time the user stakes
+        // since paramN always >= 1
+        if (lastParamN[account] == 0) {
             lastParamL[account] = paramL;
             lastParamN[account] = paramN;
             return 0;
