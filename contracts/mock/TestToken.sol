@@ -31,6 +31,6 @@ contract TestToken is ERC20 {
         uint8 _decimals
     ) ERC20(_name, _symbol) {
         _setupDecimals(_decimals);
-        _mint(msg.sender, 10**(21 + 24));
+        _mint(msg.sender, 10**(18 + 10 + 3));
     }
 }
