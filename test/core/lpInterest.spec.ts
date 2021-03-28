@@ -24,7 +24,7 @@ import { marketFixture } from "./fixtures";
 const { waffle } = require("hardhat");
 const { provider } = waffle;
 
-describe("PendleAaveMarket", async () => {
+describe("lpInterest for AaveMarket", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
@@ -146,6 +146,42 @@ describe("PendleAaveMarket", async () => {
     )
   }
 
+  async function removeMarketLiquidityAll(user: Wallet, amount: BN) {
+    await router.removeMarketLiquidityAll(
+      consts.MARKET_FACTORY_AAVE,
+      xyt.address,
+      testToken.address,
+      amount,
+      BN.from(0),
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
+    );
+  }
+
+  async function removeMarketLiquidityXyt(user: Wallet, amount: BN) {
+    await router.removeMarketLiquiditySingle(
+      consts.MARKET_FACTORY_AAVE,
+      xyt.address,
+      testToken.address,
+      true,
+      amount,
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
+    )
+  }
+
+  async function removeMarketLiquidityToken(user: Wallet, amount: BN) {
+    await router.removeMarketLiquiditySingle(
+      consts.MARKET_FACTORY_AAVE,
+      xyt.address,
+      testToken.address,
+      false,
+      amount,
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
+    )
+  }
+
   async function mintOtAndXytUSDT(user: Wallet, amount: BN) {
     await mintOtAndXyt(
       provider,
@@ -184,11 +220,11 @@ describe("PendleAaveMarket", async () => {
     await xyt.connect(user).transfer(stdMarket.address, amount);
   }
 
-  // async function removeFakeXyt(user: Wallet, amount: BN) {
-  //   await xyt.connect(stdMarket.address).transfer(user.address, amount);
-  // }
+  async function getLPBalance(user: Wallet) {
+    return await stdMarket.balanceOf(user.address);
+  }
 
-  it("beta3", async () => {
+  it("test 1", async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
@@ -238,7 +274,7 @@ describe("PendleAaveMarket", async () => {
     approxBigNumber(await aUSDT.balanceOf(dave.address), BN.from(1080957012), acceptedDelta);
   });
 
-  it("beta4", async () => {
+  it("test 2", async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
@@ -288,7 +324,7 @@ describe("PendleAaveMarket", async () => {
     approxBigNumber(await aUSDT.balanceOf(dave.address), BN.from(771345798), acceptedDelta);
   });
 
-  it("beta5", async () => {
+  it("test 3", async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
@@ -338,84 +374,59 @@ describe("PendleAaveMarket", async () => {
     approxBigNumber(await aUSDT.balanceOf(dave.address), BN.from(803722622), acceptedDelta);
   });
 
-  // xit("beta", async () => {
-  // await mintAaveToken(provider, tokenUSDT, eve, BN.from(10 ** 4)); // 10**4 to wei = 10**10
-  //   for (let user of [alice, bob, charlie, dave, eve]) {
-  //     console.log((await aUSDT.balanceOf(user.address)).toString());
-  //   }
-  //   let amountLPRef = BN.from(10).pow(18);
-  //   await bootstrapSampleMarket(BN.from(10).pow(10));
+  it.only("test 4", async () => {
+    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
-  //   await advanceTime(provider, consts.FIFTEEN_DAY);
-  //   await addMarketLiquidityAll(bob, amountLPRef.div(10));
+    await bootstrapSampleMarket(BN.from(10).pow(10));
+    await advanceTime(provider, consts.ONE_DAY.mul(5));
+    await removeMarketLiquidityAll(alice, (await getLPBalance(alice)).div(2));
 
-  //   await advanceTime(provider, consts.FIFTEEN_DAY);
-  //   await addMarketLiquidityAll(charlie, amountLPRef.div(5));
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addMarketLiquidityXyt(bob, amountXytRef.div(10));
+    await swapExactInXytToToken(eve, BN.from(10).pow(9));
 
-  //   await advanceTime(provider, consts.FIFTEEN_DAY);
-  //   await addMarketLiquidityAll(dave, amountLPRef.div(2));
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await removeMarketLiquidityXyt(bob, (await getLPBalance(bob)));
+    await addMarketLiquidityAllByXyt(charlie, amountXytRef.div(5));
+    await swapExactInXytToToken(eve, BN.from(10).pow(9));
+    await addMarketLiquidityAllByXyt(alice, await xyt.balanceOf(alice.address));
 
-  //   await advanceTime(provider, consts.ONE_MONTH);
-  //   await addMarketLiquidityAll(dave, amountLPRef.div(3));
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addMarketLiquidityXyt(dave, amountXytRef.div(2));
+    await removeMarketLiquidityToken(charlie, (await getLPBalance(charlie)).div(3));
 
-  //   await advanceTime(provider, consts.FIFTEEN_DAY);
-  //   await addMarketLiquidityAll(charlie, amountLPRef.div(3));
+    await advanceTime(provider, consts.ONE_MONTH);
+    await addMarketLiquidityXyt(dave, amountXytRef.div(3));
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addMarketLiquidityXyt(bob, amountXytRef.div(6));
 
-  //   await advanceTime(provider, consts.ONE_MONTH);
-  //   await addMarketLiquidityAll(bob, amountLPRef.div(2));
+    await advanceTime(provider, consts.ONE_MONTH);
+    await removeMarketLiquidityXyt(dave, (await getLPBalance(dave)).div(3));
+    await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addMarketLiquidityAllByXyt(charlie, amountXytRef.div(3));
 
-  //   await advanceTime(provider, consts.FIFTEEN_DAY);
-  //   await addMarketLiquidityAll(bob, amountLPRef.div(5));
+    await advanceTime(provider, consts.ONE_MONTH);
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addMarketLiquidityXyt(bob, amountXytRef.div(2));
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addMarketLiquidityXyt(bob, amountXytRef.div(5));
 
-  //   for (let user of [alice, bob, charlie, dave]) {
-  //     await router.connect(user).claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
-  //     await router.connect(user).redeemDueInterests(consts.FORGE_AAVE, tokenUSDT.address, consts.T0.add(consts.SIX_MONTH), consts.HIGH_GAS_OVERRIDE);
-  //   }
+    await advanceTime(provider, consts.ONE_MONTH);
 
-  //   for (let user of [alice, bob, charlie, dave, eve]) {
-  //     console.log((await aUSDT.balanceOf(user.address)).toString());
-  //   }
-  // });
+    for (let user of [alice, bob, charlie, dave]) {
+      await router.connect(user).claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
+      await router.connect(user).redeemDueInterests(consts.FORGE_AAVE, tokenUSDT.address, consts.T0.add(consts.SIX_MONTH), consts.HIGH_GAS_OVERRIDE);
+    }
 
-  // xit("beta2-disabled", async () => {
-  //   await emptyToken(aUSDT, eve);
-  //   await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+    for (let user of [alice, bob, charlie, dave]) {
+      console.log((await aUSDT.balanceOf(user.address)).toString());
+    }
 
-  //   let amountLPRef = BN.from(10).pow(18);
-  //   await bootstrapSampleMarket(BN.from(10).pow(10));
-
-  //   await advanceTime(provider, consts.FIFTEEN_DAY);
-  //   await addMarketLiquidityAll(bob, amountLPRef.div(10));
-  //   await addFakeXyt(eve, BN.from(10).pow(10));
-
-  //   await advanceTime(provider, consts.FIFTEEN_DAY);
-  //   await addMarketLiquidityAll(charlie, amountLPRef.div(5));
-  //   await addFakeXyt(eve, BN.from(10).pow(10));
-
-  //   await advanceTime(provider, consts.FIFTEEN_DAY);
-  //   await addMarketLiquidityAll(dave, amountLPRef.div(2));
-
-  //   await advanceTime(provider, consts.ONE_MONTH);
-  //   await addMarketLiquidityAll(dave, amountLPRef.div(3));
-  //   await addFakeXyt(eve, BN.from(10).pow(10));
-
-  //   await advanceTime(provider, consts.FIFTEEN_DAY);
-  //   await addMarketLiquidityAll(charlie, amountLPRef.div(3));
-  //   await addFakeXyt(eve, BN.from(10).pow(10));
-
-  //   await advanceTime(provider, consts.ONE_MONTH);
-  //   await addMarketLiquidityAll(bob, amountLPRef.div(2));
-
-  //   await advanceTime(provider, consts.FIFTEEN_DAY);
-  //   await addMarketLiquidityAll(bob, amountLPRef.div(5));
-
-  //   for (let user of [alice, bob, charlie, dave]) {
-  //     await router.connect(user).claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
-  //     await router.connect(user).redeemDueInterests(consts.FORGE_AAVE, tokenUSDT.address, consts.T0.add(consts.SIX_MONTH), consts.HIGH_GAS_OVERRIDE);
-  //   }
-
-  //   for (let user of [alice, bob, charlie, dave]) {
-  //     console.log((await aUSDT.balanceOf(user.address)).toString());
-  //   }
-  // });
+    // const acceptedDelta = BN.from(10000);
+    // approxBigNumber(await aUSDT.balanceOf(alice.address), BN.from(1952642702), acceptedDelta);
+    // approxBigNumber(await aUSDT.balanceOf(bob.address), BN.from(743422701), acceptedDelta);
+    // approxBigNumber(await aUSDT.balanceOf(charlie.address), BN.from(722918925), acceptedDelta);
+    // approxBigNumber(await aUSDT.balanceOf(dave.address), BN.from(771345798), acceptedDelta);
+  });
 });
