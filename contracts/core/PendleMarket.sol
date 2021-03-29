@@ -50,7 +50,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     uint256 private priceLast = Math.RONE;
     uint256 private blockNumLast;
 
-    // TODO: check visibility of variables
     uint256 private lastNormalisedIncome;
     uint256 private paramL = 0;
     uint256 private paramN = Math.RONE;
@@ -706,8 +705,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     }
 
     // this function should be called whenver the total amount of LP changes
-    // !!! after done debugging, change it back to internal
-    function _updateParamLandN() public {
+    function _updateParamLandN() internal {
         if (block.timestamp.sub(lastInterestUpdate) > data.interestUpdateDelta()) {
             // get due interests for the XYT being held in the market if it has not been updated
             // for interestUpdateDelta seconds
