@@ -327,7 +327,10 @@ describe("PendleAaveLiquidityMining tests", async () => {
     await doStake(bob, INITIAL_LP_AMOUNT.div(2));
     await setTimeNextBlock(provider, params.START_TIME.add(consts.ONE_MONTH));
     await doStake(bob, INITIAL_LP_AMOUNT.div(2));
-    await setTimeNextBlock(provider, params.START_TIME.add(consts.ONE_MONTH.mul(2)));
+    await setTimeNextBlock(
+      provider,
+      params.START_TIME.add(consts.ONE_MONTH.mul(2))
+    );
 
     // await liq.connect(bob).claimLpInterests();
     // let actualGainBob = (await aUSDT.balanceOf(bob.address)).sub(preBalanceBob);

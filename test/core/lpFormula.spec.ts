@@ -237,11 +237,7 @@ describe("lpFormula", async () => {
       testToken.address,
       amountToRemove
     );
-    approxBigNumber(
-      balanceDiff,
-      test.expectedTokenDiff,
-      LOCAL_TOKEN_DELTA
-    );
+    approxBigNumber(balanceDiff, test.expectedTokenDiff, LOCAL_TOKEN_DELTA);
 
     await setTimeNextBlock(provider, T2);
     amountToRemove = lpBalanceAlice.mul(test.ratioLpForXyt).div(100);
@@ -330,11 +326,7 @@ describe("lpFormula", async () => {
 
     await checkLpBalance(bob, totalSupply.mul(3));
     approxBigNumber(amountXytUsed, amountOfXyt.mul(3), LOCAL_TOKEN_DELTA);
-    approxBigNumber(
-      amountTokenUsed,
-      amountOfToken.mul(3),
-      LOCAL_TOKEN_DELTA
-    );
+    approxBigNumber(amountTokenUsed, amountOfToken.mul(3), LOCAL_TOKEN_DELTA);
 
     approxBigNumber(
       await xyt.balanceOf(stdMarket.address),
@@ -382,11 +374,7 @@ describe("lpFormula", async () => {
     let amountTokenReceived = finalTokenBalance.sub(initialTokenBalance);
 
     approxBigNumber(amountXytReceived, amountOfXyt, LOCAL_TOKEN_DELTA);
-    approxBigNumber(
-      amountTokenReceived,
-      amountOfToken,
-      LOCAL_TOKEN_DELTA
-    );
+    approxBigNumber(amountTokenReceived, amountOfToken, LOCAL_TOKEN_DELTA);
 
     approxBigNumber(
       await xyt.balanceOf(stdMarket.address),
@@ -398,6 +386,10 @@ describe("lpFormula", async () => {
       BN.from(0),
       LOCAL_TOKEN_DELTA
     );
-    approxBigNumber(await stdMarket.totalSupply(), MINIMUM_LIQUIDITY, BN.from(0));
+    approxBigNumber(
+      await stdMarket.totalSupply(),
+      MINIMUM_LIQUIDITY,
+      BN.from(0)
+    );
   });
 });
