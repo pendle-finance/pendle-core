@@ -611,7 +611,6 @@ describe("PendleAaveMarket", async () => {
 
     let initialXytBalance: BN = await xyt.balanceOf(alice.address);
 
-    console.log("XYT", xyt.address);
     await router.swapExactOut(
       xyt.address,
       WETH.address,

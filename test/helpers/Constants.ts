@@ -49,7 +49,6 @@ export const consts = {
   INITIAL_COMPOUND_TOKEN_AMOUNT: BN.from(10 ** 6),
   INITIAL_OT_XYT_AMOUNT: BN.from(10 ** 4),
   TEST_TOKEN_DELTA: BN.from(10).pow(2),
-  TEST_LP_DELTA: BN.from(10).pow(11),
   LOCK_NUMERATOR: BN.from(1),
   LOCK_DENOMINATOR: BN.from(180),
 

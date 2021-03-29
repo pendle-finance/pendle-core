@@ -252,7 +252,6 @@ describe("PendleCompoundRouter", async () => {
       initialcUSDTbalance,
       initialUnderlyingBalance
     );
-    console.log(actualGain.toString());
     expect(actualGain.toNumber()).to.be.approximately(
       expectedGain.toNumber(),
       10

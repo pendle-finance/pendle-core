@@ -187,4 +187,13 @@ contract PendleCompoundForge is PendleForgeBase {
             .mul(initialRate)
             .div(interestVariables.currentRate);
     }
+
+    function _getLastReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
+        internal
+        view
+        override
+        returns (uint256)
+    {
+        return lastRateBeforeExpiry[_underlyingAsset][_expiry];
+    }
 }

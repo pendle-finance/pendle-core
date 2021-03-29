@@ -134,6 +134,10 @@ interface IPendleForge {
 
     function getReserveNormalizedIncome(address _underlyingAsset) external returns (uint256);
 
+    function getLastReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
+        external
+        returns (uint256);
+
     /**
      * @notice Gets a reference to the PendleRouter contract.
      * @return Returns the router contract reference.

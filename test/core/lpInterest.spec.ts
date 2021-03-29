@@ -263,9 +263,9 @@ describe("lpInterest for AaveMarket", async () => {
       await router.connect(user).redeemDueInterests(consts.FORGE_AAVE, tokenUSDT.address, consts.T0.add(consts.SIX_MONTH), consts.HIGH_GAS_OVERRIDE);
     }
 
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log((await aUSDT.balanceOf(user.address)).toString());
-    }
+    // for (let user of [alice, bob, charlie, dave]) {
+    //   console.log((await aUSDT.balanceOf(user.address)).toString());
+    // }
 
     const acceptedDelta = BN.from(10000);
     approxBigNumber(await aUSDT.balanceOf(alice.address), BN.from(1309016354), acceptedDelta);
@@ -313,9 +313,9 @@ describe("lpInterest for AaveMarket", async () => {
       await router.connect(user).redeemDueInterests(consts.FORGE_AAVE, tokenUSDT.address, consts.T0.add(consts.SIX_MONTH), consts.HIGH_GAS_OVERRIDE);
     }
 
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log((await aUSDT.balanceOf(user.address)).toString());
-    }
+    // for (let user of [alice, bob, charlie, dave]) {
+    //   console.log((await aUSDT.balanceOf(user.address)).toString());
+    // }
 
     const acceptedDelta = BN.from(10000);
     approxBigNumber(await aUSDT.balanceOf(alice.address), BN.from(1952642702), acceptedDelta);
@@ -363,9 +363,9 @@ describe("lpInterest for AaveMarket", async () => {
       await router.connect(user).redeemDueInterests(consts.FORGE_AAVE, tokenUSDT.address, consts.T0.add(consts.SIX_MONTH), consts.HIGH_GAS_OVERRIDE);
     }
 
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log((await aUSDT.balanceOf(user.address)).toString());
-    }
+    // for (let user of [alice, bob, charlie, dave]) {
+    //   console.log((await aUSDT.balanceOf(user.address)).toString());
+    // }
 
     const acceptedDelta = BN.from(10000);
     approxBigNumber(await aUSDT.balanceOf(alice.address), BN.from(803722622), acceptedDelta);
@@ -374,7 +374,7 @@ describe("lpInterest for AaveMarket", async () => {
     approxBigNumber(await aUSDT.balanceOf(dave.address), BN.from(803722622), acceptedDelta);
   });
 
-  it.only("test 4", async () => {
+  it("test 4", async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
@@ -419,14 +419,14 @@ describe("lpInterest for AaveMarket", async () => {
       await router.connect(user).redeemDueInterests(consts.FORGE_AAVE, tokenUSDT.address, consts.T0.add(consts.SIX_MONTH), consts.HIGH_GAS_OVERRIDE);
     }
 
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log((await aUSDT.balanceOf(user.address)).toString());
-    }
+    // for (let user of [alice, bob, charlie, dave]) {
+    //   console.log((await aUSDT.balanceOf(user.address)).toString());
+    // }
 
-    // const acceptedDelta = BN.from(10000);
-    // approxBigNumber(await aUSDT.balanceOf(alice.address), BN.from(1952642702), acceptedDelta);
-    // approxBigNumber(await aUSDT.balanceOf(bob.address), BN.from(743422701), acceptedDelta);
-    // approxBigNumber(await aUSDT.balanceOf(charlie.address), BN.from(722918925), acceptedDelta);
-    // approxBigNumber(await aUSDT.balanceOf(dave.address), BN.from(771345798), acceptedDelta);
+    const acceptedDelta = BN.from(10000);
+    approxBigNumber(await aUSDT.balanceOf(alice.address), BN.from(1861443829), acceptedDelta);
+    approxBigNumber(await aUSDT.balanceOf(bob.address), BN.from(750414837), acceptedDelta);
+    approxBigNumber(await aUSDT.balanceOf(charlie.address), BN.from(1005075649), acceptedDelta);
+    approxBigNumber(await aUSDT.balanceOf(dave.address), BN.from(805356609), acceptedDelta);
   });
 });

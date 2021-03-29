@@ -59,21 +59,21 @@ export function scenarioRemove05(): TestRemoveLiq {
 }
 
 export function scenarioAdd01(): TestAddLiq {
-  return new TestAddLiq(consts.THREE_MONTH, 891, 50, "33301790282170172", 331, 57, "67220816465474392");
+  return new TestAddLiq(consts.THREE_MONTH, 891, 50, "18085079", 331, 57, "36505357");
 }
 
 export function scenarioAdd02(): TestAddLiq {
-  return new TestAddLiq(consts.ONE_MONTH, 381, 157, "198283961837071968", 167, 36, "115989733684135088");
+  return new TestAddLiq(consts.ONE_MONTH, 381, 157, "50015925", 167, 36, "29257706");
 }
 
 export function scenarioAdd03(): TestAddLiq {
-  return new TestAddLiq(consts.FIVE_MONTH, 594, 784334, "254537264553463578624", 407, 397405, "935877870063826108416");
+  return new TestAddLiq(consts.FIVE_MONTH, 594, 784334, "125153154235", 407, 397405, "460160784797");
 }
 
 export function scenarioAdd04(): TestAddLiq {
-  return new TestAddLiq(consts.THREE_MONTH, 891, 1000, "570951745713196928", 331, 2697, "2212728577055110912");
+  return new TestAddLiq(consts.THREE_MONTH, 891, 1000, "310064649", 331, 2697, "1201658309");
 }
 
 export function scenarioAdd05(): TestAddLiq {
-  return new TestAddLiq(consts.ONE_MONTH, 292, 4769482, "161694963824566140928", 979, 5636155, "9693524330657995554816");
+  return new TestAddLiq(consts.ONE_MONTH, 292, 4769482, "86452840114", 979, 5636155, "5182800312870");
 }

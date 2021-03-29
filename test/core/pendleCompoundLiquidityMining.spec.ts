@@ -143,10 +143,7 @@ describe("PendleCompoundLiquidityMining tests", async () => {
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
   let liq: Contract;
-  let router: Contract;
-  let stdMarket: Contract;
-  let xyt: Contract;
-  let baseToken: Contract;
+  let market: Contract;
   let pdl: Contract;
   let params: liqParams;
   let cUSDT: Contract;
@@ -157,10 +154,7 @@ describe("PendleCompoundLiquidityMining tests", async () => {
     globalSnapshotId = await evm_snapshot();
     const fixture = await loadFixture(liquidityMiningFixture);
     liq = fixture.cLiquidityMining;
-    router = fixture.core.router;
-    baseToken = fixture.testToken;
-    stdMarket = fixture.cMarket;
-    xyt = fixture.cForge.cFutureYieldToken;
+    market = fixture.cMarket;
     params = fixture.params;
     pdl = fixture.pdl;
     cUSDT = await getCContract(alice, tokens.USDT);
@@ -204,7 +198,7 @@ describe("PendleCompoundLiquidityMining tests", async () => {
   async function getLpBalanceOfAllUsers(): Promise<BN[]> {
     let res: BN[] = [];
     for (let i = 0; i < wallets.length; i++) {
-      res.push(await stdMarket.balanceOf(wallets[i].address));
+      res.push(await market.balanceOf(wallets[i].address));
     }
     return res;
   }
@@ -319,7 +313,7 @@ describe("PendleCompoundLiquidityMining tests", async () => {
   });
 
   it("this test shouldn't crash", async () => {
-    const amountToStake = params.INITIAL_LP_AMOUNT;
+    const amountToStake = await market.balanceOf(bob.address);
 
     await setTimeNextBlock(provider, params.START_TIME);
     await liq
@@ -352,11 +346,11 @@ describe("PendleCompoundLiquidityMining tests", async () => {
   it("can stake and withdraw", async () => {
     const FIFTEEN_DAYS = consts.ONE_DAY.mul(15);
 
-    const amountToStake = params.INITIAL_LP_AMOUNT; //1e17 LP = 0.1 LP
+    const amountToStake = await market.balanceOf(bob.address); //1e17 LP = 0.1 LP
 
     const pdlBalanceOfContract = await pdl.balanceOf(liq.address);
     const pdlBalanceOfUser = await pdl.balanceOf(bob.address);
-    const lpBalanceOfUser = await stdMarket.balanceOf(bob.address);
+    const lpBalanceOfUser = await market.balanceOf(bob.address);
 
     console.log(
       `\tPDL balance of liq contract before: ${pdlBalanceOfContract}`

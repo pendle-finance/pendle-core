@@ -112,4 +112,13 @@ contract PendleAaveForge is PendleForgeBase {
 
         dueInterests = principal.mul(normalizedIncome).div(ix).sub(principal);
     }
+
+    function _getLastReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
+        internal
+        view
+        override
+        returns (uint256)
+    {
+        return lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
+    }
 }

@@ -31,7 +31,6 @@ import "../interfaces/IPendleYieldToken.sol";
 import "../tokens/PendleBaseToken.sol";
 import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "hardhat/console.sol";
 
 contract PendleMarket is IPendleMarket, PendleBaseToken {
     using Math for uint256;
@@ -142,7 +141,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         uint256 liquidity =
             Math.sqrt(initialXytLiquidity.mul(initialTokenLiquidity)).sub(MINIMUM_LIQUIDITY);
-        console.log("LP", liquidity, initialXytLiquidity, initialTokenLiquidity);
         _mintLp(MINIMUM_LIQUIDITY.add(liquidity));
 
         transfers[0].amount = initialXytLiquidity;
@@ -661,7 +659,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
     function _settleLpInterests(address account) internal returns (uint256 dueInterests) {
         if (account == address(this)) return 0;
-        // console.log("------");
 
         _updateParamLandN();
         // if lastParamN is 0 then it's certain that this is the first time the user stakes
@@ -674,23 +671,15 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         uint256 singleLpValue = _calSomething(account);
         dueInterests = balanceOf[account].rmul(singleLpValue).div(MULTIPLIER);
-        uint256 yieldTokenBalance =
-            IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this));
+        uint256 yieldTokenBalance = IERC20(underlyingYieldToken).balanceOf(address(this));
 
         lastParamL[account] = paramL;
         lastParamN[account] = paramN;
 
-        // console.log("to", _getName(account), "dueInt", dueInterests);
-        console.log("balAToken & dueInt", yieldTokenBalance, dueInterests);
-        // dueInterests = dueInterests.min(yieldTokenBalance);
+        dueInterests = dueInterests.min(yieldTokenBalance);
 
-        // console.log("------");
         if (dueInterests == 0) return 0;
-        IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).transfer(account, dueInterests);
-        console.log(
-            "postBal",
-            IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).balanceOf(address(this))
-        );
+        IERC20(underlyingYieldToken).transfer(account, dueInterests);
     }
 
     function _calSomething(address account) internal view returns (uint256) {
@@ -698,8 +687,15 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     }
 
     function _getParamI() internal returns (uint256 paramI) {
-        uint256 curNormalisedIncome =
-            IPendleForge(forge).getReserveNormalizedIncome(underlyingAsset);
+        uint256 curNormalisedIncome;
+        if (block.timestamp < lockStartTime) {
+            curNormalisedIncome = IPendleForge(forge).getReserveNormalizedIncome(underlyingAsset);
+        } else {
+            curNormalisedIncome = IPendleForge(forge).getLastReserveNormalizedIncome(
+                underlyingAsset,
+                expiry
+            );
+        }
         if (lastNormalisedIncome == 0) {
             paramI = 0;
         } else {
@@ -725,9 +721,6 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             paramL.rmul(Math.RONE + paramI) +
             reserves[xyt].balance.mul(MULTIPLIER).rmul(paramI).rdiv(sTotal);
         paramN = paramN.rmul(Math.RONE + paramI);
-        // console.log("time", block.timestamp);
-        // console.log("I", paramI, "ratio", nXyt.mul(MULTIPLIER).rdiv(sTotal));
-        // console.log("N", paramN, "L", paramL);
     }
 
     // before we send LPs, we need to settle due interests for both the to and from addresses

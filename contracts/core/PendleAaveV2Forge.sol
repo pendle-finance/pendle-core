@@ -179,4 +179,13 @@ contract PendleAaveV2Forge is PendleForgeBase {
             aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset)
         );
     }
+
+    function _getLastReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
+        internal
+        view
+        override
+        returns (uint256)
+    {
+        return lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
+    }
 }
