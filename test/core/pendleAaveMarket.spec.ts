@@ -256,6 +256,36 @@ describe("PendleAaveMarket", async () => {
     expect(testTokenBalance).to.be.equal(amount.sub(amount.div(10)));
   });
 
+  it.only("the market should still be usable after all liquidity has been withdrawn", async () => {
+    const amount = amountToWei(BN.from(100), 6);
+    await bootstrapSampleMarket(amount);
+    let lpBalanceBefore: BN = await stdMarket.balanceOf(alice.address);
+    await router.removeMarketLiquidityAll(
+      consts.MARKET_FACTORY_AAVE,
+      xyt.address,
+      testToken.address,
+      lpBalanceBefore,
+      BN.from(0),
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
+    );
+    await router.addMarketLiquidityAll(
+      consts.MARKET_FACTORY_AAVE,
+      xyt.address,
+      testToken.address,
+      consts.MAX_ALLOWANCE,
+      consts.MAX_ALLOWANCE,
+      lpBalanceBefore,
+      consts.HIGH_GAS_OVERRIDE
+    );
+
+    let xytBalance = await xyt.balanceOf(stdMarket.address);
+    let testTokenBalance = await testToken.balanceOf(stdMarket.address);
+
+    approxBigNumber(xytBalance, amount, BN.from(1000));
+    approxBigNumber(testTokenBalance, amount, BN.from(1000));
+  });
+
   it("shouldn't be able to add liquidity by dual tokens after xyt has expired", async () => {
     const amount = amountToWei(BN.from(10), 6);
     await bootstrapSampleMarket(amount);
