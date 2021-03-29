@@ -669,7 +669,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
             return 0;
         }
 
-        uint256 singleLpValue = _calSomething(account);
+        uint256 singleLpValue = _calSingleLpValue(account);
         dueInterests = balanceOf[account].rmul(singleLpValue).div(MULTIPLIER);
         uint256 yieldTokenBalance = IERC20(underlyingYieldToken).balanceOf(address(this));
 
@@ -682,7 +682,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         IERC20(underlyingYieldToken).transfer(account, dueInterests);
     }
 
-    function _calSomething(address account) internal view returns (uint256) {
+    function _calSingleLpValue(address account) internal view returns (uint256) {
         return paramL - lastParamL[account].rmul(paramN).rdiv(lastParamN[account]);
     }
 
