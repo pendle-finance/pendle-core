@@ -256,7 +256,7 @@ describe("PendleAaveMarket", async () => {
     expect(testTokenBalance).to.be.equal(amount.sub(amount.div(10)));
   });
 
-  it.only("the market should still be usable after all liquidity has been withdrawn", async () => {
+  it("the market should still be usable after all liquidity has been withdrawn", async () => {
     const amount = amountToWei(BN.from(100), 6);
     await bootstrapSampleMarket(amount);
     let lpBalanceBefore: BN = await stdMarket.balanceOf(alice.address);
