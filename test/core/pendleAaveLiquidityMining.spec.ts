@@ -308,7 +308,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
   //  - Dave just holds the LP tokens
   //  - Bob stake the LP tokens into liq-mining contract, in two transactions
   //=> after 2 months, all three of them should get the same interests
-  it.only("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests [skip because the bug is being investigated]", async () => {
+  it("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests [skip because the bug is being investigated]", async () => {
     const INITIAL_LP_AMOUNT: BN = await stdMarket.balanceOf(bob.address);
     // console.log(await stdMarket.balanceOf(stdMarket.address));
     await setTimeNextBlock(provider, params.START_TIME.add(100));
