@@ -29,6 +29,7 @@ import "../libraries/FactoryLib.sol";
 import "../interfaces/IAaveV2LendingPool.sol";
 import "../interfaces/IPendleBaseToken.sol";
 import "../interfaces/IPendleData.sol";
+import "../interfaces/IPendleAaveForge.sol";
 import "../interfaces/IPendleForge.sol";
 import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
@@ -65,7 +66,7 @@ import {WadRayMath} from "../libraries/WadRayMath.sol";
         pay smooth(10^10-3,incomeIndex2) back. In both transactions, the amount of SBAL that B & A
         will receive are not affected by smooth.
 */
-contract PendleAaveV2Forge is PendleForgeBase {
+contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
     using ExpiryUtils for string;
     using WadRayMath for uint256;
 
@@ -96,8 +97,8 @@ contract PendleAaveV2Forge is PendleForgeBase {
         return reserveATokenAddress[_underlyingAsset];
     }
 
-    function _getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
-        internal
+    function getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
+        public
         view
         override
         returns (uint256)
@@ -181,14 +182,5 @@ contract PendleAaveV2Forge is PendleForgeBase {
             _amountToTokenize,
             aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset)
         );
-    }
-
-    function _getLastReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
-        internal
-        view
-        override
-        returns (uint256)
-    {
-        return lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
     }
 }

@@ -27,6 +27,7 @@ import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleForge.sol";
+import "../interfaces/IPendleAaveForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleData.sol";
@@ -582,7 +583,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, PendleNon
 
         // update paramN => no need
         uint256 currentNormalizedIncome =
-            IPendleForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
+            IPendleAaveForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
 
         // m(t+1) = currentNormalizedIncome / normalizedIncome
         uint256 firstTerm =
@@ -636,7 +637,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, PendleNon
         );
         lpHolderForExpiry[expiry] = newLpHoldingContract;
         /* globalIncomeIndexForExpiry[expiry] = 1; */
-        normalizedIncome[expiry] = IPendleForge(forge).getReserveNormalizedIncome(
+        normalizedIncome[expiry] = IPendleAaveForge(forge).getReserveNormalizedIncome(
             underlyingAsset,
             expiry
         );
