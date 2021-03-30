@@ -161,11 +161,6 @@ describe("PendleCompoundRouter", async () => {
 
   it("[After 1 month] should be able to redeem cUSDT to get back OT, XYT and interests $", async () => {
     await tokenizeYield(alice, initialcUSDTbalance);
-    const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
-    const initialUnderlyingBalance = initialRate
-      .mul(initialcUSDTbalance)
-      .div(10 ** 9)
-      .div(10 ** 9);
     await borrow(amount, charlie);
 
     await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
@@ -174,22 +169,15 @@ describe("PendleCompoundRouter", async () => {
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
       consts.T0_C.add(consts.SIX_MONTH),
-      initialcUSDTbalance,
+      await cXyt.balanceOf(alice.address),
       alice.address,
       consts.HIGH_GAS_OVERRIDE
     );
 
-    const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
-      alice.address
-    );
-
-    const expectedGain = await getCurInterest(
-      initialcUSDTbalance,
-      initialUnderlyingBalance
-    );
-    expect(finalUnderlyingBalance.toNumber()).to.be.approximately(
-      initialUnderlyingBalance.add(expectedGain).toNumber(),
-      10
+    // if user can receive the exact amount of cUSDT that he has sent in, then he has already received
+    // the interest.
+    expect((await cUSDT.balanceOf(alice.address)).toNumber()).to.be.approximately(
+      initialcUSDTbalance.toNumber(), 10
     );
   });
 
@@ -366,11 +354,6 @@ describe("PendleCompoundRouter", async () => {
 
   it("should receive back exactly the same amount of cTokens", async () => {
     await tokenizeYield(alice, initialcUSDTbalance);
-    const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
-    const initialUnderlyingBalance = initialRate
-      .mul(initialcUSDTbalance)
-      .div(10 ** 9)
-      .div(10 ** 9);
     await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
 
     await router.redeemDueInterests(
@@ -383,7 +366,7 @@ describe("PendleCompoundRouter", async () => {
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
       consts.T0_C.add(consts.SIX_MONTH),
-      initialcUSDTbalance,
+      await cXyt.balanceOf(alice.address),
       alice.address,
       consts.HIGH_GAS_OVERRIDE
     );
