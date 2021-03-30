@@ -93,15 +93,8 @@ abstract contract PendleLiquidityMiningBase is
 
     // storage for LP interests stuff
     mapping(uint256 => address) public lpHolderForExpiry;
-
-    /* mapping(uint256 => uint256) public globalIncomeIndexForExpiry;
-    mapping(uint256 => mapping(address => uint256)) public lastGlobalIncomeIndexForExpiry; */
-
     mapping(uint256 => uint256) internal paramL;
-    /* mapping (uint256 => uint256) private firstNormalisedIncome; */
-    /* mapping(uint256 => uint256) private normalizedIncome; */
     mapping(uint256 => mapping(address => uint256)) internal lastParamL;
-    /* mapping(uint256 => mapping(address => uint256)) private userLastNormalizedIncome; */
     mapping(uint256 => uint256) public lastNYield;
     uint256 private constant MULTIPLIER = 10**20;
 

@@ -68,6 +68,6 @@ contract PendleCompoundMarket is PendleMarketBase {
         returns (uint256 firstTerm, uint256 paramR)
     {
         firstTerm = paramL;
-        paramR = currentNYield - lastNYield;
+        paramR = currentNYield.sub(lastNYield);
     }
 }

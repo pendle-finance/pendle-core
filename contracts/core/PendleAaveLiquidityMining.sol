@@ -108,9 +108,9 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         // m(t+1) = currentNormalizedIncome / normalizedIncome
         firstTerm = paramL[expiry].rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry]);
 
-        paramR =
-            currentNYield -
-            lastNYield[expiry].rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry]);
+        paramR = currentNYield.sub(
+            lastNYield[expiry].rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry])
+        );
 
         normalizedIncome[expiry] = currentNormalizedIncome;
     }

@@ -89,7 +89,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         forge = _forge;
         xyt = _xyt;
         token = _token;
-        /* bootstrapped = false; */
 
         forgeId = IPendleForge(_forge).forgeId();
         underlyingAsset = xytContract.underlyingAsset();
@@ -188,9 +187,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _mintLp(MINIMUM_LIQUIDITY.add(liquidity));
 
         transfers[0].amount = initialXytLiquidity;
-        /* transfers[0].isOut = false; */
+        transfers[0].isOut = false;
         transfers[1].amount = initialTokenLiquidity;
-        /* transfers[1].isOut = false; */
+        transfers[1].isOut = false;
         transfers[2].amount = liquidity;
         transfers[2].isOut = true;
 
@@ -226,7 +225,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         require(amountXytUsed <= _maxInXyt, "LOW_XYT_IN_LIMIT");
         xytBalance = xytBalance.add(amountXytUsed);
         transfers[0].amount = amountXytUsed;
-        /* transfers[0].isOut = false; */
+        transfers[0].isOut = false;
 
         // Calc and inject pair token.
         uint256 amountTokenUsed = Math.rmul(ratio, tokenBalance);
@@ -234,7 +233,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         require(amountTokenUsed <= _maxInToken, "LOW_TOKEN_IN_LIMIT");
         tokenBalance = tokenBalance.add(amountTokenUsed);
         transfers[1].amount = amountTokenUsed;
-        /* transfers[1].isOut = false; */
+        transfers[1].isOut = false;
 
         reserveData = encodeReserveData(xytBalance, tokenBalance, xytWeight);
         emit Sync(xytBalance, xytWeight, tokenBalance, Math.RONE - xytWeight);
@@ -267,7 +266,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // Update reserves and operate underlying LP and inToken.
         inTokenReserve.balance = inTokenReserve.balance.add(_exactIn);
         transfers[0].amount = _exactIn;
-        /* transfers[0].isOut = false; */
+        transfers[0].isOut = false;
 
         // Mint and push LP token.
         _mintLp(exactOutLp);
@@ -420,7 +419,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         emit Sync(xytBalance, xytWeight, tokenBalance, tokenWeight);
 
         transfers[0].amount = inAmount;
-        /* transfers[0].isOut = false; */
+        transfers[0].isOut = false;
         transfers[1].amount = outAmount;
         transfers[1].isOut = true;
     }
@@ -476,7 +475,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         emit Sync(xytBalance, xytWeight, tokenBalance, tokenWeight);
 
         transfers[0].amount = inAmount;
-        /* transfers[0].isOut = false; */
+        transfers[0].isOut = false;
         transfers[1].amount = outAmount;
         transfers[1].isOut = true;
     }
@@ -721,7 +720,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(currentNYield);
 
         uint256 secondTerm;
-        //TODO: remove due to redundancy
+        // this should always satisfy
         if (paramR != 0 && totalSupply != 0) {
             secondTerm = paramR.mul(MULTIPLIER).div(totalSupply);
         }

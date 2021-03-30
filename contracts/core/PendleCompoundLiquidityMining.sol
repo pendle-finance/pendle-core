@@ -95,7 +95,7 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
         returns (uint256 firstTerm, uint256 paramR)
     {
         firstTerm = paramL[expiry];
-        paramR = currentNYield - lastNYield[expiry];
+        paramR = currentNYield.sub(lastNYield[expiry]);
     }
 
     function _afterAddingNewExpiry(uint256 expiry) internal override {

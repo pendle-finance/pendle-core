@@ -82,7 +82,9 @@ contract PendleAaveMarket is PendleMarketBase {
     {
         uint256 currentNormalizedIncome = _getReserveNormalizedIncome();
         firstTerm = paramL.rmul(currentNormalizedIncome).rdiv(normalizedIncome);
-        paramR = currentNYield - lastNYield.rmul(currentNormalizedIncome).rdiv(normalizedIncome);
+        paramR = currentNYield.sub(
+            lastNYield.rmul(currentNormalizedIncome).rdiv(normalizedIncome)
+        );
         normalizedIncome = currentNormalizedIncome;
     }
 }
