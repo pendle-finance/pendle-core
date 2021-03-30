@@ -132,13 +132,13 @@ interface IPendleForge {
 
     function getYieldBearingToken(address underlyingAsset) external returns (address);
 
-    function getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
+    /* function getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
         external
         returns (uint256);
 
     function getLastReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
         external
-        returns (uint256);
+        returns (uint256); */
 
     /**
      * @notice Gets a reference to the PendleRouter contract.

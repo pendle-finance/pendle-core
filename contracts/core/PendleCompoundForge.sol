@@ -135,15 +135,6 @@ contract PendleCompoundForge is PendleForgeBase {
         return underlyingToCToken[_underlyingAsset];
     }
 
-    function _getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
-        internal
-        override
-        returns (uint256)
-    {
-        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
-        return cToken.exchangeRateCurrent();
-    }
-
     struct InterestVariables {
         uint256 prevRate;
         uint256 currentRate;
@@ -184,14 +175,5 @@ contract PendleCompoundForge is PendleForgeBase {
             .sub(principal)
             .mul(initialRate[_underlyingAsset])
             .div(interestVariables.currentRate);
-    }
-
-    function _getLastReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
-        internal
-        view
-        override
-        returns (uint256)
-    {
-        return lastRateBeforeExpiry[_underlyingAsset][_expiry];
     }
 }
