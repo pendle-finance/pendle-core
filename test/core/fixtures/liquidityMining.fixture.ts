@@ -1,6 +1,6 @@
 import { BigNumber as BN, Contract, providers, Wallet } from 'ethers';
-import PendleLiquidityMining from "../../../build/artifacts/contracts/core/PendleLiquidityMining.sol/PendleLiquidityMining.json";
-import PendleLiquidityMiningCompound from "../../../build/artifacts/contracts/core/PendleLiquidityMiningCompound.sol/PendleLiquidityMiningCompound.json";
+import PendleAaveLiquidityMining from "../../../build/artifacts/contracts/core/PendleAaveLiquidityMining.sol/PendleAaveLiquidityMining.json";
+import PendleCompoundLiquidityMining from "../../../build/artifacts/contracts/core/PendleCompoundLiquidityMining.sol/PendleCompoundLiquidityMining.json";
 import PENDLE from "../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
 import { amountToWei, consts, tokens } from '../../helpers';
 import { AaveFixture } from './aave.fixture';
@@ -92,7 +92,7 @@ export async function liquidityMiningFixture(
 
   let aLiquidityMining = await deployContract(
     alice,
-    PendleLiquidityMining,
+    PendleAaveLiquidityMining,
     [
       alice.address,
       pdl.address,
@@ -109,7 +109,7 @@ export async function liquidityMiningFixture(
 
   let cLiquidityMining = await deployContract(
     alice,
-    PendleLiquidityMiningCompound,
+    PendleCompoundLiquidityMining,
     [
       alice.address,
       pdl.address,
@@ -171,7 +171,7 @@ export async function liquidityMiningFixture(
   }
 
   let aLiquidityMiningWeb3 = new hre.web3.eth.Contract(
-    PendleLiquidityMining.abi,
+    PendleAaveLiquidityMining.abi,
     aLiquidityMining.address
   );
 
@@ -203,7 +203,7 @@ export async function liquidityMiningFixture(
 
 //   let aLiquidityMining = await deployContract(
 //     alice,
-//     PendleLiquidityMining,
+//     PendleAaveLiquidityMining,
 //     [
 //       alice.address,
 //       pdl.address,
@@ -249,7 +249,7 @@ export async function liquidityMiningFixture(
 //   }
 
 //   let aLiquidityMiningWeb3 = new hre.web3.eth.Contract(
-//     PendleLiquidityMining.abi,
+//     PendleAaveLiquidityMining.abi,
 //     aLiquidityMining.address
 //   );
 
