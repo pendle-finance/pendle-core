@@ -331,21 +331,21 @@ describe("PendleAaveLiquidityMining tests", async () => {
     );
     // console.log(await stdMarket.balanceOf(stdMarket.address));
 
-    // await doStake(alice, INITIAL_LP_AMOUNT); // Alice also stake into liq-mining
-    // console.log(`\talice staked`);
-    // await doStake(bob, INITIAL_LP_AMOUNT.div(2));
-    // console.log(`\tbob staked`);
+    await doStake(alice, INITIAL_LP_AMOUNT); // Alice also stake into liq-mining
+    console.log(`\talice staked`);
+    await doStake(bob, INITIAL_LP_AMOUNT.div(2));
+    console.log(`\tbob staked`);
     await setTimeNextBlock(provider, params.START_TIME.add(consts.ONE_MONTH));
-    // await doStake(bob, INITIAL_LP_AMOUNT.div(2));
-    // console.log(`\tbob staked round 2`);
+    await doStake(bob, INITIAL_LP_AMOUNT.div(2));
+    console.log(`\tbob staked round 2`);
     await setTimeNextBlock(
       provider,
       params.START_TIME.add(consts.ONE_MONTH.mul(2))
     );
 
-    // await liq.connect(bob).claimLpInterests();
-    // console.log(`\tbob claimed interests`);
-    // let actualGainBob = (await aUSDT.balanceOf(bob.address)).sub(preBalanceBob);
+    await liq.connect(bob).claimLpInterests();
+    console.log(`\tbob claimed interests`);
+    let actualGainBob = (await aUSDT.balanceOf(bob.address)).sub(preBalanceBob);
 
     await router
       .connect(charlie)
@@ -364,7 +364,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
     );
 
     // console.log(actualGainCharlie.toString(), actualGainDave.toString());
-    // approxBigNumber(actualGainBob, actualGainDave, consts.TEST_TOKEN_DELTA);
+    approxBigNumber(actualGainBob, actualGainDave, consts.TEST_TOKEN_DELTA);
     approxBigNumber(actualGainCharlie, actualGainDave, consts.TEST_TOKEN_DELTA);
   });
 
