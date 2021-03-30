@@ -176,9 +176,9 @@ describe("PendleCompoundRouter", async () => {
 
     // if user can receive the exact amount of cUSDT that he has sent in, then he has already received
     // the interest.
-    expect((await cUSDT.balanceOf(alice.address)).toNumber()).to.be.approximately(
-      initialcUSDTbalance.toNumber(), 10
-    );
+    expect(
+      (await cUSDT.balanceOf(alice.address)).toNumber()
+    ).to.be.approximately(initialcUSDTbalance.toNumber(), 10);
   });
 
   it("[After 1 month] should be able to get due interests", async () => {
