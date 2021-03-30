@@ -1,5 +1,6 @@
 import { BigNumber as BN, Contract, providers, Wallet } from "ethers";
 import PendleMarket from "../../../build/artifacts/contracts/core/PendleMarket.sol/PendleMarket.json";
+import PendleCompoundMarket from "../../../build/artifacts/contracts/core/PendleCompoundMarket.sol/PendleCompoundMarket.json";
 import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
 import { amountToWei, consts, mintOtAndXyt, tokens } from "../../helpers";
 import { aaveFixture, AaveFixture } from "./aave.fixture";
@@ -50,6 +51,7 @@ export async function marketFixture(
   for (var person of [alice, bob, charlie]) {
     await mintOtAndXyt(provider, token, person, consts.INITIAL_OT_XYT_AMOUNT, router);
   }
+  console.log("\tminted initial OT and XYT");
 
   const testToken = await deployContract(alice, TestToken, [
     "Test Token",
@@ -71,6 +73,8 @@ export async function marketFixture(
     consts.MARKET_FACTORY_COMPOUND,
     cMarketFactory.address
   );
+
+  console.log("\tadded market factories");
 
   await data.setForgeFactoryValidity(consts.FORGE_AAVE, consts.MARKET_FACTORY_AAVE, true);
   await data.setForgeFactoryValidity(consts.FORGE_COMPOUND, consts.MARKET_FACTORY_COMPOUND, true);
@@ -121,7 +125,7 @@ export async function marketFixture(
   );
   const cMarket = new Contract(
     cMarketAddress,
-    PendleMarket.abi,
+    PendleCompoundMarket.abi,
     alice
   );
   const ethMarket = new Contract(

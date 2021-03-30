@@ -1,5 +1,6 @@
 import { BigNumber as BN, Contract, providers, Wallet } from 'ethers';
 import PendleLiquidityMining from "../../../build/artifacts/contracts/core/PendleLiquidityMining.sol/PendleLiquidityMining.json";
+import PendleLiquidityMiningCompound from "../../../build/artifacts/contracts/core/PendleLiquidityMiningCompound.sol/PendleLiquidityMiningCompound.json";
 import PENDLE from "../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
 import { amountToWei, consts, tokens } from '../../helpers';
 import { AaveFixture } from './aave.fixture';
@@ -108,7 +109,7 @@ export async function liquidityMiningFixture(
 
   let cLiquidityMining = await deployContract(
     alice,
-    PendleLiquidityMining,
+    PendleLiquidityMiningCompound,
     [
       alice.address,
       pdl.address,
