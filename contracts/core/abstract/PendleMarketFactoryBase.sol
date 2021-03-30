@@ -72,5 +72,10 @@ abstract contract PendleMarketFactoryBase is IPendleMarketFactory, Permissions, 
         emit MarketCreated(marketFactoryId, _xyt, _token, market);
     }
 
-    function _createMarket(address _forgeAddress, address _xyt, address _token, uint256 _expiry) internal virtual returns (address) {}
+    function _createMarket(
+        address _forgeAddress,
+        address _xyt,
+        address _token,
+        uint256 _expiry
+    ) internal virtual returns (address) {}
 }
