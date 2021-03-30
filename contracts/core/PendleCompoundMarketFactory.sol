@@ -30,49 +30,24 @@ import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleYieldToken.sol";
 import "../periphery/Permissions.sol";
 import "../periphery/Withdrawable.sol";
+import "./abstract/PendleMarketFactoryBase.sol";
 
-contract PendleCompoundMarketFactory is IPendleMarketFactory, Permissions, Withdrawable {
-    IPendleRouter public override router;
-    bytes32 public immutable override marketFactoryId;
+contract PendleCompoundMarketFactory is PendleMarketFactoryBase {
+    constructor(address _governance, bytes32 _marketFactoryId)
+        PendleMarketFactoryBase(_governance, _marketFactoryId)
+    {}
 
-    constructor(address _governance, bytes32 _marketFactoryId) Permissions(_governance) {
-        marketFactoryId = _marketFactoryId;
-    }
-
-    modifier onlyRouter() {
-        require(msg.sender == address(router), "ONLY_ROUTER");
-        _;
-    }
-
-    function initialize(IPendleRouter _router) external {
-        require(msg.sender == initializer, "FORBIDDEN");
-        require(address(_router) != address(0), "ZERO_ADDRESS");
-
-        initializer = address(0);
-        router = _router;
-    }
-
-    function createMarket(address _xyt, address _token)
-        external
-        override
-        initialized
-        onlyRouter
-        returns (address market)
-    {
-        IPendleData data = router.data();
-        address forgeAddress = IPendleYieldToken(_xyt).forge();
-        address underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
-        uint256 expiry = IPendleYieldToken(_xyt).expiry();
-        require(data.isValidXYT(forgeAddress, underlyingAsset, expiry), "INVALID_XYT");
-
-        /* market = _createMarket(forgeAddress, _xyt, _token, expiry) */
-        market = Factory.createContract(
-            type(PendleCompoundMarket).creationCode,
-            abi.encodePacked(forgeAddress, _xyt, _token, expiry),
-            abi.encode(forgeAddress, _xyt, _token, expiry)
-        );
-        data.addMarket(marketFactoryId, _xyt, _token, market);
-
-        emit MarketCreated(marketFactoryId, _xyt, _token, market);
+    function _createMarket(
+        address _forgeAddress,
+        address _xyt,
+        address _token,
+        uint256 _expiry
+    ) internal override returns (address) {
+        return
+            Factory.createContract(
+                type(PendleCompoundMarket).creationCode,
+                abi.encodePacked(_forgeAddress, _xyt, _token, _expiry),
+                abi.encode(_forgeAddress, _xyt, _token, _expiry)
+            );
     }
 }

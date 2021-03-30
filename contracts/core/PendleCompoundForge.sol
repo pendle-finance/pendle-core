@@ -34,7 +34,7 @@ import "../interfaces/IComptroller.sol";
 import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
-import "./PendleForgeBase.sol";
+import "./abstract/PendleForgeBase.sol";
 
 contract PendleCompoundForge is PendleForgeBase {
     using ExpiryUtils for string;

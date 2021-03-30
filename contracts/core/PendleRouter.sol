@@ -35,8 +35,6 @@ import "../periphery/Permissions.sol";
 import "../periphery/Withdrawable.sol";
 import "../periphery/PendleNonReentrant.sol";
 
-/* import "hardhat/console.sol"; */
-
 contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReentrant {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;

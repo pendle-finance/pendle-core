@@ -32,7 +32,7 @@ import "../interfaces/IPendleAaveForge.sol";
 import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
-import "./PendleForgeBase.sol";
+import "./abstract/PendleForgeBase.sol";
 
 contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
     using ExpiryUtils for string;
