@@ -90,7 +90,8 @@ describe("aaveV2Interest test", async () => {
       .redeemDueInterests(
         consts.FORGE_AAVE_V2,
         tokenUSDT.address,
-        consts.T0_A2.add(consts.SIX_MONTH)
+        consts.T0_A2.add(consts.SIX_MONTH),
+        consts.HIGH_GAS_OVERRIDE
       );
   }
 
