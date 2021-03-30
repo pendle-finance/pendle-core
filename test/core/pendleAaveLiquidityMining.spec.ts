@@ -308,7 +308,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
   //  - Dave just holds the LP tokens
   //  - Bob stake the LP tokens into liq-mining contract, in two transactions
   //=> after 2 months, all three of them should get the same interests
-  it("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests [skip because the bug is being investigated]", async () => {
+  it.only("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests [skip because the bug is being investigated]", async () => {
     const INITIAL_LP_AMOUNT: BN = await stdMarket.balanceOf(bob.address);
     // console.log(await stdMarket.balanceOf(stdMarket.address));
     await setTimeNextBlock(provider, params.START_TIME.add(100));
@@ -322,17 +322,29 @@ describe("PendleAaveLiquidityMining tests", async () => {
     let preBalanceBob = await aUSDT.balanceOf(bob.address);
     let preBalanceDave = await aUSDT.balanceOf(dave.address);
     let preBalanceCharlie = await aUSDT.balanceOf(charlie.address);
-    // console.log(`\tPrebalanceBob = ${preBalanceBob}, preBalanceDave = ${preBalanceDave}, preBalanceCharlie = ${preBalanceCharlie}`);
+    console.log("\n========================================================");
+    console.log(
+      `\tPrebalanceBob = ${preBalanceBob}, preBalanceDave = ${preBalanceDave}, preBalanceCharlie = ${preBalanceCharlie}`
+    );
+    console.log(
+      `\tBob address = ${bob.address}, marketAddress = ${stdMarket.address}, alice address = ${alice.address}`
+    );
     // console.log(await stdMarket.balanceOf(stdMarket.address));
-    await doStake(bob, INITIAL_LP_AMOUNT.div(2));
+
+    // await doStake(alice, INITIAL_LP_AMOUNT); // Alice also stake into liq-mining
+    // console.log(`\talice staked`);
+    // await doStake(bob, INITIAL_LP_AMOUNT.div(2));
+    // console.log(`\tbob staked`);
     await setTimeNextBlock(provider, params.START_TIME.add(consts.ONE_MONTH));
-    await doStake(bob, INITIAL_LP_AMOUNT.div(2));
+    // await doStake(bob, INITIAL_LP_AMOUNT.div(2));
+    // console.log(`\tbob staked round 2`);
     await setTimeNextBlock(
       provider,
       params.START_TIME.add(consts.ONE_MONTH.mul(2))
     );
 
     // await liq.connect(bob).claimLpInterests();
+    // console.log(`\tbob claimed interests`);
     // let actualGainBob = (await aUSDT.balanceOf(bob.address)).sub(preBalanceBob);
 
     await router
@@ -352,7 +364,6 @@ describe("PendleAaveLiquidityMining tests", async () => {
     );
 
     // console.log(actualGainCharlie.toString(), actualGainDave.toString());
-    // don't check bob because liq mining interest is not done yet
     // approxBigNumber(actualGainBob, actualGainDave, consts.TEST_TOKEN_DELTA);
     approxBigNumber(actualGainCharlie, actualGainDave, consts.TEST_TOKEN_DELTA);
   });

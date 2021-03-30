@@ -70,12 +70,15 @@ contract PendleAaveForge is PendleForgeBase {
         );
     }
 
-    function _getReserveNormalizedIncome(address _underlyingAsset)
+    function _getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
         internal
         view
         override
         returns (uint256)
     {
+        if (block.timestamp > _expiry) {
+            return lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
+        }
         return aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
     }
 

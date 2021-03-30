@@ -85,12 +85,12 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         return _getLastReserveNormalizedIncome(_underlyingAsset, _expiry);
     }
 
-    function getReserveNormalizedIncome(address _underlyingAsset)
+    function getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
         external
         override
         returns (uint256)
     {
-        return _getReserveNormalizedIncome(_underlyingAsset);
+        return _getReserveNormalizedIncome(_underlyingAsset, _expiry);
     }
 
     function newYieldContracts(address _underlyingAsset, uint256 _expiry)
@@ -331,7 +331,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
     function _getYieldBearingToken(address _underlyingAsset) internal virtual returns (address);
 
-    function _getReserveNormalizedIncome(address _underlyingAsset)
+    function _getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
         internal
         virtual
         returns (uint256);

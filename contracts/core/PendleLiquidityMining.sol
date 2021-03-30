@@ -23,6 +23,7 @@
 pragma solidity 0.7.6;
 
 import "../libraries/FactoryLib.sol";
+import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleForge.sol";
@@ -35,6 +36,7 @@ import "../interfaces/IPendleLiquidityMining.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../periphery/Permissions.sol";
 import "../periphery/PendleNonReentrant.sol";
+import "hardhat/console.sol";
 
 /**
     @dev things that must hold in this contract:
@@ -43,6 +45,7 @@ import "../periphery/PendleNonReentrant.sol";
         (and saved in availableRewardsForEpoch[user][epochId])
  */
 contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, PendleNonReentrant {
+    using Math for uint256;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -64,6 +67,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, PendleNon
     IPendleData public pendleData;
     address public override pendleTokenAddress;
     bytes32 public override forgeId;
+    address private forge;
     bytes32 public override marketFactoryId;
 
     address public override underlyingAsset;
@@ -85,10 +89,17 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, PendleNon
 
     // storage for LP interests stuff
     mapping(uint256 => address) public lpHolderForExpiry;
-    mapping(uint256 => uint256) public globalIncomeIndexForExpiry;
-    mapping(uint256 => mapping(address => uint256)) public lastGlobalIncomeIndexForExpiry;
-    mapping(uint256 => uint256) public lastUnderlyingYieldTokenBalance;
-    uint256 private constant GLOBAL_INCOME_INDEX_MULTIPLIER = 10**30;
+
+    /* mapping(uint256 => uint256) public globalIncomeIndexForExpiry;
+    mapping(uint256 => mapping(address => uint256)) public lastGlobalIncomeIndexForExpiry; */
+
+    mapping(uint256 => uint256) private paramL;
+    /* mapping (uint256 => uint256) private firstNormalisedIncome; */
+    mapping(uint256 => uint256) private normalizedIncome;
+    mapping(uint256 => mapping(address => uint256)) private lastParamL;
+    mapping(uint256 => mapping(address => uint256)) private userLastNormalizedIncome;
+    mapping(uint256 => uint256) public lastNYield;
+    uint256 private constant MULTIPLIER = 10**20;
 
     // balances[account][expiry] is the amount of LP_expiry that the account has staked
     mapping(address => mapping(uint256 => uint256)) public override balances;
@@ -138,7 +149,7 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, PendleNon
         );
         marketFactoryId = _pendleMarketFactoryId;
         forgeId = _pendleForgeId;
-
+        forge = pendleData.getForgeAddress(_pendleForgeId);
         underlyingAsset = _underlyingAsset;
         baseToken = _baseToken;
         startTime = _startTime;
@@ -504,49 +515,103 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, PendleNon
         internal
         returns (uint256 dueInterests)
     {
+        console.log(
+            "[Liq][_settleLpInterests][start] account=%s, about to claim interest for LpHolder contract",
+            account
+        );
         PendleLpHolder(lpHolderForExpiry[expiry]).claimLpInterests();
-        // calculate interest for each expiry
-        _updateGlobalIncomeIndex(expiry);
-        if (lastGlobalIncomeIndexForExpiry[expiry][account] == 0) {
-            lastGlobalIncomeIndexForExpiry[expiry][account] = globalIncomeIndexForExpiry[expiry];
+        // calculate interest related params
+        _updateParamL(expiry);
+
+        // this is the first time this user stake
+        if (userLastNormalizedIncome[expiry][account] == 0) {
+            userLastNormalizedIncome[expiry][account] = normalizedIncome[expiry];
+            lastParamL[expiry][account] = paramL[expiry];
             return 0;
         }
-        dueInterests = balances[account][expiry]
-            .mul(
-            globalIncomeIndexForExpiry[expiry].sub(lastGlobalIncomeIndexForExpiry[expiry][account])
-        )
-            .div(GLOBAL_INCOME_INDEX_MULTIPLIER);
+        uint256 interestPerLP =
+            paramL[expiry].sub(
+                lastParamL[expiry][account].mul(normalizedIncome[expiry]).div(
+                    userLastNormalizedIncome[expiry][account]
+                )
+            );
 
-        lastGlobalIncomeIndexForExpiry[expiry][account] = globalIncomeIndexForExpiry[expiry];
+        console.log(
+            "[Liq][_settleLpInterests] paramL=%s, lastParamL=%s, interestPerLp=%s",
+            paramL[expiry],
+            lastParamL[expiry][account],
+            interestPerLP
+        );
+        console.log(
+            "[Liq][_settleLpInterests] NI=%s, lastUserNI=%s",
+            normalizedIncome[expiry],
+            userLastNormalizedIncome[expiry][account]
+        );
+
+        dueInterests = balances[account][expiry].mul(interestPerLP).div(MULTIPLIER);
+
+        userLastNormalizedIncome[expiry][account] = normalizedIncome[expiry];
+        lastParamL[expiry][account] = paramL[expiry];
+
         if (dueInterests == 0) return 0;
-        lastUnderlyingYieldTokenBalance[expiry] = lastUnderlyingYieldTokenBalance[expiry].sub(
+        console.log(
+            "[Lig][_settleLpInterests] lastNYield=%s, dueInterests=%s",
+            lastNYield[expiry],
             dueInterests
         );
+        lastNYield[expiry] = lastNYield[expiry].sub(dueInterests);
+        console.log(
+            "[Liq][_settleLpInterests][done] account=%s, interestPerLP=%s, dueInterests=%s",
+            account,
+            interestPerLP,
+            dueInterests
+        );
+
         PendleLpHolder(lpHolderForExpiry[expiry]).sendInterests(account, dueInterests);
     }
 
     // this function should be called whenver the total amount of LP_expiry changes
-    function _updateGlobalIncomeIndex(uint256 expiry) internal {
+    // or when someone claim LP interests
+    // it will update:
+    //    - paramL[expiry]
+    //    - lastNYield[expiry]
+    //    - normalizedIncome[expiry]
+    function _updateParamL(uint256 expiry) internal {
+        console.log("\t[Liq][_updateParamL][start]");
         require(hasExpiry[expiry], "INVALID_EXPIRY");
-        address xyt = address(pendleData.xytTokens(forgeId, underlyingAsset, expiry));
 
-        uint256 currentUnderlyingYieldTokenBalance =
+        // update paramN => no need
+        uint256 currentNormalizedIncome = IPendleForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
+
+        // m(t+1) = currentNormalizedIncome / normalizedIncome
+        uint256 firstTerm =
+            paramL[expiry].rmul(currentNormalizedIncome).rdiv(
+                normalizedIncome[expiry]
+            );
+        console.log("\t[Liq][_updateParamL] lastParamL=%s, NI=%s, lastNI=%s", paramL[expiry], currentNormalizedIncome, normalizedIncome[expiry]);
+        console.log("\t[Liq][_updateParamL] firstTerm=%s", firstTerm);
+
+        address xyt = address(pendleData.xytTokens(forgeId, underlyingAsset, expiry));
+        uint256 currentNYield =
             IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).balanceOf(
                 lpHolderForExpiry[expiry]
             );
-        uint256 interestsEarned =
-            currentUnderlyingYieldTokenBalance - lastUnderlyingYieldTokenBalance[expiry];
-        lastUnderlyingYieldTokenBalance[expiry] = currentUnderlyingYieldTokenBalance;
-
-        if (interestsEarned == 0 || currentTotalStakeForExpiry[expiry] == 0) {
-            return;
+        uint256 paramR =
+            currentNYield -
+                lastNYield[expiry].rmul(currentNormalizedIncome).rdiv(
+                    normalizedIncome[expiry]
+                );
+        uint256 secondTerm;
+        if (paramR != 0 && currentTotalStakeForExpiry[expiry] != 0) {
+            secondTerm = paramR.mul(MULTIPLIER).div(currentTotalStakeForExpiry[expiry]);
         }
+        console.log("\t[Liq][_updateParamL] currentNYield=%s, lastNYield=%s, paramR=%s", currentNYield, lastNYield[expiry], paramR);
+        console.log("\t[Liq][_updateParamL][done] secondTerm=%s", secondTerm);
 
-        globalIncomeIndexForExpiry[expiry] = globalIncomeIndexForExpiry[expiry].add(
-            interestsEarned.mul(GLOBAL_INCOME_INDEX_MULTIPLIER).div(
-                currentTotalStakeForExpiry[expiry]
-            )
-        );
+        // Update new states
+        paramL[expiry] = firstTerm.add(secondTerm);
+        lastNYield[expiry] = currentNYield;
+        normalizedIncome[expiry] = currentNormalizedIncome;
     }
 
     function _addNewExpiry(
@@ -563,7 +628,10 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, PendleNon
             abi.encode(marketAddress, pendleMarketFactory.router(), underlyingYieldToken)
         );
         lpHolderForExpiry[expiry] = newLpHoldingContract;
-        globalIncomeIndexForExpiry[expiry] = 1;
-        //1 is an aribitrary non-zero initial income index for LP_expiry
+        /* globalIncomeIndexForExpiry[expiry] = 1; */
+        normalizedIncome[expiry] = IPendleForge(forge).getReserveNormalizedIncome(
+            underlyingAsset, expiry
+        );
+        paramL[expiry] = 0;
     }
 }

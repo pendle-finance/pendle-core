@@ -31,6 +31,7 @@ import "../interfaces/IPendleYieldToken.sol";
 import "../tokens/PendleBaseToken.sol";
 import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "hardhat/console.sol";
 
 contract PendleMarket is IPendleMarket, PendleBaseToken {
     using Math for uint256;
@@ -50,11 +51,11 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     uint256 private priceLast = Math.RONE;
     uint256 private blockNumLast;
 
-    uint256 private lastNormalisedIncome;
+    uint256 private normalizedIncome;
     uint256 private paramL = 0;
-    uint256 private paramN = Math.RONE;
+    uint256 private lastNYield;
     mapping(address => uint256) private lastParamL;
-    mapping(address => uint256) private lastParamN;
+    mapping(address => uint256) private userLastNormalizedIncome;
 
     uint256 private constant MULTIPLIER = 10**20;
 
@@ -151,6 +152,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         blockNumLast = block.number;
         bootstrapped = true;
+        normalizedIncome = IPendleForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
     }
 
     /**
@@ -166,7 +168,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     ) external override marketIsOpen returns (PendingTransfer[3] memory transfers) {
         checkIsBootstrapped();
         checkOnlyRouter();
-        _updateParamLandN();
+        _updateParamL();
         uint256 totalLp = totalSupply;
         uint256 ratio = Math.rdiv(_exactOutLp, totalLp);
         require(ratio != 0, "ZERO_RATIO");
@@ -210,7 +212,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         _curveShift(data);
-        _updateParamLandN();
+        _updateParamL();
 
         TokenReserve storage inTokenReserve = reserves[_inToken];
         uint256 totalLp = totalSupply;
@@ -257,7 +259,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     ) external override returns (PendingTransfer[3] memory transfers) {
         checkIsBootstrapped();
         checkOnlyRouter();
-        _updateParamLandN();
+        _updateParamL();
         uint256 exitFee = data.exitFee();
         uint256 totalLp = totalSupply;
         uint256 exitFees = Math.rmul(_inLp, exitFee);
@@ -299,7 +301,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         _curveShift(data);
-        _updateParamLandN();
+        _updateParamL();
 
         TokenReserve storage outTokenReserve = reserves[_outToken];
         uint256 exitFee = data.exitFee();
@@ -338,7 +340,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         _curveShift(data);
-        _updateParamLandN();
+        _updateParamL();
 
         TokenReserve storage inTokenReserve = reserves[inToken];
         TokenReserve storage outTokenReserve = reserves[outToken];
@@ -391,7 +393,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         _curveShift(data);
-        _updateParamLandN();
+        _updateParamL();
 
         TokenReserve storage inTokenReserve = reserves[inToken];
         TokenReserve storage outTokenReserve = reserves[outToken];
@@ -657,35 +659,71 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
     // }
 
     function _settleLpInterests(address account) internal returns (uint256 dueInterests) {
+        console.log("\t[Market][_settleLpInterests][start] for %s", account);
+
         if (account == address(this)) return 0;
 
-        _updateParamLandN();
-        // if lastParamN is 0 then it's certain that this is the first time the user stakes
-        // since paramN always >= 1
-        if (lastParamN[account] == 0) {
+        _updateParamL();
+        // if userLastNormalizedIncome is 0 then it's certain that this is the first time the user stakes
+        // since normalizedIncome is always > 0
+        if (userLastNormalizedIncome[account] == 0) {
+            userLastNormalizedIncome[account] = normalizedIncome;
             lastParamL[account] = paramL;
-            lastParamN[account] = paramN;
             return 0;
         }
 
-        uint256 singleLpValue = _calSingleLpValue(account);
-        dueInterests = balanceOf[account].rmul(singleLpValue).div(MULTIPLIER);
-        uint256 yieldTokenBalance = IERC20(underlyingYieldToken).balanceOf(address(this));
+        uint256 interestPerLP =
+            paramL.sub(
+                lastParamL[account].mul(normalizedIncome).div(
+                    userLastNormalizedIncome[account]
+                )
+            );
 
+        console.log(
+            "\t[Market][_settleLpInterests] paramL=%s, lastParamL=%s, interestPerLp=%s",
+            paramL,
+            lastParamL[account],
+            interestPerLP
+        );
+        console.log(
+            "\t[Market][_settleLpInterests] NI=%s, lastUserNI=%s",
+            normalizedIncome,
+            userLastNormalizedIncome[account]
+        );
+        /* uint256 singleLpValue = _calSingleLpValue(account); */
+        dueInterests = balanceOf[account].mul(interestPerLP).div(MULTIPLIER);
+        /* uint256 yieldTokenBalance = IERC20(underlyingYieldToken).balanceOf(address(this)); */
+
+        userLastNormalizedIncome[account] = normalizedIncome;
         lastParamL[account] = paramL;
-        lastParamN[account] = paramN;
 
-        dueInterests = dueInterests.min(yieldTokenBalance);
-
+        /* dueInterests = dueInterests.min(yieldTokenBalance); */
+        console.log(
+            "\t[Market][_settleLpInterests][done] for %s, dueInterests=%s",
+            account,
+            dueInterests
+        );
         if (dueInterests == 0) return 0;
-        IERC20(underlyingYieldToken).transfer(account, dueInterests);
+        console.log(
+            "\t[Market][_settleLpInterests] lastNYield=%s, dueInterests=%s",
+            lastNYield,
+            dueInterests
+        );
+        lastNYield = lastNYield.sub(dueInterests);
+        console.log(
+            "\t[Market][_settleLpInterests][done] account=%s, interestPerLP=%s, dueInterests=%s",
+            account,
+            interestPerLP,
+            dueInterests
+        );
+        underlyingYieldToken.transfer(account, dueInterests);
     }
 
-    function _calSingleLpValue(address account) internal view returns (uint256) {
+    /* function _calSingleLpValue(address account) internal view returns (uint256) {
         return paramL - lastParamL[account].rmul(paramN).rdiv(lastParamN[account]);
-    }
+    } */
 
-    function _getParamI() internal returns (uint256 paramI) {
+    /* function _getParamM() internal returns (uint256 paramI) {
         uint256 curNormalisedIncome;
         if (block.timestamp < lockStartTime) {
             curNormalisedIncome = IPendleForge(forge).getReserveNormalizedIncome(underlyingAsset);
@@ -702,27 +740,55 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         }
         lastNormalisedIncome = curNormalisedIncome;
         return paramI;
-    }
+    } */
 
     // this function should be called whenver the total amount of LP changes
-    function _updateParamLandN() internal {
+    function _updateParamL() internal {
+        console.log("\t\t[Market][_updateParamL][start]");
         if (block.timestamp.sub(lastInterestUpdate) > data.interestUpdateDelta()) {
             // get due interests for the XYT being held in the market if it has not been updated
             // for interestUpdateDelta seconds
             router.redeemDueInterests(forgeId, underlyingAsset, expiry);
             lastInterestUpdate = block.timestamp;
         }
-        uint256 sTotal = totalSupply;
-        uint256 paramI = _getParamI();
 
-        paramL =
-            paramL.rmul(Math.RONE + paramI) +
-            reserves[xyt].balance.mul(MULTIPLIER).rmul(paramI).rdiv(sTotal);
-        paramN = paramN.rmul(Math.RONE + paramI);
+        // update currentNormalizedIncome
+        uint256 currentNormalizedIncome = IPendleForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
+
+        uint256 firstTerm =
+            paramL.rmul(currentNormalizedIncome).rdiv(
+                normalizedIncome
+            );
+        console.log("\t\t[Market][_updateParamL] lastParamL=%s, NI=%s, lastNI=%s", paramL, currentNormalizedIncome, normalizedIncome);
+        console.log("\t\t[Market][_updateParamL] firstTerm=%s", firstTerm);
+
+        uint256 currentNYield =
+            underlyingYieldToken.balanceOf(
+                address(this)
+            );
+        uint256 paramR =
+            currentNYield -
+                lastNYield.rmul(currentNormalizedIncome).rdiv(
+                    normalizedIncome
+                );
+        uint256 secondTerm;
+        //TODO: remove due to redundancy
+        if (paramR != 0 && totalSupply != 0) {
+            secondTerm = paramR.mul(MULTIPLIER).div(totalSupply);
+        }
+        console.log("\t\t[Market][_updateParamL] currentNYield=%s, lastNYield=%s, paramR=%s", currentNYield, lastNYield, paramR);
+        console.log("\t\t[Market][_updateParamL][done] secondTerm=%s", secondTerm);
+
+
+        // update new states
+        paramL = firstTerm.add(secondTerm);
+        lastNYield = currentNYield;
+        normalizedIncome = currentNormalizedIncome;
     }
 
     // before we send LPs, we need to settle due interests for both the to and from addresses
     function _beforeTokenTransfer(address from, address to) internal override {
+        console.log("\t[Market] transfering LP from %s to %s", from, to);
         _settleLpInterests(from);
         _settleLpInterests(to);
     }

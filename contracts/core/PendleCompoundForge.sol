@@ -137,7 +137,7 @@ contract PendleCompoundForge is PendleForgeBase {
         return underlyingToCToken[_underlyingAsset];
     }
 
-    function _getReserveNormalizedIncome(address _underlyingAsset)
+    function _getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
         internal
         override
         returns (uint256)
