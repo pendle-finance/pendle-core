@@ -104,11 +104,7 @@ describe("lpInterest for AaveMarket", async () => {
     let amountLPMarket: BN = await stdMarket.totalSupply();
     let amountLPToGet: BN;
 
-    if (amountXytMarket.gt(amountXyt)) {
-      amountLPToGet = amountXyt.mul(amountLPMarket).div(amountXytMarket);
-    } else {
-      amountLPToGet = amountXytMarket.mul(amountLPMarket).div(amountXyt);
-    }
+    amountLPToGet = amountXyt.mul(amountLPMarket).div(amountXytMarket);
     // console.log(amountXytMarket.toString(), amountXyt.toString(), amountLPToGet.toString(), amountLPMarket.toString());
     await router
       .connect(user)
