@@ -30,10 +30,8 @@ import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleYieldToken.sol";
 import "../tokens/PendleBaseToken.sol";
 import "../libraries/MathLib.sol";
-import "./PendleMarketBase.sol";
+import "./abstract/PendleMarketBase.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-
-import "hardhat/console.sol";
 
 contract PendleMarket is PendleMarketBase {
     using Math for uint256;
@@ -72,11 +70,6 @@ contract PendleMarket is PendleMarketBase {
                 lastParamL[account].mul(normalizedIncome).div(userLastNormalizedIncome[account])
             );
         }
-        console.log(
-            "\t[Market][_settleLpInterests] NI=%s, lastUserNI=%s",
-            normalizedIncome,
-            userLastNormalizedIncome[account]
-        );
 
         userLastNormalizedIncome[account] = normalizedIncome;
         lastParamL[account] = paramL;

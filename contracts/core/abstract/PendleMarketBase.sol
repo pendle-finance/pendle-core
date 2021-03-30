@@ -23,16 +23,14 @@
 pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
-import "../interfaces/IPendleData.sol";
-import "../interfaces/IPendleMarket.sol";
-import "../interfaces/IPendleForge.sol";
-import "../interfaces/IPendleMarketFactory.sol";
-import "../interfaces/IPendleYieldToken.sol";
-import "../tokens/PendleBaseToken.sol";
-import "../libraries/MathLib.sol";
+import "../../interfaces/IPendleData.sol";
+import "../../interfaces/IPendleMarket.sol";
+import "../../interfaces/IPendleForge.sol";
+import "../../interfaces/IPendleMarketFactory.sol";
+import "../../interfaces/IPendleYieldToken.sol";
+import "../../tokens/PendleBaseToken.sol";
+import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-
-import "hardhat/console.sol";
 
 abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     using Math for uint256;
@@ -646,57 +644,24 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     function _settleLpInterests(address account) internal returns (uint256 dueInterests) {
-        console.log("\t[Market][_settleLpInterests][start] for %s", account);
-
         if (account == address(this)) return 0;
 
         _updateParamL();
         uint256 interestValuePerLP = _getInterestValuePerLP(account);
         if (interestValuePerLP == 0) return 0;
 
-        console.log(
-            "\t[Market][_settleLpInterests] paramL=%s, lastParamL=%s, interestPerLp=%s",
-            paramL,
-            lastParamL[account],
-            interestValuePerLP
-        );
-
-        /* uint256 singleLpValue = _calSingleLpValue(account); */
         dueInterests = balanceOf[account].mul(interestValuePerLP).div(MULTIPLIER);
-        /* uint256 yieldTokenBalance = IERC20(underlyingYieldToken).balanceOf(address(this)); */
 
         if (dueInterests == 0) {
-            console.log(
-                "\t[Market][_settleLpInterests] ok dueInterests=0, before div = ",
-                balanceOf[account].mul(interestValuePerLP)
-            );
             return 0;
         }
 
-        /* dueInterests = dueInterests.min(yieldTokenBalance); */
-        console.log(
-            "\t[Market][_settleLpInterests][done] for %s, dueInterests=%s",
-            account,
-            dueInterests
-        );
-        console.log(
-            "\t[Market][_settleLpInterests] lastNYield=%s, dueInterests=%s",
-            lastNYield,
-            dueInterests
-        );
         lastNYield = lastNYield.sub(dueInterests);
-        console.log(
-            "\t[Market][_settleLpInterests][done] account=%s, interestValuePerLP=%s, dueInterests=%s",
-            account,
-            interestValuePerLP,
-            dueInterests
-        );
         underlyingYieldToken.transfer(account, dueInterests);
     }
 
     // this function should be called whenver the total amount of LP changes
     function _updateParamL() internal {
-        console.log("\t\t[Market][_updateParamL][start]");
         if (block.timestamp.sub(lastInterestUpdate) > data.interestUpdateDelta()) {
             // get due interests for the XYT being held in the market if it has not been updated
             // for interestUpdateDelta seconds
@@ -705,16 +670,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         }
         uint256 currentNYield = underlyingYieldToken.balanceOf(address(this));
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(currentNYield);
-        /* console.log("\t\t[Market][_updateParamL] lastParamL=%s, NI=%s, lastNI=%s", paramL, currentNormalizedIncome, normalizedIncome); */
-        console.log("\t\t[Market][_updateParamL] firstTerm=%s", firstTerm);
 
         uint256 secondTerm;
         //TODO: remove due to redundancy
         if (paramR != 0 && totalSupply != 0) {
             secondTerm = paramR.mul(MULTIPLIER).div(totalSupply);
         }
-        /* console.log("\t\t[Market][_updateParamL] currentNYield=%s, lastNYield=%s, paramR=%s", currentNYield, lastNYield, paramR); */
-        console.log("\t\t[Market][_updateParamL][done] secondTerm=%s", secondTerm);
 
         // update new states
         paramL = firstTerm.add(secondTerm);
@@ -723,7 +684,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
     // before we send LPs, we need to settle due interests for both the to and from addresses
     function _beforeTokenTransfer(address from, address to) internal override {
-        console.log("\t[Market] transfering LP from %s to %s", from, to);
         _settleLpInterests(from);
         _settleLpInterests(to);
     }
