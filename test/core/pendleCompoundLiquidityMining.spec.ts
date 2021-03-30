@@ -158,7 +158,10 @@ describe("PendleCompoundLiquidityMining tests", async () => {
     params = fixture.params;
     pdl = fixture.pdl;
     cUSDT = await getCContract(alice, tokens.USDT);
-    liqWeb3 = new hre.web3.eth.Contract(PendleCompoundLiquidityMining.abi, liq.address);
+    liqWeb3 = new hre.web3.eth.Contract(
+      PendleCompoundLiquidityMining.abi,
+      liq.address
+    );
     snapshotId = await evm_snapshot();
   });
 
