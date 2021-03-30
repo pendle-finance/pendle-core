@@ -674,9 +674,7 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
 
         uint256 interestPerLP =
             paramL.sub(
-                lastParamL[account].mul(normalizedIncome).div(
-                    userLastNormalizedIncome[account]
-                )
+                lastParamL[account].mul(normalizedIncome).div(userLastNormalizedIncome[account])
             );
 
         console.log(
@@ -753,32 +751,33 @@ contract PendleMarket is IPendleMarket, PendleBaseToken {
         }
 
         // update currentNormalizedIncome
-        uint256 currentNormalizedIncome = IPendleForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
+        uint256 currentNormalizedIncome =
+            IPendleForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
 
-        uint256 firstTerm =
-            paramL.rmul(currentNormalizedIncome).rdiv(
-                normalizedIncome
-            );
-        console.log("\t\t[Market][_updateParamL] lastParamL=%s, NI=%s, lastNI=%s", paramL, currentNormalizedIncome, normalizedIncome);
+        uint256 firstTerm = paramL.rmul(currentNormalizedIncome).rdiv(normalizedIncome);
+        console.log(
+            "\t\t[Market][_updateParamL] lastParamL=%s, NI=%s, lastNI=%s",
+            paramL,
+            currentNormalizedIncome,
+            normalizedIncome
+        );
         console.log("\t\t[Market][_updateParamL] firstTerm=%s", firstTerm);
 
-        uint256 currentNYield =
-            underlyingYieldToken.balanceOf(
-                address(this)
-            );
+        uint256 currentNYield = underlyingYieldToken.balanceOf(address(this));
         uint256 paramR =
-            currentNYield -
-                lastNYield.rmul(currentNormalizedIncome).rdiv(
-                    normalizedIncome
-                );
+            currentNYield - lastNYield.rmul(currentNormalizedIncome).rdiv(normalizedIncome);
         uint256 secondTerm;
         //TODO: remove due to redundancy
         if (paramR != 0 && totalSupply != 0) {
             secondTerm = paramR.mul(MULTIPLIER).div(totalSupply);
         }
-        console.log("\t\t[Market][_updateParamL] currentNYield=%s, lastNYield=%s, paramR=%s", currentNYield, lastNYield, paramR);
+        console.log(
+            "\t\t[Market][_updateParamL] currentNYield=%s, lastNYield=%s, paramR=%s",
+            currentNYield,
+            lastNYield,
+            paramR
+        );
         console.log("\t\t[Market][_updateParamL][done] secondTerm=%s", secondTerm);
-
 
         // update new states
         paramL = firstTerm.add(secondTerm);

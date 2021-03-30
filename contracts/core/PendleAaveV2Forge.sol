@@ -102,10 +102,10 @@ contract PendleAaveV2Forge is PendleForgeBase {
         override
         returns (uint256)
     {
-      if (block.timestamp > _expiry) {
-          return lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
-      }
-      return aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset);
+        if (block.timestamp > _expiry) {
+            return lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
+        }
+        return aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset);
     }
 
     function _calcDueInterests(

@@ -581,14 +581,18 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, PendleNon
         require(hasExpiry[expiry], "INVALID_EXPIRY");
 
         // update paramN => no need
-        uint256 currentNormalizedIncome = IPendleForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
+        uint256 currentNormalizedIncome =
+            IPendleForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
 
         // m(t+1) = currentNormalizedIncome / normalizedIncome
         uint256 firstTerm =
-            paramL[expiry].rmul(currentNormalizedIncome).rdiv(
-                normalizedIncome[expiry]
-            );
-        console.log("\t[Liq][_updateParamL] lastParamL=%s, NI=%s, lastNI=%s", paramL[expiry], currentNormalizedIncome, normalizedIncome[expiry]);
+            paramL[expiry].rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry]);
+        console.log(
+            "\t[Liq][_updateParamL] lastParamL=%s, NI=%s, lastNI=%s",
+            paramL[expiry],
+            currentNormalizedIncome,
+            normalizedIncome[expiry]
+        );
         console.log("\t[Liq][_updateParamL] firstTerm=%s", firstTerm);
 
         address xyt = address(pendleData.xytTokens(forgeId, underlyingAsset, expiry));
@@ -598,14 +602,17 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, PendleNon
             );
         uint256 paramR =
             currentNYield -
-                lastNYield[expiry].rmul(currentNormalizedIncome).rdiv(
-                    normalizedIncome[expiry]
-                );
+                lastNYield[expiry].rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry]);
         uint256 secondTerm;
         if (paramR != 0 && currentTotalStakeForExpiry[expiry] != 0) {
             secondTerm = paramR.mul(MULTIPLIER).div(currentTotalStakeForExpiry[expiry]);
         }
-        console.log("\t[Liq][_updateParamL] currentNYield=%s, lastNYield=%s, paramR=%s", currentNYield, lastNYield[expiry], paramR);
+        console.log(
+            "\t[Liq][_updateParamL] currentNYield=%s, lastNYield=%s, paramR=%s",
+            currentNYield,
+            lastNYield[expiry],
+            paramR
+        );
         console.log("\t[Liq][_updateParamL][done] secondTerm=%s", secondTerm);
 
         // Update new states
@@ -630,7 +637,8 @@ contract PendleLiquidityMining is IPendleLiquidityMining, Permissions, PendleNon
         lpHolderForExpiry[expiry] = newLpHoldingContract;
         /* globalIncomeIndexForExpiry[expiry] = 1; */
         normalizedIncome[expiry] = IPendleForge(forge).getReserveNormalizedIncome(
-            underlyingAsset, expiry
+            underlyingAsset,
+            expiry
         );
         paramL[expiry] = 0;
     }
