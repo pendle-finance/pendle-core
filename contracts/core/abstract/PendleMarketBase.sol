@@ -37,7 +37,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    address public immutable override factory;
+    address private immutable factory;
     bytes32 public immutable override factoryId;
     address internal immutable forge;
     address public immutable override token;
@@ -57,7 +57,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     uint256 private constant MULTIPLIER = 10**20;
 
     mapping(address => TokenReserve) private reserves;
-    uint256 public lastInterestUpdate;
+    uint256 private lastInterestUpdate;
 
     // the lockStartTime is set at the bootstrap time of the market, and will not
     // be changed for the entire market duration
@@ -110,9 +110,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         require(msg.sender == address(router), "ONLY_ROUTER");
     }
 
-    modifier marketIsOpen() {
+    function checkMarketIsOpen() internal view {
         require(block.timestamp < lockStartTime, "MARKET_LOCKED");
-        _;
     }
 
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
@@ -162,9 +161,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 _exactOutLp,
         uint256 _maxInXyt,
         uint256 _maxInToken
-    ) external override marketIsOpen returns (PendingTransfer[3] memory transfers) {
+    ) external override returns (PendingTransfer[3] memory transfers) {
         checkIsBootstrapped();
         checkOnlyRouter();
+        checkMarketIsOpen();
         _updateParamL();
         uint256 totalLp = totalSupply;
         uint256 ratio = Math.rdiv(_exactOutLp, totalLp);
@@ -205,19 +205,18 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         address _inToken,
         uint256 _exactIn,
         uint256 _minOutLp
-    ) external override marketIsOpen returns (PendingTransfer[3] memory transfers) {
+    ) external override returns (PendingTransfer[3] memory transfers) {
         checkIsBootstrapped();
         checkOnlyRouter();
+        checkMarketIsOpen();
         _curveShift(data);
         _updateParamL();
 
         TokenReserve storage inTokenReserve = reserves[_inToken];
         uint256 totalLp = totalSupply;
-        uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
 
         // Calc out amount of LP token.
-        uint256 exactOutLp =
-            _calcOutAmountLp(_exactIn, inTokenReserve, data.swapFee(), totalLp, totalWeight);
+        uint256 exactOutLp = _calcOutAmountLp(_exactIn, inTokenReserve, data.swapFee(), totalLp);
         require(exactOutLp >= _minOutLp, "HIGH_LP_OUT_LIMIT");
 
         // Update reserves and operate underlying LP and inToken.
@@ -294,9 +293,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         address _outToken,
         uint256 _inLp,
         uint256 _minOutAmountToken
-    ) external override marketIsOpen returns (PendingTransfer[3] memory transfers) {
+    ) external override returns (PendingTransfer[3] memory transfers) {
         checkIsBootstrapped();
         checkOnlyRouter();
+        checkMarketIsOpen();
         _curveShift(data);
         _updateParamL();
 
@@ -304,9 +304,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 exitFee = data.exitFee();
         uint256 exitFees = Math.rmul(_inLp, data.exitFee());
         uint256 totalLp = totalSupply;
-        uint256 totalWeight = reserves[xyt].weight.add(reserves[token].weight);
 
-        uint256 outAmountToken = _calcOutAmountToken(outTokenReserve, totalLp, totalWeight, _inLp);
+        uint256 outAmountToken = _calcOutAmountToken(outTokenReserve, totalLp, _inLp);
         require(outAmountToken >= _minOutAmountToken, "INSUFFICIENT_TOKEN_OUT");
 
         // Update reserves and operate underlying LP and outToken
@@ -327,7 +326,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        marketIsOpen
         returns (
             uint256 outAmount,
             uint256 spotPriceAfter,
@@ -336,6 +334,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     {
         checkIsBootstrapped();
         checkOnlyRouter();
+        checkMarketIsOpen();
         _curveShift(data);
         _updateParamL();
 
@@ -380,7 +379,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        marketIsOpen
         returns (
             uint256 inAmount,
             uint256 spotPriceAfter,
@@ -389,6 +387,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     {
         checkIsBootstrapped();
         checkOnlyRouter();
+        checkMarketIsOpen();
         _curveShift(data);
         _updateParamL();
 
@@ -522,10 +521,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 inAmount,
         TokenReserve memory inTokenReserve,
         uint256 swapFee,
-        uint256 totalSupplyLp,
-        uint256 totalWeight
+        uint256 totalSupplyLp
     ) internal pure returns (uint256 exactOutLp) {
-        uint256 nWeight = Math.rdiv(inTokenReserve.weight, totalWeight);
+        uint256 nWeight = inTokenReserve.weight;
         uint256 feePortion = Math.rmul(Math.RONE.sub(nWeight), swapFee);
         uint256 inAmoutAfterFee = Math.rmul(inAmount, Math.RONE.sub(feePortion));
 
@@ -541,10 +539,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     function _calcOutAmountToken(
         TokenReserve memory outTokenReserve,
         uint256 totalSupplyLp,
-        uint256 totalWeight,
         uint256 inLp
     ) internal view returns (uint256 exactOutToken) {
-        uint256 nWeight = Math.rdiv(outTokenReserve.weight, totalWeight);
+        uint256 nWeight = outTokenReserve.weight;
         uint256 inLpAfterExitFee = Math.rmul(inLp, Math.RONE.sub(data.exitFee()));
         uint256 totalSupplyLpUpdated = totalSupplyLp.sub(inLpAfterExitFee);
         uint256 lpRatio = Math.rdiv(totalSupplyLpUpdated, totalSupplyLp);
