@@ -61,6 +61,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     uint256 private constant MASK_148_TO_255 = type(uint256).max ^ ((1 << 148) - 1); // 1<<148 - 1 means all bit from 0->147 is off, the rest is on
     uint256 private constant MASK_40_TO_147 = ((1 << 148) - 1) ^ ((1 << 40) - 1);
     uint256 private constant MASK_0_TO_39 = ((1 << 40) - 1);
+    uint256 private constant MAX_TOKEN_RESERVE_BALANCE = (1 << 108) - 1;
 
     // the lockStartTime is set at the bootstrap time of the market, and will not
     // be changed for the entire market duration
@@ -151,12 +152,14 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         address _asset,
         uint256 oldReserveData
     ) internal view returns (uint256 _updatedReserveData) {
+        require(tokenReserve.balance <= MAX_TOKEN_RESERVE_BALANCE, "EXCEED_TOKEN_BALANCE_LIMIT");
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
             decodeReserveData(oldReserveData);
         if (_asset == xyt) {
             (xytWeight, xytBalance) = (tokenReserve.weight, tokenReserve.balance);
         } else {
             (tokenWeight, tokenBalance) = (tokenReserve.weight, tokenReserve.balance);
+            xytWeight = Math.RONE.sub(tokenWeight);
         }
         _updatedReserveData = encodeReserveData(xytBalance, tokenBalance, xytWeight);
     }

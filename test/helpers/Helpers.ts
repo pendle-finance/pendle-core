@@ -103,7 +103,12 @@ export async function convertToAaveToken(
   const erc20 = new Contract(token.address, ERC20.abi, alice);
   await erc20.approve(lendingPoolCore.address, tokenAmount);
 
-  await lendingPool.deposit(token.address, tokenAmount, 0);
+  await lendingPool.deposit(
+    token.address,
+    tokenAmount,
+    0,
+    consts.HIGH_GAS_OVERRIDE
+  );
 }
 
 export async function convertToAaveV2Token(
