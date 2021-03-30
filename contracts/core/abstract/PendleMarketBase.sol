@@ -53,11 +53,14 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     uint256 internal paramL;
     uint256 internal lastNYield;
     mapping(address => uint256) internal lastParamL;
-    //TODO: refactor this
-    uint256 private constant MULTIPLIER = 10**20;
 
-    mapping(address => TokenReserve) private reserves;
+    uint256 private constant MULTIPLIER = 10**20;
+    uint256 private reserveData;
     uint256 private lastInterestUpdate;
+
+    uint256 private constant MASK_148_TO_255 = type(uint256).max ^ ((1 << 148) - 1); // 1<<148 - 1 means all bit from 0->147 is off, the rest is on
+    uint256 private constant MASK_40_TO_147 = ((1 << 148) - 1) ^ ((1 << 40) - 1);
+    uint256 private constant MASK_0_TO_39 = ((1 << 40) - 1);
 
     // the lockStartTime is set at the bootstrap time of the market, and will not
     // be changed for the entire market duration
@@ -114,6 +117,59 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         require(block.timestamp < lockStartTime, "MARKET_LOCKED");
     }
 
+    function decodeReserveData(uint256 _reserveData)
+        internal
+        pure
+        returns (
+            uint256 xytBalance,
+            uint256 tokenBalance,
+            uint256 xytWeight,
+            uint256 tokenWeight
+        )
+    {
+        xytBalance = (_reserveData & MASK_148_TO_255) >> 148;
+        tokenBalance = (_reserveData & MASK_40_TO_147) >> 40;
+        xytWeight = _reserveData & MASK_0_TO_39;
+        tokenWeight = Math.RONE - xytWeight;
+    }
+
+    function parseTokenReserveData(address _asset, uint256 _reserveData)
+        internal
+        view
+        returns (TokenReserve memory tokenReserve)
+    {
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
+            decodeReserveData(_reserveData);
+        if (_asset == xyt) {
+            tokenReserve = TokenReserve(xytWeight, xytBalance);
+        } else {
+            tokenReserve = TokenReserve(tokenWeight, tokenBalance);
+        }
+    }
+
+    function dryUpdateReserveData(
+        TokenReserve memory tokenReserve,
+        address _asset,
+        uint256 oldReserveData
+    ) internal view returns (uint256 _updatedReserveData) {
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
+            decodeReserveData(oldReserveData);
+        if (_asset == xyt) {
+            (xytWeight, xytBalance) = (tokenReserve.weight, tokenReserve.balance);
+        } else {
+            (tokenWeight, tokenBalance) = (tokenReserve.weight, tokenReserve.balance);
+        }
+        _updatedReserveData = encodeReserveData(xytBalance, tokenBalance, xytWeight);
+    }
+
+    function encodeReserveData(
+        uint256 xytBalance,
+        uint256 tokenBalance,
+        uint256 xytWeight
+    ) internal pure returns (uint256 _updatedReserveData) {
+        _updatedReserveData = (xytBalance << 148) | (tokenBalance << 40) | xytWeight;
+    }
+
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
         override
@@ -123,17 +179,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         require(!bootstrapped, "ALREADY_BOOTSTRAPPED");
         _initializeLock(); // market's lock params should be initialized at bootstrap time
 
-        reserves[xyt].balance = initialXytLiquidity;
-        reserves[xyt].weight = Math.RONE / 2;
-        reserves[token].balance = initialTokenLiquidity;
-        reserves[token].weight = Math.RONE / 2;
+        reserveData = encodeReserveData(initialXytLiquidity, initialTokenLiquidity, Math.RONE / 2);
 
-        emit Sync(
-            reserves[xyt].balance,
-            reserves[xyt].weight,
-            reserves[token].balance,
-            reserves[token].weight
-        );
+        emit Sync(initialXytLiquidity, Math.RONE / 2, initialTokenLiquidity, Math.RONE / 2);
 
         uint256 liquidity =
             Math.sqrt(initialXytLiquidity.mul(initialTokenLiquidity)).sub(MINIMUM_LIQUIDITY);
@@ -170,30 +218,26 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 ratio = Math.rdiv(_exactOutLp, totalLp);
         require(ratio != 0, "ZERO_RATIO");
 
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) =
+            decodeReserveData(reserveData);
         // Calc and inject XYT token.
-        uint256 balanceXyt = reserves[xyt].balance;
-        uint256 amountXytUsed = Math.rmul(ratio, balanceXyt);
+        uint256 amountXytUsed = Math.rmul(ratio, xytBalance);
         require(amountXytUsed != 0, "ZERO_XYT_IN_AMOUNT");
         require(amountXytUsed <= _maxInXyt, "LOW_XYT_IN_LIMIT");
-        reserves[xyt].balance = reserves[xyt].balance.add(amountXytUsed);
+        xytBalance = xytBalance.add(amountXytUsed);
         transfers[0].amount = amountXytUsed;
         /* transfers[0].isOut = false; */
 
         // Calc and inject pair token.
-        uint256 balanceToken = reserves[token].balance;
-        uint256 amountTokenUsed = Math.rmul(ratio, balanceToken);
+        uint256 amountTokenUsed = Math.rmul(ratio, tokenBalance);
         require(amountTokenUsed != 0, "ZERO_TOKEN_IN_AMOUNT");
         require(amountTokenUsed <= _maxInToken, "LOW_TOKEN_IN_LIMIT");
-        reserves[token].balance = reserves[token].balance.add(amountTokenUsed);
+        tokenBalance = tokenBalance.add(amountTokenUsed);
         transfers[1].amount = amountTokenUsed;
         /* transfers[1].isOut = false; */
 
-        emit Sync(
-            reserves[xyt].balance,
-            reserves[xyt].weight,
-            reserves[token].balance,
-            reserves[token].weight
-        );
+        reserveData = encodeReserveData(xytBalance, tokenBalance, xytWeight);
+        emit Sync(xytBalance, xytWeight, tokenBalance, Math.RONE - xytWeight);
 
         // Mint and push LP token.
         _mintLp(_exactOutLp);
@@ -211,8 +255,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkMarketIsOpen();
         _curveShift(data);
         _updateParamL();
+        uint256 updatedReserveData = reserveData;
+        TokenReserve memory inTokenReserve = parseTokenReserveData(_inToken, updatedReserveData);
 
-        TokenReserve storage inTokenReserve = reserves[_inToken];
         uint256 totalLp = totalSupply;
 
         // Calc out amount of LP token.
@@ -229,12 +274,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[2].amount = exactOutLp;
         transfers[2].isOut = true;
 
-        emit Sync(
-            reserves[xyt].balance,
-            reserves[xyt].weight,
-            reserves[token].balance,
-            reserves[token].weight
-        );
+        // repack data
+        updatedReserveData = dryUpdateReserveData(inTokenReserve, _inToken, updatedReserveData);
+        reserveData = updatedReserveData;
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
+            decodeReserveData(updatedReserveData); // unpack data
+        emit Sync(xytBalance, xytWeight, tokenBalance, tokenWeight);
     }
 
     /**
@@ -262,25 +307,30 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 inLpAfterExitFee = _inLp.sub(exitFee);
         uint256 ratio = Math.rdiv(inLpAfterExitFee, totalLp);
         require(ratio != 0, "ZERO_RATIO");
+        uint256 updatedReserveData = reserveData;
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) =
+            decodeReserveData(updatedReserveData); // unpack data
 
         // Calc and withdraw xyt token.
-        uint256 balanceToken = reserves[xyt].balance;
+        uint256 balanceToken = xytBalance;
         uint256 xytOut = Math.rmul(ratio, balanceToken);
         require(xytOut != 0, "MATH_ERROR");
         require(xytOut >= _minOutXyt, "INSUFFICIENT_XYT_OUT");
-        reserves[xyt].balance = reserves[xyt].balance.sub(xytOut);
+        xytBalance = xytBalance.sub(xytOut);
         transfers[0].amount = xytOut;
         transfers[0].isOut = true;
 
         // Calc and withdraw pair token.
-        balanceToken = reserves[token].balance;
+        balanceToken = tokenBalance;
         uint256 tokenOut = Math.rmul(ratio, balanceToken);
         require(tokenOut != 0, "MATH_ERROR");
         require(tokenOut >= _minOutToken, "INSUFFICIENT_TOKEN_OUT");
-        reserves[token].balance = reserves[token].balance.sub(tokenOut);
+        tokenBalance = tokenBalance.sub(tokenOut);
         transfers[1].amount = tokenOut;
         transfers[1].isOut = true;
 
+        updatedReserveData = encodeReserveData(xytBalance, tokenBalance, xytWeight); // repack data
+        reserveData = updatedReserveData;
         // Deal with lp last.
         _collectFees(exitFees);
         _burnLp(inLpAfterExitFee);
@@ -299,8 +349,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkMarketIsOpen();
         _curveShift(data);
         _updateParamL();
+        uint256 updatedReserveData = reserveData;
+        TokenReserve memory outTokenReserve = parseTokenReserveData(_outToken, updatedReserveData);
 
-        TokenReserve storage outTokenReserve = reserves[_outToken];
         uint256 exitFee = data.exitFee();
         uint256 exitFees = Math.rmul(_inLp, data.exitFee());
         uint256 totalLp = totalSupply;
@@ -311,6 +362,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // Update reserves and operate underlying LP and outToken
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmountToken);
 
+        updatedReserveData = dryUpdateReserveData(outTokenReserve, _outToken, updatedReserveData);
+        reserveData = updatedReserveData;
         _collectFees(exitFee);
         _burnLp(_inLp.sub(exitFees));
         transfers[0].amount = outAmountToken;
@@ -338,8 +391,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _curveShift(data);
         _updateParamL();
 
-        TokenReserve storage inTokenReserve = reserves[inToken];
-        TokenReserve storage outTokenReserve = reserves[outToken];
+        uint256 updatedReserveData = reserveData;
+        TokenReserve memory inTokenReserve = parseTokenReserveData(inToken, updatedReserveData);
+        TokenReserve memory outTokenReserve = parseTokenReserveData(outToken, updatedReserveData);
 
         uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
         require(spotPriceBefore <= maxPrice, "LOW_MAX_PRICE");
@@ -357,12 +411,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         require(spotPriceAfter <= maxPrice, "LOW_MAX_PRICE");
         require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "MATH_ERROR");
 
-        emit Sync(
-            reserves[xyt].balance,
-            reserves[xyt].weight,
-            reserves[token].balance,
-            reserves[token].weight
-        );
+        // repack data
+        updatedReserveData = dryUpdateReserveData(inTokenReserve, inToken, updatedReserveData);
+        updatedReserveData = dryUpdateReserveData(outTokenReserve, outToken, updatedReserveData);
+        reserveData = updatedReserveData;
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
+            decodeReserveData(updatedReserveData); // unpack data
+        emit Sync(xytBalance, xytWeight, tokenBalance, tokenWeight);
 
         transfers[0].amount = inAmount;
         /* transfers[0].isOut = false; */
@@ -391,8 +446,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _curveShift(data);
         _updateParamL();
 
-        TokenReserve storage inTokenReserve = reserves[inToken];
-        TokenReserve storage outTokenReserve = reserves[outToken];
+        uint256 updatedReserveData = reserveData;
+        TokenReserve memory inTokenReserve = parseTokenReserveData(inToken, updatedReserveData);
+        TokenReserve memory outTokenReserve = parseTokenReserveData(outToken, updatedReserveData);
 
         // Calc spot price.
         uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
@@ -411,12 +467,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         require(spotPriceAfter <= maxPrice, "LOW_MAX_PRICE");
         require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "MATH_ERROR");
 
-        emit Sync(
-            reserves[xyt].balance,
-            reserves[xyt].weight,
-            reserves[token].balance,
-            reserves[token].weight
-        );
+        // repack data
+        updatedReserveData = dryUpdateReserveData(inTokenReserve, inToken, updatedReserveData);
+        updatedReserveData = dryUpdateReserveData(outTokenReserve, outToken, updatedReserveData);
+        reserveData = updatedReserveData;
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
+            decodeReserveData(updatedReserveData); // unpack data
+        emit Sync(xytBalance, xytWeight, tokenBalance, tokenWeight);
 
         transfers[0].amount = inAmount;
         /* transfers[0].isOut = false; */
@@ -424,7 +481,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[1].isOut = true;
     }
 
-    function claimLpInterests(address account) public override returns (uint256 interests) {
+    function claimLpInterests(address account) external override returns (uint256 interests) {
         checkIsBootstrapped();
         checkOnlyRouter();
         interests = _settleLpInterests(account);
@@ -440,7 +497,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
             uint256 lastBlockTimestamp
         )
     {
-        return (reserves[xyt].balance, reserves[token].balance, block.timestamp);
+        (uint256 xytBalance, uint256 tokenBalance, , ) = decodeReserveData(reserveData); // unpack data
+        return (xytBalance, tokenBalance, lastBlockTimestamp);
     }
 
     function calcExactIn(
@@ -476,20 +534,17 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     function getBalance(address asset) external view override returns (uint256) {
-        return reserves[asset].balance;
+        require(asset == xyt || asset == token, "INVALID_ASSET");
+        (uint256 xytBalance, uint256 tokenBalance, , ) = decodeReserveData(reserveData); // unpack data
+        return (asset == xyt ? xytBalance : tokenBalance);
     }
 
     // will do weight update (dry run) before reading token weights, to prevent the case
     // that weight is outdated
     function getWeight(address asset) external view override returns (uint256) {
+        require(asset == xyt || asset == token, "INVALID_ASSET");
         (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, ) = _updateWeightDry();
-        if (asset == xyt) {
-            return xytWeightUpdated;
-        } else if (asset == token) {
-            return tokenWeightUpdated;
-        } else {
-            return 0;
-        }
+        return (asset == xyt ? xytWeightUpdated : tokenWeightUpdated);
     }
 
     function spotPrice(address inToken, address outToken)
@@ -498,9 +553,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         override
         returns (uint256 spot)
     {
-        TokenReserve storage inTokenReserve = reserves[inToken];
-        TokenReserve storage outTokenReserve = reserves[outToken];
-
+        uint256 localReserveData = reserveData;
+        TokenReserve memory inTokenReserve = parseTokenReserveData(inToken, localReserveData);
+        TokenReserve memory outTokenReserve = parseTokenReserveData(outToken, localReserveData);
         return _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
     }
 
@@ -571,19 +626,17 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
     // update the token reserve storage
     function _updateWeight() internal {
-        uint256 xytWeight = reserves[xyt].weight;
-        uint256 tokenWeight = reserves[token].weight;
-
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
+            decodeReserveData(reserveData); // unpack data
         (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) =
             _updateWeightDry();
 
-        reserves[xyt].weight = xytWeightUpdated;
-        reserves[token].weight = tokenWeightUpdated;
+        reserveData = encodeReserveData(xytBalance, tokenBalance, xytWeightUpdated); // repack data
         priceLast = priceNow;
         emit Shift(xytWeight, tokenWeight, xytWeightUpdated, tokenWeightUpdated);
     }
 
-    // do the weight update calucation but don't update the token reserve storage
+    // do the weight update calucation but don't update the token reserve memory
     function _updateWeightDry()
         internal
         view
@@ -599,8 +652,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 startTime = xytStartTime;
         uint256 duration = endTime - startTime;
 
-        uint256 xytWeight = reserves[xyt].weight;
-        uint256 tokenWeight = reserves[token].weight;
+        (, , uint256 xytWeight, uint256 tokenWeight) = decodeReserveData(reserveData); // unpack data
 
         uint256 timeLeft;
         if (endTime >= currentTime) {

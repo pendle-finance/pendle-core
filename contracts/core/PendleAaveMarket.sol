@@ -33,7 +33,7 @@ import "../libraries/MathLib.sol";
 import "./abstract/PendleMarketBase.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-contract PendleMarket is PendleMarketBase {
+contract PendleAaveMarket is PendleMarketBase {
     using Math for uint256;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;

@@ -23,7 +23,7 @@
 pragma solidity 0.7.6;
 
 import "../libraries/FactoryLib.sol";
-import "./PendleMarket.sol";
+import "./PendleAaveMarket.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarketFactory.sol";
@@ -31,7 +31,7 @@ import "../interfaces/IPendleYieldToken.sol";
 import "../periphery/Permissions.sol";
 import "./abstract/PendleMarketFactoryBase.sol";
 
-contract PendleMarketFactory is PendleMarketFactoryBase {
+contract PendleAaveMarketFactory is PendleMarketFactoryBase {
     constructor(address _governance, bytes32 _marketFactoryId)
         PendleMarketFactoryBase(_governance, _marketFactoryId)
     {}
@@ -44,7 +44,7 @@ contract PendleMarketFactory is PendleMarketFactoryBase {
     ) internal override returns (address) {
         return
             Factory.createContract(
-                type(PendleMarket).creationCode,
+                type(PendleAaveMarket).creationCode,
                 abi.encodePacked(_forgeAddress, _xyt, _token, _expiry),
                 abi.encode(_forgeAddress, _xyt, _token, _expiry)
             );

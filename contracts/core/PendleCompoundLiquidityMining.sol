@@ -27,7 +27,6 @@ import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleForge.sol";
-import "../interfaces/IPendleAaveForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleData.sol";
@@ -45,13 +44,10 @@ import "./abstract/PendleLiquidityMiningBase.sol";
         then his pending rewards are calculated as well
         (and saved in availableRewardsForEpoch[user][epochId])
  */
-contract PendleLiquidityMining is PendleLiquidityMiningBase {
+contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
     using Math for uint256;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
-
-    mapping(uint256 => uint256) private normalizedIncome;
-    mapping(uint256 => mapping(address => uint256)) private userLastNormalizedIncome;
 
     constructor(
         address _governance,
@@ -84,41 +80,25 @@ contract PendleLiquidityMining is PendleLiquidityMiningBase {
         override
         returns (uint256 interestValuePerLP)
     {
-        if (userLastNormalizedIncome[expiry][account] == 0) {
+        if (lastParamL[expiry][account] == 0) {
             interestValuePerLP = 0;
         } else {
-            interestValuePerLP = paramL[expiry].sub(
-                lastParamL[expiry][account].mul(normalizedIncome[expiry]).div(
-                    userLastNormalizedIncome[expiry][account]
-                )
-            );
+            interestValuePerLP = paramL[expiry].sub(lastParamL[expiry][account]);
         }
-        userLastNormalizedIncome[expiry][account] = normalizedIncome[expiry];
         lastParamL[expiry][account] = paramL[expiry];
     }
 
     function _getFirstTermAndParamR(uint256 expiry, uint256 currentNYield)
         internal
+        view
         override
         returns (uint256 firstTerm, uint256 paramR)
     {
-        uint256 currentNormalizedIncome =
-            IPendleAaveForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
-
-        // m(t+1) = currentNormalizedIncome / normalizedIncome
-        firstTerm = paramL[expiry].rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry]);
-
-        paramR =
-            currentNYield -
-            lastNYield[expiry].rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry]);
-
-        normalizedIncome[expiry] = currentNormalizedIncome;
+        firstTerm = paramL[expiry];
+        paramR = currentNYield - lastNYield[expiry];
     }
 
     function _afterAddingNewExpiry(uint256 expiry) internal override {
-        normalizedIncome[expiry] = IPendleAaveForge(forge).getReserveNormalizedIncome(
-            underlyingAsset,
-            expiry
-        );
+        paramL[expiry] = 1; // we only use differences between paramL so we can just set an arbitrary initial number
     }
 }

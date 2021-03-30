@@ -1,8 +1,8 @@
 'use strict';
 
-const {contract} = require('hardhat');
-const {promisify} = require('util');
-const {resolve} = require('path');
+const { contract } = require('hardhat');
+const { promisify } = require('util');
+const { resolve } = require('path');
 const fs = require('fs');
 
 const EIP170 = 24576;
@@ -10,17 +10,26 @@ const CONTRACTS = `${__dirname}/../build/artifacts/contracts`;
 const READDIR = promisify(fs.readdir);
 const STAT = promisify(fs.stat);
 const LIST = [
-  'PendleRouter.sol',
-  'PendleAaveForge.sol',
-  'PendleCompoundForge.sol',
   'PendleForgeBase.sol',
+  'PendleLiquidityMiningBase.sol',
+  'PendleMarketBase.sol',
+  'PendleMarketFactoryBase.sol',
+  'PendleAaveForge.sol',
+  'PendleAaveLiquidityMining.sol',
+  'PendleAaveMarket.sol',
+  'PendleAaveMarketFactory.sol',
+  'PendleAaveV2Forge.sol',
+  'PendleCompoundForge.sol',
+  'PendleCompoundLiquidityMining.sol',
+  'PendleCompoundMarket.sol',
+  'PendleCompoundMarketFactory.sol',
   'PendleData.sol',
-  'PendleMarket.sol',
-  'PendleMarketFactory.sol',
   'PendleGovernance.sol',
-  'PendleTreasury.sol',
-  'PendleLiquidityMining.sol',
   'PendleLpHolder.sol',
+  'PendleMarketReader.sol',
+  'PendleRouter.sol',
+  'PendleTokenDistribution.sol',
+  'PendleTreasury.sol',
   'PendleFutureYieldToken.sol',
   'PendleOwnershipToken.sol',
   'PENDLE.sol',

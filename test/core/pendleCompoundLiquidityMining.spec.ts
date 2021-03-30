@@ -1,7 +1,7 @@
 import { assert, expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
-import PendleLiquidityMining from "../../build/artifacts/contracts/core/PendleLiquidityMining.sol/PendleLiquidityMining.json";
+import PendleCompoundLiquidityMining from "../../build/artifacts/contracts/core/PendleCompoundLiquidityMining.sol/PendleCompoundLiquidityMining.json";
 import {
   advanceTime,
   amountToWei,
@@ -158,7 +158,7 @@ describe("PendleCompoundLiquidityMining tests", async () => {
     params = fixture.params;
     pdl = fixture.pdl;
     cUSDT = await getCContract(alice, tokens.USDT);
-    liqWeb3 = new hre.web3.eth.Contract(PendleLiquidityMining.abi, liq.address);
+    liqWeb3 = new hre.web3.eth.Contract(PendleCompoundLiquidityMining.abi, liq.address);
     snapshotId = await evm_snapshot();
   });
 
@@ -425,7 +425,7 @@ describe("PendleCompoundLiquidityMining tests", async () => {
     // console.log(liq);
 
     const liqWeb3 = new hre.web3.eth.Contract(
-      PendleLiquidityMining.abi,
+      PendleCompoundLiquidityMining.abi,
       liq.address
     );
     const rewardsData = await liqWeb3.methods

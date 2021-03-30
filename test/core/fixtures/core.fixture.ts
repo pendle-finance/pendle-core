@@ -1,6 +1,6 @@
 import { Contract, providers, Wallet } from 'ethers'
 import PendleData from "../../../build/artifacts/contracts/core/PendleData.sol/PendleData.json"
-import PendleMarketFactory from "../../../build/artifacts/contracts/core/PendleMarketFactory.sol/PendleMarketFactory.json"
+import PendleAaveMarketFactory from "../../../build/artifacts/contracts/core/PendleAaveMarketFactory.sol/PendleAaveMarketFactory.json"
 import PendleCompoundMarketFactory from "../../../build/artifacts/contracts/core/PendleCompoundMarketFactory.sol/PendleCompoundMarketFactory.json"
 import PendleRouter from '../../../build/artifacts/contracts/core/PendleRouter.sol/PendleRouter.json'
 import PendleMarketReader from '../../../build/artifacts/contracts/core/PendleMarketReader.sol/PendleMarketReader.json'
@@ -27,7 +27,7 @@ export async function coreFixture(
 ): Promise<CoreFixture> {
   const router = await deployContract(alice, PendleRouter, [alice.address, tokens.WETH.address]);
   const treasury = await deployContract(alice, PendleTreasury, [alice.address]);
-  const aMarketFactory = await deployContract(alice, PendleMarketFactory, [alice.address, consts.MARKET_FACTORY_AAVE]);
+  const aMarketFactory = await deployContract(alice, PendleAaveMarketFactory, [alice.address, consts.MARKET_FACTORY_AAVE]);
   const cMarketFactory = await deployContract(alice, PendleCompoundMarketFactory, [alice.address, consts.MARKET_FACTORY_COMPOUND]);
   const data = await deployContract(alice, PendleData, [alice.address, treasury.address]);
   const marketReader = await deployContract(alice, PendleMarketReader, [data.address]);
