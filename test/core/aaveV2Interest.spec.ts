@@ -90,7 +90,8 @@ describe("aaveV2Interest test", async () => {
       .redeemDueInterests(
         consts.FORGE_AAVE_V2,
         tokenUSDT.address,
-        consts.T0_A2.add(consts.SIX_MONTH)
+        consts.T0_A2.add(consts.SIX_MONTH),
+        consts.HIGH_GAS_OVERRIDE
       );
   }
 
@@ -125,7 +126,6 @@ describe("aaveV2Interest test", async () => {
     for (let id = 0; id < yieldTest.length; id++) {
       let curTest = yieldTest[id];
       let user = wallets[curTest.user];
-      // console.log(curTest);
       curTime = curTime.add(BN.from(curTest.timeDelta));
       await setTimeNextBlock(provider, curTime);
       if (curTest.type == "redeemDueInterests") {

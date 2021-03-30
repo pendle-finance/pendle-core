@@ -22,16 +22,16 @@
  */
 pragma solidity 0.7.6;
 
-import "../libraries/FactoryLib.sol";
-import "./PendleMarket.sol";
-import "../interfaces/IPendleRouter.sol";
-import "../interfaces/IPendleData.sol";
-import "../interfaces/IPendleMarketFactory.sol";
-import "../interfaces/IPendleYieldToken.sol";
-import "../periphery/Permissions.sol";
-import "../periphery/Withdrawable.sol";
+import "../../libraries/FactoryLib.sol";
+import "../PendleAaveMarket.sol";
+import "../../interfaces/IPendleRouter.sol";
+import "../../interfaces/IPendleData.sol";
+import "../../interfaces/IPendleMarketFactory.sol";
+import "../../interfaces/IPendleYieldToken.sol";
+import "../../periphery/Permissions.sol";
+import "../../periphery/Withdrawable.sol";
 
-contract PendleMarketFactory is IPendleMarketFactory, Permissions, Withdrawable {
+abstract contract PendleMarketFactoryBase is IPendleMarketFactory, Permissions, Withdrawable {
     IPendleRouter public override router;
     bytes32 public immutable override marketFactoryId;
 
@@ -66,13 +66,16 @@ contract PendleMarketFactory is IPendleMarketFactory, Permissions, Withdrawable 
         uint256 expiry = IPendleYieldToken(_xyt).expiry();
         require(data.isValidXYT(forgeAddress, underlyingAsset, expiry), "INVALID_XYT");
 
-        market = Factory.createContract(
-            type(PendleMarket).creationCode,
-            abi.encodePacked(forgeAddress, _xyt, _token, expiry),
-            abi.encode(forgeAddress, _xyt, _token, expiry)
-        );
+        market = _createMarket(forgeAddress, _xyt, _token, expiry);
         data.addMarket(marketFactoryId, _xyt, _token, market);
 
         emit MarketCreated(marketFactoryId, _xyt, _token, market);
     }
+
+    function _createMarket(
+        address _forgeAddress,
+        address _xyt,
+        address _token,
+        uint256 _expiry
+    ) internal virtual returns (address) {}
 }

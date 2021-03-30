@@ -12,9 +12,9 @@ import {
   setTime,
   setTimeNextBlock,
   startOfEpoch,
-  mintAaveToken,
   tokens,
   errMsg,
+  emptyToken,
 } from "../helpers";
 import { liqParams, liquidityMiningFixture, UserStakeAction } from "./fixtures";
 import * as scenario from "./fixtures/liquidityMiningScenario.fixture";
@@ -137,7 +137,6 @@ function calExpectedRewards(
   return rewards;
 }
 
-// TODO:interest of Lp
 describe("PendleAaveLiquidityMining tests", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
@@ -170,10 +169,10 @@ describe("PendleAaveLiquidityMining tests", async () => {
 
     // empty aUSDT and XYT balance
     await emptyToken(aUSDT, bob);
-    await emptyToken(aUSDT, bob);
+    // await emptyToken(aUSDT, bob);
     await emptyToken(xyt, charlie);
     await emptyToken(aUSDT, charlie);
-    await emptyToken(aUSDT, charlie);
+    // await emptyToken(aUSDT, charlie);
     snapshotId = await evm_snapshot();
   });
 
@@ -185,14 +184,6 @@ describe("PendleAaveLiquidityMining tests", async () => {
     await evm_revert(snapshotId);
     snapshotId = await evm_snapshot();
   });
-
-  async function emptyToken(tokenContract: Contract, person: Wallet) {
-    const bal: BN = await tokenContract.balanceOf(person.address);
-    if (bal.eq(0)) return;
-    await tokenContract
-      .connect(person)
-      .transfer(consts.DUMMY_GOVERNANCE_ADDRESS, bal);
-  }
 
   async function doStake(person: Wallet, amount: BN) {
     await liq
@@ -317,7 +308,8 @@ describe("PendleAaveLiquidityMining tests", async () => {
   //  - Dave just holds the LP tokens
   //  - Bob stake the LP tokens into liq-mining contract, in two transactions
   //=> after 2 months, all three of them should get the same interests
-  xit("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests [skip because the bug is being investigated]", async () => {
+  it("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests [skip because the bug is being investigated]", async () => {
+    const INITIAL_LP_AMOUNT: BN = await stdMarket.balanceOf(bob.address);
     // console.log(await stdMarket.balanceOf(stdMarket.address));
     await setTimeNextBlock(provider, params.START_TIME.add(100));
     const xytBalanceOfMarket = await xyt.balanceOf(stdMarket.address);
@@ -330,14 +322,29 @@ describe("PendleAaveLiquidityMining tests", async () => {
     let preBalanceBob = await aUSDT.balanceOf(bob.address);
     let preBalanceDave = await aUSDT.balanceOf(dave.address);
     let preBalanceCharlie = await aUSDT.balanceOf(charlie.address);
-    // console.log(`\tPrebalanceBob = ${preBalanceBob}, preBalanceDave = ${preBalanceDave}, preBalanceCharlie = ${preBalanceCharlie}`);
+    console.log("\n========================================================");
+    console.log(
+      `\tPrebalanceBob = ${preBalanceBob}, preBalanceDave = ${preBalanceDave}, preBalanceCharlie = ${preBalanceCharlie}`
+    );
+    console.log(
+      `\tBob address = ${bob.address}, marketAddress = ${stdMarket.address}, alice address = ${alice.address}`
+    );
     // console.log(await stdMarket.balanceOf(stdMarket.address));
-    await doStake(bob, params.INITIAL_LP_AMOUNT.div(2));
-    await advanceTime(provider, consts.ONE_MONTH);
-    await doStake(bob, params.INITIAL_LP_AMOUNT.div(2));
-    await advanceTime(provider, consts.ONE_MONTH);
+
+    await doStake(alice, INITIAL_LP_AMOUNT); // Alice also stake into liq-mining
+    console.log(`\talice staked`);
+    await doStake(bob, INITIAL_LP_AMOUNT.div(2));
+    console.log(`\tbob staked`);
+    await setTimeNextBlock(provider, params.START_TIME.add(consts.ONE_MONTH));
+    await doStake(bob, INITIAL_LP_AMOUNT.div(2));
+    console.log(`\tbob staked round 2`);
+    await setTimeNextBlock(
+      provider,
+      params.START_TIME.add(consts.ONE_MONTH.mul(2))
+    );
 
     await liq.connect(bob).claimLpInterests();
+    console.log(`\tbob claimed interests`);
     let actualGainBob = (await aUSDT.balanceOf(bob.address)).sub(preBalanceBob);
 
     await router
@@ -356,7 +363,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
       preBalanceDave
     );
 
-    // console.log(actualGainBob.toString(), actualGainCharlie.toString(), actualGainDave.toString());
+    // console.log(actualGainCharlie.toString(), actualGainDave.toString());
     approxBigNumber(actualGainBob, actualGainDave, consts.TEST_TOKEN_DELTA);
     approxBigNumber(actualGainCharlie, actualGainDave, consts.TEST_TOKEN_DELTA);
   });
@@ -447,7 +454,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
   });
 
   it("this test shouldn't crash", async () => {
-    const amountToStake = params.INITIAL_LP_AMOUNT;
+    const amountToStake = await stdMarket.balanceOf(bob.address);
 
     await setTimeNextBlock(provider, params.START_TIME);
     await liq
@@ -480,7 +487,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
   it("can stake and withdraw", async () => {
     const FIFTEEN_DAYS = consts.ONE_DAY.mul(15);
 
-    const amountToStake = params.INITIAL_LP_AMOUNT; //1e17 LP = 0.1 LP
+    const amountToStake = await stdMarket.balanceOf(bob.address);
 
     const pdlBalanceOfContract = await pdl.balanceOf(liq.address);
     const pdlBalanceOfUser = await pdl.balanceOf(bob.address);

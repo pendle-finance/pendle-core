@@ -34,7 +34,7 @@ import "../interfaces/IComptroller.sol";
 import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
-import "./PendleForgeBase.sol";
+import "./abstract/PendleForgeBase.sol";
 
 contract PendleCompoundForge is PendleForgeBase {
     using ExpiryUtils for string;
@@ -42,7 +42,7 @@ contract PendleCompoundForge is PendleForgeBase {
 
     IComptroller public immutable comptroller;
 
-    uint256 private initialRate = 0;
+    mapping(address => uint256) public initialRate;
     mapping(address => address) public underlyingToCToken;
     mapping(address => mapping(uint256 => uint256)) public lastRateBeforeExpiry;
     mapping(address => mapping(uint256 => mapping(address => uint256))) public lastRate;
@@ -71,6 +71,7 @@ contract PendleCompoundForge is PendleForgeBase {
             require(underlyingToCToken[_underlyingAssets[i]] == address(0), "FORBIDDEN");
             require(_isValidCToken(_underlyingAssets[i], _cTokens[i]), "INVALID_CTOKEN_DATA");
             underlyingToCToken[_underlyingAssets[i]] = _cTokens[i];
+            initialRate[_underlyingAssets[i]] = ICToken(_cTokens[i]).exchangeRateCurrent();
         }
 
         emit RegisterCTokens(_underlyingAssets, _cTokens);
@@ -100,7 +101,7 @@ contract PendleCompoundForge is PendleForgeBase {
     ) internal view override returns (uint256 totalAfterExpiry) {
         // interests from the timestamp of the last XYT transfer (before expiry) to now is entitled to the OT holders
         // this means that the OT holders are getting some extra interests, at the expense of XYT holders
-        totalAfterExpiry = redeemedAmount.mul(initialRate).div(
+        totalAfterExpiry = redeemedAmount.mul(initialRate[_underlyingAsset]).div(
             lastRateBeforeExpiry[_underlyingAsset][_expiry]
         );
     }
@@ -112,7 +113,7 @@ contract PendleCompoundForge is PendleForgeBase {
     {
         ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
         uint256 currentRate = cToken.exchangeRateCurrent();
-        underlyingToRedeem = _amountToRedeem.mul(initialRate).div(currentRate);
+        underlyingToRedeem = _amountToRedeem.mul(initialRate[_underlyingAsset]).div(currentRate);
     }
 
     function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)
@@ -122,10 +123,7 @@ contract PendleCompoundForge is PendleForgeBase {
     {
         ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
         uint256 currentRate = cToken.exchangeRateCurrent();
-        if (initialRate == 0) {
-            initialRate = currentRate;
-        }
-        amountToMint = _amountToTokenize.mul(currentRate).div(initialRate);
+        amountToMint = _amountToTokenize.mul(currentRate).div(initialRate[_underlyingAsset]);
     }
 
     function _getYieldBearingToken(address _underlyingAsset)
@@ -175,7 +173,7 @@ contract PendleCompoundForge is PendleForgeBase {
             .mul(interestVariables.currentRate)
             .div(interestVariables.prevRate)
             .sub(principal)
-            .mul(initialRate)
+            .mul(initialRate[_underlyingAsset])
             .div(interestVariables.currentRate);
     }
 }

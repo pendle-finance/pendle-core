@@ -34,6 +34,8 @@ describe("lpFormula", async () => {
   let snapshotId: string;
   let globalSnapshotId: string;
   let tokenUSDT: Token;
+  const LOCAL_TOKEN_DELTA: BN = BN.from(10000);
+  const MINIMUM_LIQUIDITY: BN = BN.from(1000);
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
@@ -167,7 +169,7 @@ describe("lpFormula", async () => {
     approxBigNumber(
       await stdMarket.balanceOf(user.address),
       expected,
-      consts.TEST_LP_DELTA
+      LOCAL_TOKEN_DELTA
     );
   }
 
@@ -207,12 +209,12 @@ describe("lpFormula", async () => {
     approxBigNumber(
       amountToWei(test.amountTokenChange, 6),
       initialTokenBalance.sub(finalTokenBalance),
-      consts.TEST_TOKEN_DELTA
+      LOCAL_TOKEN_DELTA
     );
     approxBigNumber(
       amountToWei(test.amountXytChange, 6),
       initialXytBalance.sub(finalXytBalance),
-      consts.TEST_TOKEN_DELTA
+      LOCAL_TOKEN_DELTA
     );
   }
 
@@ -235,11 +237,7 @@ describe("lpFormula", async () => {
       testToken.address,
       amountToRemove
     );
-    approxBigNumber(
-      test.expectedTokenDiff,
-      balanceDiff,
-      consts.TEST_TOKEN_DELTA
-    );
+    approxBigNumber(balanceDiff, test.expectedTokenDiff, LOCAL_TOKEN_DELTA);
 
     await setTimeNextBlock(provider, T2);
     amountToRemove = lpBalanceAlice.mul(test.ratioLpForXyt).div(100);
@@ -249,7 +247,7 @@ describe("lpFormula", async () => {
       xyt.address,
       amountToRemove
     );
-    approxBigNumber(test.expectedXytDiff, balanceDiff, consts.TEST_TOKEN_DELTA);
+    approxBigNumber(test.expectedXytDiff, balanceDiff, LOCAL_TOKEN_DELTA);
     approxBigNumber(
       lpBalanceAlice.sub(totalLpAmountRemoved),
       await stdMarket.balanceOf(alice.address),
@@ -327,12 +325,8 @@ describe("lpFormula", async () => {
     let amountTokenUsed = initialTokenBalance.sub(finalTokenBalance);
 
     await checkLpBalance(bob, totalSupply.mul(3));
-    approxBigNumber(amountXytUsed, amountOfXyt.mul(3), consts.TEST_TOKEN_DELTA);
-    approxBigNumber(
-      amountTokenUsed,
-      amountOfToken.mul(3),
-      consts.TEST_TOKEN_DELTA
-    );
+    approxBigNumber(amountXytUsed, amountOfXyt.mul(3), LOCAL_TOKEN_DELTA);
+    approxBigNumber(amountTokenUsed, amountOfToken.mul(3), LOCAL_TOKEN_DELTA);
 
     approxBigNumber(
       await xyt.balanceOf(stdMarket.address),
@@ -356,7 +350,7 @@ describe("lpFormula", async () => {
     const amountOfToken = amountToWei(BN.from(891), 6);
     await bootstrapMarket(amountOfXyt, amountOfToken);
 
-    const totalSupply: BN = await stdMarket.totalSupply();
+    const totalSupply: BN = await stdMarket.balanceOf(alice.address);
     // weights: Token: 660606624370, XYT: 438905003406
 
     let initialXytBalance: BN = await xyt.balanceOf(alice.address);
@@ -379,23 +373,23 @@ describe("lpFormula", async () => {
     let amountXytReceived = finalXytBalance.sub(initialXytBalance);
     let amountTokenReceived = finalTokenBalance.sub(initialTokenBalance);
 
-    approxBigNumber(amountXytReceived, amountOfXyt, consts.TEST_TOKEN_DELTA);
-    approxBigNumber(
-      amountTokenReceived,
-      amountOfToken,
-      consts.TEST_TOKEN_DELTA
-    );
+    approxBigNumber(amountXytReceived, amountOfXyt, LOCAL_TOKEN_DELTA);
+    approxBigNumber(amountTokenReceived, amountOfToken, LOCAL_TOKEN_DELTA);
 
     approxBigNumber(
       await xyt.balanceOf(stdMarket.address),
       BN.from(0),
-      BN.from(0)
+      LOCAL_TOKEN_DELTA
     );
     approxBigNumber(
       await testToken.balanceOf(stdMarket.address),
       BN.from(0),
+      LOCAL_TOKEN_DELTA
+    );
+    approxBigNumber(
+      await stdMarket.totalSupply(),
+      MINIMUM_LIQUIDITY,
       BN.from(0)
     );
-    approxBigNumber(await stdMarket.totalSupply(), BN.from(0), BN.from(0));
   });
 });

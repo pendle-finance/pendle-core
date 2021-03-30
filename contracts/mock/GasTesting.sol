@@ -21,16 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
+pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../core/PendleRouter.sol";
 
-contract TestToken is ERC20 {
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals
-    ) ERC20(_name, _symbol) {
-        _setupDecimals(_decimals);
-        _mint(msg.sender, 10**(18 + 10 + 3));
+contract GasTesting {
+    mapping(uint256 => uint256) test256;
+    mapping(uint256 => uint128) test128;
+    mapping(uint256 => uint32) test32;
+
+    /* mapping(uint256 => uint256) test256;
+    mapping(uint256 => uint256) test256;
+    uint128 test128_1;
+    uint32 test32_1;
+    uint256 test256_2;
+    uint128 test128_2;
+    uint32 test32_2; */
+
+    function change256(uint256 times) public {
+        for (uint256 i = 0; i < times; i++) {
+            test256[i] = block.timestamp;
+        }
+    }
+
+    function change128(uint256 times) public {
+        for (uint256 i = 0; i < times; i++) {
+            test128[i] = uint128(block.timestamp);
+        }
+    }
+
+    function change32(uint256 times) public {
+        for (uint256 i = 0; i < times; i++) {
+            test32[i] = uint32(block.timestamp);
+        }
     }
 }

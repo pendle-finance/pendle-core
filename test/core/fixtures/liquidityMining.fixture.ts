@@ -1,5 +1,6 @@
 import { BigNumber as BN, Contract, providers, Wallet } from 'ethers';
-import PendleLiquidityMining from "../../../build/artifacts/contracts/core/PendleLiquidityMining.sol/PendleLiquidityMining.json";
+import PendleAaveLiquidityMining from "../../../build/artifacts/contracts/core/PendleAaveLiquidityMining.sol/PendleAaveLiquidityMining.json";
+import PendleCompoundLiquidityMining from "../../../build/artifacts/contracts/core/PendleCompoundLiquidityMining.sol/PendleCompoundLiquidityMining.json";
 import PENDLE from "../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
 import { amountToWei, consts, tokens } from '../../helpers';
 import { AaveFixture } from './aave.fixture';
@@ -34,7 +35,6 @@ export interface liqParams {
   NUMBER_OF_EPOCHS: BN,
   VESTING_EPOCHS: BN,
   TOTAL_NUMERATOR: BN,
-  INITIAL_LP_AMOUNT: BN,
 }
 export class UserStakeAction {
   time: BN;
@@ -57,7 +57,6 @@ const params: liqParams = {
   NUMBER_OF_EPOCHS: BN.from(20),
   VESTING_EPOCHS: BN.from(4),
   TOTAL_NUMERATOR: BN.from(10 ** 9),
-  INITIAL_LP_AMOUNT: BN.from(10).pow(17),
 };
 
 export async function liquidityMiningFixture(
@@ -93,7 +92,7 @@ export async function liquidityMiningFixture(
 
   let aLiquidityMining = await deployContract(
     alice,
-    PendleLiquidityMining,
+    PendleAaveLiquidityMining,
     [
       alice.address,
       pdl.address,
@@ -110,7 +109,7 @@ export async function liquidityMiningFixture(
 
   let cLiquidityMining = await deployContract(
     alice,
-    PendleLiquidityMining,
+    PendleCompoundLiquidityMining,
     [
       alice.address,
       pdl.address,
@@ -147,7 +146,6 @@ export async function liquidityMiningFixture(
     consts.HIGH_GAS_OVERRIDE
   );
 
-
   for (var person of [bob, charlie, dave]) {
     await aMarket
       .connect(person)
@@ -164,16 +162,103 @@ export async function liquidityMiningFixture(
   await data.setReentrancyWhitelist([aLiquidityMining.address], [true]);
   await data.setReentrancyWhitelist([cLiquidityMining.address], [true]);
 
+
+  let lpBalanceAlice = await aMarket.balanceOf(alice.address);
   // originally alice has 1e18 LP tokens
   for (var person of [bob, charlie, dave]) { // transfer some LP to each user
-    await aMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);
-    await cMarket.transfer(person.address, params.INITIAL_LP_AMOUNT);
+    await aMarket.transfer(person.address, lpBalanceAlice.div(10));
+    await cMarket.transfer(person.address, lpBalanceAlice.div(10));
   }
 
   let aLiquidityMiningWeb3 = new hre.web3.eth.Contract(
-    PendleLiquidityMining.abi,
+    PendleAaveLiquidityMining.abi,
     aLiquidityMining.address
   );
 
   return { core, aForge, cForge, aave, testToken, pdl, aMarket, cMarket, aLiquidityMining, cLiquidityMining, aLiquidityMiningWeb3, params };
 }
+
+// export async function liquidityMiningFixtureBeta(
+//   wallets: Wallet[],
+//   provider: providers.Web3Provider,
+// ) {
+//   let [alice, bob, charlie, dave, eve] = wallets;
+//   let { core, aForge, cForge, aave, testToken, aMarket, cMarket } = await marketFixture(wallets, provider);
+//   let router = core.router;
+//   let data = core.data;
+//   let aXyt = aForge.aFutureYieldToken;
+//   let cXyt = cForge.cFutureYieldToken;
+//   const amount = amountToWei(BN.from(100), 6);
+
+//   await router.bootstrapMarket(
+//     consts.MARKET_FACTORY_AAVE,
+//     aXyt.address,
+//     testToken.address,
+//     amount,
+//     amount,
+//     consts.HIGH_GAS_OVERRIDE
+//   );
+
+//   let pdl = await deployContract(alice, PENDLE, [alice.address, alice.address, alice.address, alice.address, alice.address]);
+
+//   let aLiquidityMining = await deployContract(
+//     alice,
+//     PendleAaveLiquidityMining,
+//     [
+//       alice.address,
+//       pdl.address,
+//       router.address,
+//       consts.MARKET_FACTORY_AAVE,
+//       consts.FORGE_AAVE,
+//       tokens.USDT.address,
+//       testToken.address,
+//       params.START_TIME,
+//       params.EPOCH_DURATION,
+//       params.VESTING_EPOCHS,
+//     ]
+//   );
+
+//   let cLiquidityMining: Contract = aLiquidityMining;
+
+//   await pdl.approve(aLiquidityMining.address, consts.MAX_ALLOWANCE);
+
+//   await aMarket.approve(
+//     aLiquidityMining.address,
+//     consts.MAX_ALLOWANCE
+//   );
+//   await aLiquidityMining.setAllocationSetting(
+//     [consts.T0.add(consts.SIX_MONTH)],
+//     [params.TOTAL_NUMERATOR],
+//     consts.HIGH_GAS_OVERRIDE
+//   );
+
+//   for (var person of [bob, charlie, dave]) {
+//     await aMarket
+//       .connect(person)
+//       .approve(aLiquidityMining.address, consts.MAX_ALLOWANCE);
+//   }
+
+//   await aLiquidityMining.fund(params.REWARDS_PER_EPOCH);
+//   await pdl.transfer(aLiquidityMining.address, await pdl.balanceOf(alice.address));
+//   await data.setReentrancyWhitelist([aLiquidityMining.address], [true]);
+
+//   let lpBalanceAlice = await aMarket.balanceOf(alice.address);
+
+//   for (var person of [bob, charlie, dave]) { // transfer some LP to each user
+//     await aMarket.transfer(person.address, lpBalanceAlice.div(10));
+//   }
+
+//   let aLiquidityMiningWeb3 = new hre.web3.eth.Contract(
+//     PendleAaveLiquidityMining.abi,
+//     aLiquidityMining.address
+//   );
+
+//   return { core, aForge, cForge, aave, testToken, pdl, aMarket, cMarket, aLiquidityMining, cLiquidityMining, aLiquidityMiningWeb3, params };
+// }
+// import { createFixtureLoader } from "ethereum-waffle";
+// const provider = waffle.provider;
+// it("beta", async () => {
+//   const wallets = provider.getWallets();
+//   const loadFixture = createFixtureLoader(wallets, provider);
+//   const fixture = await loadFixture(liquidityMiningFixture);
+// });

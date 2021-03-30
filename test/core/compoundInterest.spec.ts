@@ -136,7 +136,6 @@ describe("compoundInterest test", async () => {
       let curTest = yieldTest[id];
       let user = wallets[curTest.user];
       curTime = curTime.add(BN.from(curTest.timeDelta));
-      // console.log(id, "/", yieldTest.length, BN.from(curTest.timeDelta));
       await setTimeNextBlock(provider, curTime);
       if (curTest.type == "redeemDueInterests") {
         await redeemDueInterests(user);

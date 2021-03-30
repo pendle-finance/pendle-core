@@ -28,13 +28,13 @@ import "../libraries/FactoryLib.sol";
 import "../interfaces/IAaveLendingPoolCore.sol";
 import "../interfaces/IPendleBaseToken.sol";
 import "../interfaces/IPendleData.sol";
-import "../interfaces/IPendleForge.sol";
+import "../interfaces/IPendleAaveForge.sol";
 import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
-import "./PendleForgeBase.sol";
+import "./abstract/PendleForgeBase.sol";
 
-contract PendleAaveForge is PendleForgeBase {
+contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
     using ExpiryUtils for string;
     using SafeMath for uint256;
 
@@ -68,6 +68,18 @@ contract PendleAaveForge is PendleForgeBase {
         totalAfterExpiry = currentNormalizedIncome.mul(redeemedAmount).div(
             lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry]
         );
+    }
+
+    function getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
+        public
+        view
+        override
+        returns (uint256)
+    {
+        if (block.timestamp > _expiry) {
+            return lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
+        }
+        return aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
     }
 
     function _getYieldBearingToken(address _underlyingAsset) internal override returns (address) {

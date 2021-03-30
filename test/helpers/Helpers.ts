@@ -103,7 +103,12 @@ export async function convertToAaveToken(
   const erc20 = new Contract(token.address, ERC20.abi, alice);
   await erc20.approve(lendingPoolCore.address, tokenAmount);
 
-  await lendingPool.deposit(token.address, tokenAmount, 0);
+  await lendingPool.deposit(
+    token.address,
+    tokenAmount,
+    0,
+    consts.HIGH_GAS_OVERRIDE
+  );
 }
 
 export async function convertToAaveV2Token(
@@ -246,6 +251,19 @@ export async function getLiquidityRate(
   const { lendingPool } = await aaveFixture(alice);
   const { liquidityRate } = await lendingPool.getReserveData(token.address);
   return liquidityRate;
+}
+
+export async function emptyToken(tokenContract: Contract, person: Wallet) {
+  let bal: BN = await tokenContract.balanceOf(person.address);
+  if (bal.eq(0)) return;
+  await tokenContract
+    .connect(person)
+    .transfer(consts.DUMMY_GOVERNANCE_ADDRESS, bal);
+  bal = await tokenContract.balanceOf(person.address);
+  if (bal.eq(0)) return;
+  await tokenContract
+    .connect(person)
+    .transfer(consts.DUMMY_GOVERNANCE_ADDRESS, bal);
 }
 
 export function getGain(amount: BN, rate: BN, duration: BN): BN {

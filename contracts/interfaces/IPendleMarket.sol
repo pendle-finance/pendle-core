@@ -137,12 +137,6 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
 
     function spotPrice(address inToken, address outToken) external view returns (uint256 spot);
 
-    /**
-     * @dev Returns the address of the PendleMarketFactory contract address.
-     * @return Returns the factory's address.
-     **/
-    function factory() external view returns (address);
-
     function factoryId() external view returns (bytes32);
 
     function token() external view returns (address);

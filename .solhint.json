@@ -18,7 +18,7 @@
     "imports-on-top": "error",
     "mark-callable-contracts": "off",
     "max-line-length": [
-      "error",
+      "off",
       99
     ],
     "max-states-count": [

@@ -22,15 +22,31 @@
  */
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../libraries/FactoryLib.sol";
+import "./PendleAaveMarket.sol";
+import "../interfaces/IPendleRouter.sol";
+import "../interfaces/IPendleData.sol";
+import "../interfaces/IPendleMarketFactory.sol";
+import "../interfaces/IPendleYieldToken.sol";
+import "../periphery/Permissions.sol";
+import "./abstract/PendleMarketFactoryBase.sol";
 
-contract TestToken is ERC20 {
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals
-    ) ERC20(_name, _symbol) {
-        _setupDecimals(_decimals);
-        _mint(msg.sender, 10**(18 + 10 + 3));
+contract PendleAaveMarketFactory is PendleMarketFactoryBase {
+    constructor(address _governance, bytes32 _marketFactoryId)
+        PendleMarketFactoryBase(_governance, _marketFactoryId)
+    {}
+
+    function _createMarket(
+        address _forgeAddress,
+        address _xyt,
+        address _token,
+        uint256 _expiry
+    ) internal override returns (address) {
+        return
+            Factory.createContract(
+                type(PendleAaveMarket).creationCode,
+                abi.encodePacked(_forgeAddress, _xyt, _token, _expiry),
+                abi.encode(_forgeAddress, _xyt, _token, _expiry)
+            );
     }
 }

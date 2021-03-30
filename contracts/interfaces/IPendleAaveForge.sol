@@ -20,17 +20,13 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
+
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "./IPendleForge.sol";
 
-contract TestToken is ERC20 {
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals
-    ) ERC20(_name, _symbol) {
-        _setupDecimals(_decimals);
-        _mint(msg.sender, 10**(18 + 10 + 3));
-    }
+interface IPendleAaveForge is IPendleForge {
+    function getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
+        external
+        returns (uint256);
 }
