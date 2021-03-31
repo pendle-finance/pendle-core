@@ -46,17 +46,17 @@ contract PendleLpHolder is IPendleLpHolder {
         underlyingYieldToken = _underlyingYieldToken;
     }
 
-    function sendLp(address user, uint256 amount) public override {
+    function sendLp(address user, uint256 amount) external override {
         require(msg.sender == pendleLiquidityMining, "NOT_AUTHORIZED");
         IERC20(pendleMarket).safeTransfer(user, amount);
     }
 
-    function sendInterests(address user, uint256 amount) public override {
+    function sendInterests(address user, uint256 amount) external override {
         require(msg.sender == pendleLiquidityMining, "NOT_AUTHORIZED");
         IERC20(underlyingYieldToken).safeTransfer(user, amount);
     }
 
-    function claimLpInterests() public override {
+    function claimLpInterests() external override {
         require(msg.sender == pendleLiquidityMining, "NOT_AUTHORIZED");
         address[] memory array = new address[](1);
         array[0] = pendleMarket;

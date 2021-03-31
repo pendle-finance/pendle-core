@@ -252,7 +252,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         address _xyt,
         address _token,
         address _marketFactory
-    ) public override {
+    ) external override {
         bytes32 marketFactoryId = getMarketFactoryId[_marketFactory];
         _updateMarketInfo(_xyt, _token, marketFactoryId);
     }
@@ -261,7 +261,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         address _xyt,
         address _token,
         bytes32 _marketFactoryId
-    ) public override {
+    ) external override {
         _updateMarketInfo(_xyt, _token, _marketFactoryId);
     }
 
@@ -327,7 +327,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         address _tokenIn,
         address _tokenOut,
         bytes32 _marketFactoryId
-    ) public view override returns (uint256 effectiveLiquidity) {
+    ) external view override returns (uint256 effectiveLiquidity) {
         bytes32 key = _createKey(_tokenIn, _tokenOut, _marketFactoryId);
         address market = markets[key];
         MarketInfo memory info = marketInfo[key];
