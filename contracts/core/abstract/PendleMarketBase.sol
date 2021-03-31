@@ -257,9 +257,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         checkMarketIsOpen();
-        _curveShift(data);
+        uint256 updatedReserveData = _curveShift(data);
         _updateParamL();
-        uint256 updatedReserveData = reserveData;
         TokenReserve memory inTokenReserve = parseTokenReserveData(_inToken, updatedReserveData);
 
         uint256 totalLp = totalSupply;
@@ -351,9 +350,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         checkMarketIsOpen();
-        _curveShift(data);
+        uint256 updatedReserveData = _curveShift(data);
         _updateParamL();
-        uint256 updatedReserveData = reserveData;
         TokenReserve memory outTokenReserve = parseTokenReserveData(_outToken, updatedReserveData);
 
         uint256 exitFee = data.exitFee();
@@ -392,10 +390,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         checkMarketIsOpen();
-        _curveShift(data);
+        uint256 updatedReserveData = _curveShift(data);
         _updateParamL();
 
-        uint256 updatedReserveData = reserveData;
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken, updatedReserveData);
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken, updatedReserveData);
 
@@ -447,10 +444,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         checkMarketIsOpen();
-        _curveShift(data);
+        uint256 updatedReserveData = _curveShift(data);
         _updateParamL();
 
-        uint256 updatedReserveData = reserveData;
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken, updatedReserveData);
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken, updatedReserveData);
 
@@ -629,13 +625,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     // update the token reserve storage
-    function _updateWeight() internal {
+    function _updateWeight() internal returns (uint256 updatedReserveData) {
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
             decodeReserveData(reserveData); // unpack data
         (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) =
             _updateWeightDry();
 
-        reserveData = encodeReserveData(xytBalance, tokenBalance, xytWeightUpdated); // repack data
+        updatedReserveData = encodeReserveData(xytBalance, tokenBalance, xytWeightUpdated); // repack data
         priceLast = priceNow;
         emit Shift(xytWeight, tokenWeight, xytWeightUpdated, tokenWeightUpdated);
     }
@@ -688,11 +684,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     //curve shift will be called before any calculation using weight
-    function _curveShift(IPendleData _data) internal {
+    function _curveShift(IPendleData _data) internal returns (uint256 updatedReserveData) {
         if (block.number > blockNumLast) {
-            _updateWeight();
+            updatedReserveData = _updateWeight();
             _data.updateMarketInfo(xyt, token, factory);
             blockNumLast = block.number;
+        } else {
+            updatedReserveData = reserveData;
         }
     }
 
