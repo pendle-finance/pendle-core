@@ -388,10 +388,7 @@ describe("PendleAaveMarket", async () => {
 
     await bootstrapSampleMarket(amount);
 
-    let {
-      xytBalance,
-      tokenBalance,
-    } = await stdMarket.getReserves();
+    let { xytBalance, tokenBalance } = await stdMarket.getReserves();
     expect(xytBalance).to.be.equal(amount);
     expect(tokenBalance).to.be.equal(amount);
   });
@@ -401,10 +398,7 @@ describe("PendleAaveMarket", async () => {
 
     await bootstrapSampleMarket(amount);
 
-    let {
-      xytBalance,
-      tokenBalance,
-    } = await marketReader.getMarketReserves(
+    let { xytBalance, tokenBalance } = await marketReader.getMarketReserves(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address
@@ -885,10 +879,7 @@ describe("PendleAaveMarket", async () => {
 
     await bootstrapSampleMarketEth(amount);
 
-    let [
-      xytBalance,
-      tokenBalance,
-    ] = await marketReader.getMarketReserves(
+    let [xytBalance, tokenBalance] = await marketReader.getMarketReserves(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       WETH.address
