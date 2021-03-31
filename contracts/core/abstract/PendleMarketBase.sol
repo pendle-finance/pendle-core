@@ -185,7 +185,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         reserveData = encodeReserveData(initialXytLiquidity, initialTokenLiquidity, Math.RONE / 2);
 
-        emit Sync(initialXytLiquidity, Math.RONE / 2, initialTokenLiquidity, Math.RONE / 2);
+        emit Sync(initialXytLiquidity, Math.RONE / 2, initialTokenLiquidity);
 
         uint256 liquidity =
             Math.sqrt(initialXytLiquidity.mul(initialTokenLiquidity)).sub(MINIMUM_LIQUIDITY);
@@ -241,7 +241,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[1].isOut = false;
 
         reserveData = encodeReserveData(xytBalance, tokenBalance, xytWeight);
-        emit Sync(xytBalance, xytWeight, tokenBalance, Math.RONE - xytWeight);
+        emit Sync(xytBalance, xytWeight, tokenBalance);
 
         // Mint and push LP token.
         _mintLp(_exactOutLp);
@@ -281,9 +281,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // repack data
         updatedReserveData = dryUpdateReserveData(inTokenReserve, _inToken, updatedReserveData);
         reserveData = updatedReserveData;
-        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) =
             decodeReserveData(updatedReserveData); // unpack data
-        emit Sync(xytBalance, xytWeight, tokenBalance, tokenWeight);
+        emit Sync(xytBalance, xytWeight, tokenBalance);
     }
 
     /**
@@ -419,9 +419,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         updatedReserveData = dryUpdateReserveData(inTokenReserve, inToken, updatedReserveData);
         updatedReserveData = dryUpdateReserveData(outTokenReserve, outToken, updatedReserveData);
         reserveData = updatedReserveData;
-        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) =
             decodeReserveData(updatedReserveData); // unpack data
-        emit Sync(xytBalance, xytWeight, tokenBalance, tokenWeight);
+        emit Sync(xytBalance, xytWeight, tokenBalance);
 
         transfers[0].amount = inAmount;
         transfers[0].isOut = false;
@@ -475,9 +475,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         updatedReserveData = dryUpdateReserveData(inTokenReserve, inToken, updatedReserveData);
         updatedReserveData = dryUpdateReserveData(outTokenReserve, outToken, updatedReserveData);
         reserveData = updatedReserveData;
-        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) =
             decodeReserveData(updatedReserveData); // unpack data
-        emit Sync(xytBalance, xytWeight, tokenBalance, tokenWeight);
+        emit Sync(xytBalance, xytWeight, tokenBalance);
 
         transfers[0].amount = inAmount;
         transfers[0].isOut = false;
@@ -632,12 +632,11 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     function _updateWeight() internal {
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
             decodeReserveData(reserveData); // unpack data
-        (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, uint256 priceNow) =
-            _updateWeightDry();
+        (uint256 xytWeightUpdated, , uint256 priceNow) = _updateWeightDry();
 
         reserveData = encodeReserveData(xytBalance, tokenBalance, xytWeightUpdated); // repack data
         priceLast = priceNow;
-        emit Shift(xytWeight, tokenWeight, xytWeightUpdated, tokenWeightUpdated);
+        emit Shift(xytWeight, tokenWeight, xytWeightUpdated);
     }
 
     // do the weight update calucation but don't update the token reserve memory
