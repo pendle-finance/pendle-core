@@ -71,7 +71,7 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
     }
 
     function getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
-        public
+        external
         view
         override
         returns (uint256)

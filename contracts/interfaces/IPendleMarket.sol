@@ -39,16 +39,10 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
      * @param reserve0 The XYT reserves.
      * @param weight0  The XYT weight
      * @param reserve1 The generic token reserves.
-     * @param weight1  The generic token weight
      **/
-    event Sync(uint256 reserve0, uint256 weight0, uint256 reserve1, uint256 weight1);
+    event Sync(uint256 reserve0, uint256 weight0, uint256 reserve1);
 
-    event Shift(
-        uint256 xytWeightOld,
-        uint256 tokenWeightOld,
-        uint256 xytWeightNew,
-        uint256 tokenWeightNew
-    );
+    event Shift(uint256 xytWeightOld, uint256 tokenWeightOld, uint256 xytWeightNew);
 
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
@@ -126,14 +120,12 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
         external
         view
         returns (
-            uint256 xytReserves,
-            uint256 tokenReserves,
+            uint256 xytBalance,
+            uint256 xytWeight,
+            uint256 tokenBalance,
+            uint256 tokenWeight,
             uint256 lastBlockTimestamp
         );
-
-    function getBalance(address asset) external view returns (uint256);
-
-    function getWeight(address asset) external view returns (uint256);
 
     function spotPrice(address inToken, address outToken) external view returns (uint256 spot);
 

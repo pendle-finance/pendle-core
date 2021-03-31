@@ -155,7 +155,7 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     function readUserExpiries(address user)
-        public
+        external
         view
         override
         returns (uint256[] memory _expiries)
@@ -165,7 +165,7 @@ abstract contract PendleLiquidityMiningBase is
 
     // fund a few epoches
     // One the last epoch is over, the program is permanently over and cannot be extended anymore
-    function fund(uint256[] memory _rewards) public onlyGovernance {
+    function fund(uint256[] memory _rewards) external onlyGovernance {
         require(currentSettingId > 0, "NO_ALLOC_SETTING");
         uint256 currentEpoch = _currentEpoch();
         require(currentEpoch <= numberOfEpochs, "LAST_EPOCH_OVER"); // we can only fund more if its still ongoing
@@ -194,7 +194,7 @@ abstract contract PendleLiquidityMiningBase is
     function setAllocationSetting(
         uint256[] calldata _expiries,
         uint256[] calldata allocationNominators
-    ) public onlyGovernance {
+    ) external onlyGovernance {
         // not many expiries, about 2-3 max
         uint256 _currentE = _currentEpoch();
         if (currentSettingId == 0) {
@@ -216,7 +216,7 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     function stake(uint256 expiry, uint256 amount)
-        public
+        external
         override
         isFunded
         pendleNonReentrant
@@ -247,7 +247,12 @@ abstract contract PendleLiquidityMiningBase is
         currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].add(amount);
     }
 
-    function withdraw(uint256 expiry, uint256 amount) public override pendleNonReentrant isFunded {
+    function withdraw(uint256 expiry, uint256 amount)
+        external
+        override
+        pendleNonReentrant
+        isFunded
+    {
         uint256 _epoch = _currentEpoch();
         require(_epoch > 0, "NOT_STARTED");
         require(balances[msg.sender][expiry] >= amount, "INSUFFICIENT_BALANCE");
@@ -260,7 +265,12 @@ abstract contract PendleLiquidityMiningBase is
         currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].sub(amount);
     }
 
-    function claimRewards() public override pendleNonReentrant returns (uint256[] memory rewards) {
+    function claimRewards()
+        external
+        override
+        pendleNonReentrant
+        returns (uint256[] memory rewards)
+    {
         uint256 _epoch = _currentEpoch(); //!!! what if currentEpoch > final epoch?
         require(_epoch > 0, "NOT_STARTED");
 
@@ -274,7 +284,7 @@ abstract contract PendleLiquidityMiningBase is
         }
     }
 
-    function claimLpInterests() public override pendleNonReentrant returns (uint256 _interests) {
+    function claimLpInterests() external override pendleNonReentrant returns (uint256 _interests) {
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
             _interests = _interests.add(
                 _settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender)

@@ -33,12 +33,6 @@ import "../periphery/Withdrawable.sol";
 contract PendleData is IPendleData, Permissions, Withdrawable {
     using SafeMath for uint256;
 
-    struct MarketInfo {
-        uint256 liquidity;
-        uint80 xytWeight;
-        uint80 tokenWeight;
-    }
-
     // It's not guaranteed that every market factory can work with
     // every forge, so we need to check against this mapping
     mapping(bytes32 => mapping(bytes32 => bool)) public override validForgeFactoryPair;
@@ -62,7 +56,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     mapping(address => bool) public override isMarket;
     mapping(address => bool) public override isXyt;
     mapping(bytes32 => address) private markets;
-    mapping(bytes32 => MarketInfo) private marketInfo;
     address[] private allMarkets;
 
     // Parameters to be set by governance;
@@ -248,42 +241,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         exitFee = _exitFee;
     }
 
-    function updateMarketInfo(
-        address _xyt,
-        address _token,
-        address _marketFactory
-    ) public override {
-        bytes32 marketFactoryId = getMarketFactoryId[_marketFactory];
-        _updateMarketInfo(_xyt, _token, marketFactoryId);
-    }
-
-    function updateMarketInfo(
-        address _xyt,
-        address _token,
-        bytes32 _marketFactoryId
-    ) public override {
-        _updateMarketInfo(_xyt, _token, _marketFactoryId);
-    }
-
-    function _updateMarketInfo(
-        address _xyt,
-        address _token,
-        bytes32 _marketFactoryId
-    ) internal {
-        bytes32 key = _createKey(_xyt, _token, _marketFactoryId);
-        address market = markets[key];
-        MarketInfo memory info = marketInfo[key];
-
-        info.xytWeight = uint80(IPendleMarket(market).getWeight(_xyt));
-        info.tokenWeight = uint80(IPendleMarket(market).getWeight(_token));
-        info.liquidity = Math.rdiv(
-            uint256(info.xytWeight),
-            uint256(info.xytWeight).add(uint256(info.tokenWeight))
-        );
-
-        marketInfo[key] = info;
-    }
-
     function allMarketsLength() external view override returns (uint256) {
         return allMarkets.length;
     }
@@ -299,44 +256,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     ) external view override returns (address market) {
         bytes32 key = _createKey(_tokenIn, _tokenOut, _marketFactoryId);
         market = markets[key];
-    }
-
-    function getMarketInfo(
-        address _tokenIn,
-        address _tokenOut,
-        bytes32 _marketFactoryId
-    )
-        external
-        view
-        override
-        returns (
-            uint256 xytWeight,
-            uint256 tokenWeight,
-            uint256 liquidity
-        )
-    {
-        bytes32 key = _createKey(_tokenIn, _tokenOut, _marketFactoryId);
-        MarketInfo memory info = marketInfo[key];
-
-        xytWeight = info.xytWeight;
-        tokenWeight = info.tokenWeight;
-        liquidity = info.liquidity;
-    }
-
-    function getEffectiveLiquidityForMarket(
-        address _tokenIn,
-        address _tokenOut,
-        bytes32 _marketFactoryId
-    ) public view override returns (uint256 effectiveLiquidity) {
-        bytes32 key = _createKey(_tokenIn, _tokenOut, _marketFactoryId);
-        address market = markets[key];
-        MarketInfo memory info = marketInfo[key];
-
-        effectiveLiquidity = Math.rdiv(
-            uint256(info.xytWeight),
-            uint256(info.xytWeight).add(uint256(info.tokenWeight))
-        );
-        effectiveLiquidity = effectiveLiquidity.mul(IPendleMarket(market).getBalance(_tokenOut));
     }
 
     function _createKey(

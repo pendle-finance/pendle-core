@@ -60,8 +60,8 @@ export async function AMMTest(
 
   async function runTestTokenToXyt(time: BN, tokenIn: BN, xytOut: BN) {
     var {
-      xytReserves: initialXytReserves,
-      tokenReserves: initialTokenReserves,
+      xytBalance: initialXytBalance,
+      tokenBalance: initialTokenBalance,
     } = await market.getReserves();
 
     await setTimeNextBlock(provider, time);
@@ -71,10 +71,10 @@ export async function AMMTest(
       // tokenIn.mul(2): double the expected rate to make sure the transaction is successful.
       await swapExactOutTokenToXyt(xytOut, tokenIn.mul(2));
     }
-    var { xytReserves, tokenReserves } = await market.getReserves();
+    var { xytBalance, tokenBalance } = await market.getReserves();
 
-    var actualXytOut = initialXytReserves.sub(xytReserves);
-    var actualTokenIn = tokenReserves.sub(initialTokenReserves);
+    var actualXytOut = initialXytBalance.sub(xytBalance);
+    var actualTokenIn = tokenBalance.sub(initialTokenBalance);
 
     expect(tokenIn.toNumber()).to.be.approximately(
       actualTokenIn.toNumber(),
@@ -88,8 +88,8 @@ export async function AMMTest(
 
   async function runTestXytToToken(time: BN, xytIn: BN, tokenOut: BN) {
     var {
-      xytReserves: initialXytReserves,
-      tokenReserves: initialTokenReserves,
+      xytBalance: initialXytBalance,
+      tokenBalance: initialTokenBalance,
     } = await market.getReserves();
 
     await setTimeNextBlock(provider, time);
@@ -99,10 +99,10 @@ export async function AMMTest(
       // tokenIn.mul(2): double the expected rate to make sure the transaction is successful.
       await swapExactOutXytToToken(tokenOut, xytIn.mul(2));
     }
-    var { xytReserves, tokenReserves } = await market.getReserves();
+    var { xytBalance, tokenBalance } = await market.getReserves();
 
-    var actualXytIn: BN = xytReserves.sub(initialXytReserves);
-    var actualTokenOut: BN = initialTokenReserves.sub(tokenReserves);
+    var actualXytIn: BN = xytBalance.sub(initialXytBalance);
+    var actualTokenOut: BN = initialTokenBalance.sub(tokenBalance);
 
     expect(tokenOut.toNumber()).to.be.approximately(
       actualTokenOut.toNumber(),

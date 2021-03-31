@@ -228,13 +228,9 @@ describe("PendleCompoundMarket", async () => {
 
     await bootstrapSampleMarket(amount);
 
-    let [
-      xytReserve,
-      tokenReserve,
-      blockTimestamp,
-    ] = await stdMarket.getReserves();
-    expect(xytReserve).to.be.equal(amount);
-    expect(tokenReserve).to.be.equal(amount);
+    let { xytBalance, tokenBalance } = await stdMarket.getReserves();
+    expect(xytBalance).to.be.equal(amount);
+    expect(tokenBalance).to.be.equal(amount);
   });
 
   it("should be able to getMarketReserve", async () => {
@@ -242,17 +238,13 @@ describe("PendleCompoundMarket", async () => {
 
     await bootstrapSampleMarket(amount);
 
-    let [
-      xytReserve,
-      tokenReserve,
-      currentTime,
-    ] = await marketReader.getMarketReserves(
+    let [xytBalance, tokenBalance] = await marketReader.getMarketReserves(
       consts.MARKET_FACTORY_COMPOUND,
       xyt.address,
       testToken.address
     );
-    expect(xytReserve).to.be.equal(amount);
-    expect(tokenReserve).to.be.equal(amount);
+    expect(xytBalance).to.be.equal(amount);
+    expect(tokenBalance).to.be.equal(amount);
   });
 
   it("should be able to getMarketRateExactOut", async () => {

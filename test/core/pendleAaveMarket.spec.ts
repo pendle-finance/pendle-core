@@ -388,13 +388,9 @@ describe("PendleAaveMarket", async () => {
 
     await bootstrapSampleMarket(amount);
 
-    let [
-      xytReserve,
-      tokenReserve,
-      blockTimestamp,
-    ] = await stdMarket.getReserves();
-    expect(xytReserve).to.be.equal(amount);
-    expect(tokenReserve).to.be.equal(amount);
+    let { xytBalance, tokenBalance } = await stdMarket.getReserves();
+    expect(xytBalance).to.be.equal(amount);
+    expect(tokenBalance).to.be.equal(amount);
   });
 
   it("should be able to getMarketReserve", async () => {
@@ -402,17 +398,13 @@ describe("PendleAaveMarket", async () => {
 
     await bootstrapSampleMarket(amount);
 
-    let [
-      xytReserve,
-      tokenReserve,
-      currentTime,
-    ] = await marketReader.getMarketReserves(
+    let { xytBalance, tokenBalance } = await marketReader.getMarketReserves(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address
     );
-    expect(xytReserve).to.be.equal(amount);
-    expect(tokenReserve).to.be.equal(amount);
+    expect(xytBalance).to.be.equal(amount);
+    expect(tokenBalance).to.be.equal(amount);
   });
 
   it("should be able to getMarketRateExactOut", async () => {
@@ -877,9 +869,9 @@ describe("PendleAaveMarket", async () => {
 
     await bootstrapSampleMarketEth(amount);
 
-    let [xytReserve, tokenReserve] = await ethMarket.getReserves();
-    expect(xytReserve).to.be.equal(amount);
-    expect(tokenReserve).to.be.equal(amount);
+    let { xytBalance, tokenBalance } = await ethMarket.getReserves();
+    expect(xytBalance).to.be.equal(amount);
+    expect(tokenBalance).to.be.equal(amount);
   });
 
   it("Aave-ETH should be able to getMarketReserve", async () => {
@@ -887,17 +879,13 @@ describe("PendleAaveMarket", async () => {
 
     await bootstrapSampleMarketEth(amount);
 
-    let [
-      xytReserve,
-      tokenReserve,
-      currentTime,
-    ] = await marketReader.getMarketReserves(
+    let [xytBalance, tokenBalance] = await marketReader.getMarketReserves(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       WETH.address
     );
-    expect(xytReserve).to.be.equal(amount);
-    expect(tokenReserve).to.be.equal(amount);
+    expect(xytBalance).to.be.equal(amount);
+    expect(tokenBalance).to.be.equal(amount);
   });
 
   it("Aave-ETH should be able to getMarketRateExactOut", async () => {
