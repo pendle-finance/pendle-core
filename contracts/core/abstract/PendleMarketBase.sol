@@ -495,13 +495,17 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         view
         override
         returns (
-            uint256 xytReserves,
-            uint256 tokenReserves,
-            uint256 lastBlockTimestamp
+            uint256 xytBalance,
+            uint256 xytWeight,
+            uint256 tokenBalance,
+            uint256 tokenWeight,
+            uint256 lastUpdatedBlock
         )
     {
-        (uint256 xytBalance, uint256 tokenBalance, , ) = decodeReserveData(reserveData); // unpack data
-        return (xytBalance, tokenBalance, lastBlockTimestamp);
+        // get the weight right now of the market, not the weight of the last update
+        (xytWeight, tokenWeight, ) = _updateWeightDry(reserveData, priceLast);
+        (xytBalance, tokenBalance, , ) = decodeReserveData(reserveData);
+        lastUpdatedBlock = blockNumLast;
     }
 
     function calcExactIn(
@@ -534,21 +538,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 bar = Math.RONE.sub(foo);
 
         exactOut = Math.rmul(outTokenReserve.balance, bar);
-    }
-
-    function getBalance(address asset) external view override returns (uint256) {
-        require(asset == xyt || asset == token, "INVALID_ASSET");
-        (uint256 xytBalance, uint256 tokenBalance, , ) = decodeReserveData(reserveData); // unpack data
-        return (asset == xyt ? xytBalance : tokenBalance);
-    }
-
-    // will do weight update (dry run) before reading token weights, to prevent the case
-    // that weight is outdated
-    function getWeight(address asset) external view override returns (uint256) {
-        require(asset == xyt || asset == token, "INVALID_ASSET");
-        (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, ) =
-            _updateWeightDry(reserveData, priceLast);
-        return (asset == xyt ? xytWeightUpdated : tokenWeightUpdated);
     }
 
     function spotPrice(address inToken, address outToken)

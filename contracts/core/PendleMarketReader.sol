@@ -60,6 +60,7 @@ contract PendleMarketReader {
         bytes32 _marketFactoryId
     ) external view returns (IPendleRouter.Swap memory swap, uint256 outSwapAmount) {
         address market = data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId);
+        require(address(market) != address(0), "MARKET_NOT_FOUND");
         Market memory marketData = _getMarketData(_tokenIn, _tokenOut, market);
 
         outSwapAmount = _calcExactOut(_inSwapAmount, marketData);
@@ -86,6 +87,7 @@ contract PendleMarketReader {
         bytes32 _marketFactoryId
     ) external view returns (IPendleRouter.Swap memory swap, uint256 inSwapAmount) {
         address market = data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId);
+        require(address(market) != address(0), "MARKET_NOT_FOUND");
         Market memory marketData = _getMarketData(_tokenIn, _tokenOut, market);
 
         inSwapAmount = _calcExactIn(_outSwapAmount, marketData);
@@ -113,14 +115,14 @@ contract PendleMarketReader {
         external
         view
         returns (
-            uint256 xytAmount,
-            uint256 tokenAmount,
-            uint256 currentTime
+            uint256 xytBalance,
+            uint256 tokenBalance,
+            uint256 lastUpdatedBlock
         )
     {
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
-        (xytAmount, tokenAmount, currentTime) = market.getReserves();
+        (xytBalance, , tokenBalance, , lastUpdatedBlock) = market.getReserves();
     }
 
     function getMarketTokenAddresses(address _market)
@@ -135,26 +137,43 @@ contract PendleMarketReader {
         xyt = pendleMarket.xyt();
     }
 
+    // _tokenIn & _tokenOut is guaranteed to be a pair of xyt/baseToken
     function _getMarketData(
         address _tokenIn,
         address _tokenOut,
         address marketAddress
     ) internal view returns (Market memory) {
         IPendleMarket market = IPendleMarket(marketAddress);
-        uint256 tokenBalanceIn = market.getBalance(_tokenIn);
-        uint256 tokenBalanceOut = market.getBalance(_tokenOut);
-        uint256 tokenWeightIn = market.getWeight(_tokenIn);
-        uint256 tokenWeightOut = market.getWeight(_tokenOut);
+        (, address baseToken) = (market.xyt(), market.token());
+
+        // assume _tokenIn is xyt, _tokenOut is baseToken
+        (
+            uint256 tokenInBalance,
+            uint256 tokenInWeight,
+            uint256 tokenOutBalance,
+            uint256 tokenOutWeight,
+
+        ) = market.getReserves();
+
+        if (_tokenIn == baseToken) {
+            // assumption is wrong, swap
+            (tokenInBalance, tokenInWeight, tokenOutBalance, tokenOutWeight) = (
+                tokenOutBalance,
+                tokenOutWeight,
+                tokenInBalance,
+                tokenInWeight
+            );
+        }
 
         uint256 effectiveLiquidity =
-            _calcEffectiveLiquidity(tokenWeightIn, tokenBalanceOut, tokenWeightOut);
+            _calcEffectiveLiquidity(tokenInWeight, tokenOutBalance, tokenOutWeight);
         Market memory returnMarket =
             Market({
                 market: marketAddress,
-                tokenBalanceIn: tokenBalanceIn,
-                tokenWeightIn: tokenWeightIn,
-                tokenBalanceOut: tokenBalanceOut,
-                tokenWeightOut: tokenWeightOut,
+                tokenBalanceIn: tokenInBalance,
+                tokenWeightIn: tokenInWeight,
+                tokenBalanceOut: tokenOutBalance,
+                tokenWeightOut: tokenOutWeight,
                 swapFee: data.swapFee(),
                 effectiveLiquidity: effectiveLiquidity
             });

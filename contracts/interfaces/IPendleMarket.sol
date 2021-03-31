@@ -120,14 +120,12 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
         external
         view
         returns (
-            uint256 xytReserves,
-            uint256 tokenReserves,
+            uint256 xytBalance,
+            uint256 xytWeight,
+            uint256 tokenBalance,
+            uint256 tokenWeight,
             uint256 lastBlockTimestamp
         );
-
-    function getBalance(address asset) external view returns (uint256);
-
-    function getWeight(address asset) external view returns (uint256);
 
     function spotPrice(address inToken, address outToken) external view returns (uint256 spot);
 
