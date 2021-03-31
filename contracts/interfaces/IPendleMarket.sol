@@ -60,6 +60,13 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
         uint256 minOutLp
     ) external returns (PendingTransfer[3] memory transfers);
 
+    function addMarketLiquidityDual(
+        uint256 _desiredXytAmount,
+        uint256 _desiredTokenAmount,
+        uint256 _xytMinAmount,
+        uint256 _tokenMinAmount
+    ) external returns (PendingTransfer[3] memory transfers, uint256 lpOut);
+
     function removeMarketLiquidityAll(
         uint256 inLp,
         uint256 minOutXyt,

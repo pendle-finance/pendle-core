@@ -864,6 +864,51 @@ describe("PendleAaveMarket", async () => {
     expect(testTokenBalance).to.be.equal(amount.sub(amount.div(10)));
   });
 
+  it("Aave-ETH should be able to join a bootstrapped pool by dual tokens with exact token in_sample", async () => {
+    const amount = amountToWei(BN.from(10), 6);
+
+    await bootstrapSampleMarketEth(amount);
+
+    const totalSupply = await ethMarket.totalSupply();
+
+    await router.connect(bob).addMarketLiquidityDual(
+      consts.MARKET_FACTORY_AAVE,
+      xyt.address,
+      consts.ETH_ADDRESS,
+      amount.add(BN.from(100000)), // _desiredXytAmount
+      amount, // _desiredTokenAmount
+      amount, // _xytMinAmount
+      amount, //_tokenMinAmount
+      wrapEth(consts.HIGH_GAS_OVERRIDE, amount)
+    );
+
+    let xytBalance = await xyt.balanceOf(ethMarket.address);
+    let ethBalance = await WETH.balanceOf(ethMarket.address);
+    let totalSupplyBalance = await ethMarket.totalSupply();
+
+    expect(xytBalance).to.be.equal(amount.mul(2));
+    expect(ethBalance).to.be.equal(amount.mul(2));
+    expect(totalSupplyBalance).to.be.equal(totalSupply.mul(2));
+
+    await router.connect(bob).addMarketLiquidityDual(
+      consts.MARKET_FACTORY_AAVE,
+      xyt.address,
+      consts.ETH_ADDRESS,
+      amount, // _desiredXytAmount
+      amount.add(BN.from(100000)), // _desiredTokenAmount
+      amount, // _xytMinAmount
+      amount, //_tokenMinAmount
+      wrapEth(consts.HIGH_GAS_OVERRIDE, amount)
+    );
+    let xytBalance2 = await xyt.balanceOf(ethMarket.address);
+    let ethBalance2 = await WETH.balanceOf(ethMarket.address);
+    let totalSupplyBalance2 = await ethMarket.totalSupply();
+
+    expect(xytBalance2).to.be.equal(amount.mul(3));
+    expect(ethBalance2).to.be.equal(amount.mul(3));
+    expect(totalSupplyBalance2).to.be.equal(totalSupply.mul(3));
+  });
+
   it("Aave-ETH should be able to getReserves", async () => {
     const amount = amountToWei(BN.from(100), 6);
 
