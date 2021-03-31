@@ -58,7 +58,7 @@ contract PendleMarketReader {
         address _tokenOut,
         uint256 _inSwapAmount,
         bytes32 _marketFactoryId
-    ) public view returns (IPendleRouter.Swap memory swap, uint256 outSwapAmount) {
+    ) external view returns (IPendleRouter.Swap memory swap, uint256 outSwapAmount) {
         address market = data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId);
         Market memory marketData = _getMarketData(_tokenIn, _tokenOut, market);
 
@@ -84,7 +84,7 @@ contract PendleMarketReader {
         address _tokenOut,
         uint256 _outSwapAmount,
         bytes32 _marketFactoryId
-    ) public view returns (IPendleRouter.Swap memory swap, uint256 inSwapAmount) {
+    ) external view returns (IPendleRouter.Swap memory swap, uint256 inSwapAmount) {
         address market = data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId);
         Market memory marketData = _getMarketData(_tokenIn, _tokenOut, market);
 
@@ -110,7 +110,7 @@ contract PendleMarketReader {
         address _xyt,
         address _token
     )
-        public
+        external
         view
         returns (
             uint256 xytAmount,
@@ -124,7 +124,7 @@ contract PendleMarketReader {
     }
 
     function getMarketTokenAddresses(address _market)
-        public
+        external
         view
         returns (address token, address xyt)
     {
