@@ -310,9 +310,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 inLpAfterExitFee = _inLp.sub(exitFee);
         uint256 ratio = Math.rdiv(inLpAfterExitFee, totalLp);
         require(ratio != 0, "ZERO_RATIO");
-        uint256 updatedReserveData = reserveData;
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) =
-            decodeReserveData(updatedReserveData); // unpack data
+            decodeReserveData(reserveData); // unpack data
 
         // Calc and withdraw xyt token.
         uint256 balanceToken = xytBalance;
@@ -332,8 +331,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[1].amount = tokenOut;
         transfers[1].isOut = true;
 
-        updatedReserveData = encodeReserveData(xytBalance, tokenBalance, xytWeight); // repack data
-        reserveData = updatedReserveData;
+        reserveData = encodeReserveData(xytBalance, tokenBalance, xytWeight); // repack data
         emit Sync(xytBalance, xytWeight, tokenBalance);
 
         // Deal with lp last.
