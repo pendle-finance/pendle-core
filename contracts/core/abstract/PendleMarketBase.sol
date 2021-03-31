@@ -257,7 +257,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         checkMarketIsOpen();
-        uint256 updatedReserveData = _curveShift(data);
+        uint256 updatedReserveData = _curveShift();
         _updateParamL();
         TokenReserve memory inTokenReserve = parseTokenReserveData(_inToken, updatedReserveData);
 
@@ -350,7 +350,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         checkMarketIsOpen();
-        uint256 updatedReserveData = _curveShift(data);
+        uint256 updatedReserveData = _curveShift();
         _updateParamL();
         TokenReserve memory outTokenReserve = parseTokenReserveData(_outToken, updatedReserveData);
 
@@ -390,7 +390,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         checkMarketIsOpen();
-        uint256 updatedReserveData = _curveShift(data);
+        uint256 updatedReserveData = _curveShift();
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken, updatedReserveData);
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken, updatedReserveData);
@@ -443,7 +443,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         checkMarketIsOpen();
-        uint256 updatedReserveData = _curveShift(data);
+        uint256 updatedReserveData = _curveShift();
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken, updatedReserveData);
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken, updatedReserveData);
@@ -541,7 +541,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     // that weight is outdated
     function getWeight(address asset) external view override returns (uint256) {
         require(asset == xyt || asset == token, "INVALID_ASSET");
-        (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, ) = _updateWeightDry();
+        (uint256 xytWeightUpdated, uint256 tokenWeightUpdated, ) =
+            _updateWeightDry(reserveData, priceLast);
         return (asset == xyt ? xytWeightUpdated : tokenWeightUpdated);
     }
 
@@ -622,19 +623,29 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _mint(address(this), amount);
     }
 
-    // update the token reserve storage
-    function _updateWeight() internal returns (uint256 updatedReserveData) {
+    /**
+    * @notice update the priceLast & emit event, but not the real weight
+    * @dev this function read the reserveData directly from storage. But the reserveData is guaranteed
+    not to be obsolete because:
+    * this function will be called at most ONCE in every transaction
+    * all functions that call this function will eventually update the reserveData
+    => it doesn't matter if the reserveData gets updated immediately or not
+     */
+    function _updateWeightPartial() internal returns (uint256 updatedReserveData) {
+        updatedReserveData = reserveData;
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
-            decodeReserveData(reserveData); // unpack data
-        (uint256 xytWeightUpdated, , uint256 priceNow) = _updateWeightDry();
-
+            decodeReserveData(updatedReserveData); // unpack data
+        (uint256 xytWeightUpdated, , uint256 priceNow) =
+            _updateWeightDry(updatedReserveData, priceLast);
         updatedReserveData = encodeReserveData(xytBalance, tokenBalance, xytWeightUpdated); // repack data
+
         priceLast = priceNow;
+        // the weight is not updated yet, but all functions that call curveShift will eventually update the weight, so we just emit event first
         emit Shift(xytWeight, tokenWeight, xytWeightUpdated);
     }
 
     // do the weight update calucation but don't update the token reserve memory
-    function _updateWeightDry()
+    function _updateWeightDry(uint256 _reserveData, uint256 _priceLast)
         internal
         view
         returns (
@@ -649,7 +660,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 startTime = xytStartTime;
         uint256 duration = endTime - startTime;
 
-        (, , uint256 xytWeight, uint256 tokenWeight) = decodeReserveData(reserveData); // unpack data
+        (, , uint256 xytWeight, uint256 tokenWeight) = decodeReserveData(_reserveData); // unpack data
 
         uint256 timeLeft;
         if (endTime >= currentTime) {
@@ -667,7 +678,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
             LN_PI_PLUSONE
         );
 
-        uint256 r = Math.rdiv(priceNow, priceLast);
+        uint256 r = Math.rdiv(priceNow, _priceLast);
         require(Math.RONE >= r, "MATH_ERROR");
 
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
@@ -681,10 +692,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     //curve shift will be called before any calculation using weight
-    function _curveShift(IPendleData _data) internal returns (uint256 updatedReserveData) {
+    function _curveShift() internal returns (uint256 updatedReserveData) {
         if (block.number > blockNumLast) {
-            updatedReserveData = _updateWeight();
-            _data.updateMarketInfo(xyt, token, factory);
+            updatedReserveData = _updateWeightPartial();
             blockNumLast = block.number;
         } else {
             updatedReserveData = reserveData;

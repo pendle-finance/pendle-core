@@ -470,7 +470,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
 
         emit Join(msg.sender, _initialXytLiquidity, _initialTokenLiquidity, address(market));
 
-        data.updateMarketInfo(_xyt, _token, _marketFactoryId);
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
     }
 

@@ -232,18 +232,6 @@ interface IPendleData {
     function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
         external;
 
-    function updateMarketInfo(
-        address xyt,
-        address token,
-        address marketFactory
-    ) external;
-
-    function updateMarketInfo(
-        address xyt,
-        address token,
-        bytes32 marketFactoryId
-    ) external;
-
     /**
      * @notice Displays the number of markets currently existing.
      * @return Returns markets length,
@@ -267,12 +255,6 @@ interface IPendleData {
      * @return Returns an array of all markets.
      **/
     function getAllMarkets() external view returns (address[] calldata);
-
-    function getEffectiveLiquidityForMarket(
-        address xyt,
-        address token,
-        bytes32 marketFactoryId
-    ) external view returns (uint256 effectiveLiquidity);
 
     /**
      * @notice Gets a market given a future yield token and an ERC20 token.
@@ -311,17 +293,4 @@ interface IPendleData {
         address token,
         bytes32 marketFactoryId
     ) external view returns (address market);
-
-    function getMarketInfo(
-        address xyt,
-        address token,
-        bytes32 marketFactoryId
-    )
-        external
-        view
-        returns (
-            uint256 xytWeight,
-            uint256 tokenWeight,
-            uint256 liquidity
-        );
 }
