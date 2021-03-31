@@ -334,6 +334,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         updatedReserveData = encodeReserveData(xytBalance, tokenBalance, xytWeight); // repack data
         reserveData = updatedReserveData;
+        emit Sync(xytBalance, xytWeight, tokenBalance);
+
         // Deal with lp last.
         _collectFees(exitFees);
         _burnLp(inLpAfterExitFee);
@@ -370,6 +372,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _burnLp(_inLp.sub(exitFees));
         transfers[0].amount = outAmountToken;
         transfers[0].isOut = true;
+
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) =
+            decodeReserveData(updatedReserveData); // unpack data
+        emit Sync(xytBalance, xytWeight, tokenBalance);
     }
 
     function swapExactIn(
@@ -468,6 +474,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // repack data
         updatedReserveData = dryUpdateReserveData(inTokenReserve, inToken, updatedReserveData);
         updatedReserveData = dryUpdateReserveData(outTokenReserve, outToken, updatedReserveData);
+
         reserveData = updatedReserveData;
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) =
             decodeReserveData(updatedReserveData); // unpack data
