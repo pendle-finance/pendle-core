@@ -49,7 +49,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     uint8 private constant DECIMALS = 18;
     uint256 private priceLast = Math.RONE;
     uint256 private blockNumLast;
-
+    uint256 private constant LN_PI_PLUSONE = 1562071538258;
     uint256 internal paramL;
     uint256 internal lastNYield;
     mapping(address => uint256) internal lastParamL;
@@ -391,7 +391,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkOnlyRouter();
         checkMarketIsOpen();
         uint256 updatedReserveData = _curveShift(data);
-        _updateParamL();
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken, updatedReserveData);
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken, updatedReserveData);
@@ -445,7 +444,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkOnlyRouter();
         checkMarketIsOpen();
         uint256 updatedReserveData = _curveShift(data);
-        _updateParamL();
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken, updatedReserveData);
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken, updatedReserveData);
@@ -666,7 +664,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // get price for now = ln(3.14 * t + 1) / ln(4.14)
         priceNow = Math.rdiv(
             Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RONE), Math.RONE),
-            Math.ln(Math.PI_PLUSONE, Math.RONE)
+            LN_PI_PLUSONE
         );
 
         uint256 r = Math.rdiv(priceNow, priceLast);
