@@ -25,9 +25,9 @@ pragma experimental ABIEncoderV2;
 import "../interfaces/IPendleData.sol";
 
 abstract contract PendleNonReentrant {
-    uint256 private constant _NOT_ENTERED = 1;
-    uint256 private constant _ENTERED = 2;
-    uint256 private _reentrancyStatus;
+    uint256 internal constant _NOT_ENTERED = 1;
+    uint256 internal constant _ENTERED = 2;
+    uint256 internal _reentrancyStatus;
 
     modifier pendleNonReentrant() {
         _checkNonReentrancy(); // use functions to reduce bytecode size

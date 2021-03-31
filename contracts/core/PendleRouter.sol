@@ -39,11 +39,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
-    // Protection against reentrance;
-    uint256 private constant _NOT_ENTERED = 1;
-    uint256 private constant _ENTERED = 2;
-    uint256 private _reentrancyStatus;
-
     IWETH public immutable override weth;
     IPendleData public override data;
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
