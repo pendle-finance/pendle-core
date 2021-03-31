@@ -249,6 +249,61 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[2].isOut = true;
     }
 
+    /**
+   * @notice Join the market by specifying the desired (and max) amount of xyts
+   *    and tokens to put in.
+   * @param _desiredXytAmount amount of XYTs user wants to contribute
+   * @param _desiredTokenAmount amount of tokens user wants to contribute
+   * @param _xytMinAmount min amount of XYTs user wants to be able to contribute
+   * @param _tokenMinAmount min amount of tokens user wants to be able to contribute
+   * @dev no curveShift to save gas because this function
+              doesn't depend on weights of tokens
+   */
+  function addMarketLiquidityDual(
+      uint256 _desiredXytAmount,
+      uint256 _desiredTokenAmount,
+      uint256 _xytMinAmount,
+      uint256 _tokenMinAmount
+  ) external override returns (PendingTransfer[3] memory transfers, uint256 lpOut) {
+      checkIsBootstrapped();
+      checkOnlyRouter();
+      checkMarketIsOpen();
+
+      (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) =
+          decodeReserveData(reserveData);
+
+      uint256 amountXytUsed;
+      uint256 amountTokenUsed = _desiredXytAmount.mul(tokenBalance).div(xytBalance);
+      if (amountTokenUsed <= _desiredTokenAmount) {
+          // using _desiredXytAmount to determine the LP and add liquidity
+          require(amountTokenUsed >= _tokenMinAmount, "INSUFFICIENT_TOKEN_AMOUNT");
+          amountXytUsed = _desiredXytAmount;
+          lpOut = _desiredXytAmount.mul(totalSupply).div(xytBalance);
+      } else {
+          // using _desiredTokenAmount to determine the LP and add liquidity
+          amountXytUsed = _desiredTokenAmount.mul(xytBalance).div(tokenBalance);
+          require(amountXytUsed >= _xytMinAmount, "INSUFFICIENT_XYT_AMOUNT");
+          amountTokenUsed = _desiredTokenAmount;
+          lpOut = _desiredTokenAmount.mul(totalSupply).div(tokenBalance);
+      }
+
+      xytBalance = xytBalance.add(amountXytUsed);
+      transfers[0].amount = amountXytUsed;
+      transfers[0].isOut = false;
+
+      tokenBalance = tokenBalance.add(amountTokenUsed);
+      transfers[1].amount = amountTokenUsed;
+      transfers[1].isOut = false;
+
+      reserveData = encodeReserveData(xytBalance, tokenBalance, xytWeight);
+      emit Sync(xytBalance, xytWeight, tokenBalance);
+
+      // Mint and push LP token.
+      _mintLp(lpOut);
+      transfers[2].amount = lpOut;
+      transfers[2].isOut = true;
+  }
+
     function addMarketLiquiditySingle(
         address _inToken,
         uint256 _exactIn,

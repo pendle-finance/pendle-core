@@ -311,6 +311,52 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     }
 
     /**
+     * @notice add market liquidity by xyt and base tokens
+     * @dev no checks on _maxInXyt, _maxInToken, _exactOutLp
+     */
+    function addMarketLiquidityDual(
+        bytes32 _marketFactoryId,
+        address _xyt,
+        address _token,
+        uint256 _desiredXytAmount,
+        uint256 _desiredTokenAmount,
+        uint256 _xytMinAmount,
+        uint256 _tokenMinAmount
+    )
+        public
+        payable
+        override
+        pendleNonReentrant
+        returns (
+            uint256 amountXytUsed,
+            uint256 amountTokenUsed,
+            uint256 lpOut
+        )
+    {
+        require(_desiredXytAmount != 0, "ZERO_XYT_AMOUNT");
+        require(_desiredTokenAmount != 0, "ZERO_TOKEN_AMOUNT");
+
+        address originalToken = _token;
+        _token = _isETH(_token) ? address(weth) : _token;
+
+        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
+        require(address(market) != address(0), "MARKET_NOT_FOUND");
+
+        PendingTransfer[3] memory transfers;
+        (transfers, lpOut) = market.addMarketLiquidityDual(
+            _desiredXytAmount,
+            _desiredTokenAmount,
+            _xytMinAmount,
+            _tokenMinAmount
+        );
+        amountXytUsed = transfers[0].amount;
+        amountTokenUsed = transfers[1].amount;
+        emit Join(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
+
+        _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
+    }
+
+    /**
      * @notice add market liquidity by xyt or base token
      * @dev no checks on _exactInAsset, _minOutLp
      */

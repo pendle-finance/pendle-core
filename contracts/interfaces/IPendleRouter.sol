@@ -190,6 +190,23 @@ interface IPendleRouter is IPendleStructs {
         uint256 exactOutLp
     ) external payable;
 
+    function addMarketLiquidityDual(
+        bytes32 _marketFactoryId,
+        address _xyt,
+        address _token,
+        uint256 _desiredXytAmount,
+        uint256 _desiredTokenAmount,
+        uint256 _xytMinAmount,
+        uint256 _tokenMinAmount
+    )
+        external
+        payable
+        returns (
+            uint256 amountXytUsed,
+            uint256 amountTokenUsed,
+            uint256 lpOut
+        );
+
     function addMarketLiquiditySingle(
         bytes32 marketFactoryId,
         address xyt,
