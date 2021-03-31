@@ -49,7 +49,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     uint8 private constant DECIMALS = 18;
     uint256 private priceLast = Math.RONE;
     uint256 private blockNumLast;
-    uint256 private constant LN_PI_PLUSONE = 1562071538258;
+    uint256 private constant LN_PI_PLUSONE = 1562071538258; // this is equal to Math.ln(Math.PI_PLUSONE,Math.RONE)
     uint256 internal paramL;
     uint256 internal lastNYield;
     mapping(address => uint256) internal lastParamL;
@@ -58,7 +58,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     uint256 private reserveData;
     uint256 private lastInterestUpdate;
 
-    uint256 private constant MASK_148_TO_255 = type(uint256).max ^ ((1 << 148) - 1); // 1<<148 - 1 means all bit from 0->147 is off, the rest is on
+    uint256 private constant MASK_148_TO_255 = type(uint256).max ^ ((1 << 148) - 1);
     uint256 private constant MASK_40_TO_147 = ((1 << 148) - 1) ^ ((1 << 40) - 1);
     uint256 private constant MASK_0_TO_39 = ((1 << 40) - 1);
     uint256 private constant MAX_TOKEN_RESERVE_BALANCE = (1 << 108) - 1;
