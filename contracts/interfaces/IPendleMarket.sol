@@ -42,7 +42,7 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
      **/
     event Sync(uint256 reserve0, uint256 weight0, uint256 reserve1);
 
-    event Shift(uint256 xytWeightOld, uint256 tokenWeightOld, uint256 xytWeightNew);
+    event Shift(uint256 xytWeightOld, uint256 xytWeightNew);
 
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external

@@ -410,11 +410,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _updateParamL();
         TokenReserve memory outTokenReserve = parseTokenReserveData(_outToken, updatedReserveData);
 
+        uint256 swapFee = data.swapFee();
         uint256 exitFee = data.exitFee();
-        uint256 exitFees = Math.rmul(_inLp, data.exitFee());
+        uint256 exitFees = Math.rmul(_inLp, exitFee);
         uint256 totalLp = totalSupply;
 
-        uint256 outAmountToken = _calcOutAmountToken(outTokenReserve, totalLp, _inLp);
+        uint256 outAmountToken =
+            _calcOutAmountToken(outTokenReserve, totalLp, _inLp, swapFee, exitFee);
         require(outAmountToken >= _minOutAmountToken, "INSUFFICIENT_TOKEN_OUT");
 
         // Update reserves and operate underlying LP and outToken
@@ -450,22 +452,23 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         checkMarketIsOpen();
+        uint256 swapFee = data.swapFee();
         uint256 updatedReserveData = _curveShift();
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken, updatedReserveData);
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken, updatedReserveData);
 
-        uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
+        uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, swapFee);
         require(spotPriceBefore <= maxPrice, "LOW_MAX_PRICE");
 
         // calc out amount of token to be swapped out
-        outAmount = calcExactOut(inTokenReserve, outTokenReserve, inAmount, data.swapFee());
+        outAmount = calcExactOut(inTokenReserve, outTokenReserve, inAmount, swapFee);
         require(outAmount >= minOutAmount, "HIGH_OUT_LIMIT");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
 
-        spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
+        spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, swapFee);
 
         require(spotPriceAfter >= spotPriceBefore, "MATH_ERROR");
         require(spotPriceAfter <= maxPrice, "LOW_MAX_PRICE");
@@ -503,23 +506,24 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkIsBootstrapped();
         checkOnlyRouter();
         checkMarketIsOpen();
+        uint256 swapFee = data.swapFee();
         uint256 updatedReserveData = _curveShift();
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken, updatedReserveData);
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken, updatedReserveData);
 
         // Calc spot price.
-        uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
+        uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, swapFee);
         require(spotPriceBefore <= maxPrice, "LOW_MAX_PRICE");
 
         // Calc in amount.
-        inAmount = calcExactIn(inTokenReserve, outTokenReserve, outAmount, data.swapFee());
+        inAmount = calcExactIn(inTokenReserve, outTokenReserve, outAmount, swapFee);
         require(inAmount <= maxInAmount, "LOW_IN_LIMIT");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
 
-        spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
+        spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, swapFee);
 
         require(spotPriceAfter >= spotPriceBefore, "MATH_ERROR");
         require(spotPriceAfter <= maxPrice, "LOW_MAX_PRICE");
@@ -643,10 +647,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     function _calcOutAmountToken(
         TokenReserve memory outTokenReserve,
         uint256 totalSupplyLp,
-        uint256 inLp
-    ) internal view returns (uint256 exactOutToken) {
+        uint256 inLp,
+        uint256 swapFee,
+        uint256 exitFee
+    ) internal pure returns (uint256 exactOutToken) {
         uint256 nWeight = outTokenReserve.weight;
-        uint256 inLpAfterExitFee = Math.rmul(inLp, Math.RONE.sub(data.exitFee()));
+        uint256 inLpAfterExitFee = Math.rmul(inLp, Math.RONE.sub(exitFee));
         uint256 totalSupplyLpUpdated = totalSupplyLp.sub(inLpAfterExitFee);
         uint256 lpRatio = Math.rdiv(totalSupplyLpUpdated, totalSupplyLp);
 
@@ -655,7 +661,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         uint256 outAmountTOkenBeforeSwapFee = outTokenReserve.balance.sub(outTokenBalanceUpdated);
 
-        uint256 feePortion = Math.rmul(Math.RONE.sub(nWeight), data.swapFee());
+        uint256 feePortion = Math.rmul(Math.RONE.sub(nWeight), swapFee);
         exactOutToken = Math.rmul(outAmountTOkenBeforeSwapFee, Math.RONE.sub(feePortion));
         return exactOutToken;
     }
@@ -683,7 +689,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
      */
     function _updateWeightPartial() internal returns (uint256 updatedReserveData) {
         updatedReserveData = reserveData;
-        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) =
             decodeReserveData(updatedReserveData); // unpack data
         (uint256 xytWeightUpdated, , uint256 priceNow) =
             _updateWeightDry(updatedReserveData, priceLast);
@@ -691,7 +697,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         priceLast = priceNow;
         // the weight is not updated yet, but all functions that call curveShift will eventually update the weight, so we just emit event first
-        emit Shift(xytWeight, tokenWeight, xytWeightUpdated);
+        emit Shift(xytWeight, xytWeightUpdated);
     }
 
     // do the weight update calucation but don't update the token reserve memory
