@@ -768,14 +768,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         underlyingYieldToken.transfer(account, dueInterests);
     }
 
-    // this function should be called whenver the total amount of LP changes
     function _updateParamL() internal {
-        if (block.timestamp.sub(lastInterestUpdate) > data.interestUpdateDelta()) {
-            // get due interests for the XYT being held in the market if it has not been updated
-            // for interestUpdateDelta seconds
-            router.redeemDueInterests(forgeId, underlyingAsset, expiry);
-            lastInterestUpdate = block.timestamp;
+        if (block.timestamp.sub(lastInterestUpdate) <= data.interestUpdateDelta()) {
+            return;
         }
+
+        router.redeemDueInterests(forgeId, underlyingAsset, expiry);
+        lastInterestUpdate = block.timestamp;
         uint256 currentNYield = underlyingYieldToken.balanceOf(address(this));
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(currentNYield);
 

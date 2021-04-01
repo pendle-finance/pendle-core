@@ -136,6 +136,7 @@ export async function marketFixture(
 
   await data.setReentrancyWhitelist([aMarketAddress, cMarketAddress, ethMarketAddress], [true, true, true]);
   await data.setLockParams(BN.from(consts.LOCK_NUMERATOR), BN.from(consts.LOCK_DENOMINATOR)); // lock market
+  await data.setInterestUpdateDelta(consts.INTEREST_UPDATE_DELTA);
 
   for (var person of [alice, bob, charlie, dave, eve]) {
     await testToken.connect(person).approve(router.address, totalSupply);
