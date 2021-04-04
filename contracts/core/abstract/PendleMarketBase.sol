@@ -807,17 +807,15 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         lockStartTime = expiry - lockDuration;
     }
 
-    function _afterBootstrap() internal virtual {}
+    function _afterBootstrap() internal virtual;
 
     function _getInterestValuePerLP(address account)
         internal
         virtual
-        returns (uint256 interestValuePerLP)
-    {}
+        returns (uint256 interestValuePerLP);
 
     function _getFirstTermAndParamR(uint256 currentNYield)
         internal
         virtual
-        returns (uint256 firstTerm, uint256 paramR)
-    {}
+        returns (uint256 firstTerm, uint256 paramR);
 }

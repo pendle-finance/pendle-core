@@ -288,14 +288,14 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         address _underlyingAsset,
         uint256 _expiry,
         address _account
-    ) internal virtual returns (uint256 dueInterests) {}
+    ) internal virtual returns (uint256 dueInterests);
 
     function _calcTotalAfterExpiry(
         address yieldTokenAddress,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 redeemedAmount
-    ) internal virtual returns (uint256 totalAfterExpiry) {}
+    ) internal virtual returns (uint256 totalAfterExpiry);
 
     function _calcUnderlyingToRedeem(address, uint256 _amountToRedeem)
         internal
