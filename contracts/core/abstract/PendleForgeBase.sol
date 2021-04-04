@@ -123,10 +123,14 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         // _to will get the principal + the interests from last action before expiry to now
         uint256 totalAfterExpiry =
             _calcTotalAfterExpiry(address(yieldToken), _underlyingAsset, _expiry, redeemedAmount);
+
+        uint256 principal = tokens.xyt.balanceOf(_account);
+        uint256 dueInterests = _calcDueInterests(principal, _underlyingAsset, _expiry, _account);
+        totalAfterExpiry = totalAfterExpiry.add(dueInterests);
+
         yieldToken.transfer(_to, totalAfterExpiry);
 
         // the msg.sender (_account) gets the interest up until the last action before expiry
-        _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
         tokens.ot.burn(_account, redeemedAmount);
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, redeemedAmount);
@@ -146,7 +150,10 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
 
         uint256 underlyingToRedeem = _calcUnderlyingToRedeem(_underlyingAsset, _amountToRedeem);
-        _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
+
+        uint256 principal = tokens.xyt.balanceOf(_account);
+        uint256 dueInterests = _calcDueInterests(principal, _underlyingAsset, _expiry, _account);
+        underlyingToRedeem = underlyingToRedeem.add(dueInterests);
 
         tokens.ot.burn(_account, _amountToRedeem);
         tokens.xyt.burn(_account, _amountToRedeem);
