@@ -2,7 +2,7 @@ import { BigNumber as BN, Contract, providers, Wallet } from "ethers";
 import PendleAaveMarket from "../../../build/artifacts/contracts/core/PendleAaveMarket.sol/PendleAaveMarket.json";
 import PendleCompoundMarket from "../../../build/artifacts/contracts/core/PendleCompoundMarket.sol/PendleCompoundMarket.json";
 import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
-import { amountToWei, consts, mintOtAndXyt, tokens } from "../../helpers";
+import { consts, mintOtAndXyt, tokens } from "../../helpers";
 import { aaveFixture, AaveFixture } from "./aave.fixture";
 import { aaveForgeFixture, AaveForgeFixture } from "./aaveForge.fixture";
 import {
@@ -16,7 +16,7 @@ import {
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;
 
-interface MarketFixture {
+export interface MarketFixture {
   core: CoreFixture,
   aForge: AaveForgeFixture,
   cForge: CompoundFixture,
