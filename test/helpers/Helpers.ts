@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { BigNumber as BN, Contract, providers, Wallet } from "ethers";
+import { BigNumber as BN, BigNumberish, Contract, providers, Wallet } from "ethers";
 import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
 import AToken from "../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json";
 import CToken from "../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json";
@@ -288,11 +288,15 @@ export function getGain(amount: BN, rate: BN, duration: BN): BN {
 }
 
 export function approxBigNumber(
-  actual: BN,
-  expected: BN,
-  delta: BN,
+  _actual: BigNumberish,
+  _expected: BigNumberish,
+  _delta: BigNumberish,
   log: boolean = true
 ) {
+  let actual: BN = BN.from(_actual);
+  let expected: BN = BN.from(_expected);
+  let delta: BN = BN.from(_delta);
+
   var diff = expected.sub(actual);
   if (diff.lt(0)) {
     diff = diff.mul(-1);
