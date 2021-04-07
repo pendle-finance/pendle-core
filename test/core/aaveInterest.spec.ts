@@ -55,19 +55,22 @@ describe("aaveInterest test", async () => {
       provider,
       tokens.USDT,
       bob,
-      consts.INITIAL_AAVE_TOKEN_AMOUNT
+      consts.INITIAL_AAVE_TOKEN_AMOUNT,
+      true
     );
     await mintAaveToken(
       provider,
       tokens.USDT,
       charlie,
-      consts.INITIAL_AAVE_TOKEN_AMOUNT
+      consts.INITIAL_AAVE_TOKEN_AMOUNT,
+      true
     );
     await mintAaveToken(
       provider,
       tokens.USDT,
       dave,
-      consts.INITIAL_AAVE_TOKEN_AMOUNT
+      consts.INITIAL_AAVE_TOKEN_AMOUNT,
+      true
     );
     await aUSDT.connect(bob).approve(router.address, consts.MAX_ALLOWANCE);
     await aUSDT.connect(charlie).approve(router.address, consts.MAX_ALLOWANCE);

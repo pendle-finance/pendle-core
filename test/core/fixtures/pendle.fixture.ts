@@ -9,7 +9,7 @@ import { CompoundFixture, compoundForgeFixture } from './compoundForge.fixture';
 import { coreFixture, CoreFixture } from './core.fixture';
 import { governanceFixture } from './governance.fixture';
 import ERC20 from "../../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
-interface PendleFixture {
+export interface PendleFixture {
   core: CoreFixture,
   aave: AaveFixture,
   aaveV2: AaveV2Fixture,

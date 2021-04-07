@@ -35,12 +35,12 @@ export async function evm_revert(snapshotId: string) {
   });
 }
 
-export async function mintOtAndXyt(
+export async function mintOtAndXyt( // TODO: Add support for AaveV2 here
   provider: providers.Web3Provider,
   token: Token,
   user: Wallet,
   amount: BN,
-  router: Contract
+  router: Contract,
 ) {
   const { lendingPoolCore } = await aaveFixture(user);
   const aContract = await getAContract(user, lendingPoolCore, token);
@@ -49,7 +49,7 @@ export async function mintOtAndXyt(
   let preATokenBal = await aContract.balanceOf(user.address);
   let preCTokenBal = await cContract.balanceOf(user.address);
 
-  await mintAaveToken(provider, token, user, amount);
+  await mintAaveToken(provider, token, user, amount, true);
   await mintCompoundToken(provider, token, user, amount);
   await aContract.approve(router.address, consts.MAX_ALLOWANCE);
   await cContract.approve(router.address, consts.MAX_ALLOWANCE);
@@ -143,20 +143,15 @@ export async function mintAaveToken(
   provider: providers.Web3Provider,
   token: Token,
   alice: Wallet,
-  amount: BN
+  amount: BN,
+  isAaveV1: boolean,
 ) {
   await mint(provider, token, alice, amount);
-  await convertToAaveToken(token, alice, amount);
-}
-
-export async function mintAaveV2Token(
-  provider: providers.Web3Provider,
-  token: Token,
-  alice: Wallet,
-  amount: BN
-) {
-  await mint(provider, token, alice, amount);
-  await convertToAaveV2Token(token, alice, amount);
+  if (isAaveV1) {
+    await convertToAaveToken(token, alice, amount);
+  } else {
+    await convertToAaveV2Token(token, alice, amount);
+  }
 }
 
 export async function mintCompoundToken(

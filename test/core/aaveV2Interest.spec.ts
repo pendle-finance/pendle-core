@@ -8,7 +8,7 @@ import {
   consts,
   evm_revert,
   evm_snapshot,
-  mintAaveV2Token,
+  mintAaveToken,
   setTimeNextBlock,
   Token,
   tokens,
@@ -51,23 +51,26 @@ describe("aaveV2Interest test", async () => {
     tokenUSDT = tokens.USDT;
     aUSDT = await getA2Contract(alice, aaveV2Forge, tokenUSDT);
 
-    await mintAaveV2Token(
+    await mintAaveToken(
       provider,
       tokens.USDT,
       bob,
-      consts.INITIAL_AAVE_TOKEN_AMOUNT
+      consts.INITIAL_AAVE_TOKEN_AMOUNT,
+      false
     );
-    await mintAaveV2Token(
+    await mintAaveToken(
       provider,
       tokens.USDT,
       charlie,
-      consts.INITIAL_AAVE_TOKEN_AMOUNT
+      consts.INITIAL_AAVE_TOKEN_AMOUNT,
+      false
     );
-    await mintAaveV2Token(
+    await mintAaveToken(
       provider,
       tokens.USDT,
       dave,
-      consts.INITIAL_AAVE_TOKEN_AMOUNT
+      consts.INITIAL_AAVE_TOKEN_AMOUNT,
+      false
     );
     await aUSDT.connect(bob).approve(router.address, consts.MAX_ALLOWANCE);
     await aUSDT.connect(charlie).approve(router.address, consts.MAX_ALLOWANCE);
