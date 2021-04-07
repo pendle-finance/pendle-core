@@ -35,8 +35,8 @@ export function runTest(isAaveV1: boolean) {
 
     let fixture: PendleFixture;
     let router: Contract;
-    let aOt: Contract;
-    let aXyt: Contract;
+    let ot: Contract;
+    let xyt: Contract;
     let aaveForge: Contract;
     let aUSDT: Contract;
     let snapshotId: string;
@@ -55,8 +55,8 @@ export function runTest(isAaveV1: boolean) {
     }
 
     async function buildTestEnvV1() {
-      aOt = fixture.aForge.aOwnershipToken;
-      aXyt = fixture.aForge.aFutureYieldToken;
+      ot = fixture.aForge.aOwnershipToken;
+      xyt = fixture.aForge.aFutureYieldToken;
       aaveForge = fixture.aForge.aaveForge;
       aUSDT = await getAContract(alice, aaveForge, tokenUSDT);
       testEnv.FORGE_ID = consts.FORGE_AAVE;
@@ -64,8 +64,8 @@ export function runTest(isAaveV1: boolean) {
     }
 
     async function buildTestEnvV2() {
-      aOt = fixture.a2Forge.a2OwnershipToken;
-      aXyt = fixture.a2Forge.a2FutureYieldToken;
+      ot = fixture.a2Forge.a2OwnershipToken;
+      xyt = fixture.a2Forge.a2FutureYieldToken;
       aaveForge = fixture.a2Forge.aaveV2Forge;
       aUSDT = await getA2Contract(alice, aaveForge, tokenUSDT);
       testEnv.FORGE_ID = consts.FORGE_AAVE_V2;
@@ -95,7 +95,7 @@ export function runTest(isAaveV1: boolean) {
     });
 
     async function tokenizeYield(user: Wallet, amount: BN): Promise<BN> {
-      let amountTokenMinted = await aOt.balanceOf(user.address);
+      let amountTokenMinted = await ot.balanceOf(user.address);
       await router.tokenizeYield(
         testEnv.FORGE_ID,
         tokenUSDT.address,
@@ -104,7 +104,7 @@ export function runTest(isAaveV1: boolean) {
         user.address,
         consts.HIGH_GAS_OVERRIDE
       );
-      amountTokenMinted = (await aOt.balanceOf(user.address)).sub(
+      amountTokenMinted = (await ot.balanceOf(user.address)).sub(
         amountTokenMinted
       );
       return amountTokenMinted;
@@ -129,10 +129,10 @@ export function runTest(isAaveV1: boolean) {
     }
 
     it("underlying asset's address should match the original asset", async () => {
-      expect((await aOt.underlyingAsset()).toLowerCase()).to.be.equal(
+      expect((await ot.underlyingAsset()).toLowerCase()).to.be.equal(
         tokens.USDT.address.toLowerCase()
       );
-      expect((await aXyt.underlyingAsset()).toLowerCase()).to.be.equal(
+      expect((await xyt.underlyingAsset()).toLowerCase()).to.be.equal(
         tokens.USDT.address.toLowerCase()
       );
     });
@@ -150,8 +150,8 @@ export function runTest(isAaveV1: boolean) {
 
     it("should be able to deposit aUSDT to get back OT and XYT", async () => {
       let amount = await tokenizeYield(alice, refAmount);
-      const balanceOwnershipToken = await aOt.balanceOf(alice.address);
-      const balanceFutureYieldToken = await aXyt.balanceOf(alice.address);
+      const balanceOwnershipToken = await ot.balanceOf(alice.address);
+      const balanceFutureYieldToken = await xyt.balanceOf(alice.address);
       expect(balanceOwnershipToken).to.be.eq(amount);
       expect(balanceFutureYieldToken).to.be.eq(amount);
     });
@@ -215,7 +215,7 @@ export function runTest(isAaveV1: boolean) {
       await startCalInterest(charlie, refAmount);
       let amount = await tokenizeYield(alice, refAmount);
 
-      await aOt.transfer(bob.address, await aOt.balanceOf(alice.address));
+      await ot.transfer(bob.address, await ot.balanceOf(alice.address));
 
       const afterLendingAUSDTbalance = await aUSDT.balanceOf(alice.address);
 
@@ -241,7 +241,7 @@ export function runTest(isAaveV1: boolean) {
       await startCalInterest(charlie, refAmount);
 
       let amount = await tokenizeYield(alice, refAmount);
-      await aXyt.transfer(bob.address, amount);
+      await xyt.transfer(bob.address, amount);
 
       const T1 = testEnv.T0.add(consts.SIX_MONTH).sub(1);
       await setTimeNextBlock(provider, T1);
@@ -267,7 +267,7 @@ export function runTest(isAaveV1: boolean) {
       await startCalInterest(charlie, refAmount);
 
       let amount = await tokenizeYield(alice, refAmount);
-      await aXyt.transfer(bob.address, amount);
+      await xyt.transfer(bob.address, amount);
 
       const T1 = testEnv.T0.add(consts.SIX_MONTH).sub(1);
       await setTimeNextBlock(provider, T1);
@@ -312,7 +312,7 @@ export function runTest(isAaveV1: boolean) {
     it("One month after expiry, should be able to redeem aUSDT with intrest", async () => {
       await startCalInterest(charlie, refAmount);
       let amount = await tokenizeYield(alice, refAmount);
-      await aXyt.transfer(bob.address, amount);
+      await xyt.transfer(bob.address, amount);
 
       const T1 = testEnv.T0.add(consts.SIX_MONTH).sub(1);
       await setTimeNextBlock(provider, T1);

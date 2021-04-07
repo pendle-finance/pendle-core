@@ -27,7 +27,6 @@ describe("lpInterest for CompoundMarket", async () => {
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
   let router: Contract;
-  let marketReader: Contract;
   let xyt: Contract;
   let ot: Contract;
   let stdMarket: Contract;
@@ -46,7 +45,6 @@ describe("lpInterest for CompoundMarket", async () => {
 
     const fixture = await loadFixture(marketFixture);
     router = fixture.core.router;
-    marketReader = fixture.core.marketReader;
     ot = fixture.cForge.cOwnershipToken;
     xyt = fixture.cForge.cFutureYieldToken;
     testToken = fixture.testToken;

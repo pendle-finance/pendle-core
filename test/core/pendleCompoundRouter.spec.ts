@@ -25,7 +25,6 @@ describe("PendleCompoundRouter", async () => {
   const [alice, bob, charlie, dave] = wallets;
 
   let router: Contract;
-  let routerWeb3: any;
   let cOt: Contract;
   let cXyt: Contract;
   let compoundForge: Contract;
@@ -40,7 +39,6 @@ describe("PendleCompoundRouter", async () => {
 
     const fixture = await loadFixture(pendleFixture);
     router = fixture.core.router;
-    routerWeb3 = fixture.core.routerWeb3;
     cOt = fixture.cForge.cOwnershipToken;
     cXyt = fixture.cForge.cFutureYieldToken;
     compoundForge = fixture.cForge.compoundForge;

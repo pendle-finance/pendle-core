@@ -40,7 +40,7 @@ export function runTest(isAaveV1: boolean) {
 
     let fixture: PendleFixture;
     let router: Contract;
-    let aOt: Contract;
+    let ot: Contract;
     let aaveForge: Contract;
     let aUSDT: Contract;
     let snapshotId: string;
@@ -55,7 +55,7 @@ export function runTest(isAaveV1: boolean) {
     }
 
     async function buildTestEnvV1() {
-      aOt = fixture.aForge.aOwnershipToken;
+      ot = fixture.aForge.aOwnershipToken;
       aaveForge = fixture.aForge.aaveForge;
       tokenUSDT = tokens.USDT;
       aUSDT = await getAContract(alice, aaveForge, tokenUSDT);
@@ -64,7 +64,7 @@ export function runTest(isAaveV1: boolean) {
     }
 
     async function buildTestEnvV2() {
-      aOt = fixture.a2Forge.a2OwnershipToken;
+      ot = fixture.a2Forge.a2OwnershipToken;
       aaveForge = fixture.a2Forge.aaveV2Forge;
       tokenUSDT = tokens.USDT;
       aUSDT = await getA2Contract(alice, aaveForge, tokenUSDT);
@@ -168,7 +168,7 @@ export function runTest(isAaveV1: boolean) {
         } else if (curTest.type == "tokenizeYield") {
           await tokenizeYield(user, BN.from(curTest.amount));
         } else if (curTest.type == "redeemUnderlyingAll") {
-          let balance = await aOt.balanceOf(user.address);
+          let balance = await ot.balanceOf(user.address);
           await redeemUnderlying(user, balance);
         }
       }

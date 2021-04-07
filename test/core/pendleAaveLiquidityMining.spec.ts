@@ -20,7 +20,7 @@ import { liqParams, liquidityMiningFixture, UserStakeAction } from "./fixtures";
 import * as scenario from "./fixtures/liquidityMiningScenario.fixture";
 
 const { waffle } = require("hardhat");
-const { deployContract, provider } = waffle;
+const { provider } = waffle;
 
 // returns a rewards object = BN[][]
 //    rewards[userId][0] is the rewards withdrawable at currentEpoch

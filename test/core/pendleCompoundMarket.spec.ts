@@ -7,8 +7,6 @@ import {
   consts,
   evm_revert,
   evm_snapshot,
-  Token,
-  tokens,
 } from "../helpers";
 import { marketFixture } from "./fixtures";
 
@@ -26,7 +24,6 @@ describe("PendleCompoundMarket", async () => {
   let testToken: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
-  let tokenUSDT: Token;
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
@@ -37,7 +34,6 @@ describe("PendleCompoundMarket", async () => {
     xyt = fixture.cForge.cFutureYieldToken;
     testToken = fixture.testToken;
     stdMarket = fixture.cMarket;
-    tokenUSDT = tokens.USDT;
     snapshotId = await evm_snapshot();
   });
 

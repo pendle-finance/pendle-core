@@ -20,7 +20,6 @@ export interface MarketFixture {
   core: CoreFixture,
   aForge: AaveForgeFixture,
   cForge: CompoundFixture,
-  aave: AaveFixture,
   testToken: Contract,
   aMarket: Contract,
   cMarket: Contract,
@@ -36,12 +35,10 @@ export async function marketFixture(
   const governance = await governanceFixture(wallets, provider);
   const aForge = await aaveForgeFixture(alice, provider, core, governance);
   const cForge = await compoundForgeFixture(alice, provider, core, governance);
-  const aave = await aaveFixture(alice);
   const { router, aMarketFactory, cMarketFactory, data } = core;
 
   const {
     aFutureYieldToken,
-    aFutureYieldToken2,
     aaveForge
   } = aForge;
   const {
@@ -156,5 +153,5 @@ export async function marketFixture(
     await ethMarket.connect(person).approve(router.address, consts.MAX_ALLOWANCE);
   }
 
-  return { core, aForge, cForge, aave, testToken, aMarket, cMarket, ethMarket }
+  return { core, aForge, cForge, testToken, aMarket, cMarket, ethMarket }
 }
