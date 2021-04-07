@@ -149,7 +149,7 @@ describe("lpInterest for AaveMarket", async () => {
   }
 
   async function removeMarketLiquidityAll(user: Wallet, amount: BN) {
-    await router.removeMarketLiquidityAll(
+    await router.connect(user).removeMarketLiquidityAll(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
@@ -161,7 +161,7 @@ describe("lpInterest for AaveMarket", async () => {
   }
 
   async function removeMarketLiquidityXyt(user: Wallet, amount: BN) {
-    await router.removeMarketLiquiditySingle(
+    await router.connect(user).removeMarketLiquiditySingle(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
@@ -173,7 +173,7 @@ describe("lpInterest for AaveMarket", async () => {
   }
 
   async function removeMarketLiquidityToken(user: Wallet, amount: BN) {
-    await router.removeMarketLiquiditySingle(
+    await router.connect(user).removeMarketLiquiditySingle(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
