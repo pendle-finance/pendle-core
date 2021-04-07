@@ -32,6 +32,7 @@ describe("lpFormula", async () => {
   let stdMarket: Contract;
   let testToken: Contract;
   let aaveForge: Contract;
+  let aaveV2Forge: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
   let tokenUSDT: Token;
@@ -49,6 +50,7 @@ describe("lpFormula", async () => {
     stdMarket = fixture.aMarket;
     tokenUSDT = tokens.USDT;
     aaveForge = fixture.aForge.aaveForge;
+    aaveV2Forge = fixture.a2Forge.aaveV2Forge;
     await data.setMarketFees(toFixedPoint("0.0035"), 0); // 0.35%
     for (var person of [alice, bob, charlie]) {
       await mintOtAndXyt(
@@ -57,7 +59,8 @@ describe("lpFormula", async () => {
         person,
         BN.from(10).pow(10),
         router,
-        aaveForge
+        aaveForge,
+        aaveV2Forge
       );
     }
     snapshotId = await evm_snapshot();

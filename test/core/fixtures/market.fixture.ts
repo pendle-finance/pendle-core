@@ -3,8 +3,8 @@ import PendleAaveMarket from "../../../build/artifacts/contracts/core/PendleAave
 import PendleCompoundMarket from "../../../build/artifacts/contracts/core/PendleCompoundMarket.sol/PendleCompoundMarket.json";
 import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
 import { consts, mintOtAndXyt, tokens } from "../../helpers";
-import { aaveFixture, AaveFixture } from "./aave.fixture";
 import { aaveForgeFixture, AaveForgeFixture } from "./aaveForge.fixture";
+import { aaveV2ForgeFixture, AaveV2ForgeFixture } from "./aaveV2Forge.fixture";
 import {
   CompoundFixture, compoundForgeFixture
 } from './compoundForge.fixture';
@@ -19,9 +19,11 @@ const { deployContract } = waffle;
 export interface MarketFixture {
   core: CoreFixture,
   aForge: AaveForgeFixture,
+  a2Forge: AaveV2ForgeFixture,
   cForge: CompoundFixture,
   testToken: Contract,
   aMarket: Contract,
+  a2Market: Contract,
   cMarket: Contract,
   ethMarket: Contract,
 }
@@ -34,22 +36,26 @@ export async function marketFixture(
   const core = await coreFixture(wallets, provider);
   const governance = await governanceFixture(wallets, provider);
   const aForge = await aaveForgeFixture(alice, provider, core, governance);
+  const a2Forge = await aaveV2ForgeFixture(alice, provider, core, governance);
   const cForge = await compoundForgeFixture(alice, provider, core, governance);
-  const { router, aMarketFactory, cMarketFactory, data } = core;
+  const { router, aMarketFactory, a2MarketFactory, cMarketFactory, data } = core;
 
   const {
     aFutureYieldToken,
     aaveForge
   } = aForge;
   const {
+    a2FutureYieldToken,
+    aaveV2Forge
+  } = a2Forge;
+  const {
     cFutureYieldToken,
   } = cForge;
   const token = tokens.USDT;
 
   for (var person of [alice, bob, charlie]) {
-    await mintOtAndXyt(provider, token, person, consts.INITIAL_OT_XYT_AMOUNT, router, aaveForge);
+    await mintOtAndXyt(provider, token, person, consts.INITIAL_OT_XYT_AMOUNT, router, aaveForge, aaveV2Forge);
   }
-  console.log("\tminted initial OT and XYT");
 
   const testToken = await deployContract(alice, TestToken, [
     "Test Token",
@@ -68,15 +74,19 @@ export async function marketFixture(
     aMarketFactory.address
   );
   await router.addMarketFactory(
+    consts.MARKET_FACTORY_AAVE_V2,
+    a2MarketFactory.address
+  );
+  await router.addMarketFactory(
     consts.MARKET_FACTORY_COMPOUND,
     cMarketFactory.address
   );
 
-  console.log("\tadded market factories");
-
   await data.setForgeFactoryValidity(consts.FORGE_AAVE, consts.MARKET_FACTORY_AAVE, true);
+  await data.setForgeFactoryValidity(consts.FORGE_AAVE_V2, consts.MARKET_FACTORY_AAVE_V2, true);
   await data.setForgeFactoryValidity(consts.FORGE_COMPOUND, consts.MARKET_FACTORY_COMPOUND, true);
 
+  // aXYT - testToken
   await router.createMarket(
     consts.MARKET_FACTORY_AAVE,
     aFutureYieldToken.address,
@@ -84,6 +94,15 @@ export async function marketFixture(
     consts.HIGH_GAS_OVERRIDE
   );
 
+  // a2XYT - testToken
+  await router.createMarket(
+    consts.MARKET_FACTORY_AAVE_V2,
+    a2FutureYieldToken.address,
+    testToken.address,
+    consts.HIGH_GAS_OVERRIDE
+  );
+
+  // cXYT - testToken
   await router.createMarket(
     consts.MARKET_FACTORY_COMPOUND,
     cFutureYieldToken.address,
@@ -91,6 +110,7 @@ export async function marketFixture(
     consts.HIGH_GAS_OVERRIDE
   );
 
+  // aXYT - WETH
   await router.createMarket(
     consts.MARKET_FACTORY_AAVE,
     aFutureYieldToken.address,
@@ -101,6 +121,12 @@ export async function marketFixture(
   const aMarketAddress = await data.getMarket(
     consts.MARKET_FACTORY_AAVE,
     aFutureYieldToken.address,
+    testToken.address
+  );
+
+  const a2MarketAddress = await data.getMarket(
+    consts.MARKET_FACTORY_AAVE_V2,
+    a2FutureYieldToken.address,
     testToken.address
   );
 
@@ -121,6 +147,11 @@ export async function marketFixture(
     PendleAaveMarket.abi,
     alice
   );
+  const a2Market = new Contract(
+    a2MarketAddress,
+    PendleAaveMarket.abi,
+    alice
+  );
   const cMarket = new Contract(
     cMarketAddress,
     PendleCompoundMarket.abi,
@@ -132,7 +163,7 @@ export async function marketFixture(
     alice
   );
 
-  await data.setReentrancyWhitelist([aMarketAddress, cMarketAddress, ethMarketAddress], [true, true, true]);
+  await data.setReentrancyWhitelist([aMarketAddress, a2MarketAddress, cMarketAddress, ethMarketAddress], [true, true, true, true]);
   await data.setLockParams(BN.from(consts.LOCK_NUMERATOR), BN.from(consts.LOCK_DENOMINATOR)); // lock market
   await data.setInterestUpdateDelta(consts.INTEREST_UPDATE_DELTA);
 
@@ -141,10 +172,16 @@ export async function marketFixture(
     await aFutureYieldToken
       .connect(person)
       .approve(router.address, consts.MAX_ALLOWANCE);
+    await a2FutureYieldToken
+      .connect(person)
+      .approve(router.address, consts.MAX_ALLOWANCE);
     await cFutureYieldToken
       .connect(person)
       .approve(router.address, consts.MAX_ALLOWANCE);
     await aMarket
+      .connect(person)
+      .approve(router.address, consts.MAX_ALLOWANCE);
+    await a2Market
       .connect(person)
       .approve(router.address, consts.MAX_ALLOWANCE);
     await cMarket
@@ -153,5 +190,5 @@ export async function marketFixture(
     await ethMarket.connect(person).approve(router.address, consts.MAX_ALLOWANCE);
   }
 
-  return { core, aForge, cForge, testToken, aMarket, cMarket, ethMarket }
+  return { core, aForge, a2Forge, cForge, testToken, aMarket, a2Market, cMarket, ethMarket }
 }

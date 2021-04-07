@@ -34,6 +34,7 @@ describe("lpInterest for CompoundMarket", async () => {
   let snapshotId: string;
   let globalSnapshotId: string;
   let aaveForge: Contract;
+  let aaveV2Forge: Contract;
   let cUSDT: Contract;
   let cUSDTWeb3: any;
   let tokenUSDT: Token;
@@ -51,6 +52,7 @@ describe("lpInterest for CompoundMarket", async () => {
     stdMarket = fixture.cMarket;
     tokenUSDT = tokens.USDT;
     aaveForge = fixture.aForge.aaveForge;
+    aaveV2Forge = fixture.a2Forge.aaveV2Forge;
     cUSDT = await getCContract(alice, tokenUSDT);
     cUSDTWeb3 = new hre.web3.eth.Contract(ICToken.abi, cUSDT.address);
 
@@ -207,7 +209,7 @@ describe("lpInterest for CompoundMarket", async () => {
   }
 
   async function mintOtAndXytUSDT(user: Wallet, amount: BN) {
-    await mintOtAndXyt(provider, tokenUSDT, user, amount, router, aaveForge);
+    await mintOtAndXyt(provider, tokenUSDT, user, amount, router, aaveForge, aaveV2Forge);
   }
 
   async function swapExactInTokenToXyt(user: Wallet, inAmount: BN) {

@@ -35,26 +35,32 @@ export async function evm_revert(snapshotId: string) {
   });
 }
 
-export async function mintOtAndXyt( // TODO: Add support for AaveV2 here
+export async function mintOtAndXyt(
   provider: providers.Web3Provider,
   token: Token,
   user: Wallet,
   amount: BN,
   router: Contract,
-  aaveForge: Contract
+  aaveForge: Contract,
+  aaveV2Forge: Contract
 ) {
   const aContract = await getAContract(user, aaveForge, token);
+  const a2Contract = await getA2Contract(user, aaveV2Forge, token);
   const cContract = await getCContract(user, token);
 
   let preATokenBal = await aContract.balanceOf(user.address);
+  let preA2TokenBal = await a2Contract.balanceOf(user.address);
   let preCTokenBal = await cContract.balanceOf(user.address);
 
   await mintAaveToken(provider, token, user, amount, true);
+  await mintAaveToken(provider, token, user, amount, false);
   await mintCompoundToken(provider, token, user, amount);
   await aContract.approve(router.address, consts.MAX_ALLOWANCE);
+  await a2Contract.approve(router.address, consts.MAX_ALLOWANCE);
   await cContract.approve(router.address, consts.MAX_ALLOWANCE);
 
   let postATokenBal = await aContract.balanceOf(user.address);
+  let postA2TokenBal = await a2Contract.balanceOf(user.address);
   let postCTokenBal = await cContract.balanceOf(user.address);
 
   await router
@@ -64,6 +70,15 @@ export async function mintOtAndXyt( // TODO: Add support for AaveV2 here
       token.address,
       consts.T0.add(consts.SIX_MONTH),
       postATokenBal.sub(preATokenBal),
+      user.address
+    );
+  await router
+    .connect(user)
+    .tokenizeYield(
+      consts.FORGE_AAVE_V2,
+      token.address,
+      consts.T0_A2.add(consts.SIX_MONTH),
+      postA2TokenBal.sub(preA2TokenBal),
       user.address
     );
   await router
