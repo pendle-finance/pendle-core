@@ -58,8 +58,7 @@ export function runTest(isAaveV1: boolean) {
       aOt = fixture.aForge.aOwnershipToken;
       aXyt = fixture.aForge.aFutureYieldToken;
       aaveForge = fixture.aForge.aaveForge;
-      let lendingPoolCore: Contract = fixture.aave.lendingPoolCore;
-      aUSDT = await getAContract(alice, lendingPoolCore, tokenUSDT);
+      aUSDT = await getAContract(alice, aaveForge, tokenUSDT);
       testEnv.FORGE_ID = consts.FORGE_AAVE;
       testEnv.T0 = consts.T0;
     }

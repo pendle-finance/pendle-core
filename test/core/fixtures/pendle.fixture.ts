@@ -31,7 +31,6 @@ export async function pendleFixture(
   const aave = await aaveFixture(alice);
   const aaveV2 = await aaveV2Fixture(alice);
 
-  const { lendingPoolCore } = aave;
 
   await mint(provider, tokens.USDT, alice, consts.INITIAL_AAVE_USDT_AMOUNT);
   await convertToAaveToken(tokens.USDT, alice, consts.INITIAL_AAVE_TOKEN_AMOUNT);
@@ -40,7 +39,7 @@ export async function pendleFixture(
   await mint(provider, tokens.USDT, alice, consts.INITIAL_COMPOUND_USDT_AMOUNT);
   await convertToCompoundToken(tokens.USDT, alice, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
 
-  const aContract = await getAContract(alice, lendingPoolCore, tokens.USDT);
+  const aContract = await getAContract(alice, aForge.aaveForge, tokens.USDT);
   await aContract.approve(core.router.address, consts.MAX_ALLOWANCE);
   const a2Contract = await getA2Contract(alice, a2Forge.aaveV2Forge, tokens.USDT);
   await a2Contract.approve(core.router.address, consts.MAX_ALLOWANCE);

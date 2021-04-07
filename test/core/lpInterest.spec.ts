@@ -39,6 +39,7 @@ describe("lpInterest for AaveMarket", async () => {
   let lendingPoolCore: Contract;
   let aUSDT: Contract;
   let tokenUSDT: Token;
+  let aaveForge: Contract;
   const amountXytRef = BN.from(10).pow(10);
 
   before(async () => {
@@ -52,8 +53,8 @@ describe("lpInterest for AaveMarket", async () => {
     testToken = fixture.testToken;
     stdMarket = fixture.aMarket;
     tokenUSDT = tokens.USDT;
-    lendingPoolCore = fixture.aave.lendingPoolCore;
-    aUSDT = await getAContract(alice, lendingPoolCore, tokens.USDT);
+    aaveForge = fixture.aForge.aaveForge;
+    aUSDT = await getAContract(alice, aaveForge, tokens.USDT);
     for (let user of [alice, bob, charlie, dave, eve]) {
       await emptyToken(ot, user);
       await emptyToken(xyt, user);
@@ -184,7 +185,7 @@ describe("lpInterest for AaveMarket", async () => {
   }
 
   async function mintOtAndXytUSDT(user: Wallet, amount: BN) {
-    await mintOtAndXyt(provider, tokenUSDT, user, amount, router);
+    await mintOtAndXyt(provider, tokenUSDT, user, amount, router, aaveForge);
   }
 
   async function swapExactInTokenToXyt(user: Wallet, inAmount: BN) {

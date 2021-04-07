@@ -42,6 +42,7 @@ export async function marketFixture(
   const {
     aFutureYieldToken,
     aFutureYieldToken2,
+    aaveForge
   } = aForge;
   const {
     cFutureYieldToken,
@@ -49,7 +50,7 @@ export async function marketFixture(
   const token = tokens.USDT;
 
   for (var person of [alice, bob, charlie]) {
-    await mintOtAndXyt(provider, token, person, consts.INITIAL_OT_XYT_AMOUNT, router);
+    await mintOtAndXyt(provider, token, person, consts.INITIAL_OT_XYT_AMOUNT, router, aaveForge);
   }
   console.log("\tminted initial OT and XYT");
 

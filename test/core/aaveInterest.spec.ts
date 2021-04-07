@@ -4,7 +4,7 @@ import { BigNumber as BN, Contract, Wallet } from "ethers";
 import {
   amountToWei,
   approxBigNumber,
-  getA2Contract,
+  getAContract,
   consts,
   evm_revert,
   evm_snapshot,
@@ -49,7 +49,7 @@ describe("aaveInterest test", async () => {
     aOt = fixture.aForge.aOwnershipToken;
     aaveForge = fixture.aForge.aaveForge;
     tokenUSDT = tokens.USDT;
-    aUSDT = await getA2Contract(alice, aaveForge, tokenUSDT);
+    aUSDT = await getAContract(alice, aaveForge, tokenUSDT);
 
     await mintAaveToken(
       provider,

@@ -164,8 +164,7 @@ describe("PendleAaveLiquidityMining tests", async () => {
     xyt = fixture.aForge.aFutureYieldToken;
     params = fixture.params;
     pdl = fixture.pdl;
-    lendingPoolCore = fixture.aave.lendingPoolCore;
-    aUSDT = await getAContract(alice, lendingPoolCore, tokens.USDT);
+    aUSDT = await getAContract(alice, fixture.aForge.aaveForge, tokens.USDT);
 
     // empty aUSDT and XYT balance
     await emptyToken(aUSDT, bob);

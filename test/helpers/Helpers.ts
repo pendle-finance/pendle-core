@@ -41,9 +41,9 @@ export async function mintOtAndXyt( // TODO: Add support for AaveV2 here
   user: Wallet,
   amount: BN,
   router: Contract,
+  aaveForge: Contract,
 ) {
-  const { lendingPoolCore } = await aaveFixture(user);
-  const aContract = await getAContract(user, lendingPoolCore, token);
+  const aContract = await getAContract(user, aaveForge, token);
   const cContract = await getCContract(user, token);
 
   let preATokenBal = await aContract.balanceOf(user.address);
@@ -176,13 +176,13 @@ export async function transferToken(
 
 export async function getAContract(
   alice: Wallet,
-  lendingPoolCore: Contract,
+  aaveForge: Contract,
   token: Token
 ): Promise<Contract> {
-  const aTokenAddress = await lendingPoolCore.getReserveATokenAddress(
+  const aContractAddress = await aaveForge.callStatic.getYieldBearingToken(
     token.address
   );
-  return new Contract(aTokenAddress, ERC20.abi, alice);
+  return new Contract(aContractAddress, ERC20.abi, alice);
 }
 
 export async function getA2Contract(
