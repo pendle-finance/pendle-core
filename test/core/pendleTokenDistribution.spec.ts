@@ -1,8 +1,8 @@
 import { expect } from "chai";
 import { BigNumber as BN, Contract } from "ethers";
-import { consts, evm_revert, evm_snapshot, setTimeNextBlock } from "../helpers";
-import PENDLE from "../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
 import PendleTokenDistribution from "../../build/artifacts/contracts/core/PendleTokenDistribution.sol/PendleTokenDistribution.json";
+import PENDLE from "../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
+import { consts, evm_revert, evm_snapshot, setTimeNextBlock } from "../helpers";
 
 const { waffle } = require("hardhat");
 const { provider, deployContract } = waffle;

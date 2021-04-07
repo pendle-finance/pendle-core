@@ -6,6 +6,8 @@ import {
   amountToWei,
   approxBigNumber,
   consts,
+  emptyToken,
+  errMsg,
   evm_revert,
   evm_snapshot,
   getAContract,
@@ -13,8 +15,6 @@ import {
   setTimeNextBlock,
   startOfEpoch,
   tokens,
-  errMsg,
-  emptyToken,
 } from "../helpers";
 import { liqParams, liquidityMiningFixture, UserStakeAction } from "./fixtures";
 import * as scenario from "./fixtures/liquidityMiningScenario.fixture";

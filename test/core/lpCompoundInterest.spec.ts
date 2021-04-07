@@ -1,29 +1,23 @@
-import { assert, expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
-import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
 import ICToken from "../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json";
-const hre = require("hardhat");
-
 import {
   advanceTime,
   amountToWei,
   approxBigNumber,
   consts,
-  errMsg,
+  emptyToken,
   evm_revert,
   evm_snapshot,
-  Token,
-  tokens,
-  mintOtAndXyt,
-  emptyToken,
-  mintAaveToken,
   getCContract,
   getERC20Contract,
-  setTimeNextBlock,
   mint,
+  mintOtAndXyt,
+  Token,
+  tokens,
 } from "../helpers";
 import { marketFixture } from "./fixtures";
+const hre = require("hardhat");
 
 const { waffle } = require("hardhat");
 const { provider } = waffle;

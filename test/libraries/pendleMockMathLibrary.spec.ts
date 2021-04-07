@@ -1,7 +1,7 @@
+import { expect } from "chai";
 import { BigNumber as BN, Contract } from "ethers";
 import MockMathLibrary from "../../build/artifacts/contracts/mock/MockMathLibrary.sol/MockMathLibrary.json";
 import { evm_revert, evm_snapshot } from "../helpers";
-import { expect } from "chai";
 import testData from "./fixtures/pendleMockMathLibrary.json";
 
 const { waffle } = require("hardhat");
@@ -53,16 +53,16 @@ describe("Math tests", async () => {
     expect(
       (await math.rpow(BN.from(0), BN.from(4915181090268))).toNumber()
     ).to.equal(0);
-    expect(
-      (await math.sqrt(BN.from(1))).toNumber())
-      .to.equal(1);
-    expect(
-      (await math.rpow(RONE, BN.from(0))).toNumber()
-    ).to.equal(RONE);
+    expect((await math.sqrt(BN.from(1))).toNumber()).to.equal(1);
+    expect((await math.rpow(RONE, BN.from(0))).toNumber()).to.equal(RONE);
   });
 
   it("test max min", async () => {
-    expect((await math.max(BN.from(10000), BN.from(9999))).toNumber()).to.equal(10000);
-    expect((await math.min(BN.from(10000), BN.from(9999))).toNumber()).to.equal(9999);
-  })
+    expect((await math.max(BN.from(10000), BN.from(9999))).toNumber()).to.equal(
+      10000
+    );
+    expect((await math.min(BN.from(10000), BN.from(9999))).toNumber()).to.equal(
+      9999
+    );
+  });
 });

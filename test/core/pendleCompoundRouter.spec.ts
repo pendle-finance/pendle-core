@@ -5,15 +5,14 @@ import {
   amountToWei,
   approxBigNumber,
   consts,
+  errMsg,
   evm_revert,
   evm_snapshot,
   getCContract,
   mint,
-  mintCompoundToken,
   setTimeNextBlock,
   Token,
   tokens,
-  errMsg,
 } from "../helpers";
 import { pendleFixture } from "./fixtures";
 

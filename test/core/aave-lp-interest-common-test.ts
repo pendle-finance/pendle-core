@@ -1,23 +1,16 @@
-import { assert, expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
-import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
 import {
   advanceTime,
-  amountToWei,
   approxBigNumber,
   consts,
-  errMsg,
+  emptyToken,
   evm_revert,
   evm_snapshot,
+  getAContract,
+  mintOtAndXyt,
   Token,
   tokens,
-  mintOtAndXyt,
-  emptyToken,
-  mintAaveToken,
-  getAContract,
-  setTimeNextBlock,
-  mint,
 } from "../helpers";
 import { marketFixture, MarketFixture } from "./fixtures";
 
@@ -25,9 +18,9 @@ const { waffle } = require("hardhat");
 const { provider } = waffle;
 
 interface TestEnv {
-  MARKET_FACTORY_ID: string,
-  T0: BN,
-  FORGE_ID: string,
+  MARKET_FACTORY_ID: string;
+  T0: BN;
+  FORGE_ID: string;
 }
 
 export function runTest(isAaveV1: boolean) {
@@ -67,8 +60,7 @@ export function runTest(isAaveV1: boolean) {
       testEnv.FORGE_ID = consts.FORGE_AAVE;
     }
 
-    async function buildTestEnvV2() {
-    }
+    async function buildTestEnvV2() {}
 
     before(async () => {
       globalSnapshotId = await evm_snapshot();
@@ -172,39 +164,45 @@ export function runTest(isAaveV1: boolean) {
     }
 
     async function removeMarketLiquidityAll(user: Wallet, amount: BN) {
-      await router.connect(user).removeMarketLiquidityAll(
-        testEnv.MARKET_FACTORY_ID,
-        xyt.address,
-        testToken.address,
-        amount,
-        BN.from(0),
-        BN.from(0),
-        consts.HIGH_GAS_OVERRIDE
-      );
+      await router
+        .connect(user)
+        .removeMarketLiquidityAll(
+          testEnv.MARKET_FACTORY_ID,
+          xyt.address,
+          testToken.address,
+          amount,
+          BN.from(0),
+          BN.from(0),
+          consts.HIGH_GAS_OVERRIDE
+        );
     }
 
     async function removeMarketLiquidityXyt(user: Wallet, amount: BN) {
-      await router.connect(user).removeMarketLiquiditySingle(
-        testEnv.MARKET_FACTORY_ID,
-        xyt.address,
-        testToken.address,
-        true,
-        amount,
-        BN.from(0),
-        consts.HIGH_GAS_OVERRIDE
-      );
+      await router
+        .connect(user)
+        .removeMarketLiquiditySingle(
+          testEnv.MARKET_FACTORY_ID,
+          xyt.address,
+          testToken.address,
+          true,
+          amount,
+          BN.from(0),
+          consts.HIGH_GAS_OVERRIDE
+        );
     }
 
     async function removeMarketLiquidityToken(user: Wallet, amount: BN) {
-      await router.connect(user).removeMarketLiquiditySingle(
-        testEnv.MARKET_FACTORY_ID,
-        xyt.address,
-        testToken.address,
-        false,
-        amount,
-        BN.from(0),
-        consts.HIGH_GAS_OVERRIDE
-      );
+      await router
+        .connect(user)
+        .removeMarketLiquiditySingle(
+          testEnv.MARKET_FACTORY_ID,
+          xyt.address,
+          testToken.address,
+          false,
+          amount,
+          BN.from(0),
+          consts.HIGH_GAS_OVERRIDE
+        );
     }
 
     async function mintOtAndXytUSDT(user: Wallet, amount: BN) {
@@ -491,7 +489,10 @@ export function runTest(isAaveV1: boolean) {
       await removeMarketLiquidityXyt(bob, await getLPBalance(bob));
       await addMarketLiquidityAllByXyt(charlie, amountXytRef.div(5));
       await swapExactInXytToToken(eve, BN.from(10).pow(9));
-      await addMarketLiquidityAllByXyt(alice, await xyt.balanceOf(alice.address));
+      await addMarketLiquidityAllByXyt(
+        alice,
+        await xyt.balanceOf(alice.address)
+      );
 
       await advanceTime(provider, consts.FIFTEEN_DAY);
       await addMarketLiquidityXyt(dave, amountXytRef.div(2));

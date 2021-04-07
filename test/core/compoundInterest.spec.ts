@@ -1,22 +1,21 @@
-import { expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
 import {
+  amountToWei,
   approxBigNumber,
-  getCContract,
   consts,
   evm_revert,
   evm_snapshot,
+  getCContract,
+  getERC20Contract,
+  mint,
   mintCompoundToken,
   setTimeNextBlock,
   Token,
   tokens,
-  amountToWei,
-  mint,
-  getERC20Contract,
 } from "../helpers";
-import testData from "./fixtures/yieldTokenizeAndRedeem.scenario.json";
 import { pendleFixture } from "./fixtures";
+import testData from "./fixtures/yieldTokenizeAndRedeem.scenario.json";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;

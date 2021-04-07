@@ -41,7 +41,7 @@ export async function mintOtAndXyt( // TODO: Add support for AaveV2 here
   user: Wallet,
   amount: BN,
   router: Contract,
-  aaveForge: Contract,
+  aaveForge: Contract
 ) {
   const aContract = await getAContract(user, aaveForge, token);
   const cContract = await getCContract(user, token);
@@ -144,7 +144,7 @@ export async function mintAaveToken(
   token: Token,
   alice: Wallet,
   amount: BN,
-  isAaveV1: boolean,
+  isAaveV1: boolean
 ) {
   await mint(provider, token, alice, amount);
   if (isAaveV1) {

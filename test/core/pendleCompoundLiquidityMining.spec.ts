@@ -4,7 +4,6 @@ import { BigNumber as BN, Contract, Wallet } from "ethers";
 import PendleCompoundLiquidityMining from "../../build/artifacts/contracts/core/PendleCompoundLiquidityMining.sol/PendleCompoundLiquidityMining.json";
 import {
   advanceTime,
-  amountToWei,
   approxBigNumber,
   consts,
   evm_revert,

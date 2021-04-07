@@ -5,15 +5,15 @@ import {
   amountToWei,
   approxBigNumber,
   consts,
+  errMsg,
   evm_revert,
   evm_snapshot,
+  getA2Contract,
   getAContract,
   mintAaveToken,
   setTimeNextBlock,
   Token,
   tokens,
-  errMsg,
-  getA2Contract
 } from "../helpers";
 import { pendleFixture, PendleFixture } from "./fixtures";
 
@@ -21,10 +21,10 @@ const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
 interface TestEnv {
-  T0: BN,
-  FORGE_ID: string,
-  INITIAL_AAVE_TOKEN_AMOUNT: BN,
-  TEST_DELTA: BN
+  T0: BN;
+  FORGE_ID: string;
+  INITIAL_AAVE_TOKEN_AMOUNT: BN;
+  TEST_DELTA: BN;
 }
 
 export function runTest(isAaveV1: boolean) {
@@ -140,7 +140,11 @@ export function runTest(isAaveV1: boolean) {
     it("shouldn't be able to do newYieldContract with an expiry in the past", async () => {
       let futureTime = testEnv.T0.sub(consts.ONE_MONTH);
       await expect(
-        router.newYieldContracts(testEnv.FORGE_ID, tokenUSDT.address, futureTime)
+        router.newYieldContracts(
+          testEnv.FORGE_ID,
+          tokenUSDT.address,
+          futureTime
+        )
       ).to.be.revertedWith(errMsg.INVALID_EXPIRY);
     });
 

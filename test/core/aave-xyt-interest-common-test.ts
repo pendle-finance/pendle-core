@@ -1,22 +1,19 @@
-import { expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
 import {
-  amountToWei,
   approxBigNumber,
   consts,
   evm_revert,
   evm_snapshot,
+  getA2Contract,
   getAContract,
   mintAaveToken,
   setTimeNextBlock,
   Token,
   tokens,
-  errMsg,
-  getA2Contract
 } from "../helpers";
-import testData from "./fixtures/yieldTokenizeAndRedeem.scenario.json";
 import { pendleFixture, PendleFixture } from "./fixtures";
+import testData from "./fixtures/yieldTokenizeAndRedeem.scenario.json";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
@@ -29,10 +26,10 @@ interface YieldTest {
 }
 
 interface TestEnv {
-  T0: BN,
-  FORGE_ID: string,
-  INITIAL_AAVE_TOKEN_AMOUNT: BN,
-  TEST_DELTA: BN
+  T0: BN;
+  FORGE_ID: string;
+  INITIAL_AAVE_TOKEN_AMOUNT: BN;
+  TEST_DELTA: BN;
 }
 
 export function runTest(isAaveV1: boolean) {
@@ -105,7 +102,9 @@ export function runTest(isAaveV1: boolean) {
         isAaveV1
       );
       await aUSDT.connect(bob).approve(router.address, consts.MAX_ALLOWANCE);
-      await aUSDT.connect(charlie).approve(router.address, consts.MAX_ALLOWANCE);
+      await aUSDT
+        .connect(charlie)
+        .approve(router.address, consts.MAX_ALLOWANCE);
       snapshotId = await evm_snapshot();
     });
 
