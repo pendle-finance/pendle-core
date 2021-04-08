@@ -1,4 +1,4 @@
-import { Contract, providers, Wallet } from 'ethers'
+import { Contract, providers, Wallet, BigNumber as BN } from 'ethers'
 import PendleAaveMarketFactory from "../../../build/artifacts/contracts/core/PendleAaveMarketFactory.sol/PendleAaveMarketFactory.json"
 import PendleCompoundMarketFactory from "../../../build/artifacts/contracts/core/PendleCompoundMarketFactory.sol/PendleCompoundMarketFactory.json"
 import PendleData from "../../../build/artifacts/contracts/core/PendleData.sol/PendleData.json"
@@ -40,6 +40,7 @@ export async function coreFixture(
   await data.initialize(router.address);
   await router.initialize(data.address);
 
+  await data.setExpiryDivisor(BN.from(10)); // for ease of testing
   let routerWeb3 = new hre.web3.eth.Contract(
     PendleRouter.abi,
     router.address

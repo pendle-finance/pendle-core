@@ -45,11 +45,13 @@ export function runTest(isAaveV1: boolean) {
     let refAmount: BN;
     let initialAUSDTbalance: BN;
     let testEnv: TestEnv = {} as TestEnv;
+    let data: Contract;
 
     async function buildCommonTestEnv() {
       fixture = await loadFixture(pendleFixture);
       router = fixture.core.router;
       tokenUSDT = tokens.USDT;
+      data = fixture.core.data;
       testEnv.INITIAL_AAVE_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
       testEnv.TEST_DELTA = BN.from(10000);
     }
@@ -139,6 +141,20 @@ export function runTest(isAaveV1: boolean) {
 
     it("shouldn't be able to do newYieldContract with an expiry in the past", async () => {
       let futureTime = testEnv.T0.sub(consts.ONE_MONTH);
+      await expect(
+        router.newYieldContracts(
+          testEnv.FORGE_ID,
+          tokenUSDT.address,
+          futureTime
+        )
+      ).to.be.revertedWith(errMsg.INVALID_EXPIRY);
+    });
+
+    it("shouldn't be able to do newYieldContract with an expiry not divisible for expiryDivisor", async () => {
+      let futureTime = testEnv.T0.add(consts.ONE_YEAR);
+      if (futureTime.mod(await data.expiryDivisor()).eq(0)) {
+        futureTime = futureTime.add(1);
+      }
       await expect(
         router.newYieldContracts(
           testEnv.FORGE_ID,
