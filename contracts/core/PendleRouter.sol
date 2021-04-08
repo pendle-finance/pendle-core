@@ -336,6 +336,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     {
         require(_desiredXytAmount != 0, "ZERO_XYT_AMOUNT");
         require(_desiredTokenAmount != 0, "ZERO_TOKEN_AMOUNT");
+        require(_desiredXytAmount >= _xytMinAmount, "INVALID_XYT_AMOUNTS");
+        require(_desiredTokenAmount >= _tokenMinAmount, "INVALID_TOKEN_AMOUNTS");
 
         address originalToken = _token;
         _token = _isETH(_token) ? address(weth) : _token;
