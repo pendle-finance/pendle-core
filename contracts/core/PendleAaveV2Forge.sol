@@ -125,12 +125,11 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
             lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = normalizedIncome;
         }
 
+        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
         // first time getting XYT
         if (ix == 0) {
-            lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
             return 0;
         }
-        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
 
         uint256 principalWithDueInterests = principal.rayDiv(ix).rayMul(normalizedIncome);
         principalWithDueInterests = WadRayMath.smooth(principalWithDueInterests, normalizedIncome);
