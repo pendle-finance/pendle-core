@@ -200,12 +200,12 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         _settleDueInterests(tokens, _underlyingAsset, _expiry, _to);
 
-        uint256 amountToMint = _calcAmountToMint(_underlyingAsset, _amountToTokenize);
+        amountTokenMinted = _calcAmountToMint(_underlyingAsset, _amountToTokenize);
 
-        tokens.ot.mint(_to, amountToMint);
-        tokens.xyt.mint(_to, amountToMint);
+        tokens.ot.mint(_to, amountTokenMinted);
+        tokens.xyt.mint(_to, amountTokenMinted);
 
-        emit MintYieldToken(forgeId, _underlyingAsset, _expiry, amountToMint);
+        emit MintYieldToken(forgeId, _underlyingAsset, _expiry, amountTokenMinted);
         return (address(tokens.ot), address(tokens.xyt), amountTokenMinted);
     }
 
