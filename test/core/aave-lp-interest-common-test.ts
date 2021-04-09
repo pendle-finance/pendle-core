@@ -219,7 +219,15 @@ export function runTest(isAaveV1: boolean) {
     }
 
     async function mintOtAndXytUSDT(user: Wallet, amount: BN) {
-      await mintOtAndXyt(provider, tokenUSDT, user, amount, router, aaveForge, aaveV2Forge);
+      await mintOtAndXyt(
+        provider,
+        tokenUSDT,
+        user,
+        amount,
+        router,
+        aaveForge,
+        aaveV2Forge
+      );
     }
 
     async function swapExactInTokenToXyt(user: Wallet, inAmount: BN) {
@@ -319,8 +327,18 @@ export function runTest(isAaveV1: boolean) {
       // for (let user of [alice, bob, charlie, dave]) {
       //   console.log((await aUSDT.balanceOf(user.address)).toString());
       // }
-      const aaveV1ExpectedResult: number[] = [1309016354, 871918760, 928448406, 1080957012];
-      const aaveV2ExpectedResult: number[] = [2519453551, 1694659957, 1799740815, 2085691898];
+      const aaveV1ExpectedResult: number[] = [
+        1309016354,
+        871918760,
+        928448406,
+        1080957012,
+      ];
+      const aaveV2ExpectedResult: number[] = [
+        2519453551,
+        1694659957,
+        1799740815,
+        2085691898,
+      ];
       if (isAaveV1) {
         await checkAUSDTBalance(aaveV1ExpectedResult);
       } else {
@@ -380,8 +398,18 @@ export function runTest(isAaveV1: boolean) {
       //   console.log((await aUSDT.balanceOf(user.address)).toString());
       // }
 
-      const aaveV1ExpectedResult: number[] = [1952642702, 743422701, 722918925, 771345798];
-      const aaveV2ExpectedResult: number[] = [3734456132, 1452822861, 1413153412, 1499113849];
+      const aaveV1ExpectedResult: number[] = [
+        1952642702,
+        743422701,
+        722918925,
+        771345798,
+      ];
+      const aaveV2ExpectedResult: number[] = [
+        3734456132,
+        1452822861,
+        1413153412,
+        1499113849,
+      ];
       if (isAaveV1) {
         await checkAUSDTBalance(aaveV1ExpectedResult);
       } else {
@@ -531,8 +559,18 @@ export function runTest(isAaveV1: boolean) {
       //   console.log((await aUSDT.balanceOf(user.address)).toString());
       // }
 
-      const aaveV1ExpectedResult: number[] = [1883631743, 743350097, 915310884, 879998610];
-      const aaveV2ExpectedResult: number[] = [3596111612, 1457043034, 1775911778, 1703759955];
+      const aaveV1ExpectedResult: number[] = [
+        1883631743,
+        743350097,
+        915310884,
+        879998610,
+      ];
+      const aaveV2ExpectedResult: number[] = [
+        3596111612,
+        1457043034,
+        1775911778,
+        1703759955,
+      ];
       if (isAaveV1) {
         await checkAUSDTBalance(aaveV1ExpectedResult);
       } else {

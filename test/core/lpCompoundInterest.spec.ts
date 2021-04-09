@@ -209,7 +209,15 @@ describe("lpInterest for CompoundMarket", async () => {
   }
 
   async function mintOtAndXytUSDT(user: Wallet, amount: BN) {
-    await mintOtAndXyt(provider, tokenUSDT, user, amount, router, aaveForge, aaveV2Forge);
+    await mintOtAndXyt(
+      provider,
+      tokenUSDT,
+      user,
+      amount,
+      router,
+      aaveForge,
+      aaveV2Forge
+    );
   }
 
   async function swapExactInTokenToXyt(user: Wallet, inAmount: BN) {
