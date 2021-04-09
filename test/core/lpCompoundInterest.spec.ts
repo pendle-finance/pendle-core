@@ -15,6 +15,7 @@ import {
   mintOtAndXyt,
   Token,
   tokens,
+  mintCompoundToken
 } from "../helpers";
 import { marketFixture } from "./fixtures";
 const hre = require("hardhat");
@@ -124,24 +125,20 @@ describe("lpInterest for CompoundMarket", async () => {
   //   )
   // }
 
-  async function addMarketLiquidityAllByXyt(user: Wallet, amountXyt: BN) {
-    let amountXytMarket: BN = await xyt.balanceOf(stdMarket.address);
-    let amountLPMarket: BN = await stdMarket.totalSupply();
-    let amountLPToGet: BN;
-
-    amountLPToGet = amountXyt.mul(amountLPMarket).div(amountXytMarket);
-    // console.log(amountXytMarket.toString(), amountXyt.toString(), amountLPToGet.toString(), amountLPMarket.toString());
+  async function addMarketLiquidityDualByXyt(user: Wallet, amountXyt: BN) {
     await router
       .connect(user)
-      .addMarketLiquidityAll(
+      .addMarketLiquidityDual(
         consts.MARKET_FACTORY_COMPOUND,
         xyt.address,
         testToken.address,
+        amountXyt,
         consts.MAX_ALLOWANCE,
-        consts.MAX_ALLOWANCE,
-        amountLPToGet,
+        amountXyt,
+        BN.from(0),
         consts.HIGH_GAS_OVERRIDE
       );
+    // console.log("added:", ((await xyt.balanceOf(stdMarket.address)).sub(amountXytMarket)).toString());
   }
 
   async function addMarketLiquidityToken(user: Wallet, amount: BN) {
@@ -259,6 +256,8 @@ describe("lpInterest for CompoundMarket", async () => {
       cUSDT.address,
       amountToWei(amount, token.decimal)
     );
+    await cUSDT.balanceOfUnderlying(user.address); // interact with compound so that it updates all info
+    // await mintCompoundToken(provider, token, user, BN.from(1000));
   }
 
   async function getLPBalance(user: Wallet) {
@@ -281,43 +280,37 @@ describe("lpInterest for CompoundMarket", async () => {
     await advanceTime(provider, consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
     console.log("\n\t============== Bob addding liq");
-    await addMarketLiquidityAllByXyt(bob, amountXytRef.div(10));
-    // await swapExactInXytToToken(eve, BN.from(10).pow(9));
-    //
+    await addMarketLiquidityDualByXyt(bob, amountXytRef.div(10));
+
     await advanceTime(provider, consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
     console.log("\n\t============== Charlie addding liq");
-    await addMarketLiquidityAllByXyt(charlie, amountXytRef.div(5));
-    // await swapExactInXytToToken(eve, BN.from(10).pow(9));
-    //
-    await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-    console.log("\n\t============== Dave addding liq");
-    await addMarketLiquidityAllByXyt(dave, amountXytRef.div(2));
+    await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
     console.log("\n\t============== Dave addding liq");
-    await addMarketLiquidityAllByXyt(dave, amountXytRef.div(3));
-    // await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addMarketLiquidityDualByXyt(dave, amountXytRef.div(2));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    console.log("\n\t============== Dave addding liq");
+    await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
     console.log("\n\t============== Bob addding liq");
-    await addMarketLiquidityAllByXyt(bob, amountXytRef.div(6));
+    await addMarketLiquidityDualByXyt(bob, amountXytRef.div(6));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-    await addMarketLiquidityAllByXyt(charlie, amountXytRef.div(3));
-    // await swapExactInXytToToken(eve, BN.from(10).pow(10));
-    await addMarketLiquidityAllByXyt(charlie, amountXytRef.div(3));
+    await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
+    await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-    // await swapExactInXytToToken(eve, BN.from(10).pow(10));
-    await addMarketLiquidityAllByXyt(bob, amountXytRef.div(2));
+    await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-    // await swapExactInXytToToken(eve, BN.from(10).pow(10));
-    await addMarketLiquidityAllByXyt(bob, amountXytRef.div(5));
+    await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
     console.log(
       "\n\t============== Users are claiming LP interests and redeemDueInterests"
@@ -340,7 +333,7 @@ describe("lpInterest for CompoundMarket", async () => {
     }
 
     const aliceCUSDTBalance = await cUSDT.balanceOf(alice.address);
-    const acceptedDelta = BN.from(600000);
+    const acceptedDelta = BN.from(1200000);
     console.log(`\t[After] cUSDT Balance of all users: `);
     for (let user of [bob, charlie, dave]) {
       const USDTBalance = await cUSDT.balanceOf(user.address);
