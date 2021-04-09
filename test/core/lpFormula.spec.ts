@@ -315,13 +315,14 @@ describe("lpFormula", async () => {
 
     await router
       .connect(bob)
-      .addMarketLiquidityAll(
+      .addMarketLiquidityDual(
         consts.MARKET_FACTORY_AAVE,
         xyt.address,
         testToken.address,
-        initialXytBalance,
-        initialTokenBalance,
-        totalSupply.mul(3),
+        amountOfXyt.mul(3),
+        amountOfToken.mul(3),
+        BN.from(0),
+        BN.from(0),
         consts.HIGH_GAS_OVERRIDE
       );
 

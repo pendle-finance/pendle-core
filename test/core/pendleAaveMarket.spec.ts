@@ -134,13 +134,14 @@ describe("PendleAaveMarket", async () => {
 
     await router
       .connect(bob)
-      .addMarketLiquidityAll(
+      .addMarketLiquidityDual(
         consts.MARKET_FACTORY_AAVE,
         xyt.address,
         testToken.address,
         amount,
         amount,
-        totalSupply,
+        BN.from(0),
+        BN.from(0),
         consts.HIGH_GAS_OVERRIDE
       );
 
@@ -269,15 +270,18 @@ describe("PendleAaveMarket", async () => {
       BN.from(0),
       consts.HIGH_GAS_OVERRIDE
     );
-    await router.addMarketLiquidityAll(
-      consts.MARKET_FACTORY_AAVE,
-      xyt.address,
-      testToken.address,
-      consts.MAX_ALLOWANCE,
-      consts.MAX_ALLOWANCE,
-      lpBalanceBefore,
-      consts.HIGH_GAS_OVERRIDE
-    );
+
+    await router
+      .addMarketLiquidityDual(
+        consts.MARKET_FACTORY_AAVE,
+        xyt.address,
+        testToken.address,
+        amount,
+        consts.MAX_ALLOWANCE,
+        BN.from(0),
+        BN.from(0),
+        consts.HIGH_GAS_OVERRIDE
+      )
 
     let xytBalance = await xyt.balanceOf(stdMarket.address);
     let testTokenBalance = await testToken.balanceOf(stdMarket.address);
@@ -289,19 +293,20 @@ describe("PendleAaveMarket", async () => {
   it("shouldn't be able to add liquidity by dual tokens after xyt has expired", async () => {
     const amount = amountToWei(BN.from(10), 6);
     await bootstrapSampleMarket(amount);
-    const totalSupply = await stdMarket.totalSupply();
 
     advanceTime(provider, consts.ONE_YEAR);
+
     await expect(
       router
         .connect(bob)
-        .addMarketLiquidityAll(
+        .addMarketLiquidityDual(
           consts.MARKET_FACTORY_AAVE,
           xyt.address,
           testToken.address,
           amount,
-          amount,
-          totalSupply,
+          consts.MAX_ALLOWANCE,
+          BN.from(0),
+          BN.from(0),
           consts.HIGH_GAS_OVERRIDE
         )
     ).to.be.revertedWith(errMsg.MARKET_LOCKED);
@@ -742,13 +747,14 @@ describe("PendleAaveMarket", async () => {
 
     await router
       .connect(bob)
-      .addMarketLiquidityAll(
+      .addMarketLiquidityDual(
         consts.MARKET_FACTORY_AAVE,
         xyt.address,
         consts.ETH_ADDRESS,
         amount,
         amount,
-        totalSupply,
+        BN.from(0),
+        BN.from(0),
         wrapEth(consts.HIGH_GAS_OVERRIDE, amount)
       );
 

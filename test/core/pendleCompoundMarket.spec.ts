@@ -97,13 +97,14 @@ describe("PendleCompoundMarket", async () => {
 
     await router
       .connect(bob)
-      .addMarketLiquidityAll(
+      .addMarketLiquidityDual(
         consts.MARKET_FACTORY_COMPOUND,
         xyt.address,
         testToken.address,
         amount,
         amount,
-        totalSupply,
+        BN.from(0),
+        BN.from(0),
         consts.HIGH_GAS_OVERRIDE
       );
 
