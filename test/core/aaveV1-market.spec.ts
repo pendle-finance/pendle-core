@@ -13,7 +13,7 @@ import {
   Token,
   tokens,
 } from "../helpers";
-import { AMMTest } from "./ammFormulaTest";
+import { AMMTest } from "./amm-formula-test";
 import { marketFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
@@ -92,7 +92,7 @@ describe("PendleAaveMarket", async () => {
   READ ME!!!
   All tests with "_sample" suffix are legacy tests. It's improved version is in other test files
     Tests for adding/removing liquidity can be found in pendleLpFormula.spec.ts
-    Tests for swapping tokens can be found in ammFormulaTest.ts
+    Tests for swapping tokens can be found in amm-formula-test.ts
   */
 
   it("should be able to join a bootstrapped market with a single standard token_sample", async () => {
