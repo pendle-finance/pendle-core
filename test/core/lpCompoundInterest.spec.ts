@@ -113,18 +113,6 @@ describe("lpInterest for CompoundMarket", async () => {
     );
   }
 
-  // async function addMarketLiquidityAll(user: Wallet, amount: BN) {
-  //   await router.connect(user).addMarketLiquidityAll(
-  //     consts.MARKET_FACTORY_COMPOUND,
-  //     xyt.address,
-  //     testToken.address,
-  //     consts.MAX_ALLOWANCE,
-  //     consts.MAX_ALLOWANCE,
-  //     amount,
-  //     consts.HIGH_GAS_OVERRIDE
-  //   )
-  // }
-
   async function addMarketLiquidityDualByXyt(user: Wallet, amountXyt: BN) {
     await router
       .connect(user)

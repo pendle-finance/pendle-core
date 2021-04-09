@@ -204,52 +204,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     /**
-     * @notice Join the market by putting in xytToken and pairTokens
-     *          and get back desired amount of lpToken.
-     * @dev no curveShift to save gas because this function
-                doesn't depend on weights of tokens
-     */
-    function addMarketLiquidityAll(
-        uint256 _exactOutLp,
-        uint256 _maxInXyt,
-        uint256 _maxInToken
-    ) external override returns (PendingTransfer[3] memory transfers) {
-        checkIsBootstrapped();
-        checkOnlyRouter();
-        checkMarketIsOpen();
-        _updateParamL();
-        uint256 totalLp = totalSupply;
-        uint256 ratio = Math.rdiv(_exactOutLp, totalLp);
-        require(ratio != 0, "ZERO_RATIO");
-
-        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) =
-            decodeReserveData(reserveData);
-        // Calc and inject XYT token.
-        uint256 amountXytUsed = Math.rmul(ratio, xytBalance);
-        require(amountXytUsed != 0, "ZERO_XYT_IN_AMOUNT");
-        require(amountXytUsed <= _maxInXyt, "LOW_XYT_IN_LIMIT");
-        xytBalance = xytBalance.add(amountXytUsed);
-        transfers[0].amount = amountXytUsed;
-        transfers[0].isOut = false;
-
-        // Calc and inject pair token.
-        uint256 amountTokenUsed = Math.rmul(ratio, tokenBalance);
-        require(amountTokenUsed != 0, "ZERO_TOKEN_IN_AMOUNT");
-        require(amountTokenUsed <= _maxInToken, "LOW_TOKEN_IN_LIMIT");
-        tokenBalance = tokenBalance.add(amountTokenUsed);
-        transfers[1].amount = amountTokenUsed;
-        transfers[1].isOut = false;
-
-        reserveData = encodeReserveData(xytBalance, tokenBalance, xytWeight);
-        emit Sync(xytBalance, xytWeight, tokenBalance);
-
-        // Mint and push LP token.
-        _mintLp(_exactOutLp);
-        transfers[2].amount = _exactOutLp;
-        transfers[2].isOut = true;
-    }
-
-    /**
    * @notice Join the market by specifying the desired (and max) amount of xyts
    *    and tokens to put in.
    * @param _desiredXytAmount amount of XYTs user wants to contribute

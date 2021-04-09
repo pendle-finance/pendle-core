@@ -290,31 +290,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
      * @notice add market liquidity by xyt and base tokens
      * @dev no checks on _maxInXyt, _maxInToken, _exactOutLp
      */
-    function addMarketLiquidityAll(
-        bytes32 _marketFactoryId,
-        address _xyt,
-        address _token,
-        uint256 _maxInXyt,
-        uint256 _maxInToken,
-        uint256 _exactOutLp
-    ) external payable override pendleNonReentrant {
-        address originalToken = _token;
-        _token = _isETH(_token) ? address(weth) : _token;
-
-        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
-        require(address(market) != address(0), "MARKET_NOT_FOUND");
-
-        PendingTransfer[3] memory transfers =
-            market.addMarketLiquidityAll(_exactOutLp, _maxInXyt, _maxInToken);
-        emit Join(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
-
-        _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
-    }
-
-    /**
-     * @notice add market liquidity by xyt and base tokens
-     * @dev no checks on _maxInXyt, _maxInToken, _exactOutLp
-     */
     function addMarketLiquidityDual(
         bytes32 _marketFactoryId,
         address _xyt,

@@ -181,15 +181,6 @@ interface IPendleRouter is IPendleStructs {
      ***********/
     function addMarketFactory(bytes32 marketFactoryId, address marketFactoryAddress) external;
 
-    function addMarketLiquidityAll(
-        bytes32 marketFactoryId,
-        address xyt,
-        address token,
-        uint256 maxInXyt,
-        uint256 maxInToken,
-        uint256 exactOutLp
-    ) external payable;
-
     function addMarketLiquidityDual(
         bytes32 _marketFactoryId,
         address _xyt,
