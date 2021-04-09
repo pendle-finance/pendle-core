@@ -23,7 +23,7 @@ const hre = require("hardhat");
 const { waffle } = require("hardhat");
 const { provider } = waffle;
 
-describe("lpInterest for CompoundMarket", async () => {
+describe("compound-lp-interest", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;

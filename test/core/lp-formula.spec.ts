@@ -22,7 +22,7 @@ import {
 const { waffle } = require("hardhat");
 const { provider } = waffle;
 
-describe("lpFormula", async () => {
+describe("lp-formula", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie] = wallets;

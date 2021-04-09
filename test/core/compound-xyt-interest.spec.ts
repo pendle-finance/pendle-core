@@ -27,7 +27,7 @@ interface YieldTest {
   timeDelta: number;
 }
 
-describe("compoundInterest test", async () => {
+describe("compound-xyt-interest", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;

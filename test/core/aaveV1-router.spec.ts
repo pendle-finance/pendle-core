@@ -1,4 +1,4 @@
 import { runTest } from "./aave-router-common-test";
-describe("AaveV1 tests", function () {
+describe("aaveV1-router", function () {
   runTest(true);
 });

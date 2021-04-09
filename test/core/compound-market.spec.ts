@@ -13,7 +13,7 @@ import { marketFixture } from "./fixtures";
 const { waffle } = require("hardhat");
 const { provider } = waffle;
 
-describe("PendleCompoundMarket", async () => {
+describe("compound-market", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;

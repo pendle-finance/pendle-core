@@ -1,4 +1,4 @@
 import { runTest } from "./aave-lp-interest-common-test";
-describe("AaveV2 lp interest test", function () {
+describe("aaveV2-lp-interest", function () {
   runTest(false);
 });

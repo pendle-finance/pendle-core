@@ -1,4 +1,4 @@
 import { runTest } from "./aave-xyt-interest-common-test";
-describe("AaveV2's XYT interest test", function () {
+describe("aaveV2-xyt-interest", function () {
   runTest(false);
 });

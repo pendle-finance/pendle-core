@@ -137,7 +137,7 @@ function calExpectedRewards(
 }
 
 // TODO:Old version, not as updated as pendleAaveLiquidityMining
-describe("PendleCompoundLiquidityMining tests", async () => {
+describe("compound-liquidityMining", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;

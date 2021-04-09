@@ -137,7 +137,7 @@ function calExpectedRewards(
   return rewards;
 }
 
-describe("PendleAaveLiquidityMining tests", async () => {
+describe("aaveV1-liquidityMining", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
