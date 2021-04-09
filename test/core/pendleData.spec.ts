@@ -13,6 +13,7 @@ describe("PendleData", async () => {
 
   let router: Contract;
   let aMarketFactory: Contract;
+  let a2MarketFactory: Contract;
   let cMarketFactory: Contract;
   let data: Contract;
   let treasury: Contract;
@@ -29,6 +30,7 @@ describe("PendleData", async () => {
     treasury = fixture.core.treasury;
     data = fixture.core.data;
     aMarketFactory = fixture.core.aMarketFactory;
+    a2MarketFactory = fixture.core.a2MarketFactory;
     cMarketFactory = fixture.core.cMarketFactory;
     xyt = fixture.aForge.aFutureYieldToken;
     tokenUSDT = tokens.USDT;
@@ -52,29 +54,38 @@ describe("PendleData", async () => {
     expect(exitFee).to.be.eq(100);
   });
 
-  it("allMarketsLength", async () => {
+  it("should be able to get allMarketsLength", async () => {
     let allMarketsLength = await data.allMarketsLength();
-    expect(allMarketsLength).to.be.eq(3); // numbers of markets that have been created in marketFixture
+    expect(allMarketsLength).to.be.eq(4); // numbers of markets that have been created in marketFixture
   });
 
   it("getAllMarkets", async () => {
-    let filter = aMarketFactory.filters.MarketCreated();
     let tx = await router.createMarket(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       tokenUSDT.address,
       consts.HIGH_GAS_OVERRIDE
     );
-    let allEvents = await aMarketFactory.queryFilter(filter, tx.blockHash);
     let expectedMarkets: string[] = [];
+
+    let filter = aMarketFactory.filters.MarketCreated();
+    let allEvents = await aMarketFactory.queryFilter(filter, tx.blockHash);
     allEvents.forEach((event) => {
       expectedMarkets.push(event.args!.market);
     });
+
+    filter = a2MarketFactory.filters.MarketCreated();
+    allEvents = await a2MarketFactory.queryFilter(filter, tx.blockHash);
+    allEvents.forEach((event) => {
+      expectedMarkets.push(event.args!.market);
+    });
+
     filter = cMarketFactory.filters.MarketCreated();
     allEvents = await cMarketFactory.queryFilter(filter, tx.blockHash);
     allEvents.forEach((event) => {
       expectedMarkets.push(event.args!.market);
     });
+
     let allMarkets = await data.getAllMarkets();
     expect(allMarkets).to.have.members(expectedMarkets);
   });
