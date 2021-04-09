@@ -15,7 +15,7 @@ import {
   mintOtAndXyt,
   Token,
   tokens,
-  mintCompoundToken
+  mintCompoundToken,
 } from "../helpers";
 import { marketFixture } from "./fixtures";
 const hre = require("hardhat");
@@ -347,7 +347,6 @@ describe("lpInterest for CompoundMarket", async () => {
     );
   });
 
-
   it("test 0", async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
@@ -441,5 +440,4 @@ describe("lpInterest for CompoundMarket", async () => {
       )}`
     );
   });
-
 });

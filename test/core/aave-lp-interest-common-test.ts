@@ -483,7 +483,10 @@ export function runTest(isAaveV1: boolean) {
 
       await bootstrapSampleMarket(BN.from(10).pow(10));
       await advanceTime(provider, consts.ONE_DAY.mul(5));
-      await removeMarketLiquidityDual(alice, (await getLPBalance(alice)).div(2));
+      await removeMarketLiquidityDual(
+        alice,
+        (await getLPBalance(alice)).div(2)
+      );
 
       await advanceTime(provider, consts.FIFTEEN_DAY);
       await addMarketLiquidityXyt(bob, amountXytRef.div(10));

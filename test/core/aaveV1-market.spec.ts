@@ -271,17 +271,16 @@ describe("PendleAaveMarket", async () => {
       consts.HIGH_GAS_OVERRIDE
     );
 
-    await router
-      .addMarketLiquidityDual(
-        consts.MARKET_FACTORY_AAVE,
-        xyt.address,
-        testToken.address,
-        amount,
-        consts.MAX_ALLOWANCE,
-        BN.from(0),
-        BN.from(0),
-        consts.HIGH_GAS_OVERRIDE
-      )
+    await router.addMarketLiquidityDual(
+      consts.MARKET_FACTORY_AAVE,
+      xyt.address,
+      testToken.address,
+      amount,
+      consts.MAX_ALLOWANCE,
+      BN.from(0),
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
+    );
 
     let xytBalance = await xyt.balanceOf(stdMarket.address);
     let testTokenBalance = await testToken.balanceOf(stdMarket.address);
