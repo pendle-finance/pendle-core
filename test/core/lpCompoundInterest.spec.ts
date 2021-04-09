@@ -358,4 +358,100 @@ describe("lpInterest for CompoundMarket", async () => {
       )}`
     );
   });
+
+
+  it("test 0", async () => {
+    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+
+    await bootstrapSampleMarket(BN.from(10).pow(10));
+    console.log(`\t[Before] cUSDT Balance of all users: `);
+    for (let user of [alice, bob, charlie, dave]) {
+      console.log((await cUSDT.balanceOf(user.address)).toString());
+    }
+    console.log(`\t[Before] XYT Balance of all users: `);
+    for (let user of [alice, bob, charlie, dave]) {
+      console.log((await xyt.balanceOf(user.address)).toString());
+    }
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    console.log("\n\t============== Bob addding liq");
+    await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    console.log("\n\t============== Charlie addding liq");
+    await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(2));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    console.log("\n\t============== Dave addding liq");
+    await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    console.log("\n\t============== Dave addding liq");
+    await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
+    console.log("\n\t============== Bob addding liq");
+    await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(6));
+    await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(6));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+
+    console.log(
+      "\n\t============== Users are claiming LP interests and redeemDueInterests"
+    );
+
+    for (let user of [alice, bob, charlie, dave]) {
+      await router
+        .connect(user)
+        .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
+      console.log("\n\t======= redeemingDueInterests");
+      // console.log(`isValidXYT? forgeId=${consts.FORGE_COMPOUND}, underlyingAsset=${tokenUSDT.address}`)
+      await router
+        .connect(user)
+        .redeemDueInterests(
+          consts.FORGE_COMPOUND,
+          tokenUSDT.address,
+          consts.T0_C.add(consts.SIX_MONTH),
+          consts.HIGH_GAS_OVERRIDE
+        );
+    }
+
+    const aliceCUSDTBalance = await cUSDT.balanceOf(alice.address);
+    const acceptedDelta = BN.from(1200000);
+    console.log(`\t[After] cUSDT Balance of all users: `);
+    for (let user of [bob, charlie, dave]) {
+      const USDTBalance = await cUSDT.balanceOf(user.address);
+      approxBigNumber(USDTBalance, aliceCUSDTBalance, acceptedDelta);
+      console.log(USDTBalance.toString());
+    }
+    console.log(`\t[After] USDT-equivalent balance of all users: `);
+    for (let user of [alice, bob, charlie, dave]) {
+      console.log(
+        (
+          await cUSDTWeb3.methods.balanceOfUnderlying(user.address).call()
+        ).toString()
+      );
+    }
+    console.log(`\t[After] XYT Balance of all users: `);
+    for (let user of [alice, bob, charlie, dave]) {
+      console.log((await xyt.balanceOf(user.address)).toString());
+    }
+    console.log(
+      `\tMarket cToken balance at the end: ${await cUSDT.balanceOf(
+        stdMarket.address
+      )}`
+    );
+  });
+
 });
