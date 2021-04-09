@@ -352,7 +352,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
      * @dev this function will never be locked since we always let users withdraw
                 their funds
      */
-    function removeMarketLiquidityAll(
+    function removeMarketLiquidityDual(
         uint256 _inLp,
         uint256 _minOutXyt,
         uint256 _minOutToken

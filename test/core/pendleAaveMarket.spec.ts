@@ -240,7 +240,7 @@ describe("PendleAaveMarket", async () => {
     await advanceTime(provider, consts.ONE_MONTH);
     const totalSupply = await stdMarket.totalSupply();
 
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
@@ -261,7 +261,7 @@ describe("PendleAaveMarket", async () => {
     const amount = amountToWei(BN.from(100), 6);
     await bootstrapSampleMarket(amount);
     let lpBalanceBefore: BN = await stdMarket.balanceOf(alice.address);
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
@@ -371,7 +371,7 @@ describe("PendleAaveMarket", async () => {
     await advanceTime(provider, consts.ONE_YEAR);
     const totalSupply = await stdMarket.totalSupply();
 
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
@@ -853,7 +853,7 @@ describe("PendleAaveMarket", async () => {
     await advanceTime(provider, consts.ONE_MONTH);
     const totalSupply = await ethMarket.totalSupply();
 
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       consts.ETH_ADDRESS,

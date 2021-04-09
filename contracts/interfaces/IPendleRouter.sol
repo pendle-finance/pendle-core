@@ -216,7 +216,7 @@ interface IPendleRouter is IPendleStructs {
         uint256 minOutLp
     ) external payable;
 
-    function removeMarketLiquidityAll(
+    function removeMarketLiquidityDual(
         bytes32 marketFactoryId,
         address xyt,
         address token,

@@ -396,7 +396,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
      * @notice remove market liquidity by xyt and base tokens
      * @dev no checks on _exactInLp, _minOutXyt, _minOutToken
      */
-    function removeMarketLiquidityAll(
+    function removeMarketLiquidityDual(
         bytes32 _marketFactoryId,
         address _xyt,
         address _token,
@@ -416,7 +416,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         _settleTokenTransfer(address(market), lpTransfer, address(market));
 
         PendingTransfer[3] memory transfers =
-            market.removeMarketLiquidityAll(_exactInLp, _minOutXyt, _minOutToken);
+            market.removeMarketLiquidityDual(_exactInLp, _minOutXyt, _minOutToken);
 
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
         emit Exit(msg.sender, transfers[0].amount, transfers[1].amount, address(market));

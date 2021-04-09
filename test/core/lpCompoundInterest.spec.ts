@@ -169,8 +169,8 @@ describe("lpInterest for CompoundMarket", async () => {
       );
   }
 
-  async function removeMarketLiquidityAll(user: Wallet, amount: BN) {
-    await router.removeMarketLiquidityAll(
+  async function removeMarketLiquidityDual(user: Wallet, amount: BN) {
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_COMPOUND,
       xyt.address,
       testToken.address,

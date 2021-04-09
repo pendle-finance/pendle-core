@@ -363,7 +363,7 @@ describe("lpFormula", async () => {
     let initialXytBalance: BN = await xyt.balanceOf(alice.address);
     let initialTokenBalance: BN = await testToken.balanceOf(alice.address);
 
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,

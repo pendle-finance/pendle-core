@@ -159,10 +159,10 @@ export function runTest(isAaveV1: boolean) {
         );
     }
 
-    async function removeMarketLiquidityAll(user: Wallet, amount: BN) {
+    async function removeMarketLiquidityDual(user: Wallet, amount: BN) {
       await router
         .connect(user)
-        .removeMarketLiquidityAll(
+        .removeMarketLiquidityDual(
           testEnv.MARKET_FACTORY_ID,
           xyt.address,
           testToken.address,
@@ -483,7 +483,7 @@ export function runTest(isAaveV1: boolean) {
 
       await bootstrapSampleMarket(BN.from(10).pow(10));
       await advanceTime(provider, consts.ONE_DAY.mul(5));
-      await removeMarketLiquidityAll(alice, (await getLPBalance(alice)).div(2));
+      await removeMarketLiquidityDual(alice, (await getLPBalance(alice)).div(2));
 
       await advanceTime(provider, consts.FIFTEEN_DAY);
       await addMarketLiquidityXyt(bob, amountXytRef.div(10));

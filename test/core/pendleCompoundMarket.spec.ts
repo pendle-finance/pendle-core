@@ -203,7 +203,7 @@ describe("PendleCompoundMarket", async () => {
     await advanceTime(provider, consts.ONE_MONTH);
     const totalSupply = await stdMarket.totalSupply();
 
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_COMPOUND,
       xyt.address,
       testToken.address,
