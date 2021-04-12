@@ -41,6 +41,8 @@ describe("compound-lp-interest", async () => {
   let tokenUSDT: Token;
   const amountUSDTRef = BN.from(10).pow(8);
   let amountXytRef: any;
+  const TEST_DELTA = BN.from(2000000);
+  const FAKE_INCOME_AMOUNT = consts.INITIAL_COMPOUND_TOKEN_AMOUNT;
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
@@ -67,25 +69,7 @@ describe("compound-lp-interest", async () => {
       await mintOtAndXytUSDT(user, amountUSDTRef.div(10 ** 6));
     }
     amountXytRef = await xyt.balanceOf(alice.address);
-    console.log(`\tamountXytRef = ${amountXytRef}`);
     //Note: bob, charlie and dave will not have exactly the same amount of cXYTs
-
-    console.log(`\t[BeforeAll] cUSDT Balance of all users: `);
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log((await cUSDT.balanceOf(user.address)).toString());
-    }
-    console.log(`\t[BeforeAll] USDT-equivalent balance of all users: `);
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log(
-        (
-          await cUSDTWeb3.methods.balanceOfUnderlying(user.address).call()
-        ).toString()
-      );
-    }
-    console.log(`\t[BeforeAll] XYT Balance of all users: `);
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log((await xyt.balanceOf(user.address)).toString());
-    }
 
     for (let user of [alice, bob, charlie, dave, eve]) {
       await emptyToken(cUSDT, user);
@@ -126,7 +110,6 @@ describe("compound-lp-interest", async () => {
         BN.from(0),
         consts.HIGH_GAS_OVERRIDE
       );
-    // console.log("added:", ((await xyt.balanceOf(stdMarket.address)).sub(amountXytMarket)).toString());
   }
 
   async function addMarketLiquidityToken(user: Wallet, amount: BN) {
@@ -158,39 +141,45 @@ describe("compound-lp-interest", async () => {
   }
 
   async function removeMarketLiquidityDual(user: Wallet, amount: BN) {
-    await router.removeMarketLiquidityDual(
-      consts.MARKET_FACTORY_COMPOUND,
-      xyt.address,
-      testToken.address,
-      amount,
-      BN.from(0),
-      BN.from(0),
-      consts.HIGH_GAS_OVERRIDE
-    );
+    await router
+      .connect(user)
+      .removeMarketLiquidityDual(
+        consts.MARKET_FACTORY_COMPOUND,
+        xyt.address,
+        testToken.address,
+        amount,
+        BN.from(0),
+        BN.from(0),
+        consts.HIGH_GAS_OVERRIDE
+      );
   }
 
   async function removeMarketLiquidityXyt(user: Wallet, amount: BN) {
-    await router.removeMarketLiquiditySingle(
-      consts.MARKET_FACTORY_COMPOUND,
-      xyt.address,
-      testToken.address,
-      true,
-      amount,
-      BN.from(0),
-      consts.HIGH_GAS_OVERRIDE
-    );
+    await router
+      .connect(user)
+      .removeMarketLiquiditySingle(
+        consts.MARKET_FACTORY_COMPOUND,
+        xyt.address,
+        testToken.address,
+        true,
+        amount,
+        BN.from(0),
+        consts.HIGH_GAS_OVERRIDE
+      );
   }
 
   async function removeMarketLiquidityToken(user: Wallet, amount: BN) {
-    await router.removeMarketLiquiditySingle(
-      consts.MARKET_FACTORY_COMPOUND,
-      xyt.address,
-      testToken.address,
-      false,
-      amount,
-      BN.from(0),
-      consts.HIGH_GAS_OVERRIDE
-    );
+    await router
+      .connect(user)
+      .removeMarketLiquiditySingle(
+        consts.MARKET_FACTORY_COMPOUND,
+        xyt.address,
+        testToken.address,
+        false,
+        amount,
+        BN.from(0),
+        consts.HIGH_GAS_OVERRIDE
+      );
   }
 
   async function mintOtAndXytUSDT(user: Wallet, amount: BN) {
@@ -203,20 +192,6 @@ describe("compound-lp-interest", async () => {
       aaveForge,
       aaveV2Forge
     );
-  }
-
-  async function swapExactInTokenToXyt(user: Wallet, inAmount: BN) {
-    await router
-      .connect(user)
-      .swapExactIn(
-        testToken.address,
-        xyt.address,
-        inAmount,
-        BN.from(0),
-        consts.MAX_ALLOWANCE,
-        consts.MARKET_FACTORY_COMPOUND,
-        consts.HIGH_GAS_OVERRIDE
-      );
   }
 
   async function swapExactInXytToToken(user: Wallet, inAmount: BN) {
@@ -233,10 +208,6 @@ describe("compound-lp-interest", async () => {
       );
   }
 
-  async function addFakeXyt(user: Wallet, amount: BN) {
-    await xyt.connect(user).transfer(stdMarket.address, amount);
-  }
-
   async function addFakeIncome(token: Token, user: Wallet, amount: BN) {
     await mint(provider, token, user, amount);
     let USDTcontract = await getERC20Contract(user, token);
@@ -245,71 +216,293 @@ describe("compound-lp-interest", async () => {
       amountToWei(amount, token.decimal)
     );
     await cUSDT.balanceOfUnderlying(user.address); // interact with compound so that it updates all info
-    // await mintCompoundToken(provider, token, user, BN.from(1000));
+
+    // to have the most accurate result since the interest is only updated every DELTA seconds
+    await advanceTime(provider, consts.INTEREST_UPDATE_DELTA);
+  }
+
+  async function checkCUSDTBalance(expectedResult: number[]) {
+    for (let id = 0; id < 4; id++) {
+      approxBigNumber(
+        await cUSDT.balanceOf(wallets[id].address),
+        BN.from(expectedResult[id]),
+        TEST_DELTA
+      );
+    }
   }
 
   async function getLPBalance(user: Wallet) {
     return await stdMarket.balanceOf(user.address);
   }
 
-  it("test 0", async () => {
+  it("test 1", async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
-    console.log(`\t[Before] cUSDT Balance of all users: `);
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log((await cUSDT.balanceOf(user.address)).toString());
-    }
-    console.log(`\t[Before] XYT Balance of all users: `);
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log((await xyt.balanceOf(user.address)).toString());
-    }
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-    console.log("\n\t============== Bob addding liq");
+    await addMarketLiquidityDualByXyt(bob, amountXytRef.div(10));
+    await swapExactInXytToToken(eve, BN.from(10).pow(9));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
+    await swapExactInXytToToken(eve, BN.from(10).pow(9));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addMarketLiquidityDualByXyt(dave, amountXytRef.div(2));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addMarketLiquidityDualByXyt(bob, amountXytRef.div(6));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+
+    await advanceTime(provider, consts.ONE_DAY);
+    for (let user of [alice, bob, charlie, dave]) {
+      await router
+        .connect(user)
+        .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
+      await router
+        .connect(user)
+        .redeemDueInterests(
+          consts.FORGE_COMPOUND,
+          tokenUSDT.address,
+          consts.T0_C.add(consts.SIX_MONTH),
+          consts.HIGH_GAS_OVERRIDE
+        );
+    }
+
+    // for (let user of [alice, bob, charlie, dave]) {
+    //   console.log((await cUSDT.balanceOf(user.address)).toString());
+    // }
+    const expectedResult: number[] = [
+      20890139294,
+      20988918732,
+      21043541932,
+      21166113984,
+    ];
+    await checkCUSDTBalance(expectedResult);
+  });
+
+  it("test 2", async () => {
+    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+
+    await bootstrapSampleMarket(BN.from(10).pow(10));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addMarketLiquidityXyt(bob, amountXytRef.div(10));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await swapExactInXytToToken(eve, BN.from(10).pow(9));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityXyt(charlie, amountXytRef.div(5));
+    await swapExactInXytToToken(eve, BN.from(10).pow(9));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addMarketLiquidityXyt(dave, amountXytRef.div(2));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await addMarketLiquidityXyt(dave, amountXytRef.div(3));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityXyt(bob, amountXytRef.div(6));
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityXyt(bob, amountXytRef.div(2));
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityXyt(bob, amountXytRef.div(5));
+
+    await advanceTime(provider, consts.ONE_DAY);
+    for (let user of [alice, bob, charlie, dave]) {
+      await router
+        .connect(user)
+        .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
+      await router
+        .connect(user)
+        .redeemDueInterests(
+          consts.FORGE_COMPOUND,
+          tokenUSDT.address,
+          consts.T0_C.add(consts.SIX_MONTH),
+          consts.HIGH_GAS_OVERRIDE
+        );
+    }
+
+    // for (let user of [alice, bob, charlie, dave]) {
+    //   console.log((await cUSDT.balanceOf(user.address)).toString());
+    // }
+    const expectedResult: number[] = [
+      29551610095,
+      26922541955,
+      24576323877,
+      22951983173,
+    ];
+    await checkCUSDTBalance(expectedResult);
+  });
+
+  it("test 3", async () => {
+    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+
+    await bootstrapSampleMarket(BN.from(10).pow(10));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+
+    await advanceTime(provider, consts.ONE_DAY.mul(5));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await removeMarketLiquidityDual(alice, (await getLPBalance(alice)).div(2));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityXyt(bob, amountXytRef.div(10));
+    await swapExactInXytToToken(eve, BN.from(10).pow(9));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await removeMarketLiquidityXyt(bob, await getLPBalance(bob));
+    await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await swapExactInXytToToken(eve, BN.from(10).pow(9));
+    await addMarketLiquidityDualByXyt(
+      alice,
+      await xyt.balanceOf(alice.address)
+    );
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityXyt(dave, amountXytRef.div(2));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await removeMarketLiquidityToken(
+      charlie,
+      (await getLPBalance(charlie)).div(3)
+    );
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await addMarketLiquidityXyt(dave, amountXytRef.div(3));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityXyt(bob, amountXytRef.div(6));
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await removeMarketLiquidityXyt(dave, (await getLPBalance(dave)).div(3));
+    await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
+
+    await advanceTime(provider, consts.ONE_MONTH);
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityXyt(bob, amountXytRef.div(2));
+    await swapExactInXytToToken(eve, BN.from(10).pow(10));
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityXyt(bob, amountXytRef.div(5));
+    await advanceTime(provider, consts.ONE_MONTH);
+
+    await advanceTime(provider, consts.ONE_DAY);
+    for (let user of [dave, charlie, bob, alice]) {
+      await router
+        .connect(user)
+        .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
+      await router
+        .connect(user)
+        .redeemDueInterests(
+          consts.FORGE_COMPOUND,
+          tokenUSDT.address,
+          consts.T0_C.add(consts.SIX_MONTH),
+          consts.HIGH_GAS_OVERRIDE
+        );
+    }
+
+    // for (let user of [alice, bob, charlie, dave]) {
+    //   console.log((await cUSDT.balanceOf(user.address)).toString());
+    // }
+    const expectedResult: number[] = [
+      45423574278,
+      35935082765,
+      36069151652,
+      34058747070,
+    ];
+    await checkCUSDTBalance(expectedResult);
+  });
+
+  it("test 4", async () => {
+    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+
+    await bootstrapSampleMarket(BN.from(10).pow(10));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(10));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-    console.log("\n\t============== Charlie addding liq");
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-    console.log("\n\t============== Dave addding liq");
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(dave, amountXytRef.div(2));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-    console.log("\n\t============== Dave addding liq");
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
-    console.log("\n\t============== Bob addding liq");
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(6));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
-    console.log(
-      "\n\t============== Users are claiming LP interests and redeemDueInterests"
-    );
-
+    await advanceTime(provider, consts.ONE_DAY);
     for (let user of [alice, bob, charlie, dave]) {
       await router
         .connect(user)
         .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
-      console.log("\n\t======= redeemingDueInterests");
-      // console.log(`isValidXYT? forgeId=${consts.FORGE_COMPOUND}, underlyingAsset=${tokenUSDT.address}`)
       await router
         .connect(user)
         .redeemDueInterests(
@@ -321,89 +514,51 @@ describe("compound-lp-interest", async () => {
     }
 
     const aliceCUSDTBalance = await cUSDT.balanceOf(alice.address);
-    const acceptedDelta = BN.from(1200000);
-    console.log(`\t[After] cUSDT Balance of all users: `);
     for (let user of [bob, charlie, dave]) {
       const USDTBalance = await cUSDT.balanceOf(user.address);
-      approxBigNumber(USDTBalance, aliceCUSDTBalance, acceptedDelta);
-      console.log(USDTBalance.toString());
+      approxBigNumber(USDTBalance, aliceCUSDTBalance, TEST_DELTA);
     }
-    console.log(`\t[After] USDT-equivalent balance of all users: `);
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log(
-        (
-          await cUSDTWeb3.methods.balanceOfUnderlying(user.address).call()
-        ).toString()
-      );
-    }
-    console.log(`\t[After] XYT Balance of all users: `);
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log((await xyt.balanceOf(user.address)).toString());
-    }
-    console.log(
-      `\tMarket cToken balance at the end: ${await cUSDT.balanceOf(
-        stdMarket.address
-      )}`
-    );
   });
 
-  it("test 0", async () => {
+  it("test 5", async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
-    console.log(`\t[Before] cUSDT Balance of all users: `);
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log((await cUSDT.balanceOf(user.address)).toString());
-    }
-    console.log(`\t[Before] XYT Balance of all users: `);
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log((await xyt.balanceOf(user.address)).toString());
-    }
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-    console.log("\n\t============== Bob addding liq");
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-    console.log("\n\t============== Charlie addding liq");
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(2));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-    console.log("\n\t============== Dave addding liq");
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-    console.log("\n\t============== Dave addding liq");
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
-    console.log("\n\t============== Bob addding liq");
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(6));
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(6));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
 
     await advanceTime(provider, consts.FIFTEEN_DAY);
-    await addFakeIncome(tokenUSDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    console.log(
-      "\n\t============== Users are claiming LP interests and redeemDueInterests"
-    );
-
+    await advanceTime(provider, consts.ONE_DAY);
     for (let user of [alice, bob, charlie, dave]) {
       await router
         .connect(user)
         .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
-      console.log("\n\t======= redeemingDueInterests");
-      // console.log(`isValidXYT? forgeId=${consts.FORGE_COMPOUND}, underlyingAsset=${tokenUSDT.address}`)
       await router
         .connect(user)
         .redeemDueInterests(
@@ -415,29 +570,9 @@ describe("compound-lp-interest", async () => {
     }
 
     const aliceCUSDTBalance = await cUSDT.balanceOf(alice.address);
-    const acceptedDelta = BN.from(1200000);
-    console.log(`\t[After] cUSDT Balance of all users: `);
     for (let user of [bob, charlie, dave]) {
       const USDTBalance = await cUSDT.balanceOf(user.address);
-      approxBigNumber(USDTBalance, aliceCUSDTBalance, acceptedDelta);
-      console.log(USDTBalance.toString());
+      approxBigNumber(USDTBalance, aliceCUSDTBalance, TEST_DELTA);
     }
-    console.log(`\t[After] USDT-equivalent balance of all users: `);
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log(
-        (
-          await cUSDTWeb3.methods.balanceOfUnderlying(user.address).call()
-        ).toString()
-      );
-    }
-    console.log(`\t[After] XYT Balance of all users: `);
-    for (let user of [alice, bob, charlie, dave]) {
-      console.log((await xyt.balanceOf(user.address)).toString());
-    }
-    console.log(
-      `\tMarket cToken balance at the end: ${await cUSDT.balanceOf(
-        stdMarket.address
-      )}`
-    );
   });
 });
