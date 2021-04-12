@@ -65,10 +65,12 @@ describe("compound-lp-interest", async () => {
       await emptyToken(cUSDT, user);
     }
 
-    for (let user of [alice, bob, charlie, dave]) {
-      await mintOtAndXytUSDT(user, amountUSDTRef.div(10 ** 6));
+    await mintOtAndXytUSDT(alice, amountUSDTRef.div(10 ** 6).mul(4));
+    amountXytRef = (await xyt.balanceOf(alice.address)).div(4);
+    for (let user of [bob, charlie, dave]) {
+      await ot.transfer(user.address, amountXytRef);
+      await xyt.transfer(user.address, amountXytRef);
     }
-    amountXytRef = await xyt.balanceOf(alice.address);
     //Note: bob, charlie and dave will not have exactly the same amount of cXYTs
 
     for (let user of [alice, bob, charlie, dave, eve]) {
@@ -296,10 +298,10 @@ describe("compound-lp-interest", async () => {
     //   console.log((await cUSDT.balanceOf(user.address)).toString());
     // }
     const expectedResult: number[] = [
-      20890139294,
-      20988918732,
-      21043541932,
-      21166113984,
+      20888931948,
+      20987964937,
+      21042842354,
+      21165667925,
     ];
     await checkCUSDTBalance(expectedResult);
   });
@@ -367,10 +369,10 @@ describe("compound-lp-interest", async () => {
     //   console.log((await cUSDT.balanceOf(user.address)).toString());
     // }
     const expectedResult: number[] = [
-      29551610095,
-      26922541955,
-      24576323877,
-      22951983173,
+      29550555880,
+      26921736683,
+      24575771785,
+      22951713356,
     ];
     await checkCUSDTBalance(expectedResult);
   });
@@ -455,10 +457,10 @@ describe("compound-lp-interest", async () => {
     //   console.log((await cUSDT.balanceOf(user.address)).toString());
     // }
     const expectedResult: number[] = [
-      45423574278,
-      35935082765,
-      36069151652,
-      34058747070,
+      45423431397,
+      35934848753,
+      36069138984,
+      34058896615,
     ];
     await checkCUSDTBalance(expectedResult);
   });
