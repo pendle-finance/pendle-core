@@ -26,12 +26,12 @@ pragma solidity 0.7.6;
 import "../interfaces/IPENDLE.sol";
 
 interface IPendleTokenDistribution {
-    function pendleToken() external view returns (IPENDLE);
-
     event ClaimedTokens(
         address _claimer,
         uint256 _timeDuration,
         uint256 _claimableFunds,
         uint256 _amountClaimed
     );
+
+    function pendleToken() external view returns (IPENDLE);
 }

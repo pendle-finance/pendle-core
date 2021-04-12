@@ -38,7 +38,7 @@ contract PendleTokenDistribution is Permissions, IPendleTokenDistribution {
     uint256[] public timeDurations;
     uint256[] public claimableFunds;
     mapping(uint256 => bool) public claimed;
-    uint256 numberOfDurations;
+    uint256 public numberOfDurations;
 
     constructor(
         address _governance,
