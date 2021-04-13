@@ -22,6 +22,7 @@
  */
 pragma solidity 0.7.6;
 
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../../libraries/ExpiryUtilsLib.sol";
 import "../../libraries/FactoryLib.sol";
@@ -38,6 +39,7 @@ import "../../periphery/Permissions.sol";
 abstract contract PendleForgeBase is IPendleForge, Permissions {
     using ExpiryUtils for string;
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     struct PendleTokens {
         IPendleYieldToken xyt;
@@ -128,7 +130,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         uint256 dueInterests = _calcDueInterests(principal, _underlyingAsset, _expiry, _account);
         totalAfterExpiry = totalAfterExpiry.add(dueInterests);
 
-        yieldToken.transfer(_to, totalAfterExpiry);
+        yieldToken.safeTransfer(_to, totalAfterExpiry);
 
         // the msg.sender (_account) gets the interest up until the last action before expiry
         tokens.ot.burn(_account, redeemedAmount);
@@ -157,7 +159,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         tokens.ot.burn(_account, _amountToRedeem);
         tokens.xyt.burn(_account, _amountToRedeem);
-        yieldToken.transfer(_to, underlyingToRedeem);
+        yieldToken.safeTransfer(_to, underlyingToRedeem);
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem);
 
@@ -274,7 +276,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         if (dueInterests > 0) {
             IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
-            yieldToken.transfer(_account, dueInterests);
+            yieldToken.safeTransfer(_account, dueInterests);
             emit DueInterestSettled(forgeId, _underlyingAsset, _expiry, dueInterests, _account);
         }
 

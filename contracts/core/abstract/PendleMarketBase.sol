@@ -725,7 +725,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         }
 
         lastNYield = lastNYield.sub(dueInterests);
-        underlyingYieldToken.transfer(account, dueInterests);
+        underlyingYieldToken.safeTransfer(account, dueInterests);
     }
 
     function _updateParamL() internal {

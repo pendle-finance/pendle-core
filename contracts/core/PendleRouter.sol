@@ -789,7 +789,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
 
         IERC20 underlyingToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
 
-        underlyingToken.transferFrom(msg.sender, address(forge), _amountToTokenize);
+        underlyingToken.safeTransferFrom(msg.sender, address(forge), _amountToTokenize);
 
         // Due to possible precision error, we will only mint the amount of OT & XYT equals
         // to the amount of tokens that the contract receives
