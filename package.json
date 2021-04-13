@@ -57,9 +57,7 @@
     "url": "git+https://github.com/ayobuenavista/pendle-protocol.git"
   },
   "scripts": {
-    "deploy:aave": "yarn hardhat run scripts/deploy_aave.js",
     "compile": "yarn hardhat compile && yarn size",
-    "console:dev": "yarn hardhat console",
     "coverage": "yarn hardhat coverage --testfiles",
     "coverage:all": "yarn hardhat coverage --testfiles \"test/**/*.spec.*\"",
     "fork": "yarn hardhat node",
@@ -68,6 +66,9 @@
     "test": "yarn hardhat test",
     "test:all": "yarn test test/**/*.spec.*",
     "ci": "yarn hardhat compile && yarn coverage:all",
-    "format": "yarn prettier --write contracts/**/*.sol && yarn prettier --write test/**/*.ts && yarn prettier --write test/**/*.js"
+    "format": "yarn prettier --write contracts/**/*.sol && yarn prettier --write test/**/*.ts && yarn prettier --write test/**/*.js && yarn prettier --write scripts/**/*.ts",
+    "deploy:core":"yarn hardhat run scripts/deploy/deploy.ts",
+    "deploy:seed":"yarn hardhat run scripts/manage/seed_test_contracts.ts",
+    "verify":"yarn hardhat run scripts/manage/verify_tenderly.ts"
   }
 }
