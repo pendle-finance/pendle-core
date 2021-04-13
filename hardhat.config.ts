@@ -9,10 +9,10 @@ import { HardhatUserConfig } from "hardhat/types";
 import "solidity-coverage";
 import "@tenderly/hardhat-tenderly";
 dotenv.config();
-
+const dummyPrivateKey = '1111111111111111111111111111111111111111111111111111111111111111';
 
 const config: HardhatUserConfig = {
-  defaultNetwork: 'kovantest',
+  defaultNetwork: 'hardhat',
   gasReporter: {
     currency: 'USD',
     gasPrice: 100
@@ -72,18 +72,18 @@ const config: HardhatUserConfig = {
       timeout: 1000000,
     },
     kovan: {
-      url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY}`,
+      url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY || "dummyKey"}`,
       gas: 8000000,
       timeout: 100000,
-      accounts: [`${process.env.PRIVATE_KEYS}`],
+      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
     },
     kovantest: {
       // url: `https://eth-kovan.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-      url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY}`,
+      url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY || "dummyKey"}`,
       gas: 8000000,
       gasPrice: 10*1000000000,
       timeout: 1000000,
-      accounts: [`${process.env.PRIVATE_KEYS}`],
+      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
     },
   },
   solidity: {
