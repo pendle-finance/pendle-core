@@ -119,23 +119,23 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     ) external override onlyRouter returns (uint256 redeemedAmount) {
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        redeemedAmount = tokens.ot.balanceOf(_account);
-        require(redeemedAmount > 0, "NOTHING_TO_REDEEM");
+        uint256 expiredOTamount = tokens.ot.balanceOf(_account);
+        require(expiredOTamount > 0, "NOTHING_TO_REDEEM");
 
         // _to will get the principal + the interests from last action before expiry to now
-        uint256 totalAfterExpiry =
-            _calcTotalAfterExpiry(address(yieldToken), _underlyingAsset, _expiry, redeemedAmount);
+        uint256 totalAfterExpiryFromOT =
+            _calcTotalAfterExpiry(address(yieldToken), _underlyingAsset, _expiry, expiredOTamount);
 
         uint256 principal = tokens.xyt.balanceOf(_account);
         uint256 dueInterests = _calcDueInterests(principal, _underlyingAsset, _expiry, _account);
-        totalAfterExpiry = totalAfterExpiry.add(dueInterests);
+        redeemedAmount = totalAfterExpiryFromOT.add(dueInterests);
 
-        yieldToken.safeTransfer(_to, totalAfterExpiry);
+        yieldToken.safeTransfer(_to, redeemedAmount);
 
         // the msg.sender (_account) gets the interest up until the last action before expiry
-        tokens.ot.burn(_account, redeemedAmount);
+        tokens.ot.burn(_account, expiredOTamount);
 
-        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, redeemedAmount);
+        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, expiredOTamount);
     }
 
     function redeemUnderlying(
@@ -151,19 +151,19 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
 
-        uint256 underlyingToRedeem = _calcUnderlyingToRedeem(_underlyingAsset, _amountToRedeem);
+        redeemedAmount = _calcUnderlyingToRedeem(_underlyingAsset, _amountToRedeem);
 
         uint256 principal = tokens.xyt.balanceOf(_account);
         uint256 dueInterests = _calcDueInterests(principal, _underlyingAsset, _expiry, _account);
-        underlyingToRedeem = underlyingToRedeem.add(dueInterests);
+        redeemedAmount = redeemedAmount.add(dueInterests);
 
         tokens.ot.burn(_account, _amountToRedeem);
         tokens.xyt.burn(_account, _amountToRedeem);
-        yieldToken.safeTransfer(_to, underlyingToRedeem);
+        yieldToken.safeTransfer(_to, redeemedAmount);
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem);
 
-        return underlyingToRedeem;
+        return redeemedAmount;
     }
 
     function redeemDueInterests(
