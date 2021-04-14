@@ -31,6 +31,7 @@ import "../../interfaces/IPendleYieldToken.sol";
 import "../../tokens/PendleBaseToken.sol";
 import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "hardhat/console.sol";
 
 abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     using Math for uint256;
@@ -728,11 +729,20 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         underlyingYieldToken.safeTransfer(account, dueInterests);
     }
 
+    function checkNeedUpdateParamL() internal returns (bool) {
+        if (_getIncomeIndexIncreaseRate() > data.interestUpdateRateDelta()) {
+            return true;
+        }
+        if (block.timestamp.sub(lastInterestUpdate) > data.interestUpdateTimeDelta()) {
+            return true;
+        }
+        return false;
+    }
+
     function _updateParamL() internal {
-        if (block.timestamp.sub(lastInterestUpdate) <= data.interestUpdateDelta()) {
+        if (!checkNeedUpdateParamL()) {
             return;
         }
-
         router.redeemDueInterests(forgeId, underlyingAsset, expiry);
         uint256 currentNYield = underlyingYieldToken.balanceOf(address(this));
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(currentNYield);
@@ -768,4 +778,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         internal
         virtual
         returns (uint256 firstTerm, uint256 paramR);
+
+    function _getIncomeIndexIncreaseRate() internal virtual returns (uint256 increaseRate);
 }

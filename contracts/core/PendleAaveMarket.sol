@@ -75,6 +75,9 @@ contract PendleAaveMarket is PendleMarketBase {
         lastParamL[account] = paramL;
     }
 
+    /**
+    @dev this can only be called by _updateParamL
+    */
     function _getFirstTermAndParamR(uint256 currentNYield)
         internal
         override
@@ -86,5 +89,9 @@ contract PendleAaveMarket is PendleMarketBase {
             lastNYield.rmul(currentNormalizedIncome).rdiv(normalizedIncome)
         );
         normalizedIncome = currentNormalizedIncome;
+    }
+
+    function _getIncomeIndexIncreaseRate() internal override returns (uint256 increaseRate) {
+        return _getReserveNormalizedIncome().rdiv(normalizedIncome) - Math.RONE;
     }
 }

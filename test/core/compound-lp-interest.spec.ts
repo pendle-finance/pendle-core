@@ -220,7 +220,6 @@ describe("compound-lp-interest", async () => {
     await cUSDT.balanceOfUnderlying(user.address); // interact with compound so that it updates all info
 
     // to have the most accurate result since the interest is only updated every DELTA seconds
-    await advanceTime(provider, consts.INTEREST_UPDATE_DELTA);
   }
 
   async function checkCUSDTBalance(expectedResult: number[]) {
@@ -377,7 +376,7 @@ describe("compound-lp-interest", async () => {
     await checkCUSDTBalance(expectedResult);
   });
 
-  it("test 3", async () => {
+  it.only("test 3", async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));

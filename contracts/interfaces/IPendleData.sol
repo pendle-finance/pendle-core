@@ -53,10 +53,16 @@ interface IPendleData {
     event ExpiryDivisorSet(uint256 expiryDivisor);
 
     /**
-     * @notice Emitted when interestUpdateDelta is changed
-     * @param interestUpdateDelta new interestUpdateDelta setting
+     * @notice Emitted when interestUpdateTimeDelta is changed
+     * @param interestUpdateTimeDelta new interestUpdateTimeDelta setting
      **/
-    event InterestUpdateDeltaSet(uint256 interestUpdateDelta);
+    event InterestUpdateTimeDeltaSet(uint256 interestUpdateTimeDelta);
+
+    /**
+     * @notice Emitted when interestUpdateRateDelta is changed
+     * @param interestUpdateRateDelta new interestUpdateRateDelta setting
+     **/
+    event InterestUpdateRateDeltaSet(uint256 interestUpdateRateDelta);
 
     event ReentrancyWhitelistUpdated(address[] addresses, bool[] whitelisted);
 
@@ -230,7 +236,9 @@ interface IPendleData {
 
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
 
-    function setInterestUpdateDelta(uint256 _interestUpdateDelta) external;
+    function setInterestUpdateTimeDelta(uint256 _interestUpdateTimeDelta) external;
+
+    function setInterestUpdateRateDelta(uint256 _interestUpdateTimeDelta) external;
 
     function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator) external;
 
@@ -247,7 +255,9 @@ interface IPendleData {
 
     function exitFee() external view returns (uint256);
 
-    function interestUpdateDelta() external view returns (uint256);
+    function interestUpdateTimeDelta() external view returns (uint256);
+
+    function interestUpdateRateDelta() external view returns (uint256);
 
     function expiryDivisor() external view returns (uint256);
 

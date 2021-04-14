@@ -28,6 +28,7 @@ import "../libraries/ExpiryUtilsLib.sol";
 import "../libraries/FactoryLib.sol";
 import "../interfaces/ICToken.sol";
 import "../interfaces/IPendleBaseToken.sol";
+import "../interfaces/IPendleCompoundForge.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleForge.sol";
 import "../interfaces/IComptroller.sol";
@@ -36,7 +37,7 @@ import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
 import "./abstract/PendleForgeBase.sol";
 
-contract PendleCompoundForge is PendleForgeBase {
+contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
     using ExpiryUtils for string;
     using SafeMath for uint256;
 
@@ -96,6 +97,17 @@ contract PendleCompoundForge is PendleForgeBase {
         totalAfterExpiry = redeemedAmount.mul(initialRate[_underlyingAsset]).div(
             lastRateBeforeExpiry[_underlyingAsset][_expiry]
         );
+    }
+
+    function getExchangeRate(address _underlyingAsset, uint256 _expiry)
+        external
+        override
+        returns (uint256)
+    {
+        if (block.timestamp > _expiry) {
+            return lastRateBeforeExpiry[_underlyingAsset][_expiry];
+        }
+        return ICToken(underlyingToCToken[_underlyingAsset]).exchangeRateCurrent();
     }
 
     function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
