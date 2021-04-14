@@ -426,7 +426,10 @@ export function runTest(isAaveV1: boolean) {
       await tokenizeYield(alice, refAmount);
       await setTime(provider, testEnv.T0.add(consts.ONE_MONTH.mul(7)));
 
-      let { redeemedAmount, amountTransferOut } = await router.callStatic.renewYield(
+      let {
+        redeemedAmount,
+        amountTransferOut,
+      } = await router.callStatic.renewYield(
         testEnv.FORGE_ID,
         testEnv.T0.add(consts.SIX_MONTH),
         tokenUSDT.address,

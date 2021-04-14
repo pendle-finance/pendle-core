@@ -126,12 +126,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         require(expiredOTamount > 0, "NOTHING_TO_REDEEM");
 
         // _to will get the principal + the interests from last action before expiry to now
-        redeemedAmount = _calcTotalAfterExpiry(
-            address(yieldToken),
-            _underlyingAsset,
-            _expiry,
-            expiredOTamount
-        );
+        redeemedAmount = _calcTotalAfterExpiry(_underlyingAsset, _expiry, expiredOTamount);
 
         redeemedAmount = redeemedAmount.add(
             _calcDueInterests(tokens.xyt.balanceOf(_account), _underlyingAsset, _expiry, _account)
@@ -163,9 +158,9 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         redeemedAmount = _calcUnderlyingToRedeem(_underlyingAsset, _amountToRedeem);
 
-        uint256 principal = tokens.xyt.balanceOf(_account);
-        uint256 dueInterests = _calcDueInterests(principal, _underlyingAsset, _expiry, _account);
-        redeemedAmount = redeemedAmount.add(dueInterests);
+        redeemedAmount = redeemedAmount.add(
+            _calcDueInterests(tokens.xyt.balanceOf(_account), _underlyingAsset, _expiry, _account)
+        );
 
         tokens.ot.burn(_account, _amountToRedeem);
         tokens.xyt.burn(_account, _amountToRedeem);
@@ -310,7 +305,6 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     ) internal virtual returns (uint256 dueInterests);
 
     function _calcTotalAfterExpiry(
-        address yieldTokenAddress,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 redeemedAmount
