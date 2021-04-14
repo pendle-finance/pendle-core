@@ -38,7 +38,7 @@ contract PendleCompoundMarket is PendleMarketBase {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 private exchangeRate;
+    uint256 private globalLastExchangeRate;
 
     constructor(
         address _forge,
@@ -53,7 +53,7 @@ contract PendleCompoundMarket is PendleMarketBase {
 
     function _afterBootstrap() internal override {
         paramL = 1;
-        exchangeRate = _getExchangeRate();
+        globalLastExchangeRate = _getExchangeRate();
     }
 
     function _getInterestValuePerLP(address account)
@@ -76,10 +76,10 @@ contract PendleCompoundMarket is PendleMarketBase {
     {
         firstTerm = paramL;
         paramR = currentNYield.sub(lastNYield);
-        exchangeRate = _getExchangeRate();
+        globalLastExchangeRate = _getExchangeRate();
     }
 
     function _getIncomeIndexIncreaseRate() internal override returns (uint256 increaseRate) {
-        return _getExchangeRate().rdiv(exchangeRate) - Math.RONE;
+        return _getExchangeRate().rdiv(globalLastExchangeRate) - Math.RONE;
     }
 }
