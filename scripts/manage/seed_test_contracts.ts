@@ -49,10 +49,22 @@ async function main() {
     )} USDT`
   );
 
+  let expiry = consts.misc.TEST_EXPIRY_3;
+  if (process.env.EXPIRY != null) {
+    expiry = BN.from(process.env.EXPIRY);
+    console.log(
+      `==== [NOTICE] =======  We are taking the expiry set by ENV, ${expiry}`
+    );
+  } else {
+    console.log(
+      `==== [NOTICE] =======  We are taking the default expiry = ${expiry}`
+    );
+  }
+
   console.log(`\n\tNetwork = ${network}, deployer = ${deployer.address}`);
   console.log(`\tDeployment's filePath = ${filePath}`);
 
-  if (network !== "development" && network !== "kovantest") {
+  if (network !== "kovan" && network !== "kovantest") {
     console.log("[ERROR] Must be for kovan or kovantest network");
     process.exit(1);
   }
@@ -107,12 +119,12 @@ async function main() {
     consts.misc.FORGE_AAVE,
     consts.misc.MARKET_FACTORY_AAVE,
     usdtAaveContract,
-    consts.misc.TEST_EXPIRY_3,
+    expiry,
     usdtAaveContract
   );
   saveDeployment(filePath, deployment);
 
-  // await createNewYieldContractAndMarket(hre, deployment, consts.misc.FORGE_AAVE_V2, consts.misc.MARKET_FACTORY_AAVE, usdtAaveContract, consts.misc.TEST_EXPIRY_3, usdtAaveContract);
+  // await createNewYieldContractAndMarket(hre, deployment, consts.misc.FORGE_AAVE_V2, consts.misc.MARKET_FACTORY_AAVE, usdtAaveContract, expiry, usdtAaveContract);
   const pendleCompoundForge = await getContractFromDeployment(
     hre,
     deployment,
@@ -138,7 +150,7 @@ async function main() {
     consts.misc.FORGE_COMPOUND,
     consts.misc.MARKET_FACTORY_COMPOUND,
     usdtCompoundContract,
-    consts.misc.TEST_EXPIRY_3,
+    expiry,
     usdtCompoundContract
   );
   saveDeployment(filePath, deployment);
@@ -150,12 +162,12 @@ async function main() {
     consts.misc.FORGE_AAVE,
     consts.misc.MARKET_FACTORY_AAVE,
     usdtAaveContract,
-    consts.misc.TEST_EXPIRY_3,
+    expiry,
     usdtAaveContract,
     UNDERLYING_YIELD_TOKEN_TO_SEED,
     BASE_TOKEN_TO_SEED
   );
-  // await mintXytAndBootstrapMarket(hre, deployment, consts, consts.misc.FORGE_AAVE_V2, consts.misc.MARKET_FACTORY_AAVE, usdtAaveContract, consts.misc.TEST_EXPIRY_3, usdtAaveContract, UNDERLYING_YIELD_TOKEN_TO_SEED, BASE_TOKEN_TO_SEED);
+  // await mintXytAndBootstrapMarket(hre, deployment, consts, consts.misc.FORGE_AAVE_V2, consts.misc.MARKET_FACTORY_AAVE, usdtAaveContract, expiry, usdtAaveContract, UNDERLYING_YIELD_TOKEN_TO_SEED, BASE_TOKEN_TO_SEED);
   saveDeployment(filePath, deployment);
   await mintXytAndBootstrapMarket(
     hre,
@@ -164,7 +176,7 @@ async function main() {
     consts.misc.FORGE_COMPOUND,
     consts.misc.MARKET_FACTORY_COMPOUND,
     usdtCompoundContract,
-    consts.misc.TEST_EXPIRY_3,
+    expiry,
     usdtCompoundContract,
     UNDERLYING_YIELD_TOKEN_TO_SEED,
     BASE_TOKEN_TO_SEED
@@ -174,7 +186,7 @@ async function main() {
   const liqParams = {
     EPOCH_DURATION: consts.misc.ONE_DAY.mul(10),
     VESTING_EPOCHS: 4,
-    EXPIRIES: [consts.misc.TEST_EXPIRY_3],
+    EXPIRIES: [expiry],
     ALLOCATIONS: [consts.misc.LIQ_MINING_ALLOCATION_DENOMINATOR],
     REWARDS_PER_EPOCH: [
       100000,

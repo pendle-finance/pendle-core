@@ -251,12 +251,12 @@ export async function createNewYieldContractAndMarket(
     `\tCreating new yield contracts and market for ${forgeIdString}, underlyingAsset-${baseTokenSymbol}, expiry=${expiry}, baseToken-${baseTokenSymbol}`
   );
 
-  await pendleRouter.newYieldContracts(
-    forgeId,
-    underlyingAssetContract.address,
-    expiry
+  await sendAndWaitForTransaction(
+    hre,
+    pendleRouter.newYieldContracts,
+    "newYieldContract",
+    [forgeId, underlyingAssetContract.address, expiry]
   );
-  console.log("\t\tCreated new yield contract");
   const xytAddress = await pendleData.xytTokens(
     forgeId,
     underlyingAssetContract.address,
@@ -268,12 +268,12 @@ export async function createNewYieldContractAndMarket(
     expiry
   );
 
-  await pendleRouter.createMarket(
-    marketFactoryId,
-    xytAddress,
-    baseTokenContract.address
+  await sendAndWaitForTransaction(
+    hre,
+    pendleRouter.createMarket,
+    "createMarket",
+    [marketFactoryId, xytAddress, baseTokenContract.address]
   );
-  console.log("\t\tCreated new market");
   const marketAddress = await pendleData.getMarket(
     marketFactoryId,
     xytAddress,
@@ -281,21 +281,38 @@ export async function createNewYieldContractAndMarket(
   );
 
   //TODO: remove after fixing reentrancy
-  await pendleData.setReentrancyWhitelist([marketAddress], [true]);
-  console.log("\t\tSet reentrancy whitelist");
+  await sendAndWaitForTransaction(
+    hre,
+    pendleData.setReentrancyWhitelist,
+    "Set whitelist",
+    [[marketAddress], [true]]
+  );
 
-  deployment.yieldContracts[forgeIdString] = {};
-  deployment.yieldContracts[forgeIdString][underlyingAssetSymbol] = {
-    expiries: {},
-    PendleLiquidityMining: {},
-  };
-  deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[
-    expiry
-  ] = {
-    XYT: xytAddress,
-    OT: otAddress,
-    markets: {},
-  };
+  if (deployment.yieldContracts[forgeIdString] == null) {
+    deployment.yieldContracts[forgeIdString] = {};
+  }
+
+  if (deployment.yieldContracts[forgeIdString][underlyingAssetSymbol] == null) {
+    deployment.yieldContracts[forgeIdString][underlyingAssetSymbol] = {
+      expiries: {},
+      PendleLiquidityMining: {},
+    };
+  }
+
+  if (
+    deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[
+      expiry
+    ] == null
+  ) {
+    deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[
+      expiry
+    ] = {
+      XYT: xytAddress,
+      OT: otAddress,
+      markets: {},
+    };
+  }
+
   deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[
     expiry
   ].markets[baseTokenSymbol] = marketAddress;
@@ -369,43 +386,61 @@ export async function mintXytAndBootstrapMarket(
   );
 
   const initialXytBalance = await xytContract.balanceOf(deployer.address);
-  let tx = await underlyingYieldTokenContract.approve(
-    pendleRouter.address,
-    consts.misc.MAX_ALLOWANCE
+  await sendAndWaitForTransaction(
+    hre,
+    underlyingYieldTokenContract.approve,
+    "approve Router for a/cToken",
+    [pendleRouter.address, consts.misc.MAX_ALLOWANCE]
   );
-  await hre.ethers.provider.waitForTransaction(tx.hash);
-  console.log(`\tapproved a/cToken contract for pendleRouter`);
-  await pendleRouter.tokenizeYield(
-    forgeId,
-    underlyingAssetContract.address,
-    expiry,
-    underlyingYieldTokenAmount,
-    deployer.address
+
+  await sendAndWaitForTransaction(
+    hre,
+    pendleRouter.tokenizeYield,
+    "tokenizeYield",
+    [
+      forgeId,
+      underlyingAssetContract.address,
+      expiry,
+      underlyingYieldTokenAmount,
+      deployer.address,
+    ]
   );
-  console.log(`\tTokenized yield`);
+
   const xytMinted = (await xytContract.balanceOf(deployer.address)).sub(
     initialXytBalance
   );
 
   console.log(`\t\tMinted ${xytMinted} XYTs`);
-  await xytContract.approve(pendleRouter.address, consts.misc.MAX_ALLOWANCE);
+  await sendAndWaitForTransaction(
+    hre,
+    xytContract.approve,
+    "approve Router for xyt",
+    [pendleRouter.address, consts.misc.MAX_ALLOWANCE]
+  );
   const baseTokenAllowance = await baseTokenContract.allowance(
     deployer.address,
     pendleRouter.address
   );
   if (baseTokenAllowance.lt(baseTokenAmount)) {
-    await baseTokenContract.approve(
-      pendleRouter.address,
-      consts.misc.MAX_ALLOWANCE
+    await sendAndWaitForTransaction(
+      hre,
+      baseTokenContract.approve,
+      "approve Router for baseToken",
+      [pendleRouter.address, consts.misc.MAX_ALLOWANCE]
     );
   }
 
-  await pendleRouter.bootstrapMarket(
-    marketFactoryId,
-    xytAddress,
-    baseTokenContract.address,
-    xytMinted,
-    baseTokenAmount
+  await sendAndWaitForTransaction(
+    hre,
+    pendleRouter.bootstrapMarket,
+    "bootstrap Market",
+    [
+      marketFactoryId,
+      xytAddress,
+      baseTokenContract.address,
+      xytMinted,
+      baseTokenAmount,
+    ]
   );
   console.log(
     `\t\tBootstrapped market with ${xytMinted}xyts and ${baseTokenAmount} ${baseTokenSymbol}`
@@ -461,15 +496,41 @@ export async function setupLiquidityMining(
   deployment.yieldContracts[forgeIdString][
     underlyingAssetSymbol
   ].PendleLiquidityMining[baseTokenSymbol] = liqMiningContract.address;
-  await pendle.approve(liqMiningContract.address, consts.misc.MAX_ALLOWANCE);
-  await liqMiningContract.setAllocationSetting(
-    liqParams.EXPIRIES,
-    liqParams.ALLOCATIONS
+  await sendAndWaitForTransaction(
+    hre,
+    pendle.approve,
+    "approve liq-mining for PENDLE",
+    [liqMiningContract.address, consts.misc.MAX_ALLOWANCE]
   );
-  await liqMiningContract.fund(liqParams.REWARDS_PER_EPOCH);
-  console.log(`\t\tFunded liq-mining contract`);
+  await sendAndWaitForTransaction(
+    hre,
+    liqMiningContract.setAllocationSetting,
+    "set allocation settings",
+    [liqParams.EXPIRIES, liqParams.ALLOCATIONS]
+  );
+
+  await sendAndWaitForTransaction(
+    hre,
+    liqMiningContract.fund,
+    "fund liq-mining",
+    [liqParams.REWARDS_PER_EPOCH]
+  );
 }
 
 export function saveDeployment(filePath: string, deployment: Deployment) {
   fs.writeFileSync(filePath, JSON.stringify(deployment, null, "  "), "utf8");
+}
+
+export async function sendAndWaitForTransaction(
+  hre: any,
+  transaction: any,
+  transactionDescription: string,
+  args: any[]
+) {
+  const tx = await transaction(...args);
+  console.log(
+    `\t\t\t[Broadcasted] transaction: ${transactionDescription}: ${tx.hash}, nonce:${tx.nonce}`
+  );
+  await hre.ethers.provider.waitForTransaction(tx.hash);
+  console.log(`\t\t\t[Confirmed] transaction: ${transactionDescription}`);
 }

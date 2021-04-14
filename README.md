@@ -34,11 +34,12 @@ The tokenization of future yields also allows for the creation of products with 
   ```
   RESET=true yarn deploy:core --network <network>
   ```
-* To deploy test instances of contracts (yield contracts, markets, liquidity mining): (this runs `scripts/manage/seed_test_contracts.ts`)
+* To deploy test instances of contracts (yield contracts, markets, liquidity mining) for an expiry: (this runs `scripts/manage/seed_test_contracts.ts`)
   ```
-  yarn deploy:seed --network <network>
+  EXPIRY=<expiry_to_seed> yarn deploy:seed --network <network>
   ```
   * This will save the new yield contracts to `deployments/<network>.json` as well
+  * If `EXPIRY` is not set, it will use the default expiry as `TEST_EXPIRY_3` in the `consts.misc` object
 * To verify contracts that have been deployed in `deployments/<network>.json`:
   * First, install tenderly [link](https://github.com/Tenderly/tenderly-cli)
   * Then, `tenderly login`
