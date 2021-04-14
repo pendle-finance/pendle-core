@@ -190,14 +190,14 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
 
     /**
      * @notice redeemAfterExpiry and tokenizeYield to a different expiry
-     * @dev checks for all params except _newExpiry are in internal functions
+     * @dev ratioToRenew is a Fixed Point number
      **/
     function renewYield(
         bytes32 _forgeId,
         uint256 _oldExpiry,
         address _underlyingAsset,
         uint256 _newExpiry,
-        uint256 _amountToTokenize,
+        uint256 _renewalRate,
         address _yieldTo
     )
         external
@@ -205,25 +205,33 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         pendleNonReentrant
         returns (
             uint256 redeemedAmount,
+            uint256 amountTransferOut,
             address ot,
             address xyt,
             uint256 amountTokenMinted
         )
     {
+        require(_oldExpiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
         require(_newExpiry > _oldExpiry, "INVALID_NEW_EXPIRY");
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _oldExpiry), "INVALID_XYT");
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _newExpiry), "INVALID_XYT");
+        require(_yieldTo != address(0), "ZERO_ADDRESS");
+        require(_renewalRate <= Math.RONE, "INVALID_RENEWAL_RATE");
 
-        redeemedAmount = _redeemAfterExpiryInternal(
-            _forgeId,
+        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
+
+        (redeemedAmount, amountTransferOut) = forge.redeemAfterExpiry(
+            msg.sender,
             _underlyingAsset,
             _oldExpiry,
-            msg.sender
+            Math.RONE - _renewalRate, // only transfer out 1 - renewalRate
+            _yieldTo
         );
-
-        (ot, xyt, amountTokenMinted) = _tokenizeYieldInternal(
-            _forgeId,
+        uint256 amountToRenew = redeemedAmount - amountTransferOut; // this amount is already inside the forge
+        (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
             _underlyingAsset,
             _newExpiry,
-            _amountToTokenize,
+            amountToRenew,
             _yieldTo
         );
     }
@@ -762,7 +770,13 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         require(_expiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        redeemedAmount = forge.redeemAfterExpiry(msg.sender, _underlyingAsset, _expiry, _to);
+        (redeemedAmount, ) = forge.redeemAfterExpiry(
+            msg.sender,
+            _underlyingAsset,
+            _expiry,
+            Math.RONE,
+            _to
+        );
     }
 
     /**
@@ -791,8 +805,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
 
         underlyingToken.safeTransferFrom(msg.sender, address(forge), _amountToTokenize);
 
-        // Due to possible precision error, we will only mint the amount of OT & XYT equals
-        // to the amount of tokens that the contract receives
         (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
             _underlyingAsset,
             _expiry,

@@ -61,13 +61,15 @@ interface IPendleForge {
      * @param forgeId The forgeId
      * @param underlyingAsset the address of the underlying asset
      * @param expiry The expiry of the XYT token
-     * @param amount The amount to be redeemed.
+     * @param amountToRedeem The amount of OT to be redeemed.
+     * @param redeemedAmount The amount of yield token received
      **/
     event RedeemYieldToken(
         bytes32 forgeId,
         address indexed underlyingAsset,
         uint256 indexed expiry,
-        uint256 amount
+        uint256 amountToRedeem,
+        uint256 redeemedAmount
     );
 
     /**
@@ -94,8 +96,9 @@ interface IPendleForge {
         address account,
         address underlyingAsset,
         uint256 expiry,
+        uint256 transferOutRate,
         address to
-    ) external returns (uint256 redeemedAmount);
+    ) external returns (uint256 redeemedAmount, uint256 amountTransferOut);
 
     function redeemDueInterests(
         address account,

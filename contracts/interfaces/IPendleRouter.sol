@@ -151,12 +151,13 @@ interface IPendleRouter is IPendleStructs {
         uint256 oldExpiry,
         address underlyingAsset,
         uint256 newExpiry,
-        uint256 amountToTokenize,
+        uint256 renewalRate,
         address yieldTo
     )
         external
         returns (
             uint256 redeemedAmount,
+            uint256 amountTransferOut,
             address ot,
             address xyt,
             uint256 amountTokenMinted
