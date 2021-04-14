@@ -734,19 +734,15 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         }
 
         router.redeemDueInterests(forgeId, underlyingAsset, expiry);
-        lastInterestUpdate = block.timestamp;
         uint256 currentNYield = underlyingYieldToken.balanceOf(address(this));
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(currentNYield);
 
-        uint256 secondTerm;
-        // this should always satisfy
-        if (paramR != 0 && totalSupply != 0) {
-            secondTerm = paramR.mul(MULTIPLIER).div(totalSupply);
-        }
+        uint256 secondTerm = paramR.mul(MULTIPLIER).div(totalSupply);
 
         // update new states
         paramL = firstTerm.add(secondTerm);
         lastNYield = currentNYield;
+        lastInterestUpdate = block.timestamp;
     }
 
     // before we send LPs, we need to settle due interests for both the to and from addresses
