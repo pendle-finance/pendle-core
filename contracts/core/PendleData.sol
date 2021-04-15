@@ -58,6 +58,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     mapping(bytes32 => address) private markets;
     address[] private allMarkets;
 
+    uint256 private constant FEE_HARD_LIMIT = 109951162777; // equals to MATH.RONE / 10 = 10%
     // Parameters to be set by governance;
     /*
     if a market's interests have not been updated for deltaT, we will ping
@@ -249,6 +250,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     }
 
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external override onlyGovernance {
+        require(_swapFee <= FEE_HARD_LIMIT && _exitFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
         swapFee = _swapFee;
         exitFee = _exitFee;
     }
