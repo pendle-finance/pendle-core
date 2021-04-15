@@ -96,8 +96,7 @@ interface IPendleForge {
         address account,
         address underlyingAsset,
         uint256 expiry,
-        uint256 transferOutRate,
-        address to
+        uint256 transferOutRate
     ) external returns (uint256 redeemedAmount, uint256 amountTransferOut);
 
     function redeemDueInterests(
@@ -116,8 +115,7 @@ interface IPendleForge {
         address account,
         address underlyingAsset,
         uint256 expiry,
-        uint256 amountToRedeem,
-        address to
+        uint256 amountToRedeem
     ) external returns (uint256 redeemedAmount);
 
     function tokenizeYield(

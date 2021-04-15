@@ -120,10 +120,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     function redeemAfterExpiry(
         bytes32 _forgeId,
         address _underlyingAsset,
-        uint256 _expiry,
-        address _to
+        uint256 _expiry
     ) external override pendleNonReentrant returns (uint256 redeemedAmount) {
-        redeemedAmount = _redeemAfterExpiryInternal(_forgeId, _underlyingAsset, _expiry, _to);
+        redeemedAmount = _redeemAfterExpiryInternal(_forgeId, _underlyingAsset, _expiry);
     }
 
     /**
@@ -171,20 +170,17 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry,
-        uint256 _amountToRedeem,
-        address _to
+        uint256 _amountToRedeem
     ) external override pendleNonReentrant returns (uint256 redeemedAmount) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
-        require(_to != address(0), "ZERO_ADDRESS");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         redeemedAmount = forge.redeemUnderlying(
             msg.sender,
             _underlyingAsset,
             _expiry,
-            _amountToRedeem,
-            _to
+            _amountToRedeem
         );
     }
 
@@ -197,8 +193,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         uint256 _oldExpiry,
         address _underlyingAsset,
         uint256 _newExpiry,
-        uint256 _renewalRate,
-        address _yieldTo
+        uint256 _renewalRate
     )
         external
         override
@@ -215,7 +210,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         require(_newExpiry > _oldExpiry, "INVALID_NEW_EXPIRY");
         require(data.isValidXYT(_forgeId, _underlyingAsset, _oldExpiry), "INVALID_XYT");
         require(data.isValidXYT(_forgeId, _underlyingAsset, _newExpiry), "INVALID_XYT");
-        require(_yieldTo != address(0), "ZERO_ADDRESS");
         require(_renewalRate <= Math.RONE, "INVALID_RENEWAL_RATE");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
@@ -224,15 +218,14 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
             msg.sender,
             _underlyingAsset,
             _oldExpiry,
-            Math.RONE - _renewalRate, // only transfer out 1 - renewalRate
-            _yieldTo
+            Math.RONE - _renewalRate // only transfer out 1 - renewalRate
         );
         uint256 amountToRenew = redeemedAmount - amountTransferOut; // this amount is already inside the forge
         (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
             _underlyingAsset,
             _newExpiry,
             amountToRenew,
-            _yieldTo
+            msg.sender
         );
     }
 
@@ -762,11 +755,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     function _redeemAfterExpiryInternal(
         bytes32 _forgeId,
         address _underlyingAsset,
-        uint256 _expiry,
-        address _to
+        uint256 _expiry
     ) internal returns (uint256 redeemedAmount) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
-        require(_to != address(0), "ZERO_ADDRESS");
         require(_expiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
@@ -774,8 +765,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
             msg.sender,
             _underlyingAsset,
             _expiry,
-            Math.RONE,
-            _to
+            Math.RONE
         );
     }
 

@@ -122,8 +122,7 @@ interface IPendleRouter is IPendleStructs {
     function redeemAfterExpiry(
         bytes32 forgeId,
         address underlyingAsset,
-        uint256 expiry,
-        address to
+        uint256 expiry
     ) external returns (uint256 redeemedAmount);
 
     function redeemDueInterests(
@@ -142,8 +141,7 @@ interface IPendleRouter is IPendleStructs {
         bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry,
-        uint256 amountToRedeem,
-        address to
+        uint256 amountToRedeem
     ) external returns (uint256 redeemedAmount);
 
     function renewYield(
@@ -151,8 +149,7 @@ interface IPendleRouter is IPendleStructs {
         uint256 oldExpiry,
         address underlyingAsset,
         uint256 newExpiry,
-        uint256 renewalRate,
-        address yieldTo
+        uint256 renewalRate
     )
         external
         returns (

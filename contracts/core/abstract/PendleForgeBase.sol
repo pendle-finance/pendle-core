@@ -117,15 +117,14 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         address _account,
         address _underlyingAsset,
         uint256 _expiry,
-        uint256 _transferOutRate,
-        address _to
+        uint256 _transferOutRate
     ) external override onlyRouter returns (uint256 redeemedAmount, uint256 amountTransferOut) {
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         uint256 expiredOTamount = tokens.ot.balanceOf(_account);
         require(expiredOTamount > 0, "NOTHING_TO_REDEEM");
 
-        // _to will get the principal + the interests from last action before expiry to now
+        // _account will get the principal + the interests from last action before expiry to now
         redeemedAmount = _calcTotalAfterExpiry(_underlyingAsset, _expiry, expiredOTamount);
 
         redeemedAmount = redeemedAmount.add(
@@ -135,7 +134,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         amountTransferOut = redeemedAmount.rmul(_transferOutRate);
 
         if (amountTransferOut > 0) {
-            yieldToken.safeTransfer(_to, amountTransferOut);
+            yieldToken.safeTransfer(_account, amountTransferOut);
         }
 
         tokens.ot.burn(_account, expiredOTamount);
@@ -147,8 +146,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         address _account,
         address _underlyingAsset,
         uint256 _expiry,
-        uint256 _amountToRedeem,
-        address _to
+        uint256 _amountToRedeem
     ) external override returns (uint256 redeemedAmount) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         require(tokens.ot.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_OT_AMOUNT");
@@ -164,7 +162,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         tokens.ot.burn(_account, _amountToRedeem);
         tokens.xyt.burn(_account, _amountToRedeem);
-        yieldToken.safeTransfer(_to, redeemedAmount);
+        yieldToken.safeTransfer(_account, redeemedAmount);
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem, redeemedAmount);
 
