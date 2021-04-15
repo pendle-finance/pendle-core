@@ -952,7 +952,7 @@ describe("aaveV1-market", async () => {
 
     expect(result[1].toNumber()).to.be.approximately(
       11111111,
-      consts.TEST_TOKEN_DELTA.toNumber()
+      200
     );
   });
 
