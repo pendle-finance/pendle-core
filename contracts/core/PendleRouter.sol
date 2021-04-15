@@ -186,7 +186,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
 
     /**
      * @notice redeemAfterExpiry and tokenizeYield to a different expiry
-     * @dev ratioToRenew is a Fixed Point number
+     * @param _renewalRate a Fixed Point number, shows how much of the total redeemedAmount is renewed
      **/
     function renewYield(
         bytes32 _forgeId,
