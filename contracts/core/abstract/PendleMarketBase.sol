@@ -733,9 +733,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         if (_getIncomeIndexIncreaseRate() > data.interestUpdateRateDelta()) {
             return true;
         }
-        if (block.timestamp.sub(lastInterestUpdate) > data.interestUpdateTimeDelta()) {
-            return true;
-        }
         return false;
     }
 

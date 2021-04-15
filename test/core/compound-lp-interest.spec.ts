@@ -376,7 +376,7 @@ describe("compound-lp-interest", async () => {
     await checkCUSDTBalance(expectedResult);
   });
 
-  it.only("test 3", async () => {
+  it("test 3", async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));

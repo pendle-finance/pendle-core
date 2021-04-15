@@ -63,7 +63,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     if a market's interests have not been updated for deltaT, we will ping
     the forge to update the interests
     */
-    uint256 public override interestUpdateTimeDelta;
     uint256 public override interestUpdateRateDelta;
     uint256 public override expiryDivisor = 1 days;
     uint256 public override swapFee;
@@ -107,16 +106,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
 
         treasury = _treasury;
         emit TreasurySet(_treasury);
-    }
-
-    function setInterestUpdateTimeDelta(uint256 _interestUpdateTimeDelta)
-        external
-        override
-        initialized
-        onlyGovernance
-    {
-        interestUpdateTimeDelta = _interestUpdateTimeDelta;
-        emit InterestUpdateTimeDeltaSet(_interestUpdateTimeDelta);
     }
 
     function setInterestUpdateRateDelta(uint256 _interestUpdateRateDelta)
