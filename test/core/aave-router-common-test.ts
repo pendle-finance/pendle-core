@@ -429,7 +429,7 @@ export function runTest(isAaveV1: boolean) {
         testEnv.T0.add(consts.SIX_MONTH),
         tokenUSDT.address,
         testEnv.T0.add(consts.ONE_YEAR),
-        consts.RONE.div(2), // 50%
+        consts.RONE.div(2) // 50%
       );
 
       await router.renewYield(
