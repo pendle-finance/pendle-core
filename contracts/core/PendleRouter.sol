@@ -233,7 +233,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
      * @notice tokenize a yield bearing token to get OT+XYT
      * @notice This function acts as a proxy to the actual function
      * @dev each forge is for a yield protocol (for example: Aave, Compound)
-     * @dev all checks are in the internal function
+     * @dev no checks for _amountToTokenize
      **/
     function tokenizeYield(
         bytes32 _forgeId,
@@ -251,8 +251,16 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
             uint256 amountTokenMinted
         )
     {
-        (ot, xyt, amountTokenMinted) = _tokenizeYieldInternal(
-            _forgeId,
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(_to != address(0), "ZERO_ADDRESS");
+
+        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
+
+        IERC20 underlyingToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
+
+        underlyingToken.safeTransferFrom(msg.sender, address(forge), _amountToTokenize);
+
+        (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
             _underlyingAsset,
             _expiry,
             _amountToTokenize,
@@ -766,40 +774,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
             _underlyingAsset,
             _expiry,
             Math.RONE
-        );
-    }
-
-    /**
-     * @dev no check on _amountToTokenize
-     */
-    function _tokenizeYieldInternal(
-        bytes32 _forgeId,
-        address _underlyingAsset,
-        uint256 _expiry,
-        uint256 _amountToTokenize,
-        address _to
-    )
-        internal
-        returns (
-            address ot,
-            address xyt,
-            uint256 amountTokenMinted
-        )
-    {
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
-        require(_to != address(0), "ZERO_ADDRESS");
-
-        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-
-        IERC20 underlyingToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
-
-        underlyingToken.safeTransferFrom(msg.sender, address(forge), _amountToTokenize);
-
-        (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
-            _underlyingAsset,
-            _expiry,
-            _amountToTokenize,
-            _to
         );
     }
 
