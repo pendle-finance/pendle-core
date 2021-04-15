@@ -102,7 +102,6 @@ describe("compound-xyt-interest", async () => {
         tokenUSDT.address,
         consts.T0_C.add(consts.SIX_MONTH),
         amount,
-        user.address,
         consts.HIGH_GAS_OVERRIDE
       );
   }

@@ -187,7 +187,6 @@ export function runTest(isAaveV1: boolean) {
           tokenUSDT.address,
           testEnv.T0.add(consts.SIX_MONTH),
           refAmount,
-          alice.address,
           consts.HIGH_GAS_OVERRIDE
         )
       ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
@@ -203,7 +202,6 @@ export function runTest(isAaveV1: boolean) {
         tokenUSDT.address,
         testEnv.T0.add(consts.SIX_MONTH),
         amount,
-        alice.address,
         consts.HIGH_GAS_OVERRIDE
       );
 
@@ -226,7 +224,6 @@ export function runTest(isAaveV1: boolean) {
         tokenUSDT.address,
         testEnv.T0.add(consts.SIX_MONTH),
         BN.from(0),
-        alice.address,
         consts.HIGH_GAS_OVERRIDE
       );
     });
@@ -315,8 +312,7 @@ export function runTest(isAaveV1: boolean) {
       await router.redeemAfterExpiry(
         testEnv.FORGE_ID,
         tokenUSDT.address,
-        testEnv.T0.add(consts.SIX_MONTH),
-        alice.address
+        testEnv.T0.add(consts.SIX_MONTH)
       );
 
       const expectedGain = await getCurInterest(dave, refAmount);
@@ -359,8 +355,7 @@ export function runTest(isAaveV1: boolean) {
       await router.redeemAfterExpiry(
         testEnv.FORGE_ID,
         tokenUSDT.address,
-        testEnv.T0.add(consts.SIX_MONTH),
-        alice.address
+        testEnv.T0.add(consts.SIX_MONTH)
       );
 
       const expectedGain = await getCurInterest(dave, refAmount);
@@ -435,7 +430,6 @@ export function runTest(isAaveV1: boolean) {
         tokenUSDT.address,
         testEnv.T0.add(consts.ONE_YEAR),
         consts.RONE.div(2), // 50%
-        alice.address
       );
 
       await router.renewYield(
@@ -443,8 +437,7 @@ export function runTest(isAaveV1: boolean) {
         testEnv.T0.add(consts.SIX_MONTH),
         tokenUSDT.address,
         testEnv.T0.add(consts.ONE_YEAR),
-        consts.RONE.div(2),
-        alice.address
+        consts.RONE.div(2)
       );
 
       let renewedAmount = redeemedAmount.sub(amountTransferOut);
