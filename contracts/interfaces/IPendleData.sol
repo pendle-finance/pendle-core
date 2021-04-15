@@ -48,6 +48,11 @@ interface IPendleData {
     event LockParamsSet(uint256 lockNumerator, uint256 lockDenominator);
 
     /**
+     * @notice Emitted when ExpiryDivisor is changed
+     **/
+    event ExpiryDivisorSet(uint256 expiryDivisor);
+
+    /**
      * @notice Emitted when interestUpdateDelta is changed
      * @param interestUpdateDelta new interestUpdateDelta setting
      **/
@@ -229,6 +234,8 @@ interface IPendleData {
 
     function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator) external;
 
+    function setExpiryDivisor(uint256 _expiryDivisor) external;
+
     function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
         external;
 
@@ -241,6 +248,8 @@ interface IPendleData {
     function exitFee() external view returns (uint256);
 
     function interestUpdateDelta() external view returns (uint256);
+
+    function expiryDivisor() external view returns (uint256);
 
     function lockNumerator() external view returns (uint256);
 

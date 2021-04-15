@@ -582,14 +582,12 @@ abstract contract PendleLiquidityMiningBase is
     function _getInterestValuePerLP(uint256 expiry, address account)
         internal
         virtual
-        returns (uint256 interestValuePerLP)
-    {}
+        returns (uint256 interestValuePerLP);
 
     function _getFirstTermAndParamR(uint256 expiry, uint256 currentNYield)
         internal
         virtual
-        returns (uint256 firstTerm, uint256 paramR)
-    {}
+        returns (uint256 firstTerm, uint256 paramR);
 
-    function _afterAddingNewExpiry(uint256 expiry) internal virtual {}
+    function _afterAddingNewExpiry(uint256 expiry) internal virtual;
 }

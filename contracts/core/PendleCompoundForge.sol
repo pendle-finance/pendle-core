@@ -69,7 +69,7 @@ contract PendleCompoundForge is PendleForgeBase {
         for (uint256 i = 0; i < _cTokens.length; ++i) {
             // once the underlying CToken has been set, it cannot be changed
             require(underlyingToCToken[_underlyingAssets[i]] == address(0), "FORBIDDEN");
-            require(_isValidCToken(_underlyingAssets[i], _cTokens[i]), "INVALID_CTOKEN_DATA");
+            verifyCToken(_underlyingAssets[i], _cTokens[i]);
             underlyingToCToken[_underlyingAssets[i]] = _cTokens[i];
             initialRate[_underlyingAssets[i]] = ICToken(_cTokens[i]).exchangeRateCurrent();
         }
@@ -77,20 +77,13 @@ contract PendleCompoundForge is PendleForgeBase {
         emit RegisterCTokens(_underlyingAssets, _cTokens);
     }
 
-    function _isValidCToken(address _underlyingAsset, address _cTokenAddress)
-        internal
-        returns (bool isValid)
-    {
-        if (comptroller.markets(_cTokenAddress).isListed != true) {
-            return false;
-        }
-        if (ICToken(_cTokenAddress).isCToken() != true) {
-            return false;
-        }
-        if (ICToken(_cTokenAddress).underlying() != _underlyingAsset) {
-            return false;
-        }
-        return true;
+    function verifyCToken(address _underlyingAsset, address _cTokenAddress) internal {
+        require(
+            comptroller.markets(_cTokenAddress).isListed &&
+                ICToken(_cTokenAddress).isCToken() &&
+                ICToken(_cTokenAddress).underlying() == _underlyingAsset,
+            "INVALID_CTOKEN_DATA"
+        );
     }
 
     function _calcTotalAfterExpiry(

@@ -97,6 +97,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     ) external override pendleNonReentrant returns (address ot, address xyt) {
         require(_underlyingAsset != address(0), "ZERO_ADDRESS");
         require(_expiry > block.timestamp, "INVALID_EXPIRY");
+        require(_expiry % data.expiryDivisor() == 0, "INVALID_EXPIRY");
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         require(address(forge) != address(0), "FORGE_NOT_EXISTS");
 
@@ -289,31 +290,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
      * @notice add market liquidity by xyt and base tokens
      * @dev no checks on _maxInXyt, _maxInToken, _exactOutLp
      */
-    function addMarketLiquidityAll(
-        bytes32 _marketFactoryId,
-        address _xyt,
-        address _token,
-        uint256 _maxInXyt,
-        uint256 _maxInToken,
-        uint256 _exactOutLp
-    ) external payable override pendleNonReentrant {
-        address originalToken = _token;
-        _token = _isETH(_token) ? address(weth) : _token;
-
-        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
-        require(address(market) != address(0), "MARKET_NOT_FOUND");
-
-        PendingTransfer[3] memory transfers =
-            market.addMarketLiquidityAll(_exactOutLp, _maxInXyt, _maxInToken);
-        emit Join(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
-
-        _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
-    }
-
-    /**
-     * @notice add market liquidity by xyt and base tokens
-     * @dev no checks on _maxInXyt, _maxInToken, _exactOutLp
-     */
     function addMarketLiquidityDual(
         bytes32 _marketFactoryId,
         address _xyt,
@@ -335,6 +311,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     {
         require(_desiredXytAmount != 0, "ZERO_XYT_AMOUNT");
         require(_desiredTokenAmount != 0, "ZERO_TOKEN_AMOUNT");
+        require(_desiredXytAmount >= _xytMinAmount, "INVALID_XYT_AMOUNTS");
+        require(_desiredTokenAmount >= _tokenMinAmount, "INVALID_TOKEN_AMOUNTS");
 
         address originalToken = _token;
         _token = _isETH(_token) ? address(weth) : _token;
@@ -393,7 +371,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
      * @notice remove market liquidity by xyt and base tokens
      * @dev no checks on _exactInLp, _minOutXyt, _minOutToken
      */
-    function removeMarketLiquidityAll(
+    function removeMarketLiquidityDual(
         bytes32 _marketFactoryId,
         address _xyt,
         address _token,
@@ -413,7 +391,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         _settleTokenTransfer(address(market), lpTransfer, address(market));
 
         PendingTransfer[3] memory transfers =
-            market.removeMarketLiquidityAll(_exactInLp, _minOutXyt, _minOutToken);
+            market.removeMarketLiquidityDual(_exactInLp, _minOutXyt, _minOutToken);
 
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
         emit Exit(msg.sender, transfers[0].amount, transfers[1].amount, address(market));

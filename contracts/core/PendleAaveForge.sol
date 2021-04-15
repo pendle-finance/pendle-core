@@ -106,12 +106,11 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
             normalizedIncome = aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
             lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = normalizedIncome;
         }
-        // first time getting XYT
+
+        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
         if (ix == 0) {
-            lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
             return 0;
         }
-        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
 
         dueInterests = principal.mul(normalizedIncome).div(ix).sub(principal);
     }

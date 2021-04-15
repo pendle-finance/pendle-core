@@ -13,13 +13,13 @@ import {
   Token,
   tokens,
 } from "../helpers";
-import { AMMTest } from "./ammFormulaTest";
+import { AMMTest } from "./amm-formula-test";
 import { marketFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const { provider } = waffle;
 
-describe("PendleAaveMarket", async () => {
+describe("aaveV1-market", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;
@@ -92,7 +92,7 @@ describe("PendleAaveMarket", async () => {
   READ ME!!!
   All tests with "_sample" suffix are legacy tests. It's improved version is in other test files
     Tests for adding/removing liquidity can be found in pendleLpFormula.spec.ts
-    Tests for swapping tokens can be found in ammFormulaTest.ts
+    Tests for swapping tokens can be found in amm-formula-test.ts
   */
 
   it("should be able to join a bootstrapped market with a single standard token_sample", async () => {
@@ -134,13 +134,14 @@ describe("PendleAaveMarket", async () => {
 
     await router
       .connect(bob)
-      .addMarketLiquidityAll(
+      .addMarketLiquidityDual(
         consts.MARKET_FACTORY_AAVE,
         xyt.address,
         testToken.address,
         amount,
         amount,
-        totalSupply,
+        BN.from(0),
+        BN.from(0),
         consts.HIGH_GAS_OVERRIDE
       );
 
@@ -239,7 +240,7 @@ describe("PendleAaveMarket", async () => {
     await advanceTime(provider, consts.ONE_MONTH);
     const totalSupply = await stdMarket.totalSupply();
 
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
@@ -260,7 +261,7 @@ describe("PendleAaveMarket", async () => {
     const amount = amountToWei(BN.from(100), 6);
     await bootstrapSampleMarket(amount);
     let lpBalanceBefore: BN = await stdMarket.balanceOf(alice.address);
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
@@ -269,13 +270,15 @@ describe("PendleAaveMarket", async () => {
       BN.from(0),
       consts.HIGH_GAS_OVERRIDE
     );
-    await router.addMarketLiquidityAll(
+
+    await router.addMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
+      amount,
       consts.MAX_ALLOWANCE,
-      consts.MAX_ALLOWANCE,
-      lpBalanceBefore,
+      BN.from(0),
+      BN.from(0),
       consts.HIGH_GAS_OVERRIDE
     );
 
@@ -289,19 +292,20 @@ describe("PendleAaveMarket", async () => {
   it("shouldn't be able to add liquidity by dual tokens after xyt has expired", async () => {
     const amount = amountToWei(BN.from(10), 6);
     await bootstrapSampleMarket(amount);
-    const totalSupply = await stdMarket.totalSupply();
 
     advanceTime(provider, consts.ONE_YEAR);
+
     await expect(
       router
         .connect(bob)
-        .addMarketLiquidityAll(
+        .addMarketLiquidityDual(
           consts.MARKET_FACTORY_AAVE,
           xyt.address,
           testToken.address,
           amount,
-          amount,
-          totalSupply,
+          consts.MAX_ALLOWANCE,
+          BN.from(0),
+          BN.from(0),
           consts.HIGH_GAS_OVERRIDE
         )
     ).to.be.revertedWith(errMsg.MARKET_LOCKED);
@@ -366,7 +370,7 @@ describe("PendleAaveMarket", async () => {
     await advanceTime(provider, consts.ONE_YEAR);
     const totalSupply = await stdMarket.totalSupply();
 
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
@@ -742,13 +746,14 @@ describe("PendleAaveMarket", async () => {
 
     await router
       .connect(bob)
-      .addMarketLiquidityAll(
+      .addMarketLiquidityDual(
         consts.MARKET_FACTORY_AAVE,
         xyt.address,
         consts.ETH_ADDRESS,
         amount,
         amount,
-        totalSupply,
+        BN.from(0),
+        BN.from(0),
         wrapEth(consts.HIGH_GAS_OVERRIDE, amount)
       );
 
@@ -847,7 +852,7 @@ describe("PendleAaveMarket", async () => {
     await advanceTime(provider, consts.ONE_MONTH);
     const totalSupply = await ethMarket.totalSupply();
 
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       consts.ETH_ADDRESS,

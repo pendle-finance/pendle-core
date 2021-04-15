@@ -64,6 +64,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     the forge to update the interests
     */
     uint256 public override interestUpdateDelta;
+    uint256 public override expiryDivisor = 1 days;
     uint256 public override swapFee;
     uint256 public override exitFee;
     // lock duration = duration * lockNumerator / lockDenominator
@@ -127,6 +128,17 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         lockNumerator = _lockNumerator;
         lockDenominator = _lockDenominator;
         emit LockParamsSet(_lockNumerator, _lockDenominator);
+    }
+
+    function setExpiryDivisor(uint256 _expiryDivisor)
+        external
+        override
+        initialized
+        onlyGovernance
+    {
+        require(0 < _expiryDivisor, "INVALID_EXPIRY_DIVISOR");
+        expiryDivisor = _expiryDivisor;
+        emit ExpiryDivisorSet(_expiryDivisor);
     }
 
     function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)

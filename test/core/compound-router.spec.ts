@@ -5,28 +5,26 @@ import {
   amountToWei,
   approxBigNumber,
   consts,
+  errMsg,
   evm_revert,
   evm_snapshot,
   getCContract,
   mint,
-  mintCompoundToken,
   setTimeNextBlock,
   Token,
   tokens,
-  errMsg,
 } from "../helpers";
 import { pendleFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
-describe("PendleCompoundRouter", async () => {
+describe("compound-router", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave] = wallets;
 
   let router: Contract;
-  let routerWeb3: any;
   let cOt: Contract;
   let cXyt: Contract;
   let compoundForge: Contract;
@@ -41,7 +39,6 @@ describe("PendleCompoundRouter", async () => {
 
     const fixture = await loadFixture(pendleFixture);
     router = fixture.core.router;
-    routerWeb3 = fixture.core.routerWeb3;
     cOt = fixture.cForge.cOwnershipToken;
     cXyt = fixture.cForge.cFutureYieldToken;
     compoundForge = fixture.cForge.compoundForge;

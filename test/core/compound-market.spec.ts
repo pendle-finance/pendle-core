@@ -7,15 +7,13 @@ import {
   consts,
   evm_revert,
   evm_snapshot,
-  Token,
-  tokens,
 } from "../helpers";
 import { marketFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const { provider } = waffle;
 
-describe("PendleCompoundMarket", async () => {
+describe("compound-market", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;
@@ -26,7 +24,6 @@ describe("PendleCompoundMarket", async () => {
   let testToken: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
-  let tokenUSDT: Token;
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
@@ -37,7 +34,6 @@ describe("PendleCompoundMarket", async () => {
     xyt = fixture.cForge.cFutureYieldToken;
     testToken = fixture.testToken;
     stdMarket = fixture.cMarket;
-    tokenUSDT = tokens.USDT;
     snapshotId = await evm_snapshot();
   });
 
@@ -101,13 +97,14 @@ describe("PendleCompoundMarket", async () => {
 
     await router
       .connect(bob)
-      .addMarketLiquidityAll(
+      .addMarketLiquidityDual(
         consts.MARKET_FACTORY_COMPOUND,
         xyt.address,
         testToken.address,
         amount,
         amount,
-        totalSupply,
+        BN.from(0),
+        BN.from(0),
         consts.HIGH_GAS_OVERRIDE
       );
 
@@ -206,7 +203,7 @@ describe("PendleCompoundMarket", async () => {
     await advanceTime(provider, consts.ONE_MONTH);
     const totalSupply = await stdMarket.totalSupply();
 
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_COMPOUND,
       xyt.address,
       testToken.address,

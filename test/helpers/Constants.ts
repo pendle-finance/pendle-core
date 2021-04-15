@@ -51,6 +51,7 @@ export const consts = {
   TEST_TOKEN_DELTA: BN.from(10).pow(2),
   LOCK_NUMERATOR: BN.from(1),
   LOCK_DENOMINATOR: BN.from(180),
+  INTEREST_UPDATE_DELTA: BN.from(15 * 60), // every 15 mins
 
   // Pendle token distribution
   INVESTOR_AMOUNT: BN.from(34102839).mul(ONE_E_18),

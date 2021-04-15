@@ -140,7 +140,7 @@ contract PendleMarketReader {
     // _tokenIn & _tokenOut is guaranteed to be a pair of xyt/baseToken
     function _getMarketData(
         address _tokenIn,
-        address _tokenOut,
+        address, // address _tokenOut
         address marketAddress
     ) internal view returns (Market memory) {
         IPendleMarket market = IPendleMarket(marketAddress);
