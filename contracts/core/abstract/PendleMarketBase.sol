@@ -603,10 +603,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 outTokenRatio = Math.rpow(lpRatio, Math.rdiv(Math.RONE, nWeight));
         uint256 outTokenBalanceUpdated = Math.rmul(outTokenRatio, outTokenReserve.balance);
 
-        uint256 outAmountTOkenBeforeSwapFee = outTokenReserve.balance.sub(outTokenBalanceUpdated);
+        uint256 outAmountTokenBeforeSwapFee = outTokenReserve.balance.sub(outTokenBalanceUpdated);
 
         uint256 feePortion = Math.rmul(Math.RONE.sub(nWeight), swapFee);
-        exactOutToken = Math.rmul(outAmountTOkenBeforeSwapFee, Math.RONE.sub(feePortion));
+        exactOutToken = Math.rmul(outAmountTokenBeforeSwapFee, Math.RONE.sub(feePortion));
         return exactOutToken;
     }
 
