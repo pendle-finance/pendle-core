@@ -72,8 +72,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     uint256 public override lockNumerator;
     uint256 public override lockDenominator;
 
-    mapping(address => bool) public override reentrancyWhitelisted;
-
     constructor(address _governance, address _treasury) Permissions(_governance) {
         require(_treasury != address(0), "ZERO_ADDRESS");
         treasury = _treasury;
@@ -140,19 +138,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         require(0 < _expiryDivisor, "INVALID_EXPIRY_DIVISOR");
         expiryDivisor = _expiryDivisor;
         emit ExpiryDivisorSet(_expiryDivisor);
-    }
-
-    function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
-        external
-        override
-        initialized
-        onlyGovernance
-    {
-        require(addresses.length == whitelisted.length, "INVALID_ARRAYS");
-        for (uint256 i = 0; i < addresses.length; i++) {
-            reentrancyWhitelisted[addresses[i]] = whitelisted[i];
-        }
-        emit ReentrancyWhitelistUpdated(addresses, whitelisted);
     }
 
     /**********

@@ -46,7 +46,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
 
     constructor(address _governance, IWETH _weth) Permissions(_governance) {
         weth = _weth;
-        _reentrancyStatus = _NOT_ENTERED;
     }
 
     /**

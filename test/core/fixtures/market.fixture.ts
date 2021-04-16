@@ -163,7 +163,6 @@ export async function marketFixture(
     alice
   );
 
-  await data.setReentrancyWhitelist([aMarketAddress, a2MarketAddress, cMarketAddress, ethMarketAddress], [true, true, true, true]);
   await data.setLockParams(BN.from(consts.LOCK_NUMERATOR), BN.from(consts.LOCK_DENOMINATOR)); // lock market
   await data.setInterestUpdateRateDelta(consts.INTEREST_UPDATE_RATE_DELTA);
 

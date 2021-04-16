@@ -58,8 +58,6 @@ interface IPendleData {
      **/
     event InterestUpdateRateDeltaSet(uint256 interestUpdateRateDelta);
 
-    event ReentrancyWhitelistUpdated(address[] addresses, bool[] whitelisted);
-
     /**
      * @notice Set/update validity of a forge-factory pair
      * @param _forgeId the forge id
@@ -236,9 +234,6 @@ interface IPendleData {
 
     function setExpiryDivisor(uint256 _expiryDivisor) external;
 
-    function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
-        external;
-
     /**
      * @notice Displays the number of markets currently existing.
      * @return Returns markets length,
@@ -256,8 +251,6 @@ interface IPendleData {
     function lockDenominator() external view returns (uint256);
 
     function swapFee() external view returns (uint256);
-
-    function reentrancyWhitelisted(address a) external view returns (bool);
 
     /**
      * @notice Gets all the markets.

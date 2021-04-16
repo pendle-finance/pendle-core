@@ -25,26 +25,23 @@ pragma experimental ABIEncoderV2;
 import "../interfaces/IPendleData.sol";
 
 abstract contract PendleNonReentrant {
-    uint256 internal constant _NOT_ENTERED = 1;
-    uint256 internal constant _ENTERED = 2;
-    uint256 internal _reentrancyStatus;
+    uint8 internal cntEntered;
 
     modifier pendleNonReentrant() {
         _checkNonReentrancy(); // use functions to reduce bytecode size
         _;
-        // By storing the original value once again, a refund is triggered (see
-        // https://eips.ethereum.org/EIPS/eip-2200)
-        _reentrancyStatus = _NOT_ENTERED;
+        cntEntered--;
     }
 
     function _checkNonReentrancy() internal {
-        if (!_getData().reentrancyWhitelisted(msg.sender)) {
-            // On the first call to pendleNonReentrant, _notEntered will be true
-            require(_reentrancyStatus != _ENTERED, "REENTRANT_CALL");
-
-            // Any calls to nonReentrant after this point will fail
-            _reentrancyStatus = _ENTERED;
+        if (_getData().isMarket(msg.sender)) {
+            // == 1 because the call must have gone through the router first
+            require(cntEntered == 1, "REENTRANT_CALL");
+        } else {
+            require(cntEntered == 0, "REENTRANT_CALL");
         }
+        // Any calls to nonReentrant after this point will fail
+        cntEntered++;
     }
 
     function _getData() internal view virtual returns (IPendleData);
