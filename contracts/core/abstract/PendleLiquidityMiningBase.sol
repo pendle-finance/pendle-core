@@ -58,9 +58,12 @@ abstract contract PendleLiquidityMiningBase is
         mapping(uint256 => bool) hasExpiry;
     }
 
+    /* availableRewardsForEpoch[account][epochId] is the amount of PENDLEs the account
+        can withdraw at the beginning of epochId*/
     struct EpochData {
         mapping(uint256 => uint256) stakeUnitsForExpiry;
         mapping(uint256 => uint256) lastUpdatedForExpiry;
+        mapping(address => uint256) availableRewardsForUser;
         mapping(address => mapping(uint256 => uint256)) stakeUnitsForUser;
         uint256 settingId;
     }
@@ -110,10 +113,6 @@ abstract contract PendleLiquidityMiningBase is
     // balances[account][expiry] is the amount of LP_expiry that the account has staked
     mapping(address => mapping(uint256 => uint256)) public override balances;
     mapping(address => mapping(uint256 => uint256)) public lastTimeUserStakeUpdated;
-
-    /* availableRewardsForEpoch[account][epochId] is the amount of PENDLEs the account
-        can withdraw at the beginning of epochId*/
-    mapping(address => mapping(uint256 => uint256)) public availableRewardsForEpoch;
 
     mapping(uint256 => EpochData) private epochData;
     mapping(uint256 => uint256) public totalStakeLPForExpiry;
@@ -288,7 +287,9 @@ abstract contract PendleLiquidityMiningBase is
             rewards[0] = _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry);
         }
         for (uint256 i = 1; i < vestingEpochs; i++) {
-            rewards[i] = rewards[i].add(availableRewardsForEpoch[msg.sender][curEpoch.add(i)]);
+            rewards[i] = rewards[i].add(
+                epochData[curEpoch.add(i)].availableRewardsForUser[msg.sender]
+            );
         }
 
         // claim LP interests
@@ -436,9 +437,9 @@ abstract contract PendleLiquidityMiningBase is
             // Now we distribute this rewards over the vestingEpochs starting from epochId + 1
             // to epochId + vestingEpochs
             for (uint256 i = epochId + 1; i <= epochId + vestingEpochs; i++) {
-                availableRewardsForEpoch[account][i] = availableRewardsForEpoch[account][i].add(
-                    vars.rewardsPerVestingEpoch
-                );
+                epochData[i].availableRewardsForUser[account] = epochData[i]
+                    .availableRewardsForUser[account]
+                    .add(vars.rewardsPerVestingEpoch);
             }
         }
 
@@ -451,11 +452,11 @@ abstract contract PendleLiquidityMiningBase is
     {
         uint256 _curEpoch = _getCurrentEpochId();
         for (uint256 i = 2; i <= _curEpoch; i++) {
-            if (availableRewardsForEpoch[_account][i] > 0) {
+            if (epochData[i].availableRewardsForUser[_account] > 0) {
                 rewardsWithdrawableNow = rewardsWithdrawableNow.add(
-                    availableRewardsForEpoch[_account][i]
+                    epochData[i].availableRewardsForUser[_account]
                 );
-                availableRewardsForEpoch[_account][i] = 0;
+                epochData[i].availableRewardsForUser[_account] = 0;
             }
         }
         if (rewardsWithdrawableNow != 0) {
