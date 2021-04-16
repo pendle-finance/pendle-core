@@ -235,7 +235,7 @@ abstract contract PendleLiquidityMiningBase is
         uint256 curEpoch = _getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
         require(curEpoch <= numberOfEpochs, "INCENTIVES_PERIOD_OVER");
-        _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, curEpoch);
+        _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry);
 
         address xyt = address(data.xytTokens(forgeId, underlyingAsset, expiry));
         address marketAddress = data.getMarket(marketFactoryId, xyt, baseToken);
@@ -262,7 +262,7 @@ abstract contract PendleLiquidityMiningBase is
         require(curEpoch > 0, "NOT_STARTED");
         require(balances[msg.sender][expiry] >= amount, "INSUFFICIENT_BALANCE");
 
-        _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, curEpoch);
+        _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry);
         // _pushLpToken must happens before currentTotalStakeForExpiry and balances are updated
         _pushLpToken(expiry, amount);
 
@@ -277,7 +277,7 @@ abstract contract PendleLiquidityMiningBase is
         rewards = new uint256[](vestingEpochs);
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
             uint256 expiry = userExpiries[msg.sender].expiries[i];
-            rewards[0] = _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, curEpoch);
+            rewards[0] = _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry);
         }
         for (uint256 i = 1; i < vestingEpochs; i++) {
             rewards[i] = rewards[i].add(availableRewardsForEpoch[msg.sender][curEpoch.add(i)]);
@@ -294,13 +294,12 @@ abstract contract PendleLiquidityMiningBase is
 
     // internal functions
 
-    function _updateStakeAndRewardsBeforeStakeChange(
-        address _account,
-        uint256 _expiry,
-        uint256 _curEpoch
-    ) internal returns (uint256 _rewardsWithdrawableNow) {
-        _updateStakeDataForExpiry(_expiry, _curEpoch);
-        _rewardsWithdrawableNow = _settlePendingRewards(_account, _expiry, _curEpoch);
+    function _updateStakeAndRewardsBeforeStakeChange(address _account, uint256 _expiry)
+        internal
+        returns (uint256 _rewardsWithdrawableNow)
+    {
+        _updateStakeDataForExpiry(_expiry);
+        _rewardsWithdrawableNow = _settlePendingRewards(_account, _expiry);
         lastTimeUserStakeUpdated[_account][_expiry] = block.timestamp;
     }
 
@@ -316,7 +315,8 @@ abstract contract PendleLiquidityMiningBase is
     @dev other functions must make sure that currentTotalStakeForExpiry could be assumed
         to stay exactly the same since lastTimeUserStakeUpdated until now;
      */
-    function _updateStakeDataForExpiry(uint256 expiry, uint256 _curEpoch) internal {
+    function _updateStakeDataForExpiry(uint256 expiry) internal {
+        uint256 _curEpoch = _getCurrentEpochId();
         uint256 _epoch = _curEpoch;
 
         if (_curEpoch > numberOfEpochs) {
@@ -361,19 +361,20 @@ abstract contract PendleLiquidityMiningBase is
             - availableRewardsForEpoch[account][all epochs]
             - epochs[all epochs].userStakeSeconds
      */
-    function _settlePendingRewards(
-        address account,
-        uint256 expiry,
-        uint256 _curEpoch
-    ) internal returns (uint256 _rewardsWithdrawableNow) {
+    function _settlePendingRewards(address account, uint256 expiry)
+        internal
+        returns (uint256 _rewardsWithdrawableNow)
+    {
         // account has not staked this LP_expiry before, no need to do anything
         if (lastTimeUserStakeUpdated[account][expiry] == 0) {
             return 0;
         }
 
+        uint256 _curEpoch = _getCurrentEpochId();
         uint256 _endEpoch;
         uint256 _startEpoch = _epochOfTimestamp(lastTimeUserStakeUpdated[account][expiry]);
         // if its after the end of the programme, only count until the last epoch
+
         /*
         calculate the rewards in the current block. All blocks before this will be calculated
         in the for-loop after this if-else
