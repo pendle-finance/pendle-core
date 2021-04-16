@@ -95,7 +95,6 @@ abstract contract PendleLiquidityMiningBase is
     bool public funded;
 
     uint256[] public expiries;
-    mapping(uint256 => bool) public hasExpiry;
     uint256 private constant ALLOCATION_DENOMINATOR = 1_000_000_000;
     mapping(uint256 => mapping(uint256 => uint256)) public allocationSettings;
     // allocationSettings[settingId][expiry] = rewards portion of a pool for settingId
@@ -245,7 +244,7 @@ abstract contract PendleLiquidityMiningBase is
         require(xyt != address(0), "XYT_NOT_FOUND");
         require(marketAddress != address(0), "MARKET_NOT_FOUND");
 
-        if (!hasExpiry[expiry]) {
+        if (lpHolderForExpiry[expiry] == address(0)) {
             newLpHoldingContractAddress = _addNewExpiry(expiry, xyt, marketAddress);
         }
 
@@ -522,7 +521,7 @@ abstract contract PendleLiquidityMiningBase is
     //    - lastNYield[expiry]
     //    - normalizedIncome[expiry]
     function _updateParamL(uint256 expiry) internal {
-        require(hasExpiry[expiry], "INVALID_EXPIRY");
+        require(lpHolderForExpiry[expiry] != address(0), "INVALID_EXPIRY");
 
         address xyt = address(data.xytTokens(forgeId, underlyingAsset, expiry));
         uint256 currentNYield =
@@ -548,7 +547,6 @@ abstract contract PendleLiquidityMiningBase is
         address marketAddress
     ) internal returns (address newLpHoldingContractAddress) {
         expiries.push(expiry);
-        hasExpiry[expiry] = true;
         address underlyingYieldToken = IPendleYieldToken(xyt).underlyingYieldToken();
         newLpHoldingContractAddress = Factory.createContract(
             type(PendleLpHolder).creationCode,
