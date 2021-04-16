@@ -303,7 +303,7 @@ describe("aaveV1-liquidityMining", async () => {
   //  - Dave just holds the LP tokens
   //  - Bob stake the LP tokens into liq-mining contract, in two transactions
   //=> after 2 months, all three of them should get the same interests
-  it("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests [skip because the bug is being investigated]", async () => {
+  it("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests", async () => {
     const INITIAL_LP_AMOUNT: BN = await stdMarket.balanceOf(bob.address);
     // console.log(await stdMarket.balanceOf(stdMarket.address));
     await setTimeNextBlock(provider, params.START_TIME.add(100));
@@ -362,49 +362,6 @@ describe("aaveV1-liquidityMining", async () => {
     // console.log(actualGainCharlie.toString(), actualGainDave.toString());
     approxBigNumber(actualGainBob, actualGainDave, consts.TEST_TOKEN_DELTA);
     approxBigNumber(actualGainCharlie, actualGainDave, consts.TEST_TOKEN_DELTA);
-  });
-
-  xit("should be able to claimLpInterest [skip because the bug is being investigated]", async () => {
-    // console.log(`\tLP balance of eve = ${await stdMarket.balanceOf(eve.address)}`);
-    // console.log(`\taToken balance of market = ${await aUSDT.balanceOf(stdMarket.address)}`);
-    // console.log(`\tXYT balance of market = ${await xyt.balanceOf(stdMarket.address)}`);
-    // console.log(`\tbaseToken balance of market = ${await baseToken.balanceOf(stdMarket.address)}`);
-    await router.connect(eve).claimLpInterests([stdMarket.address]);
-    setTimeNextBlock(provider, consts.T0.add(consts.THREE_MONTH));
-
-    // some dummy trade
-    const testAmount = amountToWei(BN.from(1), 6);
-    await router.swapExactOut(
-      baseToken.address,
-      xyt.address,
-      testAmount,
-      testAmount.mul(BN.from(10)),
-      consts.MAX_ALLOWANCE,
-      consts.MARKET_FACTORY_AAVE,
-      consts.HIGH_GAS_OVERRIDE
-    );
-    // console.log(`\t+3m, LP balance of eve = ${await stdMarket.balanceOf(eve.address)}`);
-    // console.log(`\t+3m, aToken balance of market = ${await aUSDT.balanceOf(stdMarket.address)}`);
-    // console.log(`\t+3m, XYT balance of market = ${await xyt.balanceOf(stdMarket.address)}`);
-    // console.log(`\t+3m, baseToken balance of market = ${await baseToken.balanceOf(stdMarket.address)}`);
-    // console.log(`\t\tDid a dummy trade`);
-
-    await router.connect(eve).claimLpInterests([stdMarket.address]);
-
-    // console.log(`\tclaimed LP interests: LP balance of eve = ${await stdMarket.balanceOf(eve.address)}`);
-    // console.log(`\tclaimed LP interests: aToken balance of market = ${await aUSDT.balanceOf(stdMarket.address)}`);
-    // console.log(`\tclaimed LP interests: aToken balance of eve = ${await aUSDT.balanceOf(eve.address)}`);
-    // console.log(`\tclaimed LP interests: XYT balance of market = ${await xyt.balanceOf(stdMarket.address)}`);
-    // console.log(`\tclaimed LP interests: baseToken balance of market = ${await baseToken.balanceOf(stdMarket.address)}`);
-  });
-
-  it("should be able to receive enough PENDLE rewards - test 1", async () => {
-    let userStakingData: UserStakeAction[][][] = scenario.scenario01(params);
-    await doSequence(userStakingData);
-    await checkEqualRewardsFourEpochs(
-      userStakingData,
-      userStakingData.length + 1
-    );
   });
 
   it("should be able to receive enough PENDLE rewards - test 2", async () => {
