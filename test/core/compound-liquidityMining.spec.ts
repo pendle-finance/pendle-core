@@ -193,10 +193,6 @@ describe("compound-liquidityMining", async () => {
       );
   }
 
-  async function claimRewardsWeb3(user: Wallet) {
-    return await liqWeb3.methods.claimRewards().call({ from: user.address });
-  }
-
   async function getLpBalanceOfAllUsers(): Promise<BN[]> {
     let res: BN[] = [];
     for (let i = 0; i < wallets.length; i++) {
@@ -430,14 +426,11 @@ describe("compound-liquidityMining", async () => {
       PendleCompoundLiquidityMining.abi,
       liq.address
     );
-    const rewardsData = await liqWeb3.methods
+    const { rewards, interests } = await liqWeb3.methods
       .claimRewards()
       .call({ from: alice.address });
-    const interestsData = await liqWeb3.methods
-      .claimLpInterests()
-      .call({ from: alice.address });
-    console.log(`\tInterests for alice = ${interestsData}`);
-    console.log(`\tRewards available for epochs from now: ${rewardsData}`);
+    console.log(`\tInterests for alice = ${interests}`);
+    console.log(`\tRewards available for epochs from now: ${rewards}`);
 
     await liq
       .connect(bob)

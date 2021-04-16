@@ -200,10 +200,6 @@ describe("aaveV1-liquidityMining", async () => {
       );
   }
 
-  async function claimRewardsWeb3(user: Wallet) {
-    return await liqWeb3.methods.claimRewards().call({ from: user.address });
-  }
-
   async function getLpBalanceOfAllUsers(): Promise<BN[]> {
     let res: BN[] = [];
     for (let i = 0; i < wallets.length; i++) {
@@ -342,7 +338,7 @@ describe("aaveV1-liquidityMining", async () => {
       params.START_TIME.add(consts.ONE_MONTH.mul(2))
     );
 
-    await liq.connect(bob).claimLpInterests();
+    await liq.connect(bob).claimRewards();
     console.log(`\tbob claimed interests`);
     let actualGainBob = (await aUSDT.balanceOf(bob.address)).sub(preBalanceBob);
 
@@ -571,14 +567,11 @@ describe("aaveV1-liquidityMining", async () => {
     // console.log(`abi = ${liq.abi}`);
     // console.log(liq);
 
-    const rewardsData = await liqWeb3.methods
+    const { rewards, interests } = await liqWeb3.methods
       .claimRewards()
       .call({ from: alice.address });
-    const interestsData = await liqWeb3.methods
-      .claimLpInterests()
-      .call({ from: alice.address });
-    console.log(`\tInterests for alice = ${interestsData}`);
-    console.log(`\tRewards available for epochs from now: ${rewardsData}`);
+    console.log(`\tInterests for alice = ${interests}`);
+    console.log(`\tRewards available for epochs from now: ${rewards}`);
     console.log(
       `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
         lpHolderContract
