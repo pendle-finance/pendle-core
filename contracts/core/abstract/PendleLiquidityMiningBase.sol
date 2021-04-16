@@ -284,7 +284,9 @@ abstract contract PendleLiquidityMiningBase is
         rewards = new uint256[](vestingEpochs);
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
             uint256 expiry = userExpiries[msg.sender].expiries[i];
-            rewards[0] = _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry);
+            rewards[0] = rewards[0].add(
+                _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry)
+            );
         }
         for (uint256 i = 1; i < vestingEpochs; i++) {
             rewards[i] = rewards[i].add(
