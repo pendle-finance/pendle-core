@@ -317,16 +317,13 @@ abstract contract PendleLiquidityMiningBase is
      */
     function _updateStakeDataForExpiry(uint256 expiry) internal {
         uint256 _curEpoch = _getCurrentEpochId();
-        uint256 _epoch = _curEpoch;
 
-        if (_curEpoch > numberOfEpochs) {
-            _epoch = numberOfEpochs;
-        }
-        while (_epoch > 0) {
-            uint256 endOfEpoch = startTime.add(_epoch.mul(epochDuration));
-            uint256 lastUpdatedForEpoch =
-                epochs[_epoch].lastTimeStakeSecondsUpdatedForExpiry[expiry];
-            if (lastUpdatedForEpoch == endOfEpoch) {
+        // loop through all epochs in descending order
+        for (uint256 i = Math.min(_curEpoch, numberOfEpochs); i > 0; i--) {
+            uint256 epochEndTime = startTime.add(i.mul(epochDuration));
+            uint256 lastUpdatedForEpoch = epochs[i].lastTimeStakeSecondsUpdatedForExpiry[expiry];
+
+            if (lastUpdatedForEpoch == epochEndTime) {
                 break; // its already updated until this epoch, our job here is done
             }
 
@@ -334,20 +331,18 @@ abstract contract PendleLiquidityMiningBase is
                 /* we have not run this function for this epoch, and can assume that
                 currentTotalStakeForExpiry[expiry] was staked from the beginning of this epoch,
                 so we just use the start of the epoch as lastUpdatedForEpoch */
-                lastUpdatedForEpoch = endOfEpoch.sub(epochDuration);
-            }
-            uint256 newLastUpdated = endOfEpoch;
-            if (_epoch == _curEpoch) {
-                newLastUpdated = block.timestamp;
+                lastUpdatedForEpoch = epochEndTime.sub(epochDuration);
             }
 
-            epochs[_epoch].totalStakeSecondsForExpiry[expiry] = epochs[_epoch]
-                .totalStakeSecondsForExpiry[expiry]
+            uint256 newLastUpdated = Math.min(block.timestamp, epochEndTime);
+
+            epochs[i].totalStakeSecondsForExpiry[expiry] = epochs[i].totalStakeSecondsForExpiry[
+                expiry
+            ]
                 .add(
                 currentTotalStakeForExpiry[expiry].mul(newLastUpdated.sub(lastUpdatedForEpoch))
             );
-            epochs[_epoch].lastTimeStakeSecondsUpdatedForExpiry[expiry] = newLastUpdated;
-            _epoch = _epoch.sub(1);
+            epochs[i].lastTimeStakeSecondsUpdatedForExpiry[expiry] = newLastUpdated;
         }
     }
 
