@@ -236,7 +236,6 @@ abstract contract PendleLiquidityMiningBase is
         uint256 curEpoch = _getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
         require(curEpoch <= numberOfEpochs, "INCENTIVES_PERIOD_OVER");
-        _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry);
 
         address xyt = address(data.xytTokens(forgeId, underlyingAsset, expiry));
         address marketAddress = data.getMarket(marketFactoryId, xyt, baseToken);
@@ -246,6 +245,7 @@ abstract contract PendleLiquidityMiningBase is
         if (lpHolderForExpiry[expiry] == address(0)) {
             newLpHoldingContractAddress = _addNewExpiry(expiry, xyt, marketAddress);
         }
+        _settlePendingRewards(msg.sender, expiry);
 
         if (!userExpiries[msg.sender].hasExpiry[expiry]) {
             userExpiries[msg.sender].expiries.push(expiry);
@@ -263,7 +263,7 @@ abstract contract PendleLiquidityMiningBase is
         require(curEpoch > 0, "NOT_STARTED");
         require(balances[msg.sender][expiry] >= amount, "INSUFFICIENT_BALANCE");
 
-        _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry);
+        _settlePendingRewards(msg.sender, expiry);
         // _pushLpToken must happens before totalStakeLPForExpiry and balances are updated
         _pushLpToken(expiry, amount);
 
@@ -284,9 +284,7 @@ abstract contract PendleLiquidityMiningBase is
         rewards = new uint256[](vestingEpochs);
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
             uint256 expiry = userExpiries[msg.sender].expiries[i];
-            rewards[0] = rewards[0].add(
-                _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry)
-            );
+            rewards[0] = rewards[0].add(_settlePendingRewards(msg.sender, expiry));
         }
         for (uint256 i = 1; i < vestingEpochs; i++) {
             rewards[i] = rewards[i].add(
@@ -300,14 +298,6 @@ abstract contract PendleLiquidityMiningBase is
                 _settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender)
             );
         }
-    }
-
-    function _updateStakeAndRewardsBeforeStakeChange(address _account, uint256 _expiry)
-        internal
-        returns (uint256 _rewardsWithdrawableNow)
-    {
-        _updateStakeDataForExpiry(_expiry);
-        _rewardsWithdrawableNow = _settlePendingRewards(_account, _expiry);
     }
 
     /**
@@ -363,6 +353,7 @@ abstract contract PendleLiquidityMiningBase is
         internal
         returns (uint256 _rewardsWithdrawableNow)
     {
+        _updateStakeDataForExpiry(expiry);
         // account has not staked this LP_expiry before, no need to do anything
         if (lastTimeUserStakeUpdated[account][expiry] == 0) {
             lastTimeUserStakeUpdated[account][expiry] = block.timestamp;
