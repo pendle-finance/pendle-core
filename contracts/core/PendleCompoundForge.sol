@@ -40,6 +40,7 @@ import "./abstract/PendleForgeBase.sol";
 contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
     using ExpiryUtils for string;
     using SafeMath for uint256;
+    using Math for uint256;
 
     IComptroller public immutable comptroller;
 
@@ -100,14 +101,17 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
     }
 
     function getExchangeRate(address _underlyingAsset, uint256 _expiry)
-        external
+        public
         override
         returns (uint256)
     {
         if (block.timestamp > _expiry) {
             return lastRateBeforeExpiry[_underlyingAsset][_expiry];
         }
-        return ICToken(underlyingToCToken[_underlyingAsset]).exchangeRateCurrent();
+        uint256 exchangeRate = ICToken(underlyingToCToken[_underlyingAsset]).exchangeRateCurrent();
+
+        lastRateBeforeExpiry[_underlyingAsset][_expiry] = exchangeRate;
+        return exchangeRate;
     }
 
     function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
@@ -139,45 +143,35 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         return underlyingToCToken[_underlyingAsset];
     }
 
-    struct InterestVariables {
-        uint256 prevRate;
-        uint256 currentRate;
-        ICToken cToken;
-    }
-
     function _calcDueInterests(
         uint256 principal,
         address _underlyingAsset,
         uint256 _expiry,
         address _account
     ) internal override returns (uint256 dueInterests) {
-        InterestVariables memory interestVariables;
+        uint256 prevRate = lastRate[_underlyingAsset][_expiry][_account];
+        uint256 currentRate = getExchangeRate(_underlyingAsset, _expiry);
 
-        interestVariables.prevRate = lastRate[_underlyingAsset][_expiry][_account];
-        interestVariables.cToken = ICToken(underlyingToCToken[_underlyingAsset]);
-
-        if (block.timestamp >= _expiry) {
-            interestVariables.currentRate = lastRateBeforeExpiry[_underlyingAsset][_expiry];
-        } else {
-            interestVariables.currentRate = interestVariables.cToken.exchangeRateCurrent();
-            lastRateBeforeExpiry[_underlyingAsset][_expiry] = interestVariables.currentRate;
-        }
-
-        lastRate[_underlyingAsset][_expiry][_account] = interestVariables.currentRate;
+        lastRate[_underlyingAsset][_expiry][_account] = currentRate;
         // first time getting XYT
-        if (interestVariables.prevRate == 0) {
+        if (prevRate == 0) {
             return 0;
         }
-        // dueInterests is a difference between yields where newer yield increased proportionally
-        // by currentExchangeRate / prevExchangeRate for cTokens to underyling asset
-        if (interestVariables.currentRate <= interestVariables.prevRate) {
-            return 0;
+        // split into 2 statements to avoid stack error
+        dueInterests = principal.mul(currentRate).div(prevRate).sub(principal);
+        dueInterests = dueInterests.mul(initialRate[_underlyingAsset]).div(currentRate);
+    }
+
+    function _getInterestRateForUser(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) internal override returns (uint256 rate, bool firstTime) {
+        uint256 prev = lastRate[_underlyingAsset][_expiry][_account];
+        if (prev != 0) {
+            rate = getExchangeRate(_underlyingAsset, _expiry).rdiv(prev) - Math.RONE;
+        } else {
+            firstTime = true;
         }
-        dueInterests = principal
-            .mul(interestVariables.currentRate)
-            .div(interestVariables.prevRate)
-            .sub(principal)
-            .mul(initialRate[_underlyingAsset])
-            .div(interestVariables.currentRate);
     }
 }

@@ -69,6 +69,7 @@ import {WadRayMath} from "../libraries/WadRayMath.sol";
 contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
     using ExpiryUtils for string;
     using WadRayMath for uint256;
+    using Math for uint256;
 
     IAaveV2LendingPool public immutable aaveLendingPool;
 
@@ -97,16 +98,23 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         return reserveATokenAddress[_underlyingAsset];
     }
 
+    /**
+    @dev this function serves functions that take into account the lastNormalisedIncomeBeforeExpiry
+    else, functions can just call the pool directly
+    */
     function getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
         public
-        view
         override
         returns (uint256)
     {
         if (block.timestamp > _expiry) {
             return lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
         }
-        return aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset);
+
+        uint256 normalizedIncome = aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset);
+
+        lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = normalizedIncome;
+        return normalizedIncome;
     }
 
     function _calcDueInterests(
@@ -116,15 +124,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         address _account
     ) internal override returns (uint256 dueInterests) {
         uint256 ix = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
-        uint256 normalizedIncome;
-
-        if (block.timestamp >= _expiry) {
-            normalizedIncome = lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
-        } else {
-            normalizedIncome = aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset);
-            lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = normalizedIncome;
-        }
-
+        uint256 normalizedIncome = getReserveNormalizedIncome(_underlyingAsset, _expiry);
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
         // first time getting XYT
         if (ix == 0) {
@@ -180,5 +180,18 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
             _amountToTokenize,
             aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset)
         );
+    }
+
+    function _getInterestRateForUser(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) internal override returns (uint256 rate, bool firstTime) {
+        uint256 prev = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
+        if (prev != 0) {
+            rate = getReserveNormalizedIncome(_underlyingAsset, _expiry).rdiv(prev) - Math.RONE;
+        } else {
+            firstTime = true;
+        }
     }
 }

@@ -132,9 +132,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     function redeemDueInterests(
         bytes32 _forgeId,
         address _underlyingAsset,
-        uint256 _expiry
+        uint256 _expiry,
+        bool _forced
     ) external override pendleNonReentrant returns (uint256 interests) {
-        interests = _redeemDueInterestsInternal(_forgeId, _underlyingAsset, _expiry);
+        interests = _redeemDueInterestsInternal(_forgeId, _underlyingAsset, _expiry, _forced);
     }
 
     /**
@@ -155,7 +156,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
             interests[i] = _redeemDueInterestsInternal(
                 _forgeIds[i],
                 _underlyingAssets[i],
-                _expiries[i]
+                _expiries[i],
+                false
             );
         }
     }
@@ -752,11 +754,12 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     function _redeemDueInterestsInternal(
         bytes32 _forgeId,
         address _underlyingAsset,
-        uint256 _expiry
+        uint256 _expiry,
+        bool _forced
     ) internal returns (uint256 interests) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
+        interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry, _forced);
     }
 
     function _redeemAfterExpiryInternal(
