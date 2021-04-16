@@ -63,7 +63,6 @@ abstract contract PendleLiquidityMiningBase is
         mapping(uint256 => uint256) lastTimeStakeSecondsUpdatedForExpiry;
         mapping(address => mapping(uint256 => uint256)) userStakeSeconds;
         uint256 allocationSettingId;
-        bool calculated;
     }
 
     struct RewardsData {
@@ -404,7 +403,7 @@ abstract contract PendleLiquidityMiningBase is
         */
         for (uint256 epochId = _startEpoch; epochId < _endEpoch; epochId++) {
             RewardsData memory vars;
-            vars.userStakeSeconds = calUserStakeSeconds(account, expiry, _startEpoch, epochId);
+            vars.userStakeSeconds = _calUserStakeSeconds(account, expiry, _startEpoch, epochId);
 
             epochData[epochId].userStakeSeconds[account][expiry] = vars.userStakeSeconds;
 
@@ -450,20 +449,28 @@ abstract contract PendleLiquidityMiningBase is
             }
         }
 
+        _rewardsWithdrawableNow = _pushRewardsWithdrawableNow(account);
+    }
+
+    function _pushRewardsWithdrawableNow(address _account)
+        internal
+        returns (uint256 rewardsWithdrawableNow)
+    {
+        uint256 _curEpoch = _getCurrentEpochId();
         for (uint256 i = 2; i <= _curEpoch; i++) {
-            if (availableRewardsForEpoch[account][i] > 0) {
-                _rewardsWithdrawableNow = _rewardsWithdrawableNow.add(
-                    availableRewardsForEpoch[account][i]
+            if (availableRewardsForEpoch[_account][i] > 0) {
+                rewardsWithdrawableNow = rewardsWithdrawableNow.add(
+                    availableRewardsForEpoch[_account][i]
                 );
-                availableRewardsForEpoch[account][i] = 0;
+                availableRewardsForEpoch[_account][i] = 0;
             }
         }
-        if (_rewardsWithdrawableNow != 0) {
-            IERC20(pendleTokenAddress).safeTransfer(account, _rewardsWithdrawableNow);
+        if (rewardsWithdrawableNow != 0) {
+            IERC20(pendleTokenAddress).safeTransfer(_account, rewardsWithdrawableNow);
         }
     }
 
-    function calUserStakeSeconds(
+    function _calUserStakeSeconds(
         address account,
         uint256 expiry,
         uint256 _startEpoch,
