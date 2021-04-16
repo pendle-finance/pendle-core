@@ -36,7 +36,7 @@ import "../../core/PendleLpHolder.sol";
 import "../../interfaces/IPendleLiquidityMining.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../../periphery/Permissions.sol";
-import "../../periphery/PendleNonReentrant.sol";
+import "../../periphery/PendleLiquidityMiningNonReentrant.sol";
 
 /**
     @dev things that must hold in this contract:
@@ -47,7 +47,7 @@ import "../../periphery/PendleNonReentrant.sol";
 abstract contract PendleLiquidityMiningBase is
     IPendleLiquidityMining,
     Permissions,
-    PendleNonReentrant
+    PendleLiquidityMiningNonReentrant
 {
     using Math for uint256;
     using SafeMath for uint256;
@@ -126,7 +126,7 @@ abstract contract PendleLiquidityMiningBase is
         uint256 _startTime,
         uint256 _epochDuration,
         uint256 _vestingEpochs
-    ) Permissions(_governance) {
+    ) Permissions(_governance) PendleLiquidityMiningNonReentrant() {
         require(_startTime > block.timestamp, "START_TIME_OVER");
         require(IERC20(_pendleTokenAddress).totalSupply() > 0, "INVALID_ERC20");
         require(IERC20(_underlyingAsset).totalSupply() > 0, "INVALID_ERC20");
@@ -217,7 +217,7 @@ abstract contract PendleLiquidityMiningBase is
         external
         override
         isFunded
-        pendleNonReentrant
+        nonReentrant
         returns (address newLpHoldingContract)
     {
         uint256 _epoch = _currentEpoch();
@@ -245,12 +245,7 @@ abstract contract PendleLiquidityMiningBase is
         currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].add(amount);
     }
 
-    function withdraw(uint256 expiry, uint256 amount)
-        external
-        override
-        pendleNonReentrant
-        isFunded
-    {
+    function withdraw(uint256 expiry, uint256 amount) external override nonReentrant isFunded {
         uint256 _epoch = _currentEpoch();
         require(_epoch > 0, "NOT_STARTED");
         require(balances[msg.sender][expiry] >= amount, "INSUFFICIENT_BALANCE");
@@ -263,12 +258,7 @@ abstract contract PendleLiquidityMiningBase is
         currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].sub(amount);
     }
 
-    function claimRewards()
-        external
-        override
-        pendleNonReentrant
-        returns (uint256[] memory rewards)
-    {
+    function claimRewards() external override nonReentrant returns (uint256[] memory rewards) {
         uint256 _epoch = _currentEpoch(); //!!! what if currentEpoch > final epoch?
         require(_epoch > 0, "NOT_STARTED");
 
@@ -282,7 +272,7 @@ abstract contract PendleLiquidityMiningBase is
         }
     }
 
-    function claimLpInterests() external override pendleNonReentrant returns (uint256 _interests) {
+    function claimLpInterests() external override nonReentrant returns (uint256 _interests) {
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
             _interests = _interests.add(
                 _settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender)

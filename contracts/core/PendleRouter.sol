@@ -33,9 +33,9 @@ import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../periphery/Permissions.sol";
 import "../periphery/Withdrawable.sol";
-import "../periphery/PendleNonReentrant.sol";
+import "../periphery/PendleRouterNonReentrant.sol";
 
-contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReentrant {
+contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterNonReentrant {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -44,7 +44,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     address private constant DUMMY_ERC20 = address(0x123);
 
-    constructor(address _governance, IWETH _weth) Permissions(_governance) {
+    constructor(address _governance, IWETH _weth)
+        Permissions(_governance)
+        PendleRouterNonReentrant()
+    {
         weth = _weth;
     }
 
@@ -73,7 +76,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         override
         initialized
         onlyGovernance
-        pendleNonReentrant
+        nonReentrant
     {
         require(_forgeId != bytes32(0), "ZERO_BYTES");
         require(_forgeAddress != address(0), "ZERO_ADDRESS");
@@ -93,7 +96,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) external override pendleNonReentrant returns (address ot, address xyt) {
+    ) external override nonReentrant returns (address ot, address xyt) {
         require(_underlyingAsset != address(0), "ZERO_ADDRESS");
         require(_expiry > block.timestamp, "INVALID_EXPIRY");
         require(_expiry % data.expiryDivisor() == 0, "INVALID_EXPIRY");
@@ -120,7 +123,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) external override pendleNonReentrant returns (uint256 redeemedAmount) {
+    ) external override nonReentrant returns (uint256 redeemedAmount) {
         redeemedAmount = _redeemAfterExpiryInternal(_forgeId, _underlyingAsset, _expiry);
     }
 
@@ -134,7 +137,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         address _underlyingAsset,
         uint256 _expiry,
         bool _forced
-    ) external override pendleNonReentrant returns (uint256 interests) {
+    ) external override nonReentrant returns (uint256 interests) {
         interests = _redeemDueInterestsInternal(_forgeId, _underlyingAsset, _expiry, _forced);
     }
 
@@ -146,7 +149,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         bytes32[] calldata _forgeIds,
         address[] calldata _underlyingAssets,
         uint256[] calldata _expiries
-    ) external override pendleNonReentrant returns (uint256[] memory interests) {
+    ) external override nonReentrant returns (uint256[] memory interests) {
         require(
             _forgeIds.length == _underlyingAssets.length && _forgeIds.length == _expiries.length,
             "INVALID_ARRAYS"
@@ -172,7 +175,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToRedeem
-    ) external override pendleNonReentrant returns (uint256 redeemedAmount) {
+    ) external override nonReentrant returns (uint256 redeemedAmount) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
 
@@ -198,7 +201,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     )
         external
         override
-        pendleNonReentrant
+        nonReentrant
         returns (
             uint256 redeemedAmount,
             uint256 amountTransferOut,
@@ -245,7 +248,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     )
         external
         override
-        pendleNonReentrant
+        nonReentrant
         returns (
             address ot,
             address xyt,
@@ -283,7 +286,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         override
         initialized
         onlyGovernance
-        pendleNonReentrant
+        nonReentrant
     {
         require(_marketFactoryId != bytes32(0), "ZERO_BYTES");
         require(_marketFactoryAddress != address(0), "ZERO_ADDRESS");
@@ -312,7 +315,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         public
         payable
         override
-        pendleNonReentrant
+        nonReentrant
         returns (
             uint256 amountXytUsed,
             uint256 amountTokenUsed,
@@ -355,7 +358,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         bool _forXyt,
         uint256 _exactInAsset,
         uint256 _minOutLp
-    ) external payable override pendleNonReentrant {
+    ) external payable override nonReentrant {
         address originalToken = _token;
         _token = _isETH(_token) ? address(weth) : _token;
 
@@ -388,7 +391,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         uint256 _exactInLp,
         uint256 _minOutXyt,
         uint256 _minOutToken
-    ) external override pendleNonReentrant returns (uint256 exactOutXyt, uint256 exactOutToken) {
+    ) external override nonReentrant returns (uint256 exactOutXyt, uint256 exactOutToken) {
         address originalToken = _token;
         _token = _isETH(_token) ? address(weth) : _token;
 
@@ -419,7 +422,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         bool _forXyt,
         uint256 _exactInLp,
         uint256 _minOutAsset
-    ) external override pendleNonReentrant returns (uint256 exactOutXyt, uint256 exactOutToken) {
+    ) external override nonReentrant returns (uint256 exactOutXyt, uint256 exactOutToken) {
         address originalToken = _token;
         _token = _isETH(_token) ? address(weth) : _token;
 
@@ -457,7 +460,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         bytes32 _marketFactoryId,
         address _xyt,
         address _token
-    ) external override pendleNonReentrant returns (address market) {
+    ) external override nonReentrant returns (address market) {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
         require(data.isXyt(_xyt), "INVALID_XYT");
@@ -489,7 +492,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         address _token,
         uint256 _initialXytLiquidity,
         uint256 _initialTokenLiquidity
-    ) external payable override pendleNonReentrant {
+    ) external payable override nonReentrant {
         require(_initialXytLiquidity > 0, "INVALID_XYT_AMOUNT");
         require(_initialTokenLiquidity > 0, "INVALID_TOKEN_AMOUNT");
 
@@ -518,7 +521,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         uint256 _minOutTotalAmount,
         uint256 _maxPrice,
         bytes32 _marketFactoryId
-    ) external payable override pendleNonReentrant returns (uint256 outSwapAmount) {
+    ) external payable override nonReentrant returns (uint256 outSwapAmount) {
         address originalTokenIn = _tokenIn;
         address originalTokenOut = _tokenOut;
         _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
@@ -560,7 +563,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         uint256 _maxInTotalAmount,
         uint256 _maxPrice,
         bytes32 _marketFactoryId
-    ) external payable override pendleNonReentrant returns (uint256 inSwapAmount) {
+    ) external payable override nonReentrant returns (uint256 inSwapAmount) {
         address originalTokenIn = _tokenIn;
         address originalTokenOut = _tokenOut;
         _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
@@ -604,7 +607,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         address _tokenOut,
         uint256 _inTotalAmount,
         uint256 _minOutTotalAmount
-    ) external payable override pendleNonReentrant returns (uint256 outTotalAmount) {
+    ) external payable override nonReentrant returns (uint256 outTotalAmount) {
         uint256 sumInAmount;
         for (uint256 i = 0; i < _swapPath.length; i++) {
             uint256 swapRouteLength = _swapPath[i].length;
@@ -670,7 +673,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         address _tokenIn,
         address _tokenOut,
         uint256 _maxInTotalAmount
-    ) external payable override pendleNonReentrant returns (uint256 inTotalAmount) {
+    ) external payable override nonReentrant returns (uint256 inTotalAmount) {
         for (uint256 i = 0; i < _swapPath.length; i++) {
             uint256 swapRouteLength = _swapPath[i].length;
             require(
@@ -733,7 +736,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     function claimLpInterests(address[] calldata markets)
         external
         override
-        pendleNonReentrant
+        nonReentrant
         returns (uint256[] memory interests)
     {
         interests = new uint256[](markets.length);

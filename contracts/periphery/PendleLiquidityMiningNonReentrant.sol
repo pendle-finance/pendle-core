@@ -24,24 +24,22 @@ pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 import "../interfaces/IPendleData.sol";
 
-abstract contract PendleNonReentrant {
-    uint8 internal cntEntered;
+abstract contract PendleLiquidityMiningNonReentrant {
+    uint8 private _guardCounter;
 
-    modifier pendleNonReentrant() {
+    modifier nonReentrant() {
         _checkNonReentrancy(); // use functions to reduce bytecode size
         _;
-        cntEntered--;
+        _guardCounter--;
+    }
+
+    constructor() {
+        _guardCounter = 1;
     }
 
     function _checkNonReentrancy() internal {
-        if (_getData().isMarket(msg.sender)) {
-            // == 1 because the call must have gone through the router first
-            require(cntEntered == 1, "REENTRANT_CALL");
-        } else {
-            require(cntEntered == 0, "REENTRANT_CALL");
-        }
-        // Any calls to nonReentrant after this point will fail
-        cntEntered++;
+        require(_guardCounter == 1, "REENTRANT_CALL");
+        _guardCounter++;
     }
 
     function _getData() internal view virtual returns (IPendleData);
