@@ -53,10 +53,16 @@ interface IPendleData {
     event ExpiryDivisorSet(uint256 expiryDivisor);
 
     /**
-     * @notice Emitted when interestUpdateRateDelta is changed
-     * @param interestUpdateRateDelta new interestUpdateRateDelta setting
+     * @notice Emitted when interestUpdateRateDeltaForMarket is changed
+     * @param interestUpdateRateDeltaForMarket new interestUpdateRateDeltaForMarket setting
      **/
-    event InterestUpdateRateDeltaSet(uint256 interestUpdateRateDelta);
+    event InterestUpdateRateDeltaForMarketSet(uint256 interestUpdateRateDeltaForMarket);
+
+    /**
+     * @notice Emitted when interestUpdateRateDeltaForForge is changed
+     * @param interestUpdateRateDeltaForForge new interestUpdateRateDeltaForForge setting
+     **/
+    event InterestUpdateRateDeltaForForgeSet(uint256 interestUpdateRateDeltaForForge);
 
     /**
      * @notice Set/update validity of a forge-factory pair
@@ -228,7 +234,10 @@ interface IPendleData {
 
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
 
-    function setInterestUpdateRateDelta(uint256 _interestUpdateRateDelta) external;
+    function setInterestUpdateRateDeltaForMarket(uint256 _interestUpdateRateDeltaForMarket)
+        external;
+
+    function setInterestUpdateRateDeltaForForge(uint256 _interestUpdateRateDeltaForForge) external;
 
     function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator) external;
 
@@ -242,7 +251,9 @@ interface IPendleData {
 
     function exitFee() external view returns (uint256);
 
-    function interestUpdateRateDelta() external view returns (uint256);
+    function interestUpdateRateDeltaForMarket() external view returns (uint256);
+
+    function interestUpdateRateDeltaForForge() external view returns (uint256);
 
     function expiryDivisor() external view returns (uint256);
 

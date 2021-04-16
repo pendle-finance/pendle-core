@@ -60,11 +60,9 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
 
     uint256 private constant FEE_HARD_LIMIT = 109951162777; // equals to MATH.RONE / 10 = 10%
     // Parameters to be set by governance;
-    /*
-    if a market's interests have not been updated for deltaT, we will ping
-    the forge to update the interests
-    */
-    uint256 public override interestUpdateRateDelta;
+
+    uint256 public override interestUpdateRateDeltaForMarket;
+    uint256 public override interestUpdateRateDeltaForForge;
     uint256 public override expiryDivisor = 1 days;
     uint256 public override swapFee;
     uint256 public override exitFee;
@@ -107,14 +105,24 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         emit TreasurySet(_treasury);
     }
 
-    function setInterestUpdateRateDelta(uint256 _interestUpdateRateDelta)
+    function setInterestUpdateRateDeltaForMarket(uint256 _interestUpdateRateDeltaForMarket)
         external
         override
         initialized
         onlyGovernance
     {
-        interestUpdateRateDelta = _interestUpdateRateDelta;
-        emit InterestUpdateRateDeltaSet(_interestUpdateRateDelta);
+        interestUpdateRateDeltaForMarket = _interestUpdateRateDeltaForMarket;
+        emit InterestUpdateRateDeltaForMarketSet(_interestUpdateRateDeltaForMarket);
+    }
+
+    function setInterestUpdateRateDeltaForForge(uint256 _interestUpdateRateDeltaForForge)
+        external
+        override
+        initialized
+        onlyGovernance
+    {
+        interestUpdateRateDeltaForForge = _interestUpdateRateDeltaForForge;
+        emit InterestUpdateRateDeltaForForgeSet(_interestUpdateRateDeltaForForge);
     }
 
     function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator)

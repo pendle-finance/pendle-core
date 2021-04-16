@@ -164,7 +164,8 @@ export async function marketFixture(
   );
 
   await data.setLockParams(BN.from(consts.LOCK_NUMERATOR), BN.from(consts.LOCK_DENOMINATOR)); // lock market
-  await data.setInterestUpdateRateDelta(consts.INTEREST_UPDATE_RATE_DELTA);
+  await data.setInterestUpdateRateDeltaForMarket(consts.INTEREST_UPDATE_RATE_DELTA_FOR_MARKET);
+  await data.setInterestUpdateRateDeltaForForge(consts.INTEREST_UPDATE_RATE_DELTA_FOR_FORGE);
 
   for (var person of [alice, bob, charlie, dave, eve]) {
     await testToken.connect(person).approve(router.address, totalSupply);

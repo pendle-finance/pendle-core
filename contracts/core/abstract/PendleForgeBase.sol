@@ -283,7 +283,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         }
         (uint256 rate, bool firstTime) =
             _getInterestRateForUser(_underlyingAsset, _expiry, _account);
-        if (firstTime || rate > data.interestUpdateRateDelta()) {
+        if (firstTime || rate > data.interestUpdateRateDeltaForForge()) {
             return true;
         }
         return false;

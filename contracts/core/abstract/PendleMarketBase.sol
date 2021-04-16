@@ -719,7 +719,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     function checkNeedUpdateParamL() internal returns (bool) {
-        if (_getIncomeIndexIncreaseRate() > data.interestUpdateRateDelta()) {
+        if (_getIncomeIndexIncreaseRate() > data.interestUpdateRateDeltaForMarket()) {
             return true;
         }
         return false;
