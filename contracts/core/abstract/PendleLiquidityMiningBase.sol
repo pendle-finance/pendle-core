@@ -118,9 +118,9 @@ abstract contract PendleLiquidityMiningBase is
     constructor(
         address _governance,
         address _pendleTokenAddress,
-        address _pendleRouter, // The router basically identify our Pendle instance.
-        bytes32 _pendleMarketFactoryId,
-        bytes32 _pendleForgeId,
+        address _router, // The router basically identify our Pendle instance.
+        bytes32 _marketFactoryId,
+        bytes32 _forgeId,
         address _underlyingAsset,
         address _baseToken,
         uint256 _startTime,
@@ -132,19 +132,21 @@ abstract contract PendleLiquidityMiningBase is
         require(IERC20(_underlyingAsset).totalSupply() > 0, "INVALID_ERC20");
         require(IERC20(_baseToken).totalSupply() > 0, "INVALID_ERC20");
         require(_vestingEpochs > 0, "INVALID_VESTING_EPOCHS");
+
         pendleTokenAddress = _pendleTokenAddress;
-        router = IPendleRouter(_pendleRouter);
+        router = IPendleRouter(_router);
         data = router.data();
+
         require(
-            data.getMarketFactoryAddress(_pendleMarketFactoryId) != address(0),
+            data.getMarketFactoryAddress(_marketFactoryId) != address(0),
             "INVALID_MARKET_FACTORY_ID"
         );
-        require(data.getForgeAddress(_pendleForgeId) != address(0), "INVALID_FORGE_ID");
+        require(data.getForgeAddress(_forgeId) != address(0), "INVALID_FORGE_ID");
 
-        marketFactory = IPendleMarketFactory(data.getMarketFactoryAddress(_pendleMarketFactoryId));
-        marketFactoryId = _pendleMarketFactoryId;
-        forgeId = _pendleForgeId;
-        forge = data.getForgeAddress(_pendleForgeId);
+        marketFactory = IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));
+        forge = data.getForgeAddress(_forgeId);
+        marketFactoryId = _marketFactoryId;
+        forgeId = _forgeId;
         underlyingAsset = _underlyingAsset;
         baseToken = _baseToken;
         startTime = _startTime;
@@ -165,18 +167,19 @@ abstract contract PendleLiquidityMiningBase is
     // One the last epoch is over, the program is permanently over and cannot be extended anymore
     function fund(uint256[] memory _rewards) external onlyGovernance {
         require(currentSettingId > 0, "NO_ALLOC_SETTING");
-        uint256 currentEpoch = _currentEpoch();
-        require(currentEpoch <= numberOfEpochs, "LAST_EPOCH_OVER"); // we can only fund more if its still ongoing
-
-        uint256 totalFundedRewards;
+        require(_currentEpoch() <= numberOfEpochs, "LAST_EPOCH_OVER"); // we can only fund more if its still ongoing
         uint256 nNewEpoches = _rewards.length;
+
+        uint256 totalFunded;
         for (uint256 i = 0; i < nNewEpoches; i++) {
-            totalFundedRewards = totalFundedRewards.add(_rewards[i]);
+            totalFunded = totalFunded.add(_rewards[i]);
             rewardsForEpoch[numberOfEpochs + i + 1] = _rewards[i];
         }
+
+        require(totalFunded > 0, "ZERO_FUND");
         funded = true;
         numberOfEpochs = numberOfEpochs.add(nNewEpoches);
-        IERC20(pendleTokenAddress).safeTransferFrom(msg.sender, address(this), totalFundedRewards);
+        IERC20(pendleTokenAddress).safeTransferFrom(msg.sender, address(this), totalFunded);
     }
 
     /**
@@ -188,16 +191,18 @@ abstract contract PendleLiquidityMiningBase is
         In that case, we will not be able to set any allocation and hence its not possible to
             fund the contract as well
         => We should just throw this contract away, and funds are SAFU!
+    @dev the length of _expiries array should be small, 2 or 3
      */
     function setAllocationSetting(
         uint256[] calldata _expiries,
         uint256[] calldata allocationNominators
     ) external onlyGovernance {
-        // not many expiries, about 2-3 max
-        uint256 _currentE = _currentEpoch();
+        require(_expiries.length == allocationNominators.length, "INVALID_ALLOCATION");
         if (currentSettingId == 0) {
             require(block.timestamp < startTime, "LATE_FIRST_ALLOCATION");
         }
+
+        uint256 _currentE = _currentEpoch();
         for (uint256 _epoch = lastEpochWithSettingId.add(1); _epoch <= _currentE; _epoch++) {
             // save the epochSettingId for the epochs before the current epoch
             epochs[_epoch].allocationSettingId = currentSettingId;
@@ -205,7 +210,6 @@ abstract contract PendleLiquidityMiningBase is
         lastEpochWithSettingId = _currentE;
         currentSettingId++;
         uint256 sumAllocationNominators;
-        require(_expiries.length == allocationNominators.length, "INVALID_ALLOCATION");
         for (uint256 _i = 0; _i < _expiries.length; _i++) {
             allocationSettings[currentSettingId][_expiries[_i]] = allocationNominators[_i];
             sumAllocationNominators = sumAllocationNominators.add(allocationNominators[_i]);
@@ -419,29 +423,14 @@ abstract contract PendleLiquidityMiningBase is
         to update epochs[..].userStakeSeconds and epochs[..].availableRewardsForEpoch
         */
         for (uint256 epochId = _startEpoch; epochId < _endEpoch; epochId++) {
-            //// Update epochs[e].userStakeSeconds
             RewardsCalculation memory vars;
-            vars.userStakeSeconds = 0; // making it explicit for readability
-            if (epochId == _startEpoch) {
-                // if its the epoch where user staked,
-                // the user staked from lastTimeUserStakeUpdated[expiry] until end of that epoch
-                uint256 secondsStakedThisEpochSinceLastUpdate =
-                    epochDuration.sub(
-                        _epochRelativeTime(lastTimeUserStakeUpdated[account][expiry])
-                    );
-                // number of remaining seconds in this startEpoch (since the last action of user)
-                vars.userStakeSeconds = epochs[epochId].userStakeSeconds[account][expiry].add(
-                    secondsStakedThisEpochSinceLastUpdate.mul(balances[account][expiry])
-                );
-            } else {
-                vars.userStakeSeconds = epochDuration.mul(balances[account][expiry]);
-            }
+            vars.userStakeSeconds = calUserStakeSeconds(account, expiry, _startEpoch, epochId);
+
             epochs[epochId].userStakeSeconds[account][expiry] = vars.userStakeSeconds;
 
             vars.settingId = epochId > lastEpochWithSettingId
                 ? currentSettingId
                 : epochs[epochId].allocationSettingId;
-            //TODO: think of a better way to update the epoch setting
 
             vars.rewardsForMarket = rewardsForEpoch[epochId]
                 .mul(allocationSettings[vars.settingId][expiry])
@@ -490,6 +479,26 @@ abstract contract PendleLiquidityMiningBase is
             }
         }
         IERC20(pendleTokenAddress).safeTransfer(account, _rewardsWithdrawableNow);
+    }
+
+    function calUserStakeSeconds(
+        address account,
+        uint256 expiry,
+        uint256 _startEpoch,
+        uint256 _epochId
+    ) internal view returns (uint256 userStakeSeconds) {
+        if (_epochId == _startEpoch) {
+            // if its the epoch where user staked,
+            // the user staked from lastTimeUserStakeUpdated[expiry] until end of that epoch
+            uint256 secondsStakedThisEpochSinceLastUpdate =
+                epochDuration.sub(_epochRelativeTime(lastTimeUserStakeUpdated[account][expiry]));
+            // number of remaining seconds in this startEpoch (since the last action of user)
+            userStakeSeconds = epochs[_epochId].userStakeSeconds[account][expiry].add(
+                secondsStakedThisEpochSinceLastUpdate.mul(balances[account][expiry])
+            );
+        } else {
+            userStakeSeconds = epochDuration.mul(balances[account][expiry]);
+        }
     }
 
     function _pullLpToken(
