@@ -270,7 +270,13 @@ abstract contract PendleLiquidityMiningBase is
         curTotalStakeForExpiry[expiry] = curTotalStakeForExpiry[expiry].sub(amount);
     }
 
-    function claimRewards() external override nonReentrant returns (uint256[] memory rewards) {
+    function claimRewards()
+        external
+        override
+        nonReentrant
+        returns (uint256[] memory rewards, uint256 interests)
+    {
+        // claim PENDLE rewards
         uint256 curEpoch = _getCurrentEpochId(); //!!! what if currentEpoch > final epoch?
         require(curEpoch > 0, "NOT_STARTED");
 
@@ -282,17 +288,14 @@ abstract contract PendleLiquidityMiningBase is
         for (uint256 i = 1; i < vestingEpochs; i++) {
             rewards[i] = rewards[i].add(availableRewardsForEpoch[msg.sender][curEpoch.add(i)]);
         }
-    }
 
-    function claimLpInterests() external override nonReentrant returns (uint256 interests) {
+        // claim LP interests
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
             interests = interests.add(
                 _settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender)
             );
         }
     }
-
-    // internal functions
 
     function _updateStakeAndRewardsBeforeStakeChange(address _account, uint256 _expiry)
         internal
