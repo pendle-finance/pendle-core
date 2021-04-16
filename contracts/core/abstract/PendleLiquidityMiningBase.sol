@@ -66,6 +66,13 @@ abstract contract PendleLiquidityMiningBase is
         bool calculated;
     }
 
+    struct RewardsCalculation {
+        uint256 userStakeSeconds;
+        uint256 settingId;
+        uint256 rewardsForMarket;
+        uint256 rewardsPerVestingEpoch;
+    }
+
     IPendleRouter public router;
     IPendleMarketFactory public marketFactory;
     IPendleData public data;
@@ -154,20 +161,20 @@ abstract contract PendleLiquidityMiningBase is
         vestingEpochs = _vestingEpochs;
     }
 
-    function readUserExpiries(address user)
+    function readUserExpiries(address _account)
         external
         view
         override
         returns (uint256[] memory _expiries)
     {
-        _expiries = userExpiries[user].expiries;
+        _expiries = userExpiries[_account].expiries;
     }
 
     // fund a few epoches
     // One the last epoch is over, the program is permanently over and cannot be extended anymore
     function fund(uint256[] memory _rewards) external onlyGovernance {
         require(currentSettingId > 0, "NO_ALLOC_SETTING");
-        require(_currentEpoch() <= numberOfEpochs, "LAST_EPOCH_OVER"); // we can only fund more if its still ongoing
+        require(_getCurrentEpochId() <= numberOfEpochs, "LAST_EPOCH_OVER"); // we can only fund more if its still ongoing
         uint256 nNewEpoches = _rewards.length;
 
         uint256 totalFunded;
@@ -195,24 +202,25 @@ abstract contract PendleLiquidityMiningBase is
      */
     function setAllocationSetting(
         uint256[] calldata _expiries,
-        uint256[] calldata allocationNominators
+        uint256[] calldata _allocationNominators
     ) external onlyGovernance {
-        require(_expiries.length == allocationNominators.length, "INVALID_ALLOCATION");
+        require(_expiries.length == _allocationNominators.length, "INVALID_ALLOCATION");
         if (currentSettingId == 0) {
             require(block.timestamp < startTime, "LATE_FIRST_ALLOCATION");
         }
 
-        uint256 _currentE = _currentEpoch();
-        for (uint256 _epoch = lastEpochWithSettingId.add(1); _epoch <= _currentE; _epoch++) {
+        uint256 curEpoch = _getCurrentEpochId();
+        for (uint256 i = lastEpochWithSettingId + 1; i <= curEpoch; i++) {
             // save the epochSettingId for the epochs before the current epoch
-            epochs[_epoch].allocationSettingId = currentSettingId;
+            epochs[i].allocationSettingId = currentSettingId;
         }
-        lastEpochWithSettingId = _currentE;
+        lastEpochWithSettingId = curEpoch;
         currentSettingId++;
+
         uint256 sumAllocationNominators;
         for (uint256 _i = 0; _i < _expiries.length; _i++) {
-            allocationSettings[currentSettingId][_expiries[_i]] = allocationNominators[_i];
-            sumAllocationNominators = sumAllocationNominators.add(allocationNominators[_i]);
+            allocationSettings[currentSettingId][_expiries[_i]] = _allocationNominators[_i];
+            sumAllocationNominators = sumAllocationNominators.add(_allocationNominators[_i]);
         }
         require(sumAllocationNominators == ALLOCATION_DENOMINATOR, "INVALID_ALLOCATION");
     }
@@ -222,12 +230,12 @@ abstract contract PendleLiquidityMiningBase is
         override
         isFunded
         nonReentrant
-        returns (address newLpHoldingContract)
+        returns (address newLpHoldingContractAddress)
     {
-        uint256 _epoch = _currentEpoch();
-        require(_epoch > 0, "NOT_STARTED");
-        require(_epoch <= numberOfEpochs, "INCENTIVES_PERIOD_OVER");
-        _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, _epoch);
+        uint256 curEpoch = _getCurrentEpochId();
+        require(curEpoch > 0, "NOT_STARTED");
+        require(curEpoch <= numberOfEpochs, "INCENTIVES_PERIOD_OVER");
+        _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, curEpoch);
 
         address xyt = address(data.xytTokens(forgeId, underlyingAsset, expiry));
         address marketAddress = data.getMarket(marketFactoryId, xyt, baseToken);
@@ -235,14 +243,14 @@ abstract contract PendleLiquidityMiningBase is
         require(marketAddress != address(0), "MARKET_NOT_FOUND");
 
         if (!hasExpiry[expiry]) {
-            newLpHoldingContract = _addNewExpiry(expiry, xyt, marketAddress);
+            newLpHoldingContractAddress = _addNewExpiry(expiry, xyt, marketAddress);
         }
 
         if (!userExpiries[msg.sender].hasExpiry[expiry]) {
             userExpiries[msg.sender].expiries.push(expiry);
             userExpiries[msg.sender].hasExpiry[expiry] = true;
         }
-        // get the LPs
+        // _pullLpToken must happens before currentTotalStakeForExpiry and balances are updated
         _pullLpToken(marketAddress, expiry, amount);
 
         balances[msg.sender][expiry] = balances[msg.sender][expiry].add(amount);
@@ -250,11 +258,11 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     function withdraw(uint256 expiry, uint256 amount) external override nonReentrant isFunded {
-        uint256 _epoch = _currentEpoch();
-        require(_epoch > 0, "NOT_STARTED");
+        uint256 curEpoch = _getCurrentEpochId();
+        require(curEpoch > 0, "NOT_STARTED");
         require(balances[msg.sender][expiry] >= amount, "INSUFFICIENT_BALANCE");
-        _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, _epoch);
 
+        _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, curEpoch);
         // _pushLpToken must happens before currentTotalStakeForExpiry and balances are updated
         _pushLpToken(expiry, amount);
 
@@ -263,22 +271,22 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     function claimRewards() external override nonReentrant returns (uint256[] memory rewards) {
-        uint256 _epoch = _currentEpoch(); //!!! what if currentEpoch > final epoch?
-        require(_epoch > 0, "NOT_STARTED");
+        uint256 curEpoch = _getCurrentEpochId(); //!!! what if currentEpoch > final epoch?
+        require(curEpoch > 0, "NOT_STARTED");
 
         rewards = new uint256[](vestingEpochs);
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
             uint256 expiry = userExpiries[msg.sender].expiries[i];
-            rewards[0] = _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, _epoch);
+            rewards[0] = _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, curEpoch);
         }
-        for (uint256 e = 1; e < vestingEpochs; e++) {
-            rewards[e] = rewards[e].add(availableRewardsForEpoch[msg.sender][_epoch.add(e)]);
+        for (uint256 i = 1; i < vestingEpochs; i++) {
+            rewards[i] = rewards[i].add(availableRewardsForEpoch[msg.sender][curEpoch.add(i)]);
         }
     }
 
-    function claimLpInterests() external override nonReentrant returns (uint256 _interests) {
+    function claimLpInterests() external override nonReentrant returns (uint256 interests) {
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
-            _interests = _interests.add(
+            interests = interests.add(
                 _settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender)
             );
         }
@@ -286,32 +294,14 @@ abstract contract PendleLiquidityMiningBase is
 
     // internal functions
 
-    function _getData() internal view override returns (IPendleData) {
-        return data;
-    }
-
-    // 1-indexed
-    function _currentEpoch() internal view returns (uint256) {
-        return _epochOfTimestamp(block.timestamp);
-    }
-
-    function _epochOfTimestamp(uint256 t) internal view returns (uint256) {
-        if (t < startTime) return 0;
-        return t.sub(startTime).div(epochDuration).add(1);
-    }
-
-    function _epochRelativeTime(uint256 t) internal view returns (uint256) {
-        return t.sub(startTime).mod(epochDuration);
-    }
-
     function _updateStakeAndRewardsBeforeStakeChange(
-        address account,
-        uint256 expiry,
-        uint256 currentEpoch
+        address _account,
+        uint256 _expiry,
+        uint256 _curEpoch
     ) internal returns (uint256 _rewardsWithdrawableNow) {
-        _updateStakeDataForExpiry(expiry, currentEpoch);
-        _rewardsWithdrawableNow = _settlePendingRewards(account, expiry, currentEpoch);
-        lastTimeUserStakeUpdated[account][expiry] = block.timestamp;
+        _updateStakeDataForExpiry(_expiry, _curEpoch);
+        _rewardsWithdrawableNow = _settlePendingRewards(_account, _expiry, _curEpoch);
+        lastTimeUserStakeUpdated[_account][_expiry] = block.timestamp;
     }
 
     /**
@@ -326,10 +316,10 @@ abstract contract PendleLiquidityMiningBase is
     @dev other functions must make sure that currentTotalStakeForExpiry could be assumed
         to stay exactly the same since lastTimeUserStakeUpdated until now;
      */
-    function _updateStakeDataForExpiry(uint256 expiry, uint256 _currentE) internal {
-        uint256 _epoch = _currentE;
+    function _updateStakeDataForExpiry(uint256 expiry, uint256 _curEpoch) internal {
+        uint256 _epoch = _curEpoch;
 
-        if (_currentE > numberOfEpochs) {
+        if (_curEpoch > numberOfEpochs) {
             _epoch = numberOfEpochs;
         }
         while (_epoch > 0) {
@@ -347,7 +337,7 @@ abstract contract PendleLiquidityMiningBase is
                 lastUpdatedForEpoch = endOfEpoch.sub(epochDuration);
             }
             uint256 newLastUpdated = endOfEpoch;
-            if (_epoch == _currentE) {
+            if (_epoch == _curEpoch) {
                 newLastUpdated = block.timestamp;
             }
 
@@ -359,13 +349,6 @@ abstract contract PendleLiquidityMiningBase is
             epochs[_epoch].lastTimeStakeSecondsUpdatedForExpiry[expiry] = newLastUpdated;
             _epoch = _epoch.sub(1);
         }
-    }
-
-    struct RewardsCalculation {
-        uint256 userStakeSeconds;
-        uint256 settingId;
-        uint256 rewardsForMarket;
-        uint256 rewardsPerVestingEpoch;
     }
 
     /**
@@ -381,7 +364,7 @@ abstract contract PendleLiquidityMiningBase is
     function _settlePendingRewards(
         address account,
         uint256 expiry,
-        uint256 _currentE
+        uint256 _curEpoch
     ) internal returns (uint256 _rewardsWithdrawableNow) {
         // account has not staked this LP_expiry before, no need to do anything
         if (lastTimeUserStakeUpdated[account][expiry] == 0) {
@@ -395,17 +378,17 @@ abstract contract PendleLiquidityMiningBase is
         calculate the rewards in the current block. All blocks before this will be calculated
         in the for-loop after this if-else
         */
-        if (_currentE > numberOfEpochs) {
+        if (_curEpoch > numberOfEpochs) {
             _endEpoch = numberOfEpochs.add(1);
         } else {
-            _endEpoch = _currentE;
+            _endEpoch = _curEpoch;
 
             // current epoch is still within the liq mining programme.
             // We need to update userStakeSeconds for this epoch, until the current timestamp
-            if (_startEpoch < _currentE) {
+            if (_startEpoch < _curEpoch) {
                 /* if the last time we ran this funciton was in a previous epoch,
                 then we just count the seconds elapsed this epoch */
-                epochs[_currentE].userStakeSeconds[account][expiry] = balances[account][expiry]
+                epochs[_curEpoch].userStakeSeconds[account][expiry] = balances[account][expiry]
                     .mul(_epochRelativeTime(block.timestamp));
                 // last action of user is in a previous epoch
                 // tlast -> now the user hasn't changed their amount of Lp
@@ -413,7 +396,7 @@ abstract contract PendleLiquidityMiningBase is
                 uint256 timeElapsed =
                     block.timestamp.sub(lastTimeUserStakeUpdated[account][expiry]);
                 // last action of user is in this epoch
-                epochs[_currentE].userStakeSeconds[account][expiry] = epochs[_currentE]
+                epochs[_curEpoch].userStakeSeconds[account][expiry] = epochs[_curEpoch]
                     .userStakeSeconds[account][expiry]
                     .add(balances[account][expiry].mul(timeElapsed));
             }
@@ -470,7 +453,7 @@ abstract contract PendleLiquidityMiningBase is
             }
         }
 
-        for (uint256 epochId = 2; epochId <= _currentE; epochId++) {
+        for (uint256 epochId = 2; epochId <= _curEpoch; epochId++) {
             if (availableRewardsForEpoch[account][epochId] > 0) {
                 _rewardsWithdrawableNow = _rewardsWithdrawableNow.add(
                     availableRewardsForEpoch[account][epochId]
@@ -563,17 +546,35 @@ abstract contract PendleLiquidityMiningBase is
         uint256 expiry,
         address xyt,
         address marketAddress
-    ) internal returns (address newLpHoldingContract) {
+    ) internal returns (address newLpHoldingContractAddress) {
         expiries.push(expiry);
         hasExpiry[expiry] = true;
         address underlyingYieldToken = IPendleYieldToken(xyt).underlyingYieldToken();
-        newLpHoldingContract = Factory.createContract(
+        newLpHoldingContractAddress = Factory.createContract(
             type(PendleLpHolder).creationCode,
             abi.encodePacked(marketAddress, marketFactory.router(), underlyingYieldToken),
             abi.encode(marketAddress, marketFactory.router(), underlyingYieldToken)
         );
-        lpHolderForExpiry[expiry] = newLpHoldingContract;
+        lpHolderForExpiry[expiry] = newLpHoldingContractAddress;
         _afterAddingNewExpiry(expiry);
+    }
+
+    function _getData() internal view override returns (IPendleData) {
+        return data;
+    }
+
+    // 1-indexed
+    function _getCurrentEpochId() internal view returns (uint256) {
+        return _epochOfTimestamp(block.timestamp);
+    }
+
+    function _epochOfTimestamp(uint256 t) internal view returns (uint256) {
+        if (t < startTime) return 0;
+        return t.sub(startTime).div(epochDuration).add(1);
+    }
+
+    function _epochRelativeTime(uint256 t) internal view returns (uint256) {
+        return t.sub(startTime).mod(epochDuration);
     }
 
     function _getInterestValuePerLP(uint256 expiry, address account)
