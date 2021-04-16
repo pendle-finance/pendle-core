@@ -66,7 +66,7 @@ abstract contract PendleLiquidityMiningBase is
         bool calculated;
     }
 
-    struct RewardsCalculation {
+    struct RewardsData {
         uint256 userStakeSeconds;
         uint256 settingId;
         uint256 rewardsForMarket;
@@ -95,7 +95,7 @@ abstract contract PendleLiquidityMiningBase is
     uint256 private constant ALLOCATION_DENOMINATOR = 1_000_000_000;
     mapping(uint256 => mapping(uint256 => uint256)) public allocationSettings;
     // allocationSettings[settingId][expiry] = rewards portion of a pool for settingId
-    uint256 public currentSettingId;
+    uint256 public curSettingId;
     uint256 public lastEpochWithSettingId;
 
     // storage for LP interests stuff
@@ -113,8 +113,8 @@ abstract contract PendleLiquidityMiningBase is
         can withdraw at the beginning of epochId*/
     mapping(address => mapping(uint256 => uint256)) public availableRewardsForEpoch;
 
-    mapping(uint256 => EpochData) private epochs;
-    mapping(uint256 => uint256) public currentTotalStakeForExpiry;
+    mapping(uint256 => EpochData) private epochData;
+    mapping(uint256 => uint256) public curTotalStakeForExpiry;
     mapping(address => UserExpiries) private userExpiries;
 
     modifier isFunded() {
@@ -173,7 +173,7 @@ abstract contract PendleLiquidityMiningBase is
     // fund a few epoches
     // One the last epoch is over, the program is permanently over and cannot be extended anymore
     function fund(uint256[] memory _rewards) external onlyGovernance {
-        require(currentSettingId > 0, "NO_ALLOC_SETTING");
+        require(curSettingId > 0, "NO_ALLOC_SETTING");
         require(_getCurrentEpochId() <= numberOfEpochs, "LAST_EPOCH_OVER"); // we can only fund more if its still ongoing
         uint256 nNewEpoches = _rewards.length;
 
@@ -191,7 +191,7 @@ abstract contract PendleLiquidityMiningBase is
 
     /**
     @notice set a new allocation setting, which will be applied from the next Epoch onwards
-    @dev  all the epochs from lastEpochWithSettingId+1 to current epoch will follow the previous
+    @dev  all the epochData from lastEpochWithSettingId+1 to current epoch will follow the previous
     allocation setting
     @dev We must set the very first allocation setting before the start of epoch 1,
             otherwise epoch 1 will not have any allocation setting!
@@ -205,21 +205,21 @@ abstract contract PendleLiquidityMiningBase is
         uint256[] calldata _allocationNominators
     ) external onlyGovernance {
         require(_expiries.length == _allocationNominators.length, "INVALID_ALLOCATION");
-        if (currentSettingId == 0) {
+        if (curSettingId == 0) {
             require(block.timestamp < startTime, "LATE_FIRST_ALLOCATION");
         }
 
         uint256 curEpoch = _getCurrentEpochId();
         for (uint256 i = lastEpochWithSettingId + 1; i <= curEpoch; i++) {
-            // save the epochSettingId for the epochs before the current epoch
-            epochs[i].allocationSettingId = currentSettingId;
+            // save the epochSettingId for the epochData before the current epoch
+            epochData[i].allocationSettingId = curSettingId;
         }
         lastEpochWithSettingId = curEpoch;
-        currentSettingId++;
+        curSettingId++;
 
         uint256 sumAllocationNominators;
         for (uint256 _i = 0; _i < _expiries.length; _i++) {
-            allocationSettings[currentSettingId][_expiries[_i]] = _allocationNominators[_i];
+            allocationSettings[curSettingId][_expiries[_i]] = _allocationNominators[_i];
             sumAllocationNominators = sumAllocationNominators.add(_allocationNominators[_i]);
         }
         require(sumAllocationNominators == ALLOCATION_DENOMINATOR, "INVALID_ALLOCATION");
@@ -250,11 +250,11 @@ abstract contract PendleLiquidityMiningBase is
             userExpiries[msg.sender].expiries.push(expiry);
             userExpiries[msg.sender].hasExpiry[expiry] = true;
         }
-        // _pullLpToken must happens before currentTotalStakeForExpiry and balances are updated
+        // _pullLpToken must happens before curTotalStakeForExpiry and balances are updated
         _pullLpToken(marketAddress, expiry, amount);
 
         balances[msg.sender][expiry] = balances[msg.sender][expiry].add(amount);
-        currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].add(amount);
+        curTotalStakeForExpiry[expiry] = curTotalStakeForExpiry[expiry].add(amount);
     }
 
     function withdraw(uint256 expiry, uint256 amount) external override nonReentrant isFunded {
@@ -263,11 +263,11 @@ abstract contract PendleLiquidityMiningBase is
         require(balances[msg.sender][expiry] >= amount, "INSUFFICIENT_BALANCE");
 
         _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry);
-        // _pushLpToken must happens before currentTotalStakeForExpiry and balances are updated
+        // _pushLpToken must happens before curTotalStakeForExpiry and balances are updated
         _pushLpToken(expiry, amount);
 
         balances[msg.sender][expiry] = balances[msg.sender][expiry].sub(amount);
-        currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].sub(amount);
+        curTotalStakeForExpiry[expiry] = curTotalStakeForExpiry[expiry].sub(amount);
     }
 
     function claimRewards() external override nonReentrant returns (uint256[] memory rewards) {
@@ -305,23 +305,24 @@ abstract contract PendleLiquidityMiningBase is
 
     /**
     @notice update the following stake data for the current epoch:
-        - epochs[current epoch].totalStakeSecondsForExpiry
-        - epochs[current epoch].lastTimeStakeSecondsUpdatedForExpiry
+        - epochData[current epoch].totalStakeSecondsForExpiry
+        - epochData[current epoch].lastTimeStakeSecondsUpdatedForExpiry
     @dev If this is the very first transaction involving this expiry, then need to update for the
     previous epoch as well. If the previous didn't have any transactions at all, (and hence was not
     updated at all), we need to update it and check the previous previous ones, and so on..
     @dev must be called right before every _settlePendingRewards()
     @dev this is the only function that updates lastTimeUserStakeUpdated
-    @dev other functions must make sure that currentTotalStakeForExpiry could be assumed
+    @dev other functions must make sure that curTotalStakeForExpiry could be assumed
         to stay exactly the same since lastTimeUserStakeUpdated until now;
      */
     function _updateStakeDataForExpiry(uint256 expiry) internal {
         uint256 _curEpoch = _getCurrentEpochId();
 
-        // loop through all epochs in descending order
+        // loop through all epochData in descending order
         for (uint256 i = Math.min(_curEpoch, numberOfEpochs); i > 0; i--) {
             uint256 epochEndTime = startTime.add(i.mul(epochDuration));
-            uint256 lastUpdatedForEpoch = epochs[i].lastTimeStakeSecondsUpdatedForExpiry[expiry];
+            uint256 lastUpdatedForEpoch =
+                epochData[i].lastTimeStakeSecondsUpdatedForExpiry[expiry];
 
             if (lastUpdatedForEpoch == epochEndTime) {
                 break; // its already updated until this epoch, our job here is done
@@ -329,20 +330,17 @@ abstract contract PendleLiquidityMiningBase is
 
             if (lastUpdatedForEpoch == 0) {
                 /* we have not run this function for this epoch, and can assume that
-                currentTotalStakeForExpiry[expiry] was staked from the beginning of this epoch,
+                curTotalStakeForExpiry[expiry] was staked from the beginning of this epoch,
                 so we just use the start of the epoch as lastUpdatedForEpoch */
                 lastUpdatedForEpoch = epochEndTime.sub(epochDuration);
             }
 
             uint256 newLastUpdated = Math.min(block.timestamp, epochEndTime);
 
-            epochs[i].totalStakeSecondsForExpiry[expiry] = epochs[i].totalStakeSecondsForExpiry[
-                expiry
-            ]
-                .add(
-                currentTotalStakeForExpiry[expiry].mul(newLastUpdated.sub(lastUpdatedForEpoch))
-            );
-            epochs[i].lastTimeStakeSecondsUpdatedForExpiry[expiry] = newLastUpdated;
+            epochData[i].totalStakeSecondsForExpiry[expiry] = epochData[i]
+                .totalStakeSecondsForExpiry[expiry]
+                .add(curTotalStakeForExpiry[expiry].mul(newLastUpdated.sub(lastUpdatedForEpoch)));
+            epochData[i].lastTimeStakeSecondsUpdatedForExpiry[expiry] = newLastUpdated;
         }
     }
 
@@ -353,8 +351,8 @@ abstract contract PendleLiquidityMiningBase is
         I.e. Since lastTimeUserStakeUpdated[account]
     @dev The user's stake since lastTimeUserStakeUpdated[user] until now = balances[user][expiry]
     @dev After this function, the following should be updated correctly up to this point:
-            - availableRewardsForEpoch[account][all epochs]
-            - epochs[all epochs].userStakeSeconds
+            - availableRewardsForEpoch[account][all epochData]
+            - epochData[all epochData].userStakeSeconds
      */
     function _settlePendingRewards(address account, uint256 expiry)
         internal
@@ -384,7 +382,7 @@ abstract contract PendleLiquidityMiningBase is
             if (_startEpoch < _curEpoch) {
                 /* if the last time we ran this funciton was in a previous epoch,
                 then we just count the seconds elapsed this epoch */
-                epochs[_curEpoch].userStakeSeconds[account][expiry] = balances[account][expiry]
+                epochData[_curEpoch].userStakeSeconds[account][expiry] = balances[account][expiry]
                     .mul(_epochRelativeTime(block.timestamp));
                 // last action of user is in a previous epoch
                 // tlast -> now the user hasn't changed their amount of Lp
@@ -392,44 +390,44 @@ abstract contract PendleLiquidityMiningBase is
                 uint256 timeElapsed =
                     block.timestamp.sub(lastTimeUserStakeUpdated[account][expiry]);
                 // last action of user is in this epoch
-                epochs[_curEpoch].userStakeSeconds[account][expiry] = epochs[_curEpoch]
+                epochData[_curEpoch].userStakeSeconds[account][expiry] = epochData[_curEpoch]
                     .userStakeSeconds[account][expiry]
                     .add(balances[account][expiry].mul(timeElapsed));
             }
         }
 
-        /* Go through epochs that were over
-        to update epochs[..].userStakeSeconds and epochs[..].availableRewardsForEpoch
+        /* Go through epochData that were over
+        to update epochData[..].userStakeSeconds and epochData[..].availableRewardsForEpoch
         */
         for (uint256 epochId = _startEpoch; epochId < _endEpoch; epochId++) {
-            RewardsCalculation memory vars;
+            RewardsData memory vars;
             vars.userStakeSeconds = calUserStakeSeconds(account, expiry, _startEpoch, epochId);
 
-            epochs[epochId].userStakeSeconds[account][expiry] = vars.userStakeSeconds;
+            epochData[epochId].userStakeSeconds[account][expiry] = vars.userStakeSeconds;
 
             vars.settingId = epochId > lastEpochWithSettingId
-                ? currentSettingId
-                : epochs[epochId].allocationSettingId;
+                ? curSettingId
+                : epochData[epochId].allocationSettingId;
 
             vars.rewardsForMarket = rewardsForEpoch[epochId]
                 .mul(allocationSettings[vars.settingId][expiry])
                 .div(ALLOCATION_DENOMINATOR);
 
-            if (epochs[epochId].totalStakeSecondsForExpiry[expiry] == 0) {
+            if (epochData[epochId].totalStakeSecondsForExpiry[expiry] == 0) {
                 /*
                 Handle special case when no-one stake/unstake for this expiry during the epoch
                 I.e. Everyone staked before the start of the epoch and hold through the end
                 as such, totalStakeSecondsForExpiry is still not updated, and is zero.
-                we will just update it to currentTotalStakeForExpiry[expiry] * epochDuration
+                we will just update it to curTotalStakeForExpiry[expiry] * epochDuration
                 */
-                if (currentTotalStakeForExpiry[expiry] == 0) {
+                if (curTotalStakeForExpiry[expiry] == 0) {
                     /* in the extreme extreme case of zero staked LPs for this expiry even now,
                     => nothing to do from this epoch onwards */
                     break;
                 }
 
                 // no one does anything in this epoch => totalStakeSecondsForExpiry = full epoch
-                epochs[epochId].totalStakeSecondsForExpiry[expiry] = currentTotalStakeForExpiry[
+                epochData[epochId].totalStakeSecondsForExpiry[expiry] = curTotalStakeForExpiry[
                     expiry
                 ]
                     .mul(epochDuration);
@@ -437,27 +435,29 @@ abstract contract PendleLiquidityMiningBase is
             vars.rewardsPerVestingEpoch = vars
                 .rewardsForMarket
                 .mul(vars.userStakeSeconds)
-                .div(epochs[epochId].totalStakeSecondsForExpiry[expiry])
+                .div(epochData[epochId].totalStakeSecondsForExpiry[expiry])
                 .div(vestingEpochs);
 
-            // Now we distribute this rewards over the vestingEpochs starting from e + 1
-            for (uint256 vestingE = epochId + 1; vestingE <= epochId + vestingEpochs; vestingE++) {
-                availableRewardsForEpoch[account][vestingE] = availableRewardsForEpoch[account][
-                    vestingE
-                ]
-                    .add(vars.rewardsPerVestingEpoch);
+            // Now we distribute this rewards over the vestingEpochs starting from epochId + 1
+            // to epochId + vestingEpochs
+            for (uint256 i = epochId + 1; i <= epochId + vestingEpochs; i++) {
+                availableRewardsForEpoch[account][i] = availableRewardsForEpoch[account][i].add(
+                    vars.rewardsPerVestingEpoch
+                );
             }
         }
 
-        for (uint256 epochId = 2; epochId <= _curEpoch; epochId++) {
-            if (availableRewardsForEpoch[account][epochId] > 0) {
+        for (uint256 i = 2; i <= _curEpoch; i++) {
+            if (availableRewardsForEpoch[account][i] > 0) {
                 _rewardsWithdrawableNow = _rewardsWithdrawableNow.add(
-                    availableRewardsForEpoch[account][epochId]
+                    availableRewardsForEpoch[account][i]
                 );
-                availableRewardsForEpoch[account][epochId] = 0;
+                availableRewardsForEpoch[account][i] = 0;
             }
         }
-        IERC20(pendleTokenAddress).safeTransfer(account, _rewardsWithdrawableNow);
+        if (_rewardsWithdrawableNow != 0) {
+            IERC20(pendleTokenAddress).safeTransfer(account, _rewardsWithdrawableNow);
+        }
     }
 
     function calUserStakeSeconds(
@@ -472,7 +472,7 @@ abstract contract PendleLiquidityMiningBase is
             uint256 secondsStakedThisEpochSinceLastUpdate =
                 epochDuration.sub(_epochRelativeTime(lastTimeUserStakeUpdated[account][expiry]));
             // number of remaining seconds in this startEpoch (since the last action of user)
-            userStakeSeconds = epochs[_epochId].userStakeSeconds[account][expiry].add(
+            userStakeSeconds = epochData[_epochId].userStakeSeconds[account][expiry].add(
                 secondsStakedThisEpochSinceLastUpdate.mul(balances[account][expiry])
             );
         } else {
@@ -529,8 +529,8 @@ abstract contract PendleLiquidityMiningBase is
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(expiry, currentNYield);
 
         uint256 secondTerm;
-        if (paramR != 0 && currentTotalStakeForExpiry[expiry] != 0) {
-            secondTerm = paramR.mul(MULTIPLIER).div(currentTotalStakeForExpiry[expiry]);
+        if (paramR != 0 && curTotalStakeForExpiry[expiry] != 0) {
+            secondTerm = paramR.mul(MULTIPLIER).div(curTotalStakeForExpiry[expiry]);
         }
 
         // Update new states
