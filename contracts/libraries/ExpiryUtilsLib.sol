@@ -22,12 +22,6 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
 library ExpiryUtils {
-    struct PendingTransfer {
-        uint256 amount;
-        address token;
-        bool isOut;
-    }
-
     struct Date {
         uint16 year;
         uint8 month;
