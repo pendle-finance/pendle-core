@@ -381,26 +381,19 @@ abstract contract PendleLiquidityMiningBase is
         } else {
             _endEpoch = _curEpoch;
 
-            // current epoch is still within the liq mining programme.
-            // We need to update stakeUnitsForUser for this epoch, until the current timestamp
-            if (_startEpoch < _curEpoch) {
-                /* if the last time we ran this funciton was in a previous epoch,
-                then we just count the seconds elapsed this epoch */
-                epochData[_curEpoch].stakeUnitsForUser[account][expiry] = balances[account][expiry]
-                    .mul(_epochRelativeTime(block.timestamp));
-                // last action of user is in a previous epoch
-                // tlast -> now the user hasn't changed their amount of Lp
-            } else {
-                uint256 timeElapsed =
-                    block.timestamp.sub(lastTimeUserStakeUpdated[account][expiry]);
-                // last action of user is in this epoch
-                epochData[_curEpoch].stakeUnitsForUser[account][expiry] = epochData[_curEpoch]
-                    .stakeUnitsForUser[account][expiry]
-                    .add(balances[account][expiry].mul(timeElapsed));
-            }
+            uint256 durationStakeThisEpoch =
+                block.timestamp -
+                    Math.max(
+                        _startTimeOfEpoch(_curEpoch),
+                        lastTimeUserStakeUpdated[account][expiry]
+                    );
+
+            epochData[_curEpoch].stakeUnitsForUser[account][expiry] = epochData[_curEpoch]
+                .stakeUnitsForUser[account][expiry]
+                .add(balances[account][expiry].mul(durationStakeThisEpoch));
         }
 
-        /* Go through epochData that were over
+        /* Go through all epochs that are now over
         to update epochData[..].stakeUnitsForUser and epochData[..].availableRewardsForEpoch
         */
         for (uint256 epochId = _startEpoch; epochId < _endEpoch; epochId++) {
@@ -582,6 +575,11 @@ abstract contract PendleLiquidityMiningBase is
 
     function _epochRelativeTime(uint256 t) internal view returns (uint256) {
         return t.sub(startTime).mod(epochDuration);
+    }
+
+    function _startTimeOfEpoch(uint256 t) internal view returns (uint256) {
+        // epoch id starting from 1
+        return startTime + (t - 1) * epochDuration;
     }
 
     function _getInterestValuePerLP(uint256 expiry, address account)
