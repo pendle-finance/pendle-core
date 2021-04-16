@@ -306,7 +306,6 @@ abstract contract PendleLiquidityMiningBase is
     {
         _updateStakeDataForExpiry(_expiry);
         _rewardsWithdrawableNow = _settlePendingRewards(_account, _expiry);
-        lastTimeUserStakeUpdated[_account][_expiry] = block.timestamp;
     }
 
     /**
@@ -364,6 +363,7 @@ abstract contract PendleLiquidityMiningBase is
     {
         // account has not staked this LP_expiry before, no need to do anything
         if (lastTimeUserStakeUpdated[account][expiry] == 0) {
+            lastTimeUserStakeUpdated[account][expiry] = block.timestamp;
             return 0;
         }
 
@@ -443,6 +443,7 @@ abstract contract PendleLiquidityMiningBase is
             }
         }
 
+        lastTimeUserStakeUpdated[account][expiry] = block.timestamp;
         _rewardsWithdrawableNow = _pushRewardsWithdrawableNow(account);
     }
 
