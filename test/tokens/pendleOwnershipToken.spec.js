@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
-const { BN, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
-const { expect } = require('chai');
-const { consts, errMsg } = require('../helpers');
+const {BN, expectEvent, expectRevert} = require('@openzeppelin/test-helpers');
+const {expect} = require('chai');
+const {consts, errMsg} = require('../helpers');
 
 const {
   shouldBehaveLikeERC20,
@@ -66,7 +66,7 @@ contract('PendleOwnershipToken', function (accounts) {
         describe('when there was no approved amount before', function () {
           it('reverts', async function () {
             await expectRevert(
-              this.token.decreaseAllowance(spender, amount, { from: initialHolder }),
+              this.token.decreaseAllowance(spender, amount, {from: initialHolder}),
               errMsg.NEGATIVE_ALLOWANCE
             );
           });
@@ -76,11 +76,11 @@ contract('PendleOwnershipToken', function (accounts) {
           const approvedAmount = amount;
 
           beforeEach(async function () {
-            ({ logs: this.logs } = await this.token.approve(spender, approvedAmount, { from: initialHolder }));
+            ({logs: this.logs} = await this.token.approve(spender, approvedAmount, {from: initialHolder}));
           });
 
           it('emits an approval event', async function () {
-            const { logs } = await this.token.decreaseAllowance(spender, approvedAmount, { from: initialHolder });
+            const {logs} = await this.token.decreaseAllowance(spender, approvedAmount, {from: initialHolder});
 
             expectEvent.inLogs(logs, 'Approval', {
               owner: initialHolder,
@@ -90,19 +90,19 @@ contract('PendleOwnershipToken', function (accounts) {
           });
 
           it('decreases the spender allowance subtracting the requested amount', async function () {
-            await this.token.decreaseAllowance(spender, approvedAmount.subn(1), { from: initialHolder });
+            await this.token.decreaseAllowance(spender, approvedAmount.subn(1), {from: initialHolder});
 
             expect(await this.token.allowance(initialHolder, spender)).to.be.bignumber.equal('1');
           });
 
           it('sets the allowance to zero when all allowance is removed', async function () {
-            await this.token.decreaseAllowance(spender, approvedAmount, { from: initialHolder });
+            await this.token.decreaseAllowance(spender, approvedAmount, {from: initialHolder});
             expect(await this.token.allowance(initialHolder, spender)).to.be.bignumber.equal('0');
           });
 
           it('reverts when more than the full allowance is removed', async function () {
             await expectRevert(
-              this.token.decreaseAllowance(spender, approvedAmount.addn(1), { from: initialHolder }),
+              this.token.decreaseAllowance(spender, approvedAmount.addn(1), {from: initialHolder}),
               errMsg.NEGATIVE_ALLOWANCE
             );
           });
@@ -128,7 +128,7 @@ contract('PendleOwnershipToken', function (accounts) {
 
       it('reverts', async function () {
         await expectRevert(
-          this.token.decreaseAllowance(spender, amount, { from: initialHolder }),
+          this.token.decreaseAllowance(spender, amount, {from: initialHolder}),
           errMsg.NEGATIVE_ALLOWANCE
         );
       });
@@ -143,7 +143,7 @@ contract('PendleOwnershipToken', function (accounts) {
 
       describe('when the sender has enough balance', function () {
         it('emits an approval event', async function () {
-          const { logs } = await this.token.increaseAllowance(spender, amount, { from: initialHolder });
+          const {logs} = await this.token.increaseAllowance(spender, amount, {from: initialHolder});
 
           expectEvent.inLogs(logs, 'Approval', {
             owner: initialHolder,
@@ -154,7 +154,7 @@ contract('PendleOwnershipToken', function (accounts) {
 
         describe('when there was no approved amount before', function () {
           it('approves the requested amount', async function () {
-            await this.token.increaseAllowance(spender, amount, { from: initialHolder });
+            await this.token.increaseAllowance(spender, amount, {from: initialHolder});
 
             expect(await this.token.allowance(initialHolder, spender)).to.be.bignumber.equal(amount);
           });
@@ -162,11 +162,11 @@ contract('PendleOwnershipToken', function (accounts) {
 
         describe('when the spender had an approved amount', function () {
           beforeEach(async function () {
-            await this.token.approve(spender, new BN(1), { from: initialHolder });
+            await this.token.approve(spender, new BN(1), {from: initialHolder});
           });
 
           it('increases the spender allowance adding the requested amount', async function () {
-            await this.token.increaseAllowance(spender, amount, { from: initialHolder });
+            await this.token.increaseAllowance(spender, amount, {from: initialHolder});
 
             expect(await this.token.allowance(initialHolder, spender)).to.be.bignumber.equal(amount.addn(1));
           });
@@ -177,7 +177,7 @@ contract('PendleOwnershipToken', function (accounts) {
         const amount = initialSupply.addn(1);
 
         it('emits an approval event', async function () {
-          const { logs } = await this.token.increaseAllowance(spender, amount, { from: initialHolder });
+          const {logs} = await this.token.increaseAllowance(spender, amount, {from: initialHolder});
 
           expectEvent.inLogs(logs, 'Approval', {
             owner: initialHolder,
@@ -188,7 +188,7 @@ contract('PendleOwnershipToken', function (accounts) {
 
         describe('when there was no approved amount before', function () {
           it('approves the requested amount', async function () {
-            await this.token.increaseAllowance(spender, amount, { from: initialHolder });
+            await this.token.increaseAllowance(spender, amount, {from: initialHolder});
 
             expect(await this.token.allowance(initialHolder, spender)).to.be.bignumber.equal(amount);
           });
@@ -196,11 +196,11 @@ contract('PendleOwnershipToken', function (accounts) {
 
         describe('when the spender had an approved amount', function () {
           beforeEach(async function () {
-            await this.token.approve(spender, new BN(1), { from: initialHolder });
+            await this.token.approve(spender, new BN(1), {from: initialHolder});
           });
 
           it('increases the spender allowance adding the requested amount', async function () {
-            await this.token.increaseAllowance(spender, amount, { from: initialHolder });
+            await this.token.increaseAllowance(spender, amount, {from: initialHolder});
 
             expect(await this.token.allowance(initialHolder, spender)).to.be.bignumber.equal(amount.addn(1));
           });
@@ -213,7 +213,7 @@ contract('PendleOwnershipToken', function (accounts) {
 
       it('reverts', async function () {
         await expectRevert(
-          this.token.increaseAllowance(spender, amount, { from: initialHolder }),
+          this.token.increaseAllowance(spender, amount, {from: initialHolder}),
           errMsg.SPENDER_ZERO_ADDR
         );
       });
@@ -228,7 +228,7 @@ contract('PendleOwnershipToken', function (accounts) {
 
     describe('for a non zero account', function () {
       beforeEach('minting', async function () {
-        const { logs } = await this.token.mint(recipient, amount);
+        const {logs} = await this.token.mint(recipient, amount);
         this.logs = logs;
       });
 
@@ -265,7 +265,7 @@ contract('PendleOwnershipToken', function (accounts) {
       const describeBurn = function (description, amount) {
         describe(description, function () {
           beforeEach('burning', async function () {
-            const { logs } = await this.token.burn(initialHolder, amount);
+            const {logs} = await this.token.burn(initialHolder, amount);
             this.logs = logs;
           });
 
