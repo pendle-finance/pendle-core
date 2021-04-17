@@ -57,7 +57,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
     uint256 private constant MULTIPLIER = 10**20;
     uint256 private reserveData;
-    uint256 private lastInterestUpdate;
 
     uint256 private constant MASK_148_TO_255 = type(uint256).max ^ ((1 << 148) - 1);
     uint256 private constant MASK_40_TO_147 = ((1 << 148) - 1) ^ ((1 << 40) - 1);
@@ -738,7 +737,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // update new states
         paramL = firstTerm.add(secondTerm);
         lastNYield = currentNYield;
-        lastInterestUpdate = block.timestamp;
     }
 
     // before we send LPs, we need to settle due interests for both the to and from addresses

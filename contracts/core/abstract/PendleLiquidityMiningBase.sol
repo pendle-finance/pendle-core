@@ -494,14 +494,14 @@ abstract contract PendleLiquidityMiningBase is
 
     function _pushLpToken(uint256 expiry, uint256 amount) internal {
         _settleLpInterests(expiry, msg.sender);
-        PendleLpHolder(lpHolderForExpiry[expiry]).sendLp(msg.sender, amount);
+        IPendleLpHolder(lpHolderForExpiry[expiry]).sendLp(msg.sender, amount);
     }
 
     function _settleLpInterests(uint256 expiry, address account)
         internal
         returns (uint256 dueInterests)
     {
-        PendleLpHolder(lpHolderForExpiry[expiry]).claimLpInterests();
+        IPendleLpHolder(lpHolderForExpiry[expiry]).claimLpInterests();
         // calculate interest related params
         _updateParamL(expiry);
 
@@ -511,7 +511,7 @@ abstract contract PendleLiquidityMiningBase is
         dueInterests = balances[account][expiry].mul(interestValuePerLP).div(MULTIPLIER);
         if (dueInterests == 0) return 0;
         lastNYield[expiry] = lastNYield[expiry].sub(dueInterests);
-        PendleLpHolder(lpHolderForExpiry[expiry]).sendInterests(account, dueInterests);
+        IPendleLpHolder(lpHolderForExpiry[expiry]).sendInterests(account, dueInterests);
     }
 
     // this function should be called whenver the total amount of LP_expiry changes
