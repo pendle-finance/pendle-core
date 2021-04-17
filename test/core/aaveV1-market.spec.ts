@@ -950,10 +950,7 @@ describe("aaveV1-market", async () => {
       consts.MARKET_FACTORY_AAVE
     );
 
-    expect(result[1].toNumber()).to.be.approximately(
-      11111111,
-      consts.TEST_TOKEN_DELTA.toNumber()
-    );
+    expect(result[1].toNumber()).to.be.approximately(11111111, 200);
   });
 
   it("Aave-ETH should be able to getMarketRateExactIn", async () => {

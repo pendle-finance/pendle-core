@@ -87,7 +87,6 @@ contract PendleCompoundForge is PendleForgeBase {
     }
 
     function _calcTotalAfterExpiry(
-        address,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 redeemedAmount

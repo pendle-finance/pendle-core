@@ -58,7 +58,6 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
 
     //calculate the (principal + interest) from the last action before expiry to now.
     function _calcTotalAfterExpiry(
-        address,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 redeemedAmount

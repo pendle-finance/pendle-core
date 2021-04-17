@@ -150,7 +150,6 @@ describe("compound-router", async () => {
         tokenUSDT.address,
         consts.T0_C.add(consts.SIX_MONTH),
         amount,
-        alice.address,
         consts.HIGH_GAS_OVERRIDE
       )
     ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
@@ -167,7 +166,6 @@ describe("compound-router", async () => {
       tokenUSDT.address,
       consts.T0_C.add(consts.SIX_MONTH),
       await cXyt.balanceOf(alice.address),
-      alice.address,
       consts.HIGH_GAS_OVERRIDE
     );
 
@@ -270,8 +268,7 @@ describe("compound-router", async () => {
     await router.redeemAfterExpiry(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH),
-      alice.address
+      consts.T0_C.add(consts.SIX_MONTH)
     );
 
     const lastRate = await compoundForge.lastRateBeforeExpiry(
@@ -315,8 +312,7 @@ describe("compound-router", async () => {
     await router.redeemAfterExpiry(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH),
-      alice.address
+      consts.T0_C.add(consts.SIX_MONTH)
     );
 
     const lastRate = await compoundForge.lastRateBeforeExpiry(
@@ -364,7 +360,6 @@ describe("compound-router", async () => {
       tokenUSDT.address,
       consts.T0_C.add(consts.SIX_MONTH),
       await cXyt.balanceOf(alice.address),
-      alice.address,
       consts.HIGH_GAS_OVERRIDE
     );
 

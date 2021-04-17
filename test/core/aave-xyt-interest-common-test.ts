@@ -136,7 +136,6 @@ export function runTest(isAaveV1: boolean) {
           tokenUSDT.address,
           testEnv.T0.add(consts.SIX_MONTH),
           amount,
-          user.address,
           consts.HIGH_GAS_OVERRIDE
         );
     }

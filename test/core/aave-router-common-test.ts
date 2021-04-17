@@ -2,6 +2,7 @@ import { expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
 import {
+  advanceTime,
   amountToWei,
   approxBigNumber,
   consts,
@@ -12,6 +13,7 @@ import {
   getAContract,
   mintAaveToken,
   setTimeNextBlock,
+  setTime,
   Token,
   tokens,
 } from "../helpers";
@@ -35,6 +37,7 @@ export function runTest(isAaveV1: boolean) {
 
     let fixture: PendleFixture;
     let router: Contract;
+    let routerWeb3: any;
     let ot: Contract;
     let xyt: Contract;
     let aaveForge: Contract;
@@ -50,6 +53,7 @@ export function runTest(isAaveV1: boolean) {
     async function buildCommonTestEnv() {
       fixture = await loadFixture(pendleFixture);
       router = fixture.core.router;
+      routerWeb3 = fixture.core.routerWeb3;
       tokenUSDT = tokens.USDT;
       data = fixture.core.data;
       testEnv.INITIAL_AAVE_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
@@ -183,7 +187,6 @@ export function runTest(isAaveV1: boolean) {
           tokenUSDT.address,
           testEnv.T0.add(consts.SIX_MONTH),
           refAmount,
-          alice.address,
           consts.HIGH_GAS_OVERRIDE
         )
       ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
@@ -199,7 +202,6 @@ export function runTest(isAaveV1: boolean) {
         tokenUSDT.address,
         testEnv.T0.add(consts.SIX_MONTH),
         amount,
-        alice.address,
         consts.HIGH_GAS_OVERRIDE
       );
 
@@ -222,7 +224,6 @@ export function runTest(isAaveV1: boolean) {
         tokenUSDT.address,
         testEnv.T0.add(consts.SIX_MONTH),
         BN.from(0),
-        alice.address,
         consts.HIGH_GAS_OVERRIDE
       );
     });
@@ -311,8 +312,7 @@ export function runTest(isAaveV1: boolean) {
       await router.redeemAfterExpiry(
         testEnv.FORGE_ID,
         tokenUSDT.address,
-        testEnv.T0.add(consts.SIX_MONTH),
-        alice.address
+        testEnv.T0.add(consts.SIX_MONTH)
       );
 
       const expectedGain = await getCurInterest(dave, refAmount);
@@ -355,8 +355,7 @@ export function runTest(isAaveV1: boolean) {
       await router.redeemAfterExpiry(
         testEnv.FORGE_ID,
         tokenUSDT.address,
-        testEnv.T0.add(consts.SIX_MONTH),
-        alice.address
+        testEnv.T0.add(consts.SIX_MONTH)
       );
 
       const expectedGain = await getCurInterest(dave, refAmount);
@@ -419,16 +418,29 @@ export function runTest(isAaveV1: boolean) {
         testEnv.T0.add(consts.ONE_YEAR)
       );
       await startCalInterest(dave, refAmount);
-      let amount = await tokenizeYield(alice, refAmount);
-      await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH.mul(7)));
+      await tokenizeYield(alice, refAmount);
+      await setTime(provider, testEnv.T0.add(consts.ONE_MONTH.mul(7)));
+
+      let {
+        redeemedAmount,
+        amountTransferOut,
+      } = await router.callStatic.renewYield(
+        testEnv.FORGE_ID,
+        testEnv.T0.add(consts.SIX_MONTH),
+        tokenUSDT.address,
+        testEnv.T0.add(consts.ONE_YEAR),
+        consts.RONE.div(2) // 50%
+      );
+
       await router.renewYield(
         testEnv.FORGE_ID,
         testEnv.T0.add(consts.SIX_MONTH),
         tokenUSDT.address,
         testEnv.T0.add(consts.ONE_YEAR),
-        amount,
-        alice.address
+        consts.RONE.div(2)
       );
+
+      let renewedAmount = redeemedAmount.sub(amountTransferOut);
       await setTimeNextBlock(
         provider,
         testEnv.T0.add(consts.ONE_MONTH.mul(11))
@@ -439,7 +451,7 @@ export function runTest(isAaveV1: boolean) {
         testEnv.T0.add(consts.ONE_YEAR)
       );
       let actualGain = await aUSDT.balanceOf(alice.address);
-      let expectedGain = await getCurInterest(dave, refAmount);
+      let expectedGain = await getCurInterest(dave, renewedAmount);
       approxBigNumber(actualGain, expectedGain, testEnv.TEST_DELTA);
     });
 
