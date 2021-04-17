@@ -66,6 +66,7 @@ abstract contract PendleLiquidityMiningBase is
         mapping(address => uint256) availableRewardsForUser;
         mapping(address => mapping(uint256 => uint256)) stakeUnitsForUser;
         uint256 settingId;
+        uint256 totalRewards;
     }
 
     struct RewardsData {
@@ -92,7 +93,6 @@ abstract contract PendleLiquidityMiningBase is
     address public override baseToken;
     uint256 public override startTime;
     uint256 public override epochDuration;
-    mapping(uint256 => uint256) public override rewardsForEpoch;
     uint256 public override numberOfEpochs;
     uint256 public override vestingEpochs;
     bool public funded;
@@ -181,7 +181,7 @@ abstract contract PendleLiquidityMiningBase is
         uint256 totalFunded;
         for (uint256 i = 0; i < nNewEpoches; i++) {
             totalFunded = totalFunded.add(_rewards[i]);
-            rewardsForEpoch[numberOfEpochs + i + 1] = _rewards[i];
+            epochData[numberOfEpochs + i + 1].totalRewards = _rewards[i];
         }
 
         require(totalFunded > 0, "ZERO_FUND");
@@ -300,6 +300,10 @@ abstract contract PendleLiquidityMiningBase is
         }
     }
 
+    function rewardsForEpoch(uint256 epochId) external view override returns (uint256 rewards) {
+        rewards = epochData[epochId].totalRewards;
+    }
+
     /**
     @notice update the following stake data for the current epoch:
         - epochData[current epoch].stakeUnitsForExpiry
@@ -399,7 +403,8 @@ abstract contract PendleLiquidityMiningBase is
                 ? latestSetting.id
                 : epochData[epochId].settingId;
 
-            vars.rewardsForMarket = rewardsForEpoch[epochId]
+            vars.rewardsForMarket = epochData[epochId]
+                .totalRewards
                 .mul(allocationSettings[vars.settingId][expiry])
                 .div(ALLOCATION_DENOMINATOR);
 
