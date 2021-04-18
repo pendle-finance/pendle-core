@@ -69,6 +69,17 @@ describe("compound-router", async () => {
     );
   }
 
+  async function redeemDueInterests(user: Wallet, expiry: BN) {
+    await router
+      .connect(user)
+      .redeemDueInterests(
+        consts.FORGE_COMPOUND,
+        tokenUSDT.address,
+        expiry,
+        false
+      );
+  }
+
   async function convertToCAmount(amount: BN) {
     const curRate = await cUSDT.callStatic.exchangeRateCurrent();
     return amount
@@ -190,12 +201,7 @@ describe("compound-router", async () => {
 
     await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
 
-    await router.redeemDueInterests(
-      consts.FORGE_COMPOUND,
-      tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH),
-      false
-    );
+    await redeemDueInterests(alice, consts.T0_C.add(consts.SIX_MONTH));
 
     const expectedGain = await getCurInterest(
       initialcUSDTbalance,
@@ -224,14 +230,8 @@ describe("compound-router", async () => {
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
-    await router
-      .connect(bob)
-      .redeemDueInterests(
-        consts.FORGE_COMPOUND,
-        tokenUSDT.address,
-        consts.T0_C.add(consts.SIX_MONTH),
-        false
-      );
+    await redeemDueInterests(bob, consts.T0_C.add(consts.SIX_MONTH));
+
     const actualGain = await cUSDT.callStatic.balanceOfUnderlying(bob.address);
     const expectedGain = await getCurInterest(
       initialcUSDTbalance,
@@ -256,14 +256,7 @@ describe("compound-router", async () => {
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
-    await router
-      .connect(bob)
-      .redeemDueInterests(
-        consts.FORGE_COMPOUND,
-        tokenUSDT.address,
-        consts.T0_C.add(consts.SIX_MONTH),
-        false
-      );
+    await redeemDueInterests(bob, consts.T0_C.add(consts.SIX_MONTH));
 
     const T2 = T1.add(10);
     await setTimeNextBlock(provider, T2);
@@ -301,14 +294,7 @@ describe("compound-router", async () => {
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
-    await router
-      .connect(bob)
-      .redeemDueInterests(
-        consts.FORGE_COMPOUND,
-        tokenUSDT.address,
-        consts.T0_C.add(consts.SIX_MONTH),
-        false
-      );
+    await redeemDueInterests(bob, consts.T0_C.add(consts.SIX_MONTH));
 
     const T2 = T1.add(consts.ONE_MONTH);
     await setTimeNextBlock(provider, T2);
@@ -353,12 +339,7 @@ describe("compound-router", async () => {
     await tokenizeYield(alice, initialcUSDTbalance);
     await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
 
-    await router.redeemDueInterests(
-      consts.FORGE_COMPOUND,
-      tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH),
-      false
-    );
+    await redeemDueInterests(alice, consts.T0_C.add(consts.SIX_MONTH));
 
     await router.redeemUnderlying(
       consts.FORGE_COMPOUND,

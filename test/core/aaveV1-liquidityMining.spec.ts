@@ -347,8 +347,7 @@ describe("aaveV1-liquidityMining", async () => {
       .redeemDueInterests(
         consts.FORGE_AAVE,
         tokens.USDT.address,
-        consts.T0.add(consts.SIX_MONTH),
-        false
+        consts.T0.add(consts.SIX_MONTH)
       );
     const actualGainCharlie = (await aUSDT.balanceOf(charlie.address)).sub(
       preBalanceCharlie

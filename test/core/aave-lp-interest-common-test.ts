@@ -75,6 +75,22 @@ export function runTest(isAaveV1: boolean) {
       testEnv.TEST_DELTA = BN.from(30000);
     }
 
+    async function redeemAll() {
+      for (let user of [alice, bob, charlie, dave]) {
+        await router
+          .connect(user)
+          .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
+        await router
+          .connect(user)
+          .redeemDueInterests(
+            testEnv.FORGE_ID,
+            tokenUSDT.address,
+            testEnv.T0.add(consts.SIX_MONTH),
+            consts.HIGH_GAS_OVERRIDE
+          );
+      }
+    }
+
     before(async () => {
       globalSnapshotId = await evm_snapshot();
       await buildCommonTestEnv();
@@ -293,20 +309,7 @@ export function runTest(isAaveV1: boolean) {
       await swapExactInXytToToken(eve, BN.from(10).pow(10));
       await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
-      for (let user of [alice, bob, charlie, dave]) {
-        await router
-          .connect(user)
-          .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
-        await router
-          .connect(user)
-          .redeemDueInterests(
-            testEnv.FORGE_ID,
-            tokenUSDT.address,
-            testEnv.T0.add(consts.SIX_MONTH),
-            false,
-            consts.HIGH_GAS_OVERRIDE
-          );
-      }
+      await redeemAll();
 
       // for (let user of [alice, bob, charlie, dave]) {
       //   console.log((await aUSDT.balanceOf(user.address)).toString());
@@ -364,20 +367,7 @@ export function runTest(isAaveV1: boolean) {
       await swapExactInXytToToken(eve, BN.from(10).pow(10));
       await addMarketLiquidityXyt(bob, amountXytRef.div(5));
 
-      for (let user of [alice, bob, charlie, dave]) {
-        await router
-          .connect(user)
-          .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
-        await router
-          .connect(user)
-          .redeemDueInterests(
-            testEnv.FORGE_ID,
-            tokenUSDT.address,
-            testEnv.T0.add(consts.SIX_MONTH),
-            false,
-            consts.HIGH_GAS_OVERRIDE
-          );
-      }
+      await redeemAll();
 
       // for (let user of [alice, bob, charlie, dave]) {
       //   console.log((await aUSDT.balanceOf(user.address)).toString());
@@ -436,20 +426,7 @@ export function runTest(isAaveV1: boolean) {
     //   await addFakeXyt(eve, BN.from(10).pow(10));
     //   await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
-    //   for (let user of [alice, bob, charlie, dave]) {
-    //     await router
-    //       .connect(user)
-    //       .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
-    //     await router
-    //       .connect(user)
-    //       .redeemDueInterests(
-    //         testEnv.FORGE_ID,
-    //         tokenUSDT.address,
-    //         testEnv.T0.add(consts.SIX_MONTH),
-    //         false,
-    //         consts.HIGH_GAS_OVERRIDE
-    //       );
-    //   }
+    //   await redeemAll();
 
     //   // for (let user of [alice, bob, charlie, dave]) {
     //   //   console.log((await aUSDT.balanceOf(user.address)).toString());
@@ -530,20 +507,7 @@ export function runTest(isAaveV1: boolean) {
 
       await advanceTime(provider, consts.ONE_MONTH);
 
-      for (let user of [alice, bob, charlie, dave]) {
-        await router
-          .connect(user)
-          .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
-        await router
-          .connect(user)
-          .redeemDueInterests(
-            testEnv.FORGE_ID,
-            tokenUSDT.address,
-            testEnv.T0.add(consts.SIX_MONTH),
-            false,
-            consts.HIGH_GAS_OVERRIDE
-          );
-      }
+      await redeemAll();
 
       // for (let user of [alice, bob, charlie, dave]) {
       //   console.log((await aUSDT.balanceOf(user.address)).toString());
