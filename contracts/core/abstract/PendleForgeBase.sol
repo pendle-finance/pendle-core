@@ -162,7 +162,9 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         tokens.ot.burn(_account, _amountToRedeem);
         tokens.xyt.burn(_account, _amountToRedeem);
-        yieldToken.safeTransfer(_account, redeemedAmount);
+        if (redeemedAmount > 0) {
+            yieldToken.safeTransfer(_account, redeemedAmount);
+        }
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem, redeemedAmount);
 
