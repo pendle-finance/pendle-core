@@ -83,17 +83,18 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         override
         returns (uint256 interestValuePerLP)
     {
+        ExpiryData storage exData = expiryData[expiry];
         if (userLastNormalizedIncome[expiry][account] == 0) {
             interestValuePerLP = 0;
         } else {
-            interestValuePerLP = paramL[expiry].sub(
-                lastParamL[expiry][account].mul(normalizedIncome[expiry]).div(
+            interestValuePerLP = exData.paramL.sub(
+                exData.lastParamL[account].mul(normalizedIncome[expiry]).div(
                     userLastNormalizedIncome[expiry][account]
                 )
             );
         }
         userLastNormalizedIncome[expiry][account] = normalizedIncome[expiry];
-        lastParamL[expiry][account] = paramL[expiry];
+        exData.lastParamL[account] = exData.paramL;
     }
 
     function _getFirstTermAndParamR(uint256 expiry, uint256 currentNYield)
@@ -101,14 +102,15 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         override
         returns (uint256 firstTerm, uint256 paramR)
     {
+        ExpiryData storage exData = expiryData[expiry];
         uint256 currentNormalizedIncome =
             IPendleAaveForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
 
         // m(t+1) = currentNormalizedIncome / normalizedIncome
-        firstTerm = paramL[expiry].rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry]);
+        firstTerm = exData.paramL.rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry]);
 
         paramR = currentNYield.sub(
-            lastNYield[expiry].rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry])
+            exData.lastNYield.rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry])
         );
 
         normalizedIncome[expiry] = currentNormalizedIncome;

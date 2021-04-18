@@ -79,12 +79,13 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
         override
         returns (uint256 interestValuePerLP)
     {
-        if (lastParamL[expiry][account] == 0) {
+        ExpiryData storage exData = expiryData[expiry];
+        if (exData.lastParamL[account] == 0) {
             interestValuePerLP = 0;
         } else {
-            interestValuePerLP = paramL[expiry].sub(lastParamL[expiry][account]);
+            interestValuePerLP = exData.paramL.sub(exData.lastParamL[account]);
         }
-        lastParamL[expiry][account] = paramL[expiry];
+        exData.lastParamL[account] = exData.paramL;
     }
 
     function _getFirstTermAndParamR(uint256 expiry, uint256 currentNYield)
@@ -93,11 +94,12 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
         override
         returns (uint256 firstTerm, uint256 paramR)
     {
-        firstTerm = paramL[expiry];
-        paramR = currentNYield.sub(lastNYield[expiry]);
+        ExpiryData storage exData = expiryData[expiry];
+        firstTerm = exData.paramL;
+        paramR = currentNYield.sub(exData.lastNYield);
     }
 
     function _afterAddingNewExpiry(uint256 expiry) internal override {
-        paramL[expiry] = 1; // we only use differences between paramL so we can just set an arbitrary initial number
+        expiryData[expiry].paramL = 1; // we only use differences between paramL so we can just set an arbitrary initial number
     }
 }
