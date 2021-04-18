@@ -256,7 +256,8 @@ abstract contract PendleLiquidityMiningBase is
         if (exd.lpHolder == address(0)) {
             newLpHoldingContractAddress = _addNewExpiry(expiry, xyt, marketAddress);
         }
-        _settlePendingRewards(msg.sender, expiry);
+        // if expiry doesn't exist yet, this function must still be called
+        _settlePendingRewards(expiry, msg.sender);
 
         if (!userExpiries[msg.sender].hasExpiry[expiry]) {
             userExpiries[msg.sender].expiries.push(expiry);
@@ -276,7 +277,7 @@ abstract contract PendleLiquidityMiningBase is
         ExpiryData storage exd = expiryData[expiry];
         require(exd.balances[msg.sender] >= amount, "INSUFFICIENT_BALANCE");
 
-        _settlePendingRewards(msg.sender, expiry);
+        _settlePendingRewards(expiry, msg.sender);
         // _pushLpToken must happens before totalStakeLPForExpiry and balances are updated
         _pushLpToken(expiry, amount);
 
@@ -297,23 +298,25 @@ abstract contract PendleLiquidityMiningBase is
         rewards = new uint256[](vestingEpochs);
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
             uint256 expiry = userExpiries[msg.sender].expiries[i];
-            rewards[0] = rewards[0].add(_settlePendingRewards(msg.sender, expiry));
+            rewards[0] = rewards[0].add(_settlePendingRewards(expiry, msg.sender));
+
+            // claim LP interests
+            interests = interests.add(_settleLpInterests(expiry, msg.sender));
         }
+
         for (uint256 i = 1; i < vestingEpochs; i++) {
             rewards[i] = rewards[i].add(
                 epochData[curEpoch.add(i)].availableRewardsForUser[msg.sender]
             );
         }
-
-        // claim LP interests
-        for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
-            interests = interests.add(
-                _settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender)
-            );
-        }
     }
 
-    function rewardsForEpoch(uint256 epochId) external view override returns (uint256 rewards) {
+    function totalRewardsForEpoch(uint256 epochId)
+        external
+        view
+        override
+        returns (uint256 rewards)
+    {
         rewards = epochData[epochId].totalRewards;
     }
 
@@ -334,7 +337,7 @@ abstract contract PendleLiquidityMiningBase is
 
         // loop through all epochData in descending order
         for (uint256 i = Math.min(_curEpoch, numberOfEpochs); i > 0; i--) {
-            uint256 epochEndTime = startTime.add(i.mul(epochDuration));
+            uint256 epochEndTime = _endTimeOfEpoch(i);
             uint256 lastUpdatedForEpoch = epochData[i].lastUpdatedForExpiry[expiry];
 
             if (lastUpdatedForEpoch == epochEndTime) {
@@ -366,7 +369,7 @@ abstract contract PendleLiquidityMiningBase is
             - availableRewardsForEpoch[account][all epochData]
             - epochData[all epochData].stakeUnitsForUser
      */
-    function _settlePendingRewards(address account, uint256 expiry)
+    function _settlePendingRewards(uint256 expiry, address account)
         internal
         returns (uint256 _rewardsWithdrawableNow)
     {
@@ -486,7 +489,7 @@ abstract contract PendleLiquidityMiningBase is
             // if its the epoch where user staked,
             // the user staked from lastTimeUserStakeUpdated[expiry] until end of that epoch
             uint256 secondsStakedThisEpochSinceLastUpdate =
-                epochDuration.sub(_epochRelativeTime(exd.lastTimeUserStakeUpdated[account]));
+                _endTimeOfEpoch(_epochId).sub(exd.lastTimeUserStakeUpdated[account]);
             // number of remaining seconds in this startEpoch (since the last action of user)
             stakeUnitsForUser = epochData[_epochId].stakeUnitsForUser[account][expiry].add(
                 secondsStakedThisEpochSinceLastUpdate.mul(exd.balances[account])
@@ -597,13 +600,14 @@ abstract contract PendleLiquidityMiningBase is
         return t.sub(startTime).div(epochDuration).add(1);
     }
 
-    function _epochRelativeTime(uint256 t) internal view returns (uint256) {
-        return t.sub(startTime).mod(epochDuration);
-    }
-
     function _startTimeOfEpoch(uint256 t) internal view returns (uint256) {
         // epoch id starting from 1
         return startTime + (t - 1) * epochDuration;
+    }
+
+    function _endTimeOfEpoch(uint256 t) internal view returns (uint256) {
+        // epoch id starting from 1
+        return startTime + (t) * epochDuration;
     }
 
     function _getInterestValuePerLP(uint256 expiry, address account)
