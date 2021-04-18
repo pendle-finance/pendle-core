@@ -54,7 +54,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ayobuenavista/pendle-protocol.git"
+    "url": "git+https://github.com/pendle-finance/pendle-protocol.git"
   },
   "scripts": {
     "deploy:aave": "yarn hardhat run scripts/deploy_aave.js",
