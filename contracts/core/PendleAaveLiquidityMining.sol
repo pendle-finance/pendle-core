@@ -49,7 +49,7 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    mapping(uint256 => uint256) private normalizedIncome;
+    mapping(uint256 => uint256) private globalLastNormalizedIncome;
     mapping(uint256 => mapping(address => uint256)) private userLastNormalizedIncome;
 
     constructor(
@@ -78,6 +78,10 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         )
     {}
 
+    function _getReserveNormalizedIncome(uint256 expiry) internal returns (uint256) {
+        return IPendleAaveForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
+    }
+
     function _getInterestValuePerLP(uint256 expiry, address account)
         internal
         override
@@ -88,12 +92,12 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
             interestValuePerLP = 0;
         } else {
             interestValuePerLP = exData.paramL.sub(
-                exData.lastParamL[account].mul(normalizedIncome[expiry]).div(
+                exData.lastParamL[account].mul(globalLastNormalizedIncome[expiry]).div(
                     userLastNormalizedIncome[expiry][account]
                 )
             );
         }
-        userLastNormalizedIncome[expiry][account] = normalizedIncome[expiry];
+        userLastNormalizedIncome[expiry][account] = globalLastNormalizedIncome[expiry];
         exData.lastParamL[account] = exData.paramL;
     }
 
@@ -103,23 +107,34 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         returns (uint256 firstTerm, uint256 paramR)
     {
         ExpiryData storage exData = expiryData[expiry];
-        uint256 currentNormalizedIncome =
-            IPendleAaveForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
-
-        // m(t+1) = currentNormalizedIncome / normalizedIncome
-        firstTerm = exData.paramL.rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry]);
-
-        paramR = currentNYield.sub(
-            exData.lastNYield.rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry])
+        uint256 currentNormalizedIncome = _getReserveNormalizedIncome(expiry);
+        firstTerm = exData.paramL.mul(currentNormalizedIncome).div(
+            globalLastNormalizedIncome[expiry]
         );
 
-        normalizedIncome[expiry] = currentNormalizedIncome;
+        uint256 ix =
+            exData.lastNYield.rmul(currentNormalizedIncome).rdiv(
+                globalLastNormalizedIncome[expiry]
+            );
+        paramR = (currentNYield >= ix ? currentNYield - ix : 0);
+
+        globalLastNormalizedIncome[expiry] = currentNormalizedIncome;
     }
 
     function _afterAddingNewExpiry(uint256 expiry) internal override {
-        normalizedIncome[expiry] = IPendleAaveForge(forge).getReserveNormalizedIncome(
+        globalLastNormalizedIncome[expiry] = IPendleAaveForge(forge).getReserveNormalizedIncome(
             underlyingAsset,
             expiry
         );
+    }
+
+    function _getIncomeIndexIncreaseRate(uint256 expiry)
+        internal
+        override
+        returns (uint256 increaseRate)
+    {
+        return
+            _getReserveNormalizedIncome(expiry).rdiv(globalLastNormalizedIncome[expiry]) -
+            Math.RONE;
     }
 }

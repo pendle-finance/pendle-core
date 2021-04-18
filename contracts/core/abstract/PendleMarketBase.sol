@@ -708,10 +708,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         if (interestValuePerLP == 0) return 0;
 
         dueInterests = balanceOf[account].mul(interestValuePerLP).div(MULTIPLIER);
-
-        if (dueInterests == 0) {
-            return 0;
-        }
+        if (dueInterests == 0) return 0;
 
         lastNYield = lastNYield.sub(dueInterests);
         underlyingYieldToken.safeTransfer(account, dueInterests);

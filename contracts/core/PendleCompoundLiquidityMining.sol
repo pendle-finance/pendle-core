@@ -25,6 +25,7 @@ pragma solidity 0.7.6;
 import "../libraries/FactoryLib.sol";
 import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "../interfaces/IPendleCompoundForge.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
@@ -47,6 +48,8 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
     using Math for uint256;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+
+    mapping(uint256 => uint256) private globalLastExchangeRate;
 
     constructor(
         address _governance,
@@ -74,6 +77,10 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
         )
     {}
 
+    function _getExchangeRate(uint256 expiry) internal returns (uint256) {
+        return IPendleCompoundForge(forge).getExchangeRate(underlyingAsset, expiry);
+    }
+
     function _getInterestValuePerLP(uint256 expiry, address account)
         internal
         override
@@ -90,16 +97,25 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
 
     function _getFirstTermAndParamR(uint256 expiry, uint256 currentNYield)
         internal
-        view
         override
         returns (uint256 firstTerm, uint256 paramR)
     {
         ExpiryData storage exData = expiryData[expiry];
         firstTerm = exData.paramL;
         paramR = currentNYield.sub(exData.lastNYield);
+        globalLastExchangeRate[expiry] = _getExchangeRate(expiry);
     }
 
     function _afterAddingNewExpiry(uint256 expiry) internal override {
         expiryData[expiry].paramL = 1; // we only use differences between paramL so we can just set an arbitrary initial number
+        globalLastExchangeRate[expiry] = _getExchangeRate(expiry);
+    }
+
+    function _getIncomeIndexIncreaseRate(uint256 expiry)
+        internal
+        override
+        returns (uint256 increaseRate)
+    {
+        return _getExchangeRate(expiry).rdiv(globalLastExchangeRate[expiry]) - Math.RONE;
     }
 }

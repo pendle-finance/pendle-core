@@ -177,6 +177,10 @@ abstract contract PendleLiquidityMiningBase is
         return expiryData[expiry].balances[user];
     }
 
+    function lpHolderForExpiry(uint256 expiry) external view override returns (address) {
+        return expiryData[expiry].lpHolder;
+    }
+
     // fund a few epoches
     // One the last epoch is over, the program is permanently over and cannot be extended anymore
     function fund(uint256[] memory _rewards) external onlyGovernance {
@@ -513,9 +517,9 @@ abstract contract PendleLiquidityMiningBase is
         internal
         returns (uint256 dueInterests)
     {
+        if (account == address(this)) return 0;
+
         ExpiryData storage exData = expiryData[expiry];
-        IPendleLpHolder(exData.lpHolder).claimLpInterests();
-        // calculate interest related params
         _updateParamL(expiry);
 
         uint256 interestValuePerLP = _getInterestValuePerLP(expiry, account);
@@ -523,30 +527,43 @@ abstract contract PendleLiquidityMiningBase is
 
         dueInterests = exData.balances[account].mul(interestValuePerLP).div(MULTIPLIER);
         if (dueInterests == 0) return 0;
+
         exData.lastNYield = exData.lastNYield.sub(dueInterests);
         IPendleLpHolder(exData.lpHolder).sendInterests(account, dueInterests);
     }
 
-    // this function should be called whenver the total amount of LP_expiry changes
-    // or when someone claim LP interests
-    // it will update:
-    //    - expiryData[expiry].paramL
-    //    - expiryData[expiry].lastNYield
-    //    - normalizedIncome[expiry]
+    function checkNeedUpdateParamL(uint256 expiry) internal returns (bool) {
+        if (expiryData[expiry].totalStakeLP == 0) {
+            return false;
+        }
+        if (_getIncomeIndexIncreaseRate(expiry) > data.interestUpdateRateDeltaForMarket()) {
+            return true;
+        }
+        return false;
+    }
+
     function _updateParamL(uint256 expiry) internal {
         ExpiryData storage exData = expiryData[expiry];
         require(exData.lpHolder != address(0), "INVALID_EXPIRY");
 
-        address xyt = address(data.xytTokens(forgeId, underlyingAsset, expiry));
-        uint256 currentNYield =
-            IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).balanceOf(exData.lpHolder);
+        if (!checkNeedUpdateParamL(expiry)) {
+            return;
+        }
 
+        IPendleLpHolder(exData.lpHolder).claimLpInterests();
+        // calculate interest related params
+
+        IERC20 underlyingYieldToken =
+            IERC20(
+                IPendleYieldToken(data.xytTokens(forgeId, underlyingAsset, expiry))
+                    .underlyingYieldToken()
+            );
+
+        uint256 currentNYield = underlyingYieldToken.balanceOf(exData.lpHolder);
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(expiry, currentNYield);
 
-        uint256 secondTerm;
-        if (paramR != 0 && exData.totalStakeLP != 0) {
-            secondTerm = paramR.mul(MULTIPLIER).div(exData.totalStakeLP);
-        }
+        // exData.totalStakeLP has been checked to be != 0
+        uint256 secondTerm = paramR.mul(MULTIPLIER).div(exData.totalStakeLP);
 
         // Update new states
         exData.paramL = firstTerm.add(secondTerm);
@@ -603,4 +620,9 @@ abstract contract PendleLiquidityMiningBase is
         returns (uint256 firstTerm, uint256 paramR);
 
     function _afterAddingNewExpiry(uint256 expiry) internal virtual;
+
+    function _getIncomeIndexIncreaseRate(uint256 expiry)
+        internal
+        virtual
+        returns (uint256 increaseRate);
 }

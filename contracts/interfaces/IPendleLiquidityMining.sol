@@ -44,30 +44,32 @@ interface IPendleLiquidityMining {
     /**
      * @notice Read the all the expiries that user has staked LP for
      **/
-    function readUserExpiries(address user) external returns (uint256[] memory expiries);
+    function readUserExpiries(address user) external view returns (uint256[] memory expiries);
 
     /**
      * @notice Read the amount of LP_expiry staked for a user
      **/
-    function balances(uint256 expiry, address user) external returns (uint256);
+    function balances(uint256 expiry, address user) external view returns (uint256);
 
-    function startTime() external returns (uint256);
+    function lpHolderForExpiry(uint256 expiry) external view returns (address);
 
-    function epochDuration() external returns (uint256);
+    function startTime() external view returns (uint256);
 
-    function rewardsForEpoch(uint256) external returns (uint256);
+    function epochDuration() external view returns (uint256);
 
-    function numberOfEpochs() external returns (uint256);
+    function rewardsForEpoch(uint256) external view returns (uint256);
 
-    function vestingEpochs() external returns (uint256);
+    function numberOfEpochs() external view returns (uint256);
 
-    function baseToken() external returns (address);
+    function vestingEpochs() external view returns (uint256);
 
-    function underlyingAsset() external returns (address);
+    function baseToken() external view returns (address);
 
-    function pendleTokenAddress() external returns (address);
+    function underlyingAsset() external view returns (address);
 
-    function marketFactoryId() external returns (bytes32);
+    function pendleTokenAddress() external view returns (address);
 
-    function forgeId() external returns (bytes32);
+    function marketFactoryId() external view returns (bytes32);
+
+    function forgeId() external view returns (bytes32);
 }
