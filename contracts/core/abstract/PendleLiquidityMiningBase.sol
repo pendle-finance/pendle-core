@@ -108,7 +108,7 @@ abstract contract PendleLiquidityMiningBase is
     uint256 public override vestingEpochs;
     bool public funded;
 
-    uint256[] public expiries;
+    uint256[] public allExpiries;
     uint256 private constant ALLOCATION_DENOMINATOR = 1_000_000_000;
     uint256 private constant MULTIPLIER = 10**20;
 
@@ -243,7 +243,7 @@ abstract contract PendleLiquidityMiningBase is
         nonReentrant
         returns (address newLpHoldingContractAddress)
     {
-        ExpiryData storage exData = expiryData[expiry];
+        ExpiryData storage exd = expiryData[expiry];
         uint256 curEpoch = _getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
         require(curEpoch <= numberOfEpochs, "INCENTIVES_PERIOD_OVER");
@@ -253,7 +253,7 @@ abstract contract PendleLiquidityMiningBase is
         require(xyt != address(0), "XYT_NOT_FOUND");
         require(marketAddress != address(0), "MARKET_NOT_FOUND");
 
-        if (exData.lpHolder == address(0)) {
+        if (exd.lpHolder == address(0)) {
             newLpHoldingContractAddress = _addNewExpiry(expiry, xyt, marketAddress);
         }
         _settlePendingRewards(msg.sender, expiry);
@@ -265,23 +265,23 @@ abstract contract PendleLiquidityMiningBase is
         // _pullLpToken must happens before totalStakeLPForExpiry and balances are updated
         _pullLpToken(marketAddress, expiry, amount);
 
-        exData.balances[msg.sender] = exData.balances[msg.sender].add(amount);
-        exData.totalStakeLP = exData.totalStakeLP.add(amount);
+        exd.balances[msg.sender] = exd.balances[msg.sender].add(amount);
+        exd.totalStakeLP = exd.totalStakeLP.add(amount);
     }
 
     function withdraw(uint256 expiry, uint256 amount) external override nonReentrant isFunded {
         uint256 curEpoch = _getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
 
-        ExpiryData storage exData = expiryData[expiry];
-        require(exData.balances[msg.sender] >= amount, "INSUFFICIENT_BALANCE");
+        ExpiryData storage exd = expiryData[expiry];
+        require(exd.balances[msg.sender] >= amount, "INSUFFICIENT_BALANCE");
 
         _settlePendingRewards(msg.sender, expiry);
         // _pushLpToken must happens before totalStakeLPForExpiry and balances are updated
         _pushLpToken(expiry, amount);
 
-        exData.balances[msg.sender] = exData.balances[msg.sender].sub(amount);
-        exData.totalStakeLP = exData.totalStakeLP.sub(amount);
+        exd.balances[msg.sender] = exd.balances[msg.sender].sub(amount);
+        exd.totalStakeLP = exd.totalStakeLP.sub(amount);
     }
 
     function claimRewards()
@@ -371,17 +371,17 @@ abstract contract PendleLiquidityMiningBase is
         returns (uint256 _rewardsWithdrawableNow)
     {
         _updateStakeDataForExpiry(expiry);
-        ExpiryData storage exData = expiryData[expiry];
+        ExpiryData storage exd = expiryData[expiry];
 
         // account has not staked this LP_expiry before, no need to do anything
-        if (exData.lastTimeUserStakeUpdated[account] == 0) {
-            exData.lastTimeUserStakeUpdated[account] = block.timestamp;
+        if (exd.lastTimeUserStakeUpdated[account] == 0) {
+            exd.lastTimeUserStakeUpdated[account] = block.timestamp;
             return 0;
         }
 
         uint256 _curEpoch = _getCurrentEpochId();
         uint256 _endEpoch;
-        uint256 _startEpoch = _epochOfTimestamp(exData.lastTimeUserStakeUpdated[account]);
+        uint256 _startEpoch = _epochOfTimestamp(exd.lastTimeUserStakeUpdated[account]);
         // if its after the end of the programme, only count until the last epoch
 
         /*
@@ -395,14 +395,11 @@ abstract contract PendleLiquidityMiningBase is
 
             uint256 durationStakeThisEpoch =
                 block.timestamp -
-                    Math.max(
-                        _startTimeOfEpoch(_curEpoch),
-                        exData.lastTimeUserStakeUpdated[account]
-                    );
+                    Math.max(_startTimeOfEpoch(_curEpoch), exd.lastTimeUserStakeUpdated[account]);
 
             epochData[_curEpoch].stakeUnitsForUser[account][expiry] = epochData[_curEpoch]
                 .stakeUnitsForUser[account][expiry]
-                .add(exData.balances[account].mul(durationStakeThisEpoch));
+                .add(exd.balances[account].mul(durationStakeThisEpoch));
         }
 
         /* Go through all epochs that are now over
@@ -428,16 +425,16 @@ abstract contract PendleLiquidityMiningBase is
                 Handle special case when no-one stake/unstake for this expiry during the epoch
                 I.e. Everyone staked before the start of the epoch and hold through the end
                 as such, stakeUnitsForExpiry is still not updated, and is zero.
-                we will just update it to exData.totalStakeLP * epochDuration
+                we will just update it to exd.totalStakeLP * epochDuration
                 */
-                if (exData.totalStakeLP == 0) {
+                if (exd.totalStakeLP == 0) {
                     /* in the extreme extreme case of zero staked LPs for this expiry even now,
                     => nothing to do from this epoch onwards */
                     break;
                 }
 
                 // no one does anything in this epoch => stakeUnitsForExpiry = full epoch
-                epochData[epochId].stakeUnitsForExpiry[expiry] = exData.totalStakeLP.mul(
+                epochData[epochId].stakeUnitsForExpiry[expiry] = exd.totalStakeLP.mul(
                     epochDuration
                 );
             }
@@ -456,7 +453,7 @@ abstract contract PendleLiquidityMiningBase is
             }
         }
 
-        exData.lastTimeUserStakeUpdated[account] = block.timestamp;
+        exd.lastTimeUserStakeUpdated[account] = block.timestamp;
         _rewardsWithdrawableNow = _pushRewardsWithdrawableNow(account);
     }
 
@@ -484,18 +481,18 @@ abstract contract PendleLiquidityMiningBase is
         uint256 _startEpoch,
         uint256 _epochId
     ) internal view returns (uint256 stakeUnitsForUser) {
-        ExpiryData storage exData = expiryData[expiry];
+        ExpiryData storage exd = expiryData[expiry];
         if (_epochId == _startEpoch) {
             // if its the epoch where user staked,
             // the user staked from lastTimeUserStakeUpdated[expiry] until end of that epoch
             uint256 secondsStakedThisEpochSinceLastUpdate =
-                epochDuration.sub(_epochRelativeTime(exData.lastTimeUserStakeUpdated[account]));
+                epochDuration.sub(_epochRelativeTime(exd.lastTimeUserStakeUpdated[account]));
             // number of remaining seconds in this startEpoch (since the last action of user)
             stakeUnitsForUser = epochData[_epochId].stakeUnitsForUser[account][expiry].add(
-                secondsStakedThisEpochSinceLastUpdate.mul(exData.balances[account])
+                secondsStakedThisEpochSinceLastUpdate.mul(exd.balances[account])
             );
         } else {
-            stakeUnitsForUser = epochDuration.mul(exData.balances[account]);
+            stakeUnitsForUser = epochDuration.mul(exd.balances[account]);
         }
     }
 
@@ -519,17 +516,17 @@ abstract contract PendleLiquidityMiningBase is
     {
         if (account == address(this)) return 0;
 
-        ExpiryData storage exData = expiryData[expiry];
+        ExpiryData storage exd = expiryData[expiry];
         _updateParamL(expiry);
 
         uint256 interestValuePerLP = _getInterestValuePerLP(expiry, account);
         if (interestValuePerLP == 0) return 0;
 
-        dueInterests = exData.balances[account].mul(interestValuePerLP).div(MULTIPLIER);
+        dueInterests = exd.balances[account].mul(interestValuePerLP).div(MULTIPLIER);
         if (dueInterests == 0) return 0;
 
-        exData.lastNYield = exData.lastNYield.sub(dueInterests);
-        IPendleLpHolder(exData.lpHolder).sendInterests(account, dueInterests);
+        exd.lastNYield = exd.lastNYield.sub(dueInterests);
+        IPendleLpHolder(exd.lpHolder).sendInterests(account, dueInterests);
     }
 
     function checkNeedUpdateParamL(uint256 expiry) internal returns (bool) {
@@ -543,14 +540,14 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     function _updateParamL(uint256 expiry) internal {
-        ExpiryData storage exData = expiryData[expiry];
-        require(exData.lpHolder != address(0), "INVALID_EXPIRY");
+        ExpiryData storage exd = expiryData[expiry];
+        require(exd.lpHolder != address(0), "INVALID_EXPIRY");
 
         if (!checkNeedUpdateParamL(expiry)) {
             return;
         }
 
-        IPendleLpHolder(exData.lpHolder).claimLpInterests();
+        IPendleLpHolder(exd.lpHolder).claimLpInterests();
         // calculate interest related params
 
         IERC20 underlyingYieldToken =
@@ -559,15 +556,15 @@ abstract contract PendleLiquidityMiningBase is
                     .underlyingYieldToken()
             );
 
-        uint256 currentNYield = underlyingYieldToken.balanceOf(exData.lpHolder);
+        uint256 currentNYield = underlyingYieldToken.balanceOf(exd.lpHolder);
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(expiry, currentNYield);
 
-        // exData.totalStakeLP has been checked to be != 0
-        uint256 secondTerm = paramR.mul(MULTIPLIER).div(exData.totalStakeLP);
+        // exd.totalStakeLP has been checked to be != 0
+        uint256 secondTerm = paramR.mul(MULTIPLIER).div(exd.totalStakeLP);
 
         // Update new states
-        exData.paramL = firstTerm.add(secondTerm);
-        exData.lastNYield = currentNYield;
+        exd.paramL = firstTerm.add(secondTerm);
+        exd.lastNYield = currentNYield;
     }
 
     function _addNewExpiry(
@@ -575,7 +572,7 @@ abstract contract PendleLiquidityMiningBase is
         address xyt,
         address marketAddress
     ) internal returns (address newLpHoldingContractAddress) {
-        expiries.push(expiry);
+        allExpiries.push(expiry);
         address underlyingYieldToken = IPendleYieldToken(xyt).underlyingYieldToken();
         newLpHoldingContractAddress = Factory.createContract(
             type(PendleLpHolder).creationCode,

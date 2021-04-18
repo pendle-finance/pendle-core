@@ -86,13 +86,13 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
         override
         returns (uint256 interestValuePerLP)
     {
-        ExpiryData storage exData = expiryData[expiry];
-        if (exData.lastParamL[account] == 0) {
+        ExpiryData storage exd = expiryData[expiry];
+        if (exd.lastParamL[account] == 0) {
             interestValuePerLP = 0;
         } else {
-            interestValuePerLP = exData.paramL.sub(exData.lastParamL[account]);
+            interestValuePerLP = exd.paramL.sub(exd.lastParamL[account]);
         }
-        exData.lastParamL[account] = exData.paramL;
+        exd.lastParamL[account] = exd.paramL;
     }
 
     function _getFirstTermAndParamR(uint256 expiry, uint256 currentNYield)
@@ -100,9 +100,9 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
         override
         returns (uint256 firstTerm, uint256 paramR)
     {
-        ExpiryData storage exData = expiryData[expiry];
-        firstTerm = exData.paramL;
-        paramR = currentNYield.sub(exData.lastNYield);
+        ExpiryData storage exd = expiryData[expiry];
+        firstTerm = exd.paramL;
+        paramR = currentNYield.sub(exd.lastNYield);
         globalLastExchangeRate[expiry] = _getExchangeRate(expiry);
     }
 
