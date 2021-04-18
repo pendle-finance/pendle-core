@@ -429,7 +429,7 @@ export function runTest(isAaveV1: boolean) {
         provider,
         testEnv.T0.add(consts.ONE_MONTH.mul(11))
       );
-      await redeemDueInterests(bob, testEnv.T0.add(consts.ONE_YEAR));
+      await redeemDueInterests(alice, testEnv.T0.add(consts.ONE_YEAR));
       let actualGain = await aUSDT.balanceOf(alice.address);
       let expectedGain = await getCurInterest(dave, renewedAmount);
       approxBigNumber(actualGain, expectedGain, testEnv.TEST_DELTA);

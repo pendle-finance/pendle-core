@@ -75,8 +75,7 @@ describe("compound-router", async () => {
       .redeemDueInterests(
         consts.FORGE_COMPOUND,
         tokenUSDT.address,
-        expiry,
-        false
+        expiry
       );
   }
 
