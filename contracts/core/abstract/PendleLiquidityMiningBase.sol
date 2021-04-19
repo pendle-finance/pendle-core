@@ -445,6 +445,9 @@ abstract contract PendleLiquidityMiningBase is
         _rewardsWithdrawableNow = _pushRewardsWithdrawableNow(account);
     }
 
+    /**
+     * @dev the loop starts from 2 because 2 is the earliest epoch that users can claim rewards
+     */
     function _pushRewardsWithdrawableNow(address _account)
         internal
         returns (uint256 rewardsWithdrawableNow)
@@ -463,6 +466,12 @@ abstract contract PendleLiquidityMiningBase is
         }
     }
 
+    /**
+     * @notice retuns the stakeUnits in the _epochId(th) epoch of an user if he stake from _startTime to now
+     * @dev to calculate durationStakeThisEpoch:
+     *   user will stake from _startTime -> _endTime, while the epoch last from _startTimeOfEpoch -> _endTimeOfEpoch
+     *   => the stakeDuration of user will be min(_endTime,_endTimeOfEpoch) - max(_startTime,_startTimeOfEpoch)
+     */
     function _calcUnitsStakeInEpoch(
         uint256 lpAmount,
         uint256 _startTime,
