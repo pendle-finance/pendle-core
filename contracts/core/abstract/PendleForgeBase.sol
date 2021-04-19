@@ -133,9 +133,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         amountTransferOut = redeemedAmount.rmul(_transferOutRate);
 
-        if (amountTransferOut > 0) {
-            yieldToken.safeTransfer(_account, amountTransferOut);
-        }
+        _safeTransferOut(yieldToken, _account, amountTransferOut);
 
         tokens.ot.burn(_account, expiredOTamount);
 
@@ -162,9 +160,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         tokens.ot.burn(_account, _amountToRedeem);
         tokens.xyt.burn(_account, _amountToRedeem);
-        if (redeemedAmount > 0) {
-            yieldToken.safeTransfer(_account, redeemedAmount);
-        }
+        _safeTransferOut(yieldToken, _account, redeemedAmount);
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem, redeemedAmount);
 
@@ -303,11 +299,20 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         if (dueInterests > 0) {
             IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
-            yieldToken.safeTransfer(_account, dueInterests);
+            _safeTransferOut(yieldToken, _account, dueInterests);
             emit DueInterestSettled(forgeId, _underlyingAsset, _expiry, dueInterests, _account);
         }
 
         return dueInterests;
+    }
+
+    function _safeTransferOut(
+        IERC20 yieldToken,
+        address _account,
+        uint256 _amount
+    ) internal {
+        _amount = Math.min(_amount, yieldToken.balanceOf(address(this)));
+        if (_amount > 0) yieldToken.safeTransfer(_account, _amount);
     }
 
     function _getTokens(address _underlyingAsset, uint256 _expiry)
