@@ -221,11 +221,11 @@ abstract contract PendleLiquidityMiningBase is
         }
 
         uint256 curEpoch = _getCurrentEpochId();
-        for (uint256 i = latestSetting.firstEpochToApply + 1; i <= curEpoch; i++) {
+        for (uint256 i = latestSetting.firstEpochToApply; i <= curEpoch; i++) {
             // save the epochSettingId for the epochData before the current epoch
             epochData[i].settingId = latestSetting.id;
         }
-        latestSetting.firstEpochToApply = curEpoch;
+        latestSetting.firstEpochToApply = curEpoch + 1;
         latestSetting.id++;
 
         uint256 sumAllocationNumerators;
@@ -417,7 +417,7 @@ abstract contract PendleLiquidityMiningBase is
             RewardsData memory vars;
             vars.stakeUnitsForUser = epochData[epochId].stakeUnitsForUser[account][expiry];
 
-            vars.settingId = epochId > latestSetting.firstEpochToApply
+            vars.settingId = epochId >= latestSetting.firstEpochToApply
                 ? latestSetting.id
                 : epochData[epochId].settingId;
 
@@ -507,6 +507,9 @@ abstract contract PendleLiquidityMiningBase is
         if (account == address(this)) return 0;
 
         ExpiryData storage exd = expiryData[expiry];
+        // even if exd.balances[account]==0, this function must still be called
+        // if (exd.balances[account] == 0) return 0;
+
         _updateParamL(expiry);
 
         uint256 interestValuePerLP = _getInterestValuePerLP(expiry, account);
