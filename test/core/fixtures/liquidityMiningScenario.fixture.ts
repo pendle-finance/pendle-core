@@ -182,3 +182,79 @@ export function scenario04(params: liqParams): UserStakeAction[][][] {
     ]
   ]
 }
+
+export function scenario06(params: liqParams): UserStakeAction[][][] {
+  return [
+    [
+      [
+        new UserStakeAction(startOfEpoch(params, 1).add(801427), BN.from(745), true, 0),
+      ],
+      [
+        new UserStakeAction(startOfEpoch(params, 1).add(110339), BN.from(584), true, 1),
+        new UserStakeAction(startOfEpoch(params, 1).add(174944), BN.from(217), false, 1),
+        new UserStakeAction(startOfEpoch(params, 1).add(523613), BN.from(314), true, 1),
+      ],
+      [
+        new UserStakeAction(startOfEpoch(params, 1).add(3492), BN.from(420), true, 2),
+        new UserStakeAction(startOfEpoch(params, 1).add(481032), BN.from(54), false, 2),
+        new UserStakeAction(startOfEpoch(params, 1).add(698160), BN.from(246), false, 2),
+        new UserStakeAction(startOfEpoch(params, 1).add(706579), BN.from(48), false, 2),
+      ],
+      [
+        new UserStakeAction(startOfEpoch(params, 1).add(126315), BN.from(659), true, 3),
+        new UserStakeAction(startOfEpoch(params, 1).add(524408), BN.from(831), true, 3),
+        new UserStakeAction(startOfEpoch(params, 1).add(646377), BN.from(254), true, 3),
+      ]
+    ],
+    [
+      [
+      ],
+      [
+      ],
+      [
+      ],
+      [
+      ]
+    ],
+    [
+      [
+      ],
+      [
+      ],
+      [
+      ],
+      [
+      ]
+    ],
+    [
+      [
+      ],
+      [],
+      [
+      ],
+      [
+      ]
+    ],
+    [
+      [
+        new UserStakeAction(startOfEpoch(params, 5).add(168997), BN.from(745), false, 0),
+        new UserStakeAction(startOfEpoch(params, 5).add(272394), BN.from(539), true, 0),
+        new UserStakeAction(startOfEpoch(params, 5).add(644768), BN.from(267), true, 0),
+        new UserStakeAction(startOfEpoch(params, 5).add(784413), BN.from(377), true, 0),
+      ],
+      [
+        new UserStakeAction(startOfEpoch(params, 5).add(4240), BN.from(928), true, 1),
+        new UserStakeAction(startOfEpoch(params, 5).add(23888), BN.from(521), true, 1),
+        new UserStakeAction(startOfEpoch(params, 5).add(699612), BN.from(1950), false, 1),
+      ],
+      [
+        new UserStakeAction(startOfEpoch(params, 5).add(268619), BN.from(284), true, 2),
+      ],
+      [
+        new UserStakeAction(startOfEpoch(params, 5).add(77091), BN.from(465), true, 3),
+        new UserStakeAction(startOfEpoch(params, 5).add(374716), BN.from(200), true, 3),
+        new UserStakeAction(startOfEpoch(params, 5).add(458030), BN.from(144), true, 3),
+      ]
+    ]
+  ]
+}

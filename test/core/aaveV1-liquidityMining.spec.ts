@@ -283,7 +283,7 @@ describe("aaveV1-liquidityMining", async () => {
     }
   }
 
-  async function checkEqualRewardsFourEpochs(
+  async function checkEqualRewardsForEpochs(
     userStakingData: UserStakeAction[][][],
     epochToCheck: number,
     _allocationRateDiv?: number
@@ -366,7 +366,7 @@ describe("aaveV1-liquidityMining", async () => {
   it("should be able to receive enough PENDLE rewards - test 2", async () => {
     let userStakingData: UserStakeAction[][][] = scenario.scenario04(params);
     await doSequence(userStakingData);
-    await checkEqualRewardsFourEpochs(
+    await checkEqualRewardsForEpochs(
       userStakingData,
       userStakingData.length + 1
     );
@@ -380,7 +380,22 @@ describe("aaveV1-liquidityMining", async () => {
     );
     let userStakingData: UserStakeAction[][][] = scenario.scenario04(params);
     await doSequence(userStakingData);
-    await checkEqualRewardsFourEpochs(
+    await checkEqualRewardsForEpochs(
+      userStakingData,
+      userStakingData.length + 1,
+      2
+    );
+  });
+
+  it("should be able to receive enough PENDLE rewards - test 4", async () => {
+    await liq.setAllocationSetting(
+      [consts.T0.add(consts.SIX_MONTH), consts.T0.add(consts.THREE_MONTH)],
+      [params.TOTAL_NUMERATOR.div(2), params.TOTAL_NUMERATOR.div(2)],
+      consts.HIGH_GAS_OVERRIDE
+    );
+    let userStakingData: UserStakeAction[][][] = scenario.scenario06(params);
+    await doSequence(userStakingData);
+    await checkEqualRewardsForEpochs(
       userStakingData,
       userStakingData.length + 1,
       2

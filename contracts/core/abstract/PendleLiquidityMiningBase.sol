@@ -404,6 +404,12 @@ abstract contract PendleLiquidityMiningBase is
         to update epochData[..].stakeUnitsForUser and epochData[..].availableRewardsForEpoch
         */
         for (uint256 epochId = _startEpoch; epochId < _endEpoch; epochId++) {
+            if (epochData[epochId].stakeUnitsForExpiry[expiry] == 0 && exd.totalStakeLP == 0) {
+                /* in the extreme extreme case of zero staked LPs for this expiry even now,
+                    => nothing to do from this epoch onwards */
+                break;
+            }
+
             RewardsData memory vars;
 
             epochData[epochId].stakeUnitsForUser[account][expiry] = epochData[epochId]
@@ -427,24 +433,8 @@ abstract contract PendleLiquidityMiningBase is
                 .mul(allocationSettings[vars.settingId][expiry])
                 .div(ALLOCATION_DENOMINATOR);
 
-            if (epochData[epochId].stakeUnitsForExpiry[expiry] == 0) {
-                /*
-                Handle special case when no-one stake/unstake for this expiry during the epoch
-                I.e. Everyone staked before the start of the epoch and hold through the end
-                as such, stakeUnitsForExpiry is still not updated, and is zero.
-                we will just update it to exd.totalStakeLP * epochDuration
-                */
-                if (exd.totalStakeLP == 0) {
-                    /* in the extreme extreme case of zero staked LPs for this expiry even now,
-                    => nothing to do from this epoch onwards */
-                    break;
-                }
+            assert(epochData[epochId].stakeUnitsForExpiry[expiry] != 0);
 
-                // no one does anything in this epoch => stakeUnitsForExpiry = full epoch
-                epochData[epochId].stakeUnitsForExpiry[expiry] = exd.totalStakeLP.mul(
-                    epochDuration
-                );
-            }
             vars.rewardsPerVestingEpoch = vars
                 .rewardsForMarket
                 .mul(vars.stakeUnitsForUser)
