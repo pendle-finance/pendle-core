@@ -51,6 +51,7 @@ export function runTest(isAaveV1: boolean) {
       tokenUSDT = tokens.USDT;
       aaveForge = fixture.aForge.aaveForge;
       aaveV2Forge = fixture.a2Forge.aaveV2Forge;
+      testEnv.TEST_DELTA = BN.from(30000);
     }
 
     async function buildTestEnvV1() {
@@ -61,7 +62,6 @@ export function runTest(isAaveV1: boolean) {
       testEnv.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE;
       testEnv.T0 = consts.T0;
       testEnv.FORGE_ID = consts.FORGE_AAVE;
-      testEnv.TEST_DELTA = BN.from(10000);
     }
 
     async function buildTestEnvV2() {
@@ -72,7 +72,6 @@ export function runTest(isAaveV1: boolean) {
       testEnv.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE_V2;
       testEnv.T0 = consts.T0_A2;
       testEnv.FORGE_ID = consts.FORGE_AAVE_V2;
-      testEnv.TEST_DELTA = BN.from(30000);
     }
 
     async function redeemAll() {

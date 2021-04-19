@@ -379,7 +379,6 @@ abstract contract PendleLiquidityMiningBase is
         uint256 _endEpoch = Math.min(numberOfEpochs, _curEpoch);
 
         // if _curEpoch<=numberOfEpochs
-        // => the curEpoch hasn't ended yet
         // => the endEpoch hasn't ended yet (since endEpoch=curEpoch)
         bool _isEndEpochOver = (_curEpoch > numberOfEpochs);
 
@@ -411,7 +410,10 @@ abstract contract PendleLiquidityMiningBase is
 
             // this epoch has ended, users can claim rewards now
 
-            // this should never happen
+            // @Long: this can never happen because:
+            // * if exd.totalStakeLP==0 => will break by conditions above
+            // * else: it can only happen if startOfEpoch == now, but in this case it means that
+            //      the epoch is not over yet, so !_isEndEpochOver == false
             assert(epochData[epochId].stakeUnitsForExpiry[expiry] != 0);
 
             RewardsData memory vars;
