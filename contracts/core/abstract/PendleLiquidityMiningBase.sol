@@ -376,41 +376,24 @@ abstract contract PendleLiquidityMiningBase is
         }
 
         uint256 _curEpoch = _getCurrentEpochId();
-        uint256 _endEpoch;
+        uint256 _endEpoch = Math.min(numberOfEpochs, _curEpoch);
+
+        // if _curEpoch<=numberOfEpochs
+        // => the curEpoch hasn't ended yet
+        // => the endEpoch hasn't ended yet (since endEpoch=curEpoch)
+        bool _isEndEpochOver = (_curEpoch > numberOfEpochs);
+
         uint256 _startEpoch = _epochOfTimestamp(exd.lastTimeUserStakeUpdated[account]);
-        // if its after the end of the programme, only count until the last epoch
-
-        /*
-        calculate the rewards in the current block. All blocks before this will be calculated
-        in the for-loop after this if-else
-        */
-        if (_curEpoch > numberOfEpochs) {
-            _endEpoch = numberOfEpochs.add(1);
-        } else {
-            _endEpoch = _curEpoch;
-
-            epochData[_curEpoch].stakeUnitsForUser[account][expiry] = epochData[_curEpoch]
-                .stakeUnitsForUser[account][expiry]
-                .add(
-                _calcUnitsStakeInEpoch(
-                    exd.balances[account],
-                    exd.lastTimeUserStakeUpdated[account],
-                    _curEpoch
-                )
-            );
-        }
 
         /* Go through all epochs that are now over
         to update epochData[..].stakeUnitsForUser and epochData[..].availableRewardsForEpoch
         */
-        for (uint256 epochId = _startEpoch; epochId < _endEpoch; epochId++) {
+        for (uint256 epochId = _startEpoch; epochId <= _endEpoch; epochId++) {
             if (epochData[epochId].stakeUnitsForExpiry[expiry] == 0 && exd.totalStakeLP == 0) {
                 /* in the extreme extreme case of zero staked LPs for this expiry even now,
                     => nothing to do from this epoch onwards */
                 break;
             }
-
-            RewardsData memory vars;
 
             epochData[epochId].stakeUnitsForUser[account][expiry] = epochData[epochId]
                 .stakeUnitsForUser[account][expiry]
@@ -422,6 +405,16 @@ abstract contract PendleLiquidityMiningBase is
                 )
             );
 
+            if (epochId == _endEpoch && !_isEndEpochOver) {
+                break;
+            }
+
+            // this epoch has ended, users can claim rewards now
+
+            // this should never happen
+            assert(epochData[epochId].stakeUnitsForExpiry[expiry] != 0);
+
+            RewardsData memory vars;
             vars.stakeUnitsForUser = epochData[epochId].stakeUnitsForUser[account][expiry];
 
             vars.settingId = epochId > latestSetting.firstEpochToApply
@@ -432,8 +425,6 @@ abstract contract PendleLiquidityMiningBase is
                 .totalRewards
                 .mul(allocationSettings[vars.settingId][expiry])
                 .div(ALLOCATION_DENOMINATOR);
-
-            assert(epochData[epochId].stakeUnitsForExpiry[expiry] != 0);
 
             vars.rewardsPerVestingEpoch = vars
                 .rewardsForMarket
