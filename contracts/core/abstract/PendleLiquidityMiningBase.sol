@@ -210,6 +210,7 @@ abstract contract PendleLiquidityMiningBase is
             fund the contract as well
         => We should just throw this contract away, and funds are SAFU!
     @dev the length of _expiries array should be small, 2 or 3
+    @dev it's intentional that we don't check the existence of expiries
      */
     function setAllocationSetting(
         uint256[] calldata _expiries,
@@ -454,8 +455,8 @@ abstract contract PendleLiquidityMiningBase is
         internal
         returns (uint256 rewardsWithdrawableNow)
     {
-        uint256 _curEpoch = _getCurrentEpochId();
-        for (uint256 i = 2; i <= _curEpoch; i++) {
+        uint256 _lastEpoch = Math.min(_getCurrentEpochId(), numberOfEpochs);
+        for (uint256 i = 2; i <= _lastEpoch; i++) {
             if (epochData[i].availableRewardsForUser[_account] > 0) {
                 rewardsWithdrawableNow = rewardsWithdrawableNow.add(
                     epochData[i].availableRewardsForUser[_account]
