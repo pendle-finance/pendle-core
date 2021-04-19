@@ -344,18 +344,11 @@ abstract contract PendleLiquidityMiningBase is
                 break; // its already updated until this epoch, our job here is done
             }
 
-            if (lastUpdatedForEpoch == 0) {
-                /* we have not run this function for this epoch, and can assume that
-                expiryData[expiry].totalStakeLP was staked from the beginning of this epoch,
-                so we just use the start of the epoch as lastUpdatedForEpoch */
-                lastUpdatedForEpoch = epochEndTime.sub(epochDuration);
-            }
-
-            uint256 newLastUpdated = Math.min(block.timestamp, epochEndTime);
-
             epochData[i].stakeUnitsForExpiry[expiry] = epochData[i].stakeUnitsForExpiry[expiry]
-                .add(expiryData[expiry].totalStakeLP.mul(newLastUpdated.sub(lastUpdatedForEpoch)));
-            epochData[i].lastUpdatedForExpiry[expiry] = newLastUpdated;
+                .add(
+                _calcUnitsStakeInEpoch(expiryData[expiry].totalStakeLP, lastUpdatedForEpoch, i)
+            );
+            epochData[i].lastUpdatedForExpiry[expiry] = Math.min(block.timestamp, epochEndTime);
         }
     }
 
@@ -396,13 +389,15 @@ abstract contract PendleLiquidityMiningBase is
         } else {
             _endEpoch = _curEpoch;
 
-            uint256 durationStakeThisEpoch =
-                block.timestamp -
-                    Math.max(_startTimeOfEpoch(_curEpoch), exd.lastTimeUserStakeUpdated[account]);
-
             epochData[_curEpoch].stakeUnitsForUser[account][expiry] = epochData[_curEpoch]
                 .stakeUnitsForUser[account][expiry]
-                .add(exd.balances[account].mul(durationStakeThisEpoch));
+                .add(
+                _calcUnitsStakeInEpoch(
+                    exd.balances[account],
+                    exd.lastTimeUserStakeUpdated[account],
+                    _curEpoch
+                )
+            );
         }
 
         /* Go through all epochs that are now over
@@ -410,9 +405,18 @@ abstract contract PendleLiquidityMiningBase is
         */
         for (uint256 epochId = _startEpoch; epochId < _endEpoch; epochId++) {
             RewardsData memory vars;
-            vars.stakeUnitsForUser = _calStakeUnitsForUser(account, expiry, _startEpoch, epochId);
 
-            epochData[epochId].stakeUnitsForUser[account][expiry] = vars.stakeUnitsForUser;
+            epochData[epochId].stakeUnitsForUser[account][expiry] = epochData[epochId]
+                .stakeUnitsForUser[account][expiry]
+                .add(
+                _calcUnitsStakeInEpoch(
+                    exd.balances[account],
+                    exd.lastTimeUserStakeUpdated[account],
+                    epochId
+                )
+            );
+
+            vars.stakeUnitsForUser = epochData[epochId].stakeUnitsForUser[account][expiry];
 
             vars.settingId = epochId > latestSetting.firstEpochToApply
                 ? latestSetting.id
@@ -478,25 +482,18 @@ abstract contract PendleLiquidityMiningBase is
         }
     }
 
-    function _calStakeUnitsForUser(
-        address account,
-        uint256 expiry,
-        uint256 _startEpoch,
+    function _calcUnitsStakeInEpoch(
+        uint256 lpAmount,
+        uint256 _startTime,
         uint256 _epochId
     ) internal view returns (uint256 stakeUnitsForUser) {
-        ExpiryData storage exd = expiryData[expiry];
-        if (_epochId == _startEpoch) {
-            // if its the epoch where user staked,
-            // the user staked from lastTimeUserStakeUpdated[expiry] until end of that epoch
-            uint256 secondsStakedThisEpochSinceLastUpdate =
-                _endTimeOfEpoch(_epochId).sub(exd.lastTimeUserStakeUpdated[account]);
-            // number of remaining seconds in this startEpoch (since the last action of user)
-            stakeUnitsForUser = epochData[_epochId].stakeUnitsForUser[account][expiry].add(
-                secondsStakedThisEpochSinceLastUpdate.mul(exd.balances[account])
-            );
-        } else {
-            stakeUnitsForUser = epochDuration.mul(exd.balances[account]);
-        }
+        uint256 _endTime = block.timestamp;
+
+        uint256 _l = Math.max(_startTime, _startTimeOfEpoch(_epochId));
+        uint256 _r = Math.min(_endTime, _endTimeOfEpoch(_epochId));
+        uint256 durationStakeThisEpoch = (_l >= _r ? 0 : _r - _l);
+
+        return lpAmount.mul(durationStakeThisEpoch);
     }
 
     function _pullLpToken(
