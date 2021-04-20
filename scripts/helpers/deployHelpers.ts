@@ -42,12 +42,12 @@ export const devConstants = {
     TEST_EXPIRY_3: 1621087200,
 
     // Pendle token distribution
-    INVESTOR_AMOUNT: BN.from(34102839).mul(ONE_E_18),
+    INVESTOR_AMOUNT: BN.from(36959981).mul(ONE_E_18),
     ADVISOR_AMOUNT: BN.from(2500000).mul(ONE_E_18),
     TEAM_AMOUNT: BN.from(55000000).mul(ONE_E_18),
-    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(91602839).mul(ONE_E_18),
-    ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(50 * 1000000).mul(ONE_E_18),
-    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(15897161).mul(ONE_E_18),
+    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94459981).mul(ONE_E_18),
+    ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(46 * 10 ** 6).mul(ONE_E_18),
+    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(17040019).mul(ONE_E_18),
     INITIAL_LIQUIDITY_EMISSION: BN.from(1200000).mul(ONE_E_18),
     CONFIG_DENOMINATOR: BN.from(72000000000),
     CONFIG_CHANGES_TIME_LOCK: BN.from(7 * 24 * 3600),
@@ -116,12 +116,12 @@ export const kovanConstants = {
     LOCK_DENOMINATOR: BN.from(180),
 
     // Pendle token distribution
-    INVESTOR_AMOUNT: BN.from(34102839).mul(ONE_E_18),
+    INVESTOR_AMOUNT: BN.from(36959981).mul(ONE_E_18),
     ADVISOR_AMOUNT: BN.from(2500000).mul(ONE_E_18),
     TEAM_AMOUNT: BN.from(55000000).mul(ONE_E_18),
-    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(91602839).mul(ONE_E_18),
-    ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(50 * 1000000).mul(ONE_E_18),
-    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(15897161).mul(ONE_E_18),
+    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94459981).mul(ONE_E_18),
+    ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(46 * 10 ** 6).mul(ONE_E_18),
+    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(17040019).mul(ONE_E_18),
     INITIAL_LIQUIDITY_EMISSION: BN.from(1200000).mul(ONE_E_18),
     CONFIG_DENOMINATOR: BN.from(72000000000),
     CONFIG_CHANGES_TIME_LOCK: BN.from(7 * 24 * 3600),
@@ -197,6 +197,26 @@ export async function deploy(
   args: any[]
 ): Promise<any> {
   const contractFactory = await hre.ethers.getContractFactory(contractName);
+  const contractObject = await contractFactory.deploy(...args);
+  await contractObject.deployed();
+  deployment.contracts[contractName] = {
+    address: contractObject.address,
+    tx: contractObject.deployTransaction.hash,
+  };
+  console.log(
+    `\t[DEPLOYED] ${contractName} deployed to ${contractObject.address}, tx=${contractObject.deployTransaction.hash}`
+  );
+  return contractObject;
+}
+
+export async function deployWithName(
+  hre: any,
+  deployment: Deployment,
+  contractType: string,
+  contractName: string,
+  args: any[]
+): Promise<any> {
+  const contractFactory = await hre.ethers.getContractFactory(contractType);
   const contractObject = await contractFactory.deploy(...args);
   await contractObject.deployed();
   deployment.contracts[contractName] = {
@@ -301,7 +321,7 @@ export async function createNewYieldContractAndMarket(
 
   if (
     deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[
-      expiry
+    expiry
     ] == null
   ) {
     deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[
