@@ -10,6 +10,8 @@ import {
   createNewYieldContractAndMarket,
   getContractFromDeployment,
 } from "../helpers/deployHelpers";
+import { beforeAll } from "./beforeAll";
+import { step0 } from "./step0";
 import { step1 } from "./step1";
 import { step2 } from "./step2";
 import { step3 } from "./step3";
@@ -48,7 +50,7 @@ async function main() {
   } else {
     console.log(`\tNo existing deployment file`);
     deployment = {
-      step: 0,
+      step: -1,
       contracts: {},
       variables: {},
       yieldContracts: {},
@@ -56,7 +58,7 @@ async function main() {
   }
   if (process.env.RESET == "true") {
     console.log(`\tRESETing, deploying a brand new instance of contracts`);
-    deployment.step = 0;
+    deployment.step = -1;
   }
 
   const lastStep =
@@ -64,11 +66,18 @@ async function main() {
       ? parseInt!(process.env.LAST_STEP)
       : NUMBER_OF_STEPS;
   console.log(
-    `======= Deploying from step ${deployment.step + 1} to step ${lastStep}`
+    `======= Deploying from step ${deployment.step} to step ${lastStep}`
   );
 
+  console.log(`\nSetting Environment Variables`);
+  await beforeAll(deployer, hre, deployment, consts);
   for (let step = deployment.step + 1; step <= lastStep; step++) {
     switch (step) {
+      case 0: {
+        console.log(`\n[Step ${step}]: Deploying PendleTeamTokens & PendleEcosystemFund's contracts`);
+        await step0(deployer, hre, deployment, consts);
+        break;
+      }
       case 1: {
         console.log(`\n[Step ${step}]: Deploying PENDLE`);
         await step1(deployer, hre, deployment, consts);
