@@ -321,7 +321,7 @@ export async function createNewYieldContractAndMarket(
 
   if (
     deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[
-    expiry
+      expiry
     ] == null
   ) {
     deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[

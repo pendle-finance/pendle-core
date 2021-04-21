@@ -74,7 +74,9 @@ async function main() {
   for (let step = deployment.step + 1; step <= lastStep; step++) {
     switch (step) {
       case 0: {
-        console.log(`\n[Step ${step}]: Deploying PendleTeamTokens & PendleEcosystemFund's contracts`);
+        console.log(
+          `\n[Step ${step}]: Deploying PendleTeamTokens & PendleEcosystemFund's contracts`
+        );
         await step0(deployer, hre, deployment, consts);
         break;
       }
