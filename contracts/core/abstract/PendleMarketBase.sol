@@ -326,7 +326,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // Calc and withdraw xyt token.
         uint256 balanceToken = xytBalance;
         uint256 xytOut = Math.rmul(ratio, balanceToken);
-        assert(xytOut != 0);
+        require(xytOut != 0, "INTERNAL_ERROR");
         require(xytOut >= _minOutXyt, "INSUFFICIENT_XYT_OUT");
         xytBalance = xytBalance.sub(xytOut);
         transfers[0].amount = xytOut;
@@ -335,7 +335,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // Calc and withdraw pair token.
         balanceToken = tokenBalance;
         uint256 tokenOut = Math.rmul(ratio, balanceToken);
-        assert(tokenOut != 0);
+        require(tokenOut != 0, "INTERNAL_ERROR");
         require(tokenOut >= _minOutToken, "INSUFFICIENT_TOKEN_OUT");
         tokenBalance = tokenBalance.sub(tokenOut);
         transfers[1].amount = tokenOut;

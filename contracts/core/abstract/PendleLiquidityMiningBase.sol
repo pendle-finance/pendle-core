@@ -415,7 +415,7 @@ abstract contract PendleLiquidityMiningBase is
             // * if exd.totalStakeLP==0 => will break by conditions above
             // * else: it can only happen if startOfEpoch == now, but in this case it means that
             //      the epoch is not over yet, so !_isEndEpochOver == false
-            assert(epochData[epochId].stakeUnitsForExpiry[expiry] != 0);
+            require(epochData[epochId].stakeUnitsForExpiry[expiry] != 0, "INTERNAL_ERROR");
 
             RewardsData memory vars;
             vars.stakeUnitsForUser = epochData[epochId].stakeUnitsForUser[account][expiry];
