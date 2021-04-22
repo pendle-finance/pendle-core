@@ -183,7 +183,7 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     // fund a few epoches
-    // One the last epoch is over, the program is permanently over and cannot be extended anymore
+    // Once the last epoch is over, the program is permanently over and cannot be extended anymore
     function fund(uint256[] memory _rewards) external onlyGovernance {
         require(latestSetting.id > 0, "NO_ALLOC_SETTING");
         require(_getCurrentEpochId() <= numberOfEpochs, "LAST_EPOCH_OVER"); // we can only fund more if its still ongoing
@@ -202,7 +202,7 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     /**
-    @notice set a new allocation setting, which will be applied from the next Epoch onwards
+    @notice set a new allocation setting, which will be applied from the next epoch onwards
     @dev  all the epochData from latestSetting.firstEpochToApply+1 to current epoch will follow the previous
     allocation setting
     @dev We must set the very first allocation setting before the start of epoch 1,
@@ -210,7 +210,7 @@ abstract contract PendleLiquidityMiningBase is
         In that case, we will not be able to set any allocation and hence its not possible to
             fund the contract as well
         => We should just throw this contract away, and funds are SAFU!
-    @dev the length of _expiries array should be small, 2 or 3
+    @dev the length of _expiries array is expcted to be small, 2 or 3
     @dev it's intentional that we don't check the existence of expiries
      */
     function setAllocationSetting(
@@ -224,7 +224,6 @@ abstract contract PendleLiquidityMiningBase is
 
         uint256 curEpoch = _getCurrentEpochId();
         for (uint256 i = latestSetting.firstEpochToApply; i <= curEpoch; i++) {
-            // save the epochSettingId for the epochData before the current epoch
             epochData[i].settingId = latestSetting.id;
         }
         latestSetting.firstEpochToApply = curEpoch + 1;
@@ -287,28 +286,28 @@ abstract contract PendleLiquidityMiningBase is
         exd.totalStakeLP = exd.totalStakeLP.sub(amount);
     }
 
-    function claimRewards()
-        external
-        override
-        nonReentrant
-        returns (uint256[] memory rewards, uint256 interests)
-    {
+    function claimRewards() external override nonReentrant returns (uint256[] memory rewards) {
         // claim PENDLE rewards
-        uint256 curEpoch = _getCurrentEpochId(); //!!! what if currentEpoch > final epoch?
+        uint256 curEpoch = _getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
 
         rewards = new uint256[](vestingEpochs);
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
             uint256 expiry = userExpiries[msg.sender].expiries[i];
             rewards[0] = rewards[0].add(_settlePendingRewards(expiry, msg.sender));
-
-            // claim LP interests
-            interests = interests.add(_settleLpInterests(expiry, msg.sender));
         }
 
         for (uint256 i = 1; i < vestingEpochs; i++) {
             rewards[i] = rewards[i].add(
                 epochData[curEpoch.add(i)].availableRewardsForUser[msg.sender]
+            );
+        }
+    }
+
+    function claimLpInterests() external override nonReentrant returns (uint256 interests) {
+        for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
+            interests = interests.add(
+                _settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender)
             );
         }
     }
@@ -324,13 +323,13 @@ abstract contract PendleLiquidityMiningBase is
 
     /**
     @notice update the following stake data for the current epoch:
-        - epochData[current epoch].stakeUnitsForExpiry
-        - epochData[current epoch].lastUpdatedForExpiry
+        - epochData[_curEpoch].stakeUnitsForExpiry
+        - epochData[_curEpoch].lastUpdatedForExpiry
     @dev If this is the very first transaction involving this expiry, then need to update for the
     previous epoch as well. If the previous didn't have any transactions at all, (and hence was not
     updated at all), we need to update it and check the previous previous ones, and so on..
     @dev must be called right before every _settlePendingRewards()
-    @dev this is the only function that updates lastTimeUserStakeUpdated
+    @dev this is the only function that updates lastTimeUserStakeUpdated & stakeUnitsForExpiry
     @dev other functions must make sure that totalStakeLPForExpiry could be assumed
         to stay exactly the same since lastTimeUserStakeUpdated until now;
      */
@@ -386,8 +385,8 @@ abstract contract PendleLiquidityMiningBase is
 
         uint256 _startEpoch = _epochOfTimestamp(exd.lastTimeUserStakeUpdated[account]);
 
-        /* Go through all epochs that are now over
-        to update epochData[..].stakeUnitsForUser and epochData[..].availableRewardsForEpoch
+        /* Go through all epochs until now
+        to update stakeUnitsForUser and availableRewardsForEpoch
         */
         for (uint256 epochId = _startEpoch; epochId <= _endEpoch; epochId++) {
             if (epochData[epochId].stakeUnitsForExpiry[expiry] == 0 && exd.totalStakeLP == 0) {
@@ -506,6 +505,9 @@ abstract contract PendleLiquidityMiningBase is
         IPendleLpHolder(expiryData[expiry].lpHolder).sendLp(msg.sender, amount);
     }
 
+    /**
+     * @dev even if exd.balances[account]==0, this function must still be called
+     */
     function _settleLpInterests(uint256 expiry, address account)
         internal
         returns (uint256 dueInterests)
@@ -513,8 +515,6 @@ abstract contract PendleLiquidityMiningBase is
         if (account == address(this)) return 0;
 
         ExpiryData storage exd = expiryData[expiry];
-        // even if exd.balances[account]==0, this function must still be called
-        // if (exd.balances[account] == 0) return 0;
 
         _updateParamL(expiry);
 
@@ -538,6 +538,9 @@ abstract contract PendleLiquidityMiningBase is
         return false;
     }
 
+    /**
+     * @dev all LP interests related functions are almost identical to markets' functions
+     */
     function _updateParamL(uint256 expiry) internal {
         ExpiryData storage exd = expiryData[expiry];
         require(exd.lpHolder != address(0), "INVALID_EXPIRY");
@@ -547,7 +550,6 @@ abstract contract PendleLiquidityMiningBase is
         }
 
         IPendleLpHolder(exd.lpHolder).claimLpInterests();
-        // calculate interest related params
 
         IERC20 underlyingYieldToken =
             IERC20(

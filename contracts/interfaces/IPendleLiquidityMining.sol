@@ -35,11 +35,17 @@ interface IPendleLiquidityMining {
     function withdraw(uint256 expiry, uint256 amount) external;
 
     /**
-     * @notice Get the pending rewards & interests for a user
+     * @notice Get the pending rewards for a user
      * @return rewards Returns rewards[0] as the rewards available now, as well as rewards
      that can be claimed for subsequent epochs (size of rewards array is numberOfEpochs)
      **/
-    function claimRewards() external returns (uint256[] memory rewards, uint256 interests);
+    function claimRewards() external returns (uint256[] memory rewards);
+
+    /**
+     * @notice Get the pending LP interests for a staker
+     * @return interests Returns the interest amount
+     **/
+    function claimLpInterests() external returns (uint256 interests);
 
     /**
      * @notice Read the all the expiries that user has staked LP for
