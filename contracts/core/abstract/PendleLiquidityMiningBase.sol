@@ -182,13 +182,17 @@ abstract contract PendleLiquidityMiningBase is
         return expiryData[expiry].lpHolder;
     }
 
-    // fund a few epoches
-    // Once the last epoch is over, the program is permanently over and cannot be extended anymore
-    function fund(uint256[] memory _rewards) external onlyGovernance {
+    /**
+     * @notice fund new epochs
+     * @dev Once the last epoch is over, the program is permanently override
+     * @dev the settings must be set before epochs can be funded
+        => if funded=true, means that epochs have been funded & have already has valid allocation settings
+     */
+    function fund(uint256[] memory _rewards) external override onlyGovernance {
         require(latestSetting.id > 0, "NO_ALLOC_SETTING");
-        require(_getCurrentEpochId() <= numberOfEpochs, "LAST_EPOCH_OVER"); // we can only fund more if its still ongoing
-        uint256 nNewEpoches = _rewards.length;
+        require(_getCurrentEpochId() <= numberOfEpochs, "LAST_EPOCH_OVER");
 
+        uint256 nNewEpoches = _rewards.length;
         uint256 totalFunded;
         for (uint256 i = 0; i < nNewEpoches; i++) {
             totalFunded = totalFunded.add(_rewards[i]);
@@ -199,6 +203,34 @@ abstract contract PendleLiquidityMiningBase is
         funded = true;
         numberOfEpochs = numberOfEpochs.add(nNewEpoches);
         IERC20(pendleTokenAddress).safeTransferFrom(msg.sender, address(this), totalFunded);
+    }
+
+    /**
+    @notice top up rewards for any funded future epochs (but not to create new epochs)
+    */
+    function topUpRewards(uint256[] memory _epochIds, uint256[] memory _rewards)
+        external
+        override
+        onlyGovernance
+        isFunded
+    {
+        require(latestSetting.id > 0, "NO_ALLOC_SETTING");
+        require(_epochIds.length == _rewards.length, "INVALID_ARRAYS");
+
+        uint256 curEpoch = _getCurrentEpochId();
+        uint256 endEpoch = numberOfEpochs;
+        uint256 totalTopUp;
+
+        for (uint256 i = 0; i < _epochIds.length; i++) {
+            require(curEpoch < _epochIds[i] && _epochIds[i] <= endEpoch, "INVALID_EPOCH_ID");
+            totalTopUp = totalTopUp.add(_rewards[i]);
+            epochData[_epochIds[i]].totalRewards = epochData[_epochIds[i]].totalRewards.add(
+                _rewards[i]
+            );
+        }
+
+        require(totalTopUp > 0, "ZERO_FUND");
+        IERC20(pendleTokenAddress).safeTransferFrom(msg.sender, address(this), totalTopUp);
     }
 
     /**

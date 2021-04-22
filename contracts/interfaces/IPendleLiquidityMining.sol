@@ -25,6 +25,16 @@ pragma solidity 0.7.6;
 
 interface IPendleLiquidityMining {
     /**
+     * @notice fund new epochs
+     */
+    function fund(uint256[] memory rewards) external;
+
+    /**
+    @notice top up rewards for any funded future epochs (but not to create new epochs)
+    */
+    function topUpRewards(uint256[] memory _epochIds, uint256[] memory _rewards) external;
+
+    /**
      * @notice Stake an exact amount of LP_expiry
      **/
     function stake(uint256 expiry, uint256 amount) external returns (address);
