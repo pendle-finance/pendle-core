@@ -78,6 +78,7 @@ abstract contract PendleLiquidityMiningBase is
 
     struct ExpiryData {
         mapping(address => uint256) lastTimeUserStakeUpdated;
+        mapping(address => uint256) lastEpochClaimed;
         uint256 totalStakeLP;
         address lpHolder;
         mapping(address => uint256) balances;
@@ -445,18 +446,19 @@ abstract contract PendleLiquidityMiningBase is
         }
 
         exd.lastTimeUserStakeUpdated[account] = block.timestamp;
-        _rewardsWithdrawableNow = _pushRewardsWithdrawableNow(account);
+        _rewardsWithdrawableNow = _pushRewardsWithdrawableNow(expiry, account);
     }
 
     /**
-     * @dev the loop starts from 2 because 2 is the earliest epoch that users can claim rewards
+     * @dev for loop start from lastEpochClaimed since there is possibility that the user receives
+        more rewards in that epoch (if last time he claimed the epoch hadn't ended yet)
      */
-    function _pushRewardsWithdrawableNow(address _account)
+    function _pushRewardsWithdrawableNow(uint256 _expiry, address _account)
         internal
         returns (uint256 rewardsWithdrawableNow)
     {
         uint256 _lastEpoch = Math.min(_getCurrentEpochId(), numberOfEpochs);
-        for (uint256 i = 2; i <= _lastEpoch; i++) {
+        for (uint256 i = expiryData[_expiry].lastEpochClaimed[_account]; i <= _lastEpoch; i++) {
             if (epochData[i].availableRewardsForUser[_account] > 0) {
                 rewardsWithdrawableNow = rewardsWithdrawableNow.add(
                     epochData[i].availableRewardsForUser[_account]
@@ -464,6 +466,7 @@ abstract contract PendleLiquidityMiningBase is
                 epochData[i].availableRewardsForUser[_account] = 0;
             }
         }
+        expiryData[_expiry].lastEpochClaimed[_account] = _lastEpoch;
         if (rewardsWithdrawableNow != 0) {
             IERC20(pendleTokenAddress).safeTransfer(_account, rewardsWithdrawableNow);
         }
