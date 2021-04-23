@@ -124,6 +124,7 @@ export function runTest(isAaveV1: boolean) {
           testEnv.FORGE_ID,
           tokenUSDT.address,
           testEnv.T0.add(consts.SIX_MONTH),
+          false,
           consts.HIGH_GAS_OVERRIDE
         );
     }

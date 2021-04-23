@@ -58,20 +58,17 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     mapping(bytes32 => address) private markets;
     address[] private allMarkets;
 
+    uint256 private constant FEE_HARD_LIMIT = 109951162777; // equals to MATH.RONE / 10 = 10%
     // Parameters to be set by governance;
-    /*
-    if a market's interests have not been updated for deltaT, we will ping
-    the forge to update the interests
-    */
-    uint256 public override interestUpdateDelta;
+
+    uint256 public override interestUpdateRateDeltaForMarket;
+    uint256 public override interestUpdateRateDeltaForForge;
     uint256 public override expiryDivisor = 1 days;
     uint256 public override swapFee;
     uint256 public override exitFee;
     // lock duration = duration * lockNumerator / lockDenominator
     uint256 public override lockNumerator;
     uint256 public override lockDenominator;
-
-    mapping(address => bool) public override reentrancyWhitelisted;
 
     constructor(address _governance, address _treasury) Permissions(_governance) {
         require(_treasury != address(0), "ZERO_ADDRESS");
@@ -108,14 +105,24 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         emit TreasurySet(_treasury);
     }
 
-    function setInterestUpdateDelta(uint256 _interestUpdateDelta)
+    function setInterestUpdateRateDeltaForMarket(uint256 _interestUpdateRateDeltaForMarket)
         external
         override
         initialized
         onlyGovernance
     {
-        interestUpdateDelta = _interestUpdateDelta;
-        emit InterestUpdateDeltaSet(_interestUpdateDelta);
+        interestUpdateRateDeltaForMarket = _interestUpdateRateDeltaForMarket;
+        emit InterestUpdateRateDeltaForMarketSet(_interestUpdateRateDeltaForMarket);
+    }
+
+    function setInterestUpdateRateDeltaForForge(uint256 _interestUpdateRateDeltaForForge)
+        external
+        override
+        initialized
+        onlyGovernance
+    {
+        interestUpdateRateDeltaForForge = _interestUpdateRateDeltaForForge;
+        emit InterestUpdateRateDeltaForForgeSet(_interestUpdateRateDeltaForForge);
     }
 
     function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator)
@@ -139,19 +146,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         require(0 < _expiryDivisor, "INVALID_EXPIRY_DIVISOR");
         expiryDivisor = _expiryDivisor;
         emit ExpiryDivisorSet(_expiryDivisor);
-    }
-
-    function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
-        external
-        override
-        initialized
-        onlyGovernance
-    {
-        require(addresses.length == whitelisted.length, "INVALID_ARRAYS");
-        for (uint256 i = 0; i < addresses.length; i++) {
-            reentrancyWhitelisted[addresses[i]] = whitelisted[i];
-        }
-        emit ReentrancyWhitelistUpdated(addresses, whitelisted);
     }
 
     /**********
@@ -249,6 +243,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     }
 
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external override onlyGovernance {
+        require(_swapFee <= FEE_HARD_LIMIT && _exitFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
         swapFee = _swapFee;
         exitFee = _exitFee;
     }

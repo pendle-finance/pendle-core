@@ -193,7 +193,8 @@ describe("compound-router", async () => {
     await router.redeemDueInterests(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH)
+      consts.T0_C.add(consts.SIX_MONTH),
+      false
     );
 
     const expectedGain = await getCurInterest(
@@ -228,7 +229,8 @@ describe("compound-router", async () => {
       .redeemDueInterests(
         consts.FORGE_COMPOUND,
         tokenUSDT.address,
-        consts.T0_C.add(consts.SIX_MONTH)
+        consts.T0_C.add(consts.SIX_MONTH),
+        false
       );
     const actualGain = await cUSDT.callStatic.balanceOfUnderlying(bob.address);
     const expectedGain = await getCurInterest(
@@ -259,7 +261,8 @@ describe("compound-router", async () => {
       .redeemDueInterests(
         consts.FORGE_COMPOUND,
         tokenUSDT.address,
-        consts.T0_C.add(consts.SIX_MONTH)
+        consts.T0_C.add(consts.SIX_MONTH),
+        false
       );
 
     const T2 = T1.add(10);
@@ -303,7 +306,8 @@ describe("compound-router", async () => {
       .redeemDueInterests(
         consts.FORGE_COMPOUND,
         tokenUSDT.address,
-        consts.T0_C.add(consts.SIX_MONTH)
+        consts.T0_C.add(consts.SIX_MONTH),
+        false
       );
 
     const T2 = T1.add(consts.ONE_MONTH);
@@ -352,7 +356,8 @@ describe("compound-router", async () => {
     await router.redeemDueInterests(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH)
+      consts.T0_C.add(consts.SIX_MONTH),
+      false
     );
 
     await router.redeemUnderlying(

@@ -31,6 +31,7 @@ import "../../interfaces/IPendleYieldToken.sol";
 import "../../tokens/PendleBaseToken.sol";
 import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "hardhat/console.sol";
 
 abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     using Math for uint256;
@@ -326,7 +327,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // Calc and withdraw xyt token.
         uint256 balanceToken = xytBalance;
         uint256 xytOut = Math.rmul(ratio, balanceToken);
-        require(xytOut != 0, "MATH_ERROR");
+        assert(xytOut != 0);
         require(xytOut >= _minOutXyt, "INSUFFICIENT_XYT_OUT");
         xytBalance = xytBalance.sub(xytOut);
         transfers[0].amount = xytOut;
@@ -335,7 +336,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // Calc and withdraw pair token.
         balanceToken = tokenBalance;
         uint256 tokenOut = Math.rmul(ratio, balanceToken);
-        require(tokenOut != 0, "MATH_ERROR");
+        assert(tokenOut != 0);
         require(tokenOut >= _minOutToken, "INSUFFICIENT_TOKEN_OUT");
         tokenBalance = tokenBalance.sub(tokenOut);
         transfers[1].amount = tokenOut;
@@ -412,9 +413,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken, updatedReserveData);
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken, updatedReserveData);
 
-        uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, swapFee);
-        require(spotPriceBefore <= maxPrice, "LOW_MAX_PRICE");
-
         // calc out amount of token to be swapped out
         outAmount = calcExactOut(inTokenReserve, outTokenReserve, inAmount, swapFee);
         require(outAmount >= minOutAmount, "HIGH_OUT_LIMIT");
@@ -424,9 +422,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, swapFee);
 
-        require(spotPriceAfter >= spotPriceBefore, "MATH_ERROR");
         require(spotPriceAfter <= maxPrice, "LOW_MAX_PRICE");
-        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "MATH_ERROR");
 
         // repack data
         updatedReserveData = dryUpdateReserveData(inTokenReserve, inToken, updatedReserveData);
@@ -466,10 +462,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken, updatedReserveData);
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken, updatedReserveData);
 
-        // Calc spot price.
-        uint256 spotPriceBefore = _calcSpotPrice(inTokenReserve, outTokenReserve, swapFee);
-        require(spotPriceBefore <= maxPrice, "LOW_MAX_PRICE");
-
         // Calc in amount.
         inAmount = calcExactIn(inTokenReserve, outTokenReserve, outAmount, swapFee);
         require(inAmount <= maxInAmount, "LOW_IN_LIMIT");
@@ -479,9 +471,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, swapFee);
 
-        require(spotPriceAfter >= spotPriceBefore, "MATH_ERROR");
         require(spotPriceAfter <= maxPrice, "LOW_MAX_PRICE");
-        require(spotPriceBefore <= Math.rdiv(inAmount, outAmount), "MATH_ERROR");
 
         // repack data
         updatedReserveData = dryUpdateReserveData(inTokenReserve, inToken, updatedReserveData);
@@ -613,10 +603,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 outTokenRatio = Math.rpow(lpRatio, Math.rdiv(Math.RONE, nWeight));
         uint256 outTokenBalanceUpdated = Math.rmul(outTokenRatio, outTokenReserve.balance);
 
-        uint256 outAmountTOkenBeforeSwapFee = outTokenReserve.balance.sub(outTokenBalanceUpdated);
+        uint256 outAmountTokenBeforeSwapFee = outTokenReserve.balance.sub(outTokenBalanceUpdated);
 
         uint256 feePortion = Math.rmul(Math.RONE.sub(nWeight), swapFee);
-        exactOutToken = Math.rmul(outAmountTOkenBeforeSwapFee, Math.RONE.sub(feePortion));
+        exactOutToken = Math.rmul(outAmountTokenBeforeSwapFee, Math.RONE.sub(feePortion));
         return exactOutToken;
     }
 
@@ -689,7 +679,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         );
 
         uint256 r = Math.rdiv(priceNow, _priceLast);
-        require(Math.RONE >= r, "MATH_ERROR");
+        assert(Math.RONE >= r);
 
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
@@ -728,12 +718,18 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         underlyingYieldToken.safeTransfer(account, dueInterests);
     }
 
+    function checkNeedUpdateParamL() internal returns (bool) {
+        if (_getIncomeIndexIncreaseRate() > data.interestUpdateRateDeltaForMarket()) {
+            return true;
+        }
+        return false;
+    }
+
     function _updateParamL() internal {
-        if (block.timestamp.sub(lastInterestUpdate) <= data.interestUpdateDelta()) {
+        if (!checkNeedUpdateParamL()) {
             return;
         }
-
-        router.redeemDueInterests(forgeId, underlyingAsset, expiry);
+        router.redeemDueInterests(forgeId, underlyingAsset, expiry, true);
         uint256 currentNYield = underlyingYieldToken.balanceOf(address(this));
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(currentNYield);
 
@@ -768,4 +764,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         internal
         virtual
         returns (uint256 firstTerm, uint256 paramR);
+
+    function _getIncomeIndexIncreaseRate() internal virtual returns (uint256 increaseRate);
 }

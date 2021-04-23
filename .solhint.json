@@ -22,7 +22,7 @@
       99
     ],
     "max-states-count": [
-      "error",
+      "off",
       20
     ],
     "multiple-sends": "error",

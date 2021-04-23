@@ -158,8 +158,6 @@ export async function liquidityMiningFixture(
   await cLiquidityMining.fund(params.REWARDS_PER_EPOCH);
   await pdl.transfer(aLiquidityMining.address, await pdl.balanceOf(alice.address));
   await pdl.transfer(cLiquidityMining.address, await pdl.balanceOf(alice.address));
-  await data.setReentrancyWhitelist([aLiquidityMining.address], [true]);
-  await data.setReentrancyWhitelist([cLiquidityMining.address], [true]);
 
 
   let lpBalanceAlice = await aMarket.balanceOf(alice.address);

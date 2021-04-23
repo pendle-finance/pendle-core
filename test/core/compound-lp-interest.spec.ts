@@ -220,7 +220,6 @@ describe("compound-lp-interest", async () => {
     await cUSDT.balanceOfUnderlying(user.address); // interact with compound so that it updates all info
 
     // to have the most accurate result since the interest is only updated every DELTA seconds
-    await advanceTime(provider, consts.INTEREST_UPDATE_DELTA);
   }
 
   async function checkCUSDTBalance(expectedResult: number[]) {
@@ -290,6 +289,7 @@ describe("compound-lp-interest", async () => {
           consts.FORGE_COMPOUND,
           tokenUSDT.address,
           consts.T0_C.add(consts.SIX_MONTH),
+          false,
           consts.HIGH_GAS_OVERRIDE
         );
     }
@@ -361,6 +361,7 @@ describe("compound-lp-interest", async () => {
           consts.FORGE_COMPOUND,
           tokenUSDT.address,
           consts.T0_C.add(consts.SIX_MONTH),
+          false,
           consts.HIGH_GAS_OVERRIDE
         );
     }
@@ -449,6 +450,7 @@ describe("compound-lp-interest", async () => {
           consts.FORGE_COMPOUND,
           tokenUSDT.address,
           consts.T0_C.add(consts.SIX_MONTH),
+          false,
           consts.HIGH_GAS_OVERRIDE
         );
     }
@@ -511,6 +513,7 @@ describe("compound-lp-interest", async () => {
           consts.FORGE_COMPOUND,
           tokenUSDT.address,
           consts.T0_C.add(consts.SIX_MONTH),
+          false,
           consts.HIGH_GAS_OVERRIDE
         );
     }
@@ -567,6 +570,7 @@ describe("compound-lp-interest", async () => {
           consts.FORGE_COMPOUND,
           tokenUSDT.address,
           consts.T0_C.add(consts.SIX_MONTH),
+          false,
           consts.HIGH_GAS_OVERRIDE
         );
     }

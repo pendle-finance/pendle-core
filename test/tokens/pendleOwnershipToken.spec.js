@@ -23,8 +23,8 @@ contract('PendleOwnershipToken', function (accounts) {
 
   beforeEach(async function () {
     this.token = await MockPendleOwnerShipToken.new(
-      consts.ZERO_ADDRESS,
-      consts.ZERO_ADDRESS,
+      consts.RANDOM_ADDRESS,
+      consts.RANDOM_ADDRESS,
       name,
       symbol,
       6,

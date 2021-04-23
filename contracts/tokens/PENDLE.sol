@@ -122,6 +122,13 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         address salesMultisig,
         address _liquidityIncentivesRecipient
     ) Permissions(_governance) {
+        require(
+            pendleTeamTokens != address(0) &&
+                pendleEcosystemFund != address(0) &&
+                salesMultisig != address(0) &&
+                _liquidityIncentivesRecipient != address(0),
+            "ZERO_ADDRESS"
+        );
         _mint(pendleTeamTokens, TEAM_INVESTOR_ADVISOR_AMOUNT);
         _mint(pendleEcosystemFund, ECOSYSTEM_FUND_TOKEN_AMOUNT);
         _mint(salesMultisig, PUBLIC_SALES_TOKEN_AMOUNT);
@@ -385,7 +392,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         uint256 _terminalInflationRateNumerator,
         address _liquidityIncentivesRecipient
     ) external override onlyGovernance {
-        require(liquidityIncentivesRecipient != address(0), "ZERO_ADDRESS");
+        require(_liquidityIncentivesRecipient != address(0), "ZERO_ADDRESS");
         pendingEmissionRateMultiplierNumerator = _emissionRateMultiplierNumerator;
         pendingTerminalInflationRateNumerator = _terminalInflationRateNumerator;
         pendingLiquidityIncentivesRecipient = _liquidityIncentivesRecipient;

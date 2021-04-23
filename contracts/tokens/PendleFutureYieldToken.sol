@@ -42,6 +42,10 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldToken {
         uint256 _start,
         uint256 _expiry
     ) PendleBaseToken(_name, _symbol, _underlyingYieldTokenDecimals, _start, _expiry) {
+        require(
+            _underlyingAsset != address(0) && _underlyingYieldToken != address(0),
+            "ZERO_ADDRESS"
+        );
         forge = msg.sender;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;

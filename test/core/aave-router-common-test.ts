@@ -241,7 +241,8 @@ export function runTest(isAaveV1: boolean) {
       await router.redeemDueInterests(
         testEnv.FORGE_ID,
         tokenUSDT.address,
-        testEnv.T0.add(consts.SIX_MONTH)
+        testEnv.T0.add(consts.SIX_MONTH),
+        false
       );
 
       const expectedGain = await getCurInterest(charlie, refAmount);
@@ -268,7 +269,8 @@ export function runTest(isAaveV1: boolean) {
         .redeemDueInterests(
           testEnv.FORGE_ID,
           tokenUSDT.address,
-          testEnv.T0.add(consts.SIX_MONTH)
+          testEnv.T0.add(consts.SIX_MONTH),
+          false
         );
 
       const actualGain = await aUSDT.balanceOf(bob.address);
@@ -294,7 +296,8 @@ export function runTest(isAaveV1: boolean) {
         .redeemDueInterests(
           testEnv.FORGE_ID,
           tokenUSDT.address,
-          testEnv.T0.add(consts.SIX_MONTH)
+          testEnv.T0.add(consts.SIX_MONTH),
+          false
         );
 
       approxBigNumber(
@@ -338,7 +341,8 @@ export function runTest(isAaveV1: boolean) {
         .redeemDueInterests(
           testEnv.FORGE_ID,
           tokenUSDT.address,
-          testEnv.T0.add(consts.SIX_MONTH)
+          testEnv.T0.add(consts.SIX_MONTH),
+          false
         );
 
       await startCalInterest(dave, refAmount);
@@ -448,7 +452,8 @@ export function runTest(isAaveV1: boolean) {
       await router.redeemDueInterests(
         testEnv.FORGE_ID,
         tokenUSDT.address,
-        testEnv.T0.add(consts.ONE_YEAR)
+        testEnv.T0.add(consts.ONE_YEAR),
+        false
       );
       let actualGain = await aUSDT.balanceOf(alice.address);
       let expectedGain = await getCurInterest(dave, renewedAmount);

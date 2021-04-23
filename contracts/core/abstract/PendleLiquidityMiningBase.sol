@@ -36,7 +36,7 @@ import "../../core/PendleLpHolder.sol";
 import "../../interfaces/IPendleLiquidityMining.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../../periphery/Permissions.sol";
-import "../../periphery/PendleNonReentrant.sol";
+import "../../periphery/PendleLiquidityMiningNonReentrant.sol";
 
 /**
     @dev things that must hold in this contract:
@@ -47,7 +47,7 @@ import "../../periphery/PendleNonReentrant.sol";
 abstract contract PendleLiquidityMiningBase is
     IPendleLiquidityMining,
     Permissions,
-    PendleNonReentrant
+    PendleLiquidityMiningNonReentrant
 {
     using Math for uint256;
     using SafeMath for uint256;
@@ -66,9 +66,9 @@ abstract contract PendleLiquidityMiningBase is
         bool calculated;
     }
 
-    IPendleRouter public pendleRouter;
-    IPendleMarketFactory public pendleMarketFactory;
-    IPendleData public pendleData;
+    IPendleRouter public router;
+    IPendleMarketFactory public marketFactory;
+    IPendleData public data;
     address public override pendleTokenAddress;
     bytes32 public override forgeId;
     address internal forge;
@@ -126,27 +126,25 @@ abstract contract PendleLiquidityMiningBase is
         uint256 _startTime,
         uint256 _epochDuration,
         uint256 _vestingEpochs
-    ) Permissions(_governance) {
+    ) Permissions(_governance) PendleLiquidityMiningNonReentrant() {
         require(_startTime > block.timestamp, "START_TIME_OVER");
         require(IERC20(_pendleTokenAddress).totalSupply() > 0, "INVALID_ERC20");
         require(IERC20(_underlyingAsset).totalSupply() > 0, "INVALID_ERC20");
         require(IERC20(_baseToken).totalSupply() > 0, "INVALID_ERC20");
         require(_vestingEpochs > 0, "INVALID_VESTING_EPOCHS");
         pendleTokenAddress = _pendleTokenAddress;
-        pendleRouter = IPendleRouter(_pendleRouter);
-        pendleData = pendleRouter.data();
+        router = IPendleRouter(_pendleRouter);
+        data = router.data();
         require(
-            pendleData.getMarketFactoryAddress(_pendleMarketFactoryId) != address(0),
+            data.getMarketFactoryAddress(_pendleMarketFactoryId) != address(0),
             "INVALID_MARKET_FACTORY_ID"
         );
-        require(pendleData.getForgeAddress(_pendleForgeId) != address(0), "INVALID_FORGE_ID");
+        require(data.getForgeAddress(_pendleForgeId) != address(0), "INVALID_FORGE_ID");
 
-        pendleMarketFactory = IPendleMarketFactory(
-            pendleData.getMarketFactoryAddress(_pendleMarketFactoryId)
-        );
+        marketFactory = IPendleMarketFactory(data.getMarketFactoryAddress(_pendleMarketFactoryId));
         marketFactoryId = _pendleMarketFactoryId;
         forgeId = _pendleForgeId;
-        forge = pendleData.getForgeAddress(_pendleForgeId);
+        forge = data.getForgeAddress(_pendleForgeId);
         underlyingAsset = _underlyingAsset;
         baseToken = _baseToken;
         startTime = _startTime;
@@ -219,7 +217,7 @@ abstract contract PendleLiquidityMiningBase is
         external
         override
         isFunded
-        pendleNonReentrant
+        nonReentrant
         returns (address newLpHoldingContract)
     {
         uint256 _epoch = _currentEpoch();
@@ -227,8 +225,8 @@ abstract contract PendleLiquidityMiningBase is
         require(_epoch <= numberOfEpochs, "INCENTIVES_PERIOD_OVER");
         _updateStakeAndRewardsBeforeStakeChange(msg.sender, expiry, _epoch);
 
-        address xyt = address(pendleData.xytTokens(forgeId, underlyingAsset, expiry));
-        address marketAddress = pendleData.getMarket(marketFactoryId, xyt, baseToken);
+        address xyt = address(data.xytTokens(forgeId, underlyingAsset, expiry));
+        address marketAddress = data.getMarket(marketFactoryId, xyt, baseToken);
         require(xyt != address(0), "XYT_NOT_FOUND");
         require(marketAddress != address(0), "MARKET_NOT_FOUND");
 
@@ -247,12 +245,7 @@ abstract contract PendleLiquidityMiningBase is
         currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].add(amount);
     }
 
-    function withdraw(uint256 expiry, uint256 amount)
-        external
-        override
-        pendleNonReentrant
-        isFunded
-    {
+    function withdraw(uint256 expiry, uint256 amount) external override nonReentrant isFunded {
         uint256 _epoch = _currentEpoch();
         require(_epoch > 0, "NOT_STARTED");
         require(balances[msg.sender][expiry] >= amount, "INSUFFICIENT_BALANCE");
@@ -265,12 +258,7 @@ abstract contract PendleLiquidityMiningBase is
         currentTotalStakeForExpiry[expiry] = currentTotalStakeForExpiry[expiry].sub(amount);
     }
 
-    function claimRewards()
-        external
-        override
-        pendleNonReentrant
-        returns (uint256[] memory rewards)
-    {
+    function claimRewards() external override nonReentrant returns (uint256[] memory rewards) {
         uint256 _epoch = _currentEpoch(); //!!! what if currentEpoch > final epoch?
         require(_epoch > 0, "NOT_STARTED");
 
@@ -284,7 +272,7 @@ abstract contract PendleLiquidityMiningBase is
         }
     }
 
-    function claimLpInterests() external override pendleNonReentrant returns (uint256 _interests) {
+    function claimLpInterests() external override nonReentrant returns (uint256 _interests) {
         for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
             _interests = _interests.add(
                 _settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender)
@@ -295,7 +283,7 @@ abstract contract PendleLiquidityMiningBase is
     // internal functions
 
     function _getData() internal view override returns (IPendleData) {
-        return pendleData;
+        return data;
     }
 
     // 1-indexed
@@ -544,7 +532,7 @@ abstract contract PendleLiquidityMiningBase is
     function _updateParamL(uint256 expiry) internal {
         require(hasExpiry[expiry], "INVALID_EXPIRY");
 
-        address xyt = address(pendleData.xytTokens(forgeId, underlyingAsset, expiry));
+        address xyt = address(data.xytTokens(forgeId, underlyingAsset, expiry));
         uint256 currentNYield =
             IERC20(IPendleYieldToken(xyt).underlyingYieldToken()).balanceOf(
                 lpHolderForExpiry[expiry]
@@ -572,8 +560,8 @@ abstract contract PendleLiquidityMiningBase is
         address underlyingYieldToken = IPendleYieldToken(xyt).underlyingYieldToken();
         newLpHoldingContract = Factory.createContract(
             type(PendleLpHolder).creationCode,
-            abi.encodePacked(marketAddress, pendleMarketFactory.router(), underlyingYieldToken),
-            abi.encode(marketAddress, pendleMarketFactory.router(), underlyingYieldToken)
+            abi.encodePacked(marketAddress, marketFactory.router(), underlyingYieldToken),
+            abi.encode(marketAddress, marketFactory.router(), underlyingYieldToken)
         );
         lpHolderForExpiry[expiry] = newLpHoldingContract;
         _afterAddingNewExpiry(expiry);

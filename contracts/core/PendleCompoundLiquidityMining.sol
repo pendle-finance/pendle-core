@@ -35,7 +35,6 @@ import "../core/PendleLpHolder.sol";
 import "../interfaces/IPendleLiquidityMining.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../periphery/Permissions.sol";
-import "../periphery/PendleNonReentrant.sol";
 import "./abstract/PendleLiquidityMiningBase.sol";
 
 /**
