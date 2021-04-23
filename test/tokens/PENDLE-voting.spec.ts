@@ -13,7 +13,7 @@ import { errMsg, consts } from "../helpers";
 const { waffle } = require("hardhat");
 const { provider, deployContract } = waffle;
 
-describe("Comp", () => {
+describe("PENDLE-voting", () => {
   const wallets: Wallet[] = provider.getWallets();
   const [root, a1, a2, ...accounts] = wallets;
 
@@ -26,7 +26,7 @@ describe("Comp", () => {
 
   beforeEach(async () => {
     chainId = 1; // await web3.eth.net.getId(); See: https://github.com/trufflesuite/ganache-core/issues/515
-    PENDLE = await await deployContract(root, MockPENDLE, [
+    PENDLE = await deployContract(root, MockPENDLE, [
       root.address,
       root.address,
       root.address,

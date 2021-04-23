@@ -59,7 +59,7 @@ describe("compound-router", async () => {
   });
 
   async function tokenizeYield(user: Wallet, amount: BN) {
-    await router.tokenizeYield(
+    await router.connect(user).tokenizeYield(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
       consts.T0_C.add(consts.SIX_MONTH),
