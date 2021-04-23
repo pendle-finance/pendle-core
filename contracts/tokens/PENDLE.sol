@@ -150,6 +150,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
      * @return Whether or not the approval succeeded
      **/
     function approve(address spender, uint256 amount) external override returns (bool) {
+        require(spender != address(0), "SPENDER_ZERO_ADDR");
         allowances[msg.sender][spender] = amount;
 
         emit Approval(msg.sender, spender, amount);
@@ -182,14 +183,14 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         address spender = msg.sender;
         uint256 spenderAllowance = allowances[src][spender];
 
+        _transferTokens(src, dst, amount);
         if (spender != src && spenderAllowance != uint256(-1)) {
-            uint256 newAllowance = spenderAllowance.sub(amount);
+            uint256 newAllowance = spenderAllowance.sub(amount, "TRANSFER_EXCEED_ALLOWANCE");
             allowances[src][spender] = newAllowance;
 
             emit Approval(src, spender, newAllowance);
         }
 
-        _transferTokens(src, dst, amount);
         return true;
     }
 
@@ -325,7 +326,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         require(src != address(0), "SENDER_ZERO_ADDR");
         require(dst != address(0), "RECEIVER_ZERO_ADDR");
 
-        balances[src] = balances[src].sub(amount);
+        balances[src] = balances[src].sub(amount, "TRANSFER_EXCEED_BALANCE");
         balances[dst] = balances[dst].add(amount);
         emit Transfer(src, dst, amount);
 

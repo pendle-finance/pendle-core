@@ -28,6 +28,8 @@
     "eslint-plugin-mocha": "^8.1.0",
     "eslint-plugin-prettier": "^3.3.1",
     "ethereum-waffle": "^3.3.0",
+    "ethereumjs-abi": "^0.6.8",
+    "ethereumjs-util": "^7.0.10",
     "ethers": "^5.1.0",
     "got": "^11.8.2",
     "hardhat": "^2.1.2",
