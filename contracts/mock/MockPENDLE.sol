@@ -57,6 +57,14 @@ contract MockPENDLE is PENDLE {
         address to,
         uint256 value
     ) public {
-        _transferTokens(from, to, value);
+        _transfer(from, to, value);
+    }
+
+    function approveInternal(
+        address from,
+        address to,
+        uint256 value
+    ) public {
+        _approve(from, to, value);
     }
 }
