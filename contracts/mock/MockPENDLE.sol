@@ -67,4 +67,12 @@ contract MockPENDLE is PENDLE {
     ) public {
         _approve(from, to, value);
     }
+
+    function getCurrentWeek() public view returns (uint256) {
+        return _getCurrentWeek();
+    }
+
+    function getTotalSupply() public returns (uint256) {
+        return totalSupply;
+    }
 }
