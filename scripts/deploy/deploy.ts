@@ -5,6 +5,7 @@ import path from "path";
 import {
   devConstants,
   kovanConstants,
+  goerliConstants,
   Deployment,
   DeployedContract,
   createNewYieldContractAndMarket,
@@ -35,6 +36,8 @@ async function main() {
 
   if (network == "kovan" || network == "kovantest") {
     consts = kovanConstants;
+  } else if (network == "goerli") {
+    consts = goerliConstants;
   } else {
     consts = devConstants;
   }

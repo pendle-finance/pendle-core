@@ -14,7 +14,7 @@ export async function beforeAll(
     "LIQUIDITY_INCENTIVES_MULTISIG",
   ];
 
-  if (!["kovan", "mainnet"].includes(hre.network.name)) {
+  if (!["kovan", "mainnet", "goerli"].includes(hre.network.name)) {
     console.log(
       `[NOTICE] its not mainnet or kovan, so we are using deployer account ${deployer.address} as the multisigs`
     );

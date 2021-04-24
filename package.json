@@ -45,7 +45,7 @@
     "ts-generator": "^0.1.1",
     "ts-node": "^9.1.1",
     "typechain": "^4.0.3",
-    "typescript": "^4.2.3",
+    "typescript": "^4.2.4",
     "web3": "^1.3.4",
     "yargs": "16.2.0"
   },
@@ -67,8 +67,8 @@
     "test:all": "yarn test test/**/*.spec.*",
     "ci": "yarn hardhat compile && yarn coverage:all",
     "format": "yarn prettier --write contracts/**/*.sol && yarn prettier --write test/**/*.ts && yarn prettier --write test/**/*.js && yarn prettier --write scripts/**/*.ts",
-    "deploy:core":"yarn hardhat run scripts/deploy/deploy.ts",
-    "deploy:seed":"yarn hardhat run scripts/manage/seed_test_contracts.ts",
-    "verify":"yarn hardhat run scripts/manage/verify_tenderly.ts"
+    "deploy:core": "yarn hardhat run scripts/deploy/deploy.ts",
+    "deploy:seed": "yarn hardhat run scripts/manage/seed_test_contracts.ts",
+    "verify": "yarn hardhat run scripts/manage/verify_tenderly.ts"
   }
 }

@@ -12,7 +12,7 @@ dotenv.config();
 const dummyPrivateKey = '1111111111111111111111111111111111111111111111111111111111111111';
 
 const config: HardhatUserConfig = {
-  defaultNetwork: 'hardhat',
+  defaultNetwork: 'mainnet',
   gasReporter: {
     currency: 'USD',
     gasPrice: 100
@@ -85,6 +85,17 @@ const config: HardhatUserConfig = {
       timeout: 1000000,
       accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
     },
+    goerli: {
+      url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
+      timeout: 20000,
+    },
+    mainnet: {
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
+      gasPrice: 130 * 1000000000,
+      timeout: 200000,
+    }
   },
   solidity: {
     compilers: [
