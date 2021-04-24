@@ -114,13 +114,16 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         return exchangeRate;
     }
 
+    function getExchangeRateDirect(address _underlyingAsset) public override returns (uint256) {
+        return ICToken(underlyingToCToken[_underlyingAsset]).exchangeRateCurrent();
+    }
+
     function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
         internal
         override
         returns (uint256 underlyingToRedeem)
     {
-        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
-        uint256 currentRate = cToken.exchangeRateCurrent();
+        uint256 currentRate = getExchangeRateDirect(_underlyingAsset);
         underlyingToRedeem = _amountToRedeem.mul(initialRate[_underlyingAsset]).div(currentRate);
     }
 
@@ -129,8 +132,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         override
         returns (uint256 amountToMint)
     {
-        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
-        uint256 currentRate = cToken.exchangeRateCurrent();
+        uint256 currentRate = getExchangeRateDirect(_underlyingAsset);
         amountToMint = _amountToTokenize.mul(currentRate).div(initialRate[_underlyingAsset]);
     }
 

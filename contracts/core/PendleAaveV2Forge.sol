@@ -56,8 +56,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         uint256 _expiry,
         uint256 redeemedAmount
     ) internal view override returns (uint256 totalAfterExpiry) {
-        uint256 currentNormalizedIncome =
-            aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset);
+        uint256 currentNormalizedIncome = getReserveNormalizedIncomeDirect(_underlyingAsset);
         totalAfterExpiry = currentNormalizedIncome.mul(redeemedAmount).div(
             lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry]
         );
@@ -80,6 +79,18 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
 
         lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = normalizedIncome;
         return normalizedIncome;
+    }
+
+    /**
+    @dev directly get the normalizedIncome from Aave
+    */
+    function getReserveNormalizedIncomeDirect(address _underlyingAsset)
+        public
+        view
+        override
+        returns (uint256)
+    {
+        return aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset);
     }
 
     function _getYieldBearingToken(address _underlyingAsset) internal override returns (address) {

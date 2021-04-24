@@ -27,4 +27,6 @@ import "./IPendleForge.sol";
 
 interface IPendleCompoundForge is IPendleForge {
     function getExchangeRate(address _underlyingAsset, uint256 _expiry) external returns (uint256);
+
+    function getExchangeRateDirect(address _underlyingAsset) external returns (uint256);
 }

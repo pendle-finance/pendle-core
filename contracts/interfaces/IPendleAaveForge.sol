@@ -29,4 +29,6 @@ interface IPendleAaveForge is IPendleForge {
     function getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
         external
         returns (uint256);
+
+    function getReserveNormalizedIncomeDirect(address _underlyingAsset) external returns (uint256);
 }
