@@ -15,4 +15,5 @@ export const errMsg = {
   YIELD_CONTRACT_EXPIRED: prefix + " " + "YIELD_CONTRACT_EXPIRED",
   INVALID_AMOUNTS: prefix + " " + "INVALID_AMOUNTS",
   INVALID_ALLOCATION: prefix + " " + "INVALID_ALLOCATION",
+  INVALID_SIGNATURE: prefix + " " + "INVALID_SIGNATURE",
 };

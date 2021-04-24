@@ -59,14 +59,16 @@ describe("compound-router", async () => {
   });
 
   async function tokenizeYield(user: Wallet, amount: BN) {
-    await router.tokenizeYield(
-      consts.FORGE_COMPOUND,
-      tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH),
-      amount,
-      user.address,
-      consts.HIGH_GAS_OVERRIDE
-    );
+    await router
+      .connect(user)
+      .tokenizeYield(
+        consts.FORGE_COMPOUND,
+        tokenUSDT.address,
+        consts.T0_C.add(consts.SIX_MONTH),
+        amount,
+        user.address,
+        consts.HIGH_GAS_OVERRIDE
+      );
   }
 
   async function redeemDueInterests(user: Wallet, expiry: BN) {

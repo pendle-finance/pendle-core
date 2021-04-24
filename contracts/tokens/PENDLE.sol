@@ -48,9 +48,9 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     uint8 public constant decimals = 18;
     uint256 public override totalSupply;
 
-    uint256 private constant TEAM_INVESTOR_ADVISOR_AMOUNT = 91602839 * 1e18;
-    uint256 private constant ECOSYSTEM_FUND_TOKEN_AMOUNT = 50 * 1_000_000 * 1e18;
-    uint256 private constant PUBLIC_SALES_TOKEN_AMOUNT = 15897161 * 1e18;
+    uint256 private constant TEAM_INVESTOR_ADVISOR_AMOUNT = 94459981 * 1e18;
+    uint256 private constant ECOSYSTEM_FUND_TOKEN_AMOUNT = 46 * 1_000_000 * 1e18;
+    uint256 private constant PUBLIC_SALES_TOKEN_AMOUNT = 17040019 * 1e18;
     uint256 private constant INITIAL_LIQUIDITY_EMISSION = 1200000 * 1e18;
     uint256 private constant CONFIG_DENOMINATOR = 1_000_000_000_000;
     uint256 private constant CONFIG_CHANGES_TIME_LOCK = 7 days;
@@ -146,13 +146,11 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
      * @dev This will overwrite the approval amount for `spender`
      *  and is subject to issues noted [here](https://eips.ethereum.org/EIPS/eip-20#approve)
      * @param spender The address of the account which may transfer tokens
-     * @param amount The number of tokens that are approved (2^256-1 means infinite)
+     * @param amount The number of tokens that are approved
      * @return Whether or not the approval succeeded
      **/
     function approve(address spender, uint256 amount) external override returns (bool) {
-        allowances[msg.sender][spender] = amount;
-
-        emit Approval(msg.sender, spender, amount);
+        _approve(msg.sender, spender, amount);
         return true;
     }
 
@@ -163,7 +161,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
      * @return Whether or not the transfer succeeded
      */
     function transfer(address dst, uint256 amount) external override returns (bool) {
-        _transferTokens(msg.sender, dst, amount);
+        _transfer(msg.sender, dst, amount);
         return true;
     }
 
@@ -179,17 +177,46 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         address dst,
         uint256 amount
     ) external override returns (bool) {
-        address spender = msg.sender;
-        uint256 spenderAllowance = allowances[src][spender];
+        _transfer(src, dst, amount);
+        _approve(
+            src,
+            msg.sender,
+            allowances[src][msg.sender].sub(amount, "TRANSFER_EXCEED_ALLOWANCE")
+        );
+        return true;
+    }
 
-        if (spender != src && spenderAllowance != uint256(-1)) {
-            uint256 newAllowance = spenderAllowance.sub(amount);
-            allowances[src][spender] = newAllowance;
+    /**
+     * @dev Increases the allowance granted to spender by the caller.
+     * @param spender The address to increase the allowance from.
+     * @param addedValue The amount allowance to add.
+     * @return returns true if allowance has increased, otherwise false
+     **/
+    function increaseAllowance(address spender, uint256 addedValue)
+        public
+        override
+        returns (bool)
+    {
+        _approve(msg.sender, spender, allowances[msg.sender][spender].add(addedValue));
+        return true;
+    }
 
-            emit Approval(src, spender, newAllowance);
-        }
-
-        _transferTokens(src, dst, amount);
+    /**
+     * @dev Decreases the allowance granted to spender by the caller.
+     * @param spender The address to reduce the allowance from.
+     * @param subtractedValue The amount allowance to subtract.
+     * @return Returns true if allowance has decreased, otherwise false.
+     **/
+    function decreaseAllowance(address spender, uint256 subtractedValue)
+        public
+        override
+        returns (bool)
+    {
+        _approve(
+            msg.sender,
+            spender,
+            allowances[msg.sender][spender].sub(subtractedValue, "NEGATIVE_ALLOWANCE")
+        );
         return true;
     }
 
@@ -317,7 +344,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
 
-    function _transferTokens(
+    function _transfer(
         address src,
         address dst,
         uint256 amount
@@ -325,11 +352,23 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         require(src != address(0), "SENDER_ZERO_ADDR");
         require(dst != address(0), "RECEIVER_ZERO_ADDR");
 
-        balances[src] = balances[src].sub(amount);
+        balances[src] = balances[src].sub(amount, "TRANSFER_EXCEED_BALANCE");
         balances[dst] = balances[dst].add(amount);
         emit Transfer(src, dst, amount);
 
         _moveDelegates(delegates[src], delegates[dst], amount);
+    }
+
+    function _approve(
+        address src,
+        address dst,
+        uint256 amount
+    ) internal virtual {
+        require(src != address(0), "OWNER_ZERO_ADDR");
+        require(dst != address(0), "SPENDER_ZERO_ADDR");
+
+        allowances[src][dst] = amount;
+        emit Approval(src, dst, amount);
     }
 
     function _moveDelegates(
