@@ -90,7 +90,6 @@ describe("compound-xyt-interest", async () => {
         consts.FORGE_COMPOUND,
         tokenUSDT.address,
         consts.T0_C.add(consts.SIX_MONTH),
-        false,
         consts.HIGH_GAS_OVERRIDE
       );
   }

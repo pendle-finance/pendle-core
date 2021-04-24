@@ -222,6 +222,22 @@ describe("compound-lp-interest", async () => {
     // to have the most accurate result since the interest is only updated every DELTA seconds
   }
 
+  async function claimAll() {
+    for (let user of [alice, bob, charlie, dave]) {
+      await router
+        .connect(user)
+        .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
+      await router
+        .connect(user)
+        .redeemDueInterests(
+          consts.FORGE_COMPOUND,
+          tokenUSDT.address,
+          consts.T0_C.add(consts.SIX_MONTH),
+          consts.HIGH_GAS_OVERRIDE
+        );
+    }
+  }
+
   async function checkCUSDTBalance(expectedResult: number[]) {
     for (let id = 0; id < 4; id++) {
       approxBigNumber(
@@ -279,20 +295,7 @@ describe("compound-lp-interest", async () => {
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
     await advanceTime(provider, consts.ONE_DAY);
-    for (let user of [alice, bob, charlie, dave]) {
-      await router
-        .connect(user)
-        .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
-      await router
-        .connect(user)
-        .redeemDueInterests(
-          consts.FORGE_COMPOUND,
-          tokenUSDT.address,
-          consts.T0_C.add(consts.SIX_MONTH),
-          false,
-          consts.HIGH_GAS_OVERRIDE
-        );
-    }
+    await claimAll();
 
     // for (let user of [alice, bob, charlie, dave]) {
     //   console.log((await cUSDT.balanceOf(user.address)).toString());
@@ -351,20 +354,7 @@ describe("compound-lp-interest", async () => {
     await addMarketLiquidityXyt(bob, amountXytRef.div(5));
 
     await advanceTime(provider, consts.ONE_DAY);
-    for (let user of [alice, bob, charlie, dave]) {
-      await router
-        .connect(user)
-        .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
-      await router
-        .connect(user)
-        .redeemDueInterests(
-          consts.FORGE_COMPOUND,
-          tokenUSDT.address,
-          consts.T0_C.add(consts.SIX_MONTH),
-          false,
-          consts.HIGH_GAS_OVERRIDE
-        );
-    }
+    await claimAll();
 
     // for (let user of [alice, bob, charlie, dave]) {
     //   console.log((await cUSDT.balanceOf(user.address)).toString());
@@ -450,7 +440,6 @@ describe("compound-lp-interest", async () => {
           consts.FORGE_COMPOUND,
           tokenUSDT.address,
           consts.T0_C.add(consts.SIX_MONTH),
-          false,
           consts.HIGH_GAS_OVERRIDE
         );
     }
@@ -503,20 +492,7 @@ describe("compound-lp-interest", async () => {
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
     await advanceTime(provider, consts.ONE_DAY);
-    for (let user of [alice, bob, charlie, dave]) {
-      await router
-        .connect(user)
-        .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
-      await router
-        .connect(user)
-        .redeemDueInterests(
-          consts.FORGE_COMPOUND,
-          tokenUSDT.address,
-          consts.T0_C.add(consts.SIX_MONTH),
-          false,
-          consts.HIGH_GAS_OVERRIDE
-        );
-    }
+    await claimAll();
 
     const aliceCUSDTBalance = await cUSDT.balanceOf(alice.address);
     for (let user of [bob, charlie, dave]) {
@@ -560,20 +536,7 @@ describe("compound-lp-interest", async () => {
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
     await advanceTime(provider, consts.ONE_DAY);
-    for (let user of [alice, bob, charlie, dave]) {
-      await router
-        .connect(user)
-        .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
-      await router
-        .connect(user)
-        .redeemDueInterests(
-          consts.FORGE_COMPOUND,
-          tokenUSDT.address,
-          consts.T0_C.add(consts.SIX_MONTH),
-          false,
-          consts.HIGH_GAS_OVERRIDE
-        );
-    }
+    await claimAll();
 
     const aliceCUSDTBalance = await cUSDT.balanceOf(alice.address);
     for (let user of [bob, charlie, dave]) {

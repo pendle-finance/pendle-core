@@ -57,7 +57,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
     uint256 private constant MULTIPLIER = 10**20;
     uint256 private reserveData;
-    uint256 private lastInterestUpdate;
 
     uint256 private constant MASK_148_TO_255 = type(uint256).max ^ ((1 << 148) - 1);
     uint256 private constant MASK_40_TO_147 = ((1 << 148) - 1) ^ ((1 << 40) - 1);
@@ -327,7 +326,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // Calc and withdraw xyt token.
         uint256 balanceToken = xytBalance;
         uint256 xytOut = Math.rmul(ratio, balanceToken);
-        assert(xytOut != 0);
+        require(xytOut != 0, "INTERNAL_ERROR");
         require(xytOut >= _minOutXyt, "INSUFFICIENT_XYT_OUT");
         xytBalance = xytBalance.sub(xytOut);
         transfers[0].amount = xytOut;
@@ -336,7 +335,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // Calc and withdraw pair token.
         balanceToken = tokenBalance;
         uint256 tokenOut = Math.rmul(ratio, balanceToken);
-        assert(tokenOut != 0);
+        require(tokenOut != 0, "INTERNAL_ERROR");
         require(tokenOut >= _minOutToken, "INSUFFICIENT_TOKEN_OUT");
         tokenBalance = tokenBalance.sub(tokenOut);
         transfers[1].amount = tokenOut;
@@ -709,10 +708,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         if (interestValuePerLP == 0) return 0;
 
         dueInterests = balanceOf[account].mul(interestValuePerLP).div(MULTIPLIER);
-
-        if (dueInterests == 0) {
-            return 0;
-        }
+        if (dueInterests == 0) return 0;
 
         lastNYield = lastNYield.sub(dueInterests);
         underlyingYieldToken.safeTransfer(account, dueInterests);
@@ -729,7 +725,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         if (!checkNeedUpdateParamL()) {
             return;
         }
-        router.redeemDueInterests(forgeId, underlyingAsset, expiry, true);
+        router.redeemDueInterests(forgeId, underlyingAsset, expiry);
         uint256 currentNYield = underlyingYieldToken.balanceOf(address(this));
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(currentNYield);
 
@@ -738,7 +734,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // update new states
         paramL = firstTerm.add(secondTerm);
         lastNYield = currentNYield;
-        lastInterestUpdate = block.timestamp;
     }
 
     // before we send LPs, we need to settle due interests for both the to and from addresses

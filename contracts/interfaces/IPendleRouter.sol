@@ -128,8 +128,7 @@ interface IPendleRouter is IPendleStructs {
     function redeemDueInterests(
         bytes32 forgeId,
         address underlyingAsset,
-        uint256 expiry,
-        bool _forced
+        uint256 expiry
     ) external returns (uint256 interests);
 
     function redeemDueInterestsMultiple(

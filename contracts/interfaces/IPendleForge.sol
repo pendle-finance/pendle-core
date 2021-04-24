@@ -102,8 +102,7 @@ interface IPendleForge {
     function redeemDueInterests(
         address account,
         address underlyingAsset,
-        uint256 expiry,
-        bool forced
+        uint256 expiry
     ) external returns (uint256 interests);
 
     function redeemDueInterestsBeforeTransfer(

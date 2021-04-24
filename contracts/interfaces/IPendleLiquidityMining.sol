@@ -25,6 +25,16 @@ pragma solidity 0.7.6;
 
 interface IPendleLiquidityMining {
     /**
+     * @notice fund new epochs
+     */
+    function fund(uint256[] memory rewards) external;
+
+    /**
+    @notice top up rewards for any funded future epochs (but not to create new epochs)
+    */
+    function topUpRewards(uint256[] memory _epochIds, uint256[] memory _rewards) external;
+
+    /**
      * @notice Stake an exact amount of LP_expiry
      **/
     function stake(uint256 expiry, uint256 amount) external returns (address);
@@ -35,39 +45,47 @@ interface IPendleLiquidityMining {
     function withdraw(uint256 expiry, uint256 amount) external;
 
     /**
-     * @notice Get the pending rewards & interests for a user
+     * @notice Get the pending rewards for a user
      * @return rewards Returns rewards[0] as the rewards available now, as well as rewards
      that can be claimed for subsequent epochs (size of rewards array is numberOfEpochs)
      **/
-    function claimRewards() external returns (uint256[] memory rewards, uint256 interests);
+    function claimRewards() external returns (uint256[] memory rewards);
+
+    /**
+     * @notice Get the pending LP interests for a staker
+     * @return interests Returns the interest amount
+     **/
+    function claimLpInterests() external returns (uint256 interests);
 
     /**
      * @notice Read the all the expiries that user has staked LP for
      **/
-    function readUserExpiries(address user) external returns (uint256[] memory expiries);
+    function readUserExpiries(address user) external view returns (uint256[] memory expiries);
 
     /**
      * @notice Read the amount of LP_expiry staked for a user
      **/
-    function balances(address user, uint256 expiry) external returns (uint256);
+    function balances(uint256 expiry, address user) external view returns (uint256);
 
-    function startTime() external returns (uint256);
+    function lpHolderForExpiry(uint256 expiry) external view returns (address);
 
-    function epochDuration() external returns (uint256);
+    function startTime() external view returns (uint256);
 
-    function rewardsForEpoch(uint256) external returns (uint256);
+    function epochDuration() external view returns (uint256);
 
-    function numberOfEpochs() external returns (uint256);
+    function totalRewardsForEpoch(uint256) external view returns (uint256);
 
-    function vestingEpochs() external returns (uint256);
+    function numberOfEpochs() external view returns (uint256);
 
-    function baseToken() external returns (address);
+    function vestingEpochs() external view returns (uint256);
 
-    function underlyingAsset() external returns (address);
+    function baseToken() external view returns (address);
 
-    function pendleTokenAddress() external returns (address);
+    function underlyingAsset() external view returns (address);
 
-    function marketFactoryId() external returns (bytes32);
+    function pendleTokenAddress() external view returns (address);
 
-    function forgeId() external returns (bytes32);
+    function marketFactoryId() external view returns (bytes32);
+
+    function forgeId() external view returns (bytes32);
 }

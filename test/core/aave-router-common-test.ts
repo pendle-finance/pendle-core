@@ -116,6 +116,12 @@ export function runTest(isAaveV1: boolean) {
       return amountTokenMinted;
     }
 
+    async function redeemDueInterests(user: Wallet, expiry: BN) {
+      await router
+        .connect(user)
+        .redeemDueInterests(testEnv.FORGE_ID, tokenUSDT.address, expiry);
+    }
+
     async function startCalInterest(walletToUse: Wallet, initialAmount: BN) {
       // divide by 10^decimal since mintAaveToken will multiply that number back
       await mintAaveToken(
@@ -238,12 +244,7 @@ export function runTest(isAaveV1: boolean) {
 
       await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
 
-      await router.redeemDueInterests(
-        testEnv.FORGE_ID,
-        tokenUSDT.address,
-        testEnv.T0.add(consts.SIX_MONTH),
-        false
-      );
+      await redeemDueInterests(alice, testEnv.T0.add(consts.SIX_MONTH));
 
       const expectedGain = await getCurInterest(charlie, refAmount);
       const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
@@ -264,14 +265,7 @@ export function runTest(isAaveV1: boolean) {
       const T1 = testEnv.T0.add(consts.SIX_MONTH).sub(1);
       await setTimeNextBlock(provider, T1);
 
-      await router
-        .connect(bob)
-        .redeemDueInterests(
-          testEnv.FORGE_ID,
-          tokenUSDT.address,
-          testEnv.T0.add(consts.SIX_MONTH),
-          false
-        );
+      await redeemDueInterests(bob, testEnv.T0.add(consts.SIX_MONTH));
 
       const actualGain = await aUSDT.balanceOf(bob.address);
       const expectedGain = await getCurInterest(charlie, refAmount);
@@ -291,14 +285,7 @@ export function runTest(isAaveV1: boolean) {
       const T1 = testEnv.T0.add(consts.SIX_MONTH).sub(1);
       await setTimeNextBlock(provider, T1);
 
-      await router
-        .connect(bob)
-        .redeemDueInterests(
-          testEnv.FORGE_ID,
-          tokenUSDT.address,
-          testEnv.T0.add(consts.SIX_MONTH),
-          false
-        );
+      await redeemDueInterests(bob, testEnv.T0.add(consts.SIX_MONTH));
 
       approxBigNumber(
         await aUSDT.balanceOf(bob.address),
@@ -336,14 +323,7 @@ export function runTest(isAaveV1: boolean) {
       const T1 = testEnv.T0.add(consts.SIX_MONTH).sub(1);
       await setTimeNextBlock(provider, T1);
 
-      await router
-        .connect(bob)
-        .redeemDueInterests(
-          testEnv.FORGE_ID,
-          tokenUSDT.address,
-          testEnv.T0.add(consts.SIX_MONTH),
-          false
-        );
+      await redeemDueInterests(bob, testEnv.T0.add(consts.SIX_MONTH));
 
       await startCalInterest(dave, refAmount);
       approxBigNumber(
@@ -449,12 +429,7 @@ export function runTest(isAaveV1: boolean) {
         provider,
         testEnv.T0.add(consts.ONE_MONTH.mul(11))
       );
-      await router.redeemDueInterests(
-        testEnv.FORGE_ID,
-        tokenUSDT.address,
-        testEnv.T0.add(consts.ONE_YEAR),
-        false
-      );
+      await redeemDueInterests(alice, testEnv.T0.add(consts.ONE_YEAR));
       let actualGain = await aUSDT.balanceOf(alice.address);
       let expectedGain = await getCurInterest(dave, renewedAmount);
       approxBigNumber(actualGain, expectedGain, testEnv.TEST_DELTA);

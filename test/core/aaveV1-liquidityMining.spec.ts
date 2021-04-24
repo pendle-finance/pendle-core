@@ -283,7 +283,7 @@ describe("aaveV1-liquidityMining", async () => {
     }
   }
 
-  async function checkEqualRewardsFourEpochs(
+  async function checkEqualRewardsForEpochs(
     userStakingData: UserStakeAction[][][],
     epochToCheck: number,
     _allocationRateDiv?: number
@@ -338,7 +338,7 @@ describe("aaveV1-liquidityMining", async () => {
       params.START_TIME.add(consts.ONE_MONTH.mul(2))
     );
 
-    await liq.connect(bob).claimRewards();
+    await liq.connect(bob).claimLpInterests();
     console.log(`\tbob claimed interests`);
     let actualGainBob = (await aUSDT.balanceOf(bob.address)).sub(preBalanceBob);
 
@@ -347,8 +347,7 @@ describe("aaveV1-liquidityMining", async () => {
       .redeemDueInterests(
         consts.FORGE_AAVE,
         tokens.USDT.address,
-        consts.T0.add(consts.SIX_MONTH),
-        false
+        consts.T0.add(consts.SIX_MONTH)
       );
     const actualGainCharlie = (await aUSDT.balanceOf(charlie.address)).sub(
       preBalanceCharlie
@@ -367,7 +366,7 @@ describe("aaveV1-liquidityMining", async () => {
   it("should be able to receive enough PENDLE rewards - test 2", async () => {
     let userStakingData: UserStakeAction[][][] = scenario.scenario04(params);
     await doSequence(userStakingData);
-    await checkEqualRewardsFourEpochs(
+    await checkEqualRewardsForEpochs(
       userStakingData,
       userStakingData.length + 1
     );
@@ -381,7 +380,22 @@ describe("aaveV1-liquidityMining", async () => {
     );
     let userStakingData: UserStakeAction[][][] = scenario.scenario04(params);
     await doSequence(userStakingData);
-    await checkEqualRewardsFourEpochs(
+    await checkEqualRewardsForEpochs(
+      userStakingData,
+      userStakingData.length + 1,
+      2
+    );
+  });
+
+  it("should be able to receive enough PENDLE rewards - test 4", async () => {
+    await liq.setAllocationSetting(
+      [consts.T0.add(consts.SIX_MONTH), consts.T0.add(consts.THREE_MONTH)],
+      [params.TOTAL_NUMERATOR.div(2), params.TOTAL_NUMERATOR.div(2)],
+      consts.HIGH_GAS_OVERRIDE
+    );
+    let userStakingData: UserStakeAction[][][] = scenario.scenario06(params);
+    await doSequence(userStakingData);
+    await checkEqualRewardsForEpochs(
       userStakingData,
       userStakingData.length + 1,
       2
@@ -524,7 +538,10 @@ describe("aaveV1-liquidityMining", async () => {
     // console.log(`abi = ${liq.abi}`);
     // console.log(liq);
 
-    const { rewards, interests } = await liqWeb3.methods
+    const { interests } = await liqWeb3.methods
+      .claimLpInterests()
+      .call({ from: alice.address });
+    const { rewards } = await liqWeb3.methods
       .claimRewards()
       .call({ from: alice.address });
     console.log(`\tInterests for alice = ${interests}`);

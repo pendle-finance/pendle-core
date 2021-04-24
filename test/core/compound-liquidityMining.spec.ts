@@ -274,8 +274,6 @@ describe("compound-liquidityMining", async () => {
         false
       );
     }
-    // console.log(await claimRewardsWeb3(wallets[0]));
-    // console.log(await claimRewardsWeb3(wallets[1]));
   }
 
   async function checkEqualRewardsFourEpochs(
@@ -426,7 +424,10 @@ describe("compound-liquidityMining", async () => {
       PendleCompoundLiquidityMining.abi,
       liq.address
     );
-    const { rewards, interests } = await liqWeb3.methods
+    const { interests } = await liqWeb3.methods
+      .claimLpInterests()
+      .call({ from: alice.address });
+    const { rewards } = await liqWeb3.methods
       .claimRewards()
       .call({ from: alice.address });
     console.log(`\tInterests for alice = ${interests}`);

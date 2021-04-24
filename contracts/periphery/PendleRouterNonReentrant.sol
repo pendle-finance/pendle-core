@@ -39,8 +39,7 @@ abstract contract PendleRouterNonReentrant {
 
     function _checkNonReentrancy() internal {
         if (_getData().isMarket(msg.sender)) {
-            // == 2 because the call should have gone through the router first
-            require(_guardCounter == 2, "REENTRANT_CALL");
+            require(_guardCounter <= 2, "REENTRANT_CALL");
         } else {
             require(_guardCounter == 1, "REENTRANT_CALL");
         }

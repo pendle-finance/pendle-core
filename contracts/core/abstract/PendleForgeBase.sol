@@ -133,9 +133,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         amountTransferOut = redeemedAmount.rmul(_transferOutRate);
 
-        if (amountTransferOut > 0) {
-            yieldToken.safeTransfer(_account, amountTransferOut);
-        }
+        _safeTransferOut(yieldToken, _account, amountTransferOut);
 
         tokens.ot.burn(_account, expiredOTamount);
 
@@ -162,7 +160,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         tokens.ot.burn(_account, _amountToRedeem);
         tokens.xyt.burn(_account, _amountToRedeem);
-        yieldToken.safeTransfer(_account, redeemedAmount);
+        _safeTransferOut(yieldToken, _account, redeemedAmount);
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem, redeemedAmount);
 
@@ -172,11 +170,10 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     function redeemDueInterests(
         address _account,
         address _underlyingAsset,
-        uint256 _expiry,
-        bool _forced
+        uint256 _expiry
     ) external override onlyRouter returns (uint256 interests) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account, _forced);
+        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
     }
 
     function redeemDueInterestsBeforeTransfer(
@@ -185,7 +182,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         address _account
     ) external override onlyXYT(_underlyingAsset, _expiry) returns (uint256 interests) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account, false);
+        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account);
     }
 
     function tokenizeYield(
@@ -204,7 +201,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         )
     {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        _settleDueInterests(tokens, _underlyingAsset, _expiry, _to, false);
+        _settleDueInterests(tokens, _underlyingAsset, _expiry, _to);
 
         amountTokenMinted = _calcAmountToMint(_underlyingAsset, _amountToTokenize);
 
@@ -275,12 +272,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     function checkNeedClaimInterest(
         address _underlyingAsset,
         uint256 _expiry,
-        address _account,
-        bool _forced
+        address _account
     ) internal returns (bool) {
-        if (_forced) {
-            return true;
-        }
         (uint256 rate, bool firstTime) =
             _getInterestRateForUser(_underlyingAsset, _expiry, _account);
         if (firstTime || rate > data.interestUpdateRateDeltaForForge()) {
@@ -294,10 +287,9 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         PendleTokens memory _tokens,
         address _underlyingAsset,
         uint256 _expiry,
-        address _account,
-        bool _forced
+        address _account
     ) internal returns (uint256) {
-        if (!checkNeedClaimInterest(_underlyingAsset, _expiry, _account, _forced)) {
+        if (!checkNeedClaimInterest(_underlyingAsset, _expiry, _account)) {
             return 0;
         }
 
@@ -307,11 +299,20 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         if (dueInterests > 0) {
             IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
-            yieldToken.safeTransfer(_account, dueInterests);
+            _safeTransferOut(yieldToken, _account, dueInterests);
             emit DueInterestSettled(forgeId, _underlyingAsset, _expiry, dueInterests, _account);
         }
 
         return dueInterests;
+    }
+
+    function _safeTransferOut(
+        IERC20 yieldToken,
+        address _account,
+        uint256 _amount
+    ) internal {
+        _amount = Math.min(_amount, yieldToken.balanceOf(address(this)));
+        if (_amount > 0) yieldToken.safeTransfer(_account, _amount);
     }
 
     function _getTokens(address _underlyingAsset, uint256 _expiry)
