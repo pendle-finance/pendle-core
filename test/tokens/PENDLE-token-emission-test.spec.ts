@@ -189,8 +189,8 @@ describe("Token name test", async () => {
         });
 
         it("test various ranges of waiting before claiming", async() => {
-            let testRanges = [[1, 2]];
-            let points = [3, 25, 26, 259, 260, 500, 13, 100, 37, 20, 300, 400];
+            let testRanges = [[3, 5]];
+            let points = [2, 25, 26, 259, 260, 500, 13, 100, 37, 20, 300, 400];
             for(let i = 0; i < points.length; ++i) {
                 for(let j = 0; j < points.length; ++j) {
                     for(let x = -1; x <= 1; ++x) {
@@ -206,6 +206,7 @@ describe("Token name test", async () => {
 
             const startSupply = await PENDLE.callStatic.getTotalSupply();
             const INITIAL_LIQUIDITY_EMISSION = await PENDLE.connect(a4).balanceOf(a4.address);
+            expect(INITIAL_LIQUIDITY_EMISSION)
 
             function calculateClaimableAmount(week, totalSupply, lastWeekClaimed){
                 if (week < 27) return BN.from(0);
@@ -224,36 +225,41 @@ describe("Token name test", async () => {
                 weeklyEmissions.push(claimableAmount);
             }
 
-            for(let i = 0; i < 1; ++i) {
+            for(let i = 0; i < testRanges.length; ++i) {
                 const range = testRanges[i];
                 const l = range[0];
                 const r = range[1];
+
                 console.log(l, r);
                 let shouldBeClaiming = BN.from(0);
                 for(let j = l; j <= r; ++j) {
                     shouldBeClaiming = shouldBeClaiming.add(weeklyEmissions[j]);
                 }
 
-                // PENDLE = await deployContract(root, MockPendle, [
-                //     root.address,
-                //     a1.address,
-                //     a2.address,
-                //     a3.address,
-                //     a4.address,
-                // ]);
+                PENDLE = await deployContract(root, MockPendle, [
+                    root.address,
+                    a1.address,
+                    a2.address,
+                    a3.address,
+                    a4.address,
+                ]);
 
                 const connected = PENDLE.connect(a4);
                 
-                advanceTime(provider, consts.ONE_WEEK.mul(BN.from(l - 2)));
+                if(l > 2) advanceTime(provider, consts.ONE_WEEK.mul(BN.from(l - 2)));
                 const pastClaimed = BN.from(await connected.callStatic.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE));
                 await connected.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE);
                 
-                advanceTime(provider, consts.ONE_WEEK.mul(BN.from(r - l + 1)));
+                if (l == 1)
+                    advanceTime(provider, consts.ONE_WEEK.mul(BN.from(r - l)));
+                else
+                    advanceTime(provider, consts.ONE_WEEK.mul(BN.from(r - l + 1)));
+
+            
                 const nowClaimed = BN.from(await connected.callStatic.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE));
                 await connected.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE);
 
-                const amountClaimed = nowClaimed.sub(pastClaimed);
-                console.log(l, r, shouldBeClaiming.toString(), amountClaimed.toString());
+                const amountClaimed = nowClaimed;
                 expect(amountClaimed.eq(shouldBeClaiming)).to.be.true;
             }
         });
