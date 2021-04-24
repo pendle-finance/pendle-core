@@ -1,7 +1,15 @@
 import { expect } from "chai";
 import MockPENDLE from "../../build/artifacts/contracts/mock/MockPENDLE.sol/MockPENDLE.json";
 import { Contract, providers, Wallet, BigNumber as BN, utils } from "ethers";
-import { errMsg, consts, minerStop, minerStart, mineBlock, evm_snapshot, evm_revert } from "../helpers";
+import {
+  errMsg,
+  consts,
+  minerStop,
+  minerStart,
+  mineBlock,
+  evm_snapshot,
+  evm_revert,
+} from "../helpers";
 
 const { waffle } = require("hardhat");
 const { provider, deployContract } = waffle;
@@ -91,24 +99,40 @@ describe("PENDLE-voting", () => {
       ).to.be.revertedWith(errMsg.INVALID_SIGNATURE);
     });
 
-    it('reverts if the nonce is bad ', async () => {
-      const delegatee = root.address, nonce = 1, expiry = 0;
+    it("reverts if the nonce is bad ", async () => {
+      const delegatee = root.address,
+        nonce = 1,
+        expiry = 0;
       const Data = { delegatee, nonce, expiry };
-      const { v, r, s } = utils.splitSignature(await a1._signTypedData(Domain(PENDLE), Types, Data));
-      await expect(PENDLE.delegateBySig(delegatee, nonce, expiry, v, r, s)).to.be.revertedWith("INVALID_NONCE");
+      const { v, r, s } = utils.splitSignature(
+        await a1._signTypedData(Domain(PENDLE), Types, Data)
+      );
+      await expect(
+        PENDLE.delegateBySig(delegatee, nonce, expiry, v, r, s)
+      ).to.be.revertedWith("INVALID_NONCE");
     });
 
-    it('reverts if the signature has expired', async () => {
-      const delegatee = root.address, nonce = 0, expiry = 0;
+    it("reverts if the signature has expired", async () => {
+      const delegatee = root.address,
+        nonce = 0,
+        expiry = 0;
       const Data = { delegatee, nonce, expiry };
-      const { v, r, s } = utils.splitSignature(await a1._signTypedData(Domain(PENDLE), Types, Data));
-      await expect(PENDLE.delegateBySig(delegatee, nonce, expiry, v, r, s)).to.be.revertedWith("SIGNATURE_EXPIRED");
+      const { v, r, s } = utils.splitSignature(
+        await a1._signTypedData(Domain(PENDLE), Types, Data)
+      );
+      await expect(
+        PENDLE.delegateBySig(delegatee, nonce, expiry, v, r, s)
+      ).to.be.revertedWith("SIGNATURE_EXPIRED");
     });
 
-    it('delegates on behalf of the signatory', async () => {
-      const delegatee = root.address, nonce = 0, expiry = 10e9;
+    it("delegates on behalf of the signatory", async () => {
+      const delegatee = root.address,
+        nonce = 0,
+        expiry = 10e9;
       const Data = { delegatee, nonce, expiry };
-      const { v, r, s } = utils.splitSignature(await a1._signTypedData(Domain(PENDLE), Types, Data));
+      const { v, r, s } = utils.splitSignature(
+        await a1._signTypedData(Domain(PENDLE), Types, Data)
+      );
       expect(await PENDLE.delegates(a1.address)).to.equal(consts.ZERO_ADDRESS);
       const tx = await PENDLE.delegateBySig(delegatee, nonce, expiry, v, r, s);
       expect(tx.gasUsed < 80000);
@@ -180,5 +204,5 @@ describe("PENDLE-voting", () => {
   //     // expect(await PENDLE.numCheckpoints(a1.address)).to.equal(BN.from(2));
   //     // checkValidCheckpoints(await PENDLE.checkpoints(a1.address, BN.from(1)), t4.blockNumber, BN.from(100));
   //   });
-});
+  // });
 });

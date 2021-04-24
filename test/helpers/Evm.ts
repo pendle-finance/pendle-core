@@ -1,11 +1,7 @@
 import { expect } from "chai";
-import {
-  BigNumber as BN,
-  providers,
-} from "ethers";
+import { BigNumber as BN, providers } from "ethers";
 
 const hre = require("hardhat");
-
 
 export async function impersonateAccount(address: String) {
   await hre.network.provider.request({
