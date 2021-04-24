@@ -263,6 +263,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         )
     {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(block.timestamp < _expiry, "EXPIRED_YIELD_CONTRACT");
         require(_to != address(0), "ZERO_ADDRESS");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
