@@ -19,6 +19,8 @@ describe("pendleTokenDistribution", async () => {
   const newEmissionRateMultiplierNumerator = BN.from(123456);
   const newTerminalInflationRateNumerator = BN.from(123123);
   const newLiquidityIncentivesRecipient = consts.DUMMY_ADDRESS;
+  const newIsBurningAllowed = true;
+
   const initiateConfigChangesTimestamp = consts.PENDLE_START_TIME.add(20000);
 
   let pendle: Contract;
@@ -65,10 +67,7 @@ describe("pendleTokenDistribution", async () => {
       [
         governance.address,
         [BN.from(0), consts.ONE_QUARTER.mul(4)],
-        [
-          consts.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2),
-          consts.MAX_ALLOWANCE,
-        ],
+        [consts.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2), consts.MAX_ALLOWANCE],
       ]
     );
 
@@ -127,7 +126,8 @@ describe("pendleTokenDistribution", async () => {
     await pendle.initiateConfigChanges(
       newEmissionRateMultiplierNumerator,
       newTerminalInflationRateNumerator,
-      newLiquidityIncentivesRecipient
+      newLiquidityIncentivesRecipient,
+      newIsBurningAllowed
     );
 
     expect(await pendle.pendingEmissionRateMultiplierNumerator()).to.be.eq(
@@ -138,6 +138,12 @@ describe("pendleTokenDistribution", async () => {
     );
     expect(await pendle.pendingLiquidityIncentivesRecipient()).to.be.eq(
       newLiquidityIncentivesRecipient
+    );
+    expect(await pendle.pendingLiquidityIncentivesRecipient()).to.be.eq(
+      newLiquidityIncentivesRecipient
+    );
+    expect(await pendle.pendingIsBurningAllowed()).to.be.eq(
+      newIsBurningAllowed
     );
     expect(await pendle.configChangesInitiated()).to.be.eq(
       initiateConfigChangesTimestamp
@@ -150,7 +156,8 @@ describe("pendleTokenDistribution", async () => {
         .initiateConfigChanges(
           newEmissionRateMultiplierNumerator,
           newTerminalInflationRateNumerator,
-          newLiquidityIncentivesRecipient
+          newLiquidityIncentivesRecipient,
+          newIsBurningAllowed
         )
     ).to.be.revertedWith(
       "VM Exception while processing transaction: revert ONLY_GOVERNANCE"
@@ -161,7 +168,8 @@ describe("pendleTokenDistribution", async () => {
     await pendle.initiateConfigChanges(
       newEmissionRateMultiplierNumerator,
       newTerminalInflationRateNumerator,
-      newLiquidityIncentivesRecipient
+      newLiquidityIncentivesRecipient,
+      newIsBurningAllowed
     );
     await setTimeNextBlock(
       provider,
@@ -177,6 +185,7 @@ describe("pendleTokenDistribution", async () => {
     expect(await pendle.liquidityIncentivesRecipient()).to.be.eq(
       newLiquidityIncentivesRecipient
     );
+    expect(await pendle.isBurningAllowed()).to.be.eq(newIsBurningAllowed);
     expect(await pendle.configChangesInitiated()).to.be.eq(BN.from(0));
   });
   it("should not be able to applyConfigChanges within timelock", async () => {
@@ -184,7 +193,8 @@ describe("pendleTokenDistribution", async () => {
     await pendle.initiateConfigChanges(
       newEmissionRateMultiplierNumerator,
       newTerminalInflationRateNumerator,
-      newLiquidityIncentivesRecipient
+      newLiquidityIncentivesRecipient,
+      newIsBurningAllowed
     );
     await setTimeNextBlock(
       provider,
@@ -195,6 +205,36 @@ describe("pendleTokenDistribution", async () => {
     ).to.be.revertedWith(
       "VM Exception while processing transaction: revert TIMELOCK_IS_NOT_OVER"
     );
+  });
+  it("should not be able to burn with isBurningAllowed==false", async () => {
+    await expect(
+      pendle.connect(salesMultisig).burn(BN.from(1))
+    ).to.be.revertedWith(
+      "VM Exception while processing transaction: revert BURNING_NOT_ALLOWED"
+    );
+  });
+  it("should be able to burn if isBurningAllowed==true", async () => {
+    await setTimeNextBlock(provider, initiateConfigChangesTimestamp);
+    await pendle.initiateConfigChanges(
+      newEmissionRateMultiplierNumerator,
+      newTerminalInflationRateNumerator,
+      newLiquidityIncentivesRecipient,
+      newIsBurningAllowed // = true
+    );
+    await setTimeNextBlock(
+      provider,
+      initiateConfigChangesTimestamp.add(consts.CONFIG_CHANGES_TIME_LOCK).add(1)
+    );
+    await pendle.connect(salesMultisig).applyConfigChanges(); // Anyone can call this
+
+    const balanceOfBefore = await pendle.balanceOf(salesMultisig.address);
+    const totalSupplyBefore = await pendle.totalSupply();
+    const burnAmount = BN.from(123456123456);
+    await pendle.connect(salesMultisig).burn(burnAmount);
+    const balanceOfAfter = await pendle.balanceOf(salesMultisig.address);
+    const totalSupplyAfter = await pendle.totalSupply();
+    expect(balanceOfAfter).to.be.eq(balanceOfBefore.sub(burnAmount));
+    expect(totalSupplyAfter).to.be.eq(totalSupplyBefore.sub(burnAmount));
   });
   it("should be able to claimLiquidityEmissions until current week", async () => {
     let weeklyEmission = await pendle.lastWeeklyEmission();

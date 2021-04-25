@@ -229,16 +229,9 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
      * @param amount The amount to burn
      * @return Returns true if the operation is successful
      **/
-    function burn(uint256 amount)
-        public
-        override
-        returns (bool)
-    {
+    function burn(uint256 amount) public override returns (bool) {
         require(isBurningAllowed, "BURNING_NOT_ALLOWED");
-        _burn(
-            msg.sender,
-            amount
-        );
+        _burn(msg.sender, amount);
         return true;
     }
 
