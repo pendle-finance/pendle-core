@@ -29,12 +29,15 @@ interface IPENDLE is IERC20 {
     function initiateConfigChanges(
         uint256 _emissionRateMultiplierNumerator,
         uint256 _terminalInflationRateNumerator,
-        address _liquidityIncentivesRecipient
+        address _liquidityIncentivesRecipient,
+        bool _isBurningAllowed
     ) external;
 
     function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
 
     function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
+
+    function burn(uint256 amount) external returns (bool);
 
     function applyConfigChanges() external;
 
@@ -54,9 +57,13 @@ interface IPENDLE is IERC20 {
 
     function liquidityIncentivesRecipient() external view returns (address);
 
+    function isBurningAllowed() external view returns (bool);
+
     function pendingEmissionRateMultiplierNumerator() external view returns (uint256);
 
     function pendingTerminalInflationRateNumerator() external view returns (uint256);
 
     function pendingLiquidityIncentivesRecipient() external view returns (address);
+
+    function pendingIsBurningAllowed() external view returns (bool);
 }
