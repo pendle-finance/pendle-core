@@ -139,9 +139,6 @@ describe("pendleTokenDistribution", async () => {
     expect(await pendle.pendingLiquidityIncentivesRecipient()).to.be.eq(
       newLiquidityIncentivesRecipient
     );
-    expect(await pendle.pendingLiquidityIncentivesRecipient()).to.be.eq(
-      newLiquidityIncentivesRecipient
-    );
     expect(await pendle.pendingIsBurningAllowed()).to.be.eq(
       newIsBurningAllowed
     );
