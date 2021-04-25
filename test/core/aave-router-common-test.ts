@@ -445,7 +445,6 @@ export function runTest(isAaveV1: boolean) {
           consts.T0.add(consts.ONE_YEAR)
         )
       ).to.be.revertedWith(errMsg.INVALID_UNDERLYING_ASSET);
-
     });
   });
 }

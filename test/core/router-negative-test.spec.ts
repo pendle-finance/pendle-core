@@ -153,23 +153,32 @@ describe("router-negative-test", async () => {
   });
 
   it("shouldn't be able to initialize router twice", async () => {
-    await expect(
-      router.initialize(
-        data.address
-      )
-    ).to.be.revertedWith(errMsg.FORBIDDEN);
+    await expect(router.initialize(data.address)).to.be.revertedWith(
+      errMsg.FORBIDDEN
+    );
   });
 
   it("shouldn't be able to redeemUnderlying with zero amount", async () => {
     await expect(
-      router.redeemUnderlying(consts.FORGE_AAVE, tokenUSDT.address, consts.T0.add(consts.SIX_MONTH), BN.from(0))
+      router.redeemUnderlying(
+        consts.FORGE_AAVE,
+        tokenUSDT.address,
+        consts.T0.add(consts.SIX_MONTH),
+        BN.from(0)
+      )
     ).to.be.revertedWith(errMsg.ZERO_AMOUNT);
   });
 
   it("shouldn't be able to renewYield to invalid expiry", async () => {
     await advanceTime(provider, consts.SIX_MONTH);
     await expect(
-      router.renewYield(consts.FORGE_AAVE, consts.T0.add(consts.SIX_MONTH), tokenUSDT.address, consts.T0.add(consts.ONE_YEAR.add(100)), consts.RONE)
+      router.renewYield(
+        consts.FORGE_AAVE,
+        consts.T0.add(consts.SIX_MONTH),
+        tokenUSDT.address,
+        consts.T0.add(consts.ONE_YEAR.add(100)),
+        consts.RONE
+      )
     ).to.be.revertedWith(errMsg.INVALID_XYT);
   });
 
@@ -182,7 +191,13 @@ describe("router-negative-test", async () => {
     );
     await advanceTime(provider, consts.FIVE_MONTH);
     await expect(
-      router.renewYield(consts.FORGE_AAVE, consts.T0.add(consts.SIX_MONTH), tokenUSDT.address, futureTime, consts.RONE)
+      router.renewYield(
+        consts.FORGE_AAVE,
+        consts.T0.add(consts.SIX_MONTH),
+        tokenUSDT.address,
+        futureTime,
+        consts.RONE
+      )
     ).to.be.revertedWith(errMsg.MUST_BE_AFTER_EXPIRY);
   });
 
@@ -195,29 +210,45 @@ describe("router-negative-test", async () => {
     );
     await advanceTime(provider, consts.SIX_MONTH);
     await expect(
-      router.renewYield(consts.FORGE_AAVE, consts.T0.add(consts.SIX_MONTH), tokenUSDT.address, futureTime, BN.from(0))
+      router.renewYield(
+        consts.FORGE_AAVE,
+        consts.T0.add(consts.SIX_MONTH),
+        tokenUSDT.address,
+        futureTime,
+        BN.from(0)
+      )
     ).to.be.revertedWith(errMsg.INVALID_RENEWAL_RATE);
     await expect(
-      router.renewYield(consts.FORGE_AAVE, consts.T0.add(consts.SIX_MONTH), tokenUSDT.address, futureTime, consts.RONE.add(1))
+      router.renewYield(
+        consts.FORGE_AAVE,
+        consts.T0.add(consts.SIX_MONTH),
+        tokenUSDT.address,
+        futureTime,
+        consts.RONE.add(1)
+      )
     ).to.be.revertedWith(errMsg.INVALID_RENEWAL_RATE);
   });
 
   it("shouldn't be able to tokenizeYield to an expired contract", async () => {
     await advanceTime(provider, consts.SIX_MONTH);
-    await expect(router.tokenizeYield(
-      consts.FORGE_AAVE,
-      tokenUSDT.address,
-      consts.T0.add(consts.SIX_MONTH),
-      BN.from(1000000),
-      alice.address,
-      consts.HIGH_GAS_OVERRIDE
-    )).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
+    await expect(
+      router.tokenizeYield(
+        consts.FORGE_AAVE,
+        tokenUSDT.address,
+        consts.T0.add(consts.SIX_MONTH),
+        BN.from(1000000),
+        alice.address,
+        consts.HIGH_GAS_OVERRIDE
+      )
+    ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
   });
 
   it("shouldn't be able to add invalid market factories", async () => {
-    await expect(router.addMarketFactory(
-      consts.MARKET_FACTORY_AAVE_V2,
-      fixture.core.aMarketFactory.address
-    )).to.be.revertedWith(errMsg.INVALID_FACTORY_ID);
+    await expect(
+      router.addMarketFactory(
+        consts.MARKET_FACTORY_AAVE_V2,
+        fixture.core.aMarketFactory.address
+      )
+    ).to.be.revertedWith(errMsg.INVALID_FACTORY_ID);
   });
 });

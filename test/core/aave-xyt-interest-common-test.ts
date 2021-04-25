@@ -102,9 +102,7 @@ export function runTest(isAaveV1: boolean) {
         isAaveV1
       );
       await aUSDT.connect(bob).approve(router.address, consts.INF);
-      await aUSDT
-        .connect(charlie)
-        .approve(router.address, consts.INF);
+      await aUSDT.connect(charlie).approve(router.address, consts.INF);
       snapshotId = await evm_snapshot();
     });
 
