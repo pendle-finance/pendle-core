@@ -20,7 +20,6 @@ export async function AMMTest(
       xyt.address,
       inAmount,
       BN.from(0),
-      consts.MAX_ALLOWANCE,
       consts.MARKET_FACTORY_AAVE
     );
   }
@@ -31,7 +30,6 @@ export async function AMMTest(
       testToken.address,
       inAmount,
       BN.from(0),
-      consts.MAX_ALLOWANCE,
       consts.MARKET_FACTORY_AAVE
     );
   }
@@ -42,7 +40,6 @@ export async function AMMTest(
       xyt.address,
       outAmount,
       inAmountLimit,
-      consts.MAX_ALLOWANCE,
       consts.MARKET_FACTORY_AAVE
     );
   }
@@ -53,7 +50,6 @@ export async function AMMTest(
       testToken.address,
       outAmount,
       inAmountLimit,
-      consts.MAX_ALLOWANCE,
       consts.MARKET_FACTORY_AAVE
     );
   }

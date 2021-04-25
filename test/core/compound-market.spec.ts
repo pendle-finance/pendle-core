@@ -138,7 +138,6 @@ describe("compound-market", async () => {
         testToken.address,
         amountToWei(BN.from(10), 6),
         amountToWei(BN.from(100), 6),
-        consts.MAX_ALLOWANCE,
         consts.MARKET_FACTORY_COMPOUND,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -165,7 +164,6 @@ describe("compound-market", async () => {
         testToken.address,
         amountToWei(BN.from(10), 6),
         BN.from(0),
-        consts.MAX_ALLOWANCE,
         consts.MARKET_FACTORY_COMPOUND,
         consts.HIGH_GAS_OVERRIDE
       );

@@ -382,8 +382,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         address inToken,
         uint256 inAmount,
         address outToken,
-        uint256 minOutAmount,
-        uint256 maxPrice
+        uint256 minOutAmount
     )
         external
         override
@@ -411,8 +410,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, swapFee);
 
-        require(spotPriceAfter <= maxPrice, "LOW_MAX_PRICE");
-
         // repack data
         updateReserveData(inTokenReserve, inToken);
         updateReserveData(outTokenReserve, outToken);
@@ -429,8 +426,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         address inToken,
         uint256 maxInAmount,
         address outToken,
-        uint256 outAmount,
-        uint256 maxPrice
+        uint256 outAmount
     )
         external
         override
@@ -457,8 +453,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
 
         spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, swapFee);
-
-        require(spotPriceAfter <= maxPrice, "LOW_MAX_PRICE");
 
         // repack data
         updateReserveData(inTokenReserve, inToken);

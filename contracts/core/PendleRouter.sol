@@ -521,14 +521,13 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
 
     /**
      * @notice trade by swap exact amount of token into market
-     * @dev no checks on _inTotalAmount, _minOutTotalAmount, _maxPrice
+     * @dev no checks on _inTotalAmount, _minOutTotalAmount
      */
     function swapExactIn(
         address _tokenIn,
         address _tokenOut,
         uint256 _inTotalAmount,
         uint256 _minOutTotalAmount,
-        uint256 _maxPrice,
         bytes32 _marketFactoryId
     ) external payable override nonReentrant returns (uint256 outSwapAmount) {
         address originalTokenIn = _tokenIn;
@@ -545,8 +544,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             _tokenIn,
             _inTotalAmount,
             _tokenOut,
-            _minOutTotalAmount,
-            _maxPrice
+            _minOutTotalAmount
         );
 
         _settlePendingTransfers(transfers, originalTokenIn, originalTokenOut, address(market));
@@ -563,14 +561,13 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
 
     /**
      * @notice trade by swap exact amount of token out of market
-     * @dev no checks on _outTotalAmount, _maxInTotalAmount, _maxPrice
+     * @dev no checks on _outTotalAmount, _maxInTotalAmount
      */
     function swapExactOut(
         address _tokenIn,
         address _tokenOut,
         uint256 _outTotalAmount,
         uint256 _maxInTotalAmount,
-        uint256 _maxPrice,
         bytes32 _marketFactoryId
     ) external payable override nonReentrant returns (uint256 inSwapAmount) {
         address originalTokenIn = _tokenIn;
@@ -587,8 +584,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             _tokenIn,
             _maxInTotalAmount,
             _tokenOut,
-            _outTotalAmount,
-            _maxPrice
+            _outTotalAmount
         );
 
         _settlePendingTransfers(transfers, originalTokenIn, originalTokenOut, address(market));
@@ -650,8 +646,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                     swap.tokenIn,
                     swap.swapAmount,
                     swap.tokenOut,
-                    swap.limitReturnAmount,
-                    swap.maxPrice
+                    swap.limitReturnAmount
                 );
             }
 
@@ -712,8 +707,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                     swap.tokenIn,
                     swap.limitReturnAmount,
                     swap.tokenOut,
-                    swap.swapAmount,
-                    swap.maxPrice
+                    swap.swapAmount
                 );
                 if (j == 0) break;
             }
