@@ -274,7 +274,7 @@ describe("aaveV1-market", async () => {
       xyt.address,
       testToken.address,
       amount,
-      consts.MAX_ALLOWANCE,
+      consts.INF,
       BN.from(0),
       BN.from(0),
       consts.HIGH_GAS_OVERRIDE
@@ -301,7 +301,7 @@ describe("aaveV1-market", async () => {
           xyt.address,
           testToken.address,
           amount,
-          consts.MAX_ALLOWANCE,
+          consts.INF,
           BN.from(0),
           BN.from(0),
           consts.HIGH_GAS_OVERRIDE
@@ -443,7 +443,7 @@ describe("aaveV1-market", async () => {
     const amount = amountToWei(BN.from(10), 6);
 
     await bootstrapSampleMarket(amount);
-    await testToken.approve(stdMarket.address, consts.MAX_ALLOWANCE);
+    await testToken.approve(stdMarket.address, consts.INF);
 
     let initalLpTokenBal = await stdMarket.balanceOf(alice.address);
     let initalXytBal = await xyt.balanceOf(alice.address);
@@ -473,7 +473,7 @@ describe("aaveV1-market", async () => {
     const amount = amountToWei(BN.from(10), 6);
 
     await bootstrapSampleMarket(amount);
-    await testToken.approve(stdMarket.address, consts.MAX_ALLOWANCE);
+    await testToken.approve(stdMarket.address, consts.INF);
 
     let initalLpTokenBal = await stdMarket.balanceOf(alice.address);
     let initalXytBal = await xyt.balanceOf(alice.address);
@@ -601,20 +601,20 @@ describe("aaveV1-market", async () => {
             tokenIn: testToken.address,
             tokenOut: xyt.address,
             swapAmount: BN.from(0),
-            limitReturnAmount: consts.MAX_ALLOWANCE, // TODO: change to some reasonable amount?
+            limitReturnAmount: consts.INF, // TODO: change to some reasonable amount?
           },
           {
             market: ethMarket.address,
             tokenIn: xyt.address,
             tokenOut: WETH.address,
             swapAmount: swapAmount,
-            limitReturnAmount: consts.MAX_ALLOWANCE,
+            limitReturnAmount: consts.INF,
           },
         ],
       ],
       testToken.address,
       WETH.address,
-      consts.MAX_ALLOWANCE,
+      consts.INF,
       consts.HIGH_GAS_OVERRIDE
     );
 
@@ -633,7 +633,7 @@ describe("aaveV1-market", async () => {
       xyt.address,
       WETH.address,
       swapAmount,
-      consts.MAX_ALLOWANCE,
+      consts.INF,
       consts.MARKET_FACTORY_AAVE,
       consts.HIGH_GAS_OVERRIDE
     );
@@ -642,7 +642,7 @@ describe("aaveV1-market", async () => {
       testToken.address,
       xyt.address,
       initialXytBalance.sub(postXytBalance),
-      consts.MAX_ALLOWANCE,
+      consts.INF,
       consts.MARKET_FACTORY_AAVE,
       consts.HIGH_GAS_OVERRIDE
     );

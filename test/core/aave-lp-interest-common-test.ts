@@ -139,7 +139,7 @@ export function runTest(isAaveV1: boolean) {
           xyt.address,
           testToken.address,
           amountXyt,
-          consts.MAX_ALLOWANCE,
+          consts.INF,
           amountXyt,
           BN.from(0),
           consts.HIGH_GAS_OVERRIDE

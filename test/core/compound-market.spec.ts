@@ -282,7 +282,7 @@ describe("compound-market", async () => {
     const amount = amountToWei(BN.from(10), 6);
 
     await bootstrapSampleMarket(amount);
-    await testToken.approve(stdMarket.address, consts.MAX_ALLOWANCE);
+    await testToken.approve(stdMarket.address, consts.INF);
 
     let initalLpTokenBal = await stdMarket.balanceOf(alice.address);
     let initalXytBal = await xyt.balanceOf(alice.address);
@@ -312,7 +312,7 @@ describe("compound-market", async () => {
     const amount = amountToWei(BN.from(10), 6);
 
     await bootstrapSampleMarket(amount);
-    await testToken.approve(stdMarket.address, consts.MAX_ALLOWANCE);
+    await testToken.approve(stdMarket.address, consts.INF);
 
     let initalLpTokenBal = await stdMarket.balanceOf(alice.address);
     let initalXytBal = await xyt.balanceOf(alice.address);
