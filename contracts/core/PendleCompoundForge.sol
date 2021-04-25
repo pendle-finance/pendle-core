@@ -142,6 +142,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         override
         returns (address)
     {
+        require(underlyingToCToken[_underlyingAsset] != address(0), "INVALID_UNDERLYING_ASSET");
         return underlyingToCToken[_underlyingAsset];
     }
 

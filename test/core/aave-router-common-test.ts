@@ -449,5 +449,17 @@ export function runTest(isAaveV1: boolean) {
       const curAUSDTbalance = await aUSDT.balanceOf(alice.address);
       approxBigNumber(curAUSDTbalance, expectedGain, testEnv.TEST_DELTA);
     });
+
+    it("shouldn't be able to newYieldContracts with an invalid underlyingAsset", async () => {
+      // random underlyingAsset
+      await expect(
+        router.newYieldContracts(
+          testEnv.FORGE_ID,
+          consts.RANDOM_ADDRESS,
+          consts.T0.add(consts.ONE_YEAR)
+        )
+      ).to.be.revertedWith(errMsg.INVALID_UNDERLYING_ASSET);
+
+    });
   });
 }

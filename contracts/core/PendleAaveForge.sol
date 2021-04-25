@@ -96,6 +96,10 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
             reserveATokenAddress[_underlyingAsset] = aaveLendingPoolCore.getReserveATokenAddress(
                 _underlyingAsset
             );
+            require(
+                reserveATokenAddress[_underlyingAsset] != address(0),
+                "INVALID_UNDERLYING_ASSET"
+            );
         }
         return reserveATokenAddress[_underlyingAsset];
     }

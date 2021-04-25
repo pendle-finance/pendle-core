@@ -185,6 +185,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     ) external override nonReentrant returns (uint256 redeemedAmount) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
+        require(_amountToRedeem != 0, "ZERO_AMOUNT");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         redeemedAmount = forge.redeemUnderlying(
@@ -221,7 +222,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         require(_newExpiry > _oldExpiry, "INVALID_NEW_EXPIRY");
         require(data.isValidXYT(_forgeId, _underlyingAsset, _oldExpiry), "INVALID_XYT");
         require(data.isValidXYT(_forgeId, _underlyingAsset, _newExpiry), "INVALID_XYT");
-        require(_renewalRate <= Math.RONE, "INVALID_RENEWAL_RATE");
+        require(0 < _renewalRate && _renewalRate <= Math.RONE, "INVALID_RENEWAL_RATE");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
 
@@ -263,7 +264,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         )
     {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
-        require(block.timestamp < _expiry, "EXPIRED_YIELD_CONTRACT");
+        require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
         require(_to != address(0), "ZERO_ADDRESS");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
