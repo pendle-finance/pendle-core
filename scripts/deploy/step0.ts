@@ -44,7 +44,7 @@ export async function step0(
         consts.misc.TEAM_AMOUNT.div(8),
         consts.misc.TEAM_AMOUNT.div(8),
         consts.misc.TEAM_AMOUNT.div(8),
-        consts.misc.TEAM_AMOUNT.div(8),
+        consts.misc.MAX_ALLOWANCE,
       ],
     ]
   );
@@ -59,7 +59,7 @@ export async function step0(
       [BN.from(0), consts.misc.ONE_QUARTER.mul(4)],
       [
         consts.misc.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2),
-        consts.misc.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2),
+        consts.misc.MAX_ALLOWANCE,
       ],
     ]
   );

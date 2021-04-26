@@ -45,9 +45,9 @@ export const devConstants = {
     INVESTOR_AMOUNT: BN.from(36959981).mul(ONE_E_18),
     ADVISOR_AMOUNT: BN.from(2500000).mul(ONE_E_18),
     TEAM_AMOUNT: BN.from(55000000).mul(ONE_E_18),
-    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94459981).mul(ONE_E_18),
+    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94917125).mul(ONE_E_18),
     ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(46 * 10 ** 6).mul(ONE_E_18),
-    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(17040019).mul(ONE_E_18),
+    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(16582875).mul(ONE_E_18),
     INITIAL_LIQUIDITY_EMISSION: BN.from(1200000).mul(ONE_E_18),
     CONFIG_DENOMINATOR: BN.from(72000000000),
     CONFIG_CHANGES_TIME_LOCK: BN.from(7 * 24 * 3600),
@@ -116,12 +116,12 @@ export const kovanConstants = {
     LOCK_DENOMINATOR: BN.from(180),
 
     // Pendle token distribution
-    INVESTOR_AMOUNT: BN.from(36959981).mul(ONE_E_18),
+    INVESTOR_AMOUNT: BN.from(37417125).mul(ONE_E_18),
     ADVISOR_AMOUNT: BN.from(2500000).mul(ONE_E_18),
     TEAM_AMOUNT: BN.from(55000000).mul(ONE_E_18),
-    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94459981).mul(ONE_E_18),
+    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94917125).mul(ONE_E_18),
     ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(46 * 10 ** 6).mul(ONE_E_18),
-    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(17040019).mul(ONE_E_18),
+    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(16582875).mul(ONE_E_18),
     INITIAL_LIQUIDITY_EMISSION: BN.from(1200000).mul(ONE_E_18),
     CONFIG_DENOMINATOR: BN.from(72000000000),
     CONFIG_CHANGES_TIME_LOCK: BN.from(7 * 24 * 3600),
@@ -165,78 +165,36 @@ export const kovanConstants = {
 export const goerliConstants = {
   misc: {
     ONE_E_18,
-    AAVE_LENDING_POOL_CORE_ADDRESS:
-      "0x95D1189Ed88B380E319dF73fF00E479fcc4CFa45",
-    AAVE_LENDING_POOL_ADDRESS: "0x580D4Fdc4BF8f9b5ae2fb9225D584fED4AD5375c",
-    AAVE_V2_LENDING_POOL_ADDRESS: "0xE0fBa4Fc209b4948668006B2bE61711b7f465bAe",
-    AAVE_DUMMY_REFERRAL_CODE: 0,
-    COMPOUND_COMPTROLLER_ADDRESS: "0x5eae89dc1c671724a672ff0630122ee834098657",
-    FORGE_AAVE: utils.formatBytes32String("Aave"),
-    MARKET_FACTORY_AAVE: utils.formatBytes32String("Aave"),
-    FORGE_AAVE_V2: utils.formatBytes32String("AaveV2"),
-    MARKET_FACTORY_AAVE_V2: utils.formatBytes32String("AaveV2"),
-    FORGE_COMPOUND: utils.formatBytes32String("Compound"),
-    MARKET_FACTORY_COMPOUND: utils.formatBytes32String("Compound"),
     ZERO_ADDRESS: "0x0000000000000000000000000000000000000000",
     MAX_ALLOWANCE: BN.from(2).pow(BN.from(256)).sub(BN.from(1)),
-    ONE_DAY: BN.from(86400),
-    ONE_MONTH: BN.from(2592000),
-    TEST_EXPIRY: 1623500719,
-    TEST_EXPIRY_2: 1618230319,
-    TEST_EXPIRY_3: 1621087200,
-    ONE_YEAR: BN.from(31536000),
-    LOCK_NUMERATOR: BN.from(1),
-    LOCK_DENOMINATOR: BN.from(180),
 
     // Pendle token distribution
-    INVESTOR_AMOUNT: BN.from(36959981).mul(ONE_E_18),
+    INVESTOR_AMOUNT: BN.from(37417125).mul(ONE_E_18),
     ADVISOR_AMOUNT: BN.from(2500000).mul(ONE_E_18),
     TEAM_AMOUNT: BN.from(55000000).mul(ONE_E_18),
-    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94459981).mul(ONE_E_18),
+    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94917125).mul(ONE_E_18),
     ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(46 * 10 ** 6).mul(ONE_E_18),
-    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(17040019).mul(ONE_E_18),
-    INITIAL_LIQUIDITY_EMISSION: BN.from(1200000).mul(ONE_E_18),
-    CONFIG_DENOMINATOR: BN.from(72000000000),
-    CONFIG_CHANGES_TIME_LOCK: BN.from(7 * 24 * 3600),
-    PENDLE_START_TIME: BN.from(4000000000),
-    INITIAL_WEEKLY_EMISSION: BN.from(1200000).mul(ONE_E_18),
+    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(16582875).mul(ONE_E_18),
     ONE_QUARTER: BN.from(7884000),
-
-    LIQ_MINING_ALLOCATION_DENOMINATOR: 1000000000,
-    HIGH_GAS_OVERRIDE: { gasLimit: 12500000 },
-
-    SALES_MULTISIG: "0x5191FCceDd4304Fb684905916cA39758043a79FB",
-    TEAM_TOKENS_MULTISIG: "0x815C09DB3B8Ff939e90732251D0dBbad5EFefCe4",
-    ECOSYSTEM_MULTISIG: "0x42e52bD6eC36323F6016991e08961c85e85bB137",
   },
-  tokens: {
-    USDT_AAVE: {
-      address: "0x13512979ade267ab5100878e2e0f485b568328a4",
-      decimal: 6,
-      owner: "0xC6CDE7C39eB2f0F0095F41570af89eFC2C1Ea828",
-      compound: "0x3f0a0ea2f86bae6362cf9799b523ba06647da018",
-    },
-    USDT_COMPOUND: {
-      address: "0x07de306ff27a2b630b1141956844eb1552b956b5",
-      decimal: 6,
-      owner: "0xC6CDE7C39eB2f0F0095F41570af89eFC2C1Ea828",
-      compound: "0x3f0a0ea2f86bae6362cf9799b523ba06647da018",
-    },
-    WETH: {
-      address: "0xa1c74a9a3e59ffe9bee7b85cd6e91c0751289ebd",
-      decimal: 18,
-    },
-    USDC: {
-      address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-      decimal: 6,
-      compound: "0x4a92e71227d294f041bd82dd8f78591b75140d63",
-    },
-    AUSDT: {
-      address: "0xA01bA9fB493b851F4Ac5093A324CB081A909C34B",
-      decimal: 6,
-      // owner: "0x81dfbbaF5011e3b86383f72A24793EE44ea547C5"
-    },
+  tokens: {},
+};
+
+export const mainnetConstants = {
+  misc: {
+    ONE_E_18,
+    ZERO_ADDRESS: "0x0000000000000000000000000000000000000000",
+    MAX_ALLOWANCE: BN.from(2).pow(BN.from(256)).sub(BN.from(1)),
+    // Pendle token distribution
+    INVESTOR_AMOUNT: BN.from(37417125).mul(ONE_E_18),
+    ADVISOR_AMOUNT: BN.from(2500000).mul(ONE_E_18),
+    TEAM_AMOUNT: BN.from(55000000).mul(ONE_E_18),
+    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94917125).mul(ONE_E_18),
+    ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(46 * 10 ** 6).mul(ONE_E_18),
+    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(16582875).mul(ONE_E_18),
+    ONE_QUARTER: BN.from(7884000),
   },
+  tokens: {},
 };
 
 export interface DeployedContract {

@@ -48,9 +48,9 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     uint8 public constant decimals = 18;
     uint256 public override totalSupply;
 
-    uint256 private constant TEAM_INVESTOR_ADVISOR_AMOUNT = 94459981 * 1e18;
+    uint256 private constant TEAM_INVESTOR_ADVISOR_AMOUNT = 94917125 * 1e18;
     uint256 private constant ECOSYSTEM_FUND_TOKEN_AMOUNT = 46 * 1_000_000 * 1e18;
-    uint256 private constant PUBLIC_SALES_TOKEN_AMOUNT = 17040019 * 1e18;
+    uint256 private constant PUBLIC_SALES_TOKEN_AMOUNT = 16582875 * 1e18;
     uint256 private constant INITIAL_LIQUIDITY_EMISSION = 1200000 * 1e18;
     uint256 private constant CONFIG_DENOMINATOR = 1_000_000_000_000;
     uint256 private constant CONFIG_CHANGES_TIME_LOCK = 7 days;
