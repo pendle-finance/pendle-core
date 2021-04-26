@@ -367,6 +367,26 @@ describe("Token name test", async () => {
         pendingRecipentIndex = recipent;
       }
 
+      async function updateCorrectEmission(week: number) {
+        if (week > 26) {
+          let amountClaimable = BN.from(0);
+          if (week < 260) {
+            amountClaimable = lastWeekClaimed
+              .mul(emissionRateMultiplierNumerator)
+              .div(CONFIG_DENOMINATOR);
+          } else {
+            amountClaimable = totalSupply
+              .mul(terminalInflationRateNumerator)
+              .div(CONFIG_DENOMINATOR);
+          }
+          correctEmissionForAddress[recipentIndex] = correctEmissionForAddress[
+            recipentIndex
+          ].add(amountClaimable);
+          totalSupply = totalSupply.add(amountClaimable);
+          lastWeekClaimed = amountClaimable;
+        }
+      }
+
       async function applyConfigSimulator() {
         const recipent_connected = PENDLE.connect(recipents[recipentIndex]);
         emissionForAddress[recipentIndex] = emissionForAddress[
@@ -376,8 +396,14 @@ describe("Token name test", async () => {
             consts.HIGH_GAS_OVERRIDE
           )
         );
+
+        await recipent_connected.claimLiquidityEmissions(
+          consts.HIGH_GAS_OVERRIDE
+        );
+
         if (configChangesInitiated.eq(BN.from(0))) return;
         await root_connected.applyConfigChanges(consts.HIGH_GAS_OVERRIDE);
+
         emissionRateMultiplierNumerator = pendingEmissionRateMultiplierNumerator;
         terminalInflationRateNumerator = pendingTerminalInflationRateNumerator;
         liquidityIncentivesRecipient = pendingLiquidityIncentivesRecipient;
@@ -399,7 +425,6 @@ describe("Token name test", async () => {
       }
 
       for (let week = 1; week < 1000; ++week) {
-        expect(await root_connected.getCurrentWeek()).to.be.equal(week);
         if (getRandomNumber(100) < 5) {
           await initiateConfigChange(
             emissionRateMultiplierNumerator
@@ -412,37 +437,26 @@ describe("Token name test", async () => {
           );
         }
 
-        if (week > 26) {
-          let amountClaimable = BN.from(0);
-          if (week < 260) {
-            amountClaimable = lastWeekClaimed
-              .mul(emissionRateMultiplierNumerator)
-              .div(CONFIG_DENOMINATOR);
-          } else {
-            amountClaimable = totalSupply
-              .mul(terminalInflationRateNumerator)
-              .div(CONFIG_DENOMINATOR);
-          }
-          correctEmissionForAddress[recipentIndex] = correctEmissionForAddress[
-            recipentIndex
-          ].add(amountClaimable);
-          totalSupply = totalSupply.add(amountClaimable);
-          lastWeekClaimed = amountClaimable;
-        }
-
+        await updateCorrectEmission(week);
         await claimLiquidityEmissionsSimulator();
-        expect(correctEmissionForAddress[0].eq(emissionForAddress[0])).to.be
-          .true;
-        expect(correctEmissionForAddress[1].eq(emissionForAddress[1])).to.be
-          .true;
-        expect(correctEmissionForAddress[2].eq(emissionForAddress[2])).to.be
-          .true;
+        
         try {
           /// Might not have been 1 week yet
           if (getRandomNumber(100) < 10) await applyConfigSimulator();
         } catch (error) {}
-        advanceTime(provider, consts.ONE_WEEK.add(BN.from(-60)));
+
+        advanceTime(provider, consts.ONE_WEEK);
       }
+
+      await updateCorrectEmission(1000);
+      await claimLiquidityEmissionsSimulator();
+
+      expect(correctEmissionForAddress[0].eq(emissionForAddress[0])).to.be
+        .true;
+      expect(correctEmissionForAddress[1].eq(emissionForAddress[1])).to.be
+        .true;
+      expect(correctEmissionForAddress[2].eq(emissionForAddress[2])).to.be
+        .true;
     });
   });
 
