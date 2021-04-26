@@ -5,6 +5,7 @@ import path from "path";
 import {
   devConstants,
   kovanConstants,
+  mainnetConstants,
   goerliConstants,
   Deployment,
   DeployedContract,
@@ -38,6 +39,8 @@ async function main() {
     consts = kovanConstants;
   } else if (network == "goerli") {
     consts = goerliConstants;
+  } else if (network == "mainnet") {
+    consts = mainnetConstants;
   } else {
     consts = devConstants;
   }
