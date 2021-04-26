@@ -389,17 +389,12 @@ describe("Token name test", async () => {
                 }
 
                 await claimLiquidityEmissionsSimulator();
-                console.log(correctEmissionForAddress[0].toString(), emissionForAddress[0].toString());
-                console.log(correctEmissionForAddress[1].toString(), emissionForAddress[1].toString());
-                console.log(correctEmissionForAddress[2].toString(), emissionForAddress[2].toString());
-
                 expect(correctEmissionForAddress[0].eq(emissionForAddress[0])).to.be.true;
                 expect(correctEmissionForAddress[1].eq(emissionForAddress[1])).to.be.true;
                 expect(correctEmissionForAddress[2].eq(emissionForAddress[2])).to.be.true;
-                try {
+                try { /// Might not have been 1 week yet
                     if (getRandomNumber(100) < 10) await applyConfigSimulator();
                 } catch (error) {
-
                 }
                 advanceTime(provider, consts.ONE_WEEK.add(1));
             }
