@@ -16,4 +16,5 @@ export const errMsg = {
   INVALID_AMOUNTS: prefix + " " + "INVALID_AMOUNTS",
   INVALID_ALLOCATION: prefix + " " + "INVALID_ALLOCATION",
   INVALID_SIGNATURE: prefix + " " + "INVALID_SIGNATURE",
+  ONLY_GOVERNANCE: prefix + " " + "ONLY_GOVERNANCE",
 };

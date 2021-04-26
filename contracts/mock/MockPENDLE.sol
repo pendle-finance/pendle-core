@@ -75,4 +75,22 @@ contract MockPENDLE is PENDLE {
     function getTotalSupply() public returns (uint256) {
         return totalSupply;
     }
+
+    function getInitiateConfig() public view returns (uint256 x, uint256 y, address z, uint256 t) {
+        x = pendingEmissionRateMultiplierNumerator;
+        y = pendingTerminalInflationRateNumerator;
+        z = pendingLiquidityIncentivesRecipient;
+        t = configChangesInitiated;
+    }
+
+    function getCurrentConfig() public view returns (uint256 x, uint256 y, address z, uint256 t) {
+        x = emissionRateMultiplierNumerator;
+        y = terminalInflationRateNumerator;
+        z = liquidityIncentivesRecipient;
+        t = configChangesInitiated;       
+    }
+
+    function getCurrentTime() public view returns (uint256 time) {
+        time = block.timestamp;
+    }
 }

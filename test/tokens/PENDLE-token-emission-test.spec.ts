@@ -10,12 +10,14 @@ const { provider, deployContract } = waffle;
 describe("Token name test", async () => {
     const wallets: Wallet[] = provider.getWallets();
 
-    const [root, a1, a2, a3, a4, a5] = wallets;
+    const [root, a1, a2, a3, a4] = wallets;
 
     const name = "Pendle";
     const symbol = "PENDLE";
     const initialSupply = BN.from("188700000000000000000000000");
-    const CONFIG_DENOMINATOR = BN.from("1000000000000000000");
+    const CONFIG_DENOMINATOR = BN.from(1000000000000);
+
+
 
 
     let PENDLE: Contract;
@@ -25,6 +27,9 @@ describe("Token name test", async () => {
     before(async () => {
         globalSnapshotId = await evm_snapshot();
         snapshotId = await evm_snapshot();
+
+        let terminalInflationRateNumerator = BN.from(379848538);
+        let emissionRateMultiplierNumerator = CONFIG_DENOMINATOR.mul(989).div(1000);    
     });
 
     after(async () => {
@@ -35,10 +40,10 @@ describe("Token name test", async () => {
         await evm_revert(snapshotId);
         PENDLE = await deployContract(root, MockPendle, [
             root.address,
-            a1.address,
-            a2.address,
-            a3.address,
-            a4.address,
+            root.address,
+            root.address,
+            root.address,
+            a4.address
         ])
         snapshotId = await evm_snapshot();
     });
@@ -188,7 +193,7 @@ describe("Token name test", async () => {
             }
         });
 
-        it("test various ranges of waiting before claiming", async() => {
+        xit("test various ranges of waiting before claiming", async() => {
             let testRanges = [[3, 5]];
             let points = [2, 25, 26, 259, 260, 500, 13, 100, 37, 20, 300, 400];
             for(let i = 0; i < points.length; ++i) {
@@ -203,6 +208,8 @@ describe("Token name test", async () => {
                     }
                 }
             }
+
+            testRanges = [[27, 77]];
 
             const startSupply = await PENDLE.callStatic.getTotalSupply();
             const INITIAL_LIQUIDITY_EMISSION = await PENDLE.connect(a4).balanceOf(a4.address);
@@ -263,8 +270,146 @@ describe("Token name test", async () => {
                 expect(amountClaimed.eq(shouldBeClaiming)).to.be.true;
             }
         });
+
+        it("test applying config changes to pendle", async() => {
+            function getRandomNumber(max) {
+                return Math.floor(Math.random() * max);
+            }
+
+            function getRandomBigNumber(max) {
+                return BN.from(getRandomNumber(max));
+            }
+            
+            const root_connected = PENDLE.connect(root);
+            const INITIAL_LIQUIDITY_EMISSION = BN.from(await PENDLE.balanceOf(a4.address));
+            
+            const recipents = [
+                a2,
+                a3,
+                a4
+            ]
+
+            const addresses = [
+                a2.address,
+                a3.address,
+                a4.address
+            ]
+            
+            let correctEmissionForAddress = [
+                BN.from(0),
+                BN.from(0),
+                INITIAL_LIQUIDITY_EMISSION
+            ]
+
+            let emissionForAddress = [
+                BN.from(0),
+                BN.from(0),
+                INITIAL_LIQUIDITY_EMISSION,
+            ]
+
+            let lastWeekClaimed = INITIAL_LIQUIDITY_EMISSION.div(26);
+            let totalSupplyNumber = ((await root_connected.callStatic.getTotalSupply(consts.HIGH_GAS_OVERRIDE)));
+            let totalSupply = BN.from(totalSupplyNumber);
+
+            let recipentIndex = 2;
+            let pendingRecipentIndex = 2;
+
+            let emissionRateMultiplierNumerator = CONFIG_DENOMINATOR.mul(989).div(1000);
+            let terminalInflationRateNumerator = BN.from(379848538);
+            let liquidityIncentivesRecipient = a4.address;
+
+            let pendingEmissionRateMultiplierNumerator = BN.from(0);
+            let pendingTerminalInflationRateNumerator = BN.from(0);
+            let pendingLiquidityIncentivesRecipient = "0";
+            let configChangesInitiated = BN.from(0);
+
+
+            async function initiateConfigChangeSimulator(_emissionRateMultiplierNumerator, _terminalInflationRateNumerator, _liquidityIncentivesRecipient) {
+                configChangesInitiated = (await root_connected.getCurrentTime(consts.HIGH_GAS_OVERRIDE));
+                pendingEmissionRateMultiplierNumerator = _emissionRateMultiplierNumerator;
+                pendingTerminalInflationRateNumerator = _terminalInflationRateNumerator;
+                pendingLiquidityIncentivesRecipient = _liquidityIncentivesRecipient;
+                await root_connected.initiateConfigChanges(
+                    _emissionRateMultiplierNumerator, 
+                    _terminalInflationRateNumerator, 
+                    _liquidityIncentivesRecipient,
+                    consts.HIGH_GAS_OVERRIDE
+                );
+            }
+
+            async function initiateConfigChange(_emissionRateMultiplierNumerator, _terminalInflationRateNumerator, recipent) {
+                await initiateConfigChangeSimulator(
+                    _emissionRateMultiplierNumerator, 
+                    _terminalInflationRateNumerator, 
+                    addresses[recipent]
+                );
+                pendingRecipentIndex = recipent;
+            }
+
+            async function applyConfigSimulator() {
+                const recipent_connected = PENDLE.connect(recipents[recipentIndex]);
+                emissionForAddress[recipentIndex] = emissionForAddress[recipentIndex].add((await recipent_connected.callStatic.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE)));
+                if (configChangesInitiated.eq(BN.from(0))) return;
+                await root_connected.applyConfigChanges(consts.HIGH_GAS_OVERRIDE);
+                emissionRateMultiplierNumerator = pendingEmissionRateMultiplierNumerator;
+                terminalInflationRateNumerator = pendingTerminalInflationRateNumerator;
+                liquidityIncentivesRecipient = pendingLiquidityIncentivesRecipient;
+                recipentIndex = pendingRecipentIndex;
+                configChangesInitiated = BN.from(0);
+            }
+
+            async function claimLiquidityEmissionsSimulator() {
+                const claimedAmount = (await PENDLE.connect(recipents[recipentIndex]).callStatic.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE));
+                await PENDLE.connect(recipents[recipentIndex]).claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE);
+                emissionForAddress[recipentIndex] = emissionForAddress[recipentIndex].add(claimedAmount);
+                return claimedAmount;
+            }
+
+            for(let week = 1; week < 1000; ++week) {
+                expect((await root_connected.getCurrentWeek())).to.be.equal(week);
+                if (getRandomNumber(100) < 5) {
+                    await initiateConfigChange(
+                        emissionRateMultiplierNumerator.mul(getRandomBigNumber(200).add(BN.from(800))).div(BN.from(1000)),
+                        terminalInflationRateNumerator.mul(getRandomBigNumber(200).add(BN.from(800))).div(BN.from(1000)),
+                        getRandomNumber(3)
+                    )
+                }
+
+                if (week > 26) {
+                    let amountClaimable = BN.from(0);
+                    if (week < 260) {
+                        amountClaimable = lastWeekClaimed.mul(emissionRateMultiplierNumerator).div(CONFIG_DENOMINATOR);
+                    }
+                    else {
+                        amountClaimable = totalSupply.mul(terminalInflationRateNumerator).div(CONFIG_DENOMINATOR);
+                    }
+                    correctEmissionForAddress[recipentIndex] = correctEmissionForAddress[recipentIndex].add(amountClaimable);
+                    totalSupply = totalSupply.add(amountClaimable);
+                    lastWeekClaimed = amountClaimable;
+                }
+
+                await claimLiquidityEmissionsSimulator();
+                console.log(correctEmissionForAddress[0].toString(), emissionForAddress[0].toString());
+                console.log(correctEmissionForAddress[1].toString(), emissionForAddress[1].toString());
+                console.log(correctEmissionForAddress[2].toString(), emissionForAddress[2].toString());
+
+                expect(correctEmissionForAddress[0].eq(emissionForAddress[0])).to.be.true;
+                expect(correctEmissionForAddress[1].eq(emissionForAddress[1])).to.be.true;
+                expect(correctEmissionForAddress[2].eq(emissionForAddress[2])).to.be.true;
+                try {
+                    if (getRandomNumber(100) < 10) await applyConfigSimulator();
+                } catch (error) {
+
+                }
+                advanceTime(provider, consts.ONE_WEEK.add(1));
+            }
+
+
+        });
+
     });
-        
+    
+
 
     // it("token after time....", async() => {
     //     advanceTime(provider, consts.ONE_WEEK.mul(50));
