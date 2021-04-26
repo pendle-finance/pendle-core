@@ -45,9 +45,9 @@ export const devConstants = {
     INVESTOR_AMOUNT: BN.from(36959981).mul(ONE_E_18),
     ADVISOR_AMOUNT: BN.from(2500000).mul(ONE_E_18),
     TEAM_AMOUNT: BN.from(55000000).mul(ONE_E_18),
-    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94459981).mul(ONE_E_18),
+    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94917125).mul(ONE_E_18),
     ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(46 * 10 ** 6).mul(ONE_E_18),
-    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(17040019).mul(ONE_E_18),
+    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(16582875).mul(ONE_E_18),
     INITIAL_LIQUIDITY_EMISSION: BN.from(1200000).mul(ONE_E_18),
     CONFIG_DENOMINATOR: BN.from(72000000000),
     CONFIG_CHANGES_TIME_LOCK: BN.from(7 * 24 * 3600),
@@ -119,7 +119,7 @@ export const kovanConstants = {
     INVESTOR_AMOUNT: BN.from(37417125).mul(ONE_E_18),
     ADVISOR_AMOUNT: BN.from(2500000).mul(ONE_E_18),
     TEAM_AMOUNT: BN.from(55000000).mul(ONE_E_18),
-    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94459981).mul(ONE_E_18),
+    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94917125).mul(ONE_E_18),
     ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(46 * 10 ** 6).mul(ONE_E_18),
     PUBLIC_SALES_TOKEN_AMOUNT: BN.from(16582875).mul(ONE_E_18),
     INITIAL_LIQUIDITY_EMISSION: BN.from(1200000).mul(ONE_E_18),
@@ -192,7 +192,7 @@ export const goerliConstants = {
     INVESTOR_AMOUNT: BN.from(37417125).mul(ONE_E_18),
     ADVISOR_AMOUNT: BN.from(2500000).mul(ONE_E_18),
     TEAM_AMOUNT: BN.from(55000000).mul(ONE_E_18),
-    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94459981).mul(ONE_E_18),
+    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94917125).mul(ONE_E_18),
     ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(46 * 10 ** 6).mul(ONE_E_18),
     PUBLIC_SALES_TOKEN_AMOUNT: BN.from(16582875).mul(ONE_E_18),
     INITIAL_LIQUIDITY_EMISSION: BN.from(1200000).mul(ONE_E_18),
@@ -237,6 +237,22 @@ export const goerliConstants = {
       // owner: "0x81dfbbaF5011e3b86383f72A24793EE44ea547C5"
     },
   },
+};
+
+export const mainnetConstants = {
+  misc: {
+    ONE_E_18,
+    ZERO_ADDRESS: "0x0000000000000000000000000000000000000000",
+    MAX_ALLOWANCE: BN.from(2).pow(BN.from(256)).sub(BN.from(1)),
+    // Pendle token distribution
+    INVESTOR_AMOUNT: BN.from(37417125).mul(ONE_E_18),
+    ADVISOR_AMOUNT: BN.from(2500000).mul(ONE_E_18),
+    TEAM_AMOUNT: BN.from(55000000).mul(ONE_E_18),
+    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94917125).mul(ONE_E_18),
+    ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(46 * 10 ** 6).mul(ONE_E_18),
+    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(16582875).mul(ONE_E_18),
+  },
+  tokens: {},
 };
 
 export interface DeployedContract {
