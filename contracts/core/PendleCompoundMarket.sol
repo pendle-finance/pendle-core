@@ -26,6 +26,7 @@ pragma experimental ABIEncoderV2;
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleForge.sol";
+import "../interfaces/IPendleCompoundForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleYieldToken.sol";
 import "../tokens/PendleBaseToken.sol";
@@ -37,6 +38,8 @@ contract PendleCompoundMarket is PendleMarketBase {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
+    uint256 private globalLastExchangeRate;
+
     constructor(
         address _forge,
         address _xyt,
@@ -44,8 +47,13 @@ contract PendleCompoundMarket is PendleMarketBase {
         uint256 _expiry
     ) PendleMarketBase(_forge, _xyt, _token, _expiry) {}
 
+    function _getExchangeRate() internal returns (uint256) {
+        return IPendleCompoundForge(forge).getExchangeRateDirect(underlyingAsset);
+    }
+
     function _afterBootstrap() internal override {
         paramL = 1;
+        globalLastExchangeRate = _getExchangeRate();
     }
 
     function _getInterestValuePerLP(address account)
@@ -63,11 +71,15 @@ contract PendleCompoundMarket is PendleMarketBase {
 
     function _getFirstTermAndParamR(uint256 currentNYield)
         internal
-        view
         override
         returns (uint256 firstTerm, uint256 paramR)
     {
         firstTerm = paramL;
         paramR = currentNYield.sub(lastNYield);
+        globalLastExchangeRate = _getExchangeRate();
+    }
+
+    function _getIncomeIndexIncreaseRate() internal override returns (uint256 increaseRate) {
+        return _getExchangeRate().rdiv(globalLastExchangeRate) - Math.RONE;
     }
 }

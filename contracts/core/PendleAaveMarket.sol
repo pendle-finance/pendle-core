@@ -38,7 +38,7 @@ contract PendleAaveMarket is PendleMarketBase {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 private normalizedIncome;
+    uint256 private globalLastNormalizedIncome;
     mapping(address => uint256) private userLastNormalizedIncome;
 
     constructor(
@@ -49,11 +49,11 @@ contract PendleAaveMarket is PendleMarketBase {
     ) PendleMarketBase(_forge, _xyt, _token, _expiry) {}
 
     function _getReserveNormalizedIncome() internal returns (uint256) {
-        return IPendleAaveForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
+        return IPendleAaveForge(forge).getReserveNormalizedIncomeDirect(underlyingAsset);
     }
 
     function _afterBootstrap() internal override {
-        normalizedIncome = _getReserveNormalizedIncome();
+        globalLastNormalizedIncome = _getReserveNormalizedIncome();
     }
 
     function _getInterestValuePerLP(address account)
@@ -62,29 +62,39 @@ contract PendleAaveMarket is PendleMarketBase {
         returns (uint256 interestValuePerLP)
     {
         // if userLastNormalizedIncome is 0 then it's certain that this is the first time the user stakes
-        // since normalizedIncome is always > 0
+        // since globalLastNormalizedIncome is always > 0
         if (userLastNormalizedIncome[account] == 0) {
             interestValuePerLP = 0;
         } else {
             interestValuePerLP = paramL.sub(
-                lastParamL[account].mul(normalizedIncome).div(userLastNormalizedIncome[account])
+                lastParamL[account].mul(globalLastNormalizedIncome).div(
+                    userLastNormalizedIncome[account]
+                )
             );
         }
 
-        userLastNormalizedIncome[account] = normalizedIncome;
+        userLastNormalizedIncome[account] = globalLastNormalizedIncome;
         lastParamL[account] = paramL;
     }
 
+    /**
+    @dev this can only be called by _updateParamL
+    */
     function _getFirstTermAndParamR(uint256 currentNYield)
         internal
         override
         returns (uint256 firstTerm, uint256 paramR)
     {
         uint256 currentNormalizedIncome = _getReserveNormalizedIncome();
-        firstTerm = paramL.rmul(currentNormalizedIncome).rdiv(normalizedIncome);
-        paramR = currentNYield.sub(
-            lastNYield.rmul(currentNormalizedIncome).rdiv(normalizedIncome)
-        );
-        normalizedIncome = currentNormalizedIncome;
+        firstTerm = paramL.mul(currentNormalizedIncome).div(globalLastNormalizedIncome);
+
+        uint256 ix = lastNYield.mul(currentNormalizedIncome).div(globalLastNormalizedIncome);
+        paramR = (currentNYield >= ix ? currentNYield - ix : 0);
+
+        globalLastNormalizedIncome = currentNormalizedIncome;
+    }
+
+    function _getIncomeIndexIncreaseRate() internal override returns (uint256 increaseRate) {
+        return _getReserveNormalizedIncome().rdiv(globalLastNormalizedIncome) - Math.RONE;
     }
 }

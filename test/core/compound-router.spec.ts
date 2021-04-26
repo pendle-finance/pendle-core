@@ -5,28 +5,26 @@ import {
   amountToWei,
   approxBigNumber,
   consts,
+  errMsg,
   evm_revert,
   evm_snapshot,
   getCContract,
   mint,
-  mintCompoundToken,
   setTimeNextBlock,
   Token,
   tokens,
-  errMsg,
 } from "../helpers";
 import { pendleFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
-describe("PendleCompoundRouter", async () => {
+describe("compound-router", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave] = wallets;
 
   let router: Contract;
-  let routerWeb3: any;
   let cOt: Contract;
   let cXyt: Contract;
   let compoundForge: Contract;
@@ -41,7 +39,6 @@ describe("PendleCompoundRouter", async () => {
 
     const fixture = await loadFixture(pendleFixture);
     router = fixture.core.router;
-    routerWeb3 = fixture.core.routerWeb3;
     cOt = fixture.cForge.cOwnershipToken;
     cXyt = fixture.cForge.cFutureYieldToken;
     compoundForge = fixture.cForge.compoundForge;
@@ -62,14 +59,22 @@ describe("PendleCompoundRouter", async () => {
   });
 
   async function tokenizeYield(user: Wallet, amount: BN) {
-    await router.tokenizeYield(
-      consts.FORGE_COMPOUND,
-      tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH),
-      amount,
-      user.address,
-      consts.HIGH_GAS_OVERRIDE
-    );
+    await router
+      .connect(user)
+      .tokenizeYield(
+        consts.FORGE_COMPOUND,
+        tokenUSDT.address,
+        consts.T0_C.add(consts.SIX_MONTH),
+        amount,
+        user.address,
+        consts.HIGH_GAS_OVERRIDE
+      );
+  }
+
+  async function redeemDueInterests(user: Wallet, expiry: BN) {
+    await router
+      .connect(user)
+      .redeemDueInterests(consts.FORGE_COMPOUND, tokenUSDT.address, expiry);
   }
 
   async function convertToCAmount(amount: BN) {
@@ -153,7 +158,6 @@ describe("PendleCompoundRouter", async () => {
         tokenUSDT.address,
         consts.T0_C.add(consts.SIX_MONTH),
         amount,
-        alice.address,
         consts.HIGH_GAS_OVERRIDE
       )
     ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
@@ -170,7 +174,6 @@ describe("PendleCompoundRouter", async () => {
       tokenUSDT.address,
       consts.T0_C.add(consts.SIX_MONTH),
       await cXyt.balanceOf(alice.address),
-      alice.address,
       consts.HIGH_GAS_OVERRIDE
     );
 
@@ -195,11 +198,7 @@ describe("PendleCompoundRouter", async () => {
 
     await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
 
-    await router.redeemDueInterests(
-      consts.FORGE_COMPOUND,
-      tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH)
-    );
+    await redeemDueInterests(alice, consts.T0_C.add(consts.SIX_MONTH));
 
     const expectedGain = await getCurInterest(
       initialcUSDTbalance,
@@ -228,13 +227,8 @@ describe("PendleCompoundRouter", async () => {
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
-    await router
-      .connect(bob)
-      .redeemDueInterests(
-        consts.FORGE_COMPOUND,
-        tokenUSDT.address,
-        consts.T0_C.add(consts.SIX_MONTH)
-      );
+    await redeemDueInterests(bob, consts.T0_C.add(consts.SIX_MONTH));
+
     const actualGain = await cUSDT.callStatic.balanceOfUnderlying(bob.address);
     const expectedGain = await getCurInterest(
       initialcUSDTbalance,
@@ -259,13 +253,7 @@ describe("PendleCompoundRouter", async () => {
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
-    await router
-      .connect(bob)
-      .redeemDueInterests(
-        consts.FORGE_COMPOUND,
-        tokenUSDT.address,
-        consts.T0_C.add(consts.SIX_MONTH)
-      );
+    await redeemDueInterests(bob, consts.T0_C.add(consts.SIX_MONTH));
 
     const T2 = T1.add(10);
     await setTimeNextBlock(provider, T2);
@@ -273,8 +261,7 @@ describe("PendleCompoundRouter", async () => {
     await router.redeemAfterExpiry(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH),
-      alice.address
+      consts.T0_C.add(consts.SIX_MONTH)
     );
 
     const lastRate = await compoundForge.lastRateBeforeExpiry(
@@ -304,13 +291,7 @@ describe("PendleCompoundRouter", async () => {
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
     await setTimeNextBlock(provider, T1);
 
-    await router
-      .connect(bob)
-      .redeemDueInterests(
-        consts.FORGE_COMPOUND,
-        tokenUSDT.address,
-        consts.T0_C.add(consts.SIX_MONTH)
-      );
+    await redeemDueInterests(bob, consts.T0_C.add(consts.SIX_MONTH));
 
     const T2 = T1.add(consts.ONE_MONTH);
     await setTimeNextBlock(provider, T2);
@@ -318,8 +299,7 @@ describe("PendleCompoundRouter", async () => {
     await router.redeemAfterExpiry(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH),
-      alice.address
+      consts.T0_C.add(consts.SIX_MONTH)
     );
 
     const lastRate = await compoundForge.lastRateBeforeExpiry(
@@ -356,18 +336,13 @@ describe("PendleCompoundRouter", async () => {
     await tokenizeYield(alice, initialcUSDTbalance);
     await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
 
-    await router.redeemDueInterests(
-      consts.FORGE_COMPOUND,
-      tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH)
-    );
+    await redeemDueInterests(alice, consts.T0_C.add(consts.SIX_MONTH));
 
     await router.redeemUnderlying(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
       consts.T0_C.add(consts.SIX_MONTH),
       await cXyt.balanceOf(alice.address),
-      alice.address,
       consts.HIGH_GAS_OVERRIDE
     );
 

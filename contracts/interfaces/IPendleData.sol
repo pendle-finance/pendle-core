@@ -48,12 +48,21 @@ interface IPendleData {
     event LockParamsSet(uint256 lockNumerator, uint256 lockDenominator);
 
     /**
-     * @notice Emitted when interestUpdateDelta is changed
-     * @param interestUpdateDelta new interestUpdateDelta setting
+     * @notice Emitted when ExpiryDivisor is changed
      **/
-    event InterestUpdateDeltaSet(uint256 interestUpdateDelta);
+    event ExpiryDivisorSet(uint256 expiryDivisor);
 
-    event ReentrancyWhitelistUpdated(address[] addresses, bool[] whitelisted);
+    /**
+     * @notice Emitted when interestUpdateRateDeltaForMarket is changed
+     * @param interestUpdateRateDeltaForMarket new interestUpdateRateDeltaForMarket setting
+     **/
+    event InterestUpdateRateDeltaForMarketSet(uint256 interestUpdateRateDeltaForMarket);
+
+    /**
+     * @notice Emitted when interestUpdateRateDeltaForForge is changed
+     * @param interestUpdateRateDeltaForForge new interestUpdateRateDeltaForForge setting
+     **/
+    event InterestUpdateRateDeltaForForgeSet(uint256 interestUpdateRateDeltaForForge);
 
     /**
      * @notice Set/update validity of a forge-factory pair
@@ -225,12 +234,14 @@ interface IPendleData {
 
     function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
 
-    function setInterestUpdateDelta(uint256 _interestUpdateDelta) external;
+    function setInterestUpdateRateDeltaForMarket(uint256 _interestUpdateRateDeltaForMarket)
+        external;
+
+    function setInterestUpdateRateDeltaForForge(uint256 _interestUpdateRateDeltaForForge) external;
 
     function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator) external;
 
-    function setReentrancyWhitelist(address[] calldata addresses, bool[] calldata whitelisted)
-        external;
+    function setExpiryDivisor(uint256 _expiryDivisor) external;
 
     /**
      * @notice Displays the number of markets currently existing.
@@ -240,15 +251,17 @@ interface IPendleData {
 
     function exitFee() external view returns (uint256);
 
-    function interestUpdateDelta() external view returns (uint256);
+    function interestUpdateRateDeltaForMarket() external view returns (uint256);
+
+    function interestUpdateRateDeltaForForge() external view returns (uint256);
+
+    function expiryDivisor() external view returns (uint256);
 
     function lockNumerator() external view returns (uint256);
 
     function lockDenominator() external view returns (uint256);
 
     function swapFee() external view returns (uint256);
-
-    function reentrancyWhitelisted(address a) external view returns (bool);
 
     /**
      * @notice Gets all the markets.

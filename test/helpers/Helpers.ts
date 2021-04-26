@@ -1,5 +1,11 @@
 import { expect } from "chai";
-import { BigNumber as BN, Contract, providers, Wallet } from "ethers";
+import {
+  BigNumber as BN,
+  BigNumberish,
+  Contract,
+  providers,
+  Wallet,
+} from "ethers";
 import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
 import AToken from "../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json";
 import CToken from "../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json";
@@ -8,53 +14,39 @@ import { liqParams } from "../core/fixtures/";
 import { aaveFixture } from "../core/fixtures/aave.fixture";
 import { aaveV2Fixture } from "../core/fixtures/aaveV2.fixture";
 import { consts, Token } from "./Constants";
+import { impersonateAccount } from "./Evm";
 
 const hre = require("hardhat");
 const PRECISION = BN.from(2).pow(40);
 
 type MutyiplierMap = Record<string, BN>;
 
-export async function impersonateAccount(address: String) {
-  await hre.network.provider.request({
-    method: "hardhat_impersonateAccount",
-    params: [address],
-  });
-}
-
-export async function evm_snapshot(): Promise<string> {
-  return await hre.network.provider.request({
-    method: "evm_snapshot",
-    params: [],
-  });
-}
-
-export async function evm_revert(snapshotId: string) {
-  return await hre.network.provider.request({
-    method: "evm_revert",
-    params: [snapshotId],
-  });
-}
-
 export async function mintOtAndXyt(
   provider: providers.Web3Provider,
   token: Token,
   user: Wallet,
   amount: BN,
-  router: Contract
+  router: Contract,
+  aaveForge: Contract,
+  aaveV2Forge: Contract
 ) {
-  const { lendingPoolCore } = await aaveFixture(user);
-  const aContract = await getAContract(user, lendingPoolCore, token);
+  const aContract = await getAContract(user, aaveForge, token);
+  const a2Contract = await getA2Contract(user, aaveV2Forge, token);
   const cContract = await getCContract(user, token);
 
   let preATokenBal = await aContract.balanceOf(user.address);
+  let preA2TokenBal = await a2Contract.balanceOf(user.address);
   let preCTokenBal = await cContract.balanceOf(user.address);
 
-  await mintAaveToken(provider, token, user, amount);
+  await mintAaveToken(provider, token, user, amount, true);
+  await mintAaveToken(provider, token, user, amount, false);
   await mintCompoundToken(provider, token, user, amount);
-  await aContract.approve(router.address, consts.MAX_ALLOWANCE);
-  await cContract.approve(router.address, consts.MAX_ALLOWANCE);
+  await aContract.approve(router.address, consts.INF);
+  await a2Contract.approve(router.address, consts.INF);
+  await cContract.approve(router.address, consts.INF);
 
   let postATokenBal = await aContract.balanceOf(user.address);
+  let postA2TokenBal = await a2Contract.balanceOf(user.address);
   let postCTokenBal = await cContract.balanceOf(user.address);
 
   await router
@@ -64,6 +56,15 @@ export async function mintOtAndXyt(
       token.address,
       consts.T0.add(consts.SIX_MONTH),
       postATokenBal.sub(preATokenBal),
+      user.address
+    );
+  await router
+    .connect(user)
+    .tokenizeYield(
+      consts.FORGE_AAVE_V2,
+      token.address,
+      consts.T0_A2.add(consts.SIX_MONTH),
+      postA2TokenBal.sub(preA2TokenBal),
       user.address
     );
   await router
@@ -143,20 +144,15 @@ export async function mintAaveToken(
   provider: providers.Web3Provider,
   token: Token,
   alice: Wallet,
-  amount: BN
+  amount: BN,
+  isAaveV1: boolean
 ) {
   await mint(provider, token, alice, amount);
-  await convertToAaveToken(token, alice, amount);
-}
-
-export async function mintAaveV2Token(
-  provider: providers.Web3Provider,
-  token: Token,
-  alice: Wallet,
-  amount: BN
-) {
-  await mint(provider, token, alice, amount);
-  await convertToAaveV2Token(token, alice, amount);
+  if (isAaveV1) {
+    await convertToAaveToken(token, alice, amount);
+  } else {
+    await convertToAaveV2Token(token, alice, amount);
+  }
 }
 
 export async function mintCompoundToken(
@@ -181,13 +177,13 @@ export async function transferToken(
 
 export async function getAContract(
   alice: Wallet,
-  lendingPoolCore: Contract,
+  aaveForge: Contract,
   token: Token
 ): Promise<Contract> {
-  const aTokenAddress = await lendingPoolCore.getReserveATokenAddress(
+  const aContractAddress = await aaveForge.callStatic.getYieldBearingToken(
     token.address
   );
-  return new Contract(aTokenAddress, ERC20.abi, alice);
+  return new Contract(aContractAddress, ERC20.abi, alice);
 }
 
 export async function getA2Contract(
@@ -224,26 +220,6 @@ export function amountToWei(amount: BN, decimal: number) {
   return BN.from(10).pow(decimal).mul(amount);
 }
 
-export async function advanceTime(
-  provider: providers.Web3Provider,
-  duration: BN
-) {
-  provider.send("evm_increaseTime", [duration.toNumber()]);
-  provider.send("evm_mine", []);
-}
-
-export async function setTimeNextBlock(
-  provider: providers.Web3Provider,
-  time: BN
-) {
-  provider.send("evm_setNextBlockTimestamp", [time.toNumber()]);
-}
-
-export async function setTime(provider: providers.Web3Provider, time: BN) {
-  provider.send("evm_setNextBlockTimestamp", [time.toNumber()]);
-  provider.send("evm_mine", []);
-}
-
 export async function getLiquidityRate(
   alice: Wallet,
   token: Token
@@ -278,11 +254,15 @@ export function getGain(amount: BN, rate: BN, duration: BN): BN {
 }
 
 export function approxBigNumber(
-  actual: BN,
-  expected: BN,
-  delta: BN,
+  _actual: BigNumberish,
+  _expected: BigNumberish,
+  _delta: BigNumberish,
   log: boolean = true
 ) {
+  let actual: BN = BN.from(_actual);
+  let expected: BN = BN.from(_expected);
+  let delta: BN = BN.from(_delta);
+
   var diff = expected.sub(actual);
   if (diff.lt(0)) {
     diff = diff.mul(-1);

@@ -70,8 +70,7 @@ contract PendleMarketReader {
             tokenIn: _tokenIn,
             tokenOut: _tokenOut,
             swapAmount: _inSwapAmount,
-            limitReturnAmount: 0,
-            maxPrice: type(uint256).max
+            limitReturnAmount: 0
         });
 
         return (swap, outSwapAmount);
@@ -97,8 +96,7 @@ contract PendleMarketReader {
             tokenIn: _tokenIn,
             tokenOut: _tokenOut,
             swapAmount: inSwapAmount,
-            limitReturnAmount: type(uint256).max,
-            maxPrice: type(uint256).max
+            limitReturnAmount: type(uint256).max
         });
 
         return (swap, inSwapAmount);
@@ -140,7 +138,7 @@ contract PendleMarketReader {
     // _tokenIn & _tokenOut is guaranteed to be a pair of xyt/baseToken
     function _getMarketData(
         address _tokenIn,
-        address _tokenOut,
+        address, // address _tokenOut
         address marketAddress
     ) internal view returns (Market memory) {
         IPendleMarket market = IPendleMarket(marketAddress);

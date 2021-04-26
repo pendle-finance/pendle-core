@@ -14,6 +14,7 @@ export const consts = {
   ONE_E_18,
   DUMMY_ADDRESS: "0xDEADbeEfEEeEEEeEEEeEEeeeeeEeEEeeeeEEEEeE",
   DUMMY_GOVERNANCE_ADDRESS: "0xdac17f958d2ee523a2206206994597c13d831ec7",
+  RONE: BN.from(2).pow(40),
 
   AAVE_LENDING_POOL_CORE_ADDRESS: "0x3dfd23A6c5E8BbcFc9581d2E864a68feb6a076d3",
   AAVE_LENDING_POOL_ADDRESS: "0x398ec7346dcd622edc5ae82352f02be94c62d119",
@@ -29,8 +30,10 @@ export const consts = {
   ZERO_BYTES: utils.formatBytes32String(""),
   RANDOM_BYTES: utils.formatBytes32String("ZpTw6Y3Ft4ruk7pmwTJF"),
   ZERO_ADDRESS: "0x0000000000000000000000000000000000000000",
+  RANDOM_ADDRESS: "0x0000000000000000000000000000000000000123",
   ETH_ADDRESS: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-  MAX_ALLOWANCE: BN.from(2).pow(256).sub(1),
+  INF: BN.from(2).pow(256).sub(1),
+  DEFAULT_CHAIN_ID: 31337,
   ONE_DAY: BN.from(86400),
   ONE_WEEK: BN.from(86400 * 7),
   FIFTEEN_DAY: BN.from(86400 * 15),
@@ -51,6 +54,8 @@ export const consts = {
   TEST_TOKEN_DELTA: BN.from(10).pow(2),
   LOCK_NUMERATOR: BN.from(1),
   LOCK_DENOMINATOR: BN.from(180),
+  INTEREST_UPDATE_RATE_DELTA_FOR_MARKET: BN.from(2).pow(40).div(10000), // 0.01% delta
+  INTEREST_UPDATE_RATE_DELTA_FOR_FORGE: BN.from(2).pow(40).div(10000), // 0.01% delta
 
   // Pendle token distribution
   INVESTOR_AMOUNT: BN.from(36959981).mul(ONE_E_18),

@@ -38,7 +38,7 @@ contract PendleTokenDistribution is Permissions, IPendleTokenDistribution {
     uint256[] public timeDurations;
     uint256[] public claimableFunds;
     mapping(uint256 => bool) public claimed;
-    uint256 numberOfDurations;
+    uint256 public numberOfDurations;
 
     constructor(
         address _governance,
@@ -75,7 +75,7 @@ contract PendleTokenDistribution is Permissions, IPendleTokenDistribution {
             claimableFunds[timeDurationIndex] < currentPendleBalance
                 ? claimableFunds[timeDurationIndex]
                 : currentPendleBalance;
-        pendleToken.transfer(governance, amount);
+        require(pendleToken.transfer(governance, amount), "FAIL_PENDLE_TRANSFER");
         emit ClaimedTokens(
             governance,
             timeDurations[timeDurationIndex],

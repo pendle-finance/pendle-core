@@ -84,7 +84,6 @@ interface IPendleRouter is IPendleStructs {
     struct Swap {
         uint256 swapAmount;
         uint256 limitReturnAmount;
-        uint256 maxPrice;
         address market;
         address tokenIn;
         address tokenOut;
@@ -122,8 +121,7 @@ interface IPendleRouter is IPendleStructs {
     function redeemAfterExpiry(
         bytes32 forgeId,
         address underlyingAsset,
-        uint256 expiry,
-        address to
+        uint256 expiry
     ) external returns (uint256 redeemedAmount);
 
     function redeemDueInterests(
@@ -142,8 +140,7 @@ interface IPendleRouter is IPendleStructs {
         bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry,
-        uint256 amountToRedeem,
-        address to
+        uint256 amountToRedeem
     ) external returns (uint256 redeemedAmount);
 
     function renewYield(
@@ -151,12 +148,12 @@ interface IPendleRouter is IPendleStructs {
         uint256 oldExpiry,
         address underlyingAsset,
         uint256 newExpiry,
-        uint256 amountToTokenize,
-        address yieldTo
+        uint256 renewalRate
     )
         external
         returns (
             uint256 redeemedAmount,
+            uint256 amountTransferOut,
             address ot,
             address xyt,
             uint256 amountTokenMinted
@@ -180,15 +177,6 @@ interface IPendleRouter is IPendleStructs {
      *  MARKET *
      ***********/
     function addMarketFactory(bytes32 marketFactoryId, address marketFactoryAddress) external;
-
-    function addMarketLiquidityAll(
-        bytes32 marketFactoryId,
-        address xyt,
-        address token,
-        uint256 maxInXyt,
-        uint256 maxInToken,
-        uint256 exactOutLp
-    ) external payable;
 
     function addMarketLiquidityDual(
         bytes32 _marketFactoryId,
@@ -216,7 +204,7 @@ interface IPendleRouter is IPendleStructs {
         uint256 minOutLp
     ) external payable;
 
-    function removeMarketLiquidityAll(
+    function removeMarketLiquidityDual(
         bytes32 marketFactoryId,
         address xyt,
         address token,
@@ -260,7 +248,6 @@ interface IPendleRouter is IPendleStructs {
         address tokenOut,
         uint256 inTotalAmount,
         uint256 minOutTotalAmount,
-        uint256 maxPrice,
         bytes32 marketFactoryId
     ) external payable returns (uint256 outTotalAmount);
 
@@ -269,7 +256,6 @@ interface IPendleRouter is IPendleStructs {
         address tokenOut,
         uint256 outTotalAmount,
         uint256 maxInTotalAmount,
-        uint256 maxPrice,
         bytes32 marketFactoryId
     ) external payable returns (uint256 inTotalAmount);
 

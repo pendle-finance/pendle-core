@@ -33,9 +33,9 @@ import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../periphery/Permissions.sol";
 import "../periphery/Withdrawable.sol";
-import "../periphery/PendleNonReentrant.sol";
+import "../periphery/PendleRouterNonReentrant.sol";
 
-contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReentrant {
+contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterNonReentrant {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -44,9 +44,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     address private constant DUMMY_ERC20 = address(0x123);
 
-    constructor(address _governance, IWETH _weth) Permissions(_governance) {
+    constructor(address _governance, IWETH _weth)
+        Permissions(_governance)
+        PendleRouterNonReentrant()
+    {
         weth = _weth;
-        _reentrancyStatus = _NOT_ENTERED;
     }
 
     /**
@@ -74,7 +76,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         override
         initialized
         onlyGovernance
-        pendleNonReentrant
+        nonReentrant
     {
         require(_forgeId != bytes32(0), "ZERO_BYTES");
         require(_forgeAddress != address(0), "ZERO_ADDRESS");
@@ -94,9 +96,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) external override pendleNonReentrant returns (address ot, address xyt) {
+    ) external override nonReentrant returns (address ot, address xyt) {
         require(_underlyingAsset != address(0), "ZERO_ADDRESS");
         require(_expiry > block.timestamp, "INVALID_EXPIRY");
+        require(_expiry % data.expiryDivisor() == 0, "INVALID_EXPIRY");
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         require(address(forge) != address(0), "FORGE_NOT_EXISTS");
 
@@ -119,10 +122,18 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     function redeemAfterExpiry(
         bytes32 _forgeId,
         address _underlyingAsset,
-        uint256 _expiry,
-        address _to
-    ) external override pendleNonReentrant returns (uint256 redeemedAmount) {
-        redeemedAmount = _redeemAfterExpiryInternal(_forgeId, _underlyingAsset, _expiry, _to);
+        uint256 _expiry
+    ) external override nonReentrant returns (uint256 redeemedAmount) {
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(_expiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
+
+        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
+        (redeemedAmount, ) = forge.redeemAfterExpiry(
+            msg.sender,
+            _underlyingAsset,
+            _expiry,
+            Math.RONE
+        );
     }
 
     /**
@@ -134,7 +145,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) external override pendleNonReentrant returns (uint256 interests) {
+    ) external override nonReentrant returns (uint256 interests) {
         interests = _redeemDueInterestsInternal(_forgeId, _underlyingAsset, _expiry);
     }
 
@@ -146,7 +157,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         bytes32[] calldata _forgeIds,
         address[] calldata _underlyingAssets,
         uint256[] calldata _expiries
-    ) external override pendleNonReentrant returns (uint256[] memory interests) {
+    ) external override nonReentrant returns (uint256[] memory interests) {
         require(
             _forgeIds.length == _underlyingAssets.length && _forgeIds.length == _expiries.length,
             "INVALID_ARRAYS"
@@ -170,60 +181,63 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry,
-        uint256 _amountToRedeem,
-        address _to
-    ) external override pendleNonReentrant returns (uint256 redeemedAmount) {
+        uint256 _amountToRedeem
+    ) external override nonReentrant returns (uint256 redeemedAmount) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
-        require(_to != address(0), "ZERO_ADDRESS");
+        require(_amountToRedeem != 0, "ZERO_AMOUNT");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         redeemedAmount = forge.redeemUnderlying(
             msg.sender,
             _underlyingAsset,
             _expiry,
-            _amountToRedeem,
-            _to
+            _amountToRedeem
         );
     }
 
     /**
      * @notice redeemAfterExpiry and tokenizeYield to a different expiry
-     * @dev checks for all params except _newExpiry are in internal functions
+     * @param _renewalRate a Fixed Point number, shows how much of the total redeemedAmount is renewed
      **/
     function renewYield(
         bytes32 _forgeId,
         uint256 _oldExpiry,
         address _underlyingAsset,
         uint256 _newExpiry,
-        uint256 _amountToTokenize,
-        address _yieldTo
+        uint256 _renewalRate
     )
         external
         override
-        pendleNonReentrant
+        nonReentrant
         returns (
             uint256 redeemedAmount,
+            uint256 amountTransferOut,
             address ot,
             address xyt,
             uint256 amountTokenMinted
         )
     {
+        require(_oldExpiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
         require(_newExpiry > _oldExpiry, "INVALID_NEW_EXPIRY");
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _oldExpiry), "INVALID_XYT");
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _newExpiry), "INVALID_XYT");
+        require(0 < _renewalRate && _renewalRate <= Math.RONE, "INVALID_RENEWAL_RATE");
 
-        redeemedAmount = _redeemAfterExpiryInternal(
-            _forgeId,
+        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
+
+        (redeemedAmount, amountTransferOut) = forge.redeemAfterExpiry(
+            msg.sender,
             _underlyingAsset,
             _oldExpiry,
-            msg.sender
+            Math.RONE - _renewalRate // only transfer out 1 - renewalRate
         );
-
-        (ot, xyt, amountTokenMinted) = _tokenizeYieldInternal(
-            _forgeId,
+        uint256 amountToRenew = redeemedAmount - amountTransferOut; // this amount is already inside the forge
+        (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
             _underlyingAsset,
             _newExpiry,
-            _amountToTokenize,
-            _yieldTo
+            amountToRenew,
+            msg.sender
         );
     }
 
@@ -231,7 +245,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
      * @notice tokenize a yield bearing token to get OT+XYT
      * @notice This function acts as a proxy to the actual function
      * @dev each forge is for a yield protocol (for example: Aave, Compound)
-     * @dev all checks are in the internal function
+     * @dev no checks for _amountToTokenize
      **/
     function tokenizeYield(
         bytes32 _forgeId,
@@ -242,15 +256,24 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     )
         external
         override
-        pendleNonReentrant
+        nonReentrant
         returns (
             address ot,
             address xyt,
             uint256 amountTokenMinted
         )
     {
-        (ot, xyt, amountTokenMinted) = _tokenizeYieldInternal(
-            _forgeId,
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
+        require(_to != address(0), "ZERO_ADDRESS");
+
+        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
+
+        IERC20 underlyingToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
+
+        underlyingToken.safeTransferFrom(msg.sender, address(forge), _amountToTokenize);
+
+        (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
             _underlyingAsset,
             _expiry,
             _amountToTokenize,
@@ -272,7 +295,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         override
         initialized
         onlyGovernance
-        pendleNonReentrant
+        nonReentrant
     {
         require(_marketFactoryId != bytes32(0), "ZERO_BYTES");
         require(_marketFactoryAddress != address(0), "ZERO_ADDRESS");
@@ -283,31 +306,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         require(data.getMarketFactoryAddress(_marketFactoryId) == address(0), "EXISTED_ID");
         data.addMarketFactory(_marketFactoryId, _marketFactoryAddress);
         emit NewMarketFactory(_marketFactoryId, _marketFactoryAddress);
-    }
-
-    /**
-     * @notice add market liquidity by xyt and base tokens
-     * @dev no checks on _maxInXyt, _maxInToken, _exactOutLp
-     */
-    function addMarketLiquidityAll(
-        bytes32 _marketFactoryId,
-        address _xyt,
-        address _token,
-        uint256 _maxInXyt,
-        uint256 _maxInToken,
-        uint256 _exactOutLp
-    ) external payable override pendleNonReentrant {
-        address originalToken = _token;
-        _token = _isETH(_token) ? address(weth) : _token;
-
-        IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
-        require(address(market) != address(0), "MARKET_NOT_FOUND");
-
-        PendingTransfer[3] memory transfers =
-            market.addMarketLiquidityAll(_exactOutLp, _maxInXyt, _maxInToken);
-        emit Join(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
-
-        _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
     }
 
     /**
@@ -326,7 +324,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         public
         payable
         override
-        pendleNonReentrant
+        nonReentrant
         returns (
             uint256 amountXytUsed,
             uint256 amountTokenUsed,
@@ -335,6 +333,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     {
         require(_desiredXytAmount != 0, "ZERO_XYT_AMOUNT");
         require(_desiredTokenAmount != 0, "ZERO_TOKEN_AMOUNT");
+        require(_desiredXytAmount >= _xytMinAmount, "INVALID_XYT_AMOUNTS");
+        require(_desiredTokenAmount >= _tokenMinAmount, "INVALID_TOKEN_AMOUNTS");
 
         address originalToken = _token;
         _token = _isETH(_token) ? address(weth) : _token;
@@ -367,7 +367,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         bool _forXyt,
         uint256 _exactInAsset,
         uint256 _minOutLp
-    ) external payable override pendleNonReentrant {
+    ) external payable override nonReentrant {
         address originalToken = _token;
         _token = _isETH(_token) ? address(weth) : _token;
 
@@ -393,14 +393,14 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
      * @notice remove market liquidity by xyt and base tokens
      * @dev no checks on _exactInLp, _minOutXyt, _minOutToken
      */
-    function removeMarketLiquidityAll(
+    function removeMarketLiquidityDual(
         bytes32 _marketFactoryId,
         address _xyt,
         address _token,
         uint256 _exactInLp,
         uint256 _minOutXyt,
         uint256 _minOutToken
-    ) external override pendleNonReentrant returns (uint256 exactOutXyt, uint256 exactOutToken) {
+    ) external override nonReentrant returns (uint256 exactOutXyt, uint256 exactOutToken) {
         address originalToken = _token;
         _token = _isETH(_token) ? address(weth) : _token;
 
@@ -413,7 +413,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         _settleTokenTransfer(address(market), lpTransfer, address(market));
 
         PendingTransfer[3] memory transfers =
-            market.removeMarketLiquidityAll(_exactInLp, _minOutXyt, _minOutToken);
+            market.removeMarketLiquidityDual(_exactInLp, _minOutXyt, _minOutToken);
 
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
         emit Exit(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
@@ -431,7 +431,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         bool _forXyt,
         uint256 _exactInLp,
         uint256 _minOutAsset
-    ) external override pendleNonReentrant returns (uint256 exactOutXyt, uint256 exactOutToken) {
+    ) external override nonReentrant returns (uint256 exactOutXyt, uint256 exactOutToken) {
         address originalToken = _token;
         _token = _isETH(_token) ? address(weth) : _token;
 
@@ -469,7 +469,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         bytes32 _marketFactoryId,
         address _xyt,
         address _token
-    ) external override pendleNonReentrant returns (address market) {
+    ) external override nonReentrant returns (address market) {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
         require(data.isXyt(_xyt), "INVALID_XYT");
@@ -501,7 +501,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         address _token,
         uint256 _initialXytLiquidity,
         uint256 _initialTokenLiquidity
-    ) external payable override pendleNonReentrant {
+    ) external payable override nonReentrant {
         require(_initialXytLiquidity > 0, "INVALID_XYT_AMOUNT");
         require(_initialTokenLiquidity > 0, "INVALID_TOKEN_AMOUNT");
 
@@ -521,16 +521,15 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
 
     /**
      * @notice trade by swap exact amount of token into market
-     * @dev no checks on _inTotalAmount, _minOutTotalAmount, _maxPrice
+     * @dev no checks on _inTotalAmount, _minOutTotalAmount
      */
     function swapExactIn(
         address _tokenIn,
         address _tokenOut,
         uint256 _inTotalAmount,
         uint256 _minOutTotalAmount,
-        uint256 _maxPrice,
         bytes32 _marketFactoryId
-    ) external payable override pendleNonReentrant returns (uint256 outSwapAmount) {
+    ) external payable override nonReentrant returns (uint256 outSwapAmount) {
         address originalTokenIn = _tokenIn;
         address originalTokenOut = _tokenOut;
         _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
@@ -545,8 +544,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
             _tokenIn,
             _inTotalAmount,
             _tokenOut,
-            _minOutTotalAmount,
-            _maxPrice
+            _minOutTotalAmount
         );
 
         _settlePendingTransfers(transfers, originalTokenIn, originalTokenOut, address(market));
@@ -563,16 +561,15 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
 
     /**
      * @notice trade by swap exact amount of token out of market
-     * @dev no checks on _outTotalAmount, _maxInTotalAmount, _maxPrice
+     * @dev no checks on _outTotalAmount, _maxInTotalAmount
      */
     function swapExactOut(
         address _tokenIn,
         address _tokenOut,
         uint256 _outTotalAmount,
         uint256 _maxInTotalAmount,
-        uint256 _maxPrice,
         bytes32 _marketFactoryId
-    ) external payable override pendleNonReentrant returns (uint256 inSwapAmount) {
+    ) external payable override nonReentrant returns (uint256 inSwapAmount) {
         address originalTokenIn = _tokenIn;
         address originalTokenOut = _tokenOut;
         _tokenIn = _isETH(_tokenIn) ? address(weth) : _tokenIn;
@@ -587,8 +584,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
             _tokenIn,
             _maxInTotalAmount,
             _tokenOut,
-            _outTotalAmount,
-            _maxPrice
+            _outTotalAmount
         );
 
         _settlePendingTransfers(transfers, originalTokenIn, originalTokenOut, address(market));
@@ -616,7 +612,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         address _tokenOut,
         uint256 _inTotalAmount,
         uint256 _minOutTotalAmount
-    ) external payable override pendleNonReentrant returns (uint256 outTotalAmount) {
+    ) external payable override nonReentrant returns (uint256 outTotalAmount) {
         uint256 sumInAmount;
         for (uint256 i = 0; i < _swapPath.length; i++) {
             uint256 swapRouteLength = _swapPath[i].length;
@@ -650,8 +646,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
                     swap.tokenIn,
                     swap.swapAmount,
                     swap.tokenOut,
-                    swap.limitReturnAmount,
-                    swap.maxPrice
+                    swap.limitReturnAmount
                 );
             }
 
@@ -682,7 +677,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         address _tokenIn,
         address _tokenOut,
         uint256 _maxInTotalAmount
-    ) external payable override pendleNonReentrant returns (uint256 inTotalAmount) {
+    ) external payable override nonReentrant returns (uint256 inTotalAmount) {
         for (uint256 i = 0; i < _swapPath.length; i++) {
             uint256 swapRouteLength = _swapPath[i].length;
             require(
@@ -712,8 +707,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
                     swap.tokenIn,
                     swap.limitReturnAmount,
                     swap.tokenOut,
-                    swap.swapAmount,
-                    swap.maxPrice
+                    swap.swapAmount
                 );
                 if (j == 0) break;
             }
@@ -745,7 +739,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
     function claimLpInterests(address[] calldata markets)
         external
         override
-        pendleNonReentrant
+        nonReentrant
         returns (uint256[] memory interests)
     {
         interests = new uint256[](markets.length);
@@ -771,56 +765,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleNonReen
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         interests = forge.redeemDueInterests(msg.sender, _underlyingAsset, _expiry);
-    }
-
-    function _redeemAfterExpiryInternal(
-        bytes32 _forgeId,
-        address _underlyingAsset,
-        uint256 _expiry,
-        address _to
-    ) internal returns (uint256 redeemedAmount) {
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
-        require(_to != address(0), "ZERO_ADDRESS");
-        require(_expiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
-
-        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        redeemedAmount = forge.redeemAfterExpiry(msg.sender, _underlyingAsset, _expiry, _to);
-    }
-
-    /**
-     * @dev no check on _amountToTokenize
-     */
-    function _tokenizeYieldInternal(
-        bytes32 _forgeId,
-        address _underlyingAsset,
-        uint256 _expiry,
-        uint256 _amountToTokenize,
-        address _to
-    )
-        internal
-        returns (
-            address ot,
-            address xyt,
-            uint256 amountTokenMinted
-        )
-    {
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
-        require(_to != address(0), "ZERO_ADDRESS");
-
-        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-
-        IERC20 underlyingToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
-
-        underlyingToken.transferFrom(msg.sender, address(forge), _amountToTokenize);
-
-        // Due to possible precision error, we will only mint the amount of OT & XYT equals
-        // to the amount of tokens that the contract receives
-        (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
-            _underlyingAsset,
-            _expiry,
-            _amountToTokenize,
-            _to
-        );
     }
 
     /**

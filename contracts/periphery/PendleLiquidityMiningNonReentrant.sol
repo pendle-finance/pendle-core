@@ -24,27 +24,22 @@ pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 import "../interfaces/IPendleData.sol";
 
-abstract contract PendleNonReentrant {
-    uint256 internal constant _NOT_ENTERED = 1;
-    uint256 internal constant _ENTERED = 2;
-    uint256 internal _reentrancyStatus;
+abstract contract PendleLiquidityMiningNonReentrant {
+    uint8 private _guardCounter;
 
-    modifier pendleNonReentrant() {
+    modifier nonReentrant() {
         _checkNonReentrancy(); // use functions to reduce bytecode size
         _;
-        // By storing the original value once again, a refund is triggered (see
-        // https://eips.ethereum.org/EIPS/eip-2200)
-        _reentrancyStatus = _NOT_ENTERED;
+        _guardCounter--;
+    }
+
+    constructor() {
+        _guardCounter = 1;
     }
 
     function _checkNonReentrancy() internal {
-        if (!_getData().reentrancyWhitelisted(msg.sender)) {
-            // On the first call to pendleNonReentrant, _notEntered will be true
-            require(_reentrancyStatus != _ENTERED, "REENTRANT_CALL");
-
-            // Any calls to nonReentrant after this point will fail
-            _reentrancyStatus = _ENTERED;
-        }
+        require(_guardCounter == 1, "REENTRANT_CALL");
+        _guardCounter++;
     }
 
     function _getData() internal view virtual returns (IPendleData);

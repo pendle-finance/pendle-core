@@ -36,7 +36,6 @@ import "../core/PendleLpHolder.sol";
 import "../interfaces/IPendleLiquidityMining.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../periphery/Permissions.sol";
-import "../periphery/PendleNonReentrant.sol";
 import "./abstract/PendleLiquidityMiningBase.sol";
 
 /**
@@ -50,7 +49,7 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    mapping(uint256 => uint256) private normalizedIncome;
+    mapping(uint256 => uint256) private globalLastNormalizedIncome;
     mapping(uint256 => mapping(address => uint256)) private userLastNormalizedIncome;
 
     constructor(
@@ -79,22 +78,27 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         )
     {}
 
+    function _getReserveNormalizedIncome() internal returns (uint256) {
+        return IPendleAaveForge(forge).getReserveNormalizedIncomeDirect(underlyingAsset);
+    }
+
     function _getInterestValuePerLP(uint256 expiry, address account)
         internal
         override
         returns (uint256 interestValuePerLP)
     {
+        ExpiryData storage exd = expiryData[expiry];
         if (userLastNormalizedIncome[expiry][account] == 0) {
             interestValuePerLP = 0;
         } else {
-            interestValuePerLP = paramL[expiry].sub(
-                lastParamL[expiry][account].mul(normalizedIncome[expiry]).div(
+            interestValuePerLP = exd.paramL.sub(
+                exd.lastParamL[account].mul(globalLastNormalizedIncome[expiry]).div(
                     userLastNormalizedIncome[expiry][account]
                 )
             );
         }
-        userLastNormalizedIncome[expiry][account] = normalizedIncome[expiry];
-        lastParamL[expiry][account] = paramL[expiry];
+        userLastNormalizedIncome[expiry][account] = globalLastNormalizedIncome[expiry];
+        exd.lastParamL[account] = exd.paramL;
     }
 
     function _getFirstTermAndParamR(uint256 expiry, uint256 currentNYield)
@@ -102,23 +106,31 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         override
         returns (uint256 firstTerm, uint256 paramR)
     {
-        uint256 currentNormalizedIncome =
-            IPendleAaveForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
-
-        // m(t+1) = currentNormalizedIncome / normalizedIncome
-        firstTerm = paramL[expiry].rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry]);
-
-        paramR = currentNYield.sub(
-            lastNYield[expiry].rmul(currentNormalizedIncome).rdiv(normalizedIncome[expiry])
+        ExpiryData storage exd = expiryData[expiry];
+        uint256 currentNormalizedIncome = _getReserveNormalizedIncome();
+        firstTerm = exd.paramL.mul(currentNormalizedIncome).div(
+            globalLastNormalizedIncome[expiry]
         );
 
-        normalizedIncome[expiry] = currentNormalizedIncome;
+        uint256 ix =
+            exd.lastNYield.rmul(currentNormalizedIncome).rdiv(globalLastNormalizedIncome[expiry]);
+        paramR = (currentNYield >= ix ? currentNYield - ix : 0);
+
+        globalLastNormalizedIncome[expiry] = currentNormalizedIncome;
     }
 
     function _afterAddingNewExpiry(uint256 expiry) internal override {
-        normalizedIncome[expiry] = IPendleAaveForge(forge).getReserveNormalizedIncome(
+        globalLastNormalizedIncome[expiry] = IPendleAaveForge(forge).getReserveNormalizedIncome(
             underlyingAsset,
             expiry
         );
+    }
+
+    function _getIncomeIndexIncreaseRate(uint256 expiry)
+        internal
+        override
+        returns (uint256 increaseRate)
+    {
+        return _getReserveNormalizedIncome().rdiv(globalLastNormalizedIncome[expiry]) - Math.RONE;
     }
 }

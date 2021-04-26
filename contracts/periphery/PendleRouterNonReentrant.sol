@@ -20,18 +20,31 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-
 pragma solidity 0.7.6;
+pragma experimental ABIEncoderV2;
+import "../interfaces/IPendleData.sol";
 
-import "../interfaces/IPENDLE.sol";
+abstract contract PendleRouterNonReentrant {
+    uint8 internal _guardCounter;
 
-interface IPendleTokenDistribution {
-    event ClaimedTokens(
-        address _claimer,
-        uint256 _timeDuration,
-        uint256 _claimableFunds,
-        uint256 _amountClaimed
-    );
+    modifier nonReentrant() {
+        _checkNonReentrancy(); // use functions to reduce bytecode size
+        _;
+        _guardCounter--;
+    }
 
-    function pendleToken() external view returns (IPENDLE);
+    constructor() {
+        _guardCounter = 1;
+    }
+
+    function _checkNonReentrancy() internal {
+        if (_getData().isMarket(msg.sender)) {
+            require(_guardCounter <= 2, "REENTRANT_CALL");
+        } else {
+            require(_guardCounter == 1, "REENTRANT_CALL");
+        }
+        _guardCounter++;
+    }
+
+    function _getData() internal view virtual returns (IPendleData);
 }

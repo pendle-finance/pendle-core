@@ -57,9 +57,11 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     uint256 public override emissionRateMultiplierNumerator;
     uint256 public override terminalInflationRateNumerator;
     address public override liquidityIncentivesRecipient;
+    bool public override isBurningAllowed;
     uint256 public override pendingEmissionRateMultiplierNumerator;
     uint256 public override pendingTerminalInflationRateNumerator;
     address public override pendingLiquidityIncentivesRecipient;
+    bool public override pendingIsBurningAllowed;
     uint256 public override configChangesInitiated;
     uint256 public override startTime;
     uint256 public lastWeeklyEmission;
@@ -103,13 +105,15 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     event PendingConfigChanges(
         uint256 pendingEmissionRateMultiplierNumerator,
         uint256 pendingTerminalInflationRateNumerator,
-        address pendingLiquidityIncentivesRecipient
+        address pendingLiquidityIncentivesRecipient,
+        bool pendingIsBurningAllowed
     );
 
     event ConfigsChanged(
         uint256 emissionRateMultiplierNumerator,
         uint256 terminalInflationRateNumerator,
-        address liquidityIncentivesRecipient
+        address liquidityIncentivesRecipient,
+        bool isBurningAllowed
     );
 
     /**
@@ -122,6 +126,13 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         address salesMultisig,
         address _liquidityIncentivesRecipient
     ) Permissions(_governance) {
+        require(
+            pendleTeamTokens != address(0) &&
+                pendleEcosystemFund != address(0) &&
+                salesMultisig != address(0) &&
+                _liquidityIncentivesRecipient != address(0),
+            "ZERO_ADDRESS"
+        );
         _mint(pendleTeamTokens, TEAM_INVESTOR_ADVISOR_AMOUNT);
         _mint(pendleEcosystemFund, ECOSYSTEM_FUND_TOKEN_AMOUNT);
         _mint(salesMultisig, PUBLIC_SALES_TOKEN_AMOUNT);
@@ -139,13 +150,11 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
      * @dev This will overwrite the approval amount for `spender`
      *  and is subject to issues noted [here](https://eips.ethereum.org/EIPS/eip-20#approve)
      * @param spender The address of the account which may transfer tokens
-     * @param amount The number of tokens that are approved (2^256-1 means infinite)
+     * @param amount The number of tokens that are approved
      * @return Whether or not the approval succeeded
      **/
     function approve(address spender, uint256 amount) external override returns (bool) {
-        allowances[msg.sender][spender] = amount;
-
-        emit Approval(msg.sender, spender, amount);
+        _approve(msg.sender, spender, amount);
         return true;
     }
 
@@ -156,7 +165,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
      * @return Whether or not the transfer succeeded
      */
     function transfer(address dst, uint256 amount) external override returns (bool) {
-        _transferTokens(msg.sender, dst, amount);
+        _transfer(msg.sender, dst, amount);
         return true;
     }
 
@@ -172,17 +181,57 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         address dst,
         uint256 amount
     ) external override returns (bool) {
-        address spender = msg.sender;
-        uint256 spenderAllowance = allowances[src][spender];
+        _transfer(src, dst, amount);
+        _approve(
+            src,
+            msg.sender,
+            allowances[src][msg.sender].sub(amount, "TRANSFER_EXCEED_ALLOWANCE")
+        );
+        return true;
+    }
 
-        if (spender != src && spenderAllowance != uint256(-1)) {
-            uint256 newAllowance = spenderAllowance.sub(amount);
-            allowances[src][spender] = newAllowance;
+    /**
+     * @dev Increases the allowance granted to spender by the caller.
+     * @param spender The address to increase the allowance from.
+     * @param addedValue The amount allowance to add.
+     * @return returns true if allowance has increased, otherwise false
+     **/
+    function increaseAllowance(address spender, uint256 addedValue)
+        public
+        override
+        returns (bool)
+    {
+        _approve(msg.sender, spender, allowances[msg.sender][spender].add(addedValue));
+        return true;
+    }
 
-            emit Approval(src, spender, newAllowance);
-        }
+    /**
+     * @dev Decreases the allowance granted to spender by the caller.
+     * @param spender The address to reduce the allowance from.
+     * @param subtractedValue The amount allowance to subtract.
+     * @return Returns true if allowance has decreased, otherwise false.
+     **/
+    function decreaseAllowance(address spender, uint256 subtractedValue)
+        public
+        override
+        returns (bool)
+    {
+        _approve(
+            msg.sender,
+            spender,
+            allowances[msg.sender][spender].sub(subtractedValue, "NEGATIVE_ALLOWANCE")
+        );
+        return true;
+    }
 
-        _transferTokens(src, dst, amount);
+    /**
+     * @dev Burns an amount of tokens from the msg.sender
+     * @param amount The amount to burn
+     * @return Returns true if the operation is successful
+     **/
+    function burn(uint256 amount) public override returns (bool) {
+        require(isBurningAllowed, "BURNING_NOT_ALLOWED");
+        _burn(msg.sender, amount);
         return true;
     }
 
@@ -310,19 +359,32 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
 
-    function _transferTokens(
+    function _transfer(
         address src,
         address dst,
         uint256 amount
     ) internal {
         require(src != address(0), "SENDER_ZERO_ADDR");
         require(dst != address(0), "RECEIVER_ZERO_ADDR");
+        require(dst != address(this), "SEND_TO_TOKEN_CONTRACT");
 
-        balances[src] = balances[src].sub(amount);
+        balances[src] = balances[src].sub(amount, "TRANSFER_EXCEED_BALANCE");
         balances[dst] = balances[dst].add(amount);
         emit Transfer(src, dst, amount);
 
         _moveDelegates(delegates[src], delegates[dst], amount);
+    }
+
+    function _approve(
+        address src,
+        address dst,
+        uint256 amount
+    ) internal virtual {
+        require(src != address(0), "OWNER_ZERO_ADDR");
+        require(dst != address(0), "SPENDER_ZERO_ADDR");
+
+        allowances[src][dst] = amount;
+        emit Approval(src, dst, amount);
     }
 
     function _moveDelegates(
@@ -383,16 +445,19 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     function initiateConfigChanges(
         uint256 _emissionRateMultiplierNumerator,
         uint256 _terminalInflationRateNumerator,
-        address _liquidityIncentivesRecipient
+        address _liquidityIncentivesRecipient,
+        bool _isBurningAllowed
     ) external override onlyGovernance {
-        require(liquidityIncentivesRecipient != address(0), "ZERO_ADDRESS");
+        require(_liquidityIncentivesRecipient != address(0), "ZERO_ADDRESS");
         pendingEmissionRateMultiplierNumerator = _emissionRateMultiplierNumerator;
         pendingTerminalInflationRateNumerator = _terminalInflationRateNumerator;
         pendingLiquidityIncentivesRecipient = _liquidityIncentivesRecipient;
+        pendingIsBurningAllowed = _isBurningAllowed;
         emit PendingConfigChanges(
             _emissionRateMultiplierNumerator,
             _terminalInflationRateNumerator,
-            _liquidityIncentivesRecipient
+            _liquidityIncentivesRecipient,
+            _isBurningAllowed
         );
         configChangesInitiated = block.timestamp;
     }
@@ -409,11 +474,13 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         emissionRateMultiplierNumerator = pendingEmissionRateMultiplierNumerator;
         terminalInflationRateNumerator = pendingTerminalInflationRateNumerator;
         liquidityIncentivesRecipient = pendingLiquidityIncentivesRecipient;
+        isBurningAllowed = pendingIsBurningAllowed;
         configChangesInitiated = 0;
         emit ConfigsChanged(
             emissionRateMultiplierNumerator,
             terminalInflationRateNumerator,
-            liquidityIncentivesRecipient
+            liquidityIncentivesRecipient,
+            isBurningAllowed
         );
     }
 
@@ -454,5 +521,16 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         totalSupply = totalSupply.add(amount);
         balances[account] = balances[account].add(amount);
         emit Transfer(address(0), account, amount);
+    }
+
+    function _burn(address account, uint256 amount) internal {
+        require(account != address(0), "BURN_FROM_ZERO_ADDRESS");
+
+        uint256 accountBalance = balances[account];
+        require(accountBalance >= amount, "BURN_EXCEED_BALANCE");
+        balances[account] = accountBalance.sub(amount);
+        totalSupply = totalSupply.sub(amount);
+
+        emit Transfer(account, address(0), amount);
     }
 }

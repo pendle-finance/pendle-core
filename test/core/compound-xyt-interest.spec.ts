@@ -1,22 +1,21 @@
-import { expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
 import {
+  amountToWei,
   approxBigNumber,
-  getCContract,
   consts,
   evm_revert,
   evm_snapshot,
+  getCContract,
+  getERC20Contract,
+  mint,
   mintCompoundToken,
   setTimeNextBlock,
   Token,
   tokens,
-  amountToWei,
-  mint,
-  getERC20Contract,
 } from "../helpers";
-import testData from "./fixtures/yieldTokenizeAndRedeem.scenario.json";
 import { pendleFixture } from "./fixtures";
+import testData from "./fixtures/yieldTokenizeAndRedeem.scenario.json";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
@@ -28,7 +27,7 @@ interface YieldTest {
   timeDelta: number;
 }
 
-describe("compoundInterest test", async () => {
+describe("compound-xyt-interest", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
@@ -69,8 +68,8 @@ describe("compoundInterest test", async () => {
       dave,
       consts.INITIAL_COMPOUND_TOKEN_AMOUNT
     );
-    await cUSDT.connect(bob).approve(router.address, consts.MAX_ALLOWANCE);
-    await cUSDT.connect(charlie).approve(router.address, consts.MAX_ALLOWANCE);
+    await cUSDT.connect(bob).approve(router.address, consts.INF);
+    await cUSDT.connect(charlie).approve(router.address, consts.INF);
 
     snapshotId = await evm_snapshot();
   });
@@ -103,7 +102,6 @@ describe("compoundInterest test", async () => {
         tokenUSDT.address,
         consts.T0_C.add(consts.SIX_MONTH),
         amount,
-        user.address,
         consts.HIGH_GAS_OVERRIDE
       );
   }

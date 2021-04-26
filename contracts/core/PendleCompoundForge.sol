@@ -28,6 +28,7 @@ import "../libraries/ExpiryUtilsLib.sol";
 import "../libraries/FactoryLib.sol";
 import "../interfaces/ICToken.sol";
 import "../interfaces/IPendleBaseToken.sol";
+import "../interfaces/IPendleCompoundForge.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleForge.sol";
 import "../interfaces/IComptroller.sol";
@@ -36,9 +37,10 @@ import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
 import "./abstract/PendleForgeBase.sol";
 
-contract PendleCompoundForge is PendleForgeBase {
+contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
     using ExpiryUtils for string;
     using SafeMath for uint256;
+    using Math for uint256;
 
     IComptroller public immutable comptroller;
 
@@ -69,7 +71,7 @@ contract PendleCompoundForge is PendleForgeBase {
         for (uint256 i = 0; i < _cTokens.length; ++i) {
             // once the underlying CToken has been set, it cannot be changed
             require(underlyingToCToken[_underlyingAssets[i]] == address(0), "FORBIDDEN");
-            require(_isValidCToken(_underlyingAssets[i], _cTokens[i]), "INVALID_CTOKEN_DATA");
+            verifyCToken(_underlyingAssets[i], _cTokens[i]);
             underlyingToCToken[_underlyingAssets[i]] = _cTokens[i];
             initialRate[_underlyingAssets[i]] = ICToken(_cTokens[i]).exchangeRateCurrent();
         }
@@ -77,24 +79,16 @@ contract PendleCompoundForge is PendleForgeBase {
         emit RegisterCTokens(_underlyingAssets, _cTokens);
     }
 
-    function _isValidCToken(address _underlyingAsset, address _cTokenAddress)
-        internal
-        returns (bool isValid)
-    {
-        if (comptroller.markets(_cTokenAddress).isListed != true) {
-            return false;
-        }
-        if (ICToken(_cTokenAddress).isCToken() != true) {
-            return false;
-        }
-        if (ICToken(_cTokenAddress).underlying() != _underlyingAsset) {
-            return false;
-        }
-        return true;
+    function verifyCToken(address _underlyingAsset, address _cTokenAddress) internal {
+        require(
+            comptroller.markets(_cTokenAddress).isListed &&
+                ICToken(_cTokenAddress).isCToken() &&
+                ICToken(_cTokenAddress).underlying() == _underlyingAsset,
+            "INVALID_CTOKEN_DATA"
+        );
     }
 
     function _calcTotalAfterExpiry(
-        address,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 redeemedAmount
@@ -106,13 +100,30 @@ contract PendleCompoundForge is PendleForgeBase {
         );
     }
 
+    function getExchangeRate(address _underlyingAsset, uint256 _expiry)
+        public
+        override
+        returns (uint256)
+    {
+        if (block.timestamp > _expiry) {
+            return lastRateBeforeExpiry[_underlyingAsset][_expiry];
+        }
+        uint256 exchangeRate = ICToken(underlyingToCToken[_underlyingAsset]).exchangeRateCurrent();
+
+        lastRateBeforeExpiry[_underlyingAsset][_expiry] = exchangeRate;
+        return exchangeRate;
+    }
+
+    function getExchangeRateDirect(address _underlyingAsset) public override returns (uint256) {
+        return ICToken(underlyingToCToken[_underlyingAsset]).exchangeRateCurrent();
+    }
+
     function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
         internal
         override
         returns (uint256 underlyingToRedeem)
     {
-        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
-        uint256 currentRate = cToken.exchangeRateCurrent();
+        uint256 currentRate = getExchangeRateDirect(_underlyingAsset);
         underlyingToRedeem = _amountToRedeem.mul(initialRate[_underlyingAsset]).div(currentRate);
     }
 
@@ -121,8 +132,7 @@ contract PendleCompoundForge is PendleForgeBase {
         override
         returns (uint256 amountToMint)
     {
-        ICToken cToken = ICToken(underlyingToCToken[_underlyingAsset]);
-        uint256 currentRate = cToken.exchangeRateCurrent();
+        uint256 currentRate = getExchangeRateDirect(_underlyingAsset);
         amountToMint = _amountToTokenize.mul(currentRate).div(initialRate[_underlyingAsset]);
     }
 
@@ -132,13 +142,8 @@ contract PendleCompoundForge is PendleForgeBase {
         override
         returns (address)
     {
+        require(underlyingToCToken[_underlyingAsset] != address(0), "INVALID_UNDERLYING_ASSET");
         return underlyingToCToken[_underlyingAsset];
-    }
-
-    struct InterestVariables {
-        uint256 prevRate;
-        uint256 currentRate;
-        ICToken cToken;
     }
 
     function _calcDueInterests(
@@ -147,33 +152,29 @@ contract PendleCompoundForge is PendleForgeBase {
         uint256 _expiry,
         address _account
     ) internal override returns (uint256 dueInterests) {
-        InterestVariables memory interestVariables;
+        uint256 prevRate = lastRate[_underlyingAsset][_expiry][_account];
+        uint256 currentRate = getExchangeRate(_underlyingAsset, _expiry);
 
-        interestVariables.prevRate = lastRate[_underlyingAsset][_expiry][_account];
-        interestVariables.cToken = ICToken(underlyingToCToken[_underlyingAsset]);
-
-        if (block.timestamp >= _expiry) {
-            interestVariables.currentRate = lastRateBeforeExpiry[_underlyingAsset][_expiry];
-        } else {
-            interestVariables.currentRate = interestVariables.cToken.exchangeRateCurrent();
-            lastRateBeforeExpiry[_underlyingAsset][_expiry] = interestVariables.currentRate;
-        }
-
-        lastRate[_underlyingAsset][_expiry][_account] = interestVariables.currentRate;
+        lastRate[_underlyingAsset][_expiry][_account] = currentRate;
         // first time getting XYT
-        if (interestVariables.prevRate == 0) {
+        if (prevRate == 0) {
             return 0;
         }
-        // dueInterests is a difference between yields where newer yield increased proportionally
-        // by currentExchangeRate / prevExchangeRate for cTokens to underyling asset
-        if (interestVariables.currentRate <= interestVariables.prevRate) {
-            return 0;
+        // split into 2 statements to avoid stack error
+        dueInterests = principal.mul(currentRate).div(prevRate).sub(principal);
+        dueInterests = dueInterests.mul(initialRate[_underlyingAsset]).div(currentRate);
+    }
+
+    function _getInterestRateForUser(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) internal override returns (uint256 rate, bool firstTime) {
+        uint256 prev = lastRate[_underlyingAsset][_expiry][_account];
+        if (prev != 0) {
+            rate = getExchangeRate(_underlyingAsset, _expiry).rdiv(prev) - Math.RONE;
+        } else {
+            firstTime = true;
         }
-        dueInterests = principal
-            .mul(interestVariables.currentRate)
-            .div(interestVariables.prevRate)
-            .sub(principal)
-            .mul(initialRate[_underlyingAsset])
-            .div(interestVariables.currentRate);
     }
 }

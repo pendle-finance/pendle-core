@@ -42,17 +42,11 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
      **/
     event Sync(uint256 reserve0, uint256 weight0, uint256 reserve1);
 
-    event Shift(uint256 xytWeightOld, uint256 tokenWeightOld, uint256 xytWeightNew);
+    event Shift(uint256 xytWeightOld, uint256 xytWeightNew);
 
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
         returns (PendingTransfer[3] memory transfers);
-
-    function addMarketLiquidityAll(
-        uint256 exactOutLp,
-        uint256 maxInXyt,
-        uint256 maxInToken
-    ) external returns (PendingTransfer[3] memory transfers);
 
     function addMarketLiquiditySingle(
         address inToken,
@@ -67,7 +61,7 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
         uint256 _tokenMinAmount
     ) external returns (PendingTransfer[3] memory transfers, uint256 lpOut);
 
-    function removeMarketLiquidityAll(
+    function removeMarketLiquidityDual(
         uint256 inLp,
         uint256 minOutXyt,
         uint256 minOutToken
@@ -83,8 +77,7 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
         address inToken,
         uint256 inAmount,
         address outToken,
-        uint256 minOutAmount,
-        uint256 maxPrice
+        uint256 minOutAmount
     )
         external
         returns (
@@ -97,8 +90,7 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
         address inToken,
         uint256 maxInAmount,
         address outToken,
-        uint256 outAmount,
-        uint256 maxPrice
+        uint256 outAmount
     )
         external
         returns (

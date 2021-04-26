@@ -25,6 +25,7 @@ pragma solidity 0.7.6;
 import "../libraries/FactoryLib.sol";
 import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "../interfaces/IPendleCompoundForge.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
@@ -35,7 +36,6 @@ import "../core/PendleLpHolder.sol";
 import "../interfaces/IPendleLiquidityMining.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../periphery/Permissions.sol";
-import "../periphery/PendleNonReentrant.sol";
 import "./abstract/PendleLiquidityMiningBase.sol";
 
 /**
@@ -48,6 +48,8 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
     using Math for uint256;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+
+    mapping(uint256 => uint256) private globalLastExchangeRate;
 
     constructor(
         address _governance,
@@ -75,30 +77,45 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
         )
     {}
 
+    function _getExchangeRate() internal returns (uint256) {
+        return IPendleCompoundForge(forge).getExchangeRateDirect(underlyingAsset);
+    }
+
     function _getInterestValuePerLP(uint256 expiry, address account)
         internal
         override
         returns (uint256 interestValuePerLP)
     {
-        if (lastParamL[expiry][account] == 0) {
+        ExpiryData storage exd = expiryData[expiry];
+        if (exd.lastParamL[account] == 0) {
             interestValuePerLP = 0;
         } else {
-            interestValuePerLP = paramL[expiry].sub(lastParamL[expiry][account]);
+            interestValuePerLP = exd.paramL.sub(exd.lastParamL[account]);
         }
-        lastParamL[expiry][account] = paramL[expiry];
+        exd.lastParamL[account] = exd.paramL;
     }
 
     function _getFirstTermAndParamR(uint256 expiry, uint256 currentNYield)
         internal
-        view
         override
         returns (uint256 firstTerm, uint256 paramR)
     {
-        firstTerm = paramL[expiry];
-        paramR = currentNYield.sub(lastNYield[expiry]);
+        ExpiryData storage exd = expiryData[expiry];
+        firstTerm = exd.paramL;
+        paramR = currentNYield.sub(exd.lastNYield);
+        globalLastExchangeRate[expiry] = _getExchangeRate();
     }
 
     function _afterAddingNewExpiry(uint256 expiry) internal override {
-        paramL[expiry] = 1; // we only use differences between paramL so we can just set an arbitrary initial number
+        expiryData[expiry].paramL = 1; // we only use differences between paramL so we can just set an arbitrary initial number
+        globalLastExchangeRate[expiry] = _getExchangeRate();
+    }
+
+    function _getIncomeIndexIncreaseRate(uint256 expiry)
+        internal
+        override
+        returns (uint256 increaseRate)
+    {
+        return _getExchangeRate().rdiv(globalLastExchangeRate[expiry]) - Math.RONE;
     }
 }

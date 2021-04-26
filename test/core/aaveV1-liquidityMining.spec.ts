@@ -1,15 +1,16 @@
 import { assert, expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
-import PendleCompoundLiquidityMining from "../../build/artifacts/contracts/core/PendleCompoundLiquidityMining.sol/PendleCompoundLiquidityMining.json";
 import {
   advanceTime,
   amountToWei,
   approxBigNumber,
   consts,
+  emptyToken,
+  errMsg,
   evm_revert,
   evm_snapshot,
-  getCContract,
+  getAContract,
   setTime,
   setTimeNextBlock,
   startOfEpoch,
@@ -19,7 +20,6 @@ import { liqParams, liquidityMiningFixture, UserStakeAction } from "./fixtures";
 import * as scenario from "./fixtures/liquidityMiningScenario.fixture";
 
 const { waffle } = require("hardhat");
-const hre = require("hardhat");
 const { provider } = waffle;
 
 // returns a rewards object = BN[][]
@@ -137,31 +137,41 @@ function calExpectedRewards(
   return rewards;
 }
 
-// TODO:Old version, not as updated as pendleAaveLiquidityMining
-describe("PendleCompoundLiquidityMining tests", async () => {
+describe("aaveV1-liquidityMining", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
   let liq: Contract;
-  let market: Contract;
+  let liqWeb3: any;
+  let router: Contract;
+  let stdMarket: Contract;
+  let xyt: Contract;
+  let baseToken: Contract;
   let pdl: Contract;
   let params: liqParams;
-  let cUSDT: Contract;
+  let lendingPoolCore: Contract;
+  let aUSDT: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
-  let liqWeb3: any; // TODO: move this to fixture
   before(async () => {
     globalSnapshotId = await evm_snapshot();
     const fixture = await loadFixture(liquidityMiningFixture);
-    liq = fixture.cLiquidityMining;
-    market = fixture.cMarket;
+    liq = fixture.aLiquidityMining;
+    liqWeb3 = fixture.aLiquidityMiningWeb3;
+    router = fixture.core.router;
+    baseToken = fixture.testToken;
+    stdMarket = fixture.aMarket;
+    xyt = fixture.aForge.aFutureYieldToken;
     params = fixture.params;
     pdl = fixture.pdl;
-    cUSDT = await getCContract(alice, tokens.USDT);
-    liqWeb3 = new hre.web3.eth.Contract(
-      PendleCompoundLiquidityMining.abi,
-      liq.address
-    );
+    aUSDT = await getAContract(alice, fixture.aForge.aaveForge, tokens.USDT);
+
+    // empty aUSDT and XYT balance
+    await emptyToken(aUSDT, bob);
+    // await emptyToken(aUSDT, bob);
+    await emptyToken(xyt, charlie);
+    await emptyToken(aUSDT, charlie);
+    // await emptyToken(aUSDT, charlie);
     snapshotId = await evm_snapshot();
   });
 
@@ -177,31 +187,23 @@ describe("PendleCompoundLiquidityMining tests", async () => {
   async function doStake(person: Wallet, amount: BN) {
     await liq
       .connect(person)
-      .stake(
-        consts.T0_C.add(consts.SIX_MONTH),
-        amount,
-        consts.HIGH_GAS_OVERRIDE
-      );
+      .stake(consts.T0.add(consts.SIX_MONTH), amount, consts.HIGH_GAS_OVERRIDE);
   }
 
   async function doWithdraw(person: Wallet, amount: BN) {
     await liq
       .connect(person)
       .withdraw(
-        consts.T0_C.add(consts.SIX_MONTH),
+        consts.T0.add(consts.SIX_MONTH),
         amount,
         consts.HIGH_GAS_OVERRIDE
       );
   }
 
-  async function claimRewardsWeb3(user: Wallet) {
-    return await liqWeb3.methods.claimRewards().call({ from: user.address });
-  }
-
   async function getLpBalanceOfAllUsers(): Promise<BN[]> {
     let res: BN[] = [];
     for (let i = 0; i < wallets.length; i++) {
-      res.push(await market.balanceOf(wallets[i].address));
+      res.push(await stdMarket.balanceOf(wallets[i].address));
     }
     return res;
   }
@@ -279,11 +281,9 @@ describe("PendleCompoundLiquidityMining tests", async () => {
         false
       );
     }
-    // console.log(await claimRewardsWeb3(wallets[0]));
-    // console.log(await claimRewardsWeb3(wallets[1]));
   }
 
-  async function checkEqualRewardsFourEpochs(
+  async function checkEqualRewardsForEpochs(
     userStakingData: UserStakeAction[][][],
     epochToCheck: number,
     _allocationRateDiv?: number
@@ -297,32 +297,137 @@ describe("PendleCompoundLiquidityMining tests", async () => {
     }
   }
 
-  it("test 1", async () => {
-    let userStakingData: UserStakeAction[][][] = scenario.scenario01(params);
+  // Bob, Dave and Charlie all starts with 0 AUSDTs and 0 XYTs in their wallet
+  // Both Bob and Dave has 10% of LP of the Market
+  //  - Charlie will receive XYTs equivalent to 10% of whats in the market, and hold it
+  //  - Dave just holds the LP tokens
+  //  - Bob stake the LP tokens into liq-mining contract, in two transactions
+  //=> after 2 months, all three of them should get the same interests
+  it("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests", async () => {
+    const INITIAL_LP_AMOUNT: BN = await stdMarket.balanceOf(bob.address);
+    // console.log(await stdMarket.balanceOf(stdMarket.address));
+    await setTimeNextBlock(provider, params.START_TIME.add(100));
+    const xytBalanceOfMarket = await xyt.balanceOf(stdMarket.address);
+    // console.log(`\txyt bal of market = ${xytBalanceOfMarket}`);
+
+    // Charlie holds same equivalent amount of XYTs as 10% of the market
+    // which is the same as what Bob and Dave holds
+    await xyt.transfer(charlie.address, xytBalanceOfMarket.div(10));
+
+    let preBalanceBob = await aUSDT.balanceOf(bob.address);
+    let preBalanceDave = await aUSDT.balanceOf(dave.address);
+    let preBalanceCharlie = await aUSDT.balanceOf(charlie.address);
+    console.log("\n========================================================");
+    console.log(
+      `\tPrebalanceBob = ${preBalanceBob}, preBalanceDave = ${preBalanceDave}, preBalanceCharlie = ${preBalanceCharlie}`
+    );
+    console.log(
+      `\tBob address = ${bob.address}, marketAddress = ${stdMarket.address}, alice address = ${alice.address}`
+    );
+    // console.log(await stdMarket.balanceOf(stdMarket.address));
+
+    await doStake(alice, INITIAL_LP_AMOUNT); // Alice also stake into liq-mining
+    console.log(`\talice staked`);
+    await doStake(bob, INITIAL_LP_AMOUNT.div(2));
+    console.log(`\tbob staked`);
+    await setTimeNextBlock(provider, params.START_TIME.add(consts.ONE_MONTH));
+    await doStake(bob, INITIAL_LP_AMOUNT.div(2));
+    console.log(`\tbob staked round 2`);
+    await setTimeNextBlock(
+      provider,
+      params.START_TIME.add(consts.ONE_MONTH.mul(2))
+    );
+
+    await liq.connect(bob).claimLpInterests();
+    console.log(`\tbob claimed interests`);
+    let actualGainBob = (await aUSDT.balanceOf(bob.address)).sub(preBalanceBob);
+
+    await router
+      .connect(charlie)
+      .redeemDueInterests(
+        consts.FORGE_AAVE,
+        tokens.USDT.address,
+        consts.T0.add(consts.SIX_MONTH)
+      );
+    const actualGainCharlie = (await aUSDT.balanceOf(charlie.address)).sub(
+      preBalanceCharlie
+    );
+
+    await router.connect(dave).claimLpInterests([stdMarket.address]);
+    let actualGainDave = (await aUSDT.balanceOf(dave.address)).sub(
+      preBalanceDave
+    );
+
+    // console.log(actualGainCharlie.toString(), actualGainDave.toString());
+    approxBigNumber(actualGainBob, actualGainDave, consts.TEST_TOKEN_DELTA);
+    approxBigNumber(actualGainCharlie, actualGainDave, consts.TEST_TOKEN_DELTA);
+  });
+
+  it("should be able to receive enough PENDLE rewards - test 2", async () => {
+    let userStakingData: UserStakeAction[][][] = scenario.scenario04(params);
     await doSequence(userStakingData);
-    await checkEqualRewardsFourEpochs(
+    await checkEqualRewardsForEpochs(
       userStakingData,
       userStakingData.length + 1
     );
   });
 
-  it("test 4", async () => {
+  it("should be able to receive enough PENDLE rewards - test 3", async () => {
+    await liq.setAllocationSetting(
+      [consts.T0.add(consts.SIX_MONTH), consts.T0.add(consts.THREE_MONTH)],
+      [params.TOTAL_NUMERATOR.div(2), params.TOTAL_NUMERATOR.div(2)],
+      consts.HIGH_GAS_OVERRIDE
+    );
     let userStakingData: UserStakeAction[][][] = scenario.scenario04(params);
     await doSequence(userStakingData);
-    await checkEqualRewardsFourEpochs(
+    await checkEqualRewardsForEpochs(
       userStakingData,
-      userStakingData.length + 1
+      userStakingData.length + 1,
+      2
     );
+  });
+
+  it("should be able to receive enough PENDLE rewards - test 4", async () => {
+    await liq.setAllocationSetting(
+      [consts.T0.add(consts.SIX_MONTH), consts.T0.add(consts.THREE_MONTH)],
+      [params.TOTAL_NUMERATOR.div(2), params.TOTAL_NUMERATOR.div(2)],
+      consts.HIGH_GAS_OVERRIDE
+    );
+    let userStakingData: UserStakeAction[][][] = scenario.scenario06(params);
+    await doSequence(userStakingData);
+    await checkEqualRewardsForEpochs(
+      userStakingData,
+      userStakingData.length + 1,
+      2
+    );
+  });
+
+  it("test invalid setAllocationSetting", async () => {
+    await expect(
+      liq.setAllocationSetting(
+        [
+          consts.T0.add(consts.SIX_MONTH),
+          consts.T0.add(consts.THREE_MONTH),
+          consts.T0.add(consts.ONE_MONTH),
+        ],
+        [
+          params.TOTAL_NUMERATOR.div(3),
+          params.TOTAL_NUMERATOR.div(3),
+          params.TOTAL_NUMERATOR.div(3),
+        ],
+        consts.HIGH_GAS_OVERRIDE
+      )
+    ).to.be.revertedWith(errMsg.INVALID_ALLOCATION);
   });
 
   it("this test shouldn't crash", async () => {
-    const amountToStake = await market.balanceOf(bob.address);
+    const amountToStake = await stdMarket.balanceOf(bob.address);
 
     await setTimeNextBlock(provider, params.START_TIME);
     await liq
       .connect(bob)
       .stake(
-        consts.T0_C.add(consts.SIX_MONTH),
+        consts.T0.add(consts.SIX_MONTH),
         amountToStake,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -334,7 +439,7 @@ describe("PendleCompoundLiquidityMining tests", async () => {
     await liq
       .connect(bob)
       .withdraw(
-        consts.T0_C.add(consts.SIX_MONTH),
+        consts.T0.add(consts.SIX_MONTH),
         amountToStake,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -349,11 +454,11 @@ describe("PendleCompoundLiquidityMining tests", async () => {
   it("can stake and withdraw", async () => {
     const FIFTEEN_DAYS = consts.ONE_DAY.mul(15);
 
-    const amountToStake = await market.balanceOf(bob.address); //1e17 LP = 0.1 LP
+    const amountToStake = await stdMarket.balanceOf(bob.address);
 
     const pdlBalanceOfContract = await pdl.balanceOf(liq.address);
     const pdlBalanceOfUser = await pdl.balanceOf(bob.address);
-    const lpBalanceOfUser = await market.balanceOf(bob.address);
+    const lpBalanceOfUser = await stdMarket.balanceOf(bob.address);
 
     console.log(
       `\tPDL balance of liq contract before: ${pdlBalanceOfContract}`
@@ -361,34 +466,34 @@ describe("PendleCompoundLiquidityMining tests", async () => {
     console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
     console.log(`\tLP balance of user before: ${lpBalanceOfUser}`);
 
-    await advanceTime(provider, params.START_TIME.sub(consts.T0_C));
+    await advanceTime(provider, params.START_TIME.sub(consts.T0));
     await liq
       .connect(bob)
       .stake(
-        consts.T0_C.add(consts.SIX_MONTH),
+        consts.T0.add(consts.SIX_MONTH),
         amountToStake,
         consts.HIGH_GAS_OVERRIDE
       );
     console.log("\tStaked");
     const lpHolderContract = await liq.lpHolderForExpiry(
-      consts.T0_C.add(consts.SIX_MONTH)
+      consts.T0.add(consts.SIX_MONTH)
     );
-    const cTokenBalanceOfLpHolderContract = await cUSDT.balanceOf(
+    const aTokenBalanceOfLpHolderContract = await aUSDT.balanceOf(
       lpHolderContract
     );
-    const cTokenBalanceOfUser = await cUSDT.balanceOf(bob.address);
+    const aTokenBalanceOfUser = await aUSDT.balanceOf(bob.address);
     console.log(
-      `\t[LP interests] cUSDT balance of LpHolder after first staking = ${cTokenBalanceOfLpHolderContract}`
+      `\t[LP interests] aUSDT balance of LpHolder after first staking = ${aTokenBalanceOfLpHolderContract}`
     );
     console.log(
-      `\t[LP interests] cUSDT balance of User after first staking = ${cTokenBalanceOfUser}`
+      `\t[LP interests] aUSDT balance of User after first staking = ${aTokenBalanceOfUser}`
     );
 
     await advanceTime(provider, FIFTEEN_DAYS);
     await liq
       .connect(bob)
       .withdraw(
-        consts.T0_C.add(consts.SIX_MONTH),
+        consts.T0.add(consts.SIX_MONTH),
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
@@ -410,40 +515,47 @@ describe("PendleCompoundLiquidityMining tests", async () => {
       expectedPdlBalanceOfUserAfter.toNumber() / 1000
     );
 
+    console.log(
+      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
+        lpHolderContract
+      )}`
+    );
+
     //stake using another user - alice, for the same amount as bob's stake now (amountToStake/2)
     await liq.stake(
-      consts.T0_C.add(consts.SIX_MONTH),
+      consts.T0.add(consts.SIX_MONTH),
       amountToStake.div(2),
       consts.HIGH_GAS_OVERRIDE
     );
 
     // Now we wait for another 15 days to withdraw (at the very start of epoch 4), then the rewards to be withdrawn for bob should be:
-    // From epoch 1: rewardsForEpoch[0] * 2/4    ( 1/4 is released at start of epoch 3, 1/4 is released at start of epoch 4)
-    // From epoch 2: (rewardsForEpoch[1]/2 + rewardsForEpoch[1]/2/2) * 2/4  ( first half: get all the rewards = rewardsForEpoch/2, 2nd half: get half)
-    // From epoch 3: rewardsForEpoch[2]/2 * 1/4  ( two stakers with the same stake & duration => each gets rewardsForEpoch/2)
-    //  Total: rewardsForEpoch[0] * 1/2 + rewardsForEpoch[1]*3/8 + rewardsForEpoch[2]*1/8)
+    // From epoch 1: rewardsForEpoch * 2/4    ( 1/4 is released at start of epoch 3, 1/4 is released at start of epoch 4)
+    // From epoch 2: (rewardsForEpoch/2 + rewardsForEpoch/2/2) * 2/4  ( first half: get all the rewards = rewardsForEpoch/2, 2nd half: get half)
+    // From epoch 3: rewardsForEpoch/2 * 1/4  ( two stakers with the same stake & duration => each gets rewardsForEpoch/2)
+    //  Total: rewardsForEpoch * (1/2 + 3/8 + 1/8) = rewardsForEpoch
     await advanceTime(provider, FIFTEEN_DAYS);
 
     // console.log(`abi = ${liq.abi}`);
     // console.log(liq);
 
-    const liqWeb3 = new hre.web3.eth.Contract(
-      PendleCompoundLiquidityMining.abi,
-      liq.address
-    );
-    const rewardsData = await liqWeb3.methods
-      .claimRewards()
-      .call({ from: alice.address });
-    const interestsData = await liqWeb3.methods
+    const { interests } = await liqWeb3.methods
       .claimLpInterests()
       .call({ from: alice.address });
-    console.log(`\tInterests for alice = ${interestsData}`);
-    console.log(`\tRewards available for epochs from now: ${rewardsData}`);
+    const { rewards } = await liqWeb3.methods
+      .claimRewards()
+      .call({ from: alice.address });
+    console.log(`\tInterests for alice = ${interests}`);
+    console.log(`\tRewards available for epochs from now: ${rewards}`);
+    console.log(
+      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
+        lpHolderContract
+      )}`
+    );
 
     await liq
       .connect(bob)
       .withdraw(
-        consts.T0_C.add(consts.SIX_MONTH),
+        consts.T0.add(consts.SIX_MONTH),
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
@@ -461,27 +573,33 @@ describe("PendleCompoundLiquidityMining tests", async () => {
       `\tExpected PDL balance of user after 2nd withdraw: ${expectedPdlBalanceOfUsersAfter2ndTnx}`
     );
 
+    console.log(
+      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
+        lpHolderContract
+      )}`
+    );
+
     expect(pdlBalanceOfUserAfter2ndTnx.toNumber()).to.be.approximately(
       expectedPdlBalanceOfUsersAfter2ndTnx.toNumber(),
       expectedPdlBalanceOfUsersAfter2ndTnx.toNumber() / 1000
     );
 
     await liq.withdraw(
-      consts.T0_C.add(consts.SIX_MONTH),
+      consts.T0.add(consts.SIX_MONTH),
       amountToStake.div(2),
       consts.HIGH_GAS_OVERRIDE
     );
-    const cTokenBalanceOfLpHolderContractAfter = await cUSDT.balanceOf(
+    const aTokenBalanceOfLpHolderContractAfter = await aUSDT.balanceOf(
       lpHolderContract
     );
-    const cTokenBalanceOfUserAfter = await cUSDT.balanceOf(bob.address);
+    const aTokenBalanceOfUserAfter = await aUSDT.balanceOf(bob.address);
 
-    //now, the LP holding contract should hold almost 0 cUSDT. This means that we have calculated and gave the Lp interests back to the users properly
+    //now, the LP holding contract should hold almost 0 aUSDT. This means that we have calculated and gave the Lp interests back to the users properly
     console.log(
-      `\t[LP interests] cUSDT balance of LpHolder after withdrawing all = ${cTokenBalanceOfLpHolderContractAfter}`
+      `\t[LP interests] aUSDT balance of LpHolder after withdrawing all = ${aTokenBalanceOfLpHolderContractAfter}`
     );
     console.log(
-      `\t[LP interests] cUSDT balance of user after withdrawing all = ${cTokenBalanceOfUserAfter}`
+      `\t[LP interests] aUSDT balance of user after withdrawing all = ${aTokenBalanceOfUserAfter}`
     );
   });
 });

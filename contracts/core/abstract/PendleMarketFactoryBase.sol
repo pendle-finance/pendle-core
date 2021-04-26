@@ -77,5 +77,5 @@ abstract contract PendleMarketFactoryBase is IPendleMarketFactory, Permissions, 
         address _xyt,
         address _token,
         uint256 _expiry
-    ) internal virtual returns (address) {}
+    ) internal virtual returns (address);
 }

@@ -40,6 +40,12 @@ contract PendleLpHolder is IPendleLpHolder {
         address _router,
         address _underlyingYieldToken
     ) {
+        require(
+            _pendleMarket != address(0) &&
+                _router != address(0) &&
+                _underlyingYieldToken != address(0),
+            "ZERO_ADDRESS"
+        );
         pendleMarket = _pendleMarket;
         router = _router;
         pendleLiquidityMining = msg.sender;

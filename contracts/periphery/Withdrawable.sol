@@ -23,9 +23,12 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "./Permissions.sol";
 
 abstract contract Withdrawable is Permissions {
+    using SafeERC20 for IERC20;
+
     event EtherWithdraw(uint256 amount, address sendTo);
     event TokenWithdraw(IERC20 token, uint256 amount, address sendTo);
 
@@ -53,7 +56,7 @@ abstract contract Withdrawable is Permissions {
         uint256 amount,
         address sendTo
     ) external onlyGovernance {
-        token.transfer(sendTo, amount);
+        token.safeTransfer(sendTo, amount);
         emit TokenWithdraw(token, amount, sendTo);
     }
 }

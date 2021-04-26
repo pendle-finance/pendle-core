@@ -9,30 +9,18 @@ const {
   shouldBehaveLikeERC20Approve,
 } = require('./ERC20.behavior');
 
-const MockPendleOwnerShipToken = artifacts.require(
-  '../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json'
-);
+const MockPENDLE = artifacts.require('../../build/artifacts/contracts/mock/MockPENDLE.sol/MockPENDLE.json');
 const TestToken = artifacts.require('../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json');
 
-contract('PendleOwnershipToken', function (accounts) {
+contract('PENDLE', function (accounts) {
   const [initialHolder, recipient, anotherAccount] = accounts;
-  const name = 'My Token';
-  const symbol = 'MTKN';
+  const name = 'Pendle';
+  const symbol = 'PENDLE';
 
-  const initialSupply = new BN(100);
+  const initialSupply = new BN('188700000000000000000000000');
 
   beforeEach(async function () {
-    this.token = await MockPendleOwnerShipToken.new(
-      consts.RANDOM_ADDRESS,
-      consts.RANDOM_ADDRESS,
-      name,
-      symbol,
-      6,
-      consts.T0,
-      consts.T0.add(consts.SIX_MONTH),
-      initialHolder,
-      initialSupply
-    );
+    this.token = await MockPENDLE.new(initialHolder, initialHolder, initialHolder, initialHolder, initialHolder);
   });
 
   it('has a name', async function () {
@@ -43,12 +31,12 @@ contract('PendleOwnershipToken', function (accounts) {
     expect(await this.token.symbol()).to.equal(symbol);
   });
 
-  it('has 6 decimals', async function () {
-    expect(await this.token.decimals()).to.be.bignumber.equal('6');
+  it('has 18 decimals', async function () {
+    expect(await this.token.decimals()).to.be.bignumber.equal('18');
   });
 
   describe('_setupDecimals', function () {
-    const decimals = new BN(6);
+    const decimals = new BN(18);
 
     it('can set decimals during construction', async function () {
       const token = await TestToken.new(name, symbol, decimals);
@@ -220,34 +208,38 @@ contract('PendleOwnershipToken', function (accounts) {
     });
   });
 
-  describe('_mint', function () {
-    const amount = new BN(50);
-    it('rejects a null account', async function () {
-      await expectRevert(this.token.mint(consts.ZERO_ADDRESS, amount), errMsg.MINT_TO_ZERO_ADDR);
+  describe('_transfer', function () {
+    shouldBehaveLikeERC20Transfer('ERC20', initialHolder, recipient, initialSupply, function (from, to, amount) {
+      return this.token.transferInternal(from, to, amount);
     });
 
-    describe('for a non zero account', function () {
-      beforeEach('minting', async function () {
-        const {logs} = await this.token.mint(recipient, amount);
-        this.logs = logs;
+    describe('when the sender is the zero address', function () {
+      it('reverts', async function () {
+        await expectRevert(
+          this.token.transferInternal(consts.ZERO_ADDRESS, recipient, initialSupply),
+          errMsg.SENDER_ZERO_ADDR
+        );
       });
+    });
+  });
 
-      it('increments totalSupply', async function () {
-        const expectedSupply = initialSupply.add(amount);
-        expect(await this.token.totalSupply()).to.be.bignumber.equal(expectedSupply);
-      });
+  it('transfer 0 amount', async function () {
+    expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal('0');
+    await this.token.transfer(recipient, new BN('0'), {from: anotherAccount});
+    expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal('0');
+  });
 
-      it('increments recipient balance', async function () {
-        expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal(amount);
-      });
+  describe('_approve', function () {
+    shouldBehaveLikeERC20Approve('ERC20', initialHolder, recipient, initialSupply, function (owner, spender, amount) {
+      return this.token.approveInternal(owner, spender, amount);
+    });
 
-      it('emits Transfer event', async function () {
-        const event = expectEvent.inLogs(this.logs, 'Transfer', {
-          from: consts.ZERO_ADDRESS,
-          to: recipient,
-        });
-
-        expect(event.args.value).to.be.bignumber.equal(amount);
+    describe('when the owner is the zero address', function () {
+      it('reverts', async function () {
+        await expectRevert(
+          this.token.approveInternal(consts.ZERO_ADDRESS, recipient, initialSupply),
+          errMsg.OWNER_ZERO_ADDR
+        );
       });
     });
   });
@@ -292,36 +284,6 @@ contract('PendleOwnershipToken', function (accounts) {
 
       describeBurn('for entire balance', initialSupply);
       describeBurn('for less amount than balance', initialSupply.subn(1));
-    });
-  });
-
-  describe('_transfer', function () {
-    shouldBehaveLikeERC20Transfer('ERC20', initialHolder, recipient, initialSupply, function (from, to, amount) {
-      return this.token.transferInternal(from, to, amount);
-    });
-
-    describe('when the sender is the zero address', function () {
-      it('reverts', async function () {
-        await expectRevert(
-          this.token.transferInternal(consts.ZERO_ADDRESS, recipient, initialSupply),
-          errMsg.SENDER_ZERO_ADDR
-        );
-      });
-    });
-  });
-
-  describe('_approve', function () {
-    shouldBehaveLikeERC20Approve('ERC20', initialHolder, recipient, initialSupply, function (owner, spender, amount) {
-      return this.token.approveInternal(owner, spender, amount);
-    });
-
-    describe('when the owner is the zero address', function () {
-      it('reverts', async function () {
-        await expectRevert(
-          this.token.approveInternal(consts.ZERO_ADDRESS, recipient, initialSupply),
-          errMsg.OWNER_ZERO_ADDR
-        );
-      });
     });
   });
 });

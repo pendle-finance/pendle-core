@@ -22,21 +22,13 @@
  */
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../libraries/ExpiryUtilsLib.sol";
-import "../libraries/FactoryLib.sol";
-import "../interfaces/IAaveLendingPoolCore.sol";
-import "../interfaces/IPendleBaseToken.sol";
-import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleAaveForge.sol";
-import "../tokens/PendleFutureYieldToken.sol";
-import "../tokens/PendleOwnershipToken.sol";
-import "../periphery/Permissions.sol";
 import "./abstract/PendleForgeBase.sol";
 
 contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
     using ExpiryUtils for string;
     using SafeMath for uint256;
+    using Math for uint256;
 
     IAaveLendingPoolCore public immutable aaveLendingPoolCore;
 
@@ -58,27 +50,44 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
 
     //calculate the (principal + interest) from the last action before expiry to now.
     function _calcTotalAfterExpiry(
-        address,
         address _underlyingAsset,
         uint256 _expiry,
         uint256 redeemedAmount
     ) internal view override returns (uint256 totalAfterExpiry) {
-        uint256 currentNormalizedIncome =
-            aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
+        uint256 currentNormalizedIncome = getReserveNormalizedIncomeDirect(_underlyingAsset);
         totalAfterExpiry = currentNormalizedIncome.mul(redeemedAmount).div(
             lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry]
         );
     }
 
+    /**
+    @dev this function serves functions that take into account the lastNormalisedIncomeBeforeExpiry
+    */
     function getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
-        external
-        view
+        public
         override
         returns (uint256)
     {
         if (block.timestamp > _expiry) {
             return lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
         }
+
+        uint256 normalizedIncome =
+            aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
+
+        lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = normalizedIncome;
+        return normalizedIncome;
+    }
+
+    /**
+    @dev directly get the normalizedIncome from Aave
+    */
+    function getReserveNormalizedIncomeDirect(address _underlyingAsset)
+        public
+        view
+        override
+        returns (uint256)
+    {
         return aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
     }
 
@@ -86,6 +95,10 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         if (reserveATokenAddress[_underlyingAsset] == address(0)) {
             reserveATokenAddress[_underlyingAsset] = aaveLendingPoolCore.getReserveATokenAddress(
                 _underlyingAsset
+            );
+            require(
+                reserveATokenAddress[_underlyingAsset] != address(0),
+                "INVALID_UNDERLYING_ASSET"
             );
         }
         return reserveATokenAddress[_underlyingAsset];
@@ -98,21 +111,25 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         address _account
     ) internal override returns (uint256 dueInterests) {
         uint256 ix = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
-        uint256 normalizedIncome;
-
-        if (block.timestamp >= _expiry) {
-            normalizedIncome = lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry];
-        } else {
-            normalizedIncome = aaveLendingPoolCore.getReserveNormalizedIncome(_underlyingAsset);
-            lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry] = normalizedIncome;
-        }
+        uint256 normalizedIncome = getReserveNormalizedIncome(_underlyingAsset, _expiry);
+        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
         // first time getting XYT
         if (ix == 0) {
-            lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
             return 0;
         }
-        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
-
         dueInterests = principal.mul(normalizedIncome).div(ix).sub(principal);
+    }
+
+    function _getInterestRateForUser(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) internal override returns (uint256 rate, bool firstTime) {
+        uint256 prev = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
+        if (prev != 0) {
+            rate = getReserveNormalizedIncome(_underlyingAsset, _expiry).rdiv(prev) - Math.RONE;
+        } else {
+            firstTime = true;
+        }
     }
 }

@@ -13,13 +13,13 @@ import {
   Token,
   tokens,
 } from "../helpers";
-import { AMMTest } from "./ammFormulaTest";
+import { AMMTest } from "./amm-formula-test";
 import { marketFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const { provider } = waffle;
 
-describe("PendleAaveMarket", async () => {
+describe("aaveV1-market", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;
@@ -92,7 +92,7 @@ describe("PendleAaveMarket", async () => {
   READ ME!!!
   All tests with "_sample" suffix are legacy tests. It's improved version is in other test files
     Tests for adding/removing liquidity can be found in pendleLpFormula.spec.ts
-    Tests for swapping tokens can be found in ammFormulaTest.ts
+    Tests for swapping tokens can be found in amm-formula-test.ts
   */
 
   it("should be able to join a bootstrapped market with a single standard token_sample", async () => {
@@ -134,13 +134,14 @@ describe("PendleAaveMarket", async () => {
 
     await router
       .connect(bob)
-      .addMarketLiquidityAll(
+      .addMarketLiquidityDual(
         consts.MARKET_FACTORY_AAVE,
         xyt.address,
         testToken.address,
         amount,
         amount,
-        totalSupply,
+        BN.from(0),
+        BN.from(0),
         consts.HIGH_GAS_OVERRIDE
       );
 
@@ -174,7 +175,6 @@ describe("PendleAaveMarket", async () => {
         testToken.address,
         amountToWei(BN.from(10), 6),
         amountToWei(BN.from(100), 6),
-        consts.MAX_ALLOWANCE,
         consts.MARKET_FACTORY_AAVE,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -201,7 +201,6 @@ describe("PendleAaveMarket", async () => {
         testToken.address,
         amountToWei(BN.from(10), 6),
         BN.from(0),
-        consts.MAX_ALLOWANCE,
         consts.MARKET_FACTORY_AAVE,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -239,7 +238,7 @@ describe("PendleAaveMarket", async () => {
     await advanceTime(provider, consts.ONE_MONTH);
     const totalSupply = await stdMarket.totalSupply();
 
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
@@ -260,7 +259,7 @@ describe("PendleAaveMarket", async () => {
     const amount = amountToWei(BN.from(100), 6);
     await bootstrapSampleMarket(amount);
     let lpBalanceBefore: BN = await stdMarket.balanceOf(alice.address);
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
@@ -269,13 +268,15 @@ describe("PendleAaveMarket", async () => {
       BN.from(0),
       consts.HIGH_GAS_OVERRIDE
     );
-    await router.addMarketLiquidityAll(
+
+    await router.addMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
-      consts.MAX_ALLOWANCE,
-      consts.MAX_ALLOWANCE,
-      lpBalanceBefore,
+      amount,
+      consts.INF,
+      BN.from(0),
+      BN.from(0),
       consts.HIGH_GAS_OVERRIDE
     );
 
@@ -289,19 +290,20 @@ describe("PendleAaveMarket", async () => {
   it("shouldn't be able to add liquidity by dual tokens after xyt has expired", async () => {
     const amount = amountToWei(BN.from(10), 6);
     await bootstrapSampleMarket(amount);
-    const totalSupply = await stdMarket.totalSupply();
 
     advanceTime(provider, consts.ONE_YEAR);
+
     await expect(
       router
         .connect(bob)
-        .addMarketLiquidityAll(
+        .addMarketLiquidityDual(
           consts.MARKET_FACTORY_AAVE,
           xyt.address,
           testToken.address,
           amount,
-          amount,
-          totalSupply,
+          consts.INF,
+          BN.from(0),
+          BN.from(0),
           consts.HIGH_GAS_OVERRIDE
         )
     ).to.be.revertedWith(errMsg.MARKET_LOCKED);
@@ -366,7 +368,7 @@ describe("PendleAaveMarket", async () => {
     await advanceTime(provider, consts.ONE_YEAR);
     const totalSupply = await stdMarket.totalSupply();
 
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
@@ -441,7 +443,7 @@ describe("PendleAaveMarket", async () => {
     const amount = amountToWei(BN.from(10), 6);
 
     await bootstrapSampleMarket(amount);
-    await testToken.approve(stdMarket.address, consts.MAX_ALLOWANCE);
+    await testToken.approve(stdMarket.address, consts.INF);
 
     let initalLpTokenBal = await stdMarket.balanceOf(alice.address);
     let initalXytBal = await xyt.balanceOf(alice.address);
@@ -471,7 +473,7 @@ describe("PendleAaveMarket", async () => {
     const amount = amountToWei(BN.from(10), 6);
 
     await bootstrapSampleMarket(amount);
-    await testToken.approve(stdMarket.address, consts.MAX_ALLOWANCE);
+    await testToken.approve(stdMarket.address, consts.INF);
 
     let initalLpTokenBal = await stdMarket.balanceOf(alice.address);
     let initalXytBal = await xyt.balanceOf(alice.address);
@@ -532,7 +534,6 @@ describe("PendleAaveMarket", async () => {
             tokenOut: xyt.address,
             swapAmount: amount,
             limitReturnAmount: BN.from(0),
-            maxPrice: consts.MAX_ALLOWANCE,
           },
           {
             market: ethMarket.address,
@@ -540,7 +541,6 @@ describe("PendleAaveMarket", async () => {
             tokenOut: WETH.address,
             swapAmount: BN.from(0),
             limitReturnAmount: BN.from(0),
-            maxPrice: consts.MAX_ALLOWANCE,
           },
         ],
       ],
@@ -566,7 +566,6 @@ describe("PendleAaveMarket", async () => {
       xyt.address,
       amount,
       BN.from(0),
-      consts.MAX_ALLOWANCE,
       consts.MARKET_FACTORY_AAVE,
       consts.HIGH_GAS_OVERRIDE
     );
@@ -576,7 +575,6 @@ describe("PendleAaveMarket", async () => {
       WETH.address,
       postXytBalance.sub(initialXytBalance),
       BN.from(0),
-      consts.MAX_ALLOWANCE,
       consts.MARKET_FACTORY_AAVE,
       consts.HIGH_GAS_OVERRIDE
     );
@@ -603,22 +601,20 @@ describe("PendleAaveMarket", async () => {
             tokenIn: testToken.address,
             tokenOut: xyt.address,
             swapAmount: BN.from(0),
-            limitReturnAmount: consts.MAX_ALLOWANCE, // TODO: change to some reasonable amount?
-            maxPrice: consts.MAX_ALLOWANCE,
+            limitReturnAmount: consts.INF, // TODO: change to some reasonable amount?
           },
           {
             market: ethMarket.address,
             tokenIn: xyt.address,
             tokenOut: WETH.address,
             swapAmount: swapAmount,
-            limitReturnAmount: consts.MAX_ALLOWANCE,
-            maxPrice: consts.MAX_ALLOWANCE,
+            limitReturnAmount: consts.INF,
           },
         ],
       ],
       testToken.address,
       WETH.address,
-      consts.MAX_ALLOWANCE,
+      consts.INF,
       consts.HIGH_GAS_OVERRIDE
     );
 
@@ -637,8 +633,7 @@ describe("PendleAaveMarket", async () => {
       xyt.address,
       WETH.address,
       swapAmount,
-      consts.MAX_ALLOWANCE,
-      consts.MAX_ALLOWANCE,
+      consts.INF,
       consts.MARKET_FACTORY_AAVE,
       consts.HIGH_GAS_OVERRIDE
     );
@@ -647,8 +642,7 @@ describe("PendleAaveMarket", async () => {
       testToken.address,
       xyt.address,
       initialXytBalance.sub(postXytBalance),
-      consts.MAX_ALLOWANCE,
-      consts.MAX_ALLOWANCE,
+      consts.INF,
       consts.MARKET_FACTORY_AAVE,
       consts.HIGH_GAS_OVERRIDE
     );
@@ -676,7 +670,6 @@ describe("PendleAaveMarket", async () => {
               tokenOut: xyt.address,
               swapAmount: amount,
               limitReturnAmount: BN.from(0),
-              maxPrice: consts.MAX_ALLOWANCE,
             },
             {
               market: ethMarket.address,
@@ -684,7 +677,6 @@ describe("PendleAaveMarket", async () => {
               tokenOut: WETH.address,
               swapAmount: BN.from(0),
               limitReturnAmount: BN.from(0),
-              maxPrice: consts.MAX_ALLOWANCE,
             },
           ],
         ],
@@ -742,13 +734,14 @@ describe("PendleAaveMarket", async () => {
 
     await router
       .connect(bob)
-      .addMarketLiquidityAll(
+      .addMarketLiquidityDual(
         consts.MARKET_FACTORY_AAVE,
         xyt.address,
         consts.ETH_ADDRESS,
         amount,
         amount,
-        totalSupply,
+        BN.from(0),
+        BN.from(0),
         wrapEth(consts.HIGH_GAS_OVERRIDE, amount)
       );
 
@@ -782,7 +775,6 @@ describe("PendleAaveMarket", async () => {
         consts.ETH_ADDRESS,
         amountToWei(BN.from(10), 6),
         amountToWei(BN.from(100), 6),
-        consts.MAX_ALLOWANCE,
         consts.MARKET_FACTORY_AAVE,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -809,7 +801,6 @@ describe("PendleAaveMarket", async () => {
         consts.ETH_ADDRESS,
         amountToWei(BN.from(10), 6),
         BN.from(0),
-        consts.MAX_ALLOWANCE,
         consts.MARKET_FACTORY_AAVE,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -847,7 +838,7 @@ describe("PendleAaveMarket", async () => {
     await advanceTime(provider, consts.ONE_MONTH);
     const totalSupply = await ethMarket.totalSupply();
 
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       consts.ETH_ADDRESS,
@@ -945,10 +936,7 @@ describe("PendleAaveMarket", async () => {
       consts.MARKET_FACTORY_AAVE
     );
 
-    expect(result[1].toNumber()).to.be.approximately(
-      11111111,
-      consts.TEST_TOKEN_DELTA.toNumber()
-    );
+    expect(result[1].toNumber()).to.be.approximately(11111111, 200);
   });
 
   it("Aave-ETH should be able to getMarketRateExactIn", async () => {

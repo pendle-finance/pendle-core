@@ -6,11 +6,11 @@ import {
   consts,
   evm_revert,
   evm_snapshot,
+  mintOtAndXyt,
   setTimeNextBlock,
   toFixedPoint,
   Token,
   tokens,
-  mintOtAndXyt,
 } from "../helpers";
 import { marketFixture } from "./fixtures";
 import * as scenario from "./fixtures/lpFormulaScenario.fixture";
@@ -22,7 +22,7 @@ import {
 const { waffle } = require("hardhat");
 const { provider } = waffle;
 
-describe("lpFormula", async () => {
+describe("lp-formula", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie] = wallets;
@@ -31,6 +31,8 @@ describe("lpFormula", async () => {
   let xyt: Contract;
   let stdMarket: Contract;
   let testToken: Contract;
+  let aaveForge: Contract;
+  let aaveV2Forge: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
   let tokenUSDT: Token;
@@ -47,6 +49,8 @@ describe("lpFormula", async () => {
     testToken = fixture.testToken;
     stdMarket = fixture.aMarket;
     tokenUSDT = tokens.USDT;
+    aaveForge = fixture.aForge.aaveForge;
+    aaveV2Forge = fixture.a2Forge.aaveV2Forge;
     await data.setMarketFees(toFixedPoint("0.0035"), 0); // 0.35%
     for (var person of [alice, bob, charlie]) {
       await mintOtAndXyt(
@@ -54,7 +58,9 @@ describe("lpFormula", async () => {
         tokenUSDT,
         person,
         BN.from(10).pow(10),
-        router
+        router,
+        aaveForge,
+        aaveV2Forge
       );
     }
     snapshotId = await evm_snapshot();
@@ -309,13 +315,14 @@ describe("lpFormula", async () => {
 
     await router
       .connect(bob)
-      .addMarketLiquidityAll(
+      .addMarketLiquidityDual(
         consts.MARKET_FACTORY_AAVE,
         xyt.address,
         testToken.address,
-        initialXytBalance,
-        initialTokenBalance,
-        totalSupply.mul(3),
+        amountOfXyt.mul(3),
+        amountOfToken.mul(3),
+        BN.from(0),
+        BN.from(0),
         consts.HIGH_GAS_OVERRIDE
       );
 
@@ -356,7 +363,7 @@ describe("lpFormula", async () => {
     let initialXytBalance: BN = await xyt.balanceOf(alice.address);
     let initialTokenBalance: BN = await testToken.balanceOf(alice.address);
 
-    await router.removeMarketLiquidityAll(
+    await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,

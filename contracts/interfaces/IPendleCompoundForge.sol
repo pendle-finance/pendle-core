@@ -23,15 +23,10 @@
 
 pragma solidity 0.7.6;
 
-import "../interfaces/IPENDLE.sol";
+import "./IPendleForge.sol";
 
-interface IPendleTokenDistribution {
-    event ClaimedTokens(
-        address _claimer,
-        uint256 _timeDuration,
-        uint256 _claimableFunds,
-        uint256 _amountClaimed
-    );
+interface IPendleCompoundForge is IPendleForge {
+    function getExchangeRate(address _underlyingAsset, uint256 _expiry) external returns (uint256);
 
-    function pendleToken() external view returns (IPENDLE);
+    function getExchangeRateDirect(address _underlyingAsset) external returns (uint256);
 }
