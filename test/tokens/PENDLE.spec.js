@@ -223,6 +223,12 @@ contract('PENDLE', function (accounts) {
     });
   });
 
+  it('transfer 0 amount', async function () {
+    expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal('0');
+    await this.token.transfer(recipient, new BN('0'), {from: anotherAccount});
+    expect(await this.token.balanceOf(recipient)).to.be.bignumber.equal('0');
+  });
+
   describe('_approve', function () {
     shouldBehaveLikeERC20Approve('ERC20', initialHolder, recipient, initialSupply, function (owner, spender, amount) {
       return this.token.approveInternal(owner, spender, amount);
