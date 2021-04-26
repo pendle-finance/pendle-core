@@ -75,7 +75,7 @@ describe("Token name test", async () => {
     });
 
     xit("try callstatic to check for amount claimable each week", async () => {
-      let toBeExpected;
+      let toBeExpected = BN.from(0);
       const connected = await PENDLE.connect(a4);
       const INITIAL_LIQUIDITY_EMISSION = BN.from(
         await connected.balanceOf(a4.address)
@@ -220,15 +220,15 @@ describe("Token name test", async () => {
       );
       expect(INITIAL_LIQUIDITY_EMISSION);
 
-      function calculateClaimableAmount(week, totalSupply, lastWeekClaimed) {
+      function calculateClaimableAmount(week:number, totalSupply:BN, lastWeekClaimed:BN) {
         if (week < 27) return BN.from(0);
         if (week < 260) return lastWeekClaimed.mul(989).div(1000);
         return totalSupply.mul(379848538).div(BN.from(1000000000000));
       }
 
       let currentSupply = startSupply;
-      let lastWeekClaimed = 0;
-      let weeklyEmissions = [0];
+      let lastWeekClaimed = BN.from(0);
+      let weeklyEmissions = [BN.from(0)];
       for (let week = 1; week < 600; ++week) {
         let claimableAmount = calculateClaimableAmount(
           week,
@@ -286,11 +286,11 @@ describe("Token name test", async () => {
     });
 
     it("test applying config changes to pendle", async () => {
-      function getRandomNumber(max) {
+      function getRandomNumber(max: number) {
         return Math.floor(Math.random() * max);
       }
 
-      function getRandomBigNumber(max) {
+      function getRandomBigNumber(max: number) {
         return BN.from(getRandomNumber(max));
       }
 
@@ -336,9 +336,9 @@ describe("Token name test", async () => {
       let configChangesInitiated = BN.from(0);
 
       async function initiateConfigChangeSimulator(
-        _emissionRateMultiplierNumerator,
-        _terminalInflationRateNumerator,
-        _liquidityIncentivesRecipient
+        _emissionRateMultiplierNumerator: BN,
+        _terminalInflationRateNumerator: BN,
+        _liquidityIncentivesRecipient: string
       ) {
         configChangesInitiated = await root_connected.getCurrentTime(
           consts.HIGH_GAS_OVERRIDE
@@ -355,9 +355,9 @@ describe("Token name test", async () => {
       }
 
       async function initiateConfigChange(
-        _emissionRateMultiplierNumerator,
-        _terminalInflationRateNumerator,
-        recipent
+        _emissionRateMultiplierNumerator: BN,
+        _terminalInflationRateNumerator: BN,
+        recipent: number
       ) {
         await initiateConfigChangeSimulator(
           _emissionRateMultiplierNumerator,
