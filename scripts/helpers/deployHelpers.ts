@@ -162,8 +162,6 @@ export const kovanConstants = {
   },
 };
 
-
-
 export const goerliConstants = {
   misc: {
     ONE_E_18,
@@ -209,7 +207,7 @@ export const goerliConstants = {
 
     SALES_MULTISIG: "0x5191FCceDd4304Fb684905916cA39758043a79FB",
     TEAM_TOKENS_MULTISIG: "0x815C09DB3B8Ff939e90732251D0dBbad5EFefCe4",
-    ECOSYSTEM_MULTISIG: "0x42e52bD6eC36323F6016991e08961c85e85bB137"
+    ECOSYSTEM_MULTISIG: "0x42e52bD6eC36323F6016991e08961c85e85bB137",
   },
   tokens: {
     USDT_AAVE: {
