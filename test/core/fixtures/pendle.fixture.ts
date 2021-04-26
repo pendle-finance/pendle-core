@@ -39,11 +39,11 @@ export async function pendleFixture(
   await convertToCompoundToken(tokens.USDT, alice, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
 
   const aContract = await getAContract(alice, aForge.aaveForge, tokens.USDT);
-  await aContract.approve(core.router.address, consts.MAX_ALLOWANCE);
+  await aContract.approve(core.router.address, consts.INF);
   const a2Contract = await getA2Contract(alice, a2Forge.aaveV2Forge, tokens.USDT);
-  await a2Contract.approve(core.router.address, consts.MAX_ALLOWANCE);
+  await a2Contract.approve(core.router.address, consts.INF);
   const cContract = await getCContract(alice, tokens.USDT);
-  await cContract.approve(core.router.address, consts.MAX_ALLOWANCE);
+  await cContract.approve(core.router.address, consts.INF);
 
   return { core, aave, aaveV2, aForge, a2Forge, cForge }
 }

@@ -123,16 +123,16 @@ export async function liquidityMiningFixture(
     ]
   );
 
-  await pdl.approve(aLiquidityMining.address, consts.MAX_ALLOWANCE);
-  await pdl.approve(cLiquidityMining.address, consts.MAX_ALLOWANCE);
+  await pdl.approve(aLiquidityMining.address, consts.INF);
+  await pdl.approve(cLiquidityMining.address, consts.INF);
 
   await aMarket.approve(
     aLiquidityMining.address,
-    consts.MAX_ALLOWANCE
+    consts.INF
   );
   await cMarket.approve(
     cLiquidityMining.address,
-    consts.MAX_ALLOWANCE
+    consts.INF
   );
   await aLiquidityMining.setAllocationSetting(
     [consts.T0.add(consts.SIX_MONTH)],
@@ -148,10 +148,10 @@ export async function liquidityMiningFixture(
   for (var person of [bob, charlie, dave]) {
     await aMarket
       .connect(person)
-      .approve(aLiquidityMining.address, consts.MAX_ALLOWANCE);
+      .approve(aLiquidityMining.address, consts.INF);
     await cMarket
       .connect(person)
-      .approve(cLiquidityMining.address, consts.MAX_ALLOWANCE);
+      .approve(cLiquidityMining.address, consts.INF);
   }
 
   await aLiquidityMining.fund(params.REWARDS_PER_EPOCH);

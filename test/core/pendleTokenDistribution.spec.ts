@@ -57,7 +57,7 @@ describe("pendleTokenDistribution", async () => {
           consts.TEAM_AMOUNT.div(8),
           consts.TEAM_AMOUNT.div(8),
           consts.TEAM_AMOUNT.div(8),
-          consts.MAX_ALLOWANCE,
+          consts.INF,
         ],
       ]
     );
@@ -67,7 +67,7 @@ describe("pendleTokenDistribution", async () => {
       [
         governance.address,
         [BN.from(0), consts.ONE_QUARTER.mul(4)],
-        [consts.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2), consts.MAX_ALLOWANCE],
+        [consts.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2), consts.INF],
       ]
     );
 

@@ -68,8 +68,8 @@ describe("compound-xyt-interest", async () => {
       dave,
       consts.INITIAL_COMPOUND_TOKEN_AMOUNT
     );
-    await cUSDT.connect(bob).approve(router.address, consts.MAX_ALLOWANCE);
-    await cUSDT.connect(charlie).approve(router.address, consts.MAX_ALLOWANCE);
+    await cUSDT.connect(bob).approve(router.address, consts.INF);
+    await cUSDT.connect(charlie).approve(router.address, consts.INF);
 
     snapshotId = await evm_snapshot();
   });
