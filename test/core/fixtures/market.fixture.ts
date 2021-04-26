@@ -171,23 +171,23 @@ export async function marketFixture(
     await testToken.connect(person).approve(router.address, totalSupply);
     await aFutureYieldToken
       .connect(person)
-      .approve(router.address, consts.MAX_ALLOWANCE);
+      .approve(router.address, consts.INF);
     await a2FutureYieldToken
       .connect(person)
-      .approve(router.address, consts.MAX_ALLOWANCE);
+      .approve(router.address, consts.INF);
     await cFutureYieldToken
       .connect(person)
-      .approve(router.address, consts.MAX_ALLOWANCE);
+      .approve(router.address, consts.INF);
     await aMarket
       .connect(person)
-      .approve(router.address, consts.MAX_ALLOWANCE);
+      .approve(router.address, consts.INF);
     await a2Market
       .connect(person)
-      .approve(router.address, consts.MAX_ALLOWANCE);
+      .approve(router.address, consts.INF);
     await cMarket
       .connect(person)
-      .approve(router.address, consts.MAX_ALLOWANCE);
-    await ethMarket.connect(person).approve(router.address, consts.MAX_ALLOWANCE);
+      .approve(router.address, consts.INF);
+    await ethMarket.connect(person).approve(router.address, consts.INF);
   }
 
   return { core, aForge, a2Forge, cForge, testToken, aMarket, a2Market, cMarket, ethMarket }

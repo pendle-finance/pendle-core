@@ -41,9 +41,9 @@ export async function mintOtAndXyt(
   await mintAaveToken(provider, token, user, amount, true);
   await mintAaveToken(provider, token, user, amount, false);
   await mintCompoundToken(provider, token, user, amount);
-  await aContract.approve(router.address, consts.MAX_ALLOWANCE);
-  await a2Contract.approve(router.address, consts.MAX_ALLOWANCE);
-  await cContract.approve(router.address, consts.MAX_ALLOWANCE);
+  await aContract.approve(router.address, consts.INF);
+  await a2Contract.approve(router.address, consts.INF);
+  await cContract.approve(router.address, consts.INF);
 
   let postATokenBal = await aContract.balanceOf(user.address);
   let postA2TokenBal = await a2Contract.balanceOf(user.address);

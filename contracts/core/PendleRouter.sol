@@ -185,6 +185,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     ) external override nonReentrant returns (uint256 redeemedAmount) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
+        require(_amountToRedeem != 0, "ZERO_AMOUNT");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         redeemedAmount = forge.redeemUnderlying(
@@ -221,7 +222,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         require(_newExpiry > _oldExpiry, "INVALID_NEW_EXPIRY");
         require(data.isValidXYT(_forgeId, _underlyingAsset, _oldExpiry), "INVALID_XYT");
         require(data.isValidXYT(_forgeId, _underlyingAsset, _newExpiry), "INVALID_XYT");
-        require(_renewalRate <= Math.RONE, "INVALID_RENEWAL_RATE");
+        require(0 < _renewalRate && _renewalRate <= Math.RONE, "INVALID_RENEWAL_RATE");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
 
@@ -263,6 +264,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         )
     {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
         require(_to != address(0), "ZERO_ADDRESS");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
@@ -519,14 +521,13 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
 
     /**
      * @notice trade by swap exact amount of token into market
-     * @dev no checks on _inTotalAmount, _minOutTotalAmount, _maxPrice
+     * @dev no checks on _inTotalAmount, _minOutTotalAmount
      */
     function swapExactIn(
         address _tokenIn,
         address _tokenOut,
         uint256 _inTotalAmount,
         uint256 _minOutTotalAmount,
-        uint256 _maxPrice,
         bytes32 _marketFactoryId
     ) external payable override nonReentrant returns (uint256 outSwapAmount) {
         address originalTokenIn = _tokenIn;
@@ -543,8 +544,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             _tokenIn,
             _inTotalAmount,
             _tokenOut,
-            _minOutTotalAmount,
-            _maxPrice
+            _minOutTotalAmount
         );
 
         _settlePendingTransfers(transfers, originalTokenIn, originalTokenOut, address(market));
@@ -561,14 +561,13 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
 
     /**
      * @notice trade by swap exact amount of token out of market
-     * @dev no checks on _outTotalAmount, _maxInTotalAmount, _maxPrice
+     * @dev no checks on _outTotalAmount, _maxInTotalAmount
      */
     function swapExactOut(
         address _tokenIn,
         address _tokenOut,
         uint256 _outTotalAmount,
         uint256 _maxInTotalAmount,
-        uint256 _maxPrice,
         bytes32 _marketFactoryId
     ) external payable override nonReentrant returns (uint256 inSwapAmount) {
         address originalTokenIn = _tokenIn;
@@ -585,8 +584,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             _tokenIn,
             _maxInTotalAmount,
             _tokenOut,
-            _outTotalAmount,
-            _maxPrice
+            _outTotalAmount
         );
 
         _settlePendingTransfers(transfers, originalTokenIn, originalTokenOut, address(market));
@@ -648,8 +646,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                     swap.tokenIn,
                     swap.swapAmount,
                     swap.tokenOut,
-                    swap.limitReturnAmount,
-                    swap.maxPrice
+                    swap.limitReturnAmount
                 );
             }
 
@@ -710,8 +707,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                     swap.tokenIn,
                     swap.limitReturnAmount,
                     swap.tokenOut,
-                    swap.swapAmount,
-                    swap.maxPrice
+                    swap.swapAmount
                 );
                 if (j == 0) break;
             }
