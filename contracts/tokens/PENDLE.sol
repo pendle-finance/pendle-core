@@ -527,7 +527,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         require(account != address(0), "BURN_FROM_ZERO_ADDRESS");
 
         uint256 accountBalance = balances[account];
-        require(accountBalance >= amount, "BURN_AMOUNT_EXCEEDS_BALANCE");
+        require(accountBalance >= amount, "BURN_EXCEED_BALANCE");
         balances[account] = accountBalance.sub(amount);
         totalSupply = totalSupply.sub(amount);
 
