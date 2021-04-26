@@ -51,3 +51,7 @@ report
 # Environment
 .env
 typechain
+
+# local deployments
+deployments/development.json
+deployments/hardhat.json
