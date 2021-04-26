@@ -101,10 +101,8 @@ export function runTest(isAaveV1: boolean) {
         testEnv.INITIAL_AAVE_TOKEN_AMOUNT,
         isAaveV1
       );
-      await aUSDT.connect(bob).approve(router.address, consts.MAX_ALLOWANCE);
-      await aUSDT
-        .connect(charlie)
-        .approve(router.address, consts.MAX_ALLOWANCE);
+      await aUSDT.connect(bob).approve(router.address, consts.INF);
+      await aUSDT.connect(charlie).approve(router.address, consts.INF);
       snapshotId = await evm_snapshot();
     });
 

@@ -107,7 +107,7 @@ describe("compound-lp-interest", async () => {
         xyt.address,
         testToken.address,
         amountXyt,
-        consts.MAX_ALLOWANCE,
+        consts.INF,
         amountXyt,
         BN.from(0),
         consts.HIGH_GAS_OVERRIDE
@@ -204,7 +204,6 @@ describe("compound-lp-interest", async () => {
         testToken.address,
         inAmount,
         BN.from(0),
-        consts.MAX_ALLOWANCE,
         consts.MARKET_FACTORY_COMPOUND,
         consts.HIGH_GAS_OVERRIDE
       );

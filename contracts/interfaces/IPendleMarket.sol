@@ -77,8 +77,7 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
         address inToken,
         uint256 inAmount,
         address outToken,
-        uint256 minOutAmount,
-        uint256 maxPrice
+        uint256 minOutAmount
     )
         external
         returns (
@@ -91,8 +90,7 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
         address inToken,
         uint256 maxInAmount,
         address outToken,
-        uint256 outAmount,
-        uint256 maxPrice
+        uint256 outAmount
     )
         external
         returns (

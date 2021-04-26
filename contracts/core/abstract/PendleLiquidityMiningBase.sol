@@ -544,9 +544,9 @@ abstract contract PendleLiquidityMiningBase is
         internal
         returns (uint256 dueInterests)
     {
-        if (account == address(this)) return 0;
-
         ExpiryData storage exd = expiryData[expiry];
+
+        if (account == address(exd.lpHolder)) return 0;
 
         _updateParamL(expiry);
 

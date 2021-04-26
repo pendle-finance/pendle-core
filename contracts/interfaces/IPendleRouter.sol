@@ -84,7 +84,6 @@ interface IPendleRouter is IPendleStructs {
     struct Swap {
         uint256 swapAmount;
         uint256 limitReturnAmount;
-        uint256 maxPrice;
         address market;
         address tokenIn;
         address tokenOut;
@@ -249,7 +248,6 @@ interface IPendleRouter is IPendleStructs {
         address tokenOut,
         uint256 inTotalAmount,
         uint256 minOutTotalAmount,
-        uint256 maxPrice,
         bytes32 marketFactoryId
     ) external payable returns (uint256 outTotalAmount);
 
@@ -258,7 +256,6 @@ interface IPendleRouter is IPendleStructs {
         address tokenOut,
         uint256 outTotalAmount,
         uint256 maxInTotalAmount,
-        uint256 maxPrice,
         bytes32 marketFactoryId
     ) external payable returns (uint256 inTotalAmount);
 

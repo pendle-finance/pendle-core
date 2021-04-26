@@ -77,8 +77,8 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
         )
     {}
 
-    function _getExchangeRate(uint256 expiry) internal returns (uint256) {
-        return IPendleCompoundForge(forge).getExchangeRate(underlyingAsset, expiry);
+    function _getExchangeRate() internal returns (uint256) {
+        return IPendleCompoundForge(forge).getExchangeRateDirect(underlyingAsset);
     }
 
     function _getInterestValuePerLP(uint256 expiry, address account)
@@ -103,12 +103,12 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
         ExpiryData storage exd = expiryData[expiry];
         firstTerm = exd.paramL;
         paramR = currentNYield.sub(exd.lastNYield);
-        globalLastExchangeRate[expiry] = _getExchangeRate(expiry);
+        globalLastExchangeRate[expiry] = _getExchangeRate();
     }
 
     function _afterAddingNewExpiry(uint256 expiry) internal override {
         expiryData[expiry].paramL = 1; // we only use differences between paramL so we can just set an arbitrary initial number
-        globalLastExchangeRate[expiry] = _getExchangeRate(expiry);
+        globalLastExchangeRate[expiry] = _getExchangeRate();
     }
 
     function _getIncomeIndexIncreaseRate(uint256 expiry)
@@ -116,6 +116,6 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
         override
         returns (uint256 increaseRate)
     {
-        return _getExchangeRate(expiry).rdiv(globalLastExchangeRate[expiry]) - Math.RONE;
+        return _getExchangeRate().rdiv(globalLastExchangeRate[expiry]) - Math.RONE;
     }
 }

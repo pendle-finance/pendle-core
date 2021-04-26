@@ -14,32 +14,12 @@ import { liqParams } from "../core/fixtures/";
 import { aaveFixture } from "../core/fixtures/aave.fixture";
 import { aaveV2Fixture } from "../core/fixtures/aaveV2.fixture";
 import { consts, Token } from "./Constants";
+import { impersonateAccount } from "./Evm";
 
 const hre = require("hardhat");
 const PRECISION = BN.from(2).pow(40);
 
 type MutyiplierMap = Record<string, BN>;
-
-export async function impersonateAccount(address: String) {
-  await hre.network.provider.request({
-    method: "hardhat_impersonateAccount",
-    params: [address],
-  });
-}
-
-export async function evm_snapshot(): Promise<string> {
-  return await hre.network.provider.request({
-    method: "evm_snapshot",
-    params: [],
-  });
-}
-
-export async function evm_revert(snapshotId: string) {
-  return await hre.network.provider.request({
-    method: "evm_revert",
-    params: [snapshotId],
-  });
-}
 
 export async function mintOtAndXyt(
   provider: providers.Web3Provider,
@@ -61,9 +41,9 @@ export async function mintOtAndXyt(
   await mintAaveToken(provider, token, user, amount, true);
   await mintAaveToken(provider, token, user, amount, false);
   await mintCompoundToken(provider, token, user, amount);
-  await aContract.approve(router.address, consts.MAX_ALLOWANCE);
-  await a2Contract.approve(router.address, consts.MAX_ALLOWANCE);
-  await cContract.approve(router.address, consts.MAX_ALLOWANCE);
+  await aContract.approve(router.address, consts.INF);
+  await a2Contract.approve(router.address, consts.INF);
+  await cContract.approve(router.address, consts.INF);
 
   let postATokenBal = await aContract.balanceOf(user.address);
   let postA2TokenBal = await a2Contract.balanceOf(user.address);
@@ -238,26 +218,6 @@ export async function getERC20Contract(
  */
 export function amountToWei(amount: BN, decimal: number) {
   return BN.from(10).pow(decimal).mul(amount);
-}
-
-export async function advanceTime(
-  provider: providers.Web3Provider,
-  duration: BN
-) {
-  provider.send("evm_increaseTime", [duration.toNumber()]);
-  provider.send("evm_mine", []);
-}
-
-export async function setTimeNextBlock(
-  provider: providers.Web3Provider,
-  time: BN
-) {
-  provider.send("evm_setNextBlockTimestamp", [time.toNumber()]);
-}
-
-export async function setTime(provider: providers.Web3Provider, time: BN) {
-  provider.send("evm_setNextBlockTimestamp", [time.toNumber()]);
-  provider.send("evm_mine", []);
 }
 
 export async function getLiquidityRate(

@@ -220,20 +220,6 @@ export function runTest(isAaveV1: boolean) {
       );
     });
 
-    it("should be able to redeemUnderlying with amountToRedeem = 0", async () => {
-      // just check that it doesn't crash
-      await tokenizeYield(alice, refAmount);
-      await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
-
-      await router.redeemUnderlying(
-        testEnv.FORGE_ID,
-        tokenUSDT.address,
-        testEnv.T0.add(consts.SIX_MONTH),
-        BN.from(0),
-        consts.HIGH_GAS_OVERRIDE
-      );
-    });
-
     it("[After 1 month] should be able to get due interests", async () => {
       await startCalInterest(charlie, refAmount);
       let amount = await tokenizeYield(alice, refAmount);
@@ -448,6 +434,17 @@ export function runTest(isAaveV1: boolean) {
       // she has received from her xyt
       const curAUSDTbalance = await aUSDT.balanceOf(alice.address);
       approxBigNumber(curAUSDTbalance, expectedGain, testEnv.TEST_DELTA);
+    });
+
+    it("shouldn't be able to newYieldContracts with an invalid underlyingAsset", async () => {
+      // random underlyingAsset
+      await expect(
+        router.newYieldContracts(
+          testEnv.FORGE_ID,
+          consts.RANDOM_ADDRESS,
+          consts.T0.add(consts.ONE_YEAR)
+        )
+      ).to.be.revertedWith(errMsg.INVALID_UNDERLYING_ASSET);
     });
   });
 }

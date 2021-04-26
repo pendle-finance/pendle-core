@@ -1,14 +1,15 @@
-// import {
-//   address,
-//   minerStart,
-//   minerStop,
-//   unlockedAccount,
-//   mineBlock
-// } from "../helpers";
 import { expect } from "chai";
 import MockPENDLE from "../../build/artifacts/contracts/mock/MockPENDLE.sol/MockPENDLE.json";
 import { Contract, providers, Wallet, BigNumber as BN, utils } from "ethers";
-import { errMsg, consts } from "../helpers";
+import {
+  errMsg,
+  consts,
+  minerStop,
+  minerStart,
+  mineBlock,
+  evm_snapshot,
+  evm_revert,
+} from "../helpers";
 
 const { waffle } = require("hardhat");
 const { provider, deployContract } = waffle;
@@ -23,9 +24,12 @@ describe("PENDLE-voting", () => {
 
   let chainId: number;
   let PENDLE: Contract;
+  let snapshotId: string;
+  let globalSnapshotId: string;
 
-  beforeEach(async () => {
-    chainId = 1; // await web3.eth.net.getId(); See: https://github.com/trufflesuite/ganache-core/issues/515
+  before(async () => {
+    globalSnapshotId = await evm_snapshot();
+    chainId = consts.DEFAULT_CHAIN_ID;
     PENDLE = await deployContract(root, MockPENDLE, [
       root.address,
       root.address,
@@ -33,21 +37,31 @@ describe("PENDLE-voting", () => {
       root.address,
       root.address,
     ]);
+    snapshotId = await evm_snapshot();
+  });
+
+  beforeEach(async () => {
+    await evm_revert(snapshotId);
+    snapshotId = await evm_snapshot();
+  });
+
+  after(async () => {
+    await evm_revert(globalSnapshotId);
   });
 
   describe("metadata", () => {
     it("has given name", async () => {
-      expect(await PENDLE.name()).to.be.equal(name);
+      expect(await PENDLE.name()).to.equal(name);
     });
 
     it("has given symbol", async () => {
-      expect(await PENDLE.symbol()).to.be.equal(symbol);
+      expect(await PENDLE.symbol()).to.equal(symbol);
     });
   });
 
   describe("balanceOf", () => {
     it("grants to initial account", async () => {
-      expect(await PENDLE.balanceOf(root.address)).to.be.equal(initialSupply);
+      expect(await PENDLE.balanceOf(root.address)).to.equal(initialSupply);
     });
   });
 
@@ -56,10 +70,10 @@ describe("PENDLE-voting", () => {
   }
 
   describe("delegateBySig", () => {
-    const Domain = (comp: any) => ({
+    const Domain = (contract: any) => ({
       name,
       chainId,
-      verifyingContract: comp.address,
+      verifyingContract: contract.address,
     });
     const Types = {
       Delegation: [
@@ -89,7 +103,7 @@ describe("PENDLE-voting", () => {
       const delegatee = root.address,
         nonce = 1,
         expiry = 0;
-      const Data = { delegatee: delegatee, nonce: nonce, expiry: expiry };
+      const Data = { delegatee, nonce, expiry };
       const { v, r, s } = utils.splitSignature(
         await a1._signTypedData(Domain(PENDLE), Types, Data)
       );
@@ -102,7 +116,7 @@ describe("PENDLE-voting", () => {
       const delegatee = root.address,
         nonce = 0,
         expiry = 0;
-      const Data = { delegatee: delegatee, nonce: nonce, expiry: expiry };
+      const Data = { delegatee, nonce, expiry };
       const { v, r, s } = utils.splitSignature(
         await a1._signTypedData(Domain(PENDLE), Types, Data)
       );
@@ -111,21 +125,84 @@ describe("PENDLE-voting", () => {
       ).to.be.revertedWith("SIGNATURE_EXPIRED");
     });
 
-    it.only("delegates on behalf of the signatory", async () => {
+    it("delegates on behalf of the signatory", async () => {
       const delegatee = root.address,
         nonce = 0,
         expiry = 10e9;
-      const Data = { delegatee: delegatee, nonce: nonce, expiry: expiry };
+      const Data = { delegatee, nonce, expiry };
       const { v, r, s } = utils.splitSignature(
         await a1._signTypedData(Domain(PENDLE), Types, Data)
       );
-      console.log("106", root.address, a1.address);
-      expect(await PENDLE.delegates(a1.address)).to.be.equal(
-        consts.ZERO_ADDRESS
-      );
+      expect(await PENDLE.delegates(a1.address)).to.equal(consts.ZERO_ADDRESS);
       const tx = await PENDLE.delegateBySig(delegatee, nonce, expiry, v, r, s);
       expect(tx.gasUsed < 80000);
-      expect(await PENDLE.delegates(a1.address)).to.be.equal(root.address);
+      expect(await PENDLE.delegates(a1.address)).to.equal(root.address);
     });
   });
+
+  // function checkValidCheckpoints(checkpoints: any, fromBlock: number, votes: BN) {
+  //   expect(checkpoints.fromBlock).to.equal(fromBlock);
+  //   expect(checkpoints.votes).to.equal(votes);
+  // }
+
+  // describe('numCheckpoints', () => {
+  //   it('returns the number of checkpoints for a delegate', async () => {
+  //     let guy = accounts[0];
+  //     await PENDLE.transfer(guy.address, BN.from(100)); //give an account a few tokens for readability
+  //     expect(await PENDLE.numCheckpoints(a1.address)).to.equal(BN.from('0'));
+
+  //     let t1 = await PENDLE.connect(guy).delegate(a1.address);
+  //     t1['blockNumber'] = await provider.getBlockNumber();
+  //     expect(await PENDLE.numCheckpoints(a1.address)).to.equal(BN.from('1'));
+
+  //     const t2 = await PENDLE.connect(guy).transfer(a2.address, BN.from(10));
+  //     t2['blockNumber'] = await provider.getBlockNumber();
+  //     expect(await PENDLE.numCheckpoints(a1.address)).to.equal(BN.from('2'));
+
+  //     const t3 = await PENDLE.connect(guy).transfer(a2.address, BN.from(10));
+  //     t3['blockNumber'] = await provider.getBlockNumber();
+  //     expect(await PENDLE.numCheckpoints(a1.address)).to.equal(BN.from('3'));
+
+  //     const t4 = await PENDLE.connect(root).transfer(guy.address, BN.from(20));
+  //     t4['blockNumber'] = await provider.getBlockNumber();
+  //     expect(await PENDLE.numCheckpoints(a1.address)).to.equal(BN.from('4'));
+
+  //     checkValidCheckpoints(await PENDLE.checkpoints(a1.address, BN.from(0)), t1.blockNumber, BN.from(100));
+  //     checkValidCheckpoints(await PENDLE.checkpoints(a1.address, BN.from(1)), t2.blockNumber, BN.from(90));
+  //     checkValidCheckpoints(await PENDLE.checkpoints(a1.address, BN.from(2)), t3.blockNumber, BN.from(80));
+  //     checkValidCheckpoints(await PENDLE.checkpoints(a1.address, BN.from(3)), t4.blockNumber, BN.from(100));
+  //   });
+
+  //   it.only('does not add more than one checkpoint in a block', async () => {
+  //     let guy = accounts[0];
+
+  //     await PENDLE.transfer(guy.address, BN.from(100)); //give an account a few tokens for readability
+  //     expect(await PENDLE.numCheckpoints(a1.address)).to.equal(BN.from('0'));
+  //     // await minerStop(provider);
+
+  //     let t1 = await PENDLE.connect(guy).delegate(a1.address);
+  //     let t2 = await PENDLE.connect(guy).transfer(a2.address, BN.from(10));
+  //     let t3 = await PENDLE.connect(guy).transfer(a2.address, BN.from(10));
+
+  //     console.log(t1, t2, t3);
+  //     return;
+  //     // await minerStart(provider);
+  //     // t1['blockNumber'] = await provider.getBlockNumber();
+  //     // t2['blockNumber'] = await provider.getBlockNumber();
+  //     // t3['blockNumber'] = await provider.getBlockNumber();
+  //     // console.log(t1, t2, t3);
+
+  //     expect(await PENDLE.numCheckpoints(a1.address)).to.equal(BN.from('1'));
+
+  //     checkValidCheckpoints(await PENDLE.checkpoints(a1.address, BN.from(0)), t1.blockNumber, BN.from(80));
+  //     checkValidCheckpoints(await PENDLE.checkpoints(a1.address, BN.from(1)), 0, BN.from(0));
+  //     checkValidCheckpoints(await PENDLE.checkpoints(a1.address, BN.from(2)), 0, BN.from(0));
+
+  //     // const t4 = await PENDLE.transfer(guy.address, 20);
+  //     // t4['blockNumber'] = await provider.getBlockNumber();
+
+  //     // expect(await PENDLE.numCheckpoints(a1.address)).to.equal(BN.from(2));
+  //     // checkValidCheckpoints(await PENDLE.checkpoints(a1.address, BN.from(1)), t4.blockNumber, BN.from(100));
+  //   });
+  // });
 });

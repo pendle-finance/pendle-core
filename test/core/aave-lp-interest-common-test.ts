@@ -139,7 +139,7 @@ export function runTest(isAaveV1: boolean) {
           xyt.address,
           testToken.address,
           amountXyt,
-          consts.MAX_ALLOWANCE,
+          consts.INF,
           amountXyt,
           BN.from(0),
           consts.HIGH_GAS_OVERRIDE
@@ -236,7 +236,6 @@ export function runTest(isAaveV1: boolean) {
           xyt.address,
           inAmount,
           BN.from(0),
-          consts.MAX_ALLOWANCE,
           testEnv.MARKET_FACTORY_ID,
           consts.HIGH_GAS_OVERRIDE
         );
@@ -250,7 +249,6 @@ export function runTest(isAaveV1: boolean) {
           testToken.address,
           inAmount,
           BN.from(0),
-          consts.MAX_ALLOWANCE,
           testEnv.MARKET_FACTORY_ID,
           consts.HIGH_GAS_OVERRIDE
         );

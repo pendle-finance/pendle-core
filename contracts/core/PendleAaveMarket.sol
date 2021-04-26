@@ -49,7 +49,7 @@ contract PendleAaveMarket is PendleMarketBase {
     ) PendleMarketBase(_forge, _xyt, _token, _expiry) {}
 
     function _getReserveNormalizedIncome() internal returns (uint256) {
-        return IPendleAaveForge(forge).getReserveNormalizedIncome(underlyingAsset, expiry);
+        return IPendleAaveForge(forge).getReserveNormalizedIncomeDirect(underlyingAsset);
     }
 
     function _afterBootstrap() internal override {
