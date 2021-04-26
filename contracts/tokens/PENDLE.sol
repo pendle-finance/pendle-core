@@ -366,7 +366,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     ) internal {
         require(src != address(0), "SENDER_ZERO_ADDR");
         require(dst != address(0), "RECEIVER_ZERO_ADDR");
-        require(dst != address(this), "RECEIVER_TOKEN_ADDR");
+        require(dst != address(this), "SEND_TO_TOKEN_CONTRACT");
 
         balances[src] = balances[src].sub(amount, "TRANSFER_EXCEED_BALANCE");
         balances[dst] = balances[dst].add(amount);
