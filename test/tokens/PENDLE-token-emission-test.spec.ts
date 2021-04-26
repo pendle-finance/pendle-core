@@ -441,7 +441,7 @@ describe("Token name test", async () => {
           /// Might not have been 1 week yet
           if (getRandomNumber(100) < 10) await applyConfigSimulator();
         } catch (error) {}
-        advanceTime(provider, consts.ONE_WEEK);
+        advanceTime(provider, consts.ONE_WEEK.add(BN.from(-60)));
       }
     });
   });
