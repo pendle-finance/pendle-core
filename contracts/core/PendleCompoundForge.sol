@@ -100,9 +100,8 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         );
     }
 
-    function getExchangeRate(address _underlyingAsset, uint256 _expiry)
-        public
-        override
+    function getExchangeRateBeforeExpiry(address _underlyingAsset, uint256 _expiry)
+        internal
         returns (uint256)
     {
         if (block.timestamp > _expiry) {
@@ -114,7 +113,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         return exchangeRate;
     }
 
-    function getExchangeRateDirect(address _underlyingAsset) public override returns (uint256) {
+    function getExchangeRate(address _underlyingAsset) public override returns (uint256) {
         return ICToken(underlyingToCToken[_underlyingAsset]).exchangeRateCurrent();
     }
 
@@ -123,7 +122,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         override
         returns (uint256 underlyingToRedeem)
     {
-        uint256 currentRate = getExchangeRateDirect(_underlyingAsset);
+        uint256 currentRate = getExchangeRate(_underlyingAsset);
         underlyingToRedeem = _amountToRedeem.mul(initialRate[_underlyingAsset]).div(currentRate);
     }
 
@@ -132,7 +131,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         override
         returns (uint256 amountToMint)
     {
-        uint256 currentRate = getExchangeRateDirect(_underlyingAsset);
+        uint256 currentRate = getExchangeRate(_underlyingAsset);
         amountToMint = _amountToTokenize.mul(currentRate).div(initialRate[_underlyingAsset]);
     }
 
@@ -157,7 +156,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         address _account
     ) internal override returns (uint256 dueInterests) {
         uint256 prevRate = lastRate[_underlyingAsset][_expiry][_account];
-        uint256 currentRate = getExchangeRate(_underlyingAsset, _expiry);
+        uint256 currentRate = getExchangeRateBeforeExpiry(_underlyingAsset, _expiry);
 
         lastRate[_underlyingAsset][_expiry][_account] = currentRate;
         // first time getting XYT
@@ -176,7 +175,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
     ) internal override returns (uint256 rate, bool firstTime) {
         uint256 prev = lastRate[_underlyingAsset][_expiry][_account];
         if (prev != 0) {
-            rate = getExchangeRate(_underlyingAsset, _expiry).rdiv(prev) - Math.RONE;
+            rate = getExchangeRate(_underlyingAsset).rdiv(prev) - Math.RONE;
         } else {
             firstTime = true;
         }
