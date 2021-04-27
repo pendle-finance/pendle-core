@@ -517,7 +517,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
 
     function _mint(address account, uint256 amount) internal {
         require(account != address(0), "MINT_TO_ZERO_ADDR");
-        
+
         totalSupply = totalSupply.add(amount);
         balances[account] = balances[account].add(amount);
         emit Transfer(address(0), account, amount);

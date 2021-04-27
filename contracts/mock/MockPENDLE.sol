@@ -81,7 +81,7 @@ contract MockPENDLE is PENDLE {
     function getCurrentTime() public view returns (uint256 time) {
         time = block.timestamp;
     }
-    
+
     function burn(address from, uint256 value) public {
         _burn(from, value);
     }

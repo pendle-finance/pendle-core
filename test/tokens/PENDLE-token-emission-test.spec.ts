@@ -53,28 +53,16 @@ describe("Token name test", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  describe("token basic information", async () => {
-    it("token name should be Pendle", async () => {
-      // console.log(await PENDLE.name());
-      expect(await PENDLE.name()).to.be.equal(name);
-    });
-
-    it("token symble should be PENDLE", async () => {
-      // console.log(await PENDLE.symbol());
-      expect(await PENDLE.symbol()).to.be.equal(symbol);
-    });
-  });
-
   describe("PENDLE emissions", async () => {
-    xit("initial 26 weeks emissions", async () => {
+    it("initial 26 weeks emissions", async () => {
       const connected = PENDLE.connect(a4);
       expect(await connected.balanceOf(a4.address)).to.be.equal(
-        BN.from(31200000).mul(CONFIG_DENOMINATOR)
+        BN.from(1200000 * 26).mul(BN.from("1000000000000000000"))
       );
       expect(await connected.getCurrentWeek()).to.be.equal(1);
     });
 
-    xit("try callstatic to check for amount claimable each week", async () => {
+    it("try callstatic to check for amount claimable each week", async () => {
       let toBeExpected = BN.from(0);
       const connected = await PENDLE.connect(a4);
       const INITIAL_LIQUIDITY_EMISSION = BN.from(
@@ -84,10 +72,9 @@ describe("Token name test", async () => {
       let lastWeekClaimed = INITIAL_LIQUIDITY_EMISSION.div(26);
       let totalClaimed = BN.from(0);
 
-      advanceTime(provider, consts.ONE_WEEK.mul(26));
+      await advanceTime(provider, consts.ONE_WEEK.mul(26));
 
       for (let i = 27; i < 260; ++i) {
-        expect(await connected.getCurrentWeek()).to.be.equal(i);
         let currentWeekClaimed = BN.from(
           await connected.callStatic.claimLiquidityEmissions()
         ).sub(totalClaimed);
@@ -100,43 +87,39 @@ describe("Token name test", async () => {
         toBeExpected = BN.from(await connected.callStatic.getTotalSupply())
           .mul(379848538)
           .div(BN.from(1000000000000));
-        advanceTime(provider, consts.ONE_WEEK);
+        if (i < 259) await advanceTime(provider, consts.ONE_WEEK);
       }
+
+      totalClaimed = BN.from(0);
+      await connected.claimLiquidityEmissions();
+      await advanceTime(provider, consts.ONE_WEEK);
+      let totalSupply = BN.from(await connected.callStatic.getTotalSupply());
 
       for (let i = 260; i < 260 + 52; ++i) {
         expect(await connected.getCurrentWeek()).to.be.equal(i);
         let currentWeekClaimed = BN.from(
           await connected.callStatic.claimLiquidityEmissions()
         ).sub(totalClaimed);
-        let expectedAmount = BN.from(
-          await connected.callStatic.getTotalSupply()
-        )
-          .mul(379848538)
+        let expectedAmount = totalSupply
+          .mul(BN.from(379848538))
           .div(BN.from(1000000000000));
 
-        approxBigNumber(currentWeekClaimed, toBeExpected, 10, false);
+        approxBigNumber(currentWeekClaimed, expectedAmount, 10, false);
 
         /// I put the second term expectedAmount to see if theres any minor problem. And apparently theres not.
         totalClaimed = totalClaimed.add(expectedAmount);
-
-        toBeExpected = expectedAmount;
-        advanceTime(provider, consts.ONE_WEEK);
+        totalSupply = totalSupply.add(expectedAmount);
+        await advanceTime(provider, consts.ONE_WEEK);
       }
     });
 
-    xit("Multiple emissions claims for each week", async () => {
+    it("Multiple emissions claims for each week", async () => {
       const CLAIM_TRY = 5;
       const connected = PENDLE.connect(a4);
       expect(await connected.getCurrentWeek()).to.be.equal(1);
 
       const INITIAL_LIQUIDITY_EMISSION = BN.from(
         await connected.balanceOf(a4.address)
-      );
-      approxBigNumber(
-        INITIAL_LIQUIDITY_EMISSION,
-        BN.from(31200000).mul(CONFIG_DENOMINATOR),
-        0,
-        false
       );
 
       let totalSupply = BN.from(await connected.callStatic.getTotalSupply());
@@ -192,19 +175,21 @@ describe("Token name test", async () => {
           totalClaimed = totalClaimed.add(claimableAmount);
           totalSupply = totalSupply.add(claimableAmount);
         }
-        advanceTime(provider, consts.ONE_WEEK);
+        await advanceTime(provider, consts.ONE_WEEK);
       }
     });
 
-    xit("test various ranges of waiting before claiming", async () => {
+    it("test various ranges of waiting before claiming", async () => {
       let testRanges = [[3, 5]];
-      let points = [2, 25, 26, 259, 260, 500, 13, 100, 37, 20, 300, 400];
+      let points = [2, 26, 259, 400];
+
       for (let i = 0; i < points.length; ++i) {
         for (let j = 0; j < points.length; ++j) {
           for (let x = -1; x <= 1; ++x) {
             for (let y = -1; y <= 1; ++y) {
               let l = points[i] + x;
               let r = points[j] + y;
+
               if (l >= r) continue;
               testRanges.push([l, r]);
             }
@@ -212,15 +197,17 @@ describe("Token name test", async () => {
         }
       }
 
-      testRanges = [[27, 77]];
-
       const startSupply = await PENDLE.callStatic.getTotalSupply();
       const INITIAL_LIQUIDITY_EMISSION = await PENDLE.connect(a4).balanceOf(
         a4.address
       );
       expect(INITIAL_LIQUIDITY_EMISSION);
 
-      function calculateClaimableAmount(week:number, totalSupply:BN, lastWeekClaimed:BN) {
+      function calculateClaimableAmount(
+        week: number,
+        totalSupply: BN,
+        lastWeekClaimed: BN
+      ) {
         if (week < 27) return BN.from(0);
         if (week < 260) return lastWeekClaimed.mul(989).div(1000);
         return totalSupply.mul(379848538).div(BN.from(1000000000000));
@@ -245,8 +232,6 @@ describe("Token name test", async () => {
         const range = testRanges[i];
         const l = range[0];
         const r = range[1];
-
-        console.log(l, r);
         let shouldBeClaiming = BN.from(0);
         for (let j = l; j <= r; ++j) {
           shouldBeClaiming = shouldBeClaiming.add(weeklyEmissions[j]);
@@ -262,7 +247,8 @@ describe("Token name test", async () => {
 
         const connected = PENDLE.connect(a4);
 
-        if (l > 2) advanceTime(provider, consts.ONE_WEEK.mul(BN.from(l - 2)));
+        if (l > 2)
+          await advanceTime(provider, consts.ONE_WEEK.mul(BN.from(l - 2)));
         const pastClaimed = BN.from(
           await connected.callStatic.claimLiquidityEmissions(
             consts.HIGH_GAS_OVERRIDE
@@ -270,8 +256,10 @@ describe("Token name test", async () => {
         );
         await connected.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE);
 
-        if (l == 1) advanceTime(provider, consts.ONE_WEEK.mul(BN.from(r - l)));
-        else advanceTime(provider, consts.ONE_WEEK.mul(BN.from(r - l + 1)));
+        if (l == 1)
+          await advanceTime(provider, consts.ONE_WEEK.mul(BN.from(r - l)));
+        else
+          await advanceTime(provider, consts.ONE_WEEK.mul(BN.from(r - l + 1)));
 
         const nowClaimed = BN.from(
           await connected.callStatic.claimLiquidityEmissions(
@@ -439,24 +427,21 @@ describe("Token name test", async () => {
 
         await updateCorrectEmission(week);
         await claimLiquidityEmissionsSimulator();
-        
+
         try {
           /// Might not have been 1 week yet
           if (getRandomNumber(100) < 10) await applyConfigSimulator();
         } catch (error) {}
 
-        advanceTime(provider, consts.ONE_WEEK);
+        await advanceTime(provider, consts.ONE_WEEK);
       }
 
       await updateCorrectEmission(1000);
       await claimLiquidityEmissionsSimulator();
 
-      expect(correctEmissionForAddress[0].eq(emissionForAddress[0])).to.be
-        .true;
-      expect(correctEmissionForAddress[1].eq(emissionForAddress[1])).to.be
-        .true;
-      expect(correctEmissionForAddress[2].eq(emissionForAddress[2])).to.be
-        .true;
+      expect(correctEmissionForAddress[0].eq(emissionForAddress[0])).to.be.true;
+      expect(correctEmissionForAddress[1].eq(emissionForAddress[1])).to.be.true;
+      expect(correctEmissionForAddress[2].eq(emissionForAddress[2])).to.be.true;
     });
   });
 
