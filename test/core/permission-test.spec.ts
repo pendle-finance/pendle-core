@@ -69,56 +69,58 @@ describe("permission-test", async () => {
       consts.HIGH_GAS_OVERRIDE
     );
 
-    await expect(market.bootstrap(
-      amount, amount
-    )).to.be.revertedWith(errMsg.ONLY_ROUTER);
+    await expect(market.bootstrap(amount, amount)).to.be.revertedWith(
+      errMsg.ONLY_ROUTER
+    );
 
-    await expect(market
-      .addMarketLiquidityDual(
-        amount, amount, amount, amount
-      )).to.be.revertedWith(errMsg.ONLY_ROUTER);
+    await expect(
+      market.addMarketLiquidityDual(amount, amount, amount, amount)
+    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
-    await expect(market
-      .addMarketLiquiditySingle(
-        consts.ZERO_ADDRESS, amount, amount
-      )).to.be.revertedWith(errMsg.ONLY_ROUTER);
+    await expect(
+      market.addMarketLiquiditySingle(consts.ZERO_ADDRESS, amount, amount)
+    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
-    await expect(market
-      .removeMarketLiquidityDual(
-        amount, amount, amount
-      )).to.be.revertedWith(errMsg.ONLY_ROUTER);
+    await expect(
+      market.removeMarketLiquidityDual(amount, amount, amount)
+    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
-    await expect(market
-      .removeMarketLiquiditySingle(
-        consts.RANDOM_ADDRESS, amount, amount
-      )).to.be.revertedWith(errMsg.ONLY_ROUTER);
+    await expect(
+      market.removeMarketLiquiditySingle(consts.RANDOM_ADDRESS, amount, amount)
+    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
-    await expect(market
-      .swapExactIn(
-        consts.RANDOM_ADDRESS, amount, consts.RANDOM_ADDRESS, amount
-      )).to.be.revertedWith(errMsg.ONLY_ROUTER);
+    await expect(
+      market.swapExactIn(
+        consts.RANDOM_ADDRESS,
+        amount,
+        consts.RANDOM_ADDRESS,
+        amount
+      )
+    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
-    await expect(market
-      .swapExactOut(
-        consts.RANDOM_ADDRESS, amount, consts.RANDOM_ADDRESS, amount
-      )).to.be.revertedWith(errMsg.ONLY_ROUTER);
+    await expect(
+      market.swapExactOut(
+        consts.RANDOM_ADDRESS,
+        amount,
+        consts.RANDOM_ADDRESS,
+        amount
+      )
+    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
-    await expect(market
-      .claimLpInterests(
-        consts.RANDOM_ADDRESS
-      )).to.be.revertedWith(errMsg.ONLY_ROUTER);
+    await expect(
+      market.claimLpInterests(consts.RANDOM_ADDRESS)
+    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
   });
 
   it("PendleRouter", async () => {
-    await expect(router.connect(bob)
-      .addMarketFactory(
-        consts.MARKET_FACTORY_AAVE, consts.RANDOM_ADDRESS
-      )).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
+    await expect(
+      router
+        .connect(bob)
+        .addMarketFactory(consts.MARKET_FACTORY_AAVE, consts.RANDOM_ADDRESS)
+    ).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
 
-    await expect(router.connect(bob)
-      .addForge(
-        consts.FORGE_AAVE,
-        consts.RANDOM_ADDRESS
-      )).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
+    await expect(
+      router.connect(bob).addForge(consts.FORGE_AAVE, consts.RANDOM_ADDRESS)
+    ).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
   });
 });

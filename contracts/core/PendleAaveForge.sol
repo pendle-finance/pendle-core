@@ -117,7 +117,14 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         if (ix == 0) {
             return 0;
         }
-        dueInterests = principal.mul(normalizedIncome).div(ix).sub(principal);
+        dueInterests = (principal.mul(normalizedIncome).div(ix).sub(principal));
+
+        // if the XYT has expired and user haven't withdrawn yet, there will be compound interest
+        if (block.timestamp > _expiry) {
+            dueInterests = dueInterests
+                .mul(getReserveNormalizedIncomeDirect(_underlyingAsset))
+                .div(normalizedIncome);
+        }
     }
 
     function _getInterestRateForUser(

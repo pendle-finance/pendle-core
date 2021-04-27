@@ -146,6 +146,10 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         return underlyingToCToken[_underlyingAsset];
     }
 
+    /**
+    * @dev different from AaveForge, here there is no compound interest occured because the amount
+    of cToken always remains unchanged, only the exchangeRate does.
+    */
     function _calcDueInterests(
         uint256 principal,
         address _underlyingAsset,
