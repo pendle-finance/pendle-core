@@ -78,7 +78,7 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
     {}
 
     function _getExchangeRate() internal returns (uint256) {
-        return IPendleCompoundForge(forge).getExchangeRateDirect(underlyingAsset);
+        return IPendleCompoundForge(forge).getExchangeRate(underlyingAsset);
     }
 
     function _getInterestValuePerLP(uint256 expiry, address account)

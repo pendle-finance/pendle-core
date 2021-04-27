@@ -40,8 +40,9 @@ describe("compound-lp-interest", async () => {
   let cUSDTWeb3: any;
   let tokenUSDT: Token;
   const amountUSDTRef = BN.from(10).pow(8);
-  let amountXytRef: any;
-  const TEST_DELTA = BN.from(2000000);
+  let amountXytRef: BN;
+  let amountCTokenRef: BN;
+  const TEST_DELTA = BN.from(3000000);
   const FAKE_INCOME_AMOUNT = consts.INITIAL_COMPOUND_TOKEN_AMOUNT;
 
   before(async () => {
@@ -65,7 +66,9 @@ describe("compound-lp-interest", async () => {
       await emptyToken(cUSDT, user);
     }
 
-    await mintOtAndXytUSDT(alice, amountUSDTRef.div(10 ** 6).mul(4));
+    let res = await mintOtAndXytUSDT(alice, amountUSDTRef.div(10 ** 6).mul(4));
+    amountCTokenRef = res.CTokenMinted.div(4);
+
     amountXytRef = (await xyt.balanceOf(alice.address)).div(4);
     for (let user of [bob, charlie, dave]) {
       await ot.transfer(user.address, amountXytRef);
@@ -76,6 +79,10 @@ describe("compound-lp-interest", async () => {
     for (let user of [alice, bob, charlie, dave, eve]) {
       await emptyToken(cUSDT, user);
     }
+
+    await fixture.core.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
+    await fixture.core.data.setInterestUpdateRateDeltaForForge(BN.from(0));
+
     snapshotId = await evm_snapshot();
   });
 
@@ -184,8 +191,11 @@ describe("compound-lp-interest", async () => {
       );
   }
 
-  async function mintOtAndXytUSDT(user: Wallet, amount: BN) {
-    await mintOtAndXyt(
+  async function mintOtAndXytUSDT(
+    user: Wallet,
+    amount: BN
+  ): Promise<{ ATokenMinted: BN; A2TokenMinted: BN; CTokenMinted: BN }> {
+    return await mintOtAndXyt(
       provider,
       tokenUSDT,
       user,
@@ -541,6 +551,69 @@ describe("compound-lp-interest", async () => {
     for (let user of [bob, charlie, dave]) {
       const USDTBalance = await cUSDT.balanceOf(user.address);
       approxBigNumber(USDTBalance, aliceCUSDTBalance, TEST_DELTA);
+    }
+  });
+
+  it("test 6", async () => {
+    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+
+    await bootstrapSampleMarket(BN.from(10).pow(10));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(2));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
+    await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(6));
+    await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(6));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+    await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
+
+    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+
+    for (let i = 0; i < 6; i++) {
+      await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
+      await advanceTime(provider, consts.SIX_MONTH);
+    }
+
+    for (let user of [alice, bob, charlie, dave]) {
+      if ((await getLPBalance(user)).gt(0)) {
+        await removeMarketLiquidityDual(user, await getLPBalance(user));
+      }
+      if ((await ot.balanceOf(user.address)).gt(0)) {
+        await router
+          .connect(user)
+          .redeemAfterExpiry(
+            consts.FORGE_COMPOUND,
+            tokenUSDT.address,
+            consts.T0_C.add(consts.SIX_MONTH)
+          );
+      }
+    }
+
+    for (let user of [alice, bob, charlie, dave]) {
+      approxBigNumber(
+        await cUSDT.balanceOf(user.address),
+        amountCTokenRef,
+        TEST_DELTA
+      );
     }
   });
 });

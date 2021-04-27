@@ -8,6 +8,7 @@ import {
   evm_revert,
   evm_snapshot,
   getAContract,
+  mintAaveToken,
   mintOtAndXyt,
   Token,
   tokens,
@@ -41,7 +42,7 @@ export function runTest(isAaveV1: boolean) {
     let tokenUSDT: Token;
     let aaveForge: Contract;
     let aaveV2Forge: Contract;
-    const amountXytRef = BN.from(10).pow(10);
+    let amountXytRef = BN.from(10).pow(10);
     let testEnv: TestEnv = {} as TestEnv;
 
     async function buildCommonTestEnv() {
@@ -102,9 +103,14 @@ export function runTest(isAaveV1: boolean) {
         await emptyToken(ot, user);
         await emptyToken(xyt, user);
       }
-      for (let user of [alice, bob, charlie, dave]) {
-        await mintOtAndXytUSDT(user, amountXytRef.div(10 ** 6));
+
+      await mintOtAndXytUSDT(alice, amountXytRef.div(10 ** 6).mul(4));
+      amountXytRef = (await xyt.balanceOf(alice.address)).div(4);
+      for (let user of [bob, charlie, dave]) {
+        await ot.transfer(user.address, amountXytRef);
+        await xyt.transfer(user.address, amountXytRef);
       }
+
       for (let user of [alice, bob, charlie, dave, eve]) {
         await emptyToken(aUSDT, user);
       }
@@ -526,6 +532,66 @@ export function runTest(isAaveV1: boolean) {
         await checkAUSDTBalance(aaveV1ExpectedResult);
       } else {
         await checkAUSDTBalance(aaveV2ExpectedResult);
+      }
+    });
+
+    it("test 5", async () => {
+      await bootstrapSampleMarket(BN.from(10).pow(10));
+
+      await advanceTime(provider, consts.ONE_DAY.mul(5));
+      await removeMarketLiquidityDual(
+        alice,
+        (await getLPBalance(alice)).div(2)
+      );
+
+      await advanceTime(provider, consts.FIFTEEN_DAY);
+      await addMarketLiquidityDualByXyt(bob, amountXytRef.div(10));
+
+      await advanceTime(provider, consts.FIFTEEN_DAY);
+      await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
+
+      await addMarketLiquidityDualByXyt(
+        alice,
+        (await xyt.balanceOf(alice.address)).div(2)
+      );
+
+      await advanceTime(provider, consts.FIFTEEN_DAY);
+
+      await advanceTime(provider, consts.ONE_MONTH);
+      await addMarketLiquidityDualByXyt(bob, amountXytRef.div(6));
+
+      await advanceTime(provider, consts.ONE_MONTH);
+      await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
+      await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
+
+      await advanceTime(provider, consts.ONE_MONTH);
+      await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
+      await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
+
+      await advanceTime(provider, consts.ONE_MONTH.mul(24));
+
+      for (let user of [alice, bob, charlie, dave]) {
+        if ((await getLPBalance(user)).gt(0)) {
+          await removeMarketLiquidityDual(user, await getLPBalance(user));
+        }
+        if ((await ot.balanceOf(user.address)).gt(0)) {
+          await router
+            .connect(user)
+            .redeemAfterExpiry(
+              testEnv.FORGE_ID,
+              tokenUSDT.address,
+              testEnv.T0.add(consts.SIX_MONTH)
+            );
+        }
+      }
+
+      let expectedResult = await aUSDT.balanceOf(dave.address);
+      for (let user of [alice, bob, charlie]) {
+        approxBigNumber(
+          await aUSDT.balanceOf(user.address),
+          expectedResult,
+          testEnv.TEST_DELTA
+        );
       }
     });
   });
