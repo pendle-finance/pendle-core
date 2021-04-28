@@ -7,8 +7,9 @@ import * as dotenv from "dotenv";
 import "hardhat-typechain";
 import { HardhatUserConfig } from "hardhat/types";
 import "solidity-coverage";
+import "@tenderly/hardhat-tenderly";
 dotenv.config();
-
+const dummyPrivateKey = '1111111111111111111111111111111111111111111111111111111111111111';
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -70,12 +71,31 @@ const config: HardhatUserConfig = {
       gas: 12400000,
       timeout: 1000000,
     },
-    // kovan: {
-    //   url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY}`,
-    //   gas: 8000000,
-    //   timeout: 100000,
-    //   accounts: [`${process.env.PRIVATE_KEYS}`],
-    // },
+    kovan: {
+      url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY || "dummyKey"}`,
+      gas: 8000000,
+      timeout: 100000,
+      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
+    },
+    kovantest: {
+      // url: `https://eth-kovan.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+      url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY || "dummyKey"}`,
+      gas: 8000000,
+      gasPrice: 10*1000000000,
+      timeout: 1000000,
+      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
+    },
+    goerli: {
+      url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
+      timeout: 20000,
+    },
+    mainnet: {
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
+      gasPrice: 130 * 1000000000,
+      timeout: 200000,
+    }
   },
   solidity: {
     compilers: [
@@ -92,6 +112,10 @@ const config: HardhatUserConfig = {
   },
   mocha: {
     timeout: 500000,
+  },
+  tenderly: {
+    username: "Yongkhang",
+    project: "pendle-finance"
   }
 };
 

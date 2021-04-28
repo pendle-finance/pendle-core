@@ -254,7 +254,7 @@ contract('PendleOwnershipToken', function (accounts) {
 
   describe('_burn', function () {
     it('rejects a null account', async function () {
-      await expectRevert(this.token.burn(consts.ZERO_ADDRESS, new BN(1)), errMsg.BURN_TO_ZERO_ADDR);
+      await expectRevert(this.token.burn(consts.ZERO_ADDRESS, new BN(1)), errMsg.BURN_FROM_ZERO_ADDR);
     });
 
     describe('for a non zero account', function () {

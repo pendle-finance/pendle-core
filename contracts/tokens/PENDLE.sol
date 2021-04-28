@@ -48,18 +48,20 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     uint8 public constant decimals = 18;
     uint256 public override totalSupply;
 
-    uint256 private constant TEAM_INVESTOR_ADVISOR_AMOUNT = 94459981 * 1e18;
+    uint256 private constant TEAM_INVESTOR_ADVISOR_AMOUNT = 94917125 * 1e18;
     uint256 private constant ECOSYSTEM_FUND_TOKEN_AMOUNT = 46 * 1_000_000 * 1e18;
-    uint256 private constant PUBLIC_SALES_TOKEN_AMOUNT = 17040019 * 1e18;
+    uint256 private constant PUBLIC_SALES_TOKEN_AMOUNT = 16582875 * 1e18;
     uint256 private constant INITIAL_LIQUIDITY_EMISSION = 1200000 * 1e18;
     uint256 private constant CONFIG_DENOMINATOR = 1_000_000_000_000;
     uint256 private constant CONFIG_CHANGES_TIME_LOCK = 7 days;
     uint256 public override emissionRateMultiplierNumerator;
     uint256 public override terminalInflationRateNumerator;
     address public override liquidityIncentivesRecipient;
+    bool public override isBurningAllowed;
     uint256 public override pendingEmissionRateMultiplierNumerator;
     uint256 public override pendingTerminalInflationRateNumerator;
     address public override pendingLiquidityIncentivesRecipient;
+    bool public override pendingIsBurningAllowed;
     uint256 public override configChangesInitiated;
     uint256 public override startTime;
     uint256 public lastWeeklyEmission;
@@ -103,13 +105,15 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     event PendingConfigChanges(
         uint256 pendingEmissionRateMultiplierNumerator,
         uint256 pendingTerminalInflationRateNumerator,
-        address pendingLiquidityIncentivesRecipient
+        address pendingLiquidityIncentivesRecipient,
+        bool pendingIsBurningAllowed
     );
 
     event ConfigsChanged(
         uint256 emissionRateMultiplierNumerator,
         uint256 terminalInflationRateNumerator,
-        address liquidityIncentivesRecipient
+        address liquidityIncentivesRecipient,
+        bool isBurningAllowed
     );
 
     /**
@@ -217,6 +221,17 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
             spender,
             allowances[msg.sender][spender].sub(subtractedValue, "NEGATIVE_ALLOWANCE")
         );
+        return true;
+    }
+
+    /**
+     * @dev Burns an amount of tokens from the msg.sender
+     * @param amount The amount to burn
+     * @return Returns true if the operation is successful
+     **/
+    function burn(uint256 amount) public override returns (bool) {
+        require(isBurningAllowed, "BURNING_NOT_ALLOWED");
+        _burn(msg.sender, amount);
         return true;
     }
 
@@ -351,6 +366,7 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     ) internal {
         require(src != address(0), "SENDER_ZERO_ADDR");
         require(dst != address(0), "RECEIVER_ZERO_ADDR");
+        require(dst != address(this), "SEND_TO_TOKEN_CONTRACT");
 
         balances[src] = balances[src].sub(amount, "TRANSFER_EXCEED_BALANCE");
         balances[dst] = balances[dst].add(amount);
@@ -429,16 +445,19 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
     function initiateConfigChanges(
         uint256 _emissionRateMultiplierNumerator,
         uint256 _terminalInflationRateNumerator,
-        address _liquidityIncentivesRecipient
+        address _liquidityIncentivesRecipient,
+        bool _isBurningAllowed
     ) external override onlyGovernance {
         require(_liquidityIncentivesRecipient != address(0), "ZERO_ADDRESS");
         pendingEmissionRateMultiplierNumerator = _emissionRateMultiplierNumerator;
         pendingTerminalInflationRateNumerator = _terminalInflationRateNumerator;
         pendingLiquidityIncentivesRecipient = _liquidityIncentivesRecipient;
+        pendingIsBurningAllowed = _isBurningAllowed;
         emit PendingConfigChanges(
             _emissionRateMultiplierNumerator,
             _terminalInflationRateNumerator,
-            _liquidityIncentivesRecipient
+            _liquidityIncentivesRecipient,
+            _isBurningAllowed
         );
         configChangesInitiated = block.timestamp;
     }
@@ -455,11 +474,13 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         emissionRateMultiplierNumerator = pendingEmissionRateMultiplierNumerator;
         terminalInflationRateNumerator = pendingTerminalInflationRateNumerator;
         liquidityIncentivesRecipient = pendingLiquidityIncentivesRecipient;
+        isBurningAllowed = pendingIsBurningAllowed;
         configChangesInitiated = 0;
         emit ConfigsChanged(
             emissionRateMultiplierNumerator,
             terminalInflationRateNumerator,
-            liquidityIncentivesRecipient
+            liquidityIncentivesRecipient,
+            isBurningAllowed
         );
     }
 
@@ -500,5 +521,16 @@ contract PENDLE is IPENDLE, Permissions, Withdrawable {
         totalSupply = totalSupply.add(amount);
         balances[account] = balances[account].add(amount);
         emit Transfer(address(0), account, amount);
+    }
+
+    function _burn(address account, uint256 amount) internal {
+        require(account != address(0), "BURN_FROM_ZERO_ADDRESS");
+
+        uint256 accountBalance = balances[account];
+        require(accountBalance >= amount, "BURN_EXCEED_BALANCE");
+        balances[account] = accountBalance.sub(amount);
+        totalSupply = totalSupply.sub(amount);
+
+        emit Transfer(account, address(0), amount);
     }
 }

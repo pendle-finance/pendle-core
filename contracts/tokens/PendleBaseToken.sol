@@ -158,7 +158,7 @@ abstract contract PendleBaseToken is IPendleBaseToken {
     }
 
     function _burn(address account, uint256 amount) internal {
-        require(account != address(0), "BURN_TO_ZERO_ADDR");
+        require(account != address(0), "BURN_FROM_ZERO_ADDR");
 
         balanceOf[account] = balanceOf[account].sub(amount, "BURN_EXCEED_BALANCE");
         totalSupply = totalSupply.sub(amount);

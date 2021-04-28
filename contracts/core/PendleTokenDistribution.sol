@@ -75,7 +75,7 @@ contract PendleTokenDistribution is Permissions, IPendleTokenDistribution {
             claimableFunds[timeDurationIndex] < currentPendleBalance
                 ? claimableFunds[timeDurationIndex]
                 : currentPendleBalance;
-        pendleToken.transfer(governance, amount);
+        require(pendleToken.transfer(governance, amount), "FAIL_PENDLE_TRANSFER");
         emit ClaimedTokens(
             governance,
             timeDurations[timeDurationIndex],

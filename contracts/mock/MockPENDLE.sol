@@ -39,7 +39,9 @@ contract MockPENDLE is PENDLE {
             salesMultisig,
             _liquidityIncentivesRecipient
         )
-    {}
+    {
+        isBurningAllowed = true;
+    }
 
     /**
     @dev comment out these 2 functions since mint and burn are already non-internal
@@ -66,5 +68,9 @@ contract MockPENDLE is PENDLE {
         uint256 value
     ) public {
         _approve(from, to, value);
+    }
+
+    function burn(address from, uint256 value) public {
+        _burn(from, value);
     }
 }
