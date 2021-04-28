@@ -41,6 +41,7 @@
     "prettier": "2.2.1",
     "prettier-plugin-solidity": "1.0.0-beta.10",
     "rlp": "^2.2.6",
+    "sol2uml": "^1.1.25",
     "solc": "0.8.4",
     "solhint": "3.3.4",
     "solidity-coverage": "^0.7.16",
