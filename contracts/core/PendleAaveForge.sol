@@ -62,6 +62,7 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
 
     /**
     @dev this function serves functions that take into account the lastNormalisedIncomeBeforeExpiry
+    else, functions can just call the pool directly
     */
     function getReserveNormalizedIncomeBeforeExpiry(address _underlyingAsset, uint256 _expiry)
         internal
@@ -103,40 +104,31 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         return reserveATokenAddress[_underlyingAsset];
     }
 
-    function _calcDueInterests(
+    function _updateDueInterests(
         uint256 principal,
         address _underlyingAsset,
         uint256 _expiry,
         address _account
-    ) internal override returns (uint256 dueInterests) {
+    ) internal override {
         uint256 ix = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
         uint256 normalizedIncome =
             getReserveNormalizedIncomeBeforeExpiry(_underlyingAsset, _expiry);
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
         // first time getting XYT
         if (ix == 0) {
-            return 0;
+            return;
         }
-        dueInterests = (principal.mul(normalizedIncome).div(ix).sub(principal));
 
-        // if the XYT has expired and user haven't withdrawn yet, there will be compound interest
+        uint256 interestFromXyt = principal.mul(normalizedIncome).div(ix).sub(principal);
+        dueInterests[_account] = (dueInterests[_account].mul(normalizedIncome).div(ix)).add(
+            interestFromXyt
+        );
+
+        // if the XYT has expired and users haven't withdrawn yet, there will be compound interest
         if (block.timestamp > _expiry) {
-            dueInterests = dueInterests.mul(getReserveNormalizedIncome(_underlyingAsset)).div(
-                normalizedIncome
-            );
-        }
-    }
-
-    function _getInterestRateForUser(
-        address _underlyingAsset,
-        uint256 _expiry,
-        address _account
-    ) internal view override returns (uint256 rate, bool firstTime) {
-        uint256 prev = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
-        if (prev != 0) {
-            rate = getReserveNormalizedIncome(_underlyingAsset).rdiv(prev) - Math.RONE;
-        } else {
-            firstTime = true;
+            dueInterests[_account] = dueInterests[_account]
+                .mul(getReserveNormalizedIncome(_underlyingAsset))
+                .div(normalizedIncome);
         }
     }
 }
