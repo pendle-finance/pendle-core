@@ -208,7 +208,13 @@ describe("compound-router", async () => {
       alice.address
     );
     finalUnderlyingBalance = finalUnderlyingBalance.add(
-      (await cForge.dueInterests(alice.address))
+      (
+        await cForge.dueInterests(
+          tokenUSDT.address,
+          consts.T0_C.add(consts.SIX_MONTH),
+          alice.address
+        )
+      )
         .mul(await cUSDT.callStatic.exchangeRateCurrent())
         .div(consts.ONE_E_18)
     );
@@ -235,7 +241,13 @@ describe("compound-router", async () => {
 
     let actualGain = await cUSDT.callStatic.balanceOfUnderlying(bob.address);
     actualGain = actualGain.add(
-      (await cForge.dueInterests(bob.address))
+      (
+        await cForge.dueInterests(
+          tokenUSDT.address,
+          consts.T0_C.add(consts.SIX_MONTH),
+          bob.address
+        )
+      )
         .mul(await cUSDT.callStatic.exchangeRateCurrent())
         .div(consts.ONE_E_18)
     );

@@ -51,7 +51,9 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     IPendleRouter public override router;
     IPendleData public override data;
     bytes32 public immutable override forgeId;
-    mapping(address => uint256) public override dueInterests;
+    mapping(address => mapping(uint256 => mapping(address => uint256)))
+        public
+        override dueInterests;
 
     string private constant OT = "OT";
     string private constant XYT = "XYT";
@@ -282,13 +284,13 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         // if there is a transfer to be called outside, then just withdraw the entire interest
         // of this user
 
+        uint256 cacheThreshold = principal.rmul(data.interestUpdateRateDeltaForForge());
         if (
-            doTransferLater ||
-            dueInterests[_account] > principal.rmul(data.interestUpdateRateDeltaForForge())
+            doTransferLater || dueInterests[_underlyingAsset][_expiry][_account] > cacheThreshold
         ) {
             IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
-            amountOut = dueInterests[_account];
-            dueInterests[_account] = 0;
+            amountOut = dueInterests[_underlyingAsset][_expiry][_account];
+            dueInterests[_underlyingAsset][_expiry][_account] = 0;
             if (!doTransferLater) {
                 _safeTransferOut(yieldToken, _account, amountOut);
             }

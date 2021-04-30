@@ -167,6 +167,9 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         uint256 interestFromXyt = principal.mul(currentRate).div(prevRate).sub(principal);
         interestFromXyt = interestFromXyt.mul(initialRate[_underlyingAsset]).div(currentRate);
 
-        dueInterests[_account] = dueInterests[_account].add(interestFromXyt);
+        dueInterests[_underlyingAsset][_expiry][_account] = dueInterests[_underlyingAsset][
+            _expiry
+        ][_account]
+            .add(interestFromXyt);
     }
 }

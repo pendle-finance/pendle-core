@@ -105,30 +105,45 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
     }
 
     function _updateDueInterests(
-        uint256 principal,
+        uint256 _principal,
         address _underlyingAsset,
         uint256 _expiry,
         address _account
     ) internal override {
-        uint256 ix = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
-        uint256 normalizedIncome =
+        uint256 lastIncome = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
+        uint256 normIncomeBeforeExpiry =
             getReserveNormalizedIncomeBeforeExpiry(_underlyingAsset, _expiry);
-        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
+        uint256 normIncomeNow =
+            block.timestamp > _expiry
+                ? getReserveNormalizedIncome(_underlyingAsset)
+                : normIncomeBeforeExpiry;
+
         // first time getting XYT
-        if (ix == 0) {
+        if (lastIncome == 0) {
+            lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normIncomeNow;
             return;
         }
 
-        uint256 interestFromXyt = principal.mul(normalizedIncome).div(ix).sub(principal);
-        dueInterests[_account] = (dueInterests[_account].mul(normalizedIncome).div(ix)).add(
-            interestFromXyt
-        );
+        uint256 interestFromXyt;
 
-        // if the XYT has expired and users haven't withdrawn yet, there will be compound interest
-        if (block.timestamp > _expiry) {
-            dueInterests[_account] = dueInterests[_account]
-                .mul(getReserveNormalizedIncome(_underlyingAsset))
-                .div(normalizedIncome);
+        if (normIncomeBeforeExpiry >= lastIncome) {
+            // There are still unclaimed interests from XYT
+            interestFromXyt = _principal.mul(normIncomeBeforeExpiry).div(lastIncome).sub(
+                _principal
+            );
+
+            // the interestFromXyt has only been calculated until normIncomeBeforeExpiry
+            // we need to calculate the compound interest of it from normIncomeBeforeExpiry -> now
+            interestFromXyt = interestFromXyt.mul(normIncomeNow).div(normIncomeBeforeExpiry);
         }
+
+        dueInterests[_underlyingAsset][_expiry][_account] = dueInterests[_underlyingAsset][
+            _expiry
+        ][_account]
+            .mul(normIncomeNow)
+            .div(lastIncome)
+            .add(interestFromXyt);
+
+        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normIncomeNow;
     }
 }

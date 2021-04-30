@@ -147,5 +147,9 @@ interface IPendleForge {
      **/
     function forgeId() external view returns (bytes32);
 
-    function dueInterests(address _account) external view returns (uint256);
+    function dueInterests(
+        address _underlyingAsset,
+        uint256 expiry,
+        address _account
+    ) external view returns (uint256);
 }
