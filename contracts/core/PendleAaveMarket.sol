@@ -66,7 +66,7 @@ contract PendleAaveMarket is PendleMarketBase {
         if (userLastNormalizedIncome[account] == 0) {
             interestValuePerLP = 0;
         } else {
-            interestValuePerLP = paramL.sub(
+            interestValuePerLP = paramL.subMax0(
                 lastParamL[account].mul(globalLastNormalizedIncome).div(
                     userLastNormalizedIncome[account]
                 )

@@ -149,35 +149,27 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
     * @dev different from AaveForge, here there is no compound interest occured because the amount
     of cToken always remains unchanged, only the exchangeRate does.
     */
-    function _calcDueInterests(
+    function _updateDueInterests(
         uint256 principal,
         address _underlyingAsset,
         uint256 _expiry,
         address _account
-    ) internal override returns (uint256 dueInterests) {
+    ) internal override {
         uint256 prevRate = lastRate[_underlyingAsset][_expiry][_account];
         uint256 currentRate = getExchangeRateBeforeExpiry(_underlyingAsset, _expiry);
 
         lastRate[_underlyingAsset][_expiry][_account] = currentRate;
         // first time getting XYT
         if (prevRate == 0) {
-            return 0;
+            return;
         }
         // split into 2 statements to avoid stack error
-        dueInterests = principal.mul(currentRate).div(prevRate).sub(principal);
-        dueInterests = dueInterests.mul(initialRate[_underlyingAsset]).div(currentRate);
-    }
+        uint256 interestFromXyt = principal.mul(currentRate).div(prevRate).sub(principal);
+        interestFromXyt = interestFromXyt.mul(initialRate[_underlyingAsset]).div(currentRate);
 
-    function _getInterestRateForUser(
-        address _underlyingAsset,
-        uint256 _expiry,
-        address _account
-    ) internal override returns (uint256 rate, bool firstTime) {
-        uint256 prev = lastRate[_underlyingAsset][_expiry][_account];
-        if (prev != 0) {
-            rate = getExchangeRate(_underlyingAsset).rdiv(prev) - Math.RONE;
-        } else {
-            firstTime = true;
-        }
+        dueInterests[_underlyingAsset][_expiry][_account] = dueInterests[_underlyingAsset][
+            _expiry
+        ][_account]
+            .add(interestFromXyt);
     }
 }

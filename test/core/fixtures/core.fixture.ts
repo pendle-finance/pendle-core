@@ -41,6 +41,10 @@ export async function coreFixture(
   await router.initialize(data.address);
 
   await data.setExpiryDivisor(BN.from(10)); // for ease of testing
+  await data.setLockParams(BN.from(consts.LOCK_NUMERATOR), BN.from(consts.LOCK_DENOMINATOR)); // lock market
+  await data.setInterestUpdateRateDeltaForMarket(consts.INTEREST_UPDATE_RATE_DELTA_FOR_MARKET);
+  await data.setInterestUpdateRateDeltaForForge(consts.INTEREST_UPDATE_RATE_DELTA_FOR_FORGE);
+
   let routerWeb3 = new hre.web3.eth.Contract(
     PendleRouter.abi,
     router.address
