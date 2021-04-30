@@ -542,7 +542,7 @@ export async function setupLiquidityMining(
       forgeId,
       underlyingAssetContract.address,
       baseTokenContract.address,
-      new Date().getTime() + 3600, // starts in 1 hour
+      new Date().getTime() / 1000 + 3600, // starts in 1 hour
       liqParams.EPOCH_DURATION,
       liqParams.VESTING_EPOCHS,
     ]
