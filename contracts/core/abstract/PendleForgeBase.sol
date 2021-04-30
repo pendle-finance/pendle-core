@@ -51,7 +51,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     IPendleRouter public override router;
     IPendleData public override data;
     bytes32 public immutable override forgeId;
-    mapping(address => uint256) public dueInterests;
+    mapping(address => uint256) public override dueInterests;
 
     string private constant OT = "OT";
     string private constant XYT = "XYT";

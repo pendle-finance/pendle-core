@@ -27,7 +27,7 @@ describe("compound-router", async () => {
   let router: Contract;
   let cOt: Contract;
   let cXyt: Contract;
-  let compoundForge: Contract;
+  let cForge: Contract;
   let cUSDT: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
@@ -41,7 +41,7 @@ describe("compound-router", async () => {
     router = fixture.core.router;
     cOt = fixture.cForge.cOwnershipToken;
     cXyt = fixture.cForge.cFutureYieldToken;
-    compoundForge = fixture.cForge.compoundForge;
+    cForge = fixture.cForge.compoundForge;
     tokenUSDT = tokens.USDT;
     cUSDT = await getCContract(alice, tokenUSDT);
     snapshotId = await evm_snapshot();
@@ -98,8 +98,7 @@ describe("compound-router", async () => {
     const curRate = await cUSDT.callStatic.exchangeRateCurrent();
     return initialCAmount
       .mul(curRate)
-      .div(10 ** 9)
-      .div(10 ** 9)
+      .div(consts.ONE_E_18)
       .sub(initialUnderlyingAmount);
   }
 
@@ -108,8 +107,7 @@ describe("compound-router", async () => {
     const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
     const initialUnderlyingBalance = initialRate
       .mul(initialcUSDTbalance)
-      .div(10 ** 9)
-      .div(10 ** 9);
+      .div(consts.ONE_E_18);
     await borrow(amount, charlie);
     await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
     await tokenizeYield(alice, initialcUSDTbalance.div(2));
@@ -189,14 +187,12 @@ describe("compound-router", async () => {
     const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
     const initialUnderlyingBalance = initialRate
       .mul(initialcUSDTbalance)
-      .div(10 ** 9)
-      .div(10 ** 9);
+      .div(consts.ONE_E_18);
     await borrow(amount, charlie);
 
-    const balance = await cOt.balanceOf(alice.address);
-    await cOt.transfer(bob.address, balance);
+    await cOt.transfer(bob.address, await cOt.balanceOf(alice.address));
 
-    await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
+    await setTimeNextBlock(provider, consts.T0_C.add(consts.ONE_MONTH));
 
     await redeemDueInterests(alice, consts.T0_C.add(consts.SIX_MONTH));
 
@@ -204,8 +200,17 @@ describe("compound-router", async () => {
       initialcUSDTbalance,
       initialUnderlyingBalance
     );
-    const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
+    console.log(
+      await cUSDT.callStatic.balanceOf(alice.address),
+      await cUSDT.callStatic.balanceOfUnderlying(alice.address)
+    );
+    let finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
       alice.address
+    );
+    finalUnderlyingBalance = finalUnderlyingBalance.add(
+      (await cForge.dueInterests(alice.address))
+        .mul(await cUSDT.callStatic.exchangeRateCurrent())
+        .div(consts.ONE_E_18)
     );
     expect(finalUnderlyingBalance).to.be.below(initialUnderlyingBalance);
     expect(finalUnderlyingBalance.toNumber()).to.be.approximately(
@@ -220,8 +225,7 @@ describe("compound-router", async () => {
     const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
     const initialUnderlyingBalance = initialRate
       .mul(initialcUSDTbalance)
-      .div(10 ** 9)
-      .div(10 ** 9);
+      .div(consts.ONE_E_18);
     await borrow(amount, charlie);
 
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
@@ -229,7 +233,13 @@ describe("compound-router", async () => {
 
     await redeemDueInterests(bob, consts.T0_C.add(consts.SIX_MONTH));
 
-    const actualGain = await cUSDT.callStatic.balanceOfUnderlying(bob.address);
+    let actualGain = await cUSDT.callStatic.balanceOfUnderlying(bob.address);
+    actualGain = actualGain.add(
+      (await cForge.dueInterests(bob.address))
+        .mul(await cUSDT.callStatic.exchangeRateCurrent())
+        .div(consts.ONE_E_18)
+    );
+
     const expectedGain = await getCurInterest(
       initialcUSDTbalance,
       initialUnderlyingBalance
@@ -246,8 +256,7 @@ describe("compound-router", async () => {
     const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
     const initialUnderlyingBalance = initialRate
       .mul(initialcUSDTbalance)
-      .div(10 ** 9)
-      .div(10 ** 9);
+      .div(consts.ONE_E_18);
     await borrow(amount, charlie);
 
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
@@ -264,7 +273,7 @@ describe("compound-router", async () => {
       consts.T0_C.add(consts.SIX_MONTH)
     );
 
-    const lastRate = await compoundForge.lastRateBeforeExpiry(
+    const lastRate = await cForge.lastRateBeforeExpiry(
       tokenUSDT.address,
       consts.T0_C.add(consts.SIX_MONTH)
     );
@@ -284,8 +293,7 @@ describe("compound-router", async () => {
     const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
     const initialUnderlyingBalance = initialRate
       .mul(initialcUSDTbalance)
-      .div(10 ** 9)
-      .div(10 ** 9);
+      .div(consts.ONE_E_18);
     await borrow(amount, charlie);
 
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
@@ -302,7 +310,7 @@ describe("compound-router", async () => {
       consts.T0_C.add(consts.SIX_MONTH)
     );
 
-    const lastRate = await compoundForge.lastRateBeforeExpiry(
+    const lastRate = await cForge.lastRateBeforeExpiry(
       tokenUSDT.address,
       consts.T0_C.add(consts.SIX_MONTH)
     );
@@ -318,14 +326,14 @@ describe("compound-router", async () => {
 
   it("Should be able to newYieldContracts", async () => {
     let futureTime = consts.T0_C.add(consts.SIX_MONTH).add(consts.ONE_DAY);
-    let filter = compoundForge.filters.NewYieldContracts();
+    let filter = cForge.filters.NewYieldContracts();
     let tx = await router.newYieldContracts(
       consts.FORGE_COMPOUND,
       tokenUSDT.address,
       futureTime
     );
 
-    let allEvents = await compoundForge.queryFilter(filter, tx.blockHash);
+    let allEvents = await cForge.queryFilter(filter, tx.blockHash);
     expect(allEvents.length).to.be.eq(2);
     expect(allEvents[allEvents.length - 1].args!.ot).to.not.eq(0);
     expect(allEvents[allEvents.length - 1].args!.xyt).to.not.eq(0);

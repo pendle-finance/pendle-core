@@ -146,4 +146,6 @@ interface IPendleForge {
      * @return Returns the forge and protocol identifier.
      **/
     function forgeId() external view returns (bytes32);
+
+    function dueInterests(address _account) external view returns (uint256);
 }
