@@ -29,7 +29,7 @@ export async function mintOtAndXyt(
   router: Contract,
   aaveForge: Contract,
   aaveV2Forge: Contract
-) {
+): Promise<{ ATokenMinted: BN; A2TokenMinted: BN; CTokenMinted: BN }> {
   const aContract = await getAContract(user, aaveForge, token);
   const a2Contract = await getA2Contract(user, aaveV2Forge, token);
   const cContract = await getCContract(user, token);
@@ -76,6 +76,11 @@ export async function mintOtAndXyt(
       postCTokenBal.sub(preCTokenBal),
       user.address
     );
+  return {
+    ATokenMinted: postATokenBal.sub(preATokenBal),
+    A2TokenMinted: postA2TokenBal.sub(preA2TokenBal),
+    CTokenMinted: postCTokenBal.sub(preCTokenBal),
+  };
 }
 
 export async function mint(

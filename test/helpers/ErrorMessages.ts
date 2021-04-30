@@ -27,5 +27,6 @@ export const errMsg = {
   INVALID_FACTORY_ID: prefix + " " + "INVALID_FACTORY_ID",
   MUST_BE_AFTER_EXPIRY: prefix + " " + "MUST_BE_AFTER_EXPIRY",
   INVALID_SIGNATURE: prefix + " " + "INVALID_SIGNATURE",
+  ONLY_ROUTER: prefix + " " + "ONLY_ROUTER",
   ONLY_GOVERNANCE: prefix + " " + "ONLY_GOVERNANCE",
 };

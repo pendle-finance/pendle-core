@@ -48,7 +48,7 @@ contract PendleCompoundMarket is PendleMarketBase {
     ) PendleMarketBase(_forge, _xyt, _token, _expiry) {}
 
     function _getExchangeRate() internal returns (uint256) {
-        return IPendleCompoundForge(forge).getExchangeRateDirect(underlyingAsset);
+        return IPendleCompoundForge(forge).getExchangeRate(underlyingAsset);
     }
 
     function _afterBootstrap() internal override {

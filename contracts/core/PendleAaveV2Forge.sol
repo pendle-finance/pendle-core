@@ -27,6 +27,10 @@ import "../interfaces/IAaveV2LendingPool.sol";
 import "../interfaces/IPendleAaveForge.sol";
 import "./abstract/PendleForgeBase.sol";
 
+/**
+* @dev This contract will be very similar to AaveForge. Any major differences between the two
+are likely to be bugs
+*/
 contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
     using ExpiryUtils for string;
     using SafeMath for uint256;
@@ -56,7 +60,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         uint256 _expiry,
         uint256 redeemedAmount
     ) internal view override returns (uint256 totalAfterExpiry) {
-        uint256 currentNormalizedIncome = getReserveNormalizedIncomeDirect(_underlyingAsset);
+        uint256 currentNormalizedIncome = getReserveNormalizedIncome(_underlyingAsset);
         totalAfterExpiry = currentNormalizedIncome.mul(redeemedAmount).div(
             lastNormalisedIncomeBeforeExpiry[_underlyingAsset][_expiry]
         );
@@ -66,9 +70,8 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
     @dev this function serves functions that take into account the lastNormalisedIncomeBeforeExpiry
     else, functions can just call the pool directly
     */
-    function getReserveNormalizedIncome(address _underlyingAsset, uint256 _expiry)
-        public
-        override
+    function getReserveNormalizedIncomeBeforeExpiry(address _underlyingAsset, uint256 _expiry)
+        internal
         returns (uint256)
     {
         if (block.timestamp > _expiry) {
@@ -84,7 +87,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
     /**
     @dev directly get the normalizedIncome from Aave
     */
-    function getReserveNormalizedIncomeDirect(address _underlyingAsset)
+    function getReserveNormalizedIncome(address _underlyingAsset)
         public
         view
         override
@@ -113,23 +116,31 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         address _account
     ) internal override returns (uint256 dueInterests) {
         uint256 ix = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
-        uint256 normalizedIncome = getReserveNormalizedIncome(_underlyingAsset, _expiry);
+        uint256 normalizedIncome =
+            getReserveNormalizedIncomeBeforeExpiry(_underlyingAsset, _expiry);
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
         // first time getting XYT
         if (ix == 0) {
             return 0;
         }
         dueInterests = principal.mul(normalizedIncome).div(ix).sub(principal);
+
+        // if the XYT has expired and user haven't withdrawn yet, there will be compound interest
+        if (block.timestamp > _expiry) {
+            dueInterests = dueInterests.mul(getReserveNormalizedIncome(_underlyingAsset)).div(
+                normalizedIncome
+            );
+        }
     }
 
     function _getInterestRateForUser(
         address _underlyingAsset,
         uint256 _expiry,
         address _account
-    ) internal override returns (uint256 rate, bool firstTime) {
+    ) internal view override returns (uint256 rate, bool firstTime) {
         uint256 prev = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
         if (prev != 0) {
-            rate = getReserveNormalizedIncome(_underlyingAsset, _expiry).rdiv(prev) - Math.RONE;
+            rate = getReserveNormalizedIncome(_underlyingAsset).rdiv(prev) - Math.RONE;
         } else {
             firstTime = true;
         }
