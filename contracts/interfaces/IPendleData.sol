@@ -78,6 +78,12 @@ interface IPendleData {
     event MarketFeesSet(uint256 _swapFee, uint256 _exitFee, uint256 _protocolSwapFee);
 
     /**
+     * @notice Emitted when the curve shift block delta is changed
+     * @param _blockDelta new block delta setting
+     **/
+    event CurveShiftBlockDeltaSet(uint256 _blockDelta);
+
+    /**
      * @notice Set/update validity of a forge-factory pair
      * @param _forgeId the forge id
      * @param _marketFactoryId the market factory id
@@ -266,6 +272,8 @@ interface IPendleData {
 
     function setExpiryDivisor(uint256 _expiryDivisor) external;
 
+    function setCurveShiftBlockDelta(uint256 _blockDelta) external;
+
     /**
      * @notice Displays the number of markets currently existing.
      * @return Returns markets length,
@@ -289,6 +297,8 @@ interface IPendleData {
     function swapFee() external view returns (uint256);
 
     function protocolSwapFee() external view returns (uint256);
+
+    function curveShiftBlockDelta() external view returns (uint256);
 
     /**
      * @notice Gets all the markets.

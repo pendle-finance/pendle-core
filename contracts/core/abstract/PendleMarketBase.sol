@@ -280,7 +280,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
         // the protocol exactly now (with value same as feesPortion * swapFees).
         bool feeOn = _mintProtocolFees();
-        _curveShift();
+        _curveShift(false);
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(_inToken);
 
@@ -386,7 +386,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
         // the protocol exactly now (with value same as feesPortion * swapFees).
         bool feeOn = _mintProtocolFees();
-        _curveShift();
+        _curveShift(false);
 
         TokenReserve memory outTokenReserve = parseTokenReserveData(_outToken);
 
@@ -433,7 +433,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkOnlyRouter();
         checkMarketIsOpen();
         uint256 swapFee = data.swapFee();
-        _curveShift();
+        _curveShift(true);
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken);
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken);
@@ -477,7 +477,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkOnlyRouter();
         checkMarketIsOpen();
         uint256 swapFee = data.swapFee();
-        _curveShift();
+        _curveShift(true);
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken);
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken);
@@ -704,12 +704,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     //curve shift will be called before any calculation using weight
-    function _curveShift() internal {
-        if (block.number > blockNumLast) {
+    function _curveShift(bool mintProtocolFee) internal {
+        if (block.number > blockNumLast.add(data.curveShiftBlockDelta())) {
+            if (mintProtocolFee) {
+                _mintProtocolFees();
+            }
             _updateWeight();
             blockNumLast = block.number;
-        } else {
-            reserveData;
         }
     }
 

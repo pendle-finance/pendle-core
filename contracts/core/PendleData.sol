@@ -71,6 +71,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     // lock duration = duration * lockNumerator / lockDenominator
     uint256 public override lockNumerator;
     uint256 public override lockDenominator;
+    uint256 public override curveShiftBlockDelta;
 
     constructor(address _governance, address _treasury) Permissions(_governance) {
         require(_treasury != address(0), "ZERO_ADDRESS");
@@ -261,6 +262,11 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         exitFee = _exitFee;
         protocolSwapFee = _protocolSwapFee;
         emit MarketFeesSet(_swapFee, _exitFee, _protocolSwapFee);
+    }
+
+    function setCurveShiftBlockDelta(uint256 _blockDelta) external override onlyGovernance {
+        curveShiftBlockDelta = _blockDelta;
+        emit CurveShiftBlockDeltaSet(_blockDelta);
     }
 
     function allMarketsLength() external view override returns (uint256) {
