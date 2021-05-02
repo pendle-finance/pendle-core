@@ -55,7 +55,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         public
         override dueInterests;
 
-    mapping(address => uint256) accruedProtocolFee;
+    mapping(address => uint256) public accruedProtocolFee;
 
     string private constant OT = "OT";
     string private constant XYT = "XYT";
@@ -228,7 +228,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         uint256 _accruedProtocolFee = accruedProtocolFee[_underlyingAsset];
         accruedProtocolFee[_underlyingAsset] = 0;
 
-        _safeTransferOut(yieldToken, governance, _accruedProtocolFee);
+        address treasuryAddress = data.treasury();
+        _safeTransferOut(yieldToken, treasuryAddress, _accruedProtocolFee);
     }
 
     function getYieldBearingToken(address _underlyingAsset) external override returns (address) {
