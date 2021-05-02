@@ -180,7 +180,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         require(!bootstrapped, "ALREADY_BOOTSTRAPPED");
         _initializeLock(); // market's lock params should be initialized at bootstrap time
 
+        bool feeOn = _mintProtocolFees(); // this will not mint anything since kLast is 0
+
         writeReserveData(initialXytLiquidity, initialTokenLiquidity, Math.RONE / 2);
+        if (feeOn) {
+            kLast = _calcK();
+        }
 
         emit Sync(initialXytLiquidity, Math.RONE / 2, initialTokenLiquidity);
 
