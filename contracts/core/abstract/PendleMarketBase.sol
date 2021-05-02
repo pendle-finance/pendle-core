@@ -105,18 +105,30 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         IERC20(_token).safeApprove(routerAddress, type(uint256).max);
     }
 
+    /**
+     * @notice checker to make sure this market has been bootstrapped
+     **/
     function checkIsBootstrapped() internal view {
         require(bootstrapped, "NOT_BOOTSTRAPPED");
     }
 
+    /**
+     * @notice checker to limit access from router contract only
+     **/
     function checkOnlyRouter() internal view {
         require(msg.sender == address(router), "ONLY_ROUTER");
     }
 
+    /**
+     * @notice checker to market is not in frozen state
+     **/
     function checkMarketIsOpen() internal view {
         require(block.timestamp < lockStartTime, "MARKET_LOCKED");
     }
 
+    /**
+     * @notice read both xyt and token's balance and weight in this market
+     **/
     function readReserveData()
         internal
         view
@@ -133,6 +145,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         tokenWeight = Math.RONE - xytWeight;
     }
 
+    /**
+     * @notice read xyt or token market reserve details
+     * @param _asset address of xyt or token
+     **/
     function parseTokenReserveData(address _asset)
         internal
         view
@@ -147,6 +163,11 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         }
     }
 
+    /**
+     * @notice update xyt or token market reserve details
+     * @param tokenReserve reserve details to be updated to
+     * @param _asset address of xyt or token
+     **/
     function updateReserveData(TokenReserve memory tokenReserve, address _asset) internal {
         require(tokenReserve.balance <= MAX_TOKEN_RESERVE_BALANCE, "EXCEED_TOKEN_BALANCE_LIMIT");
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
@@ -160,6 +181,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         writeReserveData(xytBalance, tokenBalance, xytWeight);
     }
 
+    /**
+     * @notice update the packed 'reserveData'
+     * @param xytBalance xyt balance
+     * @param tokenBalance token balance
+     * @param xytWeight xyt weight
+     **/
     function writeReserveData(
         uint256 xytBalance,
         uint256 tokenBalance,
@@ -170,6 +197,11 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         reserveData = (xytBalance << 148) | (tokenBalance << 40) | xytWeight;
     }
 
+    /**
+     * @notice bootstrap the market with 50/50 weight
+     *      only router is allowed to bootstrap the market
+     *      lock start time is updated here
+     **/
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
         override
@@ -200,15 +232,15 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     /**
-   * @notice Join the market by specifying the desired (and max) amount of xyts
-   *    and tokens to put in.
-   * @param _desiredXytAmount amount of XYTs user wants to contribute
-   * @param _desiredTokenAmount amount of tokens user wants to contribute
-   * @param _xytMinAmount min amount of XYTs user wants to be able to contribute
-   * @param _tokenMinAmount min amount of tokens user wants to be able to contribute
-   * @dev no curveShift to save gas because this function
-              doesn't depend on weights of tokens
-   */
+    * @notice Join the market by specifying the desired (and min) amount of xyts
+    *    and tokens to put in.
+    * @param _desiredXytAmount amount of XYTs user wants to contribute
+    * @param _desiredTokenAmount amount of tokens user wants to contribute
+    * @param _xytMinAmount min amount of XYTs user wants to be able to contribute
+    * @param _tokenMinAmount min amount of tokens user wants to be able to contribute
+    * @dev no curveShift to save gas because this function
+                doesn't depend on weights of tokens
+    */
     function addMarketLiquidityDual(
         uint256 _desiredXytAmount,
         uint256 _desiredTokenAmount,
@@ -254,6 +286,15 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[2].isOut = true;
     }
 
+    /**
+    * @notice Join the market by deposit token (single) and get liquidity token 
+    *       need to specify the desired amount of contributed token (xyt or token)
+    *       and minmum output liquidity token
+    * @param _inToken address of token (xyt or token) user wants to contribute
+    * @param _exactIn amount of tokens (xyt or token)  user wants to contribute
+    * @param _minOutLp min amount of liquidity token user expect to receive
+    * @dev curveShift needed since function operation relies on weights
+    */
     function addMarketLiquiditySingle(
         address _inToken,
         uint256 _exactIn,
@@ -291,6 +332,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     /**
      * @notice Exit the market by putting in the desired amount of LP tokens
      *         and getting back XYT and pair tokens.
+     * @param _inLp the exact amount of liqudity token that user wants to put back
+     * @param _minOutXyt the minimum amount of xyt that user wants to get back
+     * @param _minOutToken the minimum amount of token that user wants to get back
      * @dev With remove liquidity functions, LPs are always transfered in
      *  first in the Router, to make sure we have enough LPs in the market to burn
      *  as such, we don't need to set transfers[2]
@@ -341,9 +385,16 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _burnLp(inLpAfterExitFee);
     }
 
-    /// @dev With remove liquidity functions, LPs are always transfered in
-    /// first in the Router, to make sure we have enough LPs in the market to burn
-    /// as such, we don't need to set transfers[2]
+    /**
+     * @notice Exit the market by putting in the desired amount of LP tokens
+     *      and getting back XYT or pair tokens.
+     * @param _outToken address of the token that user wants to get back
+     * @param _inLp the exact amount of liqudity token that user wants to put back
+     * @param _minOutAmountToken the minimum of token that user wants to get back
+     * @dev With remove liquidity functions, LPs are always transfered in
+        first in the Router, to make sure we have enough LPs in the market to burn
+        as such, we don't need to set transfers[2]
+    */
     function removeMarketLiquiditySingle(
         address _outToken,
         uint256 _inLp,
