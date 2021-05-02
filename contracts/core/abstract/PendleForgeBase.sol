@@ -306,10 +306,10 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         ) {
             IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
             amountOut = dueInterests[_underlyingAsset][_expiry][_account];
-            uint256 protocolSwapFee = data.protocolSwapFee();
+            uint256 forgeFee = data.forgeFee();
             // INVARIANT: every single interest payout due to XYT must go through this line
-            if (protocolSwapFee > 0) {
-                uint256 protocolFeeAmount = amountOut.rmul(protocolSwapFee);
+            if (forgeFee > 0) {
+                uint256 protocolFeeAmount = amountOut.rmul(forgeFee);
                 amountOut = amountOut.sub(protocolFeeAmount);
                 _accrueProtocolFee(_underlyingAsset, protocolFeeAmount);
             }
