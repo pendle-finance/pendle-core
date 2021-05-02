@@ -429,6 +429,14 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         emit Sync(xytBalance, xytWeight, tokenBalance);
     }
 
+    /**
+    * @notice swap for desired token (xyt or token) by putting in exact amount of the other token (token or xyt) 
+    * @param inToken address of token (xyt or token) that user wants to put in 
+    * @param inAmount amount of tokens (xyt or token) that user wants to put in
+    * @param outToken address of token (token or xyt) that user wants to get back
+    * @param minOutAmount minimum amout of token that user expects to get back 
+    * @dev curveShift needed since function operation relies on weights
+    */
     function swapExactIn(
         address inToken,
         uint256 inAmount,
@@ -473,6 +481,14 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[1].isOut = true;
     }
 
+    /**
+    * @notice swap for exact amout of desired token (xyt or token) by putting in the other token (token or xyt) 
+    * @param inToken address of token (xyt or token) that user wants to put in 
+    * @param maxInAmount max amount of tokens (xyt or token) that user wants to put in
+    * @param outToken address of token (token or xyt) that user wants to get back
+    * @param outAmount exact amout of token that user expects to get back 
+    * @dev curveShift needed since function operation relies on weights
+    */
     function swapExactOut(
         address inToken,
         uint256 maxInAmount,
@@ -517,13 +533,22 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[1].amount = outAmount;
         transfers[1].isOut = true;
     }
-
+    /**
+     * @notice for user to claim their interest as holder of underlyingYield token
+     * @param account user account address
+     * @dev only can claim through router
+     */
     function claimLpInterests(address account) external override returns (uint256 interests) {
         checkIsBootstrapped();
         checkOnlyRouter();
         interests = _settleLpInterests(account);
     }
 
+    /**
+     * @notice for UI/user to retreive market reserve details
+     * @dev this will have a dry calculation of weight update(curve shifting) to make sure
+     *      the weight read out is accurate but real weight is not updated in storage.
+     */
     function getReserves()
         external
         view
