@@ -59,13 +59,15 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     address[] private allMarkets;
 
     uint256 private constant FEE_HARD_LIMIT = 109951162777; // equals to MATH.RONE / 10 = 10%
-    // Parameters to be set by governance;
 
+    // Parameters to be set by governance;
+    uint256 public override forgeFee; // portion of interests from XYT for the protocol
     uint256 public override interestUpdateRateDeltaForMarket;
     uint256 public override interestUpdateRateDeltaForForge;
     uint256 public override expiryDivisor = 1 days;
     uint256 public override swapFee;
     uint256 public override exitFee;
+    uint256 public override protocolSwapFee; // as a portion of swapFee
     // lock duration = duration * lockNumerator / lockDenominator
     uint256 public override lockNumerator;
     uint256 public override lockDenominator;
@@ -176,6 +178,12 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         isXyt[_xyt] = true;
     }
 
+    function setForgeFee(uint256 _forgeFee) external override onlyGovernance {
+        require(_forgeFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
+        forgeFee = _forgeFee;
+        emit ForgeFeeSet(_forgeFee);
+    }
+
     function getPendleYieldTokens(
         bytes32 _forgeId,
         address _underlyingAsset,
@@ -242,10 +250,17 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         emit ForgeFactoryValiditySet(_forgeId, _marketFactoryId, _valid);
     }
 
-    function setMarketFees(uint256 _swapFee, uint256 _exitFee) external override onlyGovernance {
+    function setMarketFees(
+        uint256 _swapFee,
+        uint256 _exitFee,
+        uint256 _protocolSwapFee
+    ) external override onlyGovernance {
         require(_swapFee <= FEE_HARD_LIMIT && _exitFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
+        require(_protocolSwapFee < Math.RONE, "PROTOCOL_FEE_EXCEED_LIMIT");
         swapFee = _swapFee;
         exitFee = _exitFee;
+        protocolSwapFee = _protocolSwapFee;
+        emit MarketFeesSet(_swapFee, _exitFee, _protocolSwapFee);
     }
 
     function allMarketsLength() external view override returns (uint256) {

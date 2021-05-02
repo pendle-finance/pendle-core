@@ -53,6 +53,11 @@ interface IPendleData {
     event ExpiryDivisorSet(uint256 expiryDivisor);
 
     /**
+     * @notice Emitted when forge fee is changed
+     **/
+    event ForgeFeeSet(uint256 forgeFee);
+
+    /**
      * @notice Emitted when interestUpdateRateDeltaForMarket is changed
      * @param interestUpdateRateDeltaForMarket new interestUpdateRateDeltaForMarket setting
      **/
@@ -63,6 +68,14 @@ interface IPendleData {
      * @param interestUpdateRateDeltaForForge new interestUpdateRateDeltaForForge setting
      **/
     event InterestUpdateRateDeltaForForgeSet(uint256 interestUpdateRateDeltaForForge);
+
+    /**
+     * @notice Emitted when market fees are changed
+     * @param _swapFee new swapFee setting
+     * @param _exitFee new exitFee setting
+     * @param _protocolSwapFee new protocolSwapFee setting
+     **/
+    event MarketFeesSet(uint256 _swapFee, uint256 _exitFee, uint256 _protocolSwapFee);
 
     /**
      * @notice Set/update validity of a forge-factory pair
@@ -127,6 +140,12 @@ interface IPendleData {
         address underlyingAsset,
         uint256 expiry
     ) external;
+
+    /**
+     * @notice Set a new forge fee
+     * @param _forgeFee new forge fee
+     **/
+    function setForgeFee(uint256 _forgeFee) external;
 
     /**
      * @notice Gets the OT and XYT tokens.
@@ -232,7 +251,11 @@ interface IPendleData {
         address market
     ) external;
 
-    function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
+    function setMarketFees(
+        uint256 _swapFee,
+        uint256 _exitFee,
+        uint256 _protocolSwapFee
+    ) external;
 
     function setInterestUpdateRateDeltaForMarket(uint256 _interestUpdateRateDeltaForMarket)
         external;
@@ -249,6 +272,8 @@ interface IPendleData {
      **/
     function allMarketsLength() external view returns (uint256);
 
+    function forgeFee() external view returns (uint256);
+
     function exitFee() external view returns (uint256);
 
     function interestUpdateRateDeltaForMarket() external view returns (uint256);
@@ -262,6 +287,8 @@ interface IPendleData {
     function lockDenominator() external view returns (uint256);
 
     function swapFee() external view returns (uint256);
+
+    function protocolSwapFee() external view returns (uint256);
 
     /**
      * @notice Gets all the markets.
