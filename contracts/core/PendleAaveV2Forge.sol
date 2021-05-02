@@ -39,6 +39,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
     IAaveV2LendingPool public immutable aaveLendingPool;
 
     mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeBeforeExpiry;
+    mapping(address => uint256) public lastNormalisedIncomeForProtocolFee;
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         public lastNormalisedIncome; //lastNormalisedIncome[underlyingAsset][expiry][account]
     mapping(address => address) private reserveATokenAddress;
@@ -150,5 +151,17 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
             .add(interestFromXyt);
 
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normIncomeNow;
+    }
+
+    function _accrueProtocolFee(address _underlyingAsset, uint256 _protocolFee) internal override {
+        uint256 currentNormalizedIncome = getReserveNormalizedIncome(_underlyingAsset);
+        if (lastNormalisedIncomeForProtocolFee[_underlyingAsset] == 0) {
+            lastNormalisedIncomeForProtocolFee[_underlyingAsset] = currentNormalizedIncome;
+        }
+        accruedProtocolFee[_underlyingAsset] = accruedProtocolFee[_underlyingAsset]
+            .mul(currentNormalizedIncome)
+            .div(lastNormalisedIncomeForProtocolFee[_underlyingAsset])
+            .add(_protocolFee);
+        lastNormalisedIncomeForProtocolFee[_underlyingAsset] = currentNormalizedIncome;
     }
 }

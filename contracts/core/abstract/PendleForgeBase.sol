@@ -55,6 +55,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         public
         override dueInterests;
 
+    mapping(address => uint256) accruedProtocolFee;
+
     string private constant OT = "OT";
     string private constant XYT = "XYT";
 
@@ -128,6 +130,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         require(expiredOTamount > 0, "NOTHING_TO_REDEEM");
 
         // _account will get the principal + the interests from last action before expiry to now
+        // NOTE: the interest from the last action before expiry until now, for the OT holders,
+        // is not charged a protocol fee. Protocol fee is only charged on interests from XYT exclusively.
         redeemedAmount = _calcTotalAfterExpiry(_underlyingAsset, _expiry, expiredOTamount);
 
         redeemedAmount = redeemedAmount.add(
@@ -217,6 +221,16 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         return (address(tokens.ot), address(tokens.xyt), amountTokenMinted);
     }
 
+    function withdrawProtocolFee(address _underlyingAsset) onlyGovernance external override {
+        IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
+
+        _accrueProtocolFee(_underlyingAsset, 0); //ping to update interest up to now
+        uint256 _accruedProtocolFee = accruedProtocolFee[_underlyingAsset];
+        accruedProtocolFee[_underlyingAsset] = 0;
+
+        _safeTransferOut(yieldToken, governance, _accruedProtocolFee);
+    }
+
     function getYieldBearingToken(address _underlyingAsset) external override returns (address) {
         return _getYieldBearingToken(_underlyingAsset);
     }
@@ -279,6 +293,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     ) internal returns (uint256 amountOut) {
         uint256 principal = _tokens.xyt.balanceOf(_account);
 
+        // INVARIANT: after _updateDueInterests is called, dueInterests[][][] must already be
+        // updated with all the due interest for the account, until exactly the current timestamp (no caching whatsoever)
         _updateDueInterests(principal, _underlyingAsset, _expiry, _account);
 
         // if there is a transfer to be called outside, then just withdraw the entire interest
@@ -290,6 +306,14 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         ) {
             IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
             amountOut = dueInterests[_underlyingAsset][_expiry][_account];
+            uint256 protocolSwapFee = data.protocolSwapFee();
+            // INVARIANT: every single interest payout due to XYT must go through this line
+            if (protocolSwapFee > 0) {
+                uint256 protocolFeeAmount = amountOut.rmul(protocolSwapFee);
+                amountOut = amountOut.sub(protocolFeeAmount);
+                _accrueProtocolFee(_underlyingAsset, protocolFeeAmount);
+            }
+
             dueInterests[_underlyingAsset][_expiry][_account] = 0;
             if (!doTransferLater) {
                 _safeTransferOut(yieldToken, _account, amountOut);
@@ -344,6 +368,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     {
         amountToMint = _amountToTokenize;
     }
+
+    function _accrueProtocolFee(address _underlyingAsset, uint256 _protocolFee) internal virtual;
 
     function _getYieldBearingToken(address _underlyingAsset) internal virtual returns (address);
 }
