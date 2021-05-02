@@ -47,11 +47,13 @@ describe("PendleData", async () => {
   });
 
   it("should be able to setMarketFees", async () => {
-    await data.setMarketFees(10, 100);
+    await data.setMarketFees(10, 100, 101);
     let swapFee = await data.swapFee();
     let exitFee = await data.exitFee();
+    let protocolSwapFee = await data.protocolSwapFee();
     expect(swapFee).to.be.eq(10);
     expect(exitFee).to.be.eq(100);
+    expect(protocolSwapFee).to.be.eq(101);
   });
 
   it("should be able to get allMarketsLength", async () => {

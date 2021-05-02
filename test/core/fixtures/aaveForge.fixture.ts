@@ -24,7 +24,7 @@ export async function aaveForgeFixture(
   { pendle }: GovernanceFixture
 ): Promise<AaveForgeFixture> {
   const aaveForge = await deployContract(alice, PendleAaveForge, [
-    pendle.address,
+    alice.address, // alice will be the governance address
     router.address,
     consts.AAVE_LENDING_POOL_CORE_ADDRESS,
     consts.FORGE_AAVE,
