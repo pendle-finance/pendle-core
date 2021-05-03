@@ -2,11 +2,7 @@ const hre = require("hardhat");
 import fs from "fs";
 import path from "path";
 import { utils, BigNumber as BN } from "ethers";
-import {
-  mintAaveToken,
-  mintCompoundToken,
-  mint,
-} from "../../test/helpers";
+import { mintAaveToken, mintCompoundToken, mint } from "../../test/helpers";
 const { execSync } = require("child_process");
 
 const UNDERLYING_YIELD_TOKEN_TO_SEED = BN.from(1000000);
