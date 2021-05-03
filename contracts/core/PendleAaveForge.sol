@@ -62,6 +62,7 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
 
     /**
     @dev this function serves functions that take into account the lastNormalisedIncomeBeforeExpiry
+    else, functions can just call the pool directly
     */
     function getReserveNormalizedIncomeBeforeExpiry(address _underlyingAsset, uint256 _expiry)
         internal
@@ -103,40 +104,46 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         return reserveATokenAddress[_underlyingAsset];
     }
 
-    function _calcDueInterests(
-        uint256 principal,
+    function _updateDueInterests(
+        uint256 _principal,
         address _underlyingAsset,
         uint256 _expiry,
         address _account
-    ) internal override returns (uint256 dueInterests) {
-        uint256 ix = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
-        uint256 normalizedIncome =
+    ) internal override {
+        uint256 lastIncome = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
+        uint256 normIncomeBeforeExpiry =
             getReserveNormalizedIncomeBeforeExpiry(_underlyingAsset, _expiry);
-        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normalizedIncome;
+        uint256 normIncomeNow =
+            block.timestamp > _expiry
+                ? getReserveNormalizedIncome(_underlyingAsset)
+                : normIncomeBeforeExpiry;
+
         // first time getting XYT
-        if (ix == 0) {
-            return 0;
+        if (lastIncome == 0) {
+            lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normIncomeNow;
+            return;
         }
-        dueInterests = (principal.mul(normalizedIncome).div(ix).sub(principal));
 
-        // if the XYT has expired and user haven't withdrawn yet, there will be compound interest
-        if (block.timestamp > _expiry) {
-            dueInterests = dueInterests.mul(getReserveNormalizedIncome(_underlyingAsset)).div(
-                normalizedIncome
+        uint256 interestFromXyt;
+
+        if (normIncomeBeforeExpiry >= lastIncome) {
+            // There are still unclaimed interests from XYT
+            interestFromXyt = _principal.mul(normIncomeBeforeExpiry).div(lastIncome).sub(
+                _principal
             );
-        }
-    }
 
-    function _getInterestRateForUser(
-        address _underlyingAsset,
-        uint256 _expiry,
-        address _account
-    ) internal view override returns (uint256 rate, bool firstTime) {
-        uint256 prev = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
-        if (prev != 0) {
-            rate = getReserveNormalizedIncome(_underlyingAsset).rdiv(prev) - Math.RONE;
-        } else {
-            firstTime = true;
+            // the interestFromXyt has only been calculated until normIncomeBeforeExpiry
+            // we need to calculate the compound interest of it from normIncomeBeforeExpiry -> now
+            interestFromXyt = interestFromXyt.mul(normIncomeNow).div(normIncomeBeforeExpiry);
         }
+
+        dueInterests[_underlyingAsset][_expiry][_account] = dueInterests[_underlyingAsset][
+            _expiry
+        ][_account]
+            .mul(normIncomeNow)
+            .div(lastIncome)
+            .add(interestFromXyt);
+
+        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normIncomeNow;
     }
 }

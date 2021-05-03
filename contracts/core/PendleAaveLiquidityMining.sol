@@ -91,7 +91,7 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         if (userLastNormalizedIncome[expiry][account] == 0) {
             interestValuePerLP = 0;
         } else {
-            interestValuePerLP = exd.paramL.sub(
+            interestValuePerLP = exd.paramL.subMax0(
                 exd.lastParamL[account].mul(globalLastNormalizedIncome[expiry]).div(
                     userLastNormalizedIncome[expiry][account]
                 )
