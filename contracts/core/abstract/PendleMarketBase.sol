@@ -567,6 +567,15 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         lastUpdatedBlock = blockNumLast;
     }
 
+    /**
+     * @notice calculate the exact amount of tokens that user need to put in the market
+     *      in order to get back certain amount of the other token
+     * @param inTokenReserve market reserve details of token that user wants to put in
+     * @param outTokenReserve market reserve details of token that user wants to get back
+     * @param exactOut exact amount of token that user wants to get back
+     * @param swapFee swap fee ratio for swap
+     * @dev no curve shifting needed since this is like price calculation
+    */
     function calcExactIn(
         TokenReserve memory inTokenReserve,
         TokenReserve memory outTokenReserve,
@@ -583,6 +592,15 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         exactIn = Math.rdiv(Math.rmul(inTokenReserve.balance, foo), exactIn);
     }
 
+    /**
+     * @notice calculate the exact amount of tokens that user can get back from the market
+     *      if user put in certain amount of the other token
+     * @param inTokenReserve market reserve details of token that user wants to put in
+     * @param outTokenReserve market reserve details of token that user wants to get back
+     * @param exactIn exact amount of token that user wants to put in
+     * @param swapFee swap fee (percentage) for swap
+     * @dev no curve shifting needed since this is like price calculation
+    */
     function calcExactOut(
         TokenReserve memory inTokenReserve,
         TokenReserve memory outTokenReserve,
@@ -599,6 +617,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         exactOut = Math.rmul(outTokenReserve.balance, bar);
     }
 
+    /**
+     * @notice calculate the spot price 
+     * @param inToken address of token that user wants to put in market
+     * @param outToken address of token that user wants to get back from market
+     * @dev swap fee is configured in pendleData
+     */
     function spotPrice(address inToken, address outToken)
         external
         view
@@ -610,6 +634,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         return _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
     }
 
+    /**
+     * @notice calculate the spot price(internal function)
+     * @param inTokenReserve market reserve details of token that user wants to put in market
+     * @param outTokenReserve market reserve detailsress of token that user wants to get back from market
+     * @param swapFee swap fee (percentage) for swap
+     * @dev only used for price calculation, not for swap amount calculation
+     */
     function _calcSpotPrice(
         TokenReserve memory inTokenReserve,
         TokenReserve memory outTokenReserve,
@@ -623,6 +654,15 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         spot = Math.rmul(ratio, scale);
     }
 
+    /**
+     * @notice to calculate exact amout of lp token to be minted if single token liqudity is added to market
+     * @param inAmount exact amount of the token that user wants to put in
+     * @param inTokenReserve market reserve details of the token that user wants to put in
+     * @param swapFee swap fee (percentage) for swap
+     * @param totalSupplyLp current (before adding liquidity) lp supply
+     * @dev swapfee applies here since add liqudity by single token is equivalent of a swap
+     * @dev used when add liquidity by single token
+     */
     function _calcOutAmountLp(
         uint256 inAmount,
         TokenReserve memory inTokenReserve,
@@ -642,6 +682,17 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         return exactOutLp;
     }
 
+    /**
+     * @notice to calculate exact amout of token that user can get back if 
+     *      single token liqudity is removed from market
+     * @param outTokenReserve market reserve details of the token that user wants to get back
+     * @param totalSupplyLp current (before adding liquidity) lp supply
+     * @param inLp exact amount of the lp token (single liqudity to remove) that user wants to put in
+     * @param swapFee swap fee (percentage) for swap
+     * @dev swapfee applies here since add liqudity by single token is equivalent of a swap
+     * @dev exitfee applies here since it's removing liquidty from market
+     * @dev used when remove liquidity by single token
+     */
     function _calcOutAmountToken(
         TokenReserve memory outTokenReserve,
         uint256 totalSupplyLp,
@@ -664,15 +715,17 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         return exactOutToken;
     }
 
-    /// @notice Sends fees as LP to Treasury
+    /// @notice Sends exit fees as LP to Treasury
     function _collectFees(uint256 _amount) internal {
         IERC20(address(this)).transfer(data.treasury(), _amount);
     }
 
+    /// @notice burn lp token
     function _burnLp(uint256 amount) internal {
         _burn(address(this), amount);
     }
 
+    /// @notice mint lp token
     function _mintLp(uint256 amount) internal {
         _mint(address(this), amount);
     }
@@ -695,7 +748,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         emit Shift(xytWeight, xytWeightUpdated);
     }
 
-    // do the weight update calucation but don't update the token reserve memory
+    /// @notice do the weight update calucation but don't update the token reserve memory
     function _updateWeightDry()
         internal
         view
@@ -742,7 +795,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         tokenWeightUpdated = tokenWeight.add(theta);
     }
 
-    //curve shift will be called before any calculation using weight
+    /// @notice curve shift, which will be called before any calculation using weight
     function _curveShift() internal {
         if (block.number > blockNumLast) {
             _updateWeight();
@@ -752,6 +805,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         }
     }
 
+    // @notice settle accured interest of underlyingYieldToken as lp holder
     function _settleLpInterests(address account) internal returns (uint256 dueInterests) {
         if (account == address(this)) return 0;
 
@@ -766,6 +820,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         underlyingYieldToken.safeTransfer(account, dueInterests);
     }
 
+    /**
+     * @notice check normalized income increase rate against the update threshold to
+     *     determine whether to update paramL
+     */  
     function checkNeedUpdateParamL() internal returns (bool) {
         if (_getIncomeIndexIncreaseRate() > data.interestUpdateRateDeltaForMarket()) {
             return true;
@@ -773,6 +831,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         return false;
     }
 
+    /**
+     * @notice update paramL for interest calculation
+     * @dev interest is first reedeemed to market here
+     */
     function _updateParamL() internal {
         if (!checkNeedUpdateParamL()) {
             return;
@@ -788,12 +850,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         lastNYield = currentNYield;
     }
 
-    // before we send LPs, we need to settle due interests for both the to and from addresses
+    /// @notice before we send LPs, we need to settle due interests for both the to and from addresses
     function _beforeTokenTransfer(address from, address to) internal override {
         _settleLpInterests(from);
         _settleLpInterests(to);
     }
 
+    /// @notice lock start time is calculated at bootstrapping time
     function _initializeLock() internal {
         uint256 duration = expiry - xytStartTime; // market expiry = xyt expiry
         uint256 lockDuration = (duration * data.lockNumerator()) / data.lockDenominator();

@@ -48,14 +48,17 @@ contract PendleAaveMarket is PendleMarketBase {
         uint256 _expiry
     ) PendleMarketBase(_forge, _xyt, _token, _expiry) {}
 
+    /// @notice get normalized income per unit of asset from aave (through forge function)
     function _getReserveNormalizedIncome() internal returns (uint256) {
         return IPendleAaveForge(forge).getReserveNormalizedIncome(underlyingAsset);
     }
 
+    /// @notice actions after market is bootstrapped (now is updating the global normalized income)
     function _afterBootstrap() internal override {
         globalLastNormalizedIncome = _getReserveNormalizedIncome();
     }
 
+    /// @notice calc the accured interest per lp token
     function _getInterestValuePerLP(address account)
         internal
         override
@@ -94,6 +97,7 @@ contract PendleAaveMarket is PendleMarketBase {
         globalLastNormalizedIncome = currentNormalizedIncome;
     }
 
+    /// @notice calc increase rate of normalized income
     function _getIncomeIndexIncreaseRate() internal override returns (uint256 increaseRate) {
         return _getReserveNormalizedIncome().rdiv(globalLastNormalizedIncome) - Math.RONE;
     }

@@ -79,6 +79,7 @@ contract PendleCompoundMarket is PendleMarketBase {
         globalLastExchangeRate = _getExchangeRate();
     }
 
+    /// @notice calc increate rate of normalized income
     function _getIncomeIndexIncreaseRate() internal override returns (uint256 increaseRate) {
         return _getExchangeRate().rdiv(globalLastExchangeRate) - Math.RONE;
     }
