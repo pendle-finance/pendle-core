@@ -4,7 +4,6 @@ import path from "path";
 import { utils, BigNumber as BN } from "ethers";
 import {
   mintAaveToken,
-  mintAaveV2Token,
   mintCompoundToken,
   mint,
 } from "../../test/helpers";
@@ -74,13 +73,15 @@ async function main() {
       hre.ethers,
       consts.tokens.USDT_AAVE,
       deployer,
-      UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6)
+      UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6),
+      true
     );
-    await mintAaveV2Token(
+    await mintAaveToken(
       hre.ethers,
       consts.tokens.USDT_AAVE,
       deployer,
-      UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6)
+      UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6),
+      false
     );
     await mintCompoundToken(
       hre.ethers,
