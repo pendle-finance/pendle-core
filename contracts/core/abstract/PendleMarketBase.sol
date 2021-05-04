@@ -856,7 +856,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _settleLpInterests(to);
     }
 
-    /// @notice lock start time is calculated at bootstrapping time
+    /// @notice lock starting time is calculated at bootstrapping time
     function _initializeLock() internal {
         uint256 duration = expiry - xytStartTime; // market expiry = xyt expiry
         uint256 lockDuration = (duration * data.lockNumerator()) / data.lockDenominator();

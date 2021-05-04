@@ -37,6 +37,13 @@ contract PendleCompoundMarketFactory is PendleMarketFactoryBase {
         PendleMarketFactoryBase(_governance, _marketFactoryId)
     {}
 
+    /**
+     * @notice create market
+     * @param _forgeAddress forge address for the yield token
+     * @param _xyt address of xyt token
+     * @param _token address of token
+     * @param _expiry expirty date of yield token
+     */
     function _createMarket(
         address _forgeAddress,
         address _xyt,

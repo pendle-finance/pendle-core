@@ -47,15 +47,18 @@ contract PendleCompoundMarket is PendleMarketBase {
         uint256 _expiry
     ) PendleMarketBase(_forge, _xyt, _token, _expiry) {}
 
+    /// @notice get ctoken exchange rate against underlying asset
     function _getExchangeRate() internal returns (uint256) {
         return IPendleCompoundForge(forge).getExchangeRate(underlyingAsset);
     }
 
+    /// @notice initiate exchange rate after market bootstrap
     function _afterBootstrap() internal override {
         paramL = 1;
         globalLastExchangeRate = _getExchangeRate();
     }
 
+    /// @notice calc the accured interest per lp token
     function _getInterestValuePerLP(address account)
         internal
         override
@@ -69,6 +72,7 @@ contract PendleCompoundMarket is PendleMarketBase {
         lastParamL[account] = paramL;
     }
 
+    /// @dev this can only be called by _updateParamL
     function _getFirstTermAndParamR(uint256 currentNYield)
         internal
         override

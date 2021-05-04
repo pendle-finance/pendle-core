@@ -44,6 +44,11 @@ abstract contract PendleMarketFactoryBase is IPendleMarketFactory, Permissions, 
         _;
     }
 
+    /**
+     * @notice router address is initialzed
+     * @dev initial initializer is set at constructor
+     * @dev only initialize one time
+     */
     function initialize(IPendleRouter _router) external {
         require(msg.sender == initializer, "FORBIDDEN");
         require(address(_router) != address(0), "ZERO_ADDRESS");
@@ -52,6 +57,7 @@ abstract contract PendleMarketFactoryBase is IPendleMarketFactory, Permissions, 
         router = _router;
     }
 
+    /// @notice create market based on xyt/token
     function createMarket(address _xyt, address _token)
         external
         override
