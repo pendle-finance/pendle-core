@@ -21,20 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
 
-interface IComptroller {
-    struct Market {
-        bool isListed;
-        uint256 collateralFactorMantissa;
-    }
-
-    function markets(address) external returns (Market memory);
-
-    function claimComp(
-        address[] memory holders,
-        address[] memory cTokens,
-        bool borrowers,
-        bool suppliers
-    ) external;
+interface IPendleYieldTokenHolder {
+    function claimRewards() external;
 }

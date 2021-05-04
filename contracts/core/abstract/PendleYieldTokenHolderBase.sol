@@ -21,20 +21,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
 
-interface IComptroller {
-    struct Market {
-        bool isListed;
-        uint256 collateralFactorMantissa;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "../../interfaces/IPendleYieldTokenHolder.sol";
+import "../../interfaces/IPendleRouter.sol";
+import "../../interfaces/IPendleForge.sol";
+
+abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder {
+    using SafeERC20 for IERC20;
+
+    address internal yieldToken;
+
+    constructor(
+        address _router,
+        address _yieldToken,
+        address _rewardToken
+    ) {
+        require(
+                _router != address(0) &&
+                _yieldToken != address(0)
+                && _rewardToken != address(0),
+            "ZERO_ADDRESS"
+        );
+        yieldToken = _yieldToken;
+        IERC20(_yieldToken).safeApprove(_router, uint256(-1));
+        IERC20(_yieldToken).safeApprove(msg.sender, uint256(-1));
+
+        /* IERC20(_rewardToken).safeApprove(router, uint256(-1)); */
+        IERC20(_rewardToken).safeApprove(msg.sender, uint256(-1));
     }
 
-    function markets(address) external returns (Market memory);
-
-    function claimComp(
-        address[] memory holders,
-        address[] memory cTokens,
-        bool borrowers,
-        bool suppliers
-    ) external;
+    function claimRewards() external override virtual;
 }

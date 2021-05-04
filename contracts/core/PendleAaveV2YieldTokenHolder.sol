@@ -21,20 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
 
-interface IComptroller {
-    struct Market {
-        bool isListed;
-        uint256 collateralFactorMantissa;
+import "./abstract/PendleYieldTokenHolderBase.sol";
+import "../interfaces/IAaveIncentivesController.sol";
+
+contract PendleAaveV2YieldTokenHolder is PendleYieldTokenHolderBase {
+    IAaveIncentivesController private aaveIncentivesController;
+    address private underlyingAsset;
+
+    constructor(
+        address _router,
+        address _yieldToken,
+        address _rewardToken,
+        address _aaveIncentivesController,
+        address _underlyingAsset
+    ) PendleYieldTokenHolderBase(_router, _yieldToken, _rewardToken) {
+        require(_aaveIncentivesController != address(0), "ZERO_ADDRESS");
+        aaveIncentivesController = IAaveIncentivesController(_aaveIncentivesController);
+        underlyingAsset = _underlyingAsset;
     }
 
-    function markets(address) external returns (Market memory);
+    function claimRewards() external override {
+        address[] memory assets = new address[](1);
+        assets[0] = underlyingAsset;
 
-    function claimComp(
-        address[] memory holders,
-        address[] memory cTokens,
-        bool borrowers,
-        bool suppliers
-    ) external;
+        aaveIncentivesController.claimRewards(assets, uint256(-1), address(this), false);
+    }
 }

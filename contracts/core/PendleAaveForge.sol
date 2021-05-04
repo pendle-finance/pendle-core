@@ -24,6 +24,7 @@ pragma solidity 0.7.6;
 
 import "../interfaces/IPendleAaveForge.sol";
 import "./abstract/PendleForgeBase.sol";
+import "./PendleAaveYieldTokenHolder.sol";
 
 contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
     using ExpiryUtils for string;
@@ -42,8 +43,9 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         address _governance,
         IPendleRouter _router,
         IAaveLendingPoolCore _aaveLendingPoolCore,
-        bytes32 _forgeId
-    ) PendleForgeBase(_governance, _router, _forgeId) {
+        bytes32 _forgeId,
+        address _rewardToken
+    ) PendleForgeBase(_governance, _router, _forgeId, _rewardToken) {
         require(address(_aaveLendingPoolCore) != address(0), "ZERO_ADDRESS");
 
         aaveLendingPoolCore = _aaveLendingPoolCore;
@@ -158,5 +160,17 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
             .div(lastNormalisedIncomeForProtocolFee[_underlyingAsset])
             .add(_protocolFee);
         lastNormalisedIncomeForProtocolFee[_underlyingAsset] = currentNormalizedIncome;
+    }
+
+    function _deployYieldTokenHolder(
+        address yieldToken,
+        address,
+        address ot
+    ) internal override returns (address yieldTokenHolder) {
+        yieldTokenHolder = Factory.createContract(
+            type(PendleAaveYieldTokenHolder).creationCode,
+            abi.encodePacked(ot),
+            abi.encode(address(router), yieldToken, rewardToken)
+        );
     }
 }

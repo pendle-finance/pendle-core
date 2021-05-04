@@ -21,20 +21,29 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
 
-interface IComptroller {
-    struct Market {
-        bool isListed;
-        uint256 collateralFactorMantissa;
+import "./abstract/PendleYieldTokenHolderBase.sol";
+import "../interfaces/IComptroller.sol";
+
+contract PendleCompoundYieldTokenHolder is PendleYieldTokenHolderBase {
+    IComptroller private comptroller;
+
+    constructor(
+        address _router,
+        address _yieldToken,
+        address _rewardToken,
+        address _comptroller
+    ) PendleYieldTokenHolderBase(_router, _yieldToken, _rewardToken) {
+        require(_comptroller != address(0), "ZERO_ADDRESS");
+        comptroller = IComptroller(_comptroller);
     }
 
-    function markets(address) external returns (Market memory);
-
-    function claimComp(
-        address[] memory holders,
-        address[] memory cTokens,
-        bool borrowers,
-        bool suppliers
-    ) external;
+    // TODO: skip claimRewards if the incentive programme has already ended?
+    function claimRewards() external override {
+        address[] memory cTokens = new address[](1);
+        address[] memory holders = new address[](1);
+        cTokens[0] = yieldToken;
+        holders[0] = address(this);
+        comptroller.claimComp(holders, cTokens, false, true);
+    }
 }

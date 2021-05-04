@@ -26,6 +26,7 @@ pragma experimental ABIEncoderV2;
 import "../interfaces/IAaveV2LendingPool.sol";
 import "../interfaces/IPendleAaveForge.sol";
 import "./abstract/PendleForgeBase.sol";
+import "./PendleAaveV2YieldTokenHolder.sol";
 
 /**
 * @dev This contract will be very similar to AaveForge. Any major differences between the two
@@ -37,6 +38,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
     using Math for uint256;
 
     IAaveV2LendingPool public immutable aaveLendingPool;
+    IAaveIncentivesController public immutable aaveIncentivesController;
 
     mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeBeforeExpiry;
     mapping(address => uint256) public lastNormalisedIncomeForProtocolFee;
@@ -48,10 +50,14 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         address _governance,
         IPendleRouter _router,
         IAaveV2LendingPool _aaveLendingPool,
-        bytes32 _forgeId
-    ) PendleForgeBase(_governance, _router, _forgeId) {
+        bytes32 _forgeId,
+        address _rewardToken,
+        address _aaveIncentivesController
+    ) PendleForgeBase(_governance, _router, _forgeId, _rewardToken) {
         require(address(_aaveLendingPool) != address(0), "ZERO_ADDRESS");
+        require(address(_aaveIncentivesController) != address(0), "ZERO_ADDRESS");
 
+        aaveIncentivesController = IAaveIncentivesController(_aaveIncentivesController);
         aaveLendingPool = _aaveLendingPool;
     }
 
@@ -163,5 +169,23 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
             .div(lastNormalisedIncomeForProtocolFee[_underlyingAsset])
             .add(_protocolFee);
         lastNormalisedIncomeForProtocolFee[_underlyingAsset] = currentNormalizedIncome;
+    }
+
+    function _deployYieldTokenHolder(
+        address yieldToken,
+        address underlyingAsset,
+        address ot
+    ) internal override returns (address yieldTokenHolder) {
+        yieldTokenHolder = Factory.createContract(
+            type(PendleAaveV2YieldTokenHolder).creationCode,
+            abi.encodePacked(ot),
+            abi.encode(
+                address(router),
+                yieldToken,
+                rewardToken,
+                aaveIncentivesController,
+                underlyingAsset
+            )
+        );
     }
 }

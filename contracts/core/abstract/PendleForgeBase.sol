@@ -51,11 +51,14 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     IPendleRouter public override router;
     IPendleData public override data;
     bytes32 public immutable override forgeId;
+    IERC20 internal immutable rewardToken; // COMP/StkAAVE
+
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         public
         override dueInterests;
 
     mapping(address => uint256) public accruedProtocolFee;
+    mapping(address => mapping(uint256 => address)) yieldTokenHolders;
 
     string private constant OT = "OT";
     string private constant XYT = "XYT";
@@ -63,7 +66,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     constructor(
         address _governance,
         IPendleRouter _router,
-        bytes32 _forgeId
+        bytes32 _forgeId,
+        address _rewardToken
     ) Permissions(_governance) {
         require(address(_router) != address(0), "ZERO_ADDRESS");
         require(_forgeId != 0x0, "ZERO_BYTES");
@@ -71,6 +75,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         router = _router;
         forgeId = _forgeId;
         data = _router.data();
+        rewardToken = IERC20(_rewardToken);
     }
 
     modifier onlyRouter() {
@@ -112,6 +117,9 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
             yieldTokenDecimals,
             _expiry
         );
+
+        // ot address is passed in to be used in the salt of CREATE2
+        yieldTokenHolders[_underlyingAsset][_expiry] = _deployYieldTokenHolder(yieldToken, _underlyingAsset, ot);
 
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
@@ -369,6 +377,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     {
         amountToMint = _amountToTokenize;
     }
+
+    function _deployYieldTokenHolder(address yieldToken, address underlyingAsset, address ot) internal virtual returns (address yieldTokenHolder);
 
     function _accrueProtocolFee(address _underlyingAsset, uint256 _protocolFee) internal virtual;
 
