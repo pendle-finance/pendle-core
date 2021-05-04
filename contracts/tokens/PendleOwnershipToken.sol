@@ -24,6 +24,7 @@ pragma solidity 0.7.6;
 
 import "./PendleBaseToken.sol";
 import "../interfaces/IPendleYieldToken.sol";
+import "../interfaces/IPendleForge.sol";
 
 contract PendleOwnershipToken is PendleBaseToken, IPendleYieldToken {
     address public override forge;
@@ -71,5 +72,10 @@ contract PendleOwnershipToken is PendleBaseToken, IPendleYieldToken {
     function mint(address account, uint256 amount) public override onlyForge {
         _mint(account, amount);
         emit Mint(account, amount);
+    }
+
+    function _beforeTokenTransfer(address from, address to) internal override {
+        IPendleForge(forge).updateRewardBeforeOtTransfer(underlyingAsset, expiry, from);
+        IPendleForge(forge).updateRewardBeforeOtTransfer(underlyingAsset, expiry, to);
     }
 }

@@ -22,16 +22,17 @@
  */
 pragma solidity 0.7.6;
 
-import "./abstract/PendleYieldTokenHolderBase.sol";
-import "../interfaces/IAaveIncentivesController.sol";
+interface IPendleRewardManager {
+    function updateUserReward(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _yieldTokenHolder,
+        address _account
+    ) external;
 
-contract PendleAaveYieldTokenHolder is PendleYieldTokenHolderBase {
-    constructor(
-        address _router,
-        address _yieldToken,
-        address _rewardToken,
-        address _rewardManager
-    ) PendleYieldTokenHolderBase(_router, _yieldToken, _rewardToken, _rewardManager) {}
-
-    function claimRewards() external override {}
+    function claimRewards(
+        address[] memory _underlyingAssets,
+        uint256[] memory _expiries,
+        address _account
+    ) external;
 }

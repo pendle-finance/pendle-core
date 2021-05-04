@@ -44,8 +44,9 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         IPendleRouter _router,
         IAaveLendingPoolCore _aaveLendingPoolCore,
         bytes32 _forgeId,
-        address _rewardToken
-    ) PendleForgeBase(_governance, _router, _forgeId, _rewardToken) {
+        address _rewardToken,
+        address _rewardManager
+    ) PendleForgeBase(_governance, _router, _forgeId, _rewardToken, _rewardManager) {
         require(address(_aaveLendingPoolCore) != address(0), "ZERO_ADDRESS");
 
         aaveLendingPoolCore = _aaveLendingPoolCore;
@@ -178,7 +179,7 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         yieldTokenHolder = Factory.createContract(
             type(PendleAaveYieldTokenHolder).creationCode,
             abi.encodePacked(ot),
-            abi.encode(address(router), yieldToken, rewardToken)
+            abi.encode(address(router), yieldToken, rewardToken, address(rewardManager))
         );
     }
 }

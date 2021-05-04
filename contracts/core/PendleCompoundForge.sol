@@ -57,8 +57,9 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         IPendleRouter _router,
         IComptroller _comptroller,
         bytes32 _forgeId,
-        address _rewardToken
-    ) PendleForgeBase(_governance, _router, _forgeId, _rewardToken) {
+        address _rewardToken,
+        address _rewardManager
+    ) PendleForgeBase(_governance, _router, _forgeId, _rewardToken, _rewardManager) {
         require(address(_comptroller) != address(0), "ZERO_ADDRESS");
 
         comptroller = _comptroller;
@@ -194,7 +195,13 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         yieldTokenHolder = Factory.createContract(
             type(PendleCompoundYieldTokenHolder).creationCode,
             abi.encodePacked(ot),
-            abi.encode(address(router), yieldToken, rewardToken, address(comptroller))
+            abi.encode(
+                address(router),
+                yieldToken,
+                rewardToken,
+                address(rewardManager),
+                address(comptroller)
+            )
         );
     }
 }

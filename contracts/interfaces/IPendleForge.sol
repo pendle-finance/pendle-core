@@ -24,6 +24,7 @@
 pragma solidity 0.7.6;
 
 import "./IPendleRouter.sol";
+import "./IPendleRewardManager.sol";
 
 interface IPendleForge {
     /**
@@ -118,6 +119,12 @@ interface IPendleForge {
         address account
     ) external returns (uint256 interests);
 
+    function updateRewardBeforeOtTransfer(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) external;
+
     function redeemUnderlying(
         address account,
         address underlyingAsset,
@@ -149,6 +156,10 @@ interface IPendleForge {
     function router() external view returns (IPendleRouter);
 
     function data() external view returns (IPendleData);
+
+    function rewardManager() external view returns (IPendleRewardManager);
+
+    function rewardToken() external view returns (IERC20);
 
     /**
      * @notice Gets the bytes32 ID of the forge.

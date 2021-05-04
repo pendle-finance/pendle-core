@@ -52,8 +52,9 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         IAaveV2LendingPool _aaveLendingPool,
         bytes32 _forgeId,
         address _rewardToken,
+        address _rewardManager,
         address _aaveIncentivesController
-    ) PendleForgeBase(_governance, _router, _forgeId, _rewardToken) {
+    ) PendleForgeBase(_governance, _router, _forgeId, _rewardToken, _rewardManager) {
         require(address(_aaveLendingPool) != address(0), "ZERO_ADDRESS");
         require(address(_aaveIncentivesController) != address(0), "ZERO_ADDRESS");
 
@@ -191,6 +192,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
                 address(router),
                 yieldToken,
                 rewardToken,
+                address(rewardManager),
                 aaveIncentivesController,
                 underlyingAsset
             )

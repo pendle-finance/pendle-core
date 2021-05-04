@@ -36,20 +36,20 @@ abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder {
     constructor(
         address _router,
         address _yieldToken,
-        address _rewardToken
+        address _rewardToken,
+        address _rewardManager
     ) {
         require(
                 _router != address(0) &&
-                _yieldToken != address(0)
-                && _rewardToken != address(0),
+                _yieldToken != address(0) &&
+                _rewardToken != address(0),
             "ZERO_ADDRESS"
         );
         yieldToken = _yieldToken;
         IERC20(_yieldToken).safeApprove(_router, uint256(-1));
         IERC20(_yieldToken).safeApprove(msg.sender, uint256(-1));
 
-        /* IERC20(_rewardToken).safeApprove(router, uint256(-1)); */
-        IERC20(_rewardToken).safeApprove(msg.sender, uint256(-1));
+        IERC20(_rewardToken).safeApprove(_rewardManager, uint256(-1));
     }
 
     function claimRewards() external override virtual;

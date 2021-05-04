@@ -30,6 +30,7 @@ import "../../interfaces/IAaveLendingPoolCore.sol";
 import "../../interfaces/IPendleBaseToken.sol";
 import "../../interfaces/IPendleData.sol";
 import "../../interfaces/IPendleForge.sol";
+import "../../interfaces/IPendleRewardManager.sol";
 import "../../tokens/PendleFutureYieldToken.sol";
 import "../../tokens/PendleOwnershipToken.sol";
 import "../../periphery/Permissions.sol";
@@ -51,7 +52,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     IPendleRouter public override router;
     IPendleData public override data;
     bytes32 public immutable override forgeId;
-    IERC20 internal immutable rewardToken; // COMP/StkAAVE
+    IERC20 public immutable override rewardToken; // COMP/StkAAVE
+    IPendleRewardManager public override rewardManager;
 
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         public
@@ -67,7 +69,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         address _governance,
         IPendleRouter _router,
         bytes32 _forgeId,
-        address _rewardToken
+        address _rewardToken,
+        address _rewardManager
     ) Permissions(_governance) {
         require(address(_router) != address(0), "ZERO_ADDRESS");
         require(_forgeId != 0x0, "ZERO_BYTES");
@@ -76,6 +79,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         forgeId = _forgeId;
         data = _router.data();
         rewardToken = IERC20(_rewardToken);
+        rewardManager = IPendleRewardManager(_rewardManager);
     }
 
     modifier onlyRouter() {
@@ -87,6 +91,14 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         require(
             msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
             "ONLY_XYT"
+        );
+        _;
+    }
+
+    modifier onlyOT(address _underlyingAsset, uint256 _expiry) {
+        require(
+            msg.sender == address(data.otTokens(forgeId, _underlyingAsset, _expiry)),
+            "ONLY_OT"
         );
         _;
     }
@@ -153,6 +165,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         _safeTransferOut(yieldToken, _expiry, _account, amountTransferOut);
         _safeTransferOut(yieldToken, _expiry, yieldTokenHolders[_underlyingAsset][_newExpiry], amountToRenew);
 
+        rewardManager.updateUserReward(_underlyingAsset, _expiry, yieldTokenHolders[_underlyingAsset][_expiry], _account);
         tokens.ot.burn(_account, expiredOTamount);
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, expiredOTamount, redeemedAmount);
@@ -176,6 +189,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
             _settleDueInterests(tokens, _underlyingAsset, _expiry, _account, true)
         );
 
+        rewardManager.updateUserReward(_underlyingAsset, _expiry, yieldTokenHolders[_underlyingAsset][_expiry], _account);
         tokens.ot.burn(_account, _amountToRedeem);
         tokens.xyt.burn(_account, _amountToRedeem);
         _safeTransferOut(yieldToken, _expiry, _account, redeemedAmount);
@@ -203,6 +217,14 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account, false);
     }
 
+    function updateRewardBeforeOtTransfer(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) external override onlyOT(_underlyingAsset, _expiry) {
+        rewardManager.updateUserReward(_underlyingAsset, _expiry, yieldTokenHolders[_underlyingAsset][_expiry], _account);
+    }
+
     function tokenizeYield(
         address _underlyingAsset,
         uint256 _expiry,
@@ -225,6 +247,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         amountTokenMinted = _calcAmountToMint(_underlyingAsset, _amountToTokenize);
 
+        rewardManager.updateUserReward(_underlyingAsset, _expiry, yieldTokenHolders[_underlyingAsset][_expiry], _to);
         tokens.ot.mint(_to, amountTokenMinted);
         tokens.xyt.mint(_to, amountTokenMinted);
 

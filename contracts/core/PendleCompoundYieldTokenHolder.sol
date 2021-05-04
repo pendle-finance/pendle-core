@@ -32,8 +32,9 @@ contract PendleCompoundYieldTokenHolder is PendleYieldTokenHolderBase {
         address _router,
         address _yieldToken,
         address _rewardToken,
+        address _rewardManager,
         address _comptroller
-    ) PendleYieldTokenHolderBase(_router, _yieldToken, _rewardToken) {
+    ) PendleYieldTokenHolderBase(_router, _yieldToken, _rewardToken, _rewardManager) {
         require(_comptroller != address(0), "ZERO_ADDRESS");
         comptroller = IComptroller(_comptroller);
     }

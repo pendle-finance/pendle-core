@@ -182,6 +182,16 @@ interface IPendleData {
     function getForgeAddress(bytes32 forgeId) external view returns (address forgeAddress);
 
     /**
+     * @notice Gets a forge id of a reward manager
+     * @param rewardManager address of the reward manager
+     * @return forgeId Returns the forge id.
+     **/
+    function getRewardManagerForgeId(address rewardManager)
+        external
+        view
+        returns (bytes32 forgeId);
+
+    /**
      * @notice Checks if an XYT token is valid.
      * @param forgeAddress The address of the added forge.
      * @param underlyingAsset Token address of the underlying asset.

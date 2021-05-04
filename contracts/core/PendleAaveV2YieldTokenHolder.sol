@@ -33,9 +33,10 @@ contract PendleAaveV2YieldTokenHolder is PendleYieldTokenHolderBase {
         address _router,
         address _yieldToken,
         address _rewardToken,
+        address _rewardManager,
         address _aaveIncentivesController,
         address _underlyingAsset
-    ) PendleYieldTokenHolderBase(_router, _yieldToken, _rewardToken) {
+    ) PendleYieldTokenHolderBase(_router, _yieldToken, _rewardToken, _rewardManager) {
         require(_aaveIncentivesController != address(0), "ZERO_ADDRESS");
         aaveIncentivesController = IAaveIncentivesController(_aaveIncentivesController);
         underlyingAsset = _underlyingAsset;
