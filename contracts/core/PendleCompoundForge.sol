@@ -175,10 +175,15 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
             .add(interestFromXyt);
     }
 
-    function _accrueProtocolFee(address _underlyingAsset, uint256 _protocolFee) internal override {
-        accruedProtocolFee[_underlyingAsset] = accruedProtocolFee[_underlyingAsset].add(
-            _protocolFee
-        );
+    function _accrueProtocolFee(
+        address _underlyingAsset,
+        uint256 _expiry,
+        uint256 _protocolFee
+    ) internal override {
+        accruedProtocolFee[_underlyingAsset][_expiry] = accruedProtocolFee[_underlyingAsset][
+            _expiry
+        ]
+            .add(_protocolFee);
     }
 
     function _deployYieldTokenHolder(

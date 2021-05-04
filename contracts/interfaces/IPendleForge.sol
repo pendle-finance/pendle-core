@@ -96,8 +96,15 @@ interface IPendleForge {
         address account,
         address underlyingAsset,
         uint256 expiry,
-        uint256 transferOutRate
-    ) external returns (uint256 redeemedAmount, uint256 amountTransferOut);
+        uint256 transferOutRate,
+        uint256 newExpiry
+    )
+        external
+        returns (
+            uint256 redeemedAmount,
+            uint256 amountTransferOut,
+            uint256 amountToRenew
+        );
 
     function redeemDueInterests(
         address account,
@@ -131,7 +138,7 @@ interface IPendleForge {
             uint256 amountTokenMinted
         );
 
-    function withdrawProtocolFee(address underlyingAsset) external;
+    function withdrawProtocolFee(address underlyingAsset, uint256 expiry) external;
 
     function getYieldBearingToken(address underlyingAsset) external returns (address);
 
@@ -154,4 +161,9 @@ interface IPendleForge {
         uint256 expiry,
         address _account
     ) external view returns (uint256);
+
+    function yieldTokenHolders(address _underlyingAsset, uint256 _expiry)
+        external
+        view
+        returns (address yieldTokenHolder);
 }
