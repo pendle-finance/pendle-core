@@ -29,6 +29,7 @@ interface TestEnv {
   FORGE_ID: string;
   INITIAL_AAVE_TOKEN_AMOUNT: BN;
   TEST_DELTA: BN;
+  EXPIRY: BN;
 }
 
 export function runTest(isAaveV1: boolean) {
@@ -70,6 +71,7 @@ export function runTest(isAaveV1: boolean) {
       aUSDT = await getAContract(alice, aaveForge, tokenUSDT);
       testEnv.FORGE_ID = consts.FORGE_AAVE;
       testEnv.T0 = consts.T0;
+      testEnv.EXPIRY = consts.T0.add(consts.SIX_MONTH);
     }
 
     async function buildTestEnvV2() {
@@ -111,7 +113,7 @@ export function runTest(isAaveV1: boolean) {
       await router.tokenizeYield(
         testEnv.FORGE_ID,
         tokenUSDT.address,
-        testEnv.T0.add(consts.SIX_MONTH),
+        testEnv.EXPIRY,
         amount,
         user.address,
         consts.HIGH_GAS_OVERRIDE
@@ -154,7 +156,7 @@ export function runTest(isAaveV1: boolean) {
       await tokenizeYield(bob, refAmount);
 
       await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
-      await redeemDueInterests(bob, testEnv.T0.add(consts.SIX_MONTH));
+      await redeemDueInterests(bob, testEnv.EXPIRY);
       const bobInterest = await aUSDT.balanceOf(bob.address);
       const charlieInterest = (await aUSDT.balanceOf(charlie.address)).sub(
         refAmount
@@ -166,7 +168,8 @@ export function runTest(isAaveV1: boolean) {
       );
 
       const accruedProtocolFee = await aaveForge.accruedProtocolFee(
-        tokenUSDT.address
+        tokenUSDT.address,
+        testEnv.EXPIRY
       );
       approxBigNumber(
         charlieInterest.sub(bobInterest),
@@ -179,12 +182,13 @@ export function runTest(isAaveV1: boolean) {
       await tokenizeYield(bob, refAmount);
 
       await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
-      await redeemDueInterests(bob, testEnv.T0.add(consts.SIX_MONTH));
+      await redeemDueInterests(bob, testEnv.EXPIRY);
 
       const accruedProtocolFee = await aaveForge.accruedProtocolFee(
-        tokenUSDT.address
+        tokenUSDT.address,
+        testEnv.EXPIRY
       );
-      await aaveForge.withdrawProtocolFee(tokenUSDT.address);
+      await aaveForge.withdrawProtocolFee(tokenUSDT.address, testEnv.EXPIRY);
       const treasuryAddress = await data.treasury();
       const treasuryBalance = await aUSDT.balanceOf(treasuryAddress);
       approxBigNumber(accruedProtocolFee, treasuryBalance, BN.from(5));
@@ -197,10 +201,10 @@ export function runTest(isAaveV1: boolean) {
       await tokenizeYield(bob, refAmount);
 
       await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
-      await redeemDueInterests(bob, testEnv.T0.add(consts.SIX_MONTH));
+      await redeemDueInterests(bob, testEnv.EXPIRY);
 
       await expect(
-        aaveForge.connect(bob).withdrawProtocolFee(tokenUSDT.address)
+        aaveForge.connect(bob).withdrawProtocolFee(tokenUSDT.address, testEnv.EXPIRY)
       ).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
     });
   });

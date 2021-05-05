@@ -28,6 +28,7 @@ import "hardhat/console.sol";
 
 contract PendleAaveV2YieldTokenHolder is PendleYieldTokenHolderBase {
     IAaveIncentivesController private aaveIncentivesController;
+    address rewardToken; //TODO: remove this. This is only for debugging
 
     constructor(
         address _router,
@@ -38,6 +39,7 @@ contract PendleAaveV2YieldTokenHolder is PendleYieldTokenHolderBase {
     ) PendleYieldTokenHolderBase(_router, _yieldToken, _rewardToken, _rewardManager) {
         require(_aaveIncentivesController != address(0), "ZERO_ADDRESS");
         aaveIncentivesController = IAaveIncentivesController(_aaveIncentivesController);
+        rewardToken = _rewardToken; //TODO: remove
     }
 
     function claimRewards() external override {
@@ -50,5 +52,10 @@ contract PendleAaveV2YieldTokenHolder is PendleYieldTokenHolderBase {
         );
 
         aaveIncentivesController.claimRewards(assets, uint256(-1), address(this));
+        console.log(
+            "After claiming stkAave rewards: rewardToken = %s, balance = %s",
+            rewardToken,
+            IERC20(rewardToken).balanceOf(address(this))
+        );
     }
 }
