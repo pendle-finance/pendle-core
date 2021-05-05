@@ -29,7 +29,7 @@ const config: HardhatUserConfig = {
         url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
         // url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
         // url: 'http://localhost:8545',
-        blockNumber: 11732924
+        blockNumber: 12372265
       },
       accounts: [
         // 5 accounts with 10^14 ETH each
