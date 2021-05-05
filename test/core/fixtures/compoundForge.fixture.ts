@@ -1,5 +1,6 @@
 import { Contract, providers, Wallet } from 'ethers';
 import PendleCompoundForge from '../../../build/artifacts/contracts/core/PendleCompoundForge.sol/PendleCompoundForge.json';
+import PendleRewardManager from "../../../build/artifacts/contracts/core/PendleRewardManager.sol/PendleRewardManager.json";
 import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
 import PendleOwnershipToken from '../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json';
 import { consts, setTimeNextBlock, tokens } from "../../helpers";
@@ -9,9 +10,10 @@ const { waffle } = require("hardhat");
 const { deployContract } = waffle;
 
 export interface CompoundFixture {
-    compoundForge: Contract
-    cOwnershipToken: Contract
-    cFutureYieldToken: Contract
+    compoundForge: Contract;
+    cOwnershipToken: Contract;
+    cFutureYieldToken: Contract;
+    cRewardManager: Contract;
 }
 
 export async function compoundForgeFixture(
@@ -20,7 +22,20 @@ export async function compoundForgeFixture(
     { router, data }: CoreFixture,
     { pendle }: GovernanceFixture
 ): Promise<CompoundFixture> {
-    const compoundForge = await deployContract(alice, PendleCompoundForge, [alice.address, router.address, consts.COMPOUND_COMPTROLLER_ADDRESS, consts.FORGE_COMPOUND,]);
+    const cRewardManager = await deployContract(alice, PendleRewardManager, [
+      alice.address, //governance
+      consts.FORGE_COMPOUND
+    ]);
+    const compoundForge = await deployContract(alice, PendleCompoundForge, [
+      alice.address,
+      router.address,
+      consts.COMPOUND_COMPTROLLER_ADDRESS,
+      consts.FORGE_COMPOUND,
+      consts.COMP_ADDRESS,
+      cRewardManager.address
+    ]);
+    await cRewardManager.initialize(compoundForge.address);
+    
     await router.addForge(consts.FORGE_COMPOUND, compoundForge.address);
 
     await compoundForge.registerCTokens([tokens.USDT.address], [tokens.USDT.compound]);
@@ -47,5 +62,6 @@ export async function compoundForgeFixture(
         compoundForge,
         cOwnershipToken,
         cFutureYieldToken,
+        cRewardManager
     };
 }

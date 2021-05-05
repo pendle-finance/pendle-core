@@ -32,6 +32,8 @@ interface TestEnv {
 export function runTest(isAaveV1: boolean) {
   describe("", async () => {
     const wallets = provider.getWallets();
+    // const wallets = await hre.ethers.getSigners();
+    // console.log(``)
     const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob, charlie, dave] = wallets;
 
