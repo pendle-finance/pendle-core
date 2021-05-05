@@ -33,7 +33,7 @@ import "../interfaces/IPendleForge.sol";
 contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable {
     using SafeMath for uint256;
 
-    bytes32 private forgeId;
+    bytes32 public override forgeId;
     IPendleForge private forge;
     IERC20 private rewardToken;
     uint256 private constant MULTIPLIER = 1e20;
@@ -106,7 +106,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable 
         uint256 _expiry,
         address _yieldTokenHolder,
         address _account
-    ) external override onlyForge {
+    ) public override onlyForge {
         IPendleYieldToken ot = _updateRewardIndex(_underlyingAsset, _expiry, _yieldTokenHolder);
 
         RewardData storage rData = rewardData[_underlyingAsset][_expiry];
@@ -127,11 +127,11 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable 
         address[] memory _underlyingAssets,
         uint256[] memory _expiries,
         address _account
-    ) external override onlyRouter {
+    ) external override onlyRouter returns (uint256[] memory rewards) {
         require(_underlyingAssets.length == _expiries.length, "ARRAY_LENGTH_MISMATCH");
-
+        rewards = new uint256[](_underlyingAssets.length);
         for (uint256 i = 0; i < _underlyingAssets.length; i++) {
-            _claimReward(_underlyingAssets[i], _expiries[i], _account);
+            rewards[i] = _claimReward(_underlyingAssets[i], _expiries[i], _account);
         }
     }
 
@@ -139,12 +139,15 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable 
         address _underlyingAsset,
         uint256 _expiry,
         address _account
-    ) internal {
+    ) internal returns (uint256 reward) {
+        address yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
+        // Update the user's reward before sending the reward out
+        updateUserReward(_underlyingAsset, _expiry, yieldTokenHolder, _account);
+
         RewardData storage rData = rewardData[_underlyingAsset][_expiry];
 
         uint256 dueReward = rData.dueReward[_account];
-        if (dueReward == 0) return;
-        address yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
+        if (dueReward == 0) return 0;
 
         rData.dueReward[_account] = 0;
         rewardToken.transferFrom(yieldTokenHolder, _account, dueReward);

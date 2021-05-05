@@ -31,6 +31,7 @@ import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
+import "../interfaces/IPendleRewardManager.sol";
 import "../periphery/Permissions.sol";
 import "../periphery/Withdrawable.sol";
 import "../periphery/PendleRouterNonReentrant.sol";
@@ -752,6 +753,20 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             require(data.isMarket(markets[i]), "INVALID_MARKET");
             interests[i] = IPendleMarket(markets[i]).claimLpInterests(msg.sender);
         }
+    }
+
+    function claimOtRewards(
+        address _rewardManager,
+        address[] calldata _underlyingAssets,
+        uint256[] calldata _expiries
+    ) external override nonReentrant returns (uint256[] memory rewards) {
+        IPendleRewardManager rewardManager = IPendleRewardManager(_rewardManager);
+        require(
+            data.getRewardManagerForgeId(_rewardManager) == rewardManager.forgeId(),
+            "INVALID_REWARD_MANAGER"
+        );
+
+        rewards = rewardManager.claimRewards(_underlyingAssets, _expiries, msg.sender);
     }
 
     function _getData() internal view override returns (IPendleData) {

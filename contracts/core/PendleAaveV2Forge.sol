@@ -180,11 +180,11 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry] = currentNormalizedIncome;
     }
 
-    function _deployYieldTokenHolder(
-        address yieldToken,
-        address underlyingAsset,
-        address ot
-    ) internal override returns (address yieldTokenHolder) {
+    function _deployYieldTokenHolder(address yieldToken, address ot)
+        internal
+        override
+        returns (address yieldTokenHolder)
+    {
         yieldTokenHolder = Factory.createContract(
             type(PendleAaveV2YieldTokenHolder).creationCode,
             abi.encodePacked(ot),
@@ -193,8 +193,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
                 yieldToken,
                 rewardToken,
                 address(rewardManager),
-                aaveIncentivesController,
-                underlyingAsset
+                aaveIncentivesController
             )
         );
     }

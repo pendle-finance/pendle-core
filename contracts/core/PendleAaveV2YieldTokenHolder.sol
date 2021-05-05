@@ -24,28 +24,31 @@ pragma solidity 0.7.6;
 
 import "./abstract/PendleYieldTokenHolderBase.sol";
 import "../interfaces/IAaveIncentivesController.sol";
+import "hardhat/console.sol";
 
 contract PendleAaveV2YieldTokenHolder is PendleYieldTokenHolderBase {
     IAaveIncentivesController private aaveIncentivesController;
-    address private underlyingAsset;
 
     constructor(
         address _router,
         address _yieldToken,
         address _rewardToken,
         address _rewardManager,
-        address _aaveIncentivesController,
-        address _underlyingAsset
+        address _aaveIncentivesController
     ) PendleYieldTokenHolderBase(_router, _yieldToken, _rewardToken, _rewardManager) {
         require(_aaveIncentivesController != address(0), "ZERO_ADDRESS");
         aaveIncentivesController = IAaveIncentivesController(_aaveIncentivesController);
-        underlyingAsset = _underlyingAsset;
     }
 
     function claimRewards() external override {
         address[] memory assets = new address[](1);
-        assets[0] = underlyingAsset;
+        assets[0] = yieldToken;
+        console.log(
+            "yieldToken = %s, balance = %s",
+            yieldToken,
+            IERC20(yieldToken).balanceOf(address(this))
+        );
 
-        aaveIncentivesController.claimRewards(assets, uint256(-1), address(this), false);
+        aaveIncentivesController.claimRewards(assets, uint256(-1), address(this));
     }
 }

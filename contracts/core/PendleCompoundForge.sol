@@ -187,11 +187,11 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
             .add(_protocolFee);
     }
 
-    function _deployYieldTokenHolder(
-        address yieldToken,
-        address,
-        address ot
-    ) internal override returns (address yieldTokenHolder) {
+    function _deployYieldTokenHolder(address yieldToken, address ot)
+        internal
+        override
+        returns (address yieldTokenHolder)
+    {
         yieldTokenHolder = Factory.createContract(
             type(PendleCompoundYieldTokenHolder).creationCode,
             abi.encodePacked(ot),

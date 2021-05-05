@@ -34,5 +34,7 @@ interface IPendleRewardManager {
         address[] memory _underlyingAssets,
         uint256[] memory _expiries,
         address _account
-    ) external;
+    ) external returns (uint256[] memory rewards);
+
+    function forgeId() external returns (bytes32);
 }

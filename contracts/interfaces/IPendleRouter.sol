@@ -173,6 +173,12 @@ interface IPendleRouter is IPendleStructs {
             uint256 amountTokenMinted
         );
 
+    function claimOtRewards(
+        address _rewardManager,
+        address[] calldata _underlyingAssets,
+        uint256[] calldata _expiries
+    ) external returns (uint256[] memory rewards);
+
     /***********
      *  MARKET *
      ***********/
