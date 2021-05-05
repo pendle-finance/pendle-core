@@ -19,15 +19,41 @@ The tokenization of future yields also allows for the creation of products with 
 * Each OT and XYT is uniquely identified by `(bytes32 forgeId, address underlyingAsset, address underlyingYieldToken uint256 expiry)`
   * The `expiry` is the UNIX timestamp at 0:00 UTC of the day right after the expiry date. For example: if it expires on 3rd Oct, the `expiry` is the Unix timestamp of 4th Oct, 0:00 UTC
 
-## Scripts:
-* Run a mainnet fork on ganache: `INFURA_KEY=XXXX yarn ganache`
-* Compile (both pendle and aave): `yarn compile`
-* run a console for development network: `yarn console:dev`
+## Deployment:
+* To deploy core contracts:
+  * set the multisig addresses in `.env`, similar to `.env.example`
+    * Please note that for networks other than `mainnet` and `kovan`, the scripts will use the deploying key as all the multisig.
+    * Therefore, if we want to deploy a test instance with seeded contracts to kovan, we should use network `kovantest` instead of `kovan`
+    * `kovan` will be used when we rehearse the real deployment steps (before doing it real on mainnet)
+  * Run: (this runs `scripts/deploy/deploy.ts`)
+  ```
+  yarn deploy:core --network <network>
+  ```
+  * This will save the deployed contracts to `deployments/<network>.json`
+  * If we want to reset the instance, put `RESET=true`:
+  ```
+  RESET=true yarn deploy:core --network <network>
+  ```
+* To deploy test instances of contracts (yield contracts, markets, liquidity mining) for an expiry: (this runs `scripts/manage/seed_test_contracts.ts`)
+  ```
+  EXPIRY=<expiry_to_seed> yarn deploy:seed --network <network>
+  ```
+  * This will save the new yield contracts to `deployments/<network>.json` as well
+  * If `EXPIRY` is not set, it will use the default expiry as `TEST_EXPIRY_3` in the `consts.misc` object
+* To verify contracts that have been deployed in `deployments/<network>.json`:
+  * First, install tenderly [link](https://github.com/Tenderly/tenderly-cli)
+  * Then, `tenderly login`
+  * Run: (which runs `scripts/manage/verify_tenderly.ts`)
+  ```
+  yarn verify --network <network>
+  ```
 
 ## Testing:
 * Create a .env file containing the following properties:
   ```
-  INFURA_KEY=<insert your Infura key here>
-  PRIVATE_KEYS=<insert comma delimited private keys here>
+  ALCHEMY_KEY=<insert your ALCHEMY_KEY key here>
   ```
-* The main test for now: `yarn test test/core/Pendle.js`
+* Run test:
+  ```
+  yarn test
+  ```

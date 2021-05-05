@@ -1,0 +1,100 @@
+{
+  "step": 9,
+  "contracts": {
+    "PENDLE": {
+      "address": "0x11a28122A209147E865Ba99578cA7CB8D3d4B7aB",
+      "tx": "0x5fa2710da3dde15609d1cab9db5f7d1428ceb64c536a9b2756ef774b4c014334"
+    },
+    "PendleData": {
+      "address": "0x105eA9c8e06558fD3A4add1232E7C29BF2E5b389",
+      "tx": "0xd2319c547d97459a04db6aac7d933dc0346c5d96a473043fa9605b26a975bd96"
+    },
+    "PendleMarketReader": {
+      "address": "0x782B9261177cACEA999BC3FFDC296Cd88755B841",
+      "tx": "0xd0f0440983b46ad0557171dd6a6426a7f13ffae7cac7620009535a5754319fa5"
+    },
+    "PendleRouter": {
+      "address": "0x912F3Dcb63dEFA2ed8B60dc07e2940641De33eF7",
+      "tx": "0x21a6989e08827e40fef9abcb213010ee95ceca6087ee1872df770839e1095710"
+    },
+    "PendleAaveForge": {
+      "address": "0x92019d79c183463bDBc6a7156fECc6D3B69F96dB",
+      "tx": "0x0d7ca8ecf17e2c8913a566a9026681f6ca60180ba3b904701aa497f13d1c278a"
+    },
+    "PendleAaveMarketFactory": {
+      "address": "0x0E49405Fd90697884Afd4B60f93Ab5D4b406D1C0",
+      "tx": "0x6110f736f8799af9a33f6b8ebb328d0a08f91392ce79f2e84a1d1b01651fa6f2"
+    },
+    "PendleCompoundForge": {
+      "address": "0x5229c5F7f63cc6b5CEaAE179e76342837b6D6152",
+      "tx": "0x64e5b60c0212c3da20e907004f2f1cd6cc6b8e83d84c83bc8f3d8d040aa8aeeb"
+    },
+    "PendleCompoundMarketFactory": {
+      "address": "0xE906aBD9600D0883fc977795fac07cE81e1324E2",
+      "tx": "0xbc7b063642fb6541f17c6c1cd6e01099c7bb4df3c228be8aafd2a0e13bd96a89"
+    },
+    "PendleAaveV2Forge": {
+      "address": "0x476eeE6c26074E82886D518B64fB5c6B57A17Aff",
+      "tx": "0x3079e31ca0cb73c0dc42e6970d17c5d9fcc27f4913b4fa99bc9b7bf5e23a683e"
+    },
+    "PendleAaveLiquidityMining": {
+      "address": "0x42f289221e30Db71753885882b35C949ed6ce89e",
+      "tx": "0x3c306528425ca8983d87ddd4559bd0324c3b4aa61b95fcf14d51c77a0b0760b4"
+    }
+  },
+  "variables": {
+    "GOVERNANCE_MULTISIG": "0xB2d532986437bC93C7d2915b9F60E62cbd7F824A",
+    "TEAM_TOKENS_MULTISIG": "0xB2d532986437bC93C7d2915b9F60E62cbd7F824A",
+    "ECOSYSTEM_FUND_MULTISIG": "0xB2d532986437bC93C7d2915b9F60E62cbd7F824A",
+    "SALES_MULTISIG": "0xB2d532986437bC93C7d2915b9F60E62cbd7F824A",
+    "LIQUIDITY_INCENTIVES_MULTISIG": "0xB2d532986437bC93C7d2915b9F60E62cbd7F824A"
+  },
+  "yieldContracts": {
+    "Aave": {
+      "USDT": {
+        "expiries": {
+          "1621087200": {
+            "XYT": "0xBa09Be6Af31d36f3DC031d345edc5CE9DF25A025",
+            "OT": "0x82C2daEF05CC790eA91eC9e9eFCb1209E586b71C",
+            "markets": {
+              "USDT": "0x22DDa0B5709a5FC2191c5CFa314148FC69cbDb65"
+            }
+          },
+          "1623765600": {
+            "XYT": "0x605C6A0e42A7463383473774E8f39b32215FA929",
+            "OT": "0xCBF751210715B0d393f91115A85D129D6e6fc52a",
+            "markets": {
+              "USDT": "0x6648a1559503459b7D608211D59d89EDfCB0447c"
+            }
+          }
+        },
+        "PendleLiquidityMining": {
+          "USDT": "0x42f289221e30Db71753885882b35C949ed6ce89e"
+        }
+      }
+    },
+    "Compound": {
+      "USDT": {
+        "expiries": {
+          "1621087200": {
+            "XYT": "0x9a03920b61a64C429d7F492BF8CaEa837E36783e",
+            "OT": "0xa6080332905811185762d951306cCFb2F846E4E8",
+            "markets": {
+              "USDT": "0x05AF3301252C72AddeB318295b1516c055e02f43"
+            }
+          },
+          "1623765600": {
+            "XYT": "0xf1DeC2ba39818e1b3931bAC41e8115D5476c7DE1",
+            "OT": "0xE005F9fee2ef0c2396cEe234f4036D099409115E",
+            "markets": {
+              "USDT": "0x2C158970Aba261f0D4dd81364b1e4625c9548432"
+            }
+          }
+        },
+        "PendleLiquidityMining": {
+          "USDT": "0x31dfB8c3fce8DDEA08e5372F25420483b1d2633D"
+        }
+      }
+    }
+  }
+}
