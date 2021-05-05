@@ -763,22 +763,24 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     function _mintProtocolFees() internal {
         (bool feeOn, uint256 feeRatio) = _getProtocolSwapFee();
         uint256 _kLast = kLast;
-        if (feeOn) {
-            if (_kLast != 0) {
-                uint256 k = _calcK();
-                if (k > _kLast) {
-                    uint256 numerator = totalSupply.mul(k.sub(_kLast));
-                    uint256 denominator = Math.RONE.sub(feeRatio).mul(k).div(feeRatio).add(_kLast);
-                    uint256 liquidity = numerator / denominator;
-                    address treasury = data.treasury();
-                    if (liquidity > 0) {
-                        _mintLp(liquidity);
-                        IERC20(address(this)).transfer(treasury, liquidity);
-                    }
+        if (!feeOn) {
+            kLast = 0;
+            return;
+        }
+        
+        // feeOn == true here
+        if (_kLast != 0) {
+            uint256 k = _calcK();
+            if (k > _kLast) {
+                uint256 numerator = totalSupply.mul(k.sub(_kLast));
+                uint256 denominator = Math.RONE.sub(feeRatio).mul(k).div(feeRatio).add(_kLast);
+                uint256 liquidity = numerator / denominator;
+                address treasury = data.treasury();
+                if (liquidity > 0) {
+                    _mintLp(liquidity);
+                    IERC20(address(this)).transfer(treasury, liquidity);
                 }
             }
-        } else if (_kLast != 0) { // if fee is turned off, we need to reset kLast as well
-            kLast = 0;
         }
     }
 
