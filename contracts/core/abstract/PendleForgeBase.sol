@@ -180,12 +180,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
             amountToRenew
         );
 
-        rewardManager.updateUserReward(
-            _underlyingAsset,
-            _expiry,
-            yieldTokenHolders[_underlyingAsset][_expiry],
-            _account
-        );
+        rewardManager.settleUserRewards(_underlyingAsset, _expiry, _account);
         tokens.ot.burn(_account, expiredOTamount);
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, expiredOTamount, redeemedAmount);
@@ -209,12 +204,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
             _settleDueInterests(tokens, _underlyingAsset, _expiry, _account, true)
         );
 
-        rewardManager.updateUserReward(
-            _underlyingAsset,
-            _expiry,
-            yieldTokenHolders[_underlyingAsset][_expiry],
-            _account
-        );
+        rewardManager.settleUserRewards(_underlyingAsset, _expiry, _account);
         tokens.ot.burn(_account, _amountToRedeem);
         tokens.xyt.burn(_account, _amountToRedeem);
         _safeTransferOut(yieldToken, _underlyingAsset, _expiry, _account, redeemedAmount);
@@ -247,12 +237,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         uint256 _expiry,
         address _account
     ) external override onlyOT(_underlyingAsset, _expiry) {
-        rewardManager.updateUserReward(
-            _underlyingAsset,
-            _expiry,
-            yieldTokenHolders[_underlyingAsset][_expiry],
-            _account
-        );
+        rewardManager.settleUserRewards(_underlyingAsset, _expiry, _account);
     }
 
     function tokenizeYield(
@@ -283,12 +268,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         amountTokenMinted = _calcAmountToMint(_underlyingAsset, _amountToTokenize);
 
-        rewardManager.updateUserReward(
-            _underlyingAsset,
-            _expiry,
-            yieldTokenHolders[_underlyingAsset][_expiry],
-            _to
-        );
+        rewardManager.settleUserRewards(_underlyingAsset, _expiry, _to);
         tokens.ot.mint(_to, amountTokenMinted);
         tokens.xyt.mint(_to, amountTokenMinted);
 

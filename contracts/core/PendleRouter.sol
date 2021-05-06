@@ -755,20 +755,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         }
     }
 
-    function claimOtRewards(
-        address _rewardManager,
-        address[] calldata _underlyingAssets,
-        uint256[] calldata _expiries
-    ) external override nonReentrant returns (uint256[] memory rewards) {
-        IPendleRewardManager rewardManager = IPendleRewardManager(_rewardManager);
-        require(
-            data.getRewardManagerForgeId(_rewardManager) == rewardManager.forgeId(),
-            "INVALID_REWARD_MANAGER"
-        );
-
-        rewards = rewardManager.claimRewards(_underlyingAssets, _expiries, msg.sender);
-    }
-
     function _getData() internal view override returns (IPendleData) {
         return data;
     }
