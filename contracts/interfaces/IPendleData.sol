@@ -64,12 +64,6 @@ interface IPendleData {
     event InterestUpdateRateDeltaForMarketSet(uint256 interestUpdateRateDeltaForMarket);
 
     /**
-     * @notice Emitted when interestUpdateRateDeltaForForge is changed
-     * @param interestUpdateRateDeltaForForge new interestUpdateRateDeltaForForge setting
-     **/
-    event InterestUpdateRateDeltaForForgeSet(uint256 interestUpdateRateDeltaForForge);
-
-    /**
      * @notice Emitted when market fees are changed
      * @param _swapFee new swapFee setting
      * @param _exitFee new exitFee setting
@@ -276,8 +270,6 @@ interface IPendleData {
     function setInterestUpdateRateDeltaForMarket(uint256 _interestUpdateRateDeltaForMarket)
         external;
 
-    function setInterestUpdateRateDeltaForForge(uint256 _interestUpdateRateDeltaForForge) external;
-
     function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator) external;
 
     function setExpiryDivisor(uint256 _expiryDivisor) external;
@@ -295,8 +287,6 @@ interface IPendleData {
     function exitFee() external view returns (uint256);
 
     function interestUpdateRateDeltaForMarket() external view returns (uint256);
-
-    function interestUpdateRateDeltaForForge() external view returns (uint256);
 
     function expiryDivisor() external view returns (uint256);
 

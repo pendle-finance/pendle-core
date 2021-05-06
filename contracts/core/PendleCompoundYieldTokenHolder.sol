@@ -24,11 +24,9 @@ pragma solidity 0.7.6;
 
 import "./abstract/PendleYieldTokenHolderBase.sol";
 import "../interfaces/IComptroller.sol";
-import "hardhat/console.sol";
 
 contract PendleCompoundYieldTokenHolder is PendleYieldTokenHolderBase {
     IComptroller private comptroller;
-    address rewardToken; //TODO: remove this. This is only for debugging
 
     constructor(
         address _router,
@@ -39,7 +37,6 @@ contract PendleCompoundYieldTokenHolder is PendleYieldTokenHolderBase {
     ) PendleYieldTokenHolderBase(_router, _yieldToken, _rewardToken, _rewardManager) {
         require(_comptroller != address(0), "ZERO_ADDRESS");
         comptroller = IComptroller(_comptroller);
-        rewardToken = _rewardToken; //TODO: remove
     }
 
     // TODO: skip claimRewards if the incentive programme has already ended?
@@ -48,16 +45,6 @@ contract PendleCompoundYieldTokenHolder is PendleYieldTokenHolderBase {
         address[] memory holders = new address[](1);
         cTokens[0] = yieldToken;
         holders[0] = address(this);
-        console.log(
-            "yieldToken = %s, balance = %s",
-            yieldToken,
-            IERC20(yieldToken).balanceOf(address(this))
-        );
         comptroller.claimComp(holders, cTokens, false, true);
-        console.log(
-            "After claiming stkAave rewards: rewardToken = %s, balance = %s",
-            rewardToken,
-            IERC20(rewardToken).balanceOf(address(this))
-        );
     }
 }

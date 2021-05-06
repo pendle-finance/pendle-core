@@ -133,13 +133,12 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             msg.sender,
             _underlyingAsset,
             _expiry,
-            Math.RONE,
-            _expiry
+            Math.RONE
         );
     }
 
     /**
-     * @notice an XYT holder can redeem his acrued interests anytime
+     * @notice an XYT holder can redeem his accrued interests anytime
      * @notice This function acts as a proxy to the actual function
      * @dev all validity checks are in the internal function
      **/
@@ -232,9 +231,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             msg.sender,
             _underlyingAsset,
             _oldExpiry,
-            Math.RONE - _renewalRate, // only transfer out 1 - renewalRate
-            _newExpiry
+            Math.RONE - _renewalRate // only transfer out 1 - renewalRate
         );
+
+        forge.forwardYieldToken(_underlyingAsset, _oldExpiry, _newExpiry, amountToRenew);
+
         (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
             _underlyingAsset,
             _newExpiry,
@@ -740,7 +741,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
 
     /**
      * @notice Lp holders are entitled to receive the interests from the underlying XYTs
-     *        they can call this function to claim the acrued interests
+     *        they can call this function to claim the accrued interests
      */
     function claimLpInterests(address[] calldata markets)
         external
