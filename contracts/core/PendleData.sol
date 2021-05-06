@@ -25,6 +25,7 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../libraries/MathLib.sol";
 import "../interfaces/IPendleData.sol";
+import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../periphery/Permissions.sol";
@@ -41,6 +42,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     mapping(bytes32 => address) public override getForgeAddress;
     mapping(address => bytes32) public override getMarketFactoryId;
     mapping(bytes32 => address) public override getMarketFactoryAddress;
+    mapping(address => bytes32) public override getRewardManagerForgeId;
 
     // getMarket[marketFactoryId][xyt][token]
     mapping(bytes32 => mapping(address => mapping(address => address))) public override getMarket;
@@ -63,7 +65,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     // Parameters to be set by governance;
     uint256 public override forgeFee; // portion of interests from XYT for the protocol
     uint256 public override interestUpdateRateDeltaForMarket;
-    uint256 public override interestUpdateRateDeltaForForge;
     uint256 public override expiryDivisor = 1 days;
     uint256 public override swapFee;
     uint256 public override exitFee;
@@ -118,16 +119,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         emit InterestUpdateRateDeltaForMarketSet(_interestUpdateRateDeltaForMarket);
     }
 
-    function setInterestUpdateRateDeltaForForge(uint256 _interestUpdateRateDeltaForForge)
-        external
-        override
-        initialized
-        onlyGovernance
-    {
-        interestUpdateRateDeltaForForge = _interestUpdateRateDeltaForForge;
-        emit InterestUpdateRateDeltaForForgeSet(_interestUpdateRateDeltaForForge);
-    }
-
     function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator)
         external
         override
@@ -163,7 +154,8 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     {
         getForgeId[_forgeAddress] = _forgeId;
         getForgeAddress[_forgeId] = _forgeAddress;
-
+        address rewardManager = address(IPendleForge(_forgeAddress).rewardManager());
+        getRewardManagerForgeId[rewardManager] = _forgeId;
         emit ForgeAdded(_forgeId, _forgeAddress);
     }
 

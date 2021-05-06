@@ -31,6 +31,7 @@ import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
+import "../interfaces/IPendleRewardManager.sol";
 import "../periphery/Permissions.sol";
 import "../periphery/Withdrawable.sol";
 import "../periphery/PendleRouterNonReentrant.sol";
@@ -128,7 +129,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         require(_expiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        (redeemedAmount, ) = forge.redeemAfterExpiry(
+        (redeemedAmount, , ) = forge.redeemAfterExpiry(
             msg.sender,
             _underlyingAsset,
             _expiry,
@@ -137,7 +138,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     }
 
     /**
-     * @notice an XYT holder can redeem his acrued interests anytime
+     * @notice an XYT holder can redeem his accrued interests anytime
      * @notice This function acts as a proxy to the actual function
      * @dev all validity checks are in the internal function
      **/
@@ -225,14 +226,16 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         require(0 < _renewalRate && _renewalRate <= Math.RONE, "INVALID_RENEWAL_RATE");
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-
-        (redeemedAmount, amountTransferOut) = forge.redeemAfterExpiry(
+        uint256 amountToRenew;
+        (redeemedAmount, amountTransferOut, amountToRenew) = forge.redeemAfterExpiry(
             msg.sender,
             _underlyingAsset,
             _oldExpiry,
             Math.RONE - _renewalRate // only transfer out 1 - renewalRate
         );
-        uint256 amountToRenew = redeemedAmount - amountTransferOut; // this amount is already inside the forge
+
+        forge.forwardYieldToken(_underlyingAsset, _oldExpiry, _newExpiry, amountToRenew);
+
         (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
             _underlyingAsset,
             _newExpiry,
@@ -269,9 +272,13 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
 
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
 
-        IERC20 underlyingToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
+        IERC20 yieldToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
 
-        underlyingToken.safeTransferFrom(msg.sender, address(forge), _amountToTokenize);
+        yieldToken.safeTransferFrom(
+            msg.sender,
+            forge.yieldTokenHolders(_underlyingAsset, _expiry),
+            _amountToTokenize
+        );
 
         (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
             _underlyingAsset,
@@ -734,7 +741,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
 
     /**
      * @notice Lp holders are entitled to receive the interests from the underlying XYTs
-     *        they can call this function to claim the acrued interests
+     *        they can call this function to claim the accrued interests
      */
     function claimLpInterests(address[] calldata markets)
         external

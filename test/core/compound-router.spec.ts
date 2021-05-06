@@ -112,6 +112,7 @@ describe("compound-router", async () => {
     await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
     await tokenizeYield(alice, initialcUSDTbalance.div(2));
 
+    await redeemDueInterests(alice, consts.T0_C.add(consts.SIX_MONTH));
     const expectedGain = await getCurInterest(
       initialcUSDTbalance.div(2),
       initialUnderlyingBalance.div(2)

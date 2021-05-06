@@ -1,5 +1,6 @@
 import { Contract, providers, Wallet } from "ethers";
 import PendleAaveV2Forge from "../../../build/artifacts/contracts/core/PendleAaveV2Forge.sol/PendleAaveV2Forge.json";
+import PendleRewardManager from "../../../build/artifacts/contracts/core/PendleRewardManager.sol/PendleRewardManager.json";
 import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
 import PendleOwnershipToken from "../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json";
 import { consts, setTimeNextBlock, tokens } from "../../helpers";
@@ -15,6 +16,7 @@ export interface AaveV2ForgeFixture {
   a2FutureYieldToken: Contract;
   a2OwnershipToken2: Contract;
   a2FutureYieldToken2: Contract;
+  a2RewardManager: Contract;
 }
 
 export async function aaveV2ForgeFixture(
@@ -23,12 +25,22 @@ export async function aaveV2ForgeFixture(
   { router, data }: CoreFixture,
   { pendle }: GovernanceFixture
 ): Promise<AaveV2ForgeFixture> {
+  const a2RewardManager = await deployContract(alice, PendleRewardManager, [
+    alice.address, //governance
+    consts.FORGE_AAVE_V2
+  ]);
+
   const aaveV2Forge = await deployContract(alice, PendleAaveV2Forge, [
     alice.address, // alice will be the governance address
     router.address,
     consts.AAVE_V2_LENDING_POOL_ADDRESS,
     consts.FORGE_AAVE_V2,
+    consts.STKAAVE_ADDRESS,
+    a2RewardManager.address,
+    consts.AAVE_INCENTIVES_CONTROLLER
   ]);
+
+  await a2RewardManager.initialize(aaveV2Forge.address);
 
   await router.addForge(consts.FORGE_AAVE_V2, aaveV2Forge.address);
 
@@ -99,5 +111,6 @@ export async function aaveV2ForgeFixture(
     a2FutureYieldToken,
     a2OwnershipToken2,
     a2FutureYieldToken2,
+    a2RewardManager
   };
 }
