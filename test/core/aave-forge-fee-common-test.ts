@@ -151,7 +151,7 @@ export function runTest(isAaveV1: boolean) {
     // Bob has refAmount of XYTs
     // Charlie has equivalent amount of aUSDT
     // When bob redeem due interests, Bob should get the interest gotten by Charlie - fee portion
-    it("User should get back interest minus protocol fees", async () => {
+    it("User should get back interest minus forge fees", async () => {
       await aUSDT.transfer(charlie.address, refAmount);
       await tokenizeYield(bob, refAmount);
 
@@ -174,7 +174,7 @@ export function runTest(isAaveV1: boolean) {
       approxBigNumber(charlieInterest.sub(bobInterest), totalFee, BN.from(150));
     });
 
-    it("Governance address should be able to withdraw protocol fees", async () => {
+    it("Governance address should be able to withdraw forge fees", async () => {
       await tokenizeYield(bob, refAmount);
 
       await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
@@ -184,14 +184,14 @@ export function runTest(isAaveV1: boolean) {
         tokenUSDT.address,
         testEnv.EXPIRY
       );
-      await aaveForge.withdrawProtocolFee(tokenUSDT.address, testEnv.EXPIRY);
+      await aaveForge.withdrawForgeFee(tokenUSDT.address, testEnv.EXPIRY);
       const treasuryAddress = await data.treasury();
       const treasuryBalance = await aUSDT.balanceOf(treasuryAddress);
       approxBigNumber(totalFee, treasuryBalance, BN.from(5));
-      const protocolFeeLeft = await aaveForge.totalFee(tokenUSDT.address);
-      approxBigNumber(protocolFeeLeft, BN.from(0), BN.from(5));
+      const forgeFeeLeft = await aaveForge.totalFee(tokenUSDT.address);
+      approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(5));
     });
-    it("Non-governance address should not be able to withdraw protocol fees", async () => {
+    it("Non-governance address should not be able to withdraw forge fees", async () => {
       await tokenizeYield(bob, refAmount);
 
       await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
@@ -200,7 +200,7 @@ export function runTest(isAaveV1: boolean) {
       await expect(
         aaveForge
           .connect(bob)
-          .withdrawProtocolFee(tokenUSDT.address, testEnv.EXPIRY)
+          .withdrawForgeFee(tokenUSDT.address, testEnv.EXPIRY)
       ).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
     });
   });

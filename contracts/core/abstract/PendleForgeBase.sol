@@ -273,7 +273,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         return (address(tokens.ot), address(tokens.xyt), amountTokenMinted);
     }
 
-    function withdrawProtocolFee(address _underlyingAsset, uint256 _expiry)
+    function withdrawForgeFee(address _underlyingAsset, uint256 _expiry)
         external
         override
         onlyGovernance

@@ -145,7 +145,7 @@ interface IPendleForge {
             uint256 amountTokenMinted
         );
 
-    function withdrawProtocolFee(address underlyingAsset, uint256 expiry) external;
+    function withdrawForgeFee(address underlyingAsset, uint256 expiry) external;
 
     function getYieldBearingToken(address underlyingAsset) external returns (address);
 

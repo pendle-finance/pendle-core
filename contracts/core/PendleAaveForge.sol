@@ -34,7 +34,7 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
     IAaveLendingPoolCore public immutable aaveLendingPoolCore;
 
     mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeBeforeExpiry;
-    mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeForProtocolFee;
+    mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeForForgeFee;
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         public lastNormalisedIncome; //lastNormalisedIncome[underlyingAsset][expiry][account]
     mapping(address => address) private reserveATokenAddress;
@@ -157,15 +157,15 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         uint256 _feeAmount
     ) internal override {
         uint256 normIncomeNow = getReserveNormalizedIncome(_underlyingAsset);
-        if (lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry] == 0) {
-            lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry] = normIncomeNow;
+        if (lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] == 0) {
+            lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] = normIncomeNow;
         }
 
         totalFee[_underlyingAsset][_expiry] = totalFee[_underlyingAsset][_expiry]
             .mul(normIncomeNow)
-            .div(lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry])
+            .div(lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry])
             .add(_feeAmount);
-        lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry] = normIncomeNow;
+        lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] = normIncomeNow;
     }
 
     function _deployYieldTokenHolder(address yieldToken, address ot)
