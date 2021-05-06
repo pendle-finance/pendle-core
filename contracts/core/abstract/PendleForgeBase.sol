@@ -59,7 +59,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         public
         override dueInterests;
 
-    mapping(address => mapping(uint256 => uint256)) public accruedProtocolFee;
+    mapping(address => mapping(uint256 => uint256)) public totalFee;
     mapping(address => mapping(uint256 => address)) public override yieldTokenHolders; // yieldTokenHolders[yieldToken][expiry]
 
     string private constant OT = "OT";
@@ -161,7 +161,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         // _account will get the principal + the interests from last action before expiry to now
         // NOTE: the interest from the last action before expiry until now, for the OT holders,
-        // is not charged a protocol fee. Protocol fee is only charged on interests from XYT exclusively.
+        // is not charged a Forge fee. Forge fee is only charged on interests from XYT exclusively.
         redeemedAmount = _calcTotalAfterExpiry(_underlyingAsset, _expiry, expiredOTamount);
 
         redeemedAmount = redeemedAmount.add(
@@ -303,18 +303,12 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     {
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
 
-        _updateProtocolFee(_underlyingAsset, _expiry, 0); //ping to update interest up to now
-        uint256 _accruedProtocolFee = accruedProtocolFee[_underlyingAsset][_expiry];
-        accruedProtocolFee[_underlyingAsset][_expiry] = 0;
+        _updateForgeFee(_underlyingAsset, _expiry, 0); //ping to update interest up to now
+        uint256 _totalFee = totalFee[_underlyingAsset][_expiry];
+        totalFee[_underlyingAsset][_expiry] = 0;
 
         address treasuryAddress = data.treasury();
-        _safeTransferOut(
-            yieldToken,
-            _underlyingAsset,
-            _expiry,
-            treasuryAddress,
-            _accruedProtocolFee
-        );
+        _safeTransferOut(yieldToken, _underlyingAsset, _expiry, treasuryAddress, _totalFee);
     }
 
     function getYieldBearingToken(address _underlyingAsset) external override returns (address) {
@@ -395,9 +389,9 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
             uint256 forgeFee = data.forgeFee();
             // INVARIANT: every single interest payout due to XYT must go through this line
             if (forgeFee > 0) {
-                uint256 protocolFeeAmount = amountOut.rmul(forgeFee);
-                amountOut = amountOut.sub(protocolFeeAmount);
-                _updateProtocolFee(_underlyingAsset, _expiry, protocolFeeAmount);
+                uint256 forgeFeeAmount = amountOut.rmul(forgeFee);
+                amountOut = amountOut.sub(forgeFeeAmount);
+                _updateForgeFee(_underlyingAsset, _expiry, forgeFeeAmount);
             }
 
             dueInterests[_underlyingAsset][_expiry][_account] = 0;
@@ -437,7 +431,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         address _account
     ) internal virtual;
 
-    function _updateProtocolFee(
+    function _updateForgeFee(
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _feeAmount

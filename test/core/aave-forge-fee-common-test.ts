@@ -167,13 +167,13 @@ export function runTest(isAaveV1: boolean) {
         BN.from(150)
       );
 
-      const accruedProtocolFee = await aaveForge.accruedProtocolFee(
+      const totalFee = await aaveForge.totalFee(
         tokenUSDT.address,
         testEnv.EXPIRY
       );
       approxBigNumber(
         charlieInterest.sub(bobInterest),
-        accruedProtocolFee,
+        totalFee,
         BN.from(150)
       );
     });
@@ -184,15 +184,15 @@ export function runTest(isAaveV1: boolean) {
       await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
       await redeemDueInterests(bob, testEnv.EXPIRY);
 
-      const accruedProtocolFee = await aaveForge.accruedProtocolFee(
+      const totalFee = await aaveForge.totalFee(
         tokenUSDT.address,
         testEnv.EXPIRY
       );
       await aaveForge.withdrawProtocolFee(tokenUSDT.address, testEnv.EXPIRY);
       const treasuryAddress = await data.treasury();
       const treasuryBalance = await aUSDT.balanceOf(treasuryAddress);
-      approxBigNumber(accruedProtocolFee, treasuryBalance, BN.from(5));
-      const protocolFeeLeft = await aaveForge.accruedProtocolFee(
+      approxBigNumber(totalFee, treasuryBalance, BN.from(5));
+      const protocolFeeLeft = await aaveForge.totalFee(
         tokenUSDT.address
       );
       approxBigNumber(protocolFeeLeft, BN.from(0), BN.from(5));

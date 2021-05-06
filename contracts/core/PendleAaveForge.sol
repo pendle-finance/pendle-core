@@ -151,7 +151,7 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normIncomeNow;
     }
 
-    function _updateProtocolFee(
+    function _updateForgeFee(
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _feeAmount
@@ -160,9 +160,8 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         if (lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry] == 0) {
             lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry] = normIncomeNow;
         }
-        accruedProtocolFee[_underlyingAsset][_expiry] = accruedProtocolFee[_underlyingAsset][
-            _expiry
-        ]
+
+        totalFee[_underlyingAsset][_expiry] = totalFee[_underlyingAsset][_expiry]
             .mul(normIncomeNow)
             .div(lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry])
             .add(_feeAmount);
