@@ -79,6 +79,15 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     IPendleRouter private immutable router;
     uint256 private immutable xytStartTime;
 
+    modifier isAddRemoveSwapAllowed(bool skipOpenCheck) {
+        checkIsBootstrapped();
+        checkOnlyRouter();
+        if (!skipOpenCheck) {
+            checkMarketIsOpen();
+        }
+        _;
+    }
+
     constructor(
         address _forge,
         address _xyt,
@@ -204,24 +213,26 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     /**
-   * @notice Join the market by specifying the desired (and max) amount of xyts
-   *    and tokens to put in.
-   * @param _desiredXytAmount amount of XYTs user wants to contribute
-   * @param _desiredTokenAmount amount of tokens user wants to contribute
-   * @param _xytMinAmount min amount of XYTs user wants to be able to contribute
-   * @param _tokenMinAmount min amount of tokens user wants to be able to contribute
-   * @dev no curveShift to save gas because this function
+    * @notice Join the market by specifying the desired (and max) amount of xyts
+    *    and tokens to put in.
+    * @param _desiredXytAmount amount of XYTs user wants to contribute
+    * @param _desiredTokenAmount amount of tokens user wants to contribute
+    * @param _xytMinAmount min amount of XYTs user wants to be able to contribute
+    * @param _tokenMinAmount min amount of tokens user wants to be able to contribute
+    * @dev no curveShift to save gas because this function
               doesn't depend on weights of tokens
-   */
+    */
     function addMarketLiquidityDual(
         uint256 _desiredXytAmount,
         uint256 _desiredTokenAmount,
         uint256 _xytMinAmount,
         uint256 _tokenMinAmount
-    ) external override returns (PendingTransfer[3] memory transfers, uint256 lpOut) {
-        checkIsBootstrapped();
-        checkOnlyRouter();
-        checkMarketIsOpen();
+    )
+        external
+        override
+        isAddRemoveSwapAllowed(false)
+        returns (PendingTransfer[3] memory transfers, uint256 lpOut)
+    {
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -268,10 +279,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         address _inToken,
         uint256 _exactIn,
         uint256 _minOutLp
-    ) external override returns (PendingTransfer[3] memory transfers) {
-        checkIsBootstrapped();
-        checkOnlyRouter();
-        checkMarketIsOpen();
+    )
+        external
+        override
+        isAddRemoveSwapAllowed(false)
+        returns (PendingTransfer[3] memory transfers)
+    {
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -314,15 +327,18 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
      * @dev no curveShift to save gas because this function
                 doesn't depend on weights of tokens
      * @dev this function will never be locked since we always let users withdraw
-                their funds
+                their funds. That's why we skip time check in isAddRemoveSwapAllowed
      */
     function removeMarketLiquidityDual(
         uint256 _inLp,
         uint256 _minOutXyt,
         uint256 _minOutToken
-    ) external override returns (PendingTransfer[3] memory transfers) {
-        checkIsBootstrapped();
-        checkOnlyRouter();
+    )
+        external
+        override
+        isAddRemoveSwapAllowed(true)
+        returns (PendingTransfer[3] memory transfers)
+    {
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -372,10 +388,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         address _outToken,
         uint256 _inLp,
         uint256 _minOutAmountToken
-    ) external override returns (PendingTransfer[3] memory transfers) {
-        checkIsBootstrapped();
-        checkOnlyRouter();
-        checkMarketIsOpen();
+    )
+        external
+        override
+        isAddRemoveSwapAllowed(false)
+        returns (PendingTransfer[3] memory transfers)
+    {
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -417,16 +435,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
+        isAddRemoveSwapAllowed(false)
         returns (
             uint256 outAmount,
             uint256 spotPriceAfter,
             PendingTransfer[3] memory transfers
         )
     {
-        checkIsBootstrapped();
-        checkOnlyRouter();
-        checkMarketIsOpen();
-
         bool needCurveShift = checkNeedCurveShift();
         if (needCurveShift) {
             _mintProtocolFees();
@@ -470,16 +485,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
+        isAddRemoveSwapAllowed(false)
         returns (
             uint256 inAmount,
             uint256 spotPriceAfter,
             PendingTransfer[3] memory transfers
         )
     {
-        checkIsBootstrapped();
-        checkOnlyRouter();
-        checkMarketIsOpen();
-
         bool needCurveShift = checkNeedCurveShift();
         if (needCurveShift) {
             _mintProtocolFees();
