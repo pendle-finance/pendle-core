@@ -24,7 +24,6 @@ pragma solidity 0.7.6;
 
 import "./abstract/PendleYieldTokenHolderBase.sol";
 import "../interfaces/IAaveIncentivesController.sol";
-import "hardhat/console.sol";
 
 contract PendleAaveV2YieldTokenHolder is PendleYieldTokenHolderBase {
     IAaveIncentivesController private aaveIncentivesController;
