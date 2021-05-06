@@ -66,10 +66,9 @@ interface IPendleData {
     /**
      * @notice Emitted when market fees are changed
      * @param _swapFee new swapFee setting
-     * @param _exitFee new exitFee setting
      * @param _protocolSwapFee new protocolSwapFee setting
      **/
-    event MarketFeesSet(uint256 _swapFee, uint256 _exitFee, uint256 _protocolSwapFee);
+    event MarketFeesSet(uint256 _swapFee, uint256 _protocolSwapFee);
 
     /**
      * @notice Emitted when the curve shift block delta is changed
@@ -261,11 +260,7 @@ interface IPendleData {
         address market
     ) external;
 
-    function setMarketFees(
-        uint256 _swapFee,
-        uint256 _exitFee,
-        uint256 _protocolSwapFee
-    ) external;
+    function setMarketFees(uint256 _swapFee, uint256 _protocolSwapFee) external;
 
     function setInterestUpdateRateDeltaForMarket(uint256 _interestUpdateRateDeltaForMarket)
         external;
@@ -283,8 +278,6 @@ interface IPendleData {
     function allMarketsLength() external view returns (uint256);
 
     function forgeFee() external view returns (uint256);
-
-    function exitFee() external view returns (uint256);
 
     function interestUpdateRateDeltaForMarket() external view returns (uint256);
 

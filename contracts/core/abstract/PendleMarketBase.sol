@@ -344,11 +344,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // the protocol exactly now (with value same as feesPortion * swapFees).
         _mintProtocolFees();
 
-        uint256 exitFee = data.exitFee();
         uint256 totalLp = totalSupply();
-        uint256 exitFees = Math.rmul(_inLp, exitFee);
-        uint256 inLpAfterExitFee = _inLp.sub(exitFee);
-        uint256 ratio = Math.rdiv(inLpAfterExitFee, totalLp);
+        uint256 ratio = Math.rdiv(_inLp, totalLp);
         require(ratio != 0, "ZERO_RATIO");
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
 
@@ -375,9 +372,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         emit Sync(xytBalance, xytWeight, tokenBalance);
 
-        // Deal with lp last.
-        _collectFees(exitFees);
-        _burnLp(inLpAfterExitFee);
+        _burnLp(_inLp);
     }
 
     /// @dev With remove liquidity functions, LPs are always transferred in
@@ -403,12 +398,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         TokenReserve memory outTokenReserve = parseTokenReserveData(_outToken);
 
         uint256 swapFee = data.swapFee();
-        uint256 exitFee = data.exitFee();
-        uint256 exitFees = Math.rmul(_inLp, exitFee);
         uint256 totalLp = totalSupply();
 
-        uint256 outAmountToken =
-            _calcOutAmountToken(outTokenReserve, totalLp, _inLp, swapFee, exitFee);
+        uint256 outAmountToken = _calcOutAmountToken(outTokenReserve, totalLp, _inLp, swapFee);
         require(outAmountToken >= _minOutAmountToken, "INSUFFICIENT_TOKEN_OUT");
 
         // Update reserves and operate underlying LP and outToken
@@ -417,8 +409,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         updateReserveData(outTokenReserve, _outToken);
         _updateLastParamK();
 
-        _collectFees(exitFee);
-        _burnLp(_inLp.sub(exitFees));
+        _burnLp(_inLp);
         transfers[0].amount = outAmountToken;
         transfers[0].isOut = true;
 
@@ -629,12 +620,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         TokenReserve memory outTokenReserve,
         uint256 totalSupplyLp,
         uint256 inLp,
-        uint256 swapFee,
-        uint256 exitFee
+        uint256 swapFee
     ) internal pure returns (uint256 exactOutToken) {
         uint256 nWeight = outTokenReserve.weight;
-        uint256 inLpAfterExitFee = Math.rmul(inLp, Math.RONE.sub(exitFee));
-        uint256 totalSupplyLpUpdated = totalSupplyLp.sub(inLpAfterExitFee);
+        uint256 totalSupplyLpUpdated = totalSupplyLp.sub(inLp);
         uint256 lpRatio = Math.rdiv(totalSupplyLpUpdated, totalSupplyLp);
 
         uint256 outTokenRatio = Math.rpow(lpRatio, Math.rdiv(Math.RONE, nWeight));
@@ -645,11 +634,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 feePortion = Math.rmul(Math.RONE.sub(nWeight), swapFee);
         exactOutToken = Math.rmul(outAmountTokenBeforeSwapFee, Math.RONE.sub(feePortion));
         return exactOutToken;
-    }
-
-    /// @notice Sends fees as LP to Treasury
-    function _collectFees(uint256 _amount) internal {
-        IERC20(address(this)).transfer(data.treasury(), _amount);
     }
 
     function _burnLp(uint256 amount) internal {
