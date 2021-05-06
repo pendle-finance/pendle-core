@@ -818,7 +818,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     function _calcParamK() internal view returns (uint256 paramK) {
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
             readReserveData();
-        paramK = Math.rpow(xytBalance, xytWeight).mul(Math.rpow(tokenBalance, tokenWeight));
+        paramK = Math
+            .rpow(xytBalance.toFP(), xytWeight)
+            .rmul(Math.rpow(tokenBalance.toFP(), tokenWeight))
+            .toInt();
     }
 
     function _afterBootstrap() internal virtual;
