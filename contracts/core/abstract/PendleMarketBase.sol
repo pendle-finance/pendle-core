@@ -794,7 +794,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
             if (_lastParamK != 0) {
                 uint256 k = _calcParamK();
                 if (k > _lastParamK) {
-                    uint256 numer = totalSupply.mul(k.sub(_lastParamK));
+                    uint256 numer = totalSupply().mul(k.sub(_lastParamK));
                     uint256 denom = Math.RONE.sub(feeRatio).mul(k).div(feeRatio).add(_lastParamK);
                     uint256 liquidity = numer / denom;
                     address treasury = data.treasury();
