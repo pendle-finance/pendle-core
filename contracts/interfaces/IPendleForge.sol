@@ -97,8 +97,7 @@ interface IPendleForge {
         address account,
         address underlyingAsset,
         uint256 expiry,
-        uint256 transferOutRate,
-        uint256 newExpiry
+        uint256 transferOutRate
     )
         external
         returns (
@@ -146,6 +145,13 @@ interface IPendleForge {
         );
 
     function withdrawForgeFee(address underlyingAsset, uint256 expiry) external;
+
+    function forwardInterest(
+        address underlyingAsset,
+        uint256 fromExpiry,
+        uint256 toExpiry,
+        uint256 amount
+    ) external;
 
     function getYieldBearingToken(address underlyingAsset) external returns (address);
 
