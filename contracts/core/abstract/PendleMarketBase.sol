@@ -783,24 +783,30 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         lockStartTime = expiry - lockDuration;
     }
 
+    /**
+    @dev this function should be very similar to Uniswap
+    */
     function _mintProtocolFees() internal {
-        uint256 _lastParamK = lastParamK;
-        if (_lastParamK == 0) return;
-        lastParamK = 0;
-
         uint256 feeRatio = data.protocolSwapFee();
-        if (feeRatio == 0) return;
-
-        uint256 paramK = _calcParamK();
-        if (paramK > _lastParamK) {
-            uint256 numer = totalSupply.mul(paramK.sub(_lastParamK));
-            uint256 denom = (Math.RONE.sub(feeRatio)).rmul(paramK).rdiv(feeRatio).add(_lastParamK);
-            uint256 liquidity = numer / denom;
-            address treasury = data.treasury();
-            if (liquidity > 0) {
-                _mintLp(liquidity);
-                IERC20(address(this)).transfer(treasury, liquidity);
+        uint256 _lastParamK = lastParamK;
+        if (feeRatio > 0) {
+            if (_lastParamK != 0) {
+                uint256 k = _calcParamK();
+                if (k > _lastParamK) {
+                    uint256 numer = totalSupply.mul(k.sub(_lastParamK));
+                    uint256 denom =
+                        Math.RONE.sub(feeRatio).rmul(k).rdiv(feeRatio).add(_lastParamK);
+                    uint256 liquidity = numer / denom;
+                    address treasury = data.treasury();
+                    if (liquidity > 0) {
+                        _mintLp(liquidity);
+                        IERC20(address(this)).transfer(treasury, liquidity);
+                    }
+                }
             }
+        } else if (_lastParamK != 0) {
+            // if fee is turned off, we need to reset lastParamK as well
+            lastParamK = 0;
         }
     }
 
