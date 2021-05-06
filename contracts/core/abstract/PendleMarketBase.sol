@@ -247,13 +247,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
             // using _desiredXytAmount to determine the LP and add liquidity
             require(amountTokenUsed >= _tokenMinAmount, "INSUFFICIENT_TOKEN_AMOUNT");
             amountXytUsed = _desiredXytAmount;
-            lpOut = _desiredXytAmount.mul(totalSupply).div(xytBalance);
+            lpOut = _desiredXytAmount.mul(totalSupply()).div(xytBalance);
         } else {
             // using _desiredTokenAmount to determine the LP and add liquidity
             amountXytUsed = _desiredTokenAmount.mul(xytBalance).div(tokenBalance);
             require(amountXytUsed >= _xytMinAmount, "INSUFFICIENT_XYT_AMOUNT");
             amountTokenUsed = _desiredTokenAmount;
-            lpOut = _desiredTokenAmount.mul(totalSupply).div(tokenBalance);
+            lpOut = _desiredTokenAmount.mul(totalSupply()).div(tokenBalance);
         }
 
         xytBalance = xytBalance.add(amountXytUsed);
@@ -294,7 +294,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(_inToken);
 
-        uint256 totalLp = totalSupply;
+        uint256 totalLp = totalSupply();
 
         // Calc out amount of LP token.
         uint256 exactOutLp = _calcOutAmountLp(_exactIn, inTokenReserve, data.swapFee(), totalLp);
@@ -346,7 +346,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _mintProtocolFees();
 
         uint256 exitFee = data.exitFee();
-        uint256 totalLp = totalSupply;
+        uint256 totalLp = totalSupply();
         uint256 exitFees = Math.rmul(_inLp, exitFee);
         uint256 inLpAfterExitFee = _inLp.sub(exitFee);
         uint256 ratio = Math.rdiv(inLpAfterExitFee, totalLp);
@@ -406,7 +406,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 swapFee = data.swapFee();
         uint256 exitFee = data.exitFee();
         uint256 exitFees = Math.rmul(_inLp, exitFee);
-        uint256 totalLp = totalSupply;
+        uint256 totalLp = totalSupply();
 
         uint256 outAmountToken =
             _calcOutAmountToken(outTokenReserve, totalLp, _inLp, swapFee, exitFee);
@@ -743,7 +743,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 interestValuePerLP = _getInterestValuePerLP(account);
         if (interestValuePerLP == 0) return 0;
 
-        dueInterests = balanceOf[account].mul(interestValuePerLP).div(MULTIPLIER);
+        dueInterests = balanceOf(account).mul(interestValuePerLP).div(MULTIPLIER);
         if (dueInterests == 0) return 0;
 
         lastNYield = lastNYield.sub(dueInterests);
@@ -769,7 +769,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 currentNYield = underlyingYieldToken.balanceOf(address(this));
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(currentNYield);
 
-        uint256 secondTerm = paramR.mul(MULTIPLIER).div(totalSupply);
+        uint256 secondTerm = paramR.mul(MULTIPLIER).div(totalSupply());
 
         // update new states
         paramL = firstTerm.add(secondTerm);
@@ -777,9 +777,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     // before we send LPs, we need to settle due interests for both the to and from addresses
-    function _beforeTokenTransfer(address from, address to) internal override {
-        _settleLpInterests(from);
-        _settleLpInterests(to);
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256
+    ) internal override {
+        if (from != address(0)) _settleLpInterests(from);
+        if (to != address(0)) _settleLpInterests(to);
     }
 
     function _initializeLock() internal {
@@ -798,7 +802,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         uint256 paramK = _calcParamK();
         if (paramK > _lastParamK) {
-            uint256 numer = totalSupply.mul(paramK.sub(_lastParamK));
+            uint256 numer = totalSupply().mul(paramK.sub(_lastParamK));
             uint256 denom = (Math.RONE.sub(feeRatio)).rmul(paramK).rdiv(feeRatio).add(_lastParamK);
             uint256 liquidity = numer / denom;
             address treasury = data.treasury();

@@ -75,4 +75,10 @@ contract MockPendleOwnershipToken is PendleOwnershipToken {
     ) public {
         _approve(owner, spender, value);
     }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256
+    ) internal override {}
 }

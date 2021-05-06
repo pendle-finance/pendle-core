@@ -57,7 +57,7 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldToken {
     }
 
     /**
-     * @dev Burns OT or XYT tokens from account, reducting the total supply.
+     * @dev Burns OT or XYT tokens from account, reducing the total supply.
      * @param account The address performing the burn.
      * @param amount The amount to be burned.
      **/
@@ -76,8 +76,14 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldToken {
         emit Mint(account, amount);
     }
 
-    function _beforeTokenTransfer(address from, address to) internal override {
-        IPendleForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, from);
-        IPendleForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, to);
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256
+    ) internal override {
+        if (from != address(0))
+            IPendleForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, from);
+        if (to != address(0))
+            IPendleForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, to);
     }
 }
