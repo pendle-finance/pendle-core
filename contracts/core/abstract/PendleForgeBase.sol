@@ -280,7 +280,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         _safeTransfer(yieldToken, _underlyingAsset, _expiry, treasuryAddress, _totalFee);
     }
 
-    function forwardInterest(
+    function forwardYieldToken(
         address _underlyingAsset,
         uint256 _fromExpiry,
         uint256 _toExpiry,

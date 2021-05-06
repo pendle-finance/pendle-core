@@ -146,7 +146,7 @@ interface IPendleForge {
 
     function withdrawForgeFee(address underlyingAsset, uint256 expiry) external;
 
-    function forwardInterest(
+    function forwardYieldToken(
         address underlyingAsset,
         uint256 fromExpiry,
         uint256 toExpiry,
