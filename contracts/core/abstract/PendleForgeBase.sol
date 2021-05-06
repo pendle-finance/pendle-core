@@ -144,7 +144,16 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         uint256 _expiry,
         uint256 _transferOutRate,
         uint256 _newExpiry
-    ) external override onlyRouter returns (uint256 redeemedAmount, uint256 amountTransferOut, uint256 amountToRenew) {
+    )
+        external
+        override
+        onlyRouter
+        returns (
+            uint256 redeemedAmount,
+            uint256 amountTransferOut,
+            uint256 amountToRenew
+        )
+    {
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         uint256 expiredOTamount = tokens.ot.balanceOf(_account);
@@ -163,9 +172,20 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         amountToRenew = redeemedAmount.sub(amountTransferOut);
 
         _safeTransferOut(yieldToken, _underlyingAsset, _expiry, _account, amountTransferOut);
-        _safeTransferOut(yieldToken, _underlyingAsset, _expiry, yieldTokenHolders[_underlyingAsset][_newExpiry], amountToRenew);
+        _safeTransferOut(
+            yieldToken,
+            _underlyingAsset,
+            _expiry,
+            yieldTokenHolders[_underlyingAsset][_newExpiry],
+            amountToRenew
+        );
 
-        rewardManager.updateUserReward(_underlyingAsset, _expiry, yieldTokenHolders[_underlyingAsset][_expiry], _account);
+        rewardManager.updateUserReward(
+            _underlyingAsset,
+            _expiry,
+            yieldTokenHolders[_underlyingAsset][_expiry],
+            _account
+        );
         tokens.ot.burn(_account, expiredOTamount);
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, expiredOTamount, redeemedAmount);
@@ -189,7 +209,12 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
             _settleDueInterests(tokens, _underlyingAsset, _expiry, _account, true)
         );
 
-        rewardManager.updateUserReward(_underlyingAsset, _expiry, yieldTokenHolders[_underlyingAsset][_expiry], _account);
+        rewardManager.updateUserReward(
+            _underlyingAsset,
+            _expiry,
+            yieldTokenHolders[_underlyingAsset][_expiry],
+            _account
+        );
         tokens.ot.burn(_account, _amountToRedeem);
         tokens.xyt.burn(_account, _amountToRedeem);
         _safeTransferOut(yieldToken, _underlyingAsset, _expiry, _account, redeemedAmount);
@@ -222,7 +247,12 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         uint256 _expiry,
         address _account
     ) external override onlyOT(_underlyingAsset, _expiry) {
-        rewardManager.updateUserReward(_underlyingAsset, _expiry, yieldTokenHolders[_underlyingAsset][_expiry], _account);
+        rewardManager.updateUserReward(
+            _underlyingAsset,
+            _expiry,
+            yieldTokenHolders[_underlyingAsset][_expiry],
+            _account
+        );
     }
 
     function tokenizeYield(
@@ -243,11 +273,22 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
 
         uint256 interest = _settleDueInterests(tokens, _underlyingAsset, _expiry, _to, true);
-        _safeTransferOut(IERC20(_getYieldBearingToken(_underlyingAsset)), _underlyingAsset, _expiry, _to, interest);
+        _safeTransferOut(
+            IERC20(_getYieldBearingToken(_underlyingAsset)),
+            _underlyingAsset,
+            _expiry,
+            _to,
+            interest
+        );
 
         amountTokenMinted = _calcAmountToMint(_underlyingAsset, _amountToTokenize);
 
-        rewardManager.updateUserReward(_underlyingAsset, _expiry, yieldTokenHolders[_underlyingAsset][_expiry], _to);
+        rewardManager.updateUserReward(
+            _underlyingAsset,
+            _expiry,
+            yieldTokenHolders[_underlyingAsset][_expiry],
+            _to
+        );
         tokens.ot.mint(_to, amountTokenMinted);
         tokens.xyt.mint(_to, amountTokenMinted);
 
@@ -255,15 +296,25 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         return (address(tokens.ot), address(tokens.xyt), amountTokenMinted);
     }
 
-    function withdrawProtocolFee(address _underlyingAsset, uint256 _expiry) onlyGovernance external override {
+    function withdrawProtocolFee(address _underlyingAsset, uint256 _expiry)
+        external
+        override
+        onlyGovernance
+    {
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
 
-        _accrueProtocolFee(_underlyingAsset, _expiry, 0); //ping to update interest up to now
+        _updateProtocolFee(_underlyingAsset, _expiry, 0); //ping to update interest up to now
         uint256 _accruedProtocolFee = accruedProtocolFee[_underlyingAsset][_expiry];
         accruedProtocolFee[_underlyingAsset][_expiry] = 0;
 
         address treasuryAddress = data.treasury();
-        _safeTransferOut(yieldToken, _underlyingAsset, _expiry, treasuryAddress, _accruedProtocolFee);
+        _safeTransferOut(
+            yieldToken,
+            _underlyingAsset,
+            _expiry,
+            treasuryAddress,
+            _accruedProtocolFee
+        );
     }
 
     function getYieldBearingToken(address _underlyingAsset) external override returns (address) {
@@ -346,7 +397,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
             if (forgeFee > 0) {
                 uint256 protocolFeeAmount = amountOut.rmul(forgeFee);
                 amountOut = amountOut.sub(protocolFeeAmount);
-                _accrueProtocolFee(_underlyingAsset, _expiry, protocolFeeAmount);
+                _updateProtocolFee(_underlyingAsset, _expiry, protocolFeeAmount);
             }
 
             dueInterests[_underlyingAsset][_expiry][_account] = 0;
@@ -386,6 +437,12 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         address _account
     ) internal virtual;
 
+    function _updateProtocolFee(
+        address _underlyingAsset,
+        uint256 _expiry,
+        uint256 _feeAmount
+    ) internal virtual;
+
     function _calcTotalAfterExpiry(
         address _underlyingAsset,
         uint256 _expiry,
@@ -408,9 +465,10 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         amountToMint = _amountToTokenize;
     }
 
-    function _deployYieldTokenHolder(address yieldToken, address ot) internal virtual returns (address yieldTokenHolder);
-
-    function _accrueProtocolFee(address _underlyingAsset, uint256 _expiry, uint256 _protocolFee) internal virtual;
+    function _deployYieldTokenHolder(address yieldToken, address ot)
+        internal
+        virtual
+        returns (address yieldTokenHolder);
 
     function _getYieldBearingToken(address _underlyingAsset) internal virtual returns (address);
 }

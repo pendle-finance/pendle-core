@@ -151,24 +151,22 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normIncomeNow;
     }
 
-    function _accrueProtocolFee(
+    function _updateProtocolFee(
         address _underlyingAsset,
         uint256 _expiry,
-        uint256 _protocolFee
+        uint256 _feeAmount
     ) internal override {
-        uint256 currentNormalizedIncome = getReserveNormalizedIncome(_underlyingAsset);
+        uint256 normIncomeNow = getReserveNormalizedIncome(_underlyingAsset);
         if (lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry] == 0) {
-            lastNormalisedIncomeForProtocolFee[_underlyingAsset][
-                _expiry
-            ] = currentNormalizedIncome;
+            lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry] = normIncomeNow;
         }
         accruedProtocolFee[_underlyingAsset][_expiry] = accruedProtocolFee[_underlyingAsset][
             _expiry
         ]
-            .mul(currentNormalizedIncome)
+            .mul(normIncomeNow)
             .div(lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry])
-            .add(_protocolFee);
-        lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry] = currentNormalizedIncome;
+            .add(_feeAmount);
+        lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry] = normIncomeNow;
     }
 
     function _deployYieldTokenHolder(address yieldToken, address ot)

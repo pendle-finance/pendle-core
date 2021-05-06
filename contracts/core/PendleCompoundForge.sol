@@ -176,7 +176,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
             .add(interestFromXyt);
     }
 
-    function _accrueProtocolFee(
+    function _updateProtocolFee(
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _protocolFee
