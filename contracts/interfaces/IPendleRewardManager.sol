@@ -23,18 +23,11 @@
 pragma solidity 0.7.6;
 
 interface IPendleRewardManager {
-    function updateUserReward(
+    function settleUserRewards(
         address _underlyingAsset,
         uint256 _expiry,
-        address _yieldTokenHolder,
         address _account
-    ) external;
-
-    function claimRewards(
-        address[] memory _underlyingAssets,
-        uint256[] memory _expiries,
-        address _account
-    ) external returns (uint256[] memory rewards);
+    ) external returns (uint256 dueRewards);
 
     function forgeId() external returns (bytes32);
 }

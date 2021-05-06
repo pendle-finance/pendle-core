@@ -30,6 +30,10 @@ import "../interfaces/IPendleYieldTokenHolder.sol";
 import "../interfaces/IPendleRewardManager.sol";
 import "../interfaces/IPendleForge.sol";
 
+/**
+@dev the logic of distributing rewards is very similar to that of PendleCompoundMarket & PendleCompoundLiquidityMining
+    Any major differences are likely to be bugs
+*/
 contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable {
     using SafeMath for uint256;
 
@@ -41,10 +45,9 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable 
     IPendleRouter private router;
 
     struct RewardData {
-        uint256 rewardIndex;
+        uint256 paramL;
         uint256 lastRewardBalance;
-        mapping(address => uint256) userLastRewardIndex;
-        mapping(address => uint256) dueReward;
+        mapping(address => uint256) lastParamL;
     }
 
     mapping(address => mapping(uint256 => RewardData)) private rewardData;
@@ -67,89 +70,85 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable 
         require(msg.sender == initializer, "FORBIDDEN");
         require(address(_forgeAddress) != address(0), "ZERO_ADDRESS");
 
-        initializer = address(0);
         forge = IPendleForge(_forgeAddress);
         require(forge.forgeId() == forgeId, "FORGE_ID_MISMATCH");
+        initializer = address(0);
         rewardToken = forge.rewardToken();
         data = forge.data();
         router = forge.router();
     }
 
+    // INVARIANT: this function must be called before any action that changes the OT balance of account
+    function settleUserRewards(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) external override onlyForge returns (uint256 dueRewards) {
+        RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
+
+        address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
+        _updateParamL(_underlyingAsset, _expiry, _yieldTokenHolder);
+
+        uint256 rewardsAmountPerOT = _getRewardsAmountPerOT(_underlyingAsset, _expiry, _account);
+        if (rewardsAmountPerOT == 0) return 0;
+
+        IPendleYieldToken ot = data.otTokens(forgeId, _underlyingAsset, _expiry);
+        dueRewards = ot.balanceOf(_account).mul(rewardsAmountPerOT).div(MULTIPLIER);
+        if (dueRewards == 0) return 0;
+
+        rwd.lastRewardBalance = rwd.lastRewardBalance.sub(dueRewards);
+        rewardToken.transferFrom(_yieldTokenHolder, _account, dueRewards);
+    }
+
     // INVARIANT: this function must be called before any action that changes the total OT
-    function _updateRewardIndex(
+    function _updateParamL(
         address _underlyingAsset,
         uint256 _expiry,
         address yieldTokenHolder
-    ) internal returns (IPendleYieldToken ot) {
-        RewardData storage rData = rewardData[_underlyingAsset][_expiry];
+    ) internal {
+        RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
 
-        uint256 lastRewardIndex = rData.rewardIndex;
-        if (lastRewardIndex == 0) {
-            lastRewardIndex = 1; // always start from at least 1;
-        }
         IPendleYieldTokenHolder(yieldTokenHolder).claimRewards();
 
+        IPendleYieldToken ot = data.otTokens(forgeId, _underlyingAsset, _expiry);
+
         uint256 currentRewardBalance = rewardToken.balanceOf(yieldTokenHolder);
-        uint256 rewardClaimed = currentRewardBalance.sub(rData.lastRewardBalance);
-        ot = data.otTokens(forgeId, _underlyingAsset, _expiry);
+        (uint256 firstTerm, uint256 paramR) =
+            _getFirstTermAndParamR(_underlyingAsset, _expiry, currentRewardBalance);
+
         uint256 totalOT = ot.totalSupply();
+        uint256 secondTerm;
 
-        //TODO: what happens if there is no OT left ?
-        if (rewardClaimed == 0 || totalOT == 0) return ot;
-        rData.rewardIndex = rewardClaimed.mul(MULTIPLIER).div(totalOT).add(lastRewardIndex);
-        rData.lastRewardBalance = currentRewardBalance;
-    }
-
-    // INVARIANT: this function must be called before any action that changes the OT balance of account
-    function updateUserReward(
-        address _underlyingAsset,
-        uint256 _expiry,
-        address _yieldTokenHolder,
-        address _account
-    ) public override onlyForge {
-        IPendleYieldToken ot = _updateRewardIndex(_underlyingAsset, _expiry, _yieldTokenHolder);
-
-        RewardData storage rData = rewardData[_underlyingAsset][_expiry];
-        uint256 userLastRewardIndex = rData.userLastRewardIndex[_account];
-        uint256 currentRewardIndex = rData.rewardIndex;
-
-        rData.userLastRewardIndex[_account] = currentRewardIndex;
-        if (userLastRewardIndex == 0) return;
-
-        uint256 newReward =
-            ot.balanceOf(_account).mul(currentRewardIndex.sub(userLastRewardIndex)).div(
-                MULTIPLIER
-            );
-        rData.dueReward[_account] = rData.dueReward[_account].add(newReward);
-    }
-
-    function claimRewards(
-        address[] memory _underlyingAssets,
-        uint256[] memory _expiries,
-        address _account
-    ) external override onlyRouter returns (uint256[] memory rewards) {
-        require(_underlyingAssets.length == _expiries.length, "ARRAY_LENGTH_MISMATCH");
-        rewards = new uint256[](_underlyingAssets.length);
-        for (uint256 i = 0; i < _underlyingAssets.length; i++) {
-            rewards[i] = _claimReward(_underlyingAssets[i], _expiries[i], _account);
+        if (totalOT != 0) {
+            secondTerm = paramR.mul(MULTIPLIER).div(totalOT);
         }
+
+        // Update new states
+        rwd.paramL = firstTerm.add(secondTerm);
+        rwd.lastRewardBalance = currentRewardBalance;
     }
 
-    function _claimReward(
+    function _getFirstTermAndParamR(
         address _underlyingAsset,
         uint256 _expiry,
-        address _account
-    ) internal returns (uint256 reward) {
-        address yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
-        // Update the user's reward before sending the reward out
-        updateUserReward(_underlyingAsset, _expiry, yieldTokenHolder, _account);
+        uint256 currentRewardBalance
+    ) internal view returns (uint256 firstTerm, uint256 paramR) {
+        RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
+        firstTerm = rwd.paramL;
+        paramR = currentRewardBalance.sub(rwd.lastRewardBalance);
+    }
 
-        RewardData storage rData = rewardData[_underlyingAsset][_expiry];
-
-        uint256 dueReward = rData.dueReward[_account];
-        if (dueReward == 0) return 0;
-
-        rData.dueReward[_account] = 0;
-        rewardToken.transferFrom(yieldTokenHolder, _account, dueReward);
+    function _getRewardsAmountPerOT(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address account
+    ) internal returns (uint256 interestValuePerLP) {
+        RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
+        if (rwd.lastParamL[account] == 0) {
+            interestValuePerLP = 0;
+        } else {
+            interestValuePerLP = rwd.paramL.sub(rwd.lastParamL[account]);
+        }
+        rwd.lastParamL[account] = rwd.paramL;
     }
 }

@@ -34,7 +34,7 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
     IAaveLendingPoolCore public immutable aaveLendingPoolCore;
 
     mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeBeforeExpiry;
-    mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeForProtocolFee;
+    mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeForForgeFee;
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         public lastNormalisedIncome; //lastNormalisedIncome[underlyingAsset][expiry][account]
     mapping(address => address) private reserveATokenAddress;
@@ -151,24 +151,21 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normIncomeNow;
     }
 
-    function _accrueProtocolFee(
+    function _updateForgeFee(
         address _underlyingAsset,
         uint256 _expiry,
-        uint256 _protocolFee
+        uint256 _feeAmount
     ) internal override {
-        uint256 currentNormalizedIncome = getReserveNormalizedIncome(_underlyingAsset);
-        if (lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry] == 0) {
-            lastNormalisedIncomeForProtocolFee[_underlyingAsset][
-                _expiry
-            ] = currentNormalizedIncome;
+        uint256 normIncomeNow = getReserveNormalizedIncome(_underlyingAsset);
+        if (lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] == 0) {
+            lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] = normIncomeNow;
         }
-        accruedProtocolFee[_underlyingAsset][_expiry] = accruedProtocolFee[_underlyingAsset][
-            _expiry
-        ]
-            .mul(currentNormalizedIncome)
-            .div(lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry])
-            .add(_protocolFee);
-        lastNormalisedIncomeForProtocolFee[_underlyingAsset][_expiry] = currentNormalizedIncome;
+
+        totalFee[_underlyingAsset][_expiry] = totalFee[_underlyingAsset][_expiry]
+            .mul(normIncomeNow)
+            .div(lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry])
+            .add(_feeAmount);
+        lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] = normIncomeNow;
     }
 
     function _deployYieldTokenHolder(address yieldToken, address ot)
