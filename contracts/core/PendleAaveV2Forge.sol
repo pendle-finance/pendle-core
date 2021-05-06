@@ -26,6 +26,7 @@ pragma experimental ABIEncoderV2;
 import "../interfaces/IAaveV2LendingPool.sol";
 import "../interfaces/IPendleAaveForge.sol";
 import "./abstract/PendleForgeBase.sol";
+import "./PendleAaveV2YieldTokenHolder.sol";
 
 /**
 * @dev This contract will be very similar to AaveForge. Any major differences between the two
@@ -37,8 +38,10 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
     using Math for uint256;
 
     IAaveV2LendingPool public immutable aaveLendingPool;
+    IAaveIncentivesController public immutable aaveIncentivesController;
 
     mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeBeforeExpiry;
+    mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeForForgeFee;
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         public lastNormalisedIncome; //lastNormalisedIncome[underlyingAsset][expiry][account]
     mapping(address => address) private reserveATokenAddress;
@@ -47,10 +50,15 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         address _governance,
         IPendleRouter _router,
         IAaveV2LendingPool _aaveLendingPool,
-        bytes32 _forgeId
-    ) PendleForgeBase(_governance, _router, _forgeId) {
+        bytes32 _forgeId,
+        address _rewardToken,
+        address _rewardManager,
+        address _aaveIncentivesController
+    ) PendleForgeBase(_governance, _router, _forgeId, _rewardToken, _rewardManager) {
         require(address(_aaveLendingPool) != address(0), "ZERO_ADDRESS");
+        require(address(_aaveIncentivesController) != address(0), "ZERO_ADDRESS");
 
+        aaveIncentivesController = IAaveIncentivesController(_aaveIncentivesController);
         aaveLendingPool = _aaveLendingPool;
     }
 
@@ -150,5 +158,40 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
             .add(interestFromXyt);
 
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normIncomeNow;
+    }
+
+    function _updateForgeFee(
+        address _underlyingAsset,
+        uint256 _expiry,
+        uint256 _feeAmount
+    ) internal override {
+        uint256 normIncomeNow = getReserveNormalizedIncome(_underlyingAsset);
+        if (lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] == 0) {
+            lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] = normIncomeNow;
+        }
+
+        totalFee[_underlyingAsset][_expiry] = totalFee[_underlyingAsset][_expiry]
+            .mul(normIncomeNow)
+            .div(lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry])
+            .add(_feeAmount);
+        lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] = normIncomeNow;
+    }
+
+    function _deployYieldTokenHolder(address yieldToken, address ot)
+        internal
+        override
+        returns (address yieldTokenHolder)
+    {
+        yieldTokenHolder = Factory.createContract(
+            type(PendleAaveV2YieldTokenHolder).creationCode,
+            abi.encodePacked(ot),
+            abi.encode(
+                address(router),
+                yieldToken,
+                rewardToken,
+                address(rewardManager),
+                aaveIncentivesController
+            )
+        );
     }
 }

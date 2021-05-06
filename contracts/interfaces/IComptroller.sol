@@ -30,4 +30,11 @@ interface IComptroller {
     }
 
     function markets(address) external returns (Market memory);
+
+    function claimComp(
+        address[] memory holders,
+        address[] memory cTokens,
+        bool borrowers,
+        bool suppliers
+    ) external;
 }

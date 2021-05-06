@@ -81,7 +81,6 @@ describe("compound-lp-interest", async () => {
     }
 
     await fixture.core.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
-    await fixture.core.data.setInterestUpdateRateDeltaForForge(BN.from(0));
 
     snapshotId = await evm_snapshot();
   });

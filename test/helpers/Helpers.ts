@@ -315,3 +315,8 @@ export function epochOfTimestamp(params: liqParams, t: BN): BN {
 export function startOfEpoch(params: liqParams, e: number): BN {
   return params.EPOCH_DURATION.mul(e - 1).add(params.START_TIME);
 }
+
+export function randomBN(range?: number): BN {
+  if (range == undefined) range = 1e15;
+  return BN.from(Math.floor(Math.random() * range));
+}

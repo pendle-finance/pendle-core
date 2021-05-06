@@ -24,6 +24,7 @@ pragma solidity 0.7.6;
 
 import "../interfaces/IPendleAaveForge.sol";
 import "./abstract/PendleForgeBase.sol";
+import "./PendleAaveYieldTokenHolder.sol";
 
 contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
     using ExpiryUtils for string;
@@ -33,6 +34,7 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
     IAaveLendingPoolCore public immutable aaveLendingPoolCore;
 
     mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeBeforeExpiry;
+    mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeForForgeFee;
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         public lastNormalisedIncome; //lastNormalisedIncome[underlyingAsset][expiry][account]
     mapping(address => address) private reserveATokenAddress;
@@ -41,8 +43,10 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         address _governance,
         IPendleRouter _router,
         IAaveLendingPoolCore _aaveLendingPoolCore,
-        bytes32 _forgeId
-    ) PendleForgeBase(_governance, _router, _forgeId) {
+        bytes32 _forgeId,
+        address _rewardToken,
+        address _rewardManager
+    ) PendleForgeBase(_governance, _router, _forgeId, _rewardToken, _rewardManager) {
         require(address(_aaveLendingPoolCore) != address(0), "ZERO_ADDRESS");
 
         aaveLendingPoolCore = _aaveLendingPoolCore;
@@ -145,5 +149,34 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
             .add(interestFromXyt);
 
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normIncomeNow;
+    }
+
+    function _updateForgeFee(
+        address _underlyingAsset,
+        uint256 _expiry,
+        uint256 _feeAmount
+    ) internal override {
+        uint256 normIncomeNow = getReserveNormalizedIncome(_underlyingAsset);
+        if (lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] == 0) {
+            lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] = normIncomeNow;
+        }
+
+        totalFee[_underlyingAsset][_expiry] = totalFee[_underlyingAsset][_expiry]
+            .mul(normIncomeNow)
+            .div(lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry])
+            .add(_feeAmount);
+        lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] = normIncomeNow;
+    }
+
+    function _deployYieldTokenHolder(address yieldToken, address ot)
+        internal
+        override
+        returns (address yieldTokenHolder)
+    {
+        yieldTokenHolder = Factory.createContract(
+            type(PendleAaveYieldTokenHolder).creationCode,
+            abi.encodePacked(ot),
+            abi.encode(address(router), yieldToken, rewardToken, address(rewardManager))
+        );
     }
 }

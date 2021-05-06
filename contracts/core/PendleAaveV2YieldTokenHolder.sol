@@ -22,34 +22,27 @@
  */
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./ERC20.sol";
-import "../interfaces/IPendleBaseToken.sol";
+import "./abstract/PendleYieldTokenHolderBase.sol";
+import "../interfaces/IAaveIncentivesController.sol";
 
-/**
- *   @title PendleBaseToken
- *   @dev The contract implements the standard ERC20 functions, plus some
- *        Pendle specific fields and functions, namely:
- *          - expiry
- *
- *        This abstract contract is inherited by PendleFutureYieldToken
- *        and PendleOwnershipToken contracts.
- **/
-abstract contract PendleBaseToken is ERC20 {
-    using SafeMath for uint256;
-
-    uint256 public override start;
-    uint256 public override expiry;
+contract PendleAaveV2YieldTokenHolder is PendleYieldTokenHolderBase {
+    IAaveIncentivesController private aaveIncentivesController;
 
     constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _start,
-        uint256 _expiry
-    ) ERC20(_name, _symbol) {
-        _setupDecimals(_decimals);
-        start = _start;
-        expiry = _expiry;
+        address _router,
+        address _yieldToken,
+        address _rewardToken,
+        address _rewardManager,
+        address _aaveIncentivesController
+    ) PendleYieldTokenHolderBase(_router, _yieldToken, _rewardToken, _rewardManager) {
+        require(_aaveIncentivesController != address(0), "ZERO_ADDRESS");
+        aaveIncentivesController = IAaveIncentivesController(_aaveIncentivesController);
+    }
+
+    function claimRewards() external override {
+        address[] memory assets = new address[](1);
+        assets[0] = yieldToken;
+
+        aaveIncentivesController.claimRewards(assets, type(uint256).max, address(this));
     }
 }

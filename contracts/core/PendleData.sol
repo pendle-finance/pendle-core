@@ -25,6 +25,7 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../libraries/MathLib.sol";
 import "../interfaces/IPendleData.sol";
+import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../periphery/Permissions.sol";
@@ -41,6 +42,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     mapping(bytes32 => address) public override getForgeAddress;
     mapping(address => bytes32) public override getMarketFactoryId;
     mapping(bytes32 => address) public override getMarketFactoryAddress;
+    mapping(address => bytes32) public override getRewardManagerForgeId;
 
     // getMarket[marketFactoryId][xyt][token]
     mapping(bytes32 => mapping(address => mapping(address => address))) public override getMarket;
@@ -59,16 +61,18 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     address[] private allMarkets;
 
     uint256 private constant FEE_HARD_LIMIT = 109951162777; // equals to MATH.RONE / 10 = 10%
-    // Parameters to be set by governance;
 
+    // Parameters to be set by governance;
+    uint256 public override forgeFee; // portion of interests from XYT for the protocol
     uint256 public override interestUpdateRateDeltaForMarket;
-    uint256 public override interestUpdateRateDeltaForForge;
     uint256 public override expiryDivisor = 1 days;
     uint256 public override swapFee;
     uint256 public override exitFee;
+    uint256 public override protocolSwapFee; // as a portion of swapFee
     // lock duration = duration * lockNumerator / lockDenominator
     uint256 public override lockNumerator;
     uint256 public override lockDenominator;
+    uint256 public override curveShiftBlockDelta;
 
     constructor(address _governance, address _treasury) Permissions(_governance) {
         require(_treasury != address(0), "ZERO_ADDRESS");
@@ -115,16 +119,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         emit InterestUpdateRateDeltaForMarketSet(_interestUpdateRateDeltaForMarket);
     }
 
-    function setInterestUpdateRateDeltaForForge(uint256 _interestUpdateRateDeltaForForge)
-        external
-        override
-        initialized
-        onlyGovernance
-    {
-        interestUpdateRateDeltaForForge = _interestUpdateRateDeltaForForge;
-        emit InterestUpdateRateDeltaForForgeSet(_interestUpdateRateDeltaForForge);
-    }
-
     function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator)
         external
         override
@@ -160,7 +154,8 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     {
         getForgeId[_forgeAddress] = _forgeId;
         getForgeAddress[_forgeId] = _forgeAddress;
-
+        address rewardManager = address(IPendleForge(_forgeAddress).rewardManager());
+        getRewardManagerForgeId[rewardManager] = _forgeId;
         emit ForgeAdded(_forgeId, _forgeAddress);
     }
 
@@ -174,6 +169,12 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         otTokens[_forgeId][_underlyingAsset][_expiry] = IPendleYieldToken(_ot);
         xytTokens[_forgeId][_underlyingAsset][_expiry] = IPendleYieldToken(_xyt);
         isXyt[_xyt] = true;
+    }
+
+    function setForgeFee(uint256 _forgeFee) external override onlyGovernance {
+        require(_forgeFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
+        forgeFee = _forgeFee;
+        emit ForgeFeeSet(_forgeFee);
     }
 
     function getPendleYieldTokens(
@@ -242,10 +243,22 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         emit ForgeFactoryValiditySet(_forgeId, _marketFactoryId, _valid);
     }
 
-    function setMarketFees(uint256 _swapFee, uint256 _exitFee) external override onlyGovernance {
+    function setMarketFees(
+        uint256 _swapFee,
+        uint256 _exitFee,
+        uint256 _protocolSwapFee
+    ) external override onlyGovernance {
         require(_swapFee <= FEE_HARD_LIMIT && _exitFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
+        require(_protocolSwapFee < Math.RONE, "PROTOCOL_FEE_EXCEED_LIMIT");
         swapFee = _swapFee;
         exitFee = _exitFee;
+        protocolSwapFee = _protocolSwapFee;
+        emit MarketFeesSet(_swapFee, _exitFee, _protocolSwapFee);
+    }
+
+    function setCurveShiftBlockDelta(uint256 _blockDelta) external override onlyGovernance {
+        curveShiftBlockDelta = _blockDelta;
+        emit CurveShiftBlockDeltaSet(_blockDelta);
     }
 
     function allMarketsLength() external view override returns (uint256) {

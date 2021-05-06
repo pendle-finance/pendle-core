@@ -53,16 +53,29 @@ interface IPendleData {
     event ExpiryDivisorSet(uint256 expiryDivisor);
 
     /**
+     * @notice Emitted when forge fee is changed
+     **/
+    event ForgeFeeSet(uint256 forgeFee);
+
+    /**
      * @notice Emitted when interestUpdateRateDeltaForMarket is changed
      * @param interestUpdateRateDeltaForMarket new interestUpdateRateDeltaForMarket setting
      **/
     event InterestUpdateRateDeltaForMarketSet(uint256 interestUpdateRateDeltaForMarket);
 
     /**
-     * @notice Emitted when interestUpdateRateDeltaForForge is changed
-     * @param interestUpdateRateDeltaForForge new interestUpdateRateDeltaForForge setting
+     * @notice Emitted when market fees are changed
+     * @param _swapFee new swapFee setting
+     * @param _exitFee new exitFee setting
+     * @param _protocolSwapFee new protocolSwapFee setting
      **/
-    event InterestUpdateRateDeltaForForgeSet(uint256 interestUpdateRateDeltaForForge);
+    event MarketFeesSet(uint256 _swapFee, uint256 _exitFee, uint256 _protocolSwapFee);
+
+    /**
+     * @notice Emitted when the curve shift block delta is changed
+     * @param _blockDelta new block delta setting
+     **/
+    event CurveShiftBlockDeltaSet(uint256 _blockDelta);
 
     /**
      * @notice Set/update validity of a forge-factory pair
@@ -129,6 +142,12 @@ interface IPendleData {
     ) external;
 
     /**
+     * @notice Set a new forge fee
+     * @param _forgeFee new forge fee
+     **/
+    function setForgeFee(uint256 _forgeFee) external;
+
+    /**
      * @notice Gets the OT and XYT tokens.
      * @param forgeId Forge and protocol identifier.
      * @param underlyingYieldToken Token address of the underlying yield token.
@@ -155,6 +174,16 @@ interface IPendleData {
      * @return forgeAddress Returns the forge address.
      **/
     function getForgeAddress(bytes32 forgeId) external view returns (address forgeAddress);
+
+    /**
+     * @notice Gets a forge id of a reward manager
+     * @param rewardManager address of the reward manager
+     * @return forgeId Returns the forge id.
+     **/
+    function getRewardManagerForgeId(address rewardManager)
+        external
+        view
+        returns (bytes32 forgeId);
 
     /**
      * @notice Checks if an XYT token is valid.
@@ -232,16 +261,20 @@ interface IPendleData {
         address market
     ) external;
 
-    function setMarketFees(uint256 _swapFee, uint256 _exitFee) external;
+    function setMarketFees(
+        uint256 _swapFee,
+        uint256 _exitFee,
+        uint256 _protocolSwapFee
+    ) external;
 
     function setInterestUpdateRateDeltaForMarket(uint256 _interestUpdateRateDeltaForMarket)
         external;
 
-    function setInterestUpdateRateDeltaForForge(uint256 _interestUpdateRateDeltaForForge) external;
-
     function setLockParams(uint256 _lockNumerator, uint256 _lockDenominator) external;
 
     function setExpiryDivisor(uint256 _expiryDivisor) external;
+
+    function setCurveShiftBlockDelta(uint256 _blockDelta) external;
 
     /**
      * @notice Displays the number of markets currently existing.
@@ -249,11 +282,11 @@ interface IPendleData {
      **/
     function allMarketsLength() external view returns (uint256);
 
+    function forgeFee() external view returns (uint256);
+
     function exitFee() external view returns (uint256);
 
     function interestUpdateRateDeltaForMarket() external view returns (uint256);
-
-    function interestUpdateRateDeltaForForge() external view returns (uint256);
 
     function expiryDivisor() external view returns (uint256);
 
@@ -262,6 +295,10 @@ interface IPendleData {
     function lockDenominator() external view returns (uint256);
 
     function swapFee() external view returns (uint256);
+
+    function protocolSwapFee() external view returns (uint256);
+
+    function curveShiftBlockDelta() external view returns (uint256);
 
     /**
      * @notice Gets all the markets.

@@ -24,6 +24,7 @@ pragma solidity 0.7.6;
 
 import "./PendleBaseToken.sol";
 import "../interfaces/IPendleYieldToken.sol";
+import "../interfaces/IPendleForge.sol";
 
 contract PendleOwnershipToken is PendleBaseToken, IPendleYieldToken {
     address public override forge;
@@ -54,7 +55,7 @@ contract PendleOwnershipToken is PendleBaseToken, IPendleYieldToken {
     }
 
     /**
-     * @dev Burns OT or XYT tokens from account, reducting the total supply.
+     * @dev Burns OT or XYT tokens from account, reducing the total supply.
      * @param account The address performing the burn.
      * @param amount The amount to be burned.
      **/
@@ -71,5 +72,16 @@ contract PendleOwnershipToken is PendleBaseToken, IPendleYieldToken {
     function mint(address account, uint256 amount) public override onlyForge {
         _mint(account, amount);
         emit Mint(account, amount);
+    }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256
+    ) internal virtual override {
+        if (from != address(0))
+            IPendleForge(forge).redeemRewardsBeforeOtTransfer(underlyingAsset, expiry, from);
+        if (to != address(0))
+            IPendleForge(forge).redeemRewardsBeforeOtTransfer(underlyingAsset, expiry, to);
     }
 }

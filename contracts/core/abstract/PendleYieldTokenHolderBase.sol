@@ -22,34 +22,33 @@
  */
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./ERC20.sol";
-import "../interfaces/IPendleBaseToken.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "../../interfaces/IPendleYieldTokenHolder.sol";
+import "../../interfaces/IPendleRouter.sol";
+import "../../interfaces/IPendleForge.sol";
 
-/**
- *   @title PendleBaseToken
- *   @dev The contract implements the standard ERC20 functions, plus some
- *        Pendle specific fields and functions, namely:
- *          - expiry
- *
- *        This abstract contract is inherited by PendleFutureYieldToken
- *        and PendleOwnershipToken contracts.
- **/
-abstract contract PendleBaseToken is ERC20 {
-    using SafeMath for uint256;
+abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder {
+    using SafeERC20 for IERC20;
 
-    uint256 public override start;
-    uint256 public override expiry;
+    address internal yieldToken;
 
     constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _start,
-        uint256 _expiry
-    ) ERC20(_name, _symbol) {
-        _setupDecimals(_decimals);
-        start = _start;
-        expiry = _expiry;
+        address _router,
+        address _yieldToken,
+        address _rewardToken,
+        address _rewardManager
+    ) {
+        require(
+            _router != address(0) && _yieldToken != address(0) && _rewardToken != address(0),
+            "ZERO_ADDRESS"
+        );
+        yieldToken = _yieldToken;
+        IERC20(_yieldToken).safeApprove(_router, type(uint256).max);
+        IERC20(_yieldToken).safeApprove(msg.sender, type(uint256).max);
+
+        IERC20(_rewardToken).safeApprove(_rewardManager, type(uint256).max);
     }
+
+    function claimRewards() external virtual override;
 }
