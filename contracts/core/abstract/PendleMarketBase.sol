@@ -442,8 +442,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
             PendingTransfer[3] memory transfers
         )
     {
-        bool needCurveShift = checkNeedCurveShift();
-        if (needCurveShift) {
+        if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
         }
@@ -464,9 +463,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // repack data
         updateReserveData(inTokenReserve, inToken);
         updateReserveData(outTokenReserve, outToken);
-        if (needCurveShift) {
-            _updateLastParamK();
-        }
+        _updateLastParamK();
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
         emit Sync(xytBalance, xytWeight, tokenBalance);
@@ -492,8 +489,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
             PendingTransfer[3] memory transfers
         )
     {
-        bool needCurveShift = checkNeedCurveShift();
-        if (needCurveShift) {
+        if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
         }
@@ -514,9 +510,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // repack data
         updateReserveData(inTokenReserve, inToken);
         updateReserveData(outTokenReserve, outToken);
-        if (needCurveShift) {
-            _updateLastParamK();
-        }
+        _updateLastParamK();
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
         emit Sync(xytBalance, xytWeight, tokenBalance);
@@ -733,6 +727,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     function _curveShift() internal {
         if (!checkNeedCurveShift()) return;
         _updateWeight();
+        _updateLastParamK();
         blockNumLast = block.number;
     }
 
