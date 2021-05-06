@@ -445,6 +445,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
+            _updateLastParamK();
         }
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken);
@@ -463,7 +464,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // repack data
         updateReserveData(inTokenReserve, inToken);
         updateReserveData(outTokenReserve, outToken);
-        _updateLastParamK();
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
         emit Sync(xytBalance, xytWeight, tokenBalance);
@@ -492,6 +492,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
+            _updateLastParamK();
         }
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken);
@@ -510,7 +511,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // repack data
         updateReserveData(inTokenReserve, inToken);
         updateReserveData(outTokenReserve, outToken);
-        _updateLastParamK();
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
         emit Sync(xytBalance, xytWeight, tokenBalance);
@@ -723,11 +723,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     //curve shift will be called before any calculation using weight
     // INVARIANT: if mintProtocolFee is false:
     //    - there must be a _mintProtocolFees() before calling _curveShift()
-    //    - there must be an _updateLastParamK() after calling _curveShift()
     function _curveShift() internal {
         if (!checkNeedCurveShift()) return;
         _updateWeight();
-        _updateLastParamK();
         blockNumLast = block.number;
     }
 
