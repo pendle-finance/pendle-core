@@ -441,10 +441,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
             PendingTransfer[3] memory transfers
         )
     {
-        bool needCurveShift = checkNeedCurveShift();
-        if (needCurveShift) {
+        if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
+            _updateLastParamK();
         }
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken);
@@ -463,9 +463,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // repack data
         updateReserveData(inTokenReserve, inToken);
         updateReserveData(outTokenReserve, outToken);
-        if (needCurveShift) {
-            _updateLastParamK();
-        }
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
         emit Sync(xytBalance, xytWeight, tokenBalance);
@@ -491,10 +488,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
             PendingTransfer[3] memory transfers
         )
     {
-        bool needCurveShift = checkNeedCurveShift();
-        if (needCurveShift) {
+        if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
+            _updateLastParamK();
         }
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken);
@@ -513,9 +510,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // repack data
         updateReserveData(inTokenReserve, inToken);
         updateReserveData(outTokenReserve, outToken);
-        if (needCurveShift) {
-            _updateLastParamK();
-        }
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
         emit Sync(xytBalance, xytWeight, tokenBalance);
@@ -728,7 +722,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     //curve shift will be called before any calculation using weight
     // INVARIANT: if mintProtocolFee is false:
     //    - there must be a _mintProtocolFees() before calling _curveShift()
-    //    - there must be an _updateLastParamK() after calling _curveShift()
     function _curveShift() internal {
         if (!checkNeedCurveShift()) return;
         _updateWeight();
@@ -791,24 +784,29 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         lockStartTime = expiry - lockDuration;
     }
 
+    /**
+    @dev this function should be very similar to Uniswap
+    */
     function _mintProtocolFees() internal {
-        uint256 _lastParamK = lastParamK;
-        if (_lastParamK == 0) return;
-        lastParamK = 0;
-
         uint256 feeRatio = data.protocolSwapFee();
-        if (feeRatio == 0) return;
-
-        uint256 paramK = _calcParamK();
-        if (paramK > _lastParamK) {
-            uint256 numer = totalSupply().mul(paramK.sub(_lastParamK));
-            uint256 denom = (Math.RONE.sub(feeRatio)).rmul(paramK).rdiv(feeRatio).add(_lastParamK);
-            uint256 liquidity = numer / denom;
-            address treasury = data.treasury();
-            if (liquidity > 0) {
-                _mintLp(liquidity);
-                IERC20(address(this)).transfer(treasury, liquidity);
+        uint256 _lastParamK = lastParamK;
+        if (feeRatio > 0) {
+            if (_lastParamK != 0) {
+                uint256 k = _calcParamK();
+                if (k > _lastParamK) {
+                    uint256 numer = totalSupply.mul(k.sub(_lastParamK));
+                    uint256 denom = Math.RONE.sub(feeRatio).mul(k).div(feeRatio).add(_lastParamK);
+                    uint256 liquidity = numer / denom;
+                    address treasury = data.treasury();
+                    if (liquidity > 0) {
+                        _mintLp(liquidity);
+                        IERC20(address(this)).transfer(treasury, liquidity);
+                    }
+                }
             }
+        } else if (_lastParamK != 0) {
+            // if fee is turned off, we need to reset lastParamK as well
+            lastParamK = 0;
         }
     }
 
@@ -823,7 +821,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     function _calcParamK() internal view returns (uint256 paramK) {
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
             readReserveData();
-        paramK = Math.rpow(xytBalance, xytWeight).mul(Math.rpow(tokenBalance, tokenWeight));
+        paramK = Math
+            .rpow(xytBalance.toFP(), xytWeight)
+            .rmul(Math.rpow(tokenBalance.toFP(), tokenWeight))
+            .toInt();
     }
 
     function _afterBootstrap() internal virtual;

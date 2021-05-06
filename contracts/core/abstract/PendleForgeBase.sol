@@ -182,7 +182,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToRedeem
-    ) external override returns (uint256 redeemedAmount) {
+    ) external override onlyRouter returns (uint256 redeemedAmount) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         require(tokens.ot.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_OT_AMOUNT");
         require(tokens.xyt.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_XYT_AMOUNT");
@@ -279,7 +279,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         _safeTransfer(yieldToken, _underlyingAsset, _expiry, treasuryAddress, _totalFee);
     }
 
-    function forwardInterest(
+    function forwardYieldToken(
         address _underlyingAsset,
         uint256 _fromExpiry,
         uint256 _toExpiry,

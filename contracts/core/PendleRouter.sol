@@ -234,7 +234,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             Math.RONE - _renewalRate // only transfer out 1 - renewalRate
         );
 
-        forge.forwardInterest(_underlyingAsset, _oldExpiry, _newExpiry, amountToRenew);
+        forge.forwardYieldToken(_underlyingAsset, _oldExpiry, _newExpiry, amountToRenew);
 
         (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
             _underlyingAsset,
