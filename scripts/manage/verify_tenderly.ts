@@ -49,11 +49,11 @@ function verifyContract(
   contractName: string,
   contractAddress: string
 ) {
-  console.log("===== Verifying ", contractName);
-  const stdout = execSync(
-    `yarn hardhat --network ${tenderlyNetwork} tenderly:verify ${contractName}=${contractAddress}`
-  );
-  console.log(`${stdout}`);
+  // console.log("===== Verifying ", contractName);
+  // const stdout = execSync(
+  //   `yarn hardhat --network ${tenderlyNetwork} tenderly:verify ${contractName}=${contractAddress}`
+  // );
+  // console.log(`${stdout}`);
   const stdout2 = execSync(
     `yarn hardhat --network ${tenderlyNetwork} tenderly:push ${contractName}=${contractAddress}`
   );

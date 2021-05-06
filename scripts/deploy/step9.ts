@@ -48,6 +48,8 @@ export async function step9(
     "PendleData"
   );
 
+  deployment.yieldContracts = {}; //reset yield contracts
+
   if (!["kovan", "mainnet"].includes(hre.network.name)) {
     await pendleData.setForgeFactoryValidity(
       consts.misc.FORGE_AAVE_V2,
