@@ -82,8 +82,7 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldToken {
         uint256
     ) internal override {
         if (from != address(0))
-            IPendleForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, from);
-        if (to != address(0))
-            IPendleForge(forge).redeemDueInterestsBeforeTransfer(underlyingAsset, expiry, to);
+            IPendleForge(forge).updateDueInterests(underlyingAsset, expiry, from);
+        if (to != address(0)) IPendleForge(forge).updateDueInterests(underlyingAsset, expiry, to);
     }
 }

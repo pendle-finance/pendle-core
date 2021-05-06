@@ -164,7 +164,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         redeemedAmount = _calcTotalAfterExpiry(_underlyingAsset, _expiry, expiredOTamount);
 
         redeemedAmount = redeemedAmount.add(
-            _settleDueInterests(tokens, _underlyingAsset, _expiry, _account, true)
+            _beforeTransferDueInterests(tokens, _underlyingAsset, _expiry, _account, false)
         );
 
         amountTransferOut = redeemedAmount.rmul(_transferOutRate);
@@ -192,8 +192,9 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         tokens.ot.burn(_account, _amountToRedeem);
         tokens.xyt.burn(_account, _amountToRedeem);
 
+        // dueInterests has been updated during the process of burning XYT
         redeemedAmount = _calcUnderlyingToRedeem(_underlyingAsset, _amountToRedeem).add(
-            dueInterests[_underlyingAsset][_expiry][_account]
+            _beforeTransferDueInterests(tokens, _underlyingAsset, _expiry, _account, true)
         );
         _safeTransfer(yieldToken, _underlyingAsset, _expiry, _account, redeemedAmount);
 
@@ -208,16 +209,25 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         uint256 _expiry
     ) external override onlyRouter returns (uint256 amountOut) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account, false);
+        IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
+        amountOut = _beforeTransferDueInterests(
+            tokens,
+            _underlyingAsset,
+            _expiry,
+            _account,
+            false
+        );
+        _safeTransfer(yieldToken, _underlyingAsset, _expiry, _account, amountOut);
     }
 
-    function redeemDueInterestsBeforeTransfer(
+    function updateDueInterests(
         address _underlyingAsset,
         uint256 _expiry,
         address _account
-    ) external override onlyXYT(_underlyingAsset, _expiry) returns (uint256 amountOut) {
+    ) external override onlyXYT(_underlyingAsset, _expiry) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        return _settleDueInterests(tokens, _underlyingAsset, _expiry, _account, false);
+        uint256 principal = tokens.xyt.balanceOf(_account);
+        _updateDueInterests(principal, _underlyingAsset, _expiry, _account);
     }
 
     function redeemRewardsBeforeOtTransfer(
@@ -244,15 +254,6 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         )
     {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-
-        uint256 interest = _settleDueInterests(tokens, _underlyingAsset, _expiry, _to, true);
-        _safeTransfer(
-            IERC20(_getYieldBearingToken(_underlyingAsset)),
-            _underlyingAsset,
-            _expiry,
-            _to,
-            interest
-        );
 
         amountTokenMinted = _calcAmountToMint(_underlyingAsset, _amountToTokenize);
 
@@ -347,42 +348,33 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     }
 
     // Invariant: this function must be called before a user's XYT balance is changed
-    function _settleDueInterests(
+    function _beforeTransferDueInterests(
         PendleTokens memory _tokens,
         address _underlyingAsset,
         uint256 _expiry,
         address _account,
-        bool doTransferLater
+        bool _skipUpdateDueInterests
     ) internal returns (uint256 amountOut) {
         uint256 principal = _tokens.xyt.balanceOf(_account);
 
-        // INVARIANT: after _updateDueInterests is called, dueInterests[][][] must already be
-        // updated with all the due interest for the account, until exactly the current timestamp (no caching whatsoever)
-        _updateDueInterests(principal, _underlyingAsset, _expiry, _account);
-
-        // if there is a transfer to be called outside, then just withdraw the entire interest
-        // of this user
-
-        uint256 cacheThreshold = principal.rmul(data.interestUpdateRateDeltaForForge());
-        if (
-            doTransferLater || dueInterests[_underlyingAsset][_expiry][_account] > cacheThreshold
-        ) {
-            IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
-            amountOut = dueInterests[_underlyingAsset][_expiry][_account];
-            uint256 forgeFee = data.forgeFee();
-            // INVARIANT: every single interest payout due to XYT must go through this line
-            if (forgeFee > 0) {
-                uint256 forgeFeeAmount = amountOut.rmul(forgeFee);
-                amountOut = amountOut.sub(forgeFeeAmount);
-                _updateForgeFee(_underlyingAsset, _expiry, forgeFeeAmount);
-            }
-
-            dueInterests[_underlyingAsset][_expiry][_account] = 0;
-            if (!doTransferLater) {
-                _safeTransfer(yieldToken, _underlyingAsset, _expiry, _account, amountOut);
-            }
-            emit DueInterestSettled(forgeId, _underlyingAsset, _expiry, amountOut, _account);
+        if (!_skipUpdateDueInterests) {
+            // INVARIANT: after _updateDueInterests is called, dueInterests[][][] must already be
+            // updated with all the due interest for the account, until exactly the current timestamp (no caching whatsoever)
+            _updateDueInterests(principal, _underlyingAsset, _expiry, _account);
         }
+
+        amountOut = dueInterests[_underlyingAsset][_expiry][_account];
+        dueInterests[_underlyingAsset][_expiry][_account] = 0;
+
+        uint256 forgeFee = data.forgeFee();
+        // INVARIANT: every single interest payout due to XYT must go through this line
+        if (forgeFee > 0) {
+            uint256 forgeFeeAmount = amountOut.rmul(forgeFee);
+            amountOut = amountOut.sub(forgeFeeAmount);
+            _updateForgeFee(_underlyingAsset, _expiry, forgeFeeAmount);
+        }
+
+        emit DueInterestSettled(forgeId, _underlyingAsset, _expiry, amountOut, _account);
     }
 
     function _safeTransfer(

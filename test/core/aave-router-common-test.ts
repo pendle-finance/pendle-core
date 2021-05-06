@@ -303,7 +303,7 @@ export function runTest(isAaveV1: boolean) {
       );
     });
 
-    it("One month after expiry, should be able to redeem aUSDT with intrest", async () => {
+    it("One month after expiry, should be able to redeem aUSDT with interest", async () => {
       await startCalInterest(charlie, refAmount);
       let amount = await tokenizeYield(alice, refAmount);
       await xyt.transfer(bob.address, amount);
@@ -430,9 +430,10 @@ export function runTest(isAaveV1: boolean) {
       await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
       await tokenizeYield(alice, refAmount.div(2));
 
+      await redeemDueInterests(alice, testEnv.T0.add(consts.SIX_MONTH));
       const expectedGain = await getCurInterest(charlie, refAmount);
 
-      // because we have tokenized all aUSDT of alice, curAUSDTbalanace will equal to the interest
+      // because we have tokenized all aUSDT of alice, curAUSDTbalance will equal to the interest
       // she has received from her xyt
       const curAUSDTbalance = await aUSDT.balanceOf(alice.address);
       approxBigNumber(curAUSDTbalance, expectedGain, testEnv.TEST_DELTA);

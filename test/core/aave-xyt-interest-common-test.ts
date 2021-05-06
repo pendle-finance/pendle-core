@@ -52,6 +52,7 @@ export function runTest(isAaveV1: boolean) {
       fixture = await loadFixture(pendleFixture);
       router = fixture.core.router;
       testEnv.INITIAL_AAVE_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
+      testEnv.TEST_DELTA = BN.from(6000);
     }
 
     async function buildTestEnvV1() {
@@ -173,17 +174,17 @@ export function runTest(isAaveV1: boolean) {
       approxBigNumber(
         await aUSDT.balanceOf(alice.address),
         expectedBalance,
-        BN.from(3000)
+        testEnv.TEST_DELTA
       );
       approxBigNumber(
         await aUSDT.balanceOf(bob.address),
         expectedBalance,
-        BN.from(3000)
+        testEnv.TEST_DELTA
       );
       approxBigNumber(
         await aUSDT.balanceOf(charlie.address),
         expectedBalance,
-        BN.from(3000)
+        testEnv.TEST_DELTA
       );
     }
     it("test 1", async () => {
