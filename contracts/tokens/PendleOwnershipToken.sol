@@ -60,6 +60,7 @@ contract PendleOwnershipToken is PendleBaseToken, IPendleYieldToken {
      * @param amount The amount to be burned.
      **/
     function burn(address account, uint256 amount) public override onlyForge {
+        IPendleForge(forge).redeemRewardsBeforeOtTransfer(underlyingAsset, expiry, account);
         _burn(account, amount);
         emit Burn(account, amount);
     }
@@ -70,12 +71,13 @@ contract PendleOwnershipToken is PendleBaseToken, IPendleYieldToken {
      * @param amount The amount to be minted.
      **/
     function mint(address account, uint256 amount) public override onlyForge {
+        IPendleForge(forge).redeemRewardsBeforeOtTransfer(underlyingAsset, expiry, account);
         _mint(account, amount);
         emit Mint(account, amount);
     }
 
     function _beforeTokenTransfer(address from, address to) internal override {
-        IPendleForge(forge).updateRewardBeforeOtTransfer(underlyingAsset, expiry, from);
-        IPendleForge(forge).updateRewardBeforeOtTransfer(underlyingAsset, expiry, to);
+        IPendleForge(forge).redeemRewardsBeforeOtTransfer(underlyingAsset, expiry, from);
+        IPendleForge(forge).redeemRewardsBeforeOtTransfer(underlyingAsset, expiry, to);
     }
 }

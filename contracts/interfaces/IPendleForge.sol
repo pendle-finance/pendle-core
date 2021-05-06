@@ -119,7 +119,7 @@ interface IPendleForge {
         address account
     ) external returns (uint256 interests);
 
-    function updateRewardBeforeOtTransfer(
+    function redeemRewardsBeforeOtTransfer(
         address _underlyingAsset,
         uint256 _expiry,
         address _account

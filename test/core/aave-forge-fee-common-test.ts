@@ -171,11 +171,7 @@ export function runTest(isAaveV1: boolean) {
         tokenUSDT.address,
         testEnv.EXPIRY
       );
-      approxBigNumber(
-        charlieInterest.sub(bobInterest),
-        totalFee,
-        BN.from(150)
-      );
+      approxBigNumber(charlieInterest.sub(bobInterest), totalFee, BN.from(150));
     });
 
     it("Governance address should be able to withdraw protocol fees", async () => {
@@ -192,9 +188,7 @@ export function runTest(isAaveV1: boolean) {
       const treasuryAddress = await data.treasury();
       const treasuryBalance = await aUSDT.balanceOf(treasuryAddress);
       approxBigNumber(totalFee, treasuryBalance, BN.from(5));
-      const protocolFeeLeft = await aaveForge.totalFee(
-        tokenUSDT.address
-      );
+      const protocolFeeLeft = await aaveForge.totalFee(tokenUSDT.address);
       approxBigNumber(protocolFeeLeft, BN.from(0), BN.from(5));
     });
     it("Non-governance address should not be able to withdraw protocol fees", async () => {
@@ -204,7 +198,9 @@ export function runTest(isAaveV1: boolean) {
       await redeemDueInterests(bob, testEnv.EXPIRY);
 
       await expect(
-        aaveForge.connect(bob).withdrawProtocolFee(tokenUSDT.address, testEnv.EXPIRY)
+        aaveForge
+          .connect(bob)
+          .withdrawProtocolFee(tokenUSDT.address, testEnv.EXPIRY)
       ).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
     });
   });
