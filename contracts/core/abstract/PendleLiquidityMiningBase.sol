@@ -83,14 +83,6 @@ abstract contract PendleLiquidityMiningBase is
         uint256 totalRewards;
     }
 
-    // A struct to pack variables & avoid stack too deep
-    struct RewardsData {
-        uint256 stakeUnitsForUser;
-        uint256 settingId;
-        uint256 rewardsForThisExpiry;
-        uint256 rewardsPerVestingEpoch;
-    }
-
     // For each expiry, we will have one struct
     struct ExpiryData {
         // the last time the units of an user was updated in this expiry
@@ -418,6 +410,7 @@ abstract contract PendleLiquidityMiningBase is
     @dev this is the only function that updates lastTimeUserStakeUpdated & stakeUnitsForExpiry
     @dev other functions must make sure that totalStakeLPForExpiry could be assumed
         to stay exactly the same since lastTimeUserStakeUpdated until now;
+    @dev to be called only by _settlePendingRewards
      */
     function _updateStakeDataForExpiry(uint256 expiry) internal {
         uint256 _curEpoch = _getCurrentEpochId();
@@ -431,16 +424,21 @@ abstract contract PendleLiquidityMiningBase is
                 break; // its already updated until this epoch, our job here is done
             }
 
+            // if the epoch hasn't been fully updated yet, we will update it
+            // just add the amount of units contributed by users since lastUpdatedForEpoch -> now
+            // by calling _calcUnitsStakeInEpoch
             epochData[i].stakeUnitsForExpiry[expiry] = epochData[i].stakeUnitsForExpiry[expiry]
                 .add(
                 _calcUnitsStakeInEpoch(expiryData[expiry].totalStakeLP, lastUpdatedForEpoch, i)
             );
+            // If the epoch has ended, lastUpdated = epochEndTime
+            // If not yet, lastUpdated = block.timestamp (aka now)
             epochData[i].lastUpdatedForExpiry[expiry] = Math.min(block.timestamp, epochEndTime);
         }
     }
 
     /**
-    @notice Check if the user is entitled for any new rewards and transfer them to users.
+    @notice Transfer any pending rewards to users
         The rewards are calculated since the last time rewards was calculated for him,
         I.e. Since the last time his stake was "updated"
         I.e. Since lastTimeUserStakeUpdated[account]
@@ -448,6 +446,9 @@ abstract contract PendleLiquidityMiningBase is
     @dev After this function, the following should be updated correctly up to this point:
             - availableRewardsForEpoch[account][all epochData]
             - epochData[all epochData].stakeUnitsForUser
+    @dev Must be called before the amount of LP tokens changes or when claim rewards
+    Note: Bear in mind that every single time the amount of LP changes (for the entire market, for any user),
+    this function must & will be called
      */
     function _settlePendingRewards(uint256 expiry, address account)
         internal
@@ -481,6 +482,8 @@ abstract contract PendleLiquidityMiningBase is
                 break;
             }
 
+            // updating stakeUnits for users. The logic of this is similar to that of _updateStakeDataForExpiry
+            // Please refer to _updateStakeDataForExpiry for more details
             epochData[epochId].stakeUnitsForUser[account][expiry] = epochData[epochId]
                 .stakeUnitsForUser[account][expiry]
                 .add(
@@ -491,11 +494,13 @@ abstract contract PendleLiquidityMiningBase is
                 )
             );
 
+            // all epochs prior to the endEpoch must have ended
+            // if epochId == _endEpoch, we must check if the epoch has ended or not
             if (epochId == _endEpoch && !_isEndEpochOver) {
                 break;
             }
 
-            // this epoch has ended, users can claim rewards now
+            // Now this epoch has ended, users can claim rewards now
 
             // @Long: this can never happen because:
             // * if exd.totalStakeLP==0 => will break by conditions above
@@ -503,46 +508,35 @@ abstract contract PendleLiquidityMiningBase is
             //      the epoch is not over yet, so !_isEndEpochOver == false
             require(epochData[epochId].stakeUnitsForExpiry[expiry] != 0, "INTERNAL_ERROR");
 
-            RewardsData memory vars;
-            vars.stakeUnitsForUser = epochData[epochId].stakeUnitsForUser[account][expiry];
-
-            vars.settingId = epochId >= latestSetting.firstEpochToApply
-                ? latestSetting.id
-                : epochData[epochId].settingId;
-
-            vars.rewardsForThisExpiry = epochData[epochId]
-                .totalRewards
-                .mul(allocationSettings[vars.settingId][expiry])
-                .div(ALLOCATION_DENOMINATOR);
-
-            vars.rewardsPerVestingEpoch = vars
-                .rewardsForThisExpiry
-                .mul(vars.stakeUnitsForUser)
-                .div(epochData[epochId].stakeUnitsForExpiry[expiry])
-                .div(vestingEpochs);
+            // calc the amount of rewards the user is eligible to receive from this epoch
+            uint256 rewardsPerVestingEpoch =
+                _calcAmountRewardsForUserInEpoch(expiry, account, epochId);
 
             // Now we distribute this rewards over the vestingEpochs starting from epochId + 1
             // to epochId + vestingEpochs
             for (uint256 i = epochId + 1; i <= epochId + vestingEpochs; i++) {
                 epochData[i].availableRewardsForUser[account] = epochData[i]
                     .availableRewardsForUser[account]
-                    .add(vars.rewardsPerVestingEpoch);
+                    .add(rewardsPerVestingEpoch);
             }
         }
 
         exd.lastTimeUserStakeUpdated[account] = block.timestamp;
+        // push the rewards out
         _rewardsWithdrawableNow = _pushRewardsWithdrawableNow(expiry, account);
     }
 
     /**
-     * @dev for loop start from lastEpochClaimed since there is possibility that the user receives
-        more rewards in that epoch (if last time he claimed the epoch hadn't ended yet)
+     * @notice use to push all the claimable rewards for the user in this expiry
+     * @dev will only be called by _settlePendingRewards
      */
     function _pushRewardsWithdrawableNow(uint256 _expiry, address _account)
         internal
         returns (uint256 rewardsWithdrawableNow)
     {
         uint256 _lastEpoch = Math.min(_getCurrentEpochId(), numberOfEpochs);
+        // for loop start from lastEpochClaimed since there is possibility that the user receives
+        // more rewards in that epoch (if last time he claimed the epoch hadn't ended yet)
         for (uint256 i = expiryData[_expiry].lastEpochClaimed[_account]; i <= _lastEpoch; i++) {
             if (epochData[i].availableRewardsForUser[_account] > 0) {
                 rewardsWithdrawableNow = rewardsWithdrawableNow.add(
@@ -551,10 +545,36 @@ abstract contract PendleLiquidityMiningBase is
                 epochData[i].availableRewardsForUser[_account] = 0;
             }
         }
+
         expiryData[_expiry].lastEpochClaimed[_account] = _lastEpoch;
         if (rewardsWithdrawableNow != 0) {
             IERC20(pendleTokenAddress).safeTransfer(_account, rewardsWithdrawableNow);
         }
+    }
+
+    // calc the amount of rewards the user is eligible to receive from this epoch
+    // but we will return the amount per vestingEpoch instead
+    function _calcAmountRewardsForUserInEpoch(
+        uint256 expiry,
+        address account,
+        uint256 epochId
+    ) internal view returns (uint256 rewardsPerVestingEpoch) {
+        uint256 stakeUnitsForUser = epochData[epochId].stakeUnitsForUser[account][expiry];
+
+        uint256 settingId =
+            epochId >= latestSetting.firstEpochToApply
+                ? latestSetting.id
+                : epochData[epochId].settingId;
+
+        uint256 rewardsForThisExpiry =
+            epochData[epochId].totalRewards.mul(allocationSettings[settingId][expiry]).div(
+                ALLOCATION_DENOMINATOR
+            );
+
+        rewardsPerVestingEpoch = rewardsForThisExpiry
+            .mul(stakeUnitsForUser)
+            .div(epochData[epochId].stakeUnitsForExpiry[expiry])
+            .div(vestingEpochs);
     }
 
     /**
