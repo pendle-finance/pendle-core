@@ -96,6 +96,7 @@ describe("compound-router", async () => {
     initialUnderlyingAmount: BN
   ): Promise<BN> {
     const curRate = await cUSDT.callStatic.exchangeRateCurrent();
+    console.log("rateNow", curRate.toString());
     return initialCAmount
       .mul(curRate)
       .div(consts.ONE_E_18)
@@ -103,16 +104,16 @@ describe("compound-router", async () => {
   }
 
   it("should receive the interest from xyt when do tokenizeYield", async () => {
-    await tokenizeYield(alice, initialcUSDTbalance.div(2));
     const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
     const initialUnderlyingBalance = initialRate
       .mul(initialcUSDTbalance)
       .div(consts.ONE_E_18);
+    await tokenizeYield(alice, initialcUSDTbalance.div(2));
     await borrow(amount, charlie);
     await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
     await tokenizeYield(alice, initialcUSDTbalance.div(2));
-
     await redeemDueInterests(alice, consts.T0_C.add(consts.SIX_MONTH));
+
     const expectedGain = await getCurInterest(
       initialcUSDTbalance.div(2),
       initialUnderlyingBalance.div(2)
