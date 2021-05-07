@@ -26,5 +26,8 @@ pragma solidity 0.7.6;
 import "./IPendleForge.sol";
 
 interface IPendleAaveForge is IPendleForge {
+    /**
+    @dev directly get the normalizedIncome from Aave
+    */
     function getReserveNormalizedIncome(address _underlyingAsset) external returns (uint256);
 }

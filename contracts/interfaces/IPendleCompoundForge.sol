@@ -26,5 +26,8 @@ pragma solidity 0.7.6;
 import "./IPendleForge.sol";
 
 interface IPendleCompoundForge is IPendleForge {
+    /**
+    @dev directly get the exchangeRate from Compound
+    */
     function getExchangeRate(address _underlyingAsset) external returns (uint256);
 }

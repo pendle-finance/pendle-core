@@ -75,6 +75,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         comptroller = _comptroller;
     }
 
+    /// For Compound we can't get the address of cToken directly, so we need to register it manually
     function registerCTokens(address[] calldata _underlyingAssets, address[] calldata _cTokens)
         external
         onlyGovernance
@@ -92,6 +93,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         emit RegisterCTokens(_underlyingAssets, _cTokens);
     }
 
+    /// Use to verify the validity of a cToken. The logic of this function is similar to how Compound verify an address is cToken
     function verifyCToken(address _underlyingAsset, address _cTokenAddress) internal {
         require(
             comptroller.markets(_cTokenAddress).isListed &&
@@ -101,18 +103,21 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         );
     }
 
+    /// @inheritdoc PendleForgeBase
     function _calcTotalAfterExpiry(
         address _underlyingAsset,
         uint256 _expiry,
         uint256 redeemedAmount
     ) internal view override returns (uint256 totalAfterExpiry) {
-        // interests from the timestamp of the last XYT transfer (before expiry) to now is entitled to the OT holders
-        // this means that the OT holders are getting some extra interests, at the expense of XYT holders
         totalAfterExpiry = redeemedAmount.mul(initialRate[_underlyingAsset]).div(
             lastRateBeforeExpiry[_underlyingAsset][_expiry]
         );
     }
 
+    /**
+    @dev this function serves functions that take into account the lastRateBeforeExpiry
+    Else, call getExchangeRate instead
+    */
     function getExchangeRateBeforeExpiry(address _underlyingAsset, uint256 _expiry)
         internal
         returns (uint256)
@@ -126,10 +131,12 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         return exchangeRate;
     }
 
+    /// @inheritdoc IPendleCompoundForge
     function getExchangeRate(address _underlyingAsset) public override returns (uint256) {
         return ICToken(underlyingToCToken[_underlyingAsset]).exchangeRateCurrent();
     }
 
+    /// @inheritdoc PendleForgeBase
     function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
         internal
         override
@@ -139,6 +146,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         underlyingToRedeem = _amountToRedeem.mul(initialRate[_underlyingAsset]).div(currentRate);
     }
 
+    /// @inheritdoc PendleForgeBase
     function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)
         internal
         override
@@ -148,6 +156,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         amountToMint = _amountToTokenize.mul(currentRate).div(initialRate[_underlyingAsset]);
     }
 
+    /// @inheritdoc PendleForgeBase
     function _getYieldBearingToken(address _underlyingAsset)
         internal
         view
@@ -158,9 +167,12 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         return underlyingToCToken[_underlyingAsset];
     }
 
+    /// @inheritdoc PendleForgeBase
     /**
-    * @dev different from AaveForge, here there is no compound interest occured because the amount
+    * Different from AaveForge, here there is no compound interest occurred because the amount
     of cToken always remains unchanged, only the exchangeRate does.
+    * Since there is no compound effect, we don't need to calc the compound interest of the XYT after it has expired
+     like Aave, and also we don't need to update the dueInterest
     */
     function _updateDueInterests(
         uint256 principal,
@@ -186,6 +198,11 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
             .add(interestFromXyt);
     }
 
+    /// @inheritdoc PendleForgeBase
+    /**
+    * different from AaveForge, here there is no compound interest occurred because the amount
+    of cToken always remains unchanged, so just add the _feeAmount in
+    */
     function _updateForgeFee(
         address _underlyingAsset,
         uint256 _expiry,
