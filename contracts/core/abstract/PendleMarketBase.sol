@@ -49,7 +49,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     uint256 private constant MINIMUM_LIQUIDITY = 10**3;
     uint8 private constant DECIMALS = 18;
     uint256 private priceLast = Math.RONE;
-    uint256 private blockNumLast;
+    uint256 private lastCurveShiftBlock;
     uint256 private constant LN_PI_PLUSONE = 1562071538258; // this is equal to Math.ln(Math.PI_PLUSONE,Math.RONE)
 
     uint256 internal paramL;
@@ -218,7 +218,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[2].amount = liquidity;
         transfers[2].isOut = true;
 
-        blockNumLast = block.number;
+        lastCurveShiftBlock = block.number;
         bootstrapped = true;
         _afterBootstrap();
     }
@@ -558,7 +558,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // get the weight right now of the market, not the weight of the last update
         (xytWeight, tokenWeight, ) = _updateWeightDry();
         (xytBalance, tokenBalance, , ) = readReserveData();
-        lastUpdatedBlock = blockNumLast;
+        lastUpdatedBlock = lastCurveShiftBlock;
     }
 
     function _calcExactIn(
@@ -653,21 +653,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _mint(address(this), amount);
     }
 
-    /**
-    * @notice update the priceLast & emit event, but not the real weight
-    * @dev this function read the reserveData directly from storage. But the reserveData is guaranteed
-    not to be obsolete because:
-    * this function will be called at most ONCE in every transaction
-    * all functions that call this function will eventually update the reserveData
-    => it doesn't matter if the reserveData gets updated immediately or not
-     */
     function _updateWeight() internal {
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
         (uint256 xytWeightUpdated, , uint256 priceNow) = _updateWeightDry();
         writeReserveData(xytBalance, tokenBalance, xytWeightUpdated); // repack data
 
         priceLast = priceNow;
-        // the weight is not updated yet, but all functions that call curveShift will eventually update the weight, so we just emit event first
         emit Shift(xytWeight, xytWeightUpdated);
     }
 
@@ -724,7 +715,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     function _curveShift() internal {
         if (!checkNeedCurveShift()) return;
         _updateWeight();
-        blockNumLast = block.number;
+        lastCurveShiftBlock = block.number;
     }
 
     function _settleLpInterests(address account) internal returns (uint256 dueInterests) {
@@ -742,24 +733,20 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     function checkNeedUpdateParamL() internal returns (bool) {
-        if (_getIncomeIndexIncreaseRate() > data.interestUpdateRateDeltaForMarket()) {
-            return true;
-        }
-        return false;
+        return _getIncomeIndexIncreaseRate() > data.interestUpdateRateDeltaForMarket();
     }
 
     function checkNeedCurveShift() internal view returns (bool) {
-        return block.number > blockNumLast.add(data.curveShiftBlockDelta());
+        return block.number > lastCurveShiftBlock.add(data.curveShiftBlockDelta());
     }
 
     function _updateParamL() internal {
-        if (!checkNeedUpdateParamL()) {
-            return;
-        }
+        if (!checkNeedUpdateParamL()) return;
+
         router.redeemDueInterests(forgeId, underlyingAsset, expiry);
+
         uint256 currentNYield = underlyingYieldToken.balanceOf(address(this));
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(currentNYield);
-
         uint256 secondTerm = paramR.mul(MULTIPLIER).div(totalSupply());
 
         // update new states
