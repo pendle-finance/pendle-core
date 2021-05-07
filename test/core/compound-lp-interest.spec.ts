@@ -61,6 +61,14 @@ describe("compound-lp-interest", async () => {
     cUSDTWeb3 = new hre.web3.eth.Contract(ICToken.abi, cUSDT.address);
 
     for (let user of [alice, bob, charlie, dave, eve]) {
+      await router
+        .connect(user)
+        .redeemDueInterests(
+          consts.FORGE_COMPOUND,
+          tokenUSDT.address,
+          consts.T0_C.add(consts.SIX_MONTH),
+          consts.HIGH_GAS_OVERRIDE
+        );
       await emptyToken(ot, user);
       await emptyToken(xyt, user);
       await emptyToken(cUSDT, user);
@@ -74,7 +82,6 @@ describe("compound-lp-interest", async () => {
       await ot.transfer(user.address, amountXytRef);
       await xyt.transfer(user.address, amountXytRef);
     }
-    //Note: bob, charlie and dave will not have exactly the same amount of cXYTs
 
     for (let user of [alice, bob, charlie, dave, eve]) {
       await emptyToken(cUSDT, user);
@@ -309,10 +316,10 @@ describe("compound-lp-interest", async () => {
     //   console.log((await cUSDT.balanceOf(user.address)).toString());
     // }
     const expectedResult: number[] = [
-      20888931948,
-      20987964937,
-      21042842354,
-      21165667925,
+      6298426144,
+      6329284079,
+      6346687878,
+      6385226675,
     ];
     await checkCUSDTBalance(expectedResult);
   });
@@ -368,10 +375,10 @@ describe("compound-lp-interest", async () => {
     //   console.log((await cUSDT.balanceOf(user.address)).toString());
     // }
     const expectedResult: number[] = [
-      29550555880,
-      26921736683,
-      24575771785,
-      22951713356,
+      9004048190,
+      8170338541,
+      7453587736,
+      6971317641,
     ];
     await checkCUSDTBalance(expectedResult);
   });
@@ -456,10 +463,10 @@ describe("compound-lp-interest", async () => {
     //   console.log((await cUSDT.balanceOf(user.address)).toString());
     // }
     const expectedResult: number[] = [
-      45423431397,
-      35934848753,
-      36069138984,
-      34058896615,
+      14132885215,
+      11089436798,
+      11134332033,
+      10506380313,
     ];
     await checkCUSDTBalance(expectedResult);
   });

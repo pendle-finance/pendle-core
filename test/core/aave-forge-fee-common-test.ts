@@ -188,7 +188,10 @@ export function runTest(isAaveV1: boolean) {
       const treasuryAddress = await data.treasury();
       const treasuryBalance = await aUSDT.balanceOf(treasuryAddress);
       approxBigNumber(totalFee, treasuryBalance, BN.from(5));
-      const forgeFeeLeft = await aaveForge.totalFee(tokenUSDT.address);
+      const forgeFeeLeft = await aaveForge.totalFee(
+        tokenUSDT.address,
+        testEnv.EXPIRY
+      );
       approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(5));
     });
     it("Non-governance address should not be able to withdraw forge fees", async () => {

@@ -144,12 +144,11 @@ describe("aaveV1-liquidityMining", async () => {
   let liq: Contract;
   let liqWeb3: any;
   let router: Contract;
-  let stdMarket: Contract;
+  let market: Contract;
   let xyt: Contract;
   let baseToken: Contract;
   let pdl: Contract;
   let params: liqParams;
-  let lendingPoolCore: Contract;
   let aUSDT: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
@@ -160,18 +159,26 @@ describe("aaveV1-liquidityMining", async () => {
     liqWeb3 = fixture.aLiquidityMiningWeb3;
     router = fixture.core.router;
     baseToken = fixture.testToken;
-    stdMarket = fixture.aMarket;
+    market = fixture.aMarket;
     xyt = fixture.aForge.aFutureYieldToken;
     params = fixture.params;
     pdl = fixture.pdl;
     aUSDT = await getAContract(alice, fixture.aForge.aaveForge, tokens.USDT);
 
-    // empty aUSDT and XYT balance
-    await emptyToken(aUSDT, bob);
-    // await emptyToken(aUSDT, bob);
-    await emptyToken(xyt, charlie);
-    await emptyToken(aUSDT, charlie);
-    // await emptyToken(aUSDT, charlie);
+    await fixture.core.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
+    for (let user of [bob, charlie, dave]) {
+      await router
+        .connect(user)
+        .redeemDueInterests(
+          consts.FORGE_AAVE,
+          tokens.USDT.address,
+          consts.T0.add(consts.SIX_MONTH),
+          consts.HIGH_GAS_OVERRIDE
+        );
+      await emptyToken(aUSDT, user);
+      await emptyToken(xyt, user);
+    }
+
     snapshotId = await evm_snapshot();
   });
 
@@ -203,7 +210,7 @@ describe("aaveV1-liquidityMining", async () => {
   async function getLpBalanceOfAllUsers(): Promise<BN[]> {
     let res: BN[] = [];
     for (let i = 0; i < wallets.length; i++) {
-      res.push(await stdMarket.balanceOf(wallets[i].address));
+      res.push(await market.balanceOf(wallets[i].address));
     }
     return res;
   }
@@ -297,6 +304,26 @@ describe("aaveV1-liquidityMining", async () => {
     }
   }
 
+  async function calEffectiveLiquidity(): Promise<{
+    xytAmount: BN;
+    tokenAmount: BN;
+  }> {
+    const MINIMUM_LIQUIDITY: BN = BN.from(3000);
+    let totalSupply = await market.totalSupply();
+    let totalEffectiveLP = totalSupply.sub(MINIMUM_LIQUIDITY);
+    let xytAmount = (await xyt.balanceOf(market.address))
+      .mul(totalEffectiveLP)
+      .div(totalSupply);
+    console.log(
+      xytAmount.toString(),
+      (await xyt.balanceOf(market.address)).toString()
+    );
+    let tokenAmount = (await baseToken.balanceOf(market.address))
+      .mul(totalEffectiveLP)
+      .div(totalSupply);
+    return { xytAmount, tokenAmount };
+  }
+
   // Bob, Dave and Charlie all starts with 0 AUSDTs and 0 XYTs in their wallet
   // Both Bob and Dave has 10% of LP of the Market
   //  - Charlie will receive XYTs equivalent to 10% of whats in the market, and hold it
@@ -304,11 +331,9 @@ describe("aaveV1-liquidityMining", async () => {
   //  - Bob stake the LP tokens into liq-mining contract, in two transactions
   //=> after 2 months, all three of them should get the same interests
   it("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests", async () => {
-    const INITIAL_LP_AMOUNT: BN = await stdMarket.balanceOf(bob.address);
-    // console.log(await stdMarket.balanceOf(stdMarket.address));
+    const INITIAL_LP_AMOUNT: BN = await market.balanceOf(bob.address);
     await setTimeNextBlock(provider, params.START_TIME.add(100));
-    const xytBalanceOfMarket = await xyt.balanceOf(stdMarket.address);
-    // console.log(`\txyt bal of market = ${xytBalanceOfMarket}`);
+    const xytBalanceOfMarket = await xyt.balanceOf(market.address);
 
     // Charlie holds same equivalent amount of XYTs as 10% of the market
     // which is the same as what Bob and Dave holds
@@ -317,14 +342,6 @@ describe("aaveV1-liquidityMining", async () => {
     let preBalanceBob = await aUSDT.balanceOf(bob.address);
     let preBalanceDave = await aUSDT.balanceOf(dave.address);
     let preBalanceCharlie = await aUSDT.balanceOf(charlie.address);
-    console.log("\n========================================================");
-    console.log(
-      `\tPrebalanceBob = ${preBalanceBob}, preBalanceDave = ${preBalanceDave}, preBalanceCharlie = ${preBalanceCharlie}`
-    );
-    console.log(
-      `\tBob address = ${bob.address}, marketAddress = ${stdMarket.address}, alice address = ${alice.address}`
-    );
-    // console.log(await stdMarket.balanceOf(stdMarket.address));
 
     await doStake(alice, INITIAL_LP_AMOUNT); // Alice also stake into liq-mining
     console.log(`\talice staked`);
@@ -353,7 +370,7 @@ describe("aaveV1-liquidityMining", async () => {
       preBalanceCharlie
     );
 
-    await router.connect(dave).claimLpInterests([stdMarket.address]);
+    await router.connect(dave).claimLpInterests([market.address]);
     let actualGainDave = (await aUSDT.balanceOf(dave.address)).sub(
       preBalanceDave
     );
@@ -421,7 +438,7 @@ describe("aaveV1-liquidityMining", async () => {
   });
 
   it("this test shouldn't crash", async () => {
-    const amountToStake = await stdMarket.balanceOf(bob.address);
+    const amountToStake = await market.balanceOf(bob.address);
 
     await setTimeNextBlock(provider, params.START_TIME);
     await liq
@@ -454,11 +471,11 @@ describe("aaveV1-liquidityMining", async () => {
   it("can stake and withdraw", async () => {
     const FIFTEEN_DAYS = consts.ONE_DAY.mul(15);
 
-    const amountToStake = await stdMarket.balanceOf(bob.address);
+    const amountToStake = await market.balanceOf(bob.address);
 
     const pdlBalanceOfContract = await pdl.balanceOf(liq.address);
     const pdlBalanceOfUser = await pdl.balanceOf(bob.address);
-    const lpBalanceOfUser = await stdMarket.balanceOf(bob.address);
+    const lpBalanceOfUser = await market.balanceOf(bob.address);
 
     console.log(
       `\tPDL balance of liq contract before: ${pdlBalanceOfContract}`

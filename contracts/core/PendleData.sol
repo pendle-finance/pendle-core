@@ -67,7 +67,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     uint256 public override interestUpdateRateDeltaForMarket;
     uint256 public override expiryDivisor = 1 days;
     uint256 public override swapFee;
-    uint256 public override exitFee;
     uint256 public override protocolSwapFee; // as a portion of swapFee
     // lock duration = duration * lockNumerator / lockDenominator
     uint256 public override lockNumerator;
@@ -243,17 +242,16 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         emit ForgeFactoryValiditySet(_forgeId, _marketFactoryId, _valid);
     }
 
-    function setMarketFees(
-        uint256 _swapFee,
-        uint256 _exitFee,
-        uint256 _protocolSwapFee
-    ) external override onlyGovernance {
-        require(_swapFee <= FEE_HARD_LIMIT && _exitFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
+    function setMarketFees(uint256 _swapFee, uint256 _protocolSwapFee)
+        external
+        override
+        onlyGovernance
+    {
+        require(_swapFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
         require(_protocolSwapFee < Math.RONE, "PROTOCOL_FEE_EXCEED_LIMIT");
         swapFee = _swapFee;
-        exitFee = _exitFee;
         protocolSwapFee = _protocolSwapFee;
-        emit MarketFeesSet(_swapFee, _exitFee, _protocolSwapFee);
+        emit MarketFeesSet(_swapFee, _protocolSwapFee);
     }
 
     function setCurveShiftBlockDelta(uint256 _blockDelta) external override onlyGovernance {
