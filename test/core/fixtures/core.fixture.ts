@@ -4,6 +4,7 @@ import PendleCompoundMarketFactory from "../../../build/artifacts/contracts/core
 import PendleData from "../../../build/artifacts/contracts/core/PendleData.sol/PendleData.json"
 import PendleMarketReader from '../../../build/artifacts/contracts/core/PendleMarketReader.sol/PendleMarketReader.json'
 import PendleRouter from '../../../build/artifacts/contracts/core/PendleRouter.sol/PendleRouter.json'
+import PendlePausingManager from '../../../build/artifacts/contracts/core/PendlePausingManager.sol/PendlePausingManager.json'
 import PendleTreasury from '../../../build/artifacts/contracts/core/PendleTreasury.sol/PendleTreasury.json'
 import { consts, tokens } from "../../helpers"
 const hre = require("hardhat");
@@ -19,7 +20,8 @@ export interface CoreFixture {
   a2MarketFactory: Contract
   cMarketFactory: Contract
   data: Contract,
-  marketReader: Contract
+  marketReader: Contract,
+  pausingManager: Contract
 }
 
 export async function coreFixture(
@@ -31,7 +33,8 @@ export async function coreFixture(
   const aMarketFactory = await deployContract(alice, PendleAaveMarketFactory, [alice.address, consts.MARKET_FACTORY_AAVE]);
   const a2MarketFactory = await deployContract(alice, PendleAaveMarketFactory, [alice.address, consts.MARKET_FACTORY_AAVE_V2]);
   const cMarketFactory = await deployContract(alice, PendleCompoundMarketFactory, [alice.address, consts.MARKET_FACTORY_COMPOUND]);
-  const data = await deployContract(alice, PendleData, [alice.address, treasury.address]);
+  const pausingManager = await deployContract(alice, PendlePausingManager, [alice.address]);
+  const data = await deployContract(alice, PendleData, [alice.address, treasury.address, pausingManager.address]);
   const marketReader = await deployContract(alice, PendleMarketReader, [data.address]);
 
   await aMarketFactory.initialize(router.address);
@@ -48,5 +51,5 @@ export async function coreFixture(
     PendleRouter.abi,
     router.address
   );
-  return { router, routerWeb3, treasury, aMarketFactory, a2MarketFactory, cMarketFactory, data, marketReader }
+  return { router, routerWeb3, treasury, aMarketFactory, a2MarketFactory, cMarketFactory, data, marketReader, pausingManager }
 }
