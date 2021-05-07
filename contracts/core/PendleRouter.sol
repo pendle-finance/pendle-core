@@ -151,29 +151,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     }
 
     /**
-     * @notice redeem interests for multiple XYTs
-     * @dev all validity checks are in the internal function
-     **/
-    function redeemDueInterestsMultiple(
-        bytes32[] calldata _forgeIds,
-        address[] calldata _underlyingAssets,
-        uint256[] calldata _expiries
-    ) external override nonReentrant returns (uint256[] memory interests) {
-        require(
-            _forgeIds.length == _underlyingAssets.length && _forgeIds.length == _expiries.length,
-            "INVALID_ARRAYS"
-        );
-        interests = new uint256[](_forgeIds.length);
-        for (uint256 i = 0; i < _forgeIds.length; i++) {
-            interests[i] = _redeemDueInterestsInternal(
-                _forgeIds[i],
-                _underlyingAssets[i],
-                _expiries[i]
-            );
-        }
-    }
-
-    /**
      * @notice Before the expiry, a user can redeem the same amount of OT+XYT to get back
      *       the underlying yield token
      * @dev no check on _amountToRedeem
