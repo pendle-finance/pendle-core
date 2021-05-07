@@ -23,10 +23,10 @@
 pragma solidity 0.7.6;
 
 import "./PendleBaseToken.sol";
-import "../interfaces/IPendleYieldToken.sol";
+import "../interfaces/IPendleYieldTokenCommon.sol";
 import "../interfaces/IPendleForge.sol";
 
-contract PendleOwnershipToken is PendleBaseToken, IPendleYieldToken {
+contract PendleOwnershipToken is PendleBaseToken, IPendleYieldTokenCommon {
     address public override forge;
     address public override underlyingAsset;
     address public override underlyingYieldToken;

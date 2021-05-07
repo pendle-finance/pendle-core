@@ -24,9 +24,9 @@ pragma solidity 0.7.6;
 
 import "./PendleBaseToken.sol";
 import "../interfaces/IPendleForge.sol";
-import "../interfaces/IPendleYieldToken.sol";
+import "../interfaces/IPendleYieldTokenCommon.sol";
 
-contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldToken {
+contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldTokenCommon {
     address public override forge;
     address public override underlyingAsset;
     address public override underlyingYieldToken;

@@ -23,7 +23,7 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/IPendleBaseToken.sol";
 
 /**
@@ -38,8 +38,8 @@ import "../interfaces/IPendleBaseToken.sol";
 abstract contract PendleBaseToken is ERC20 {
     using SafeMath for uint256;
 
-    uint256 public override start;
-    uint256 public override expiry;
+    uint256 public start;
+    uint256 public expiry;
 
     constructor(
         string memory _name,
