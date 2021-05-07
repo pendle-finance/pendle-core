@@ -34,6 +34,7 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldTokenCommon {
     mapping(address => uint256) public lastNormalisedIncome;
 
     constructor(
+        address _router,
         address _forge,
         address _underlyingAsset,
         address _underlyingYieldToken,
@@ -42,7 +43,7 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldTokenCommon {
         uint8 _underlyingYieldTokenDecimals,
         uint256 _start,
         uint256 _expiry
-    ) PendleBaseToken(_name, _symbol, _underlyingYieldTokenDecimals, _start, _expiry) {
+    ) PendleBaseToken(_router, _name, _symbol, _underlyingYieldTokenDecimals, _start, _expiry) {
         require(
             _underlyingAsset != address(0) && _underlyingYieldToken != address(0),
             "ZERO_ADDRESS"

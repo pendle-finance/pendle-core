@@ -42,11 +42,12 @@ contract PendleAaveMarket is PendleMarketBase {
     mapping(address => uint256) private userLastNormalizedIncome;
 
     constructor(
+        address _router,
         address _forge,
         address _xyt,
         address _token,
         uint256 _expiry
-    ) PendleMarketBase(_forge, _xyt, _token, _expiry) {}
+    ) PendleMarketBase(_router, _forge, _xyt, _token, _expiry) {}
 
     function _getReserveNormalizedIncome() internal returns (uint256) {
         return IPendleAaveForge(forge).getReserveNormalizedIncome(underlyingAsset);

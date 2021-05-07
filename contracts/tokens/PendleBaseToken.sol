@@ -25,6 +25,7 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/IPendleBaseToken.sol";
+import "../interfaces/IPendleRouter.sol";
 
 /**
  *   @title PendleBaseToken
@@ -40,14 +41,17 @@ abstract contract PendleBaseToken is ERC20 {
 
     uint256 public start;
     uint256 public expiry;
+    IPendleRouter public router;
 
     //// EIP-2612, adapted from UniswapV2ERC20.sol
     bytes32 public DOMAIN_SEPARATOR;
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-    bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
-    mapping(address => uint) public nonces;
+    bytes32 public constant PERMIT_TYPEHASH =
+        0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+    mapping(address => uint256) public nonces;
 
     constructor(
+        address _router,
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
@@ -57,18 +61,21 @@ abstract contract PendleBaseToken is ERC20 {
         _setupDecimals(_decimals);
         start = _start;
         expiry = _expiry;
+        router = IPendleRouter(_router);
 
         //// For EIP-2612, adapted from UniswapV2ERC20.sol
-        uint chainId;
+        uint256 chainId;
         assembly {
-            chainId := chainid
+            chainId := chainid()
         }
 
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
-                keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
+                keccak256(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                ),
                 keccak256(bytes(_name)),
-                keccak256(bytes('1')),
+                keccak256(bytes("1")),
                 chainId,
                 address(this)
             )
@@ -76,17 +83,40 @@ abstract contract PendleBaseToken is ERC20 {
     }
 
     //// EIP-2612, adapted from UniswapV2ERC20.sol
-    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
-        require(deadline >= block.timestamp, 'PERMIT_EXPIRED');
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                '\x19\x01',
-                DOMAIN_SEPARATOR,
-                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
-            )
-        );
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        require(deadline >= block.timestamp, "PERMIT_EXPIRED");
+        bytes32 digest =
+            keccak256(
+                abi.encodePacked(
+                    "\x19\x01",
+                    DOMAIN_SEPARATOR,
+                    keccak256(
+                        abi.encode(
+                            PERMIT_TYPEHASH,
+                            owner,
+                            spender,
+                            value,
+                            nonces[owner]++,
+                            deadline
+                        )
+                    )
+                )
+            );
         address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == owner, 'INVALID_SIGNATURE');
+        require(recoveredAddress != address(0) && recoveredAddress == owner, "INVALID_SIGNATURE");
         _approve(owner, spender, value);
+    }
+
+    function approveRouter(address account) external {
+        require(msg.sender == address(router), "NOT_ROUTER");
+        _approve(msg.sender, address(router), type(uint256).max);
     }
 }
