@@ -193,16 +193,16 @@ abstract contract PendleLiquidityMiningBase is
         require(latestSetting.id > 0, "NO_ALLOC_SETTING");
         require(_getCurrentEpochId() <= numberOfEpochs, "LAST_EPOCH_OVER");
 
-        uint256 nNewEpoches = _rewards.length;
+        uint256 nNewEpochs = _rewards.length;
         uint256 totalFunded;
-        for (uint256 i = 0; i < nNewEpoches; i++) {
+        for (uint256 i = 0; i < nNewEpochs; i++) {
             totalFunded = totalFunded.add(_rewards[i]);
             epochData[numberOfEpochs + i + 1].totalRewards = _rewards[i];
         }
 
         require(totalFunded > 0, "ZERO_FUND");
         funded = true;
-        numberOfEpochs = numberOfEpochs.add(nNewEpoches);
+        numberOfEpochs = numberOfEpochs.add(nNewEpochs);
         IERC20(pendleTokenAddress).safeTransferFrom(msg.sender, address(this), totalFunded);
     }
 
@@ -243,7 +243,7 @@ abstract contract PendleLiquidityMiningBase is
         In that case, we will not be able to set any allocation and hence its not possible to
             fund the contract as well
         => We should just throw this contract away, and funds are SAFU!
-    @dev the length of _expiries array is expcted to be small, 2 or 3
+    @dev the length of _expiries array is expected to be small, 2 or 3
     @dev it's intentional that we don't check the existence of expiries
      */
     function setAllocationSetting(
@@ -290,8 +290,6 @@ abstract contract PendleLiquidityMiningBase is
         if (exd.lpHolder == address(0)) {
             newLpHoldingContractAddress = _addNewExpiry(expiry, xyt, marketAddress);
         }
-        // if expiry doesn't exist yet, this function must still be called
-        _settlePendingRewards(expiry, msg.sender);
 
         if (!userExpiries[msg.sender].hasExpiry[expiry]) {
             userExpiries[msg.sender].expiries.push(expiry);
@@ -299,9 +297,6 @@ abstract contract PendleLiquidityMiningBase is
         }
         // _pullLpToken must happens before totalStakeLPForExpiry and balances are updated
         _pullLpToken(marketAddress, expiry, amount);
-
-        exd.balances[msg.sender] = exd.balances[msg.sender].add(amount);
-        exd.totalStakeLP = exd.totalStakeLP.add(amount);
     }
 
     function withdraw(uint256 expiry, uint256 amount) external override nonReentrant isFunded {
@@ -311,12 +306,7 @@ abstract contract PendleLiquidityMiningBase is
         ExpiryData storage exd = expiryData[expiry];
         require(exd.balances[msg.sender] >= amount, "INSUFFICIENT_BALANCE");
 
-        _settlePendingRewards(expiry, msg.sender);
-        // _pushLpToken must happens before totalStakeLPForExpiry and balances are updated
         _pushLpToken(expiry, amount);
-
-        exd.balances[msg.sender] = exd.balances[msg.sender].sub(amount);
-        exd.totalStakeLP = exd.totalStakeLP.sub(amount);
     }
 
     function claimRewards() external override nonReentrant returns (uint256[] memory rewards) {
@@ -505,7 +495,7 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     /**
-     * @notice retuns the stakeUnits in the _epochId(th) epoch of an user if he stake from _startTime to now
+     * @notice returns the stakeUnits in the _epochId(th) epoch of an user if he stake from _startTime to now
      * @dev to calculate durationStakeThisEpoch:
      *   user will stake from _startTime -> _endTime, while the epoch last from _startTimeOfEpoch -> _endTimeOfEpoch
      *   => the stakeDuration of user will be min(_endTime,_endTimeOfEpoch) - max(_startTime,_startTimeOfEpoch)
@@ -529,13 +519,27 @@ abstract contract PendleLiquidityMiningBase is
         uint256 expiry,
         uint256 amount
     ) internal {
+        _settlePendingRewards(expiry, msg.sender);
         _settleLpInterests(expiry, msg.sender);
+
+        // transferring LP in must happens before totalStakeLPForExpiry and balances are updated
         IERC20(marketAddress).safeTransferFrom(msg.sender, expiryData[expiry].lpHolder, amount);
+
+        ExpiryData storage exd = expiryData[expiry];
+        exd.balances[msg.sender] = exd.balances[msg.sender].add(amount);
+        exd.totalStakeLP = exd.totalStakeLP.add(amount);
     }
 
     function _pushLpToken(uint256 expiry, uint256 amount) internal {
+        _settlePendingRewards(expiry, msg.sender);
         _settleLpInterests(expiry, msg.sender);
+
+        // sendLp must happens before totalStakeLPForExpiry and balances are updated
         IPendleLpHolder(expiryData[expiry].lpHolder).sendLp(msg.sender, amount);
+
+        ExpiryData storage exd = expiryData[expiry];
+        exd.balances[msg.sender] = exd.balances[msg.sender].sub(amount);
+        exd.totalStakeLP = exd.totalStakeLP.sub(amount);
     }
 
     /**
