@@ -32,6 +32,7 @@ abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder {
     using SafeERC20 for IERC20;
 
     address internal yieldToken;
+    address public forge;
 
     constructor(
         address _forge,
@@ -48,8 +49,19 @@ abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder {
         IERC20(_yieldToken).safeApprove(_router, type(uint256).max);
         IERC20(_yieldToken).safeApprove(_forge, type(uint256).max);
 
+        forge = msg.sender;
         IERC20(_rewardToken).safeApprove(_rewardManager, type(uint256).max);
     }
 
     function claimRewards() external virtual override;
+
+    // Only forge can call this function
+    // this will allow a spender to spend the whole balance of the specified tokens
+    // the spender should ideally be a contract with logic for users to withdraw out their funds.
+    function setUpEmergencyMode(address[] calldata tokens, address spender) external override {
+        require(msg.sender == forge, "NOT_FROM_FORGE");
+        for (uint256 i=0;i<tokens.length;i++) {
+            IERC20(tokens[i]).safeApprove(spender, type(uint256).max);
+        }
+    }
 }

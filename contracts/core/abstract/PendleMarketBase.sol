@@ -189,7 +189,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         (address marketEmergencyHandler,,) = pausingManager.marketEmergencyHandler();
         require(msg.sender == marketEmergencyHandler, "NOT_EMERGENCY_HANDLER");
         for (uint256 i=0;i<tokens.length;i++) {
-            IERC20(tokens[i]).approve(spender, type(uint256).max);
+            IERC20(tokens[i]).safeApprove(spender, type(uint256).max);
         }
     }
 

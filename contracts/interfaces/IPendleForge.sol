@@ -90,6 +90,13 @@ interface IPendleForge {
         address indexed receiver
     );
 
+    function setUpEmergencyMode(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address[] calldata tokens,
+        address spender
+    ) external;
+
     function newYieldContracts(address underlyingAsset, uint256 expiry)
         external
         returns (address ot, address xyt);
