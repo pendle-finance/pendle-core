@@ -39,7 +39,6 @@ export async function marketFixture(
   const a2Forge = await aaveV2ForgeFixture(alice, provider, core, governance);
   const cForge = await compoundForgeFixture(alice, provider, core, governance);
   const { router, aMarketFactory, a2MarketFactory, cMarketFactory, data } = core;
-
   const {
     aFutureYieldToken,
     aaveForge
@@ -165,24 +164,6 @@ export async function marketFixture(
 
   for (var person of [alice, bob, charlie, dave, eve]) {
     await testToken.connect(person).approve(router.address, totalSupply);
-    await aFutureYieldToken
-      .connect(person)
-      .approve(router.address, consts.INF);
-    await a2FutureYieldToken
-      .connect(person)
-      .approve(router.address, consts.INF);
-    await cFutureYieldToken
-      .connect(person)
-      .approve(router.address, consts.INF);
-    await aMarket
-      .connect(person)
-      .approve(router.address, consts.INF);
-    await a2Market
-      .connect(person)
-      .approve(router.address, consts.INF);
-    await cMarket
-      .connect(person)
-      .approve(router.address, consts.INF);
     await ethMarket.connect(person).approve(router.address, consts.INF);
   }
 
