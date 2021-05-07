@@ -597,6 +597,7 @@ abstract contract PendleLiquidityMiningBase is
         return lpAmount.mul(durationStakeThisEpoch);
     }
 
+    /// pull the lp token from users. This must be the only way to pull LP
     function _pullLpToken(
         address marketAddress,
         uint256 expiry,
@@ -613,6 +614,7 @@ abstract contract PendleLiquidityMiningBase is
         exd.totalStakeLP = exd.totalStakeLP.add(amount);
     }
 
+    /// push the lp token to users. This must be the only way to send LP out
     function _pushLpToken(uint256 expiry, uint256 amount) internal {
         _settlePendingRewards(expiry, msg.sender);
         _settleLpInterests(expiry, msg.sender);
@@ -627,6 +629,8 @@ abstract contract PendleLiquidityMiningBase is
 
     /**
      * @dev even if exd.balances[account]==0, this function must still be called
+     * Very similar to the function in PendleMarketBase. Any major differences are likely to be bugs
+       Please refer to it for more details
      */
     function _settleLpInterests(uint256 expiry, address account)
         internal
@@ -648,6 +652,10 @@ abstract contract PendleLiquidityMiningBase is
         IPendleLpHolder(exd.lpHolder).sendInterests(account, dueInterests);
     }
 
+    /**
+    * Very similar to the function in PendleMarketBase. Any major differences are likely to be bugs
+        Please refer to it for more details
+    */
     function checkNeedUpdateParamL(uint256 expiry) internal returns (bool) {
         if (expiryData[expiry].totalStakeLP == 0) {
             return false;
@@ -660,6 +668,8 @@ abstract contract PendleLiquidityMiningBase is
 
     /**
      * @dev all LP interests related functions are almost identical to markets' functions
+     * Very similar to the function in PendleMarketBase. Any major differences are likely to be bugs
+       Please refer to it for more details
      */
     function _updateParamL(uint256 expiry) internal {
         ExpiryData storage exd = expiryData[expiry];
@@ -688,6 +698,10 @@ abstract contract PendleLiquidityMiningBase is
         exd.lastNYield = currentNYield;
     }
 
+    /**
+     * @notice Use to create a new lpHolder contract
+     * Must only be called by Stake
+     */
     function _addNewExpiry(
         uint256 expiry,
         address xyt,
