@@ -639,6 +639,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     => it doesn't matter if the reserveData gets updated immediately or not
      */
     function _updateWeight() internal {
+        console.log("update weight!!");
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
         (uint256 xytWeightUpdated, , uint256 priceNow) = _updateWeightDry();
         writeReserveData(xytBalance, tokenBalance, xytWeightUpdated); // repack data
@@ -700,6 +701,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     //    - there must be a _mintProtocolFees() before calling _curveShift()
     //    - there must be an _updateKLast() after calling _curveShift()
     function _curveShift(bool mintProtocolFee) internal {
+        console.log("haha blah blah", data.curveShiftBlockDelta(), block.number, blockNumLast);
         if (block.number > blockNumLast.add(data.curveShiftBlockDelta())) {
             if (mintProtocolFee) {
                 _mintProtocolFees();

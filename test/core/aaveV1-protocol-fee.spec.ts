@@ -14,7 +14,7 @@ import {
   tokens,
   toFixedPoint,
 } from "../helpers";
-import { AMMTest, MarketFeesTest } from "./amm-formula-test";
+import { AMMTest, MarketFeesTest, ProtocolFeeTest } from "./amm-formula-test";
 import { marketFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
@@ -51,7 +51,8 @@ describe("aaveV1-market", async () => {
     ethMarket = fixture.ethMarket;
     tokenUSDT = tokens.USDT;
     WETH = new Contract(tokens.WETH.address, ERC20.abi, alice);
-    await data.setMarketFees(toFixedPoint("0.0035"), toFixedPoint("0.0"), consts.HIGH_GAS_OVERRIDE);
+    await data.setCurveShiftBlockDelta(BN.from(50));
+    await data.setMarketFees(toFixedPoint("0.0035"), toFixedPoint("0.0"), toFixedPoint("0.2"), consts.HIGH_GAS_OVERRIDE);
     snapshotId = await evm_snapshot();
   });
 
@@ -92,6 +93,19 @@ describe("aaveV1-market", async () => {
     );
   }
 
+  async function addLiquidityDual(amount: BN) {
+    await router.addMarketLiquidityDual(
+      consts.MARKET_FACTORY_AAVE,
+      xyt.address,
+      testToken.address,
+      amount, 
+      amount,
+      BN.from(0),
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
+    )
+  }
+
   /*
   READ ME!!!
   All tests with "_sample" suffix are legacy tests. It's improved version is in other test files
@@ -99,7 +113,7 @@ describe("aaveV1-market", async () => {
     Tests for swapping tokens can be found in amm-formula-test.ts
   */
 
-  it("AMM's formula should be correct for swapExactOut", async () => {
+  xit("AMM's formula should be correct for swapExactOut", async () => {
     await MarketFeesTest(
       router,
       stdMarket,
@@ -109,14 +123,21 @@ describe("aaveV1-market", async () => {
       bootstrapSampleMarket,
       true
     );
-    // await MarketFeesTest(
-    //   router,
-    //   stdMarket,
-    //   tokenUSDT,
-    //   testToken,
-    //   xyt,
-    //   bootstrapSampleMarket,
-    //   true
-    // );
+  });
+
+ it("AMM's protocol fee to treasury should be correct", async() => {
+    await ProtocolFeeTest(
+      router,
+      stdMarket,
+      tokenUSDT,
+      testToken,
+      xyt,
+      bootstrapSampleMarket,
+      true,
+      (await data.treasury()),
+      bob,
+      alice,
+      addLiquidityDual
+    );
   });
 });
