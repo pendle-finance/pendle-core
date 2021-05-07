@@ -1,6 +1,7 @@
 import { Contract, providers, Wallet } from "ethers";
 import PendleAaveForge from "../../../build/artifacts/contracts/core/PendleAaveForge.sol/PendleAaveForge.json";
 import PendleRewardManager from "../../../build/artifacts/contracts/core/PendleRewardManager.sol/PendleRewardManager.json";
+import PendleAaveYieldContractDeployer from "../../../build/artifacts/contracts/core/PendleAaveYieldContractDeployer.sol/PendleAaveYieldContractDeployer.json";
 import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
 import PendleOwnershipToken from "../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json";
 import { consts, setTimeNextBlock, tokens } from "../../helpers";
@@ -31,16 +32,24 @@ export async function aaveForgeFixture(
     consts.FORGE_AAVE
   ]);
 
+  const aYieldContractDeployer = await deployContract(alice, PendleAaveYieldContractDeployer, [
+    alice.address, //governance
+    consts.FORGE_AAVE
+  ]);
+
   const aaveForge = await deployContract(alice, PendleAaveForge, [
     alice.address, // alice will be the governance address
     router.address,
     consts.AAVE_LENDING_POOL_CORE_ADDRESS,
     consts.FORGE_AAVE,
     consts.STKAAVE_ADDRESS,
-    aRewardManager.address
+    aRewardManager.address,
+    aYieldContractDeployer.address
   ]);
 
   await aRewardManager.initialize(aaveForge.address);
+
+  await aYieldContractDeployer.initialize(aaveForge.address);
 
   await router.addForge(consts.FORGE_AAVE, aaveForge.address);
 

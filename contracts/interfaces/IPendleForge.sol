@@ -25,6 +25,7 @@ pragma solidity 0.7.6;
 
 import "./IPendleRouter.sol";
 import "./IPendleRewardManager.sol";
+import "./IPendleYieldContractDeployer.sol";
 
 interface IPendleForge {
     /**
@@ -164,6 +165,8 @@ interface IPendleForge {
     function data() external view returns (IPendleData);
 
     function rewardManager() external view returns (IPendleRewardManager);
+
+    function yieldContractDeployer() external view returns (IPendleYieldContractDeployer);
 
     function rewardToken() external view returns (IERC20);
 

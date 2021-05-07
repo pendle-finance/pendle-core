@@ -34,6 +34,7 @@ abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder {
     address internal yieldToken;
 
     constructor(
+        address _forge,
         address _router,
         address _yieldToken,
         address _rewardToken,
@@ -45,7 +46,7 @@ abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder {
         );
         yieldToken = _yieldToken;
         IERC20(_yieldToken).safeApprove(_router, type(uint256).max);
-        IERC20(_yieldToken).safeApprove(msg.sender, type(uint256).max);
+        IERC20(_yieldToken).safeApprove(_forge, type(uint256).max);
 
         IERC20(_rewardToken).safeApprove(_rewardManager, type(uint256).max);
     }

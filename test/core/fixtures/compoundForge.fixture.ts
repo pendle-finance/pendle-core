@@ -1,6 +1,7 @@
 import { Contract, providers, Wallet } from 'ethers';
 import PendleCompoundForge from '../../../build/artifacts/contracts/core/PendleCompoundForge.sol/PendleCompoundForge.json';
 import PendleRewardManager from "../../../build/artifacts/contracts/core/PendleRewardManager.sol/PendleRewardManager.json";
+import PendleCompoundYieldContractDeployer from "../../../build/artifacts/contracts/core/PendleCompoundYieldContractDeployer.sol/PendleCompoundYieldContractDeployer.json";
 import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
 import PendleOwnershipToken from '../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json';
 import { consts, setTimeNextBlock, tokens } from "../../helpers";
@@ -26,16 +27,25 @@ export async function compoundForgeFixture(
       alice.address, //governance
       consts.FORGE_COMPOUND
     ]);
+
+    const cYieldContractDeployer = await deployContract(alice, PendleCompoundYieldContractDeployer, [
+      alice.address, //governance
+      consts.FORGE_COMPOUND
+    ]);
+
     const compoundForge = await deployContract(alice, PendleCompoundForge, [
       alice.address,
       router.address,
       consts.COMPOUND_COMPTROLLER_ADDRESS,
       consts.FORGE_COMPOUND,
       consts.COMP_ADDRESS,
-      cRewardManager.address
+      cRewardManager.address,
+      cYieldContractDeployer.address
     ]);
     await cRewardManager.initialize(compoundForge.address);
-    
+
+    await cYieldContractDeployer.initialize(compoundForge.address);
+
     await router.addForge(consts.FORGE_COMPOUND, compoundForge.address);
 
     await compoundForge.registerCTokens([tokens.USDT.address], [tokens.USDT.compound]);
