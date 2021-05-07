@@ -25,14 +25,12 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../../libraries/ExpiryUtilsLib.sol";
-import "../../libraries/FactoryLib.sol";
 import "../../interfaces/IAaveLendingPoolCore.sol";
 import "../../interfaces/IPendleBaseToken.sol";
 import "../../interfaces/IPendleData.sol";
 import "../../interfaces/IPendleForge.sol";
 import "../../interfaces/IPendleRewardManager.sol";
-import "../../tokens/PendleFutureYieldToken.sol";
-import "../../tokens/PendleOwnershipToken.sol";
+import "../../interfaces/IPendleYieldContractDeployer.sol";
 import "../../periphery/Permissions.sol";
 import "../../libraries/MathLib.sol";
 
@@ -54,6 +52,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     bytes32 public immutable override forgeId;
     IERC20 public immutable override rewardToken; // COMP/StkAAVE
     IPendleRewardManager public override rewardManager;
+    IPendleYieldContractDeployer public override yieldContractDeployer;
 
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         public
@@ -70,7 +69,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         IPendleRouter _router,
         bytes32 _forgeId,
         address _rewardToken,
-        address _rewardManager
+        address _rewardManager,
+        address _yieldContractDeployer
     ) Permissions(_governance) {
         require(address(_router) != address(0), "ZERO_ADDRESS");
         require(_forgeId != 0x0, "ZERO_BYTES");
@@ -80,6 +80,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         data = _router.data();
         rewardToken = IERC20(_rewardToken);
         rewardManager = IPendleRewardManager(_rewardManager);
+        yieldContractDeployer = IPendleYieldContractDeployer(_yieldContractDeployer);
     }
 
     modifier onlyRouter() {
@@ -114,7 +115,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         require(yieldToken != address(0), "INVALID_ASSET");
 
-        ot = _forgeOwnershipToken(
+        ot = yieldContractDeployer.forgeOwnershipToken(
             _underlyingAsset,
             OT.concat(IPendleBaseToken(yieldToken).name(), _expiry, " "),
             OT.concat(IPendleBaseToken(yieldToken).symbol(), _expiry, "-"),
@@ -122,7 +123,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
             _expiry
         );
 
-        xyt = _forgeFutureYieldToken(
+        xyt = yieldContractDeployer.forgeFutureYieldToken(
             _underlyingAsset,
             XYT.concat(IPendleBaseToken(yieldToken).name(), _expiry, " "),
             XYT.concat(IPendleBaseToken(yieldToken).symbol(), _expiry, "-"),
@@ -131,7 +132,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         );
 
         // ot address is passed in to be used in the salt of CREATE2
-        yieldTokenHolders[_underlyingAsset][_expiry] = _deployYieldTokenHolder(yieldToken, ot);
+        yieldTokenHolders[_underlyingAsset][_expiry] = yieldContractDeployer.deployYieldTokenHolder(yieldToken, ot);
 
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
@@ -299,54 +300,6 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         return _getYieldBearingToken(_underlyingAsset);
     }
 
-    function _forgeFutureYieldToken(
-        address _underlyingAsset,
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _expiry
-    ) internal returns (address xyt) {
-        IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
-
-        xyt = Factory.createContract(
-            type(PendleFutureYieldToken).creationCode,
-            abi.encodePacked(yieldToken, _underlyingAsset),
-            abi.encode(
-                _underlyingAsset,
-                yieldToken,
-                _name,
-                _symbol,
-                _decimals,
-                block.timestamp,
-                _expiry
-            )
-        );
-    }
-
-    function _forgeOwnershipToken(
-        address _underlyingAsset,
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _expiry
-    ) internal returns (address ot) {
-        IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
-
-        ot = Factory.createContract(
-            type(PendleOwnershipToken).creationCode,
-            abi.encodePacked(yieldToken, _underlyingAsset),
-            abi.encode(
-                _underlyingAsset,
-                yieldToken,
-                _name,
-                _symbol,
-                _decimals,
-                block.timestamp,
-                _expiry
-            )
-        );
-    }
-
     // Invariant: this function must be called before a user's XYT balance is changed
     function _beforeTransferDueInterests(
         PendleTokens memory _tokens,
@@ -433,11 +386,6 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     {
         amountToMint = _amountToTokenize;
     }
-
-    function _deployYieldTokenHolder(address yieldToken, address ot)
-        internal
-        virtual
-        returns (address yieldTokenHolder);
 
     function _getYieldBearingToken(address _underlyingAsset) internal virtual returns (address);
 }
