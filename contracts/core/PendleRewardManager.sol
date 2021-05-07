@@ -24,6 +24,7 @@ pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../periphery/Permissions.sol";
 import "../periphery/Withdrawable.sol";
 import "../interfaces/IPendleYieldTokenHolder.sol";
@@ -34,7 +35,7 @@ import "../interfaces/IPendleForge.sol";
 @dev the logic of distributing rewards is very similar to that of PendleCompoundMarket & PendleCompoundLiquidityMining
     Any major differences are likely to be bugs
 */
-contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable {
+contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable, ReentrancyGuard {
     using SafeMath for uint256;
 
     bytes32 public override forgeId;
@@ -79,11 +80,11 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable 
     }
 
     // INVARIANT: this function must be called before any action that changes the OT balance of account
-    function settleUserRewards(
+    function claimRewards(
         address _underlyingAsset,
         uint256 _expiry,
         address _account
-    ) external override onlyForge returns (uint256 dueRewards) {
+    ) external override nonReentrant returns (uint256 dueRewards) {
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
 
         address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
