@@ -36,6 +36,7 @@ import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
 import "../periphery/Permissions.sol";
 import "./abstract/PendleForgeBase.sol";
+import "./PendleCompoundYieldTokenHolder.sol";
 
 contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
     using ExpiryUtils for string;
@@ -55,8 +56,10 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         address _governance,
         IPendleRouter _router,
         IComptroller _comptroller,
-        bytes32 _forgeId
-    ) PendleForgeBase(_governance, _router, _forgeId) {
+        bytes32 _forgeId,
+        address _rewardToken,
+        address _rewardManager
+    ) PendleForgeBase(_governance, _router, _forgeId, _rewardToken, _rewardManager) {
         require(address(_comptroller) != address(0), "ZERO_ADDRESS");
 
         comptroller = _comptroller;
@@ -173,9 +176,29 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
             .add(interestFromXyt);
     }
 
-    function _accrueProtocolFee(address _underlyingAsset, uint256 _protocolFee) internal override {
-        accruedProtocolFee[_underlyingAsset] = accruedProtocolFee[_underlyingAsset].add(
-            _protocolFee
+    function _updateForgeFee(
+        address _underlyingAsset,
+        uint256 _expiry,
+        uint256 _feeAmount
+    ) internal override {
+        totalFee[_underlyingAsset][_expiry] = totalFee[_underlyingAsset][_expiry].add(_feeAmount);
+    }
+
+    function _deployYieldTokenHolder(address yieldToken, address ot)
+        internal
+        override
+        returns (address yieldTokenHolder)
+    {
+        yieldTokenHolder = Factory.createContract(
+            type(PendleCompoundYieldTokenHolder).creationCode,
+            abi.encodePacked(ot),
+            abi.encode(
+                address(router),
+                yieldToken,
+                rewardToken,
+                address(rewardManager),
+                address(comptroller)
+            )
         );
     }
 }

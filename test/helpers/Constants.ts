@@ -55,7 +55,6 @@ export const consts = {
   LOCK_NUMERATOR: BN.from(1),
   LOCK_DENOMINATOR: BN.from(180),
   INTEREST_UPDATE_RATE_DELTA_FOR_MARKET: BN.from(2).pow(40).div(10000), // 0.01% delta
-  INTEREST_UPDATE_RATE_DELTA_FOR_FORGE: BN.from(2).pow(40).div(10000), // 0.01% delta
 
   // Pendle token distribution
   INVESTOR_AMOUNT: BN.from(37417125).mul(ONE_E_18),
@@ -70,6 +69,11 @@ export const consts = {
   PENDLE_START_TIME: BN.from(4000000000),
   INITIAL_WEEKLY_EMISSION: BN.from(1200000).mul(ONE_E_18),
   ONE_QUARTER: BN.from(7884000),
+
+  // COMP/StkAAVE rewards related
+  STKAAVE_ADDRESS: "0x4da27a545c0c5b758a6ba100e3a049001de870f5",
+  COMP_ADDRESS: "0xc00e94cb662c3520282e6f5717214004a7f26888",
+  AAVE_INCENTIVES_CONTROLLER: "0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5",
 };
 
 // export function setT0(time: BN) {

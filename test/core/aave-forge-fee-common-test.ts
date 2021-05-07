@@ -29,6 +29,7 @@ interface TestEnv {
   FORGE_ID: string;
   INITIAL_AAVE_TOKEN_AMOUNT: BN;
   TEST_DELTA: BN;
+  EXPIRY: BN;
 }
 
 export function runTest(isAaveV1: boolean) {
@@ -70,6 +71,7 @@ export function runTest(isAaveV1: boolean) {
       aUSDT = await getAContract(alice, aaveForge, tokenUSDT);
       testEnv.FORGE_ID = consts.FORGE_AAVE;
       testEnv.T0 = consts.T0;
+      testEnv.EXPIRY = consts.T0.add(consts.SIX_MONTH);
     }
 
     async function buildTestEnvV2() {
@@ -111,7 +113,7 @@ export function runTest(isAaveV1: boolean) {
       await router.tokenizeYield(
         testEnv.FORGE_ID,
         tokenUSDT.address,
-        testEnv.T0.add(consts.SIX_MONTH),
+        testEnv.EXPIRY,
         amount,
         user.address,
         consts.HIGH_GAS_OVERRIDE
@@ -149,12 +151,12 @@ export function runTest(isAaveV1: boolean) {
     // Bob has refAmount of XYTs
     // Charlie has equivalent amount of aUSDT
     // When bob redeem due interests, Bob should get the interest gotten by Charlie - fee portion
-    it("User should get back interest minus protocol fees", async () => {
+    it("User should get back interest minus forge fees", async () => {
       await aUSDT.transfer(charlie.address, refAmount);
       await tokenizeYield(bob, refAmount);
 
       await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
-      await redeemDueInterests(bob, testEnv.T0.add(consts.SIX_MONTH));
+      await redeemDueInterests(bob, testEnv.EXPIRY);
       const bobInterest = await aUSDT.balanceOf(bob.address);
       const charlieInterest = (await aUSDT.balanceOf(charlie.address)).sub(
         refAmount
@@ -165,42 +167,40 @@ export function runTest(isAaveV1: boolean) {
         BN.from(150)
       );
 
-      const accruedProtocolFee = await aaveForge.accruedProtocolFee(
-        tokenUSDT.address
+      const totalFee = await aaveForge.totalFee(
+        tokenUSDT.address,
+        testEnv.EXPIRY
       );
-      approxBigNumber(
-        charlieInterest.sub(bobInterest),
-        accruedProtocolFee,
-        BN.from(150)
-      );
+      approxBigNumber(charlieInterest.sub(bobInterest), totalFee, BN.from(150));
     });
 
-    it("Governance address should be able to withdraw protocol fees", async () => {
+    it("Governance address should be able to withdraw forge fees", async () => {
       await tokenizeYield(bob, refAmount);
 
       await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
-      await redeemDueInterests(bob, testEnv.T0.add(consts.SIX_MONTH));
+      await redeemDueInterests(bob, testEnv.EXPIRY);
 
-      const accruedProtocolFee = await aaveForge.accruedProtocolFee(
-        tokenUSDT.address
+      const totalFee = await aaveForge.totalFee(
+        tokenUSDT.address,
+        testEnv.EXPIRY
       );
-      await aaveForge.withdrawProtocolFee(tokenUSDT.address);
+      await aaveForge.withdrawForgeFee(tokenUSDT.address, testEnv.EXPIRY);
       const treasuryAddress = await data.treasury();
       const treasuryBalance = await aUSDT.balanceOf(treasuryAddress);
-      approxBigNumber(accruedProtocolFee, treasuryBalance, BN.from(5));
-      const protocolFeeLeft = await aaveForge.accruedProtocolFee(
-        tokenUSDT.address
-      );
-      approxBigNumber(protocolFeeLeft, BN.from(0), BN.from(5));
+      approxBigNumber(totalFee, treasuryBalance, BN.from(5));
+      const forgeFeeLeft = await aaveForge.totalFee(tokenUSDT.address);
+      approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(5));
     });
-    it("Non-governance address should not be able to withdraw protocol fees", async () => {
+    it("Non-governance address should not be able to withdraw forge fees", async () => {
       await tokenizeYield(bob, refAmount);
 
       await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
-      await redeemDueInterests(bob, testEnv.T0.add(consts.SIX_MONTH));
+      await redeemDueInterests(bob, testEnv.EXPIRY);
 
       await expect(
-        aaveForge.connect(bob).withdrawProtocolFee(tokenUSDT.address)
+        aaveForge
+          .connect(bob)
+          .withdrawForgeFee(tokenUSDT.address, testEnv.EXPIRY)
       ).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
     });
   });

@@ -306,6 +306,7 @@ export async function createNewYieldContractAndMarket(
     `\tCreating new yield contracts and market for ${forgeIdString}, underlyingAsset-${baseTokenSymbol}, expiry=${expiry}, baseToken-${baseTokenSymbol}`
   );
 
+  console.log(`\tunderlyingAssetContract = ${underlyingAssetContract.address}`);
   await sendAndWaitForTransaction(
     hre,
     pendleRouter.newYieldContracts,
@@ -333,14 +334,6 @@ export async function createNewYieldContractAndMarket(
     marketFactoryId,
     xytAddress,
     baseTokenContract.address
-  );
-
-  //TODO: remove after fixing reentrancy
-  await sendAndWaitForTransaction(
-    hre,
-    pendleData.setReentrancyWhitelist,
-    "Set whitelist",
-    [[marketAddress], [true]]
   );
 
   if (deployment.yieldContracts[forgeIdString] == null) {
@@ -418,6 +411,9 @@ export async function mintXytAndBootstrapMarket(
     marketFactoryId,
     xytAddress,
     baseTokenContract.address
+  );
+  console.log(
+    `\txytAddress = ${xytAddress}, otAddress = ${otAddress}, marketAddress = ${marketAddress}`
   );
 
   const xytContract = await (
@@ -542,7 +538,7 @@ export async function setupLiquidityMining(
       forgeId,
       underlyingAssetContract.address,
       baseTokenContract.address,
-      new Date().getTime() + 3600, // starts in 1 hour
+      Math.floor(new Date().getTime() / 1000) + 3600, // starts in 1 hour
       liqParams.EPOCH_DURATION,
       liqParams.VESTING_EPOCHS,
     ]

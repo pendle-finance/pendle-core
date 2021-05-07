@@ -22,34 +22,6 @@
  */
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./ERC20.sol";
-import "../interfaces/IPendleBaseToken.sol";
-
-/**
- *   @title PendleBaseToken
- *   @dev The contract implements the standard ERC20 functions, plus some
- *        Pendle specific fields and functions, namely:
- *          - expiry
- *
- *        This abstract contract is inherited by PendleFutureYieldToken
- *        and PendleOwnershipToken contracts.
- **/
-abstract contract PendleBaseToken is ERC20 {
-    using SafeMath for uint256;
-
-    uint256 public override start;
-    uint256 public override expiry;
-
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _start,
-        uint256 _expiry
-    ) ERC20(_name, _symbol) {
-        _setupDecimals(_decimals);
-        start = _start;
-        expiry = _expiry;
-    }
+interface IPendleYieldTokenHolder {
+    function claimRewards() external;
 }
