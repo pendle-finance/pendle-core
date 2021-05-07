@@ -112,19 +112,29 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     // INVARIANT: All write functions must go through this check.
     // All XYT/OT transfers must go through this check as well. As such, XYT/OT transfers are also paused
     function checkNotPaused(address _underlyingAsset, uint256 _expiry) internal {
-        (bool paused,) = pausingManager.checkYieldContractStatus(forgeId, _underlyingAsset, _expiry);
+        (bool paused, ) =
+            pausingManager.checkYieldContractStatus(forgeId, _underlyingAsset, _expiry);
         require(!paused, "YIELD_CONTRACT_PAUSED");
     }
 
     // Only the forgeEmergencyHandler can call this function, when its in emergencyMode
     // this will allow a spender to spend the whole balance of the specified tokens of the yieldTokenHolder contract
     // the spender should ideally be a contract with logic for users to withdraw out their funds.
-    function setUpEmergencyMode(address _underlyingAsset, uint256 _expiry, address[] calldata tokens, address spender) external override {
-        (, bool emergencyMode) = pausingManager.checkYieldContractStatus(forgeId, _underlyingAsset, _expiry);
+    function setUpEmergencyMode(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address[] calldata tokens,
+        address spender
+    ) external override {
+        (, bool emergencyMode) =
+            pausingManager.checkYieldContractStatus(forgeId, _underlyingAsset, _expiry);
         require(emergencyMode, "NOT_EMERGENCY");
-        (address forgeEmergencyHandler,,) = pausingManager.forgeEmergencyHandler();
+        (address forgeEmergencyHandler, , ) = pausingManager.forgeEmergencyHandler();
         require(msg.sender == forgeEmergencyHandler, "NOT_EMERGENCY_HANDLER");
-        IPendleYieldTokenHolder(yieldTokenHolders[_underlyingAsset][_expiry]).setUpEmergencyMode(tokens, spender);
+        IPendleYieldTokenHolder(yieldTokenHolders[_underlyingAsset][_expiry]).setUpEmergencyMode(
+            tokens,
+            spender
+        );
     }
 
     function newYieldContracts(address _underlyingAsset, uint256 _expiry)

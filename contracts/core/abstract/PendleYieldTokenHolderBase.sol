@@ -60,7 +60,7 @@ abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder {
     // the spender should ideally be a contract with logic for users to withdraw out their funds.
     function setUpEmergencyMode(address[] calldata tokens, address spender) external override {
         require(msg.sender == forge, "NOT_FROM_FORGE");
-        for (uint256 i=0;i<tokens.length;i++) {
+        for (uint256 i = 0; i < tokens.length; i++) {
             IERC20(tokens[i]).safeApprove(spender, type(uint256).max);
         }
     }

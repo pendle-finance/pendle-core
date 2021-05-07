@@ -123,7 +123,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     // INVARIANT: All write functions, except for ERC20's approve(), increaseAllowance(), decreaseAllowance()
     // must go through this check. This means that transfering of LP tokens is paused too.
     function checkNotPaused() internal view {
-        (bool paused,) = pausingManager.checkMarketStatus(factoryId, address(this));
+        (bool paused, ) = pausingManager.checkMarketStatus(factoryId, address(this));
         require(!paused, "MARKET_PAUSED");
     }
 
@@ -186,9 +186,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     function setUpEmergencyMode(address[] calldata tokens, address spender) external override {
         (, bool emergencyMode) = pausingManager.checkMarketStatus(factoryId, address(this));
         require(emergencyMode, "NOT_EMERGENCY");
-        (address marketEmergencyHandler,,) = pausingManager.marketEmergencyHandler();
+        (address marketEmergencyHandler, , ) = pausingManager.marketEmergencyHandler();
         require(msg.sender == marketEmergencyHandler, "NOT_EMERGENCY_HANDLER");
-        for (uint256 i=0;i<tokens.length;i++) {
+        for (uint256 i = 0; i < tokens.length; i++) {
             IERC20(tokens[i]).safeApprove(spender, type(uint256).max);
         }
     }
