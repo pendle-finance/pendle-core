@@ -117,6 +117,6 @@ abstract contract PendleBaseToken is ERC20 {
 
     function approveRouter(address account) external {
         require(msg.sender == address(router), "NOT_ROUTER");
-        _approve(msg.sender, address(router), type(uint256).max);
+        _approve(account, address(router), type(uint256).max);
     }
 }

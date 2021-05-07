@@ -421,12 +421,12 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         // since there is burning of LPs involved, we need to transfer in LP first
         // otherwise the market might not have enough LPs to burn
         PendingTransfer memory lpTransfer = PendingTransfer({amount: _exactInLp, isOut: false});
+        _checkApproveRouter(address(market));
         _settleTokenTransfer(address(market), lpTransfer, address(market));
 
         PendingTransfer[3] memory transfers =
             market.removeMarketLiquidityDual(_exactInLp, _minOutXyt, _minOutToken);
 
-        _checkApproveRouter(address(market));
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
         emit Exit(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
         return (transfers[0].amount, transfers[1].amount);
