@@ -187,23 +187,6 @@ abstract contract PendleLiquidityMiningBase is
         vestingEpochs = _vestingEpochs;
     }
 
-    function readUserExpiries(address _account)
-        external
-        view
-        override
-        returns (uint256[] memory _expiries)
-    {
-        _expiries = userExpiries[_account].expiries;
-    }
-
-    function balances(uint256 expiry, address user) external view override returns (uint256) {
-        return expiryData[expiry].balances[user];
-    }
-
-    function lpHolderForExpiry(uint256 expiry) external view override returns (address) {
-        return expiryData[expiry].lpHolder;
-    }
-
     /**
      * @notice fund new epochs
      * @dev Once the last epoch is over, the program is permanently override
@@ -405,6 +388,23 @@ abstract contract PendleLiquidityMiningBase is
         returns (uint256 rewards)
     {
         rewards = epochData[epochId].totalRewards;
+    }
+
+    function readUserExpiries(address _account)
+        external
+        view
+        override
+        returns (uint256[] memory _expiries)
+    {
+        _expiries = userExpiries[_account].expiries;
+    }
+
+    function balances(uint256 expiry, address user) external view override returns (uint256) {
+        return expiryData[expiry].balances[user];
+    }
+
+    function lpHolderForExpiry(uint256 expiry) external view override returns (address) {
+        return expiryData[expiry].lpHolder;
     }
 
     /**
