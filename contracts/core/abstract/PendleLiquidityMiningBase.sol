@@ -40,11 +40,19 @@ import "../../periphery/Permissions.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
-    @dev things that must hold in this contract:
-     - If an account's stake information is updated (hence lastTimeUserStakeUpdated is changed),
-        then his pending rewards are calculated as well
-        (and saved in availableRewardsForEpoch[user][epochId])
- */
+@dev things that must hold in this contract:
+ - If an account's stake information is updated (hence lastTimeUserStakeUpdated is changed),
+    then his pending rewards are calculated as well
+    (and saved in availableRewardsForEpoch[user][epochId])
+@dev We define 1 Unit = 1 LP stake in contract 1 second. For example, 20 LP stakes 30 secs will create 600 units for the user
+@dev Basically the logic of distributing rewards is very simple: For each epoch, we calculate how many units that each user
+has contributed in this epoch. The rewards will be distributed proportionately based on that number
+@dev IMPORTANT: All markets with the same triplets of (marketFactoryId,XYT,baseToken) will share the same LiqMining contract
+I.e: All the markets using the same LiqMining contract are only different from each other by their expiries
+@dev CORE LOGIC: So in a single LiqMining contract:
+* the rewards will be distributed among different expiries by ratios set by Governance
+* In a single expiry, the reward will be distributed by the ratio of units (explained above)
+*/
 abstract contract PendleLiquidityMiningBase is
     IPendleLiquidityMining,
     Permissions,
@@ -59,31 +67,44 @@ abstract contract PendleLiquidityMiningBase is
         mapping(uint256 => bool) hasExpiry;
     }
 
-    /* availableRewardsForEpoch[account][epochId] is the amount of PENDLEs the account
-        can withdraw at the beginning of epochId*/
     struct EpochData {
+        // total units for different expiries in this epoch
         mapping(uint256 => uint256) stakeUnitsForExpiry;
+        // the last time in this epoch that we updated the stakeUnits for this expiry
         mapping(uint256 => uint256) lastUpdatedForExpiry;
+        /* availableRewardsForEpoch[account][epochId] is the amount of PENDLEs the account can withdraw
+        at the beginning of epochId*/
         mapping(address => uint256) availableRewardsForUser;
+        // number of units an user has contributed in this epoch & expiry
         mapping(address => mapping(uint256 => uint256)) stakeUnitsForUser;
+        // the reward setting to use
         uint256 settingId;
+        // totalRewards for this epoch
         uint256 totalRewards;
     }
 
+    // A struct to pack variables & avoid stack too deep
     struct RewardsData {
         uint256 stakeUnitsForUser;
         uint256 settingId;
-        uint256 rewardsForMarket;
+        uint256 rewardsForThisExpiry;
         uint256 rewardsPerVestingEpoch;
     }
 
+    // For each expiry, we will have one struct
     struct ExpiryData {
-        mapping(address => uint256) lastTimeUserStakeUpdated;
+        // the last time the units of an user was updated in this expiry
+        mapping(address => uint256) lastTimeUserStakeUpdated; // map account => time
+        // the last epoch the user claimed rewards. After the rewards an epoch has been claimed, there won't be any
+        // additional rewards in that epoch for the user to claim
         mapping(address => uint256) lastEpochClaimed;
+        // total amount of LP in this expiry (to use for units calculation)
         uint256 totalStakeLP;
+        // lpHolder contract for this expiry
         address lpHolder;
+        // the LP balances for each user in this expiry
         mapping(address => uint256) balances;
-        // storage for interests stuff
+        // variables for lp interest calculations
         uint256 lastNYield;
         uint256 paramL;
         mapping(address => uint256) lastParamL;
@@ -130,7 +151,7 @@ abstract contract PendleLiquidityMiningBase is
     constructor(
         address _governance,
         address _pendleTokenAddress,
-        address _router, // The router basically identify our Pendle instance.
+        address _router,
         bytes32 _marketFactoryId,
         bytes32 _forgeId,
         address _underlyingAsset,
@@ -188,13 +209,18 @@ abstract contract PendleLiquidityMiningBase is
      * @dev Once the last epoch is over, the program is permanently override
      * @dev the settings must be set before epochs can be funded
         => if funded=true, means that epochs have been funded & have already has valid allocation settings
+     * conditions:
+        * Must only be called by governance
      */
     function fund(uint256[] memory _rewards) external override onlyGovernance {
+        // Can only be fund if there is already a setting
         require(latestSetting.id > 0, "NO_ALLOC_SETTING");
+        // Once the program is over, cannot fund
         require(_getCurrentEpochId() <= numberOfEpochs, "LAST_EPOCH_OVER");
 
         uint256 nNewEpochs = _rewards.length;
         uint256 totalFunded;
+        // all the funding will be used for new epochs
         for (uint256 i = 0; i < nNewEpochs; i++) {
             totalFunded = totalFunded.add(_rewards[i]);
             epochData[numberOfEpochs + i + 1].totalRewards = _rewards[i];
@@ -208,6 +234,9 @@ abstract contract PendleLiquidityMiningBase is
 
     /**
     @notice top up rewards for any funded future epochs (but not to create new epochs)
+    * conditions:
+        * Must only be called by governance
+        * The contract must have been funded already
     */
     function topUpRewards(uint256[] memory _epochIds, uint256[] memory _rewards)
         external
@@ -256,9 +285,12 @@ abstract contract PendleLiquidityMiningBase is
         }
 
         uint256 curEpoch = _getCurrentEpochId();
+        // set the settingId for past epochs
         for (uint256 i = latestSetting.firstEpochToApply; i <= curEpoch; i++) {
             epochData[i].settingId = latestSetting.id;
         }
+
+        // create a new setting that will be applied from the next epoch onwards
         latestSetting.firstEpochToApply = curEpoch + 1;
         latestSetting.id++;
 
@@ -270,6 +302,17 @@ abstract contract PendleLiquidityMiningBase is
         require(sumAllocationNumerators == ALLOCATION_DENOMINATOR, "INVALID_ALLOCATION");
     }
 
+    /**
+     * @notice Use to stake their LPs to a specific expiry
+     * @param newLpHoldingContractAddress will be /= 0 in case a new lpHolder contract is deployed
+    Conditions:
+        * only be called if the contract has been funded
+        * must have Reentrancy protection
+        * only be called if 0 < current epoch <= numberOfEpochs
+    Note:
+        * Even if an expiry currently has zero rewards allocated to it, we still allow users to stake their
+        LP in
+     */
     function stake(uint256 expiry, uint256 amount)
         external
         override
@@ -287,6 +330,7 @@ abstract contract PendleLiquidityMiningBase is
         require(xyt != address(0), "XYT_NOT_FOUND");
         require(marketAddress != address(0), "MARKET_NOT_FOUND");
 
+        // there is no lpHolder for this expiry yet, we will create one
         if (exd.lpHolder == address(0)) {
             newLpHoldingContractAddress = _addNewExpiry(expiry, xyt, marketAddress);
         }
@@ -295,10 +339,17 @@ abstract contract PendleLiquidityMiningBase is
             userExpiries[msg.sender].expiries.push(expiry);
             userExpiries[msg.sender].hasExpiry[expiry] = true;
         }
-        // _pullLpToken must happens before totalStakeLPForExpiry and balances are updated
+
         _pullLpToken(marketAddress, expiry, amount);
     }
 
+    /**
+     * @notice Use to withdraw their LP from a specific expiry
+    Conditions:
+        * only be called if the contract has been funded.
+        * must have Reentrancy protection
+        * only be called if 0 < current epoch (always can withdraw)
+     */
     function withdraw(uint256 expiry, uint256 amount) external override nonReentrant isFunded {
         uint256 curEpoch = _getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
@@ -309,30 +360,42 @@ abstract contract PendleLiquidityMiningBase is
         _pushLpToken(expiry, amount);
     }
 
-    function claimRewards() external override nonReentrant returns (uint256[] memory rewards) {
-        // claim PENDLE rewards
+    /**
+     * @notice use to claim PENDLE rewards
+    Conditions:
+        * only be called if the contract has been funded.
+        * must have Reentrancy protection
+        * only be called if 0 < current epoch (always can withdraw)
+        * Anyone can call it (and claim it for any other user)
+     */
+    function claimRewards(uint256 expiry, address account)
+        external
+        override
+        isFunded
+        nonReentrant
+        returns (uint256 rewards)
+    {
         uint256 curEpoch = _getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
 
-        rewards = new uint256[](vestingEpochs);
-        for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
-            uint256 expiry = userExpiries[msg.sender].expiries[i];
-            rewards[0] = rewards[0].add(_settlePendingRewards(expiry, msg.sender));
-        }
-
-        for (uint256 i = 1; i < vestingEpochs; i++) {
-            rewards[i] = rewards[i].add(
-                epochData[curEpoch.add(i)].availableRewardsForUser[msg.sender]
-            );
-        }
+        // _settlePendingRewards is the function that really push the rewards out
+        rewards = _settlePendingRewards(expiry, account);
     }
 
-    function claimLpInterests() external override nonReentrant returns (uint256 interests) {
-        for (uint256 i = 0; i < userExpiries[msg.sender].expiries.length; i++) {
-            interests = interests.add(
-                _settleLpInterests(userExpiries[msg.sender].expiries[i], msg.sender)
-            );
-        }
+    /**
+     * @notice use to claim lpInterest
+    Conditions:
+        * must have Reentrancy protection
+        * Anyone can call it (and claim it for any other user)
+     */
+    function claimLpInterests(uint256 expiry, address account)
+        external
+        override
+        nonReentrant
+        returns (uint256 interests)
+    {
+        // _settleLpInterests is the function that really push the interest out
+        interests = _settleLpInterests(expiry, account);
     }
 
     function totalRewardsForEpoch(uint256 epochId)
@@ -447,13 +510,13 @@ abstract contract PendleLiquidityMiningBase is
                 ? latestSetting.id
                 : epochData[epochId].settingId;
 
-            vars.rewardsForMarket = epochData[epochId]
+            vars.rewardsForThisExpiry = epochData[epochId]
                 .totalRewards
                 .mul(allocationSettings[vars.settingId][expiry])
                 .div(ALLOCATION_DENOMINATOR);
 
             vars.rewardsPerVestingEpoch = vars
-                .rewardsForMarket
+                .rewardsForThisExpiry
                 .mul(vars.stakeUnitsForUser)
                 .div(epochData[epochId].stakeUnitsForExpiry[expiry])
                 .div(vestingEpochs);
