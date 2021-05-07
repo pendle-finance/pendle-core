@@ -53,7 +53,7 @@ export async function marketFixture(
   } = cForge;
   const token = tokens.USDT;
 
-  for (var person of [alice, bob, charlie]) {
+  for (var person of [alice, bob, charlie, dave]) {
     await mintOtAndXyt(provider, token, person, consts.INITIAL_OT_XYT_AMOUNT, router, aaveForge, aaveV2Forge);
   }
 

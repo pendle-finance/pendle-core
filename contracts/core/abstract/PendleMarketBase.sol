@@ -78,11 +78,11 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     IPendleRouter private immutable router;
     uint256 private immutable xytStartTime;
 
-    modifier isAddRemoveSwapAllowed(bool skipOpenCheck) {
-        checkIsBootstrapped();
-        checkOnlyRouter();
+    modifier isAddRemoveSwapClaimAllowed(bool skipOpenCheck) {
+        require(bootstrapped, "NOT_BOOTSTRAPPED");
+        require(msg.sender == address(router), "ONLY_ROUTER");
         if (!skipOpenCheck) {
-            checkMarketIsOpen();
+            require(block.timestamp < lockStartTime, "MARKET_LOCKED");
         }
         _;
     }
@@ -114,18 +114,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _approve(address(this), routerAddress, type(uint256).max);
         IERC20(_xyt).safeApprove(routerAddress, type(uint256).max);
         IERC20(_token).safeApprove(routerAddress, type(uint256).max);
-    }
-
-    function checkIsBootstrapped() internal view {
-        require(bootstrapped, "NOT_BOOTSTRAPPED");
-    }
-
-    function checkOnlyRouter() internal view {
-        require(msg.sender == address(router), "ONLY_ROUTER");
-    }
-
-    function checkMarketIsOpen() internal view {
-        require(block.timestamp < lockStartTime, "MARKET_LOCKED");
     }
 
     function readReserveData()
@@ -186,7 +174,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         override
         returns (PendingTransfer[3] memory transfers)
     {
-        checkOnlyRouter();
+        require(msg.sender == address(router), "ONLY_ROUTER");
         require(!bootstrapped, "ALREADY_BOOTSTRAPPED");
         _initializeLock(); // market's lock params should be initialized at bootstrap time
 
@@ -229,7 +217,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        isAddRemoveSwapAllowed(false)
+        isAddRemoveSwapClaimAllowed(false)
         returns (PendingTransfer[3] memory transfers, uint256 lpOut)
     {
         _updateParamL();
@@ -281,7 +269,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        isAddRemoveSwapAllowed(false)
+        isAddRemoveSwapClaimAllowed(false)
         returns (PendingTransfer[3] memory transfers)
     {
         _updateParamL();
@@ -326,7 +314,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
      * @dev no curveShift to save gas because this function
                 doesn't depend on weights of tokens
      * @dev this function will never be locked since we always let users withdraw
-                their funds. That's why we skip time check in isAddRemoveSwapAllowed
+                their funds. That's why we skip time check in isAddRemoveSwapClaimAllowed
      */
     function removeMarketLiquidityDual(
         uint256 _inLp,
@@ -335,7 +323,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        isAddRemoveSwapAllowed(true)
+        isAddRemoveSwapClaimAllowed(true)
         returns (PendingTransfer[3] memory transfers)
     {
         _updateParamL();
@@ -385,7 +373,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        isAddRemoveSwapAllowed(false)
+        isAddRemoveSwapClaimAllowed(false)
         returns (PendingTransfer[3] memory transfers)
     {
         _updateParamL();
@@ -425,7 +413,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        isAddRemoveSwapAllowed(false)
+        isAddRemoveSwapClaimAllowed(false)
         returns (
             uint256 outAmount,
             uint256 spotPriceAfter,
@@ -472,7 +460,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        isAddRemoveSwapAllowed(false)
+        isAddRemoveSwapClaimAllowed(false)
         returns (
             uint256 inAmount,
             uint256 spotPriceAfter,
@@ -511,9 +499,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[1].isOut = true;
     }
 
-    function claimLpInterests(address account) external override returns (uint256 interests) {
-        checkIsBootstrapped();
-        checkOnlyRouter();
+    function claimLpInterests(address account)
+        external
+        override
+        isAddRemoveSwapClaimAllowed(true)
+        returns (uint256 interests)
+    {
         interests = _settleLpInterests(account);
     }
 

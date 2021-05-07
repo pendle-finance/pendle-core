@@ -161,7 +161,7 @@ export async function liquidityMiningFixture(
 
 
   let lpBalanceAlice = await aMarket.balanceOf(alice.address);
-  // originally alice has 1e18 LP tokens
+
   for (var person of [bob, charlie, dave]) { // transfer some LP to each user
     await aMarket.transfer(person.address, lpBalanceAlice.div(10));
     await cMarket.transfer(person.address, lpBalanceAlice.div(10));
