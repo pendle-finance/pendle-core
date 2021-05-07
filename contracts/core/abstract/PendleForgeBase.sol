@@ -132,7 +132,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         );
 
         // ot address is passed in to be used in the salt of CREATE2
-        yieldTokenHolders[_underlyingAsset][_expiry] = yieldContractDeployer.deployYieldTokenHolder(yieldToken, ot);
+        yieldTokenHolders[_underlyingAsset][_expiry] = yieldContractDeployer
+            .deployYieldTokenHolder(yieldToken, ot);
 
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 

@@ -31,9 +31,12 @@ import "../../tokens/PendleFutureYieldToken.sol";
 import "../../tokens/PendleOwnershipToken.sol";
 import "../../libraries/FactoryLib.sol";
 
-
 // Each PendleYieldContractDeployer is specific for exactly one forge
-abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeployer, Permissions, Withdrawable {
+abstract contract PendleYieldContractDeployerBase is
+    IPendleYieldContractDeployer,
+    Permissions,
+    Withdrawable
+{
     bytes32 public override forgeId;
     IPendleForge public forge;
 
@@ -68,6 +71,7 @@ abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeploye
             type(PendleFutureYieldToken).creationCode,
             abi.encodePacked(yieldToken, _underlyingAsset),
             abi.encode(
+                address(forge),
                 _underlyingAsset,
                 yieldToken,
                 _name,
@@ -92,6 +96,7 @@ abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeploye
             type(PendleOwnershipToken).creationCode,
             abi.encodePacked(yieldToken, _underlyingAsset),
             abi.encode(
+                address(forge),
                 _underlyingAsset,
                 yieldToken,
                 _name,
@@ -103,5 +108,9 @@ abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeploye
         );
     }
 
-    function deployYieldTokenHolder(address yieldToken, address ot) external override virtual returns (address yieldTokenHolder);
+    function deployYieldTokenHolder(address yieldToken, address ot)
+        external
+        virtual
+        override
+        returns (address yieldTokenHolder);
 }

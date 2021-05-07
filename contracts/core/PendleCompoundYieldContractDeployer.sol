@@ -41,6 +41,7 @@ contract PendleCompoundYieldContractDeployer is PendleYieldContractDeployerBase 
             type(PendleCompoundYieldTokenHolder).creationCode,
             abi.encodePacked(ot),
             abi.encode(
+                address(forge),
                 address(forge.router()),
                 yieldToken,
                 forge.rewardToken(),

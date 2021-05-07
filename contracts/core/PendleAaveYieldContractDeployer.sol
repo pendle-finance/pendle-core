@@ -40,6 +40,7 @@ contract PendleAaveYieldContractDeployer is PendleYieldContractDeployerBase {
             type(PendleAaveYieldTokenHolder).creationCode,
             abi.encodePacked(ot),
             abi.encode(
+                address(forge),
                 address(forge.router()),
                 yieldToken,
                 forge.rewardToken(),

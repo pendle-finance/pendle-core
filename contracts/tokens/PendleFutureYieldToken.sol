@@ -34,6 +34,7 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldToken {
     mapping(address => uint256) public lastNormalisedIncome;
 
     constructor(
+        address _forge,
         address _underlyingAsset,
         address _underlyingYieldToken,
         string memory _name,
@@ -46,7 +47,7 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldToken {
             _underlyingAsset != address(0) && _underlyingYieldToken != address(0),
             "ZERO_ADDRESS"
         );
-        forge = msg.sender;
+        forge = _forge;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;
     }

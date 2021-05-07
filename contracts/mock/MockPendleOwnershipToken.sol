@@ -37,6 +37,7 @@ contract MockPendleOwnershipToken is PendleOwnershipToken {
         uint256 initialBalance
     )
         PendleOwnershipToken(
+            msg.sender,
             _underlyingAsset,
             _underlyingYieldToken,
             _name,
