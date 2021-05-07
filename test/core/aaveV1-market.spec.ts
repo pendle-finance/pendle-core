@@ -421,7 +421,7 @@ describe("aaveV1-market", async () => {
       consts.MARKET_FACTORY_AAVE
     );
 
-    expect(result[1].toNumber()).to.be.approximately(11111111, 100);
+    approxBigNumber(result[1], 11111205, 1000);
   });
 
   it("should be able to getMarketRateExactIn", async () => {
@@ -436,7 +436,7 @@ describe("aaveV1-market", async () => {
       consts.MARKET_FACTORY_AAVE
     );
 
-    expect(result[1].toNumber()).to.be.approximately(9090909, 100);
+    approxBigNumber(result[1], 9090839, 1000);
   });
 
   it("should be able to add market liquidity for a token_sample", async () => {
