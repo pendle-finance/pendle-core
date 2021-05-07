@@ -304,13 +304,23 @@ describe("aaveV1-liquidityMining", async () => {
     }
   }
 
-  async function calEffectiveLiquidity(): Promise<{ xytAmount: BN, tokenAmount: BN }> {
+  async function calEffectiveLiquidity(): Promise<{
+    xytAmount: BN;
+    tokenAmount: BN;
+  }> {
     const MINIMUM_LIQUIDITY: BN = BN.from(3000);
     let totalSupply = await market.totalSupply();
     let totalEffectiveLP = totalSupply.sub(MINIMUM_LIQUIDITY);
-    let xytAmount = (await xyt.balanceOf(market.address)).mul(totalEffectiveLP).div(totalSupply);
-    console.log(xytAmount.toString(), (await xyt.balanceOf(market.address)).toString());
-    let tokenAmount = (await baseToken.balanceOf(market.address)).mul(totalEffectiveLP).div(totalSupply);
+    let xytAmount = (await xyt.balanceOf(market.address))
+      .mul(totalEffectiveLP)
+      .div(totalSupply);
+    console.log(
+      xytAmount.toString(),
+      (await xyt.balanceOf(market.address)).toString()
+    );
+    let tokenAmount = (await baseToken.balanceOf(market.address))
+      .mul(totalEffectiveLP)
+      .div(totalSupply);
     return { xytAmount, tokenAmount };
   }
 
