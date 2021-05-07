@@ -51,7 +51,7 @@ describe("lp-formula", async () => {
     tokenUSDT = tokens.USDT;
     aaveForge = fixture.aForge.aaveForge;
     aaveV2Forge = fixture.a2Forge.aaveV2Forge;
-    await data.setMarketFees(toFixedPoint("0.0035"), 0, 0); // 0.35%
+    await data.setMarketFees(toFixedPoint("0.0035"), 0); // 0.35%
     for (var person of [alice, bob, charlie]) {
       await mintOtAndXyt(
         provider,
