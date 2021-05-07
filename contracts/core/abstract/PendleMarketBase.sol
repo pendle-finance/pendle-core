@@ -28,6 +28,7 @@ import "../../interfaces/IPendleMarket.sol";
 import "../../interfaces/IPendleForge.sol";
 import "../../interfaces/IPendleMarketFactory.sol";
 import "../../interfaces/IPendleYieldToken.sol";
+import "../../interfaces/IPendlePausingManager.sol";
 import "../../tokens/PendleBaseToken.sol";
 import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -76,9 +77,11 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     IERC20 private immutable underlyingYieldToken;
     IPendleData private immutable data;
     IPendleRouter private immutable router;
+    IPendlePausingManager private immutable pausingManager;
     uint256 private immutable xytStartTime;
 
     modifier isAddRemoveSwapClaimAllowed(bool skipOpenCheck) {
+        checkNotPaused();
         require(bootstrapped, "NOT_BOOTSTRAPPED");
         require(msg.sender == address(router), "ONLY_ROUTER");
         if (!skipOpenCheck) {
@@ -109,11 +112,19 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         address routerAddress = address(IPendleMarketFactory(msg.sender).router());
         router = IPendleRouter(routerAddress);
         data = IPendleForge(_forge).data();
+        pausingManager = IPendleForge(_forge).data().pausingManager();
         xytStartTime = IPendleYieldToken(_xyt).start();
         factoryId = IPendleMarketFactory(msg.sender).marketFactoryId();
         _approve(address(this), routerAddress, type(uint256).max);
         IERC20(_xyt).safeApprove(routerAddress, type(uint256).max);
         IERC20(_token).safeApprove(routerAddress, type(uint256).max);
+    }
+
+    // INVARIANT: All write functions, except for ERC20's approve(), increaseAllowance(), decreaseAllowance()
+    // must go through this check. This means that transfering of LP tokens is paused too.
+    function checkNotPaused() internal view {
+        (bool paused,) = pausingManager.checkMarketStatus(factoryId, address(this));
+        require(!paused, "MARKET_PAUSED");
     }
 
     function readReserveData()
@@ -169,12 +180,26 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         reserveData = (xytBalance << 148) | (tokenBalance << 40) | xytWeight;
     }
 
+    // Only the marketEmergencyHandler can call this function, when its in emergencyMode
+    // this will allow a spender to spend the whole balance of the specified tokens
+    // the spender should ideally be a contract with logic for users to withdraw out their funds.
+    function setUpEmergencyMode(address[] calldata tokens, address spender) external override {
+        (, bool emergencyMode) = pausingManager.checkMarketStatus(factoryId, address(this));
+        require(emergencyMode, "NOT_EMERGENCY");
+        (address marketEmergencyHandler,,) = pausingManager.marketEmergencyHandler();
+        require(msg.sender == marketEmergencyHandler, "NOT_EMERGENCY_HANDLER");
+        for (uint256 i=0;i<tokens.length;i++) {
+            IERC20(tokens[i]).approve(spender, type(uint256).max);
+        }
+    }
+
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
         override
         returns (PendingTransfer[3] memory transfers)
     {
         require(msg.sender == address(router), "ONLY_ROUTER");
+        checkNotPaused();
         require(!bootstrapped, "ALREADY_BOOTSTRAPPED");
         _initializeLock(); // market's lock params should be initialized at bootstrap time
 
@@ -505,6 +530,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         isAddRemoveSwapClaimAllowed(true)
         returns (uint256 interests)
     {
+        checkNotPaused();
         interests = _settleLpInterests(account);
     }
 
@@ -749,6 +775,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         address to,
         uint256
     ) internal override {
+        checkNotPaused();
         if (from != address(0)) _settleLpInterests(from);
         if (to != address(0)) _settleLpInterests(to);
     }

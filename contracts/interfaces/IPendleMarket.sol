@@ -44,6 +44,8 @@ interface IPendleMarket is IPendleBaseToken, IPendleStructs {
 
     event Shift(uint256 xytWeightOld, uint256 xytWeightNew);
 
+    function setUpEmergencyMode(address[] calldata tokens, address spender) external;
+
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
         returns (PendingTransfer[3] memory transfers);

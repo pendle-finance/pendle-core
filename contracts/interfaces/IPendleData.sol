@@ -26,6 +26,7 @@ pragma solidity 0.7.6;
 
 import "./IPendleRouter.sol";
 import "./IPendleYieldToken.sol";
+import "./IPendlePausingManager.sol";
 
 interface IPendleData {
     /**
@@ -99,6 +100,12 @@ interface IPendleData {
      * @return Returns the router contract reference.
      **/
     function router() external view returns (IPendleRouter);
+
+    /**
+     * @notice Gets a reference to the PendleRouter contract.
+     * @return Returns the router contract reference.
+     **/
+    function pausingManager() external view returns (IPendlePausingManager);
 
     /**
      * @notice Gets the treasury contract address where fees are being sent to.

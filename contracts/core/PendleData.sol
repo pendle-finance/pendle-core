@@ -28,6 +28,7 @@ import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
+import "../interfaces/IPendlePausingManager.sol";
 import "../periphery/Permissions.sol";
 import "../periphery/Withdrawable.sol";
 
@@ -54,6 +55,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         override xytTokens; // [forgeId][underlyingAsset][expiry]
 
     IPendleRouter public override router;
+    IPendlePausingManager public override pausingManager;
     address public override treasury;
     mapping(address => bool) public override isMarket;
     mapping(address => bool) public override isXyt;
@@ -73,9 +75,14 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     uint256 public override lockDenominator;
     uint256 public override curveShiftBlockDelta;
 
-    constructor(address _governance, address _treasury) Permissions(_governance) {
+    constructor(
+        address _governance,
+        address _treasury,
+        address _pausingManager
+    ) Permissions(_governance) {
         require(_treasury != address(0), "ZERO_ADDRESS");
         treasury = _treasury;
+        pausingManager = IPendlePausingManager(_pausingManager);
     }
 
     modifier onlyRouter() {
