@@ -22,16 +22,26 @@
  */
 pragma solidity 0.7.6;
 
-import "./abstract/PendleYieldTokenHolderBase.sol";
+interface IPendleYieldContractDeployer {
+    function forgeId() external returns (bytes32);
 
-contract PendleAaveYieldTokenHolder is PendleYieldTokenHolderBase {
-    constructor(
-        address _forge,
-        address _router,
-        address _yieldToken,
-        address _rewardToken,
-        address _rewardManager
-    ) PendleYieldTokenHolderBase(_forge, _router, _yieldToken, _rewardToken, _rewardManager) {}
+    function forgeOwnershipToken(
+        address _underlyingAsset,
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals,
+        uint256 _expiry
+    ) external returns (address ot);
 
-    function claimRewards() external override {}
+    function forgeFutureYieldToken(
+        address _underlyingAsset,
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals,
+        uint256 _expiry
+    ) external returns (address xyt);
+
+    function deployYieldTokenHolder(address yieldToken, address ot)
+        external
+        returns (address yieldTokenHolder);
 }

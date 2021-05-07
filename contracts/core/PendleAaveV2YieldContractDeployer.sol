@@ -22,16 +22,32 @@
  */
 pragma solidity 0.7.6;
 
-import "./abstract/PendleYieldTokenHolderBase.sol";
+import "./PendleAaveV2YieldTokenHolder.sol";
+import "./abstract/PendleYieldContractDeployerBase.sol";
+import "../libraries/FactoryLib.sol";
+import "./PendleAaveV2Forge.sol";
 
-contract PendleAaveYieldTokenHolder is PendleYieldTokenHolderBase {
-    constructor(
-        address _forge,
-        address _router,
-        address _yieldToken,
-        address _rewardToken,
-        address _rewardManager
-    ) PendleYieldTokenHolderBase(_forge, _router, _yieldToken, _rewardToken, _rewardManager) {}
+contract PendleAaveV2YieldContractDeployer is PendleYieldContractDeployerBase {
+    constructor(address _governance, bytes32 _forgeId)
+        PendleYieldContractDeployerBase(_governance, _forgeId)
+    {}
 
-    function claimRewards() external override {}
+    function deployYieldTokenHolder(address yieldToken, address ot)
+        external
+        override
+        returns (address yieldTokenHolder)
+    {
+        yieldTokenHolder = Factory.createContract(
+            type(PendleAaveV2YieldTokenHolder).creationCode,
+            abi.encodePacked(ot),
+            abi.encode(
+                address(forge),
+                address(forge.router()),
+                yieldToken,
+                forge.rewardToken(),
+                address(forge.rewardManager()),
+                PendleAaveV2Forge(address(forge)).aaveIncentivesController()
+            )
+        );
+    }
 }
