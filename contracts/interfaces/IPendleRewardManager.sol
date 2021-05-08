@@ -23,7 +23,7 @@
 pragma solidity 0.7.6;
 
 interface IPendleRewardManager {
-    function settleUserRewards(
+    function claimRewards(
         address _underlyingAsset,
         uint256 _expiry,
         address _account

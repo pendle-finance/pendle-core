@@ -35,8 +35,9 @@ import "../../interfaces/IPendleLpHolder.sol";
 import "../../core/PendleLpHolder.sol";
 import "../../interfaces/IPendleLiquidityMining.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../../periphery/Permissions.sol";
-import "../../periphery/PendleLiquidityMiningNonReentrant.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
     @dev things that must hold in this contract:
@@ -47,7 +48,7 @@ import "../../periphery/PendleLiquidityMiningNonReentrant.sol";
 abstract contract PendleLiquidityMiningBase is
     IPendleLiquidityMining,
     Permissions,
-    PendleLiquidityMiningNonReentrant
+    ReentrancyGuard
 {
     using Math for uint256;
     using SafeMath for uint256;
@@ -137,7 +138,7 @@ abstract contract PendleLiquidityMiningBase is
         uint256 _startTime,
         uint256 _epochDuration,
         uint256 _vestingEpochs
-    ) Permissions(_governance) PendleLiquidityMiningNonReentrant() {
+    ) Permissions(_governance) {
         require(_startTime > block.timestamp, "START_TIME_OVER");
         require(IERC20(_pendleTokenAddress).totalSupply() > 0, "INVALID_ERC20");
         require(IERC20(_underlyingAsset).totalSupply() > 0, "INVALID_ERC20");
@@ -614,10 +615,6 @@ abstract contract PendleLiquidityMiningBase is
         );
         expiryData[expiry].lpHolder = newLpHoldingContractAddress;
         _afterAddingNewExpiry(expiry);
-    }
-
-    function _getData() internal view override returns (IPendleData) {
-        return data;
     }
 
     // 1-indexed

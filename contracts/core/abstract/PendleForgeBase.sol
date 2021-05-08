@@ -276,7 +276,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         address _account
     ) external override onlyOT(_underlyingAsset, _expiry) {
         checkNotPaused(_underlyingAsset, _expiry);
-        rewardManager.settleUserRewards(_underlyingAsset, _expiry, _account);
+        rewardManager.claimRewards(_underlyingAsset, _expiry, _account);
     }
 
     function tokenizeYield(
