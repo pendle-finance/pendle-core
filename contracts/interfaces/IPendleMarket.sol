@@ -108,7 +108,7 @@ interface IPendleMarket is IERC20, IPendleStructs {
             uint256 xytWeight,
             uint256 tokenBalance,
             uint256 tokenWeight,
-            uint256 lastBlockTimestamp
+            uint256 currentBlock
         );
 
     function factoryId() external view returns (bytes32);
