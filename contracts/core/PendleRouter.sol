@@ -330,8 +330,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
-        PendingTransfer[3] memory transfers;
+        PendingTransfer[2] memory transfers;
         (transfers, lpOut) = market.addMarketLiquidityDual(
+            msg.sender,
             _desiredXytAmount,
             _desiredTokenAmount,
             _xytMinAmount,
@@ -364,8 +365,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         address assetToTransferIn = _forXyt ? _xyt : originalToken;
 
         address assetForMarket = _forXyt ? _xyt : _token;
-        PendingTransfer[3] memory transfers =
-            market.addMarketLiquiditySingle(assetForMarket, _exactInAsset, _minOutLp);
+        PendingTransfer[2] memory transfers =
+            market.addMarketLiquiditySingle(msg.sender, assetForMarket, _exactInAsset, _minOutLp);
 
         if (_forXyt) {
             emit Join(msg.sender, _exactInAsset, 0, address(market));
@@ -393,13 +394,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
-        // since there is burning of LPs involved, we need to transfer in LP first
-        // otherwise the market might not have enough LPs to burn
-        PendingTransfer memory lpTransfer = PendingTransfer({amount: _exactInLp, isOut: false});
-        _settleTokenTransfer(address(market), lpTransfer, address(market));
-
-        PendingTransfer[3] memory transfers =
-            market.removeMarketLiquidityDual(_exactInLp, _minOutXyt, _minOutToken);
+        PendingTransfer[2] memory transfers =
+            market.removeMarketLiquidityDual(msg.sender, _exactInLp, _minOutXyt, _minOutToken);
 
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
         emit Exit(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
@@ -428,13 +424,13 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
 
         address assetForMarket = _forXyt ? _xyt : _token;
 
-        // since there is burning of LPs involved, we need to transfer in LP first
-        // otherwise the market might not have enough LPs to burn
-        PendingTransfer memory lpTransfer = PendingTransfer({amount: _exactInLp, isOut: false});
-        _settleTokenTransfer(address(market), lpTransfer, address(market));
-
-        PendingTransfer[3] memory transfers =
-            market.removeMarketLiquiditySingle(assetForMarket, _exactInLp, _minOutAsset);
+        PendingTransfer[2] memory transfers =
+            market.removeMarketLiquiditySingle(
+                msg.sender,
+                assetForMarket,
+                _exactInLp,
+                _minOutAsset
+            );
 
         address assetToTransferOut = _forXyt ? _xyt : originalToken;
         _settleTokenTransfer(assetToTransferOut, transfers[0], address(market));
@@ -497,8 +493,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
-        PendingTransfer[3] memory transfers =
-            market.bootstrap(_initialXytLiquidity, _initialTokenLiquidity);
+        PendingTransfer[2] memory transfers =
+            market.bootstrap(msg.sender, _initialXytLiquidity, _initialTokenLiquidity);
 
         emit Join(msg.sender, _initialXytLiquidity, _initialTokenLiquidity, address(market));
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
@@ -524,8 +520,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             IPendleMarket(data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
-        PendingTransfer[3] memory transfers;
+        PendingTransfer[2] memory transfers;
         (outSwapAmount, , transfers) = market.swapExactIn(
+            msg.sender,
             _tokenIn,
             _inTotalAmount,
             _tokenOut,
@@ -564,8 +561,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             IPendleMarket(data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
-        PendingTransfer[3] memory transfers;
+        PendingTransfer[2] memory transfers;
         (inSwapAmount, , transfers) = market.swapExactOut(
+            msg.sender,
             _tokenIn,
             _maxInTotalAmount,
             _tokenOut,
@@ -628,6 +626,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                 _checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
 
                 (tokenAmountOut, , ) = market.swapExactIn(
+                    msg.sender,
                     swap.tokenIn,
                     swap.swapAmount,
                     swap.tokenOut,
@@ -689,6 +688,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
 
                 _checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
                 (tokenAmountIn, , ) = market.swapExactOut(
+                    msg.sender,
                     swap.tokenIn,
                     swap.limitReturnAmount,
                     swap.tokenOut,
@@ -751,7 +751,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     }
 
     /**
-     * @notice This function takes in the standard array PendingTransfer[3] that represents
+     * @notice This function takes in the standard array PendingTransfer[2] that represents
      *        any pending transfers of tokens to be done between a market and msg.sender
      * @dev transfers[0] and transfers[1] always represent the tokens that are traded
      *      while transfers[2] always represent LP transfers
@@ -761,14 +761,13 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
      *
      */
     function _settlePendingTransfers(
-        PendingTransfer[3] memory transfers,
+        PendingTransfer[2] memory transfers,
         address firstToken,
         address secondToken,
         address market
     ) internal {
         _settleTokenTransfer(firstToken, transfers[0], market);
         _settleTokenTransfer(secondToken, transfers[1], market);
-        _settleTokenTransfer(market, transfers[2], market);
     }
 
     /**
