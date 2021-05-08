@@ -722,17 +722,14 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
      * @notice Lp holders are entitled to receive the interests from the underlying XYTs
      *        they can call this function to claim the accrued interests
      */
-    function claimLpInterests(address[] calldata markets)
+    function claimLpInterests(address market, address account)
         external
         override
         nonReentrant
-        returns (uint256[] memory interests)
+        returns (uint256 interests)
     {
-        interests = new uint256[](markets.length);
-        for (uint256 i = 0; i < markets.length; i++) {
-            require(data.isMarket(markets[i]), "INVALID_MARKET");
-            interests[i] = IPendleMarket(markets[i]).claimLpInterests(msg.sender);
-        }
+        require(data.isMarket(market), "INVALID_MARKET");
+        interests = IPendleMarket(market).claimLpInterests(account);
     }
 
     function _getData() internal view override returns (IPendleData) {
