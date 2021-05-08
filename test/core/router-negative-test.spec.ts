@@ -152,12 +152,6 @@ describe("router-negative-test", async () => {
     ).to.be.revertedWith(errMsg.DUPLICATE_YIELD_CONTRACT);
   });
 
-  it("shouldn't be able to initialize router twice", async () => {
-    await expect(router.initialize(data.address)).to.be.revertedWith(
-      errMsg.FORBIDDEN
-    );
-  });
-
   it("shouldn't be able to redeemUnderlying with zero amount", async () => {
     await expect(
       router.redeemUnderlying(
