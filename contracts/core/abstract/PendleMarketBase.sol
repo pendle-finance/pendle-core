@@ -126,7 +126,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         underlyingYieldToken = IERC20(IPendleYieldToken(_xyt).underlyingYieldToken());
         expiry = _expiry;
         require(_router == address(IPendleMarketFactory(msg.sender).router()), "ROUTER_MISMATCH");
-        /* router = IPendleRouter(_router); */
         data = IPendleForge(_forge).data();
         pausingManager = IPendleForge(_forge).data().pausingManager();
         xytStartTime = IPendleYieldToken(_xyt).start();
@@ -273,7 +272,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     ) external override returns (PendingTransfer[2] memory transfers, uint256 lpOut) {
         checkAddRemoveSwapClaimAllowed(false);
 
-        // mint protocol fees before the main logic
+        // mint protocol fees before k is changed by a non-swap event
         _mintProtocolFees();
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData();
@@ -302,9 +301,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[1].isOut = false;
 
         writeReserveData(xytBalance, tokenBalance, xytWeight);
-        _updateLastParamK(); // update paramK since it has changed not due to swap
+        _updateLastParamK(); // update paramK since it has changed due to a non-swap event
 
-        // Mint and push LP token.
+        // Mint LP direclty to the user
         _mint(user, lpOut);
 
         emit Sync(xytBalance, xytWeight, tokenBalance);
@@ -327,16 +326,17 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     ) external override returns (PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(false);
 
-        // mint protocol fees before the main logic
+        // mint protocol fees before k is changed by a non-swap event (curveShift)
         _mintProtocolFees();
         _curveShift();
 
         /*
-        * Note that in theory we should do another _mintProtocolFee in this function
-            since this add single involves an implicit swap operation
-        * However, it's very challenging to calculate the correct amount of fees to mint,
-            so for now, we will not mintProtocolFee in this function
-        * Yet, the user will still have to pay the swapFee (which will go directly into the market)
+        * Note that in theory we could do another _mintProtocolFee in this function
+            to take a portion of the swap fees for the implicit swap of this operation
+        * However, we have decided to not charge the protocol fees on the swap fees for this
+            operation.
+        * The user will still pay the swap fees, just that all the swap fees in the implicit swap
+            will all go back to the market (and shared among the LP holders)
         */
         TokenReserve memory inTokenReserve = parseTokenReserveData(_inToken);
 
@@ -365,9 +365,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     /**
      * @notice Exit the market by putting in the desired amount of LP tokens
      *         and getting back XYT and pair tokens.
-     * @dev With remove liquidity functions, LPs are always transferred in
-     *  first in the Router, to make sure we have enough LPs in the market to burn
-     *  as such, we don't need to set transfers[2]
      * @dev no curveShift to save gas because this function
                 doesn't depend on weights of tokens
      * @dev this function will never be locked since we always let users withdraw
@@ -381,7 +378,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     ) external override returns (PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(true);
 
-        // mint protocol fees before the main logic
+        // mint protocol fees before k is changed by a non-swap event
         _mintProtocolFees();
 
         uint256 totalLp = totalSupply();
@@ -409,7 +406,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[1].isOut = true;
 
         writeReserveData(xytBalance, tokenBalance, xytWeight); // repack data
-        _updateLastParamK(); // update paramK since it has changed not due to swap
+        _updateLastParamK(); // update paramK since it has changed due to a non-swap event
 
         _burn(user, _inLp);
 
@@ -432,7 +429,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     ) external override returns (PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(false);
 
-        // mint protocol fees before the main logic
+        // mint protocol fees before k is changed by a non-swap event
         _mintProtocolFees();
         _curveShift();
 
@@ -454,7 +451,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[0].isOut = true;
 
         updateReserveData(outTokenReserve, _outToken);
-        _updateLastParamK(); // update paramK since it has changed not due to swap
+        _updateLastParamK(); // update paramK since it has changed by a non-swap event
 
         _burn(user, _inLp);
 
@@ -474,7 +471,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
-            _updateLastParamK(); // update paramK since it has changed not due to swap
+            _updateLastParamK(); // update paramK since it has changed due to a non-swap event
         }
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken);
@@ -513,7 +510,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
-            _updateLastParamK(); // update paramK since it has changed not due to swap
+            _updateLastParamK(); // update paramK since it has changed due to a non-swap event
         }
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken);
@@ -790,7 +787,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
     /**
      * We will only updateParamL if the normalisedIncome / exchangeRate has increased more than a delta
-     * This delta is expected to be very small (~0.01%)
+     * This delta is expected to be very small
      */
     function checkNeedUpdateParamL() internal returns (bool) {
         return _getIncomeIndexIncreaseRate() > data.interestUpdateRateDeltaForMarket();
@@ -813,8 +810,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         tremendous (100k~200k last time we checked) => Caching is actually beneficial to user
      * The users may lose some negligible amount of interest when they do removeLiquidity or transfer LP to others
         (to be exact, they will lose NO MORE THAN interestUpdateRateDeltaForMarket%). In exchange, they will save
-        a lot of gas. And the delta is expected to be ~ 0.01%, so it's almost impossible for a user to lose more than the
-        amount of gas they saved (unless they have a few hundred millions. Well in that case 0.01% is negligible for them)
+        a lot of gas.
+        * If we assume the yearly interest rate is 10%, and we would like to only update the market's interest every one hour,
+          interestUpdateRateDeltaForMarket% = 1.10 ^ (1/ (365*24)) - 1 = 0.00108802167011 %
      * The correctness of caching can be thought of like this: We just pretend that there are only income once in a while,
      and when that income come, they will come in large amount, and we will distribute them fairly to all users
      */
