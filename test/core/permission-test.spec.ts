@@ -69,7 +69,7 @@ describe("permission-test", async () => {
       consts.HIGH_GAS_OVERRIDE
     );
 
-    await expect(market.bootstrap(amount, amount)).to.be.revertedWith(
+    await expect(market.bootstrap(alice.address, amount, amount)).to.be.revertedWith(
       errMsg.ONLY_ROUTER
     );
 
