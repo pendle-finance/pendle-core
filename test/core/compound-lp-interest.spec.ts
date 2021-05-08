@@ -239,7 +239,11 @@ describe("compound-lp-interest", async () => {
 
   async function claimAll() {
     for (let user of [alice, bob, charlie, dave]) {
-      await router.claimLpInterests(stdMarket.address, user.address, consts.HIGH_GAS_OVERRIDE);
+      await router.claimLpInterests(
+        stdMarket.address,
+        user.address,
+        consts.HIGH_GAS_OVERRIDE
+      );
       await router
         .connect(user)
         .redeemDueInterests(
@@ -444,8 +448,11 @@ describe("compound-lp-interest", async () => {
 
     await advanceTime(provider, consts.ONE_DAY);
     for (let user of [dave, charlie, bob, alice]) {
-      await router
-        .claimLpInterests(stdMarket.address, user.address, consts.HIGH_GAS_OVERRIDE);
+      await router.claimLpInterests(
+        stdMarket.address,
+        user.address,
+        consts.HIGH_GAS_OVERRIDE
+      );
       await router
         .connect(user)
         .redeemDueInterests(
