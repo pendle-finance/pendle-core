@@ -75,7 +75,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     address internal immutable underlyingAsset;
     IERC20 private immutable underlyingYieldToken;
     IPendleData private immutable data;
-    IPendleRouter private immutable router;
+    /* IPendleRouter private immutable router; */
     uint256 private immutable xytStartTime;
 
     modifier isAddRemoveSwapClaimAllowed(bool skipOpenCheck) {
@@ -88,11 +88,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     constructor(
+        address _router,
         address _forge,
         address _xyt,
         address _token,
         uint256 _expiry
-    ) PendleBaseToken(NAME, SYMBOL, DECIMALS, block.timestamp, _expiry) {
+    ) PendleBaseToken(_router, NAME, SYMBOL, DECIMALS, block.timestamp, _expiry) {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
         IPendleYieldToken xytContract = IPendleYieldToken(_xyt);
@@ -106,14 +107,14 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         underlyingAsset = xytContract.underlyingAsset();
         underlyingYieldToken = IERC20(IPendleYieldToken(_xyt).underlyingYieldToken());
         expiry = _expiry;
-        address routerAddress = address(IPendleMarketFactory(msg.sender).router());
-        router = IPendleRouter(routerAddress);
+        require(_router == address(IPendleMarketFactory(msg.sender).router()), "ROUTER_MISMATCH");
+        /* router = IPendleRouter(_router); */
         data = IPendleForge(_forge).data();
         xytStartTime = IPendleYieldToken(_xyt).start();
         factoryId = IPendleMarketFactory(msg.sender).marketFactoryId();
-        _approve(address(this), routerAddress, type(uint256).max);
-        IERC20(_xyt).safeApprove(routerAddress, type(uint256).max);
-        IERC20(_token).safeApprove(routerAddress, type(uint256).max);
+        _approve(address(this), _router, type(uint256).max);
+        IERC20(_xyt).safeApprove(_router, type(uint256).max);
+        IERC20(_token).safeApprove(_router, type(uint256).max);
     }
 
     function readReserveData()

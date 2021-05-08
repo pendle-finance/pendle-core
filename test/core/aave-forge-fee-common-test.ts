@@ -81,6 +81,7 @@ export function runTest(isAaveV1: boolean) {
       aUSDT = await getA2Contract(alice, aaveForge, tokenUSDT);
       testEnv.FORGE_ID = consts.FORGE_AAVE_V2;
       testEnv.T0 = consts.T0_A2;
+      testEnv.EXPIRY = consts.T0_A2.add(consts.SIX_MONTH);
     }
 
     before(async () => {
@@ -164,14 +165,14 @@ export function runTest(isAaveV1: boolean) {
       approxBigNumber(
         charlieInterest.mul(consts.RONE.sub(forgeFee)).div(consts.RONE),
         bobInterest,
-        BN.from(150)
+        BN.from(200)
       );
 
       const totalFee = await aaveForge.totalFee(
         tokenUSDT.address,
         testEnv.EXPIRY
       );
-      approxBigNumber(charlieInterest.sub(bobInterest), totalFee, BN.from(150));
+      approxBigNumber(charlieInterest.sub(bobInterest), totalFee, BN.from(200));
     });
 
     it("Governance address should be able to withdraw forge fees", async () => {

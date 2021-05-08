@@ -71,4 +71,10 @@ interface IPendleBaseToken is IERC20 {
      * @return Returns the token's symbol.
      **/
     function symbol() external view returns (string memory);
+
+    /**
+     * @notice let the router approve itself to spend OT/XYT/LP from any wallet
+     * @param account account to approve
+     **/
+    function approveRouter(address account) external;
 }

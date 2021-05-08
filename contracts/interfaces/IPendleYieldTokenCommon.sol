@@ -23,10 +23,7 @@
 
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./IPendleBaseToken.sol";
-
-interface IPendleYieldToken is IERC20, IPendleBaseToken {
+interface IPendleYieldTokenCommon {
     /**
      * @notice Emitted when burning OT or XYT tokens.
      * @param account The address performing the burn.
