@@ -43,12 +43,14 @@ abstract contract PendleBaseToken is ERC20 {
     uint256 public expiry;
     IPendleRouter public router;
 
-    //// EIP-2612, adapted from UniswapV2ERC20.sol
+    //// Start of EIP-2612 related part, exactly the same as UniswapV2ERC20.sol
     bytes32 public DOMAIN_SEPARATOR;
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     bytes32 public constant PERMIT_TYPEHASH =
         0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     mapping(address => uint256) public nonces;
+
+    //// End of EIP-2612 related part
 
     constructor(
         address _router,
@@ -63,10 +65,10 @@ abstract contract PendleBaseToken is ERC20 {
         expiry = _expiry;
         router = IPendleRouter(_router);
 
-        //// For EIP-2612, adapted from UniswapV2ERC20.sol
+        //// Start of EIP-2612 related part, exactly the same as UniswapV2ERC20.sol, except for the noted parts below
         uint256 chainId;
         assembly {
-            chainId := chainid()
+            chainId := chainid() // chainid() is a function in assembly in this solidity version
         }
 
         DOMAIN_SEPARATOR = keccak256(
@@ -74,15 +76,16 @@ abstract contract PendleBaseToken is ERC20 {
                 keccak256(
                     "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
                 ),
-                keccak256(bytes(_name)),
+                keccak256(bytes(_name)), // use our own _name here
                 keccak256(bytes("1")),
                 chainId,
                 address(this)
             )
         );
+        //// End of EIP-2612 related part
     }
 
-    //// EIP-2612, adapted from UniswapV2ERC20.sol
+    //// Start of EIP-2612 related part, exactly the same as UniswapV2ERC20.sol
     function permit(
         address owner,
         address spender,
@@ -114,6 +117,8 @@ abstract contract PendleBaseToken is ERC20 {
         require(recoveredAddress != address(0) && recoveredAddress == owner, "INVALID_SIGNATURE");
         _approve(owner, spender, value);
     }
+
+    //// End of EIP-2612 related part
 
     function approveRouter(address account) external {
         require(msg.sender == address(router), "NOT_ROUTER");

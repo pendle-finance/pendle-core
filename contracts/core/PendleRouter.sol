@@ -47,7 +47,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     // if someone's allowance for the router is below this amount,
     // we will approve the router again (to spend from their account)
     // if we already call .approveRouter for the a token, we shouldn't need to approve again
-    uint256 constant REASONABLE_ALLOWANCE_AMOUNT = type(uint256).max / 2;
+    uint256 private constant REASONABLE_ALLOWANCE_AMOUNT = type(uint256).max / 2;
 
     constructor(address _governance, IWETH _weth)
         Permissions(_governance)
@@ -363,7 +363,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         amountXytUsed = transfers[0].amount;
         amountTokenUsed = transfers[1].amount;
         emit Join(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
-        _checkApproveRouter(_xyt);
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
     }
 
@@ -392,7 +391,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             market.addMarketLiquiditySingle(assetForMarket, _exactInAsset, _minOutLp);
 
         if (_forXyt) {
-            _checkApproveRouter(_xyt);
             emit Join(msg.sender, _exactInAsset, 0, address(market));
         } else {
             emit Join(msg.sender, 0, _exactInAsset, address(market));
@@ -421,7 +419,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         // since there is burning of LPs involved, we need to transfer in LP first
         // otherwise the market might not have enough LPs to burn
         PendingTransfer memory lpTransfer = PendingTransfer({amount: _exactInLp, isOut: false});
-        _checkApproveRouter(address(market));
         _settleTokenTransfer(address(market), lpTransfer, address(market));
 
         PendingTransfer[3] memory transfers =
@@ -457,7 +454,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         // since there is burning of LPs involved, we need to transfer in LP first
         // otherwise the market might not have enough LPs to burn
         PendingTransfer memory lpTransfer = PendingTransfer({amount: _exactInLp, isOut: false});
-        _checkApproveRouter(address(market));
         _settleTokenTransfer(address(market), lpTransfer, address(market));
 
         PendingTransfer[3] memory transfers =
@@ -528,7 +524,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             market.bootstrap(_initialXytLiquidity, _initialTokenLiquidity);
 
         emit Join(msg.sender, _initialXytLiquidity, _initialTokenLiquidity, address(market));
-        _checkApproveRouter(_xyt);
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
     }
 
@@ -560,9 +555,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             _minOutTotalAmount
         );
 
-        if (data.isXyt(_tokenIn)) {
-            _checkApproveRouter(_tokenIn);
-        }
+        if (data.isXyt(_tokenIn)) {}
         _settlePendingTransfers(transfers, originalTokenIn, originalTokenOut, address(market));
 
         emit SwapEvent(
@@ -603,9 +596,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             _outTotalAmount
         );
 
-        if (data.isXyt(_tokenIn)) {
-            _checkApproveRouter(_tokenIn);
-        }
+        if (data.isXyt(_tokenIn)) {}
         _settlePendingTransfers(transfers, originalTokenIn, originalTokenOut, address(market));
 
         emit SwapEvent(
@@ -669,9 +660,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                 );
             }
 
-            if (data.isXyt(_tokenIn)) {
-                _checkApproveRouter(_tokenIn);
-            }
             // sends in the exactAmount into the market of the first swap
             _settleTokenTransfer(
                 _tokenIn,
@@ -734,9 +722,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                 if (j == 0) break;
             }
 
-            if (data.isXyt(_tokenIn)) {
-                _checkApproveRouter(_tokenIn);
-            }
             _settleTokenTransfer(
                 _tokenIn,
                 PendingTransfer({amount: tokenAmountIn, isOut: false}),
@@ -841,6 +826,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                 weth.deposit{value: msg.value}();
                 weth.transfer(market, transfer.amount);
             } else {
+                // its a transfer in of token. If its an XYT or the LP of the related market,
+                // we will auto approve the router to spend from the user account;
+                if (data.isXyt(token) || token == market) {
+                    _checkApproveRouter(token);
+                }
                 IERC20(token).safeTransferFrom(msg.sender, market, transfer.amount);
             }
         }
