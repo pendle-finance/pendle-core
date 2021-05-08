@@ -767,14 +767,14 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     Conditions:
      * Have Reentrancy protection
      */
-    function redeemLpInterests(address market, address account)
+    function redeemLpInterests(address market, address user)
         external
         override
         nonReentrant
         returns (uint256 interests)
     {
         require(data.isMarket(market), "INVALID_MARKET");
-        interests = IPendleMarket(market).redeemLpInterests(account);
+        interests = IPendleMarket(market).redeemLpInterests(user);
     }
 
     function _getData() internal view override returns (IPendleData) {
@@ -850,7 +850,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         return token;
     }
 
-    // Check if an account has approved the router to spend the amount
+    // Check if an user has approved the router to spend the amount
     // if not, approve the router to spend the token from the user account
     function _checkApproveRouter(address token) internal {
         uint256 allowance = IPendleBaseToken(token).allowance(msg.sender, address(this));

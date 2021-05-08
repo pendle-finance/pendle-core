@@ -36,7 +36,7 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
     mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeBeforeExpiry;
     mapping(address => mapping(uint256 => uint256)) public lastNormalisedIncomeForForgeFee;
     mapping(address => mapping(uint256 => mapping(address => uint256)))
-        public lastNormalisedIncome; //lastNormalisedIncome[underlyingAsset][expiry][account]
+        public lastNormalisedIncome; //lastNormalisedIncome[underlyingAsset][expiry][user]
     mapping(address => address) private reserveATokenAddress;
 
     constructor(

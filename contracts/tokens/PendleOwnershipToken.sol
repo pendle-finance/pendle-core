@@ -57,23 +57,23 @@ contract PendleOwnershipToken is PendleBaseToken, IPendleYieldTokenCommon {
     }
 
     /**
-     * @dev Burns OT or XYT tokens from account, reducing the total supply.
-     * @param account The address performing the burn.
+     * @dev Burns OT or XYT tokens from user, reducing the total supply.
+     * @param user The address performing the burn.
      * @param amount The amount to be burned.
      **/
-    function burn(address account, uint256 amount) public override onlyForge {
-        _burn(account, amount);
-        emit Burn(account, amount);
+    function burn(address user, uint256 amount) public override onlyForge {
+        _burn(user, amount);
+        emit Burn(user, amount);
     }
 
     /**
-     * @dev Mints new OT or XYT tokens for account, increasing the total supply.
-     * @param account The address to send the minted tokens.
+     * @dev Mints new OT or XYT tokens for user, increasing the total supply.
+     * @param user The address to send the minted tokens.
      * @param amount The amount to be minted.
      **/
-    function mint(address account, uint256 amount) public override onlyForge {
-        _mint(account, amount);
-        emit Mint(account, amount);
+    function mint(address user, uint256 amount) public override onlyForge {
+        _mint(user, amount);
+        emit Mint(user, amount);
     }
 
     function _beforeTokenTransfer(

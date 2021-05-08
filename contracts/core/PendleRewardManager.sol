@@ -94,7 +94,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     Conditions:
         * Can be called by anyone, to claim for anyone
     INVARIANTs:
-        * this function must be called before any action that changes the OT balance of account
+        * this function must be called before any action that changes the OT balance of user
           * To ensure this, we call this function in the _beforeTokenTransfer hook of the OT token contract (indirectly through the forge)
     */
     function redeemRewards(
@@ -173,17 +173,17 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     function _getRewardsAmountPerOT(
         address _underlyingAsset,
         uint256 _expiry,
-        address account
+        address user
     ) internal returns (uint256 interestValuePerLP) {
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
 
-        if (rwd.lastParamL[account] == 0) {
+        if (rwd.lastParamL[user] == 0) {
             // ParamL is always >=1, so this user must have gotten OT for the first time,
             // and shouldn't get any interests.
             interestValuePerLP = 0;
         } else {
-            interestValuePerLP = rwd.paramL.sub(rwd.lastParamL[account]);
+            interestValuePerLP = rwd.paramL.sub(rwd.lastParamL[user]);
         }
-        rwd.lastParamL[account] = rwd.paramL;
+        rwd.lastParamL[user] = rwd.paramL;
     }
 }

@@ -48,20 +48,20 @@ interface IPendleMarket is IERC20, IPendleStructs {
     function setUpEmergencyMode(address[] calldata tokens, address spender) external;
 
     function bootstrap(
-        address account,
+        address user,
         uint256 initialXytLiquidity,
         uint256 initialTokenLiquidity
     ) external returns (PendingTransfer[2] memory transfers);
 
     function addMarketLiquiditySingle(
-        address account,
+        address user,
         address inToken,
         uint256 inAmount,
         uint256 minOutLp
     ) external returns (PendingTransfer[2] memory transfers);
 
     function addMarketLiquidityDual(
-        address account,
+        address user,
         uint256 _desiredXytAmount,
         uint256 _desiredTokenAmount,
         uint256 _xytMinAmount,
@@ -69,14 +69,14 @@ interface IPendleMarket is IERC20, IPendleStructs {
     ) external returns (PendingTransfer[2] memory transfers, uint256 lpOut);
 
     function removeMarketLiquidityDual(
-        address account,
+        address user,
         uint256 inLp,
         uint256 minOutXyt,
         uint256 minOutToken
     ) external returns (PendingTransfer[2] memory transfers);
 
     function removeMarketLiquiditySingle(
-        address account,
+        address user,
         address outToken,
         uint256 exactInLp,
         uint256 minOutToken
@@ -96,7 +96,7 @@ interface IPendleMarket is IERC20, IPendleStructs {
         uint256 outAmount
     ) external returns (uint256 inAmount, PendingTransfer[2] memory transfers);
 
-    function redeemLpInterests(address account) external returns (uint256 interests);
+    function redeemLpInterests(address user) external returns (uint256 interests);
 
     function getReserves()
         external

@@ -505,7 +505,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     }
 
     /// INVARIANT: after _updateDueInterests is called, dueInterests[][][] must already be
-    /// updated with all the due interest for the account, until exactly the current timestamp (no caching whatsoever)
+    /// updated with all the due interest for the user, until exactly the current timestamp (no caching whatsoever)
     /// Refer to updateDueInterests function for more info
     function _updateDueInterests(
         uint256 principal,

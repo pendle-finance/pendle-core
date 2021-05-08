@@ -102,7 +102,7 @@ interface IPendleForge {
         returns (address ot, address xyt);
 
     function redeemAfterExpiry(
-        address account,
+        address user,
         address underlyingAsset,
         uint256 expiry,
         uint256 transferOutRate
@@ -115,7 +115,7 @@ interface IPendleForge {
         );
 
     function redeemDueInterests(
-        address account,
+        address user,
         address underlyingAsset,
         uint256 expiry
     ) external returns (uint256 interests);
@@ -123,7 +123,7 @@ interface IPendleForge {
     function updateDueInterests(
         address underlyingAsset,
         uint256 expiry,
-        address account
+        address user
     ) external;
 
     function redeemRewardsBeforeOtTransfer(
@@ -133,7 +133,7 @@ interface IPendleForge {
     ) external;
 
     function redeemUnderlying(
-        address account,
+        address user,
         address underlyingAsset,
         uint256 expiry,
         uint256 amountToRedeem

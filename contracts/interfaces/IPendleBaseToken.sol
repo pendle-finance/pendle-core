@@ -74,7 +74,7 @@ interface IPendleBaseToken is IERC20 {
 
     /**
      * @notice let the router approve itself to spend OT/XYT/LP from any wallet
-     * @param account account to approve
+     * @param user user to approve
      **/
-    function approveRouter(address account) external;
+    function approveRouter(address user) external;
 }

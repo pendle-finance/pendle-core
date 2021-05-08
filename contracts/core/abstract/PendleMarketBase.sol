@@ -216,7 +216,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     function bootstrap(
-        address account,
+        address user,
         uint256 initialXytLiquidity,
         uint256 initialTokenLiquidity
     ) external override returns (PendingTransfer[2] memory transfers) {
@@ -240,7 +240,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
             Math.sqrt(initialXytLiquidity.mul(initialTokenLiquidity)).sub(MINIMUM_LIQUIDITY);
 
         _mint(address(this), MINIMUM_LIQUIDITY);
-        _mint(account, liquidity);
+        _mint(user, liquidity);
 
         transfers[0].amount = initialXytLiquidity;
         transfers[0].isOut = false;
@@ -265,7 +265,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         * checkAddRemoveSwapClaimAllowed(false) is true
     */
     function addMarketLiquidityDual(
-        address account,
+        address user,
         uint256 _desiredXytAmount,
         uint256 _desiredTokenAmount,
         uint256 _xytMinAmount,
@@ -305,7 +305,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _updateLastParamK(); // update paramK since it has changed not due to swap
 
         // Mint and push LP token.
-        _mint(account, lpOut);
+        _mint(user, lpOut);
 
         emit Sync(xytBalance, xytWeight, tokenBalance);
     }
@@ -320,7 +320,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
      * @dev curveShift needed since function operation relies on weights
      */
     function addMarketLiquiditySingle(
-        address account,
+        address user,
         address _inToken,
         uint256 _exactIn,
         uint256 _minOutLp
@@ -356,7 +356,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _updateLastParamK(); // update paramK since it has changed not due to swap
 
         // Mint and push LP token.
-        _mint(account, exactOutLp);
+        _mint(user, exactOutLp);
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
         emit Sync(xytBalance, xytWeight, tokenBalance);
@@ -374,7 +374,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
                 their funds. That's why we skip time check in checkAddRemoveSwapClaimAllowed
      */
     function removeMarketLiquidityDual(
-        address account,
+        address user,
         uint256 _inLp,
         uint256 _minOutXyt,
         uint256 _minOutToken
@@ -411,7 +411,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         writeReserveData(xytBalance, tokenBalance, xytWeight); // repack data
         _updateLastParamK(); // update paramK since it has changed not due to swap
 
-        _burn(account, _inLp);
+        _burn(user, _inLp);
 
         emit Sync(xytBalance, xytWeight, tokenBalance);
     }
@@ -425,7 +425,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
      * @dev curveShift needed since function operation relies on weights
      */
     function removeMarketLiquiditySingle(
-        address account,
+        address user,
         address _outToken,
         uint256 _inLp,
         uint256 _minOutAmountToken
@@ -456,7 +456,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         updateReserveData(outTokenReserve, _outToken);
         _updateLastParamK(); // update paramK since it has changed not due to swap
 
-        _burn(account, _inLp);
+        _burn(user, _inLp);
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
         emit Sync(xytBalance, xytWeight, tokenBalance);
@@ -542,15 +542,15 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
     /**
      * @notice for user to claim their interest as holder of underlyingYield token
-     * @param account user account address
+     * @param user user user address
      * @dev only can claim through router (included in checkAddRemoveSwapClaimAllowed)
      * We skip time check in checkAddRemoveSwapClaimAllowed because users can always claim interests
      * Since the Router has already had Reentrancy protection, we don't need one here
      */
-    function redeemLpInterests(address account) external override returns (uint256 interests) {
+    function redeemLpInterests(address user) external override returns (uint256 interests) {
         checkAddRemoveSwapClaimAllowed(true);
         checkNotPaused();
-        interests = _settleLpInterests(account);
+        interests = _settleLpInterests(user);
     }
 
     /**
@@ -770,22 +770,22 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     @dev This must be called before any transfer / mint/ burn action of LP
         (and this has been implemented in the beforeTokenTransfer of this contract)
     */
-    function _settleLpInterests(address account) internal returns (uint256 dueInterests) {
-        if (account == address(this)) return 0;
+    function _settleLpInterests(address user) internal returns (uint256 dueInterests) {
+        if (user == address(this)) return 0;
 
         // before calc the interest for users, updateParamL
         _updateParamL();
-        uint256 interestValuePerLP = _getInterestValuePerLP(account);
+        uint256 interestValuePerLP = _getInterestValuePerLP(user);
         if (interestValuePerLP == 0) return 0;
 
         // dueInterests simply equals to the balanceOf LP * the value of each LP
         // divide by MULTIPLIER since interestValuePerLP has been multiplied by MULTIPLIER before
-        dueInterests = balanceOf(account).mul(interestValuePerLP).div(MULTIPLIER);
+        dueInterests = balanceOf(user).mul(interestValuePerLP).div(MULTIPLIER);
         if (dueInterests == 0) return 0;
 
         // Use subMax0 to handle the extreme case of the market lacking a few way of tokens to send out
         lastNYield = lastNYield.subMax0(dueInterests);
-        underlyingYieldToken.safeTransfer(account, dueInterests);
+        underlyingYieldToken.safeTransfer(user, dueInterests);
     }
 
     /**
@@ -910,7 +910,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
     function _afterBootstrap() internal virtual;
 
-    function _getInterestValuePerLP(address account)
+    function _getInterestValuePerLP(address user)
         internal
         virtual
         returns (uint256 interestValuePerLP);
