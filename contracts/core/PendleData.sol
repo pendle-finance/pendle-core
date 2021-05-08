@@ -60,7 +60,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     mapping(address => bool) public override isMarket;
     mapping(address => bool) public override isXyt;
     mapping(bytes32 => address) private markets;
-    address[] private allMarkets;
+    address[] public allMarkets;
 
     uint256 private constant FEE_HARD_LIMIT = 109951162777; // equals to MATH.RONE / 10 = 10%
 
@@ -270,8 +270,9 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         return allMarkets.length;
     }
 
-    function getAllMarkets() external view override returns (address[] memory) {
-        return allMarkets;
+    function getMarketByIndex(uint256 index) external view override returns (address market) {
+        require(index + 1 <= allMarkets.length, "INVALID_INDEX");
+        market = allMarkets[index];
     }
 
     function getMarketFromKey(

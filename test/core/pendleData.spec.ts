@@ -59,37 +59,6 @@ describe("PendleData", async () => {
     expect(allMarketsLength).to.be.eq(4); // numbers of markets that have been created in marketFixture
   });
 
-  it("getAllMarkets", async () => {
-    let tx = await router.createMarket(
-      consts.MARKET_FACTORY_AAVE,
-      xyt.address,
-      tokenUSDT.address,
-      consts.HIGH_GAS_OVERRIDE
-    );
-    let expectedMarkets: string[] = [];
-
-    let filter = aMarketFactory.filters.MarketCreated();
-    let allEvents = await aMarketFactory.queryFilter(filter, tx.blockHash);
-    allEvents.forEach((event) => {
-      expectedMarkets.push(event.args!.market);
-    });
-
-    filter = a2MarketFactory.filters.MarketCreated();
-    allEvents = await a2MarketFactory.queryFilter(filter, tx.blockHash);
-    allEvents.forEach((event) => {
-      expectedMarkets.push(event.args!.market);
-    });
-
-    filter = cMarketFactory.filters.MarketCreated();
-    allEvents = await cMarketFactory.queryFilter(filter, tx.blockHash);
-    allEvents.forEach((event) => {
-      expectedMarkets.push(event.args!.market);
-    });
-
-    let allMarkets = await data.getAllMarkets();
-    expect(allMarkets).to.have.members(expectedMarkets);
-  });
-
   it("Should be able to setTreasury", async () => {
     await expect(data.setTreasury(treasury.address))
       .to.emit(data, "TreasurySet")
