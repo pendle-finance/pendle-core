@@ -23,7 +23,7 @@
 pragma solidity 0.7.6;
 
 interface IPendleYieldTokenHolder {
-    function claimRewards() external;
+    function redeemRewards() external;
 
     function setUpEmergencyMode(address[] calldata tokens, address spender) external;
 }

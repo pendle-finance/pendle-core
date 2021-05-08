@@ -269,7 +269,7 @@ interface IPendleRouter is IPendleStructs {
         uint256 maxInTotalAmount
     ) external payable returns (uint256 inTotalAmount);
 
-    function claimLpInterests(address market, address account)
+    function redeemLpInterests(address market, address account)
         external
         returns (uint256 interests);
 }

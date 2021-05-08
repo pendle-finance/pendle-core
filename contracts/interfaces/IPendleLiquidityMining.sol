@@ -49,13 +49,13 @@ interface IPendleLiquidityMining {
      * @return rewards Returns rewards[0] as the rewards available now, as well as rewards
      that can be claimed for subsequent epochs (size of rewards array is numberOfEpochs)
      */
-    function claimRewards(uint256 expiry, address account) external returns (uint256 rewards);
+    function redeemRewards(uint256 expiry, address account) external returns (uint256 rewards);
 
     /**
      * @notice Get the pending LP interests for a staker
      * @return dueInterests Returns the interest amount
      */
-    function claimLpInterests(uint256 expiry, address account)
+    function redeemLpInterests(uint256 expiry, address account)
         external
         returns (uint256 dueInterests);
 

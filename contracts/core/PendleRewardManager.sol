@@ -97,7 +97,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         * this function must be called before any action that changes the OT balance of account
           * To ensure this, we call this function in the _beforeTokenTransfer hook of the OT token contract (indirectly through the forge)
     */
-    function claimRewards(
+    function redeemRewards(
         address _underlyingAsset,
         uint256 _expiry,
         address _account
@@ -121,7 +121,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     }
 
     // INVARIANT: this function must be called before any action that changes the total OT
-    // To ensure this, we call it in the beginning of claimRewards, which has the same invariant.
+    // To ensure this, we call it in the beginning of redeemRewards, which has the same invariant.
     function _updateParamL(
         address _underlyingAsset,
         uint256 _expiry,
@@ -135,7 +135,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         }
 
         // First, claim any pending COMP/StkAAVE rewards to the YieldTokenHolder
-        IPendleYieldTokenHolder(yieldTokenHolder).claimRewards();
+        IPendleYieldTokenHolder(yieldTokenHolder).redeemRewards();
 
         IPendleYieldToken ot = data.otTokens(forgeId, _underlyingAsset, _expiry);
 

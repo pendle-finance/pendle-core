@@ -343,7 +343,7 @@ abstract contract PendleLiquidityMiningBase is
         * only be called if 0 < current epoch (always can withdraw)
         * Anyone can call it (and claim it for any other user)
      */
-    function claimRewards(uint256 expiry, address account)
+    function redeemRewards(uint256 expiry, address account)
         external
         override
         isFunded
@@ -363,7 +363,7 @@ abstract contract PendleLiquidityMiningBase is
         * must have Reentrancy protection
         * Anyone can call it (and claim it for any other user)
      */
-    function claimLpInterests(uint256 expiry, address account)
+    function redeemLpInterests(uint256 expiry, address account)
         external
         override
         nonReentrant
@@ -679,7 +679,7 @@ abstract contract PendleLiquidityMiningBase is
             return;
         }
 
-        IPendleLpHolder(exd.lpHolder).claimLpInterests();
+        IPendleLpHolder(exd.lpHolder).redeemLpInterests();
 
         IERC20 underlyingYieldToken =
             IERC20(

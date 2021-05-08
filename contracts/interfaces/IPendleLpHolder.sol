@@ -27,5 +27,5 @@ interface IPendleLpHolder {
 
     function sendInterests(address user, uint256 amount) external;
 
-    function claimLpInterests() external;
+    function redeemLpInterests() external;
 }

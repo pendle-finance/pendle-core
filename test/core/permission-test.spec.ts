@@ -108,7 +108,7 @@ describe("permission-test", async () => {
     ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
     await expect(
-      market.claimLpInterests(consts.RANDOM_ADDRESS)
+      market.redeemLpInterests(consts.RANDOM_ADDRESS)
     ).to.be.revertedWith(errMsg.ONLY_ROUTER);
   });
 

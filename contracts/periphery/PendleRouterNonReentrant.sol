@@ -39,8 +39,8 @@ abstract contract PendleRouterNonReentrant {
 
     /**
     * We allow markets to make at most ONE Reentrant call
-    in the case of claimLpInterests
-    * The flow of claimLpInterests will be: Router.claimLpInterests -> market.claimLpInterests
+    in the case of redeemLpInterests
+    * The flow of redeemLpInterests will be: Router.redeemLpInterests -> market.redeemLpInterests
     -> Router.redeemDueInterests (so there is at most ONE Reentrant call)
     */
     function _checkNonReentrancy() internal {

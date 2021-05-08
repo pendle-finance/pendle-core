@@ -40,7 +40,7 @@ contract PendleAaveV2YieldTokenHolder is PendleYieldTokenHolderBase {
         aaveIncentivesController = IAaveIncentivesController(_aaveIncentivesController);
     }
 
-    function claimRewards() external override {
+    function redeemRewards() external override {
         address[] memory assets = new address[](1);
         assets[0] = yieldToken;
 

@@ -96,7 +96,7 @@ interface IPendleMarket is IERC20, IPendleStructs {
         uint256 outAmount
     ) external returns (uint256 inAmount, PendingTransfer[2] memory transfers);
 
-    function claimLpInterests(address account) external returns (uint256 interests);
+    function redeemLpInterests(address account) external returns (uint256 interests);
 
     function getReserves()
         external

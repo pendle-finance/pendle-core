@@ -345,7 +345,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     ) external override onlyOT(_underlyingAsset, _expiry) {
         checkNotPaused(_underlyingAsset, _expiry);
         // simply forward the call to the rewardManager
-        rewardManager.claimRewards(_underlyingAsset, _expiry, _account);
+        rewardManager.redeemRewards(_underlyingAsset, _expiry, _account);
     }
 
     /**

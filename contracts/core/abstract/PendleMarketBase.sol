@@ -547,7 +547,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
      * We skip time check in checkAddRemoveSwapClaimAllowed because users can always claim interests
      * Since the Router has already had Reentrancy protection, we don't need one here
      */
-    function claimLpInterests(address account) external override returns (uint256 interests) {
+    function redeemLpInterests(address account) external override returns (uint256 interests) {
         checkAddRemoveSwapClaimAllowed(true);
         checkNotPaused();
         interests = _settleLpInterests(account);
