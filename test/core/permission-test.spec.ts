@@ -74,11 +74,22 @@ describe("permission-test", async () => {
     );
 
     await expect(
-      market.addMarketLiquidityDual(alice.address, amount, amount, amount, amount)
+      market.addMarketLiquidityDual(
+        alice.address,
+        amount,
+        amount,
+        amount,
+        amount
+      )
     ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
     await expect(
-      market.addMarketLiquiditySingle(alice.address, consts.ZERO_ADDRESS, amount, amount)
+      market.addMarketLiquiditySingle(
+        alice.address,
+        consts.ZERO_ADDRESS,
+        amount,
+        amount
+      )
     ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
     await expect(
@@ -86,7 +97,12 @@ describe("permission-test", async () => {
     ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
     await expect(
-      market.removeMarketLiquiditySingle(alice.address, consts.RANDOM_ADDRESS, amount, amount)
+      market.removeMarketLiquiditySingle(
+        alice.address,
+        consts.RANDOM_ADDRESS,
+        amount,
+        amount
+      )
     ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
     await expect(
