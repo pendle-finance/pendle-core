@@ -29,4 +29,6 @@ export const errMsg = {
   INVALID_SIGNATURE: prefix + " " + "INVALID_SIGNATURE",
   ONLY_ROUTER: prefix + " " + "ONLY_ROUTER",
   ONLY_GOVERNANCE: prefix + " " + "ONLY_GOVERNANCE",
+  YIELD_CONTRACT_PAUSED: prefix + " " + "YIELD_CONTRACT_PAUSED",
+  MARKET_PAUSED: prefix + " " + "MARKET_PAUSED",
 };

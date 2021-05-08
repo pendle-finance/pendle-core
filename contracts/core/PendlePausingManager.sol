@@ -78,7 +78,11 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
         _;
     }
 
-    constructor(address _governance, address initialForgeHandler, address initialMarketHandler) Permissions(_governance) {
+    constructor(
+        address _governance,
+        address initialForgeHandler,
+        address initialMarketHandler
+    ) Permissions(_governance) {
         forgeEmergencyHandler.handler = initialForgeHandler;
         marketEmergencyHandler.handler = initialMarketHandler;
     }
