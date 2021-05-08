@@ -64,8 +64,8 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
     mapping(address => bool) public override isPausingAdmin;
 
     // only governance can unpause; pausing admins can pause
-    modifier isAllowedToSetPaused(bool paused) {
-        if (paused) {
+    modifier isAllowedToSetPaused(bool settingToPaused) {
+        if (settingToPaused) {
             require(isPausingAdmin[msg.sender], "FORBIDDEN");
         } else {
             require(msg.sender == governance, "ONLY_GOVERNANCE");
@@ -167,33 +167,33 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
     /////////////////////////
     //////// FORGE
     ////////
-    function setForgePaused(bytes32 forgeId, bool paused)
+    function setForgePaused(bytes32 forgeId, bool settingToPaused)
         external
         override
-        isAllowedToSetPaused(paused)
+        isAllowedToSetPaused(settingToPaused)
         notPermLocked
     {
         forgePaused[forgeId].timestamp = block.timestamp;
-        forgePaused[forgeId].paused = paused;
+        forgePaused[forgeId].paused = settingToPaused;
     }
 
     function setForgeAssetPaused(
         bytes32 forgeId,
         address underlyingAsset,
-        bool paused
-    ) external override isAllowedToSetPaused(paused) notPermLocked {
+        bool settingToPaused
+    ) external override isAllowedToSetPaused(settingToPaused) notPermLocked {
         forgeAssetPaused[forgeId][underlyingAsset].timestamp = block.timestamp;
-        forgeAssetPaused[forgeId][underlyingAsset].paused = paused;
+        forgeAssetPaused[forgeId][underlyingAsset].paused = settingToPaused;
     }
 
     function setForgeAssetExpiryPaused(
         bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry,
-        bool paused
-    ) external override isAllowedToSetPaused(paused) notPermLocked {
+        bool settingToPaused
+    ) external override isAllowedToSetPaused(settingToPaused) notPermLocked {
         forgeAssetExpiryPaused[forgeId][underlyingAsset][expiry].timestamp = block.timestamp;
-        forgeAssetExpiryPaused[forgeId][underlyingAsset][expiry].paused = paused;
+        forgeAssetExpiryPaused[forgeId][underlyingAsset][expiry].paused = settingToPaused;
     }
 
     function setForgeLocked(bytes32 forgeId) external override onlyGovernance notPermLocked {
@@ -258,23 +258,23 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
     /////////////////////////
     //////// MARKET
     ////////
-    function setMarketFactoryPaused(bytes32 marketFactoryId, bool paused)
+    function setMarketFactoryPaused(bytes32 marketFactoryId, bool settingToPaused)
         external
         override
-        isAllowedToSetPaused(paused)
+        isAllowedToSetPaused(settingToPaused)
         notPermLocked
     {
         marketFactoryPaused[marketFactoryId].timestamp = block.timestamp;
-        marketFactoryPaused[marketFactoryId].paused = paused;
+        marketFactoryPaused[marketFactoryId].paused = settingToPaused;
     }
 
     function setMarketPaused(
         bytes32 marketFactoryId,
         address market,
-        bool paused
-    ) external override isAllowedToSetPaused(paused) notPermLocked {
+        bool settingToPaused
+    ) external override isAllowedToSetPaused(settingToPaused) notPermLocked {
         marketPaused[marketFactoryId][market].timestamp = block.timestamp;
-        marketPaused[marketFactoryId][market].paused = paused;
+        marketPaused[marketFactoryId][market].paused = settingToPaused;
     }
 
     function setMarketFactoryLocked(bytes32 marketFactoryId)
