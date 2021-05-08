@@ -521,7 +521,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
         PendingTransfer[2] memory transfers;
-        (outSwapAmount, , transfers) = market.swapExactIn(
+        (outSwapAmount, transfers) = market.swapExactIn(
             msg.sender,
             _tokenIn,
             _inTotalAmount,
@@ -562,7 +562,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
         PendingTransfer[2] memory transfers;
-        (inSwapAmount, , transfers) = market.swapExactOut(
+        (inSwapAmount, transfers) = market.swapExactOut(
             msg.sender,
             _tokenIn,
             _maxInTotalAmount,
@@ -625,7 +625,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                 IPendleMarket market = IPendleMarket(swap.market);
                 _checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
 
-                (tokenAmountOut, , ) = market.swapExactIn(
+                (tokenAmountOut, ) = market.swapExactIn(
                     msg.sender,
                     swap.tokenIn,
                     swap.swapAmount,
@@ -687,7 +687,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                 IPendleMarket market = IPendleMarket(swap.market);
 
                 _checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
-                (tokenAmountIn, , ) = market.swapExactOut(
+                (tokenAmountIn, ) = market.swapExactOut(
                     msg.sender,
                     swap.tokenIn,
                     swap.limitReturnAmount,

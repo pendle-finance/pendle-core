@@ -470,15 +470,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 inAmount,
         address outToken,
         uint256 minOutAmount
-    )
-        external
-        override
-        returns (
-            uint256 outAmount,
-            uint256 spotPriceAfter,
-            PendingTransfer[2] memory transfers
-        )
-    {
+    ) external override returns (uint256 outAmount, PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(false);
         if (checkNeedCurveShift()) {
             _mintProtocolFees();
@@ -496,8 +488,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
-
-        spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, swapFee);
 
         // repack data
         updateReserveData(inTokenReserve, inToken);
@@ -518,15 +508,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 maxInAmount,
         address outToken,
         uint256 outAmount
-    )
-        external
-        override
-        returns (
-            uint256 inAmount,
-            uint256 spotPriceAfter,
-            PendingTransfer[2] memory transfers
-        )
-    {
+    ) external override returns (uint256 inAmount, PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(false);
         if (checkNeedCurveShift()) {
             _mintProtocolFees();
@@ -544,8 +526,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
-
-        spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, swapFee);
 
         // repack data
         updateReserveData(inTokenReserve, inToken);
@@ -614,19 +594,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 bar = Math.RONE.sub(foo);
 
         exactOut = Math.rmul(outTokenReserve.balance, bar);
-    }
-
-    function _calcSpotPrice(
-        TokenReserve memory inTokenReserve,
-        TokenReserve memory outTokenReserve,
-        uint256 swapFee
-    ) internal pure returns (uint256 spot) {
-        uint256 numer = Math.rdiv(inTokenReserve.balance, inTokenReserve.weight);
-        uint256 denom = Math.rdiv(outTokenReserve.balance, outTokenReserve.weight);
-        uint256 ratio = Math.rdiv(numer, denom);
-        uint256 scale = Math.rdiv(Math.RONE, Math.RONE.sub(swapFee));
-
-        spot = Math.rmul(ratio, scale);
     }
 
     function _calcOutAmountLp(
