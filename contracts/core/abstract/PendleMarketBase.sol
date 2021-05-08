@@ -33,6 +33,14 @@ import "../../tokens/PendleBaseToken.sol";
 import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
+/**
+@dev HIGH LEVEL PRINCIPAL:
+* So most of the functions in market is only callable by Router, except view/pure functions.
+    If a function is non view/pure and is callable by anyone, it must be explicitly stated so
+* Market will not do any yieldToken/baseToken transfer but instead will fill in the transfer array
+    and router will do them instead. (This is to reduce the number of approval users need to do)
+* mint, burn will be done directly with users
+*/
 abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     using Math for uint256;
     using SafeMath for uint256;
@@ -44,30 +52,48 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     address public immutable override token;
     address public immutable override xyt;
     bool public bootstrapped;
+
     string private constant NAME = "Pendle Market";
     string private constant SYMBOL = "PENDLE-LPT";
     uint256 private constant MINIMUM_LIQUIDITY = 10**3;
     uint8 private constant DECIMALS = 18;
-    uint256 private priceLast = Math.RONE;
-    uint256 private lastCurveShiftBlock;
     uint256 private constant LN_PI_PLUSONE = 1562071538258; // this is equal to Math.ln(Math.PI_PLUSONE,Math.RONE)
+    uint256 private constant MULTIPLIER = 10**20;
 
+    // 3 variables for LP interests calc
     uint256 internal paramL;
     uint256 internal lastNYield;
     mapping(address => uint256) internal lastParamL;
 
+    // paramK used for mintProtocolFee. ParamK = xytBal ^ xytWeight * tokenBal ^ tokenW
     uint256 internal lastParamK;
 
-    uint256 private constant MULTIPLIER = 10**20;
+    // the last block that we do curveShift
+    uint256 private lastCurveShiftBlock;
+
+    /*
+    * The reserveData will consist of 3 variables: xytBalance, tokenBalance & xytWeight
+    To save gas, we will pack these 3 variables into a single uint256 variable as follows:
+        Bit 148 -> 255: xytBalance
+        Bit 40 -> 147: tokenBalance
+        Bit 0 -> 39: xytWeight
+        tokenWeight = Math.RONE - xytWeight
+    Refer to writeReserveData and readReserveData for more details
+    */
     uint256 private reserveData;
+    uint256 private lastRelativePrice = Math.RONE;
 
     uint256 private constant MASK_148_TO_255 = type(uint256).max ^ ((1 << 148) - 1);
     uint256 private constant MASK_40_TO_147 = ((1 << 148) - 1) ^ ((1 << 40) - 1);
     uint256 private constant MASK_0_TO_39 = ((1 << 40) - 1);
     uint256 private constant MAX_TOKEN_RESERVE_BALANCE = (1 << 108) - 1;
 
-    // the lockStartTime is set at the bootstrap time of the market, and will not
-    // be changed for the entire market duration
+    /*
+    * the lockStartTime is set at the bootstrap time of the market, and will not be changed for the entire market duration
+    Once the market has been locked, only removeMarketLiquidityDual is allowed
+    * Why lock the market? Because when the time is very close to the end of the market, the ratio of weights are either
+    extremely big or small, which leads to high precision error
+    */
     uint256 public lockStartTime;
 
     /* these variables are used often, so we get them once in the constructor
@@ -111,12 +137,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     // INVARIANT: All write functions, except for ERC20's approve(), increaseAllowance(), decreaseAllowance()
-    // must go through this check. This means that transfering of LP tokens is paused too.
+    // must go through this check. This means that minting/burning/transferring of LP tokens is paused too.
     function checkNotPaused() internal view {
         (bool paused, ) = pausingManager.checkMarketStatus(factoryId, address(this));
         require(!paused, "MARKET_PAUSED");
     }
 
+    /// Refer to the docs for reserveData
     function readReserveData()
         internal
         view
@@ -133,6 +160,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         tokenWeight = Math.RONE - xytWeight;
     }
 
+    /// parse an asset address to tokenReserve
+    /// _asset will only be either xyt or baseToken
     function parseTokenReserveData(address _asset)
         internal
         view
@@ -147,10 +176,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         }
     }
 
+    /// pass in a tokenReserve & the type of token (through _asset), update the reserveData
     function updateReserveData(TokenReserve memory tokenReserve, address _asset) internal {
         require(tokenReserve.balance <= MAX_TOKEN_RESERVE_BALANCE, "EXCEED_TOKEN_BALANCE_LIMIT");
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
             readReserveData();
+        // Basically just update the weight & bal of the corresponding token & write the reserveData again
         if (_asset == xyt) {
             (xytWeight, xytBalance) = (tokenReserve.weight, tokenReserve.balance);
         } else {
@@ -160,6 +191,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         writeReserveData(xytBalance, tokenBalance, xytWeight);
     }
 
+    /// Refer to the docs for reserveData
     function writeReserveData(
         uint256 xytBalance,
         uint256 tokenBalance,
@@ -183,35 +215,40 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         }
     }
 
-    function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
-        external
-        override
-        returns (PendingTransfer[3] memory transfers)
-    {
+    function bootstrap(
+        address account,
+        uint256 initialXytLiquidity,
+        uint256 initialTokenLiquidity
+    ) external override returns (PendingTransfer[2] memory transfers) {
         require(msg.sender == address(router), "ONLY_ROUTER");
         checkNotPaused();
         require(!bootstrapped, "ALREADY_BOOTSTRAPPED");
-        _initializeLock(); // market's lock params should be initialized at bootstrap time
 
+        // market's lock params should be initialized at bootstrap time
+        _initializeLock();
+
+        // at the start of the market, xytWeight = tokenWeight = Math.RONE / 2
+        // As such, we will write it into the reserveData
         writeReserveData(initialXytLiquidity, initialTokenLiquidity, Math.RONE / 2);
-        _updateLastParamK();
+        _updateLastParamK(); // update paramK since this is the first time it's set
 
         emit Sync(initialXytLiquidity, Math.RONE / 2, initialTokenLiquidity);
 
+        _afterBootstrap();
+        // Taking inspiration from Uniswap, we will keep MINIMUM_LIQUIDITY in the market to make sure the market is always non-empty
         uint256 liquidity =
             Math.sqrt(initialXytLiquidity.mul(initialTokenLiquidity)).sub(MINIMUM_LIQUIDITY);
-        _mintLp(MINIMUM_LIQUIDITY.add(liquidity));
+
+        _mint(address(this), MINIMUM_LIQUIDITY);
+        _mint(account, liquidity);
 
         transfers[0].amount = initialXytLiquidity;
         transfers[0].isOut = false;
         transfers[1].amount = initialTokenLiquidity;
         transfers[1].isOut = false;
-        transfers[2].amount = liquidity;
-        transfers[2].isOut = true;
 
         lastCurveShiftBlock = block.number;
         bootstrapped = true;
-        _afterBootstrap();
     }
 
     /**
@@ -223,18 +260,20 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     * @param _tokenMinAmount min amount of tokens user wants to be able to contribute
     * @dev no curveShift to save gas because this function
               doesn't depend on weights of tokens
+    * Note: the logic of this function is similar to that of Uniswap
+    * Conditions:
+        * checkAddRemoveSwapClaimAllowed(false) is true
     */
     function addMarketLiquidityDual(
+        address account,
         uint256 _desiredXytAmount,
         uint256 _desiredTokenAmount,
         uint256 _xytMinAmount,
         uint256 _tokenMinAmount
-    ) external override returns (PendingTransfer[3] memory transfers, uint256 lpOut) {
+    ) external override returns (PendingTransfer[2] memory transfers, uint256 lpOut) {
         checkAddRemoveSwapClaimAllowed(false);
-        _updateParamL();
 
-        // mint protocol fees after updating paramL, because the new liquidity is only minted to
-        // the protocol exactly now (with value same as feesPortion * swapFees).
+        // mint protocol fees before the main logic
         _mintProtocolFees();
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData();
@@ -263,29 +302,42 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[1].isOut = false;
 
         writeReserveData(xytBalance, tokenBalance, xytWeight);
-        _updateLastParamK();
-
-        emit Sync(xytBalance, xytWeight, tokenBalance);
+        _updateLastParamK(); // update paramK since it has changed not due to swap
 
         // Mint and push LP token.
-        _mintLp(lpOut);
-        transfers[2].amount = lpOut;
-        transfers[2].isOut = true;
+        _mint(account, lpOut);
+
+        emit Sync(xytBalance, xytWeight, tokenBalance);
     }
 
+    /**
+     * @notice Join the market by deposit token (single) and get liquidity token
+     *       need to specify the desired amount of contributed token (xyt or token)
+     *       and minimum output liquidity token
+     * @param _inToken address of token (xyt or token) user wants to contribute
+     * @param _exactIn amount of tokens (xyt or token)  user wants to contribute
+     * @param _minOutLp min amount of liquidity token user expect to receive
+     * @dev curveShift needed since function operation relies on weights
+     */
     function addMarketLiquiditySingle(
+        address account,
         address _inToken,
         uint256 _exactIn,
         uint256 _minOutLp
-    ) external override returns (PendingTransfer[3] memory transfers) {
+    ) external override returns (PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(false);
-        _updateParamL();
 
-        // mint protocol fees after updating paramL, because the new liquidity is only minted to
-        // the protocol exactly now (with value same as feesPortion * swapFees).
+        // mint protocol fees before the main logic
         _mintProtocolFees();
         _curveShift();
 
+        /*
+        * Note that in theory we should do another _mintProtocolFee in this function
+            since this add single involves an implicit swap operation
+        * However, it's very challenging to calculate the correct amount of fees to mint,
+            so for now, we will not mintProtocolFee in this function
+        * Yet, the user will still have to pay the swapFee (which will go directly into the market)
+        */
         TokenReserve memory inTokenReserve = parseTokenReserveData(_inToken);
 
         uint256 totalLp = totalSupply();
@@ -299,14 +351,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[0].amount = _exactIn;
         transfers[0].isOut = false;
 
-        // Mint and push LP token.
-        _mintLp(exactOutLp);
-        transfers[2].amount = exactOutLp;
-        transfers[2].isOut = true;
-
         // repack data
         updateReserveData(inTokenReserve, _inToken);
-        _updateLastParamK();
+        _updateLastParamK(); // update paramK since it has changed not due to swap
+
+        // Mint and push LP token.
+        _mint(account, exactOutLp);
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
         emit Sync(xytBalance, xytWeight, tokenBalance);
@@ -321,23 +371,23 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
      * @dev no curveShift to save gas because this function
                 doesn't depend on weights of tokens
      * @dev this function will never be locked since we always let users withdraw
-                their funds. That's why we skip time check in isAddRemoveSwapClaimAllowed
+                their funds. That's why we skip time check in checkAddRemoveSwapClaimAllowed
      */
     function removeMarketLiquidityDual(
+        address account,
         uint256 _inLp,
         uint256 _minOutXyt,
         uint256 _minOutToken
-    ) external override returns (PendingTransfer[3] memory transfers) {
+    ) external override returns (PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(true);
-        _updateParamL();
 
-        // mint protocol fees after updating paramL, because the new liquidity is only minted to
-        // the protocol exactly now (with value same as feesPortion * swapFees).
+        // mint protocol fees before the main logic
         _mintProtocolFees();
 
         uint256 totalLp = totalSupply();
         uint256 ratio = Math.rdiv(_inLp, totalLp);
         require(ratio != 0, "ZERO_RATIO");
+
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
 
         // Calc and withdraw xyt token.
@@ -359,29 +409,38 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[1].isOut = true;
 
         writeReserveData(xytBalance, tokenBalance, xytWeight); // repack data
-        _updateLastParamK();
+        _updateLastParamK(); // update paramK since it has changed not due to swap
+
+        _burn(account, _inLp);
 
         emit Sync(xytBalance, xytWeight, tokenBalance);
-
-        _burnLp(_inLp);
     }
 
-    /// @dev With remove liquidity functions, LPs are always transferred in
-    /// first in the Router, to make sure we have enough LPs in the market to burn
-    /// as such, we don't need to set transfers[2]
+    /**
+     * @notice Exit the market by putting in the desired amount of LP tokens
+     *      and getting back XYT or pair tokens.
+     * @param _outToken address of the token that user wants to get back
+     * @param _inLp the exact amount of liquidity token that user wants to put back
+     * @param _minOutAmountToken the minimum of token that user wants to get back
+     * @dev curveShift needed since function operation relies on weights
+     */
     function removeMarketLiquiditySingle(
+        address account,
         address _outToken,
         uint256 _inLp,
         uint256 _minOutAmountToken
-    ) external override returns (PendingTransfer[3] memory transfers) {
+    ) external override returns (PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(false);
-        _updateParamL();
 
-        // mint protocol fees after updating paramL, because the new liquidity is only minted to
-        // the protocol exactly now (with value same as feesPortion * swapFees).
+        // mint protocol fees before the main logic
         _mintProtocolFees();
         _curveShift();
 
+        /*
+        * Note that in theory we should do another _mintProtocolFee in this function
+            since this add single involves an implicit swap operation
+        * The reason we don't do that is same as in addMarketLiquiditySingle
+        */
         TokenReserve memory outTokenReserve = parseTokenReserveData(_outToken);
 
         uint256 swapFee = data.swapFee();
@@ -390,120 +449,115 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 outAmountToken = _calcOutAmountToken(outTokenReserve, totalLp, _inLp, swapFee);
         require(outAmountToken >= _minOutAmountToken, "INSUFFICIENT_TOKEN_OUT");
 
-        // Update reserves and operate underlying LP and outToken
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmountToken);
-
-        updateReserveData(outTokenReserve, _outToken);
-        _updateLastParamK();
-
-        _burnLp(_inLp);
         transfers[0].amount = outAmountToken;
         transfers[0].isOut = true;
+
+        updateReserveData(outTokenReserve, _outToken);
+        _updateLastParamK(); // update paramK since it has changed not due to swap
+
+        _burn(account, _inLp);
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
         emit Sync(xytBalance, xytWeight, tokenBalance);
     }
 
     function swapExactIn(
+        address,
         address inToken,
         uint256 inAmount,
         address outToken,
         uint256 minOutAmount
-    )
-        external
-        override
-        returns (
-            uint256 outAmount,
-            uint256 spotPriceAfter,
-            PendingTransfer[3] memory transfers
-        )
-    {
+    ) external override returns (uint256 outAmount, PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(false);
+
+        // We only need to do _mintProtocolFees if there is a curveShift that follows
         if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
-            _updateLastParamK();
+            _updateLastParamK(); // update paramK since it has changed not due to swap
         }
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken);
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken);
-        uint256 swapFee = data.swapFee();
 
         // calc out amount of token to be swapped out
-        outAmount = _calcExactOut(inTokenReserve, outTokenReserve, inAmount, swapFee);
+        outAmount = _calcExactOut(inTokenReserve, outTokenReserve, inAmount, data.swapFee());
         require(outAmount >= minOutAmount, "HIGH_OUT_LIMIT");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
 
-        spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, swapFee);
-
         // repack data
         updateReserveData(inTokenReserve, inToken);
         updateReserveData(outTokenReserve, outToken);
-
-        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
-        emit Sync(xytBalance, xytWeight, tokenBalance);
+        // no update paramK since it has changed but due to swap
 
         transfers[0].amount = inAmount;
         transfers[0].isOut = false;
         transfers[1].amount = outAmount;
         transfers[1].isOut = true;
+
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
+        emit Sync(xytBalance, xytWeight, tokenBalance);
     }
 
     function swapExactOut(
+        address,
         address inToken,
         uint256 maxInAmount,
         address outToken,
         uint256 outAmount
-    )
-        external
-        override
-        returns (
-            uint256 inAmount,
-            uint256 spotPriceAfter,
-            PendingTransfer[3] memory transfers
-        )
-    {
+    ) external override returns (uint256 inAmount, PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(false);
+
+        // We only need to do _mintProtocolFees if there is a curveShift that follows
         if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
-            _updateLastParamK();
+            _updateLastParamK(); // update paramK since it has changed not due to swap
         }
 
         TokenReserve memory inTokenReserve = parseTokenReserveData(inToken);
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken);
-        uint256 swapFee = data.swapFee();
 
         // Calc in amount.
-        inAmount = _calcExactIn(inTokenReserve, outTokenReserve, outAmount, swapFee);
+        inAmount = _calcExactIn(inTokenReserve, outTokenReserve, outAmount, data.swapFee());
         require(inAmount <= maxInAmount, "LOW_IN_LIMIT");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmount);
 
-        spotPriceAfter = _calcSpotPrice(inTokenReserve, outTokenReserve, swapFee);
-
         // repack data
         updateReserveData(inTokenReserve, inToken);
         updateReserveData(outTokenReserve, outToken);
-
-        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
-        emit Sync(xytBalance, xytWeight, tokenBalance);
+        // no update paramK since it has changed but due to swap
 
         transfers[0].amount = inAmount;
         transfers[0].isOut = false;
         transfers[1].amount = outAmount;
         transfers[1].isOut = true;
+
+        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
+        emit Sync(xytBalance, xytWeight, tokenBalance);
     }
 
+    /**
+     * @notice for user to claim their interest as holder of underlyingYield token
+     * @param account user account address
+     * @dev only can claim through router (included in checkAddRemoveSwapClaimAllowed)
+     * We skip time check in checkAddRemoveSwapClaimAllowed because users can always claim interests
+     * Since the Router has already had Reentrancy protection, we don't need one here
+     */
     function claimLpInterests(address account) external override returns (uint256 interests) {
         checkAddRemoveSwapClaimAllowed(true);
         checkNotPaused();
         interests = _settleLpInterests(account);
     }
 
+    /**
+     * @notice get the most up-to-date reserveData of the market by doing a dry curveShift
+     */
     function getReserves()
         external
         view
@@ -513,15 +567,23 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
             uint256 xytWeight,
             uint256 tokenBalance,
             uint256 tokenWeight,
-            uint256 lastUpdatedBlock
+            uint256 currentBlock
         )
     {
-        // get the weight right now of the market, not the weight of the last update
         (xytWeight, tokenWeight, ) = _updateWeightDry();
         (xytBalance, tokenBalance, , ) = readReserveData();
-        lastUpdatedBlock = lastCurveShiftBlock;
+        currentBlock = block.number;
     }
 
+    /**
+     * @notice calculate the exact amount of tokens that user need to put in the market
+     *      in order to get back certain amount of the other token
+     * @param inTokenReserve market reserve details of token that user wants to put in
+     * @param outTokenReserve market reserve details of token that user wants to get back
+     * @param exactOut exact amount of token that user wants to get back
+     * @param swapFee swap fee ratio for swap
+     * @dev The formula for this function can be referred in the AMM Specs
+     */
     function _calcExactIn(
         TokenReserve memory inTokenReserve,
         TokenReserve memory outTokenReserve,
@@ -538,6 +600,15 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         exactIn = Math.rdiv(Math.rmul(inTokenReserve.balance, foo), exactIn);
     }
 
+    /**
+     * @notice calculate the exact amount of tokens that user can get back from the market
+     *      if user put in certain amount of the other token
+     * @param inTokenReserve market reserve details of token that user wants to put in
+     * @param outTokenReserve market reserve details of token that user wants to get back
+     * @param exactIn exact amount of token that user wants to put in
+     * @param swapFee swap fee (percentage) for swap
+     * @dev The formula for this function can be referred in the AMM Specs
+     */
     function _calcExactOut(
         TokenReserve memory inTokenReserve,
         TokenReserve memory outTokenReserve,
@@ -554,19 +625,16 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         exactOut = Math.rmul(outTokenReserve.balance, bar);
     }
 
-    function _calcSpotPrice(
-        TokenReserve memory inTokenReserve,
-        TokenReserve memory outTokenReserve,
-        uint256 swapFee
-    ) internal pure returns (uint256 spot) {
-        uint256 numer = Math.rdiv(inTokenReserve.balance, inTokenReserve.weight);
-        uint256 denom = Math.rdiv(outTokenReserve.balance, outTokenReserve.weight);
-        uint256 ratio = Math.rdiv(numer, denom);
-        uint256 scale = Math.rdiv(Math.RONE, Math.RONE.sub(swapFee));
-
-        spot = Math.rmul(ratio, scale);
-    }
-
+    /**
+     * @notice to calculate exact amount of lp token to be minted if single token liquidity is added to market
+     * @param inAmount exact amount of the token that user wants to put in
+     * @param inTokenReserve market reserve details of the token that user wants to put in
+     * @param swapFee swap fee (percentage) for swap
+     * @param totalSupplyLp current (before adding liquidity) lp supply
+     * @dev swap fee applies here since add liquidity by single token is equivalent of a swap
+     * @dev used when add liquidity by single token
+     * @dev The formula for this function can be referred in the AMM Specs
+     */
     function _calcOutAmountLp(
         uint256 inAmount,
         TokenReserve memory inTokenReserve,
@@ -586,6 +654,17 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         return exactOutLp;
     }
 
+    /**
+     * @notice to calculate exact amount of token that user can get back if
+     *      single token liquidity is removed from market
+     * @param outTokenReserve market reserve details of the token that user wants to get back
+     * @param totalSupplyLp current (before adding liquidity) lp supply
+     * @param inLp exact amount of the lp token (single liquidity to remove) that user wants to put in
+     * @param swapFee swap fee (percentage) for swap
+     * @dev swap fee applies here since add liquidity by single token is equivalent of a swap
+     * @dev used when remove liquidity by single token
+     * @dev The formula for this function can be referred in the AMM Specs
+     */
     function _calcOutAmountToken(
         TokenReserve memory outTokenReserve,
         uint256 totalSupplyLp,
@@ -606,20 +685,15 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         return exactOutToken;
     }
 
-    function _burnLp(uint256 amount) internal {
-        _burn(address(this), amount);
-    }
-
-    function _mintLp(uint256 amount) internal {
-        _mint(address(this), amount);
-    }
-
+    /**
+     * @notice update the weights of the market
+     */
     function _updateWeight() internal {
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
-        (uint256 xytWeightUpdated, , uint256 priceNow) = _updateWeightDry();
+        (uint256 xytWeightUpdated, , uint256 currentRelativePrice) = _updateWeightDry();
         writeReserveData(xytBalance, tokenBalance, xytWeightUpdated); // repack data
 
-        priceLast = priceNow;
+        lastRelativePrice = currentRelativePrice;
         emit Shift(xytWeight, xytWeightUpdated);
     }
 
@@ -630,7 +704,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         returns (
             uint256 xytWeightUpdated,
             uint256 tokenWeightUpdated,
-            uint256 priceNow
+            uint256 currentRelativePrice
         )
     {
         // get current timestamp currentTime
@@ -652,12 +726,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 timeToMature = Math.rdiv(timeLeft * Math.RONE, duration * Math.RONE);
 
         // get price for now = ln(3.14 * t + 1) / ln(4.14)
-        priceNow = Math.rdiv(
+        currentRelativePrice = Math.rdiv(
             Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RONE), Math.RONE),
             LN_PI_PLUSONE
         );
 
-        uint256 r = Math.rdiv(priceNow, priceLast);
+        uint256 r = Math.rdiv(currentRelativePrice, lastRelativePrice);
         assert(Math.RONE >= r);
 
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
@@ -670,6 +744,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         tokenWeightUpdated = tokenWeight.add(theta);
     }
 
+    /*
+     To add/remove/swap/claim, the market must have been
+     * bootstrapped
+     * only Router can call it
+     * if the function is not removeMarketLiquidityDual, then must check the market hasn't been locked yet
+     */
     function checkAddRemoveSwapClaimAllowed(bool skipOpenCheck) internal view {
         checkNotPaused();
         require(bootstrapped, "NOT_BOOTSTRAPPED");
@@ -680,46 +760,84 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     //curve shift will be called before any calculation using weight
-    // INVARIANT: if mintProtocolFee is false:
-    //    - there must be a _mintProtocolFees() before calling _curveShift()
+    //Note: there must be a _mintProtocolFees() before calling _curveShift()
     function _curveShift() internal {
         if (!checkNeedCurveShift()) return;
         _updateWeight();
         lastCurveShiftBlock = block.number;
     }
 
+    /**
+    @notice calc & transferOut the interests from Lp that the user is entitled to
+    @dev This must be called before any transfer / mint/ burn action of LP
+        (and this has been implemented in the beforeTokenTransfer of this contract)
+    */
     function _settleLpInterests(address account) internal returns (uint256 dueInterests) {
         if (account == address(this)) return 0;
 
+        // before calc the interest for users, updateParamL
         _updateParamL();
         uint256 interestValuePerLP = _getInterestValuePerLP(account);
         if (interestValuePerLP == 0) return 0;
 
+        // dueInterests simply equals to the balanceOf LP * the value of each LP
+        // divide by MULTIPLIER since interestValuePerLP has been multiplied by MULTIPLIER before
         dueInterests = balanceOf(account).mul(interestValuePerLP).div(MULTIPLIER);
         if (dueInterests == 0) return 0;
 
-        lastNYield = lastNYield.sub(dueInterests);
+        // Use subMax0 to handle the extreme case of the market lacking a few way of tokens to send out
+        lastNYield = lastNYield.subMax0(dueInterests);
         underlyingYieldToken.safeTransfer(account, dueInterests);
     }
 
+    /**
+     * We will only updateParamL if the normalisedIncome / exchangeRate has increased more than a delta
+     * This delta is expected to be very small (~0.01%)
+     */
     function checkNeedUpdateParamL() internal returns (bool) {
         return _getIncomeIndexIncreaseRate() > data.interestUpdateRateDeltaForMarket();
     }
 
+    /**
+     * We will only do curveShift() once every curveShiftBlockDelta blocks
+     */
     function checkNeedCurveShift() internal view returns (bool) {
         return block.number > lastCurveShiftBlock.add(data.curveShiftBlockDelta());
     }
 
+    /**
+     * @notice use to updateParamL. Must only be called by _settleLpInterests
+     * ParamL can be thought of as an always-increase incomeIndex for 1 LP
+     Consideration:
+     * Theoretically we have to updateParamL whenever the _settleLpInterests is called, since the external incomeIndex
+        (normalisedIncome/exchangeRate) is always increasing, and there are always interests to be claimed
+     * Yet, if we do so, the amount of interests to be claimed maybe negligible while the amount of gas spent is
+        tremendous (100k~200k last time we checked) => Caching is actually beneficial to user
+     * The users may lose some negligible amount of interest when they do removeLiquidity or transfer LP to others
+        (to be exact, they will lose NO MORE THAN interestUpdateRateDeltaForMarket%). In exchange, they will save
+        a lot of gas. And the delta is expected to be ~ 0.01%, so it's almost impossible for a user to lose more than the
+        amount of gas they saved (unless they have a few hundred millions. Well in that case 0.01% is negligible for them)
+     * The correctness of caching can be thought of like this: We just pretend that there are only income once in a while,
+     and when that income come, they will come in large amount, and we will distribute them fairly to all users
+     */
     function _updateParamL() internal {
         if (!checkNeedUpdateParamL()) return;
-
+        // redeem the interest from XYT
         router.redeemDueInterests(forgeId, underlyingAsset, expiry, address(this));
 
         uint256 currentNYield = underlyingYieldToken.balanceOf(address(this));
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(currentNYield);
-        uint256 secondTerm = paramR.mul(MULTIPLIER).div(totalSupply());
+        uint256 secondTerm;
 
-        // update new states
+        /*
+        * paramR can be thought of as the amount of interest earned by the market
+        (but excluding the compound effect). paramR is normally small & totalSupply is
+        normally much larger so we need to multiply them with MULTIPLIER
+        */
+        if (totalSupply() != 0) secondTerm = paramR.mul(MULTIPLIER).div(totalSupply());
+
+        // firstTerm & secondTerm are not the best names, but please refer to AMM specs
+        // to understand the meaning of these 2 params
         paramL = firstTerm.add(secondTerm);
         lastNYield = currentNYield;
     }
@@ -735,6 +853,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         if (to != address(0)) _settleLpInterests(to);
     }
 
+    /**
+     * @notice _initialize the lock of the market. Must only be called in bootstrap
+     */
     function _initializeLock() internal {
         uint256 duration = expiry - xytStartTime; // market expiry = xyt expiry
         uint256 lockDuration = (duration * data.lockNumerator()) / data.lockDenominator();
@@ -742,6 +863,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     /**
+    @notice _mint new LP for protocol fee. Mint them directly to the treasury
     @dev this function should be very similar to Uniswap
     */
     function _mintProtocolFees() internal {
@@ -756,8 +878,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
                     uint256 liquidity = numer / denom;
                     address treasury = data.treasury();
                     if (liquidity > 0) {
-                        _mintLp(liquidity);
-                        IERC20(address(this)).transfer(treasury, liquidity);
+                        _mint(treasury, liquidity);
                     }
                 }
             }
@@ -767,14 +888,19 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         }
     }
 
-    // INVARIANT: this function must be called right after:
-    //    - either the weights are updated
-    //    - or the balances of xyt and base token are updated due to adding/removing liquidity
+    /**
+    Equation for paramK: paramK = xytBal ^ xytWeight * tokenBal ^ tokenW
+    * @dev must be called whenever the above equation changes but not due to a swapping action
+    I.e: after add/remove/bootstrap liquidity or curveShift
+    */
     function _updateLastParamK() internal {
         if (data.protocolSwapFee() == 0) return;
         lastParamK = _calcParamK();
     }
 
+    /**
+     * @notice calc the value of paramK. The formula for this can be referred in the AMM specs
+     */
     function _calcParamK() internal view returns (uint256 paramK) {
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
             readReserveData();
@@ -791,10 +917,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         virtual
         returns (uint256 interestValuePerLP);
 
+    /// @notice Get params to update paramL. Must only be called by updateParamL
     function _getFirstTermAndParamR(uint256 currentNYield)
         internal
         virtual
         returns (uint256 firstTerm, uint256 paramR);
 
+    /// @notice Get the increase rate of normalisedIncome / exchangeRate
     function _getIncomeIndexIncreaseRate() internal virtual returns (uint256 increaseRate);
 }

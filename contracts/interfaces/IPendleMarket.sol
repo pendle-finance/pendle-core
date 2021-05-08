@@ -47,60 +47,56 @@ interface IPendleMarket is IERC20, IPendleStructs {
 
     function setUpEmergencyMode(address[] calldata tokens, address spender) external;
 
-    function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
-        external
-        returns (PendingTransfer[3] memory transfers);
+    function bootstrap(
+        address account,
+        uint256 initialXytLiquidity,
+        uint256 initialTokenLiquidity
+    ) external returns (PendingTransfer[2] memory transfers);
 
     function addMarketLiquiditySingle(
+        address account,
         address inToken,
         uint256 inAmount,
         uint256 minOutLp
-    ) external returns (PendingTransfer[3] memory transfers);
+    ) external returns (PendingTransfer[2] memory transfers);
 
     function addMarketLiquidityDual(
+        address account,
         uint256 _desiredXytAmount,
         uint256 _desiredTokenAmount,
         uint256 _xytMinAmount,
         uint256 _tokenMinAmount
-    ) external returns (PendingTransfer[3] memory transfers, uint256 lpOut);
+    ) external returns (PendingTransfer[2] memory transfers, uint256 lpOut);
 
     function removeMarketLiquidityDual(
+        address account,
         uint256 inLp,
         uint256 minOutXyt,
         uint256 minOutToken
-    ) external returns (PendingTransfer[3] memory transfers);
+    ) external returns (PendingTransfer[2] memory transfers);
 
     function removeMarketLiquiditySingle(
+        address account,
         address outToken,
         uint256 exactInLp,
         uint256 minOutToken
-    ) external returns (PendingTransfer[3] memory transfers);
+    ) external returns (PendingTransfer[2] memory transfers);
 
     function swapExactIn(
+        address account,
         address inToken,
         uint256 inAmount,
         address outToken,
         uint256 minOutAmount
-    )
-        external
-        returns (
-            uint256 outAmount,
-            uint256 spotPriceAfter,
-            PendingTransfer[3] memory transfers
-        );
+    ) external returns (uint256 outAmount, PendingTransfer[2] memory transfers);
 
     function swapExactOut(
+        address account,
         address inToken,
         uint256 maxInAmount,
         address outToken,
         uint256 outAmount
-    )
-        external
-        returns (
-            uint256 inAmount,
-            uint256 spotPriceAfter,
-            PendingTransfer[3] memory transfers
-        );
+    ) external returns (uint256 inAmount, PendingTransfer[2] memory transfers);
 
     function claimLpInterests(address account) external returns (uint256 interests);
 
@@ -112,7 +108,7 @@ interface IPendleMarket is IERC20, IPendleStructs {
             uint256 xytWeight,
             uint256 tokenBalance,
             uint256 tokenWeight,
-            uint256 lastBlockTimestamp
+            uint256 currentBlock
         );
 
     function factoryId() external view returns (bytes32);
