@@ -488,8 +488,7 @@ export async function ProtocolFeeTest(
 
   await setTimeNextBlock(provider, consts.T0.add(3600));
   await swapXytToToken(BN.from(100000000));
-  await printMarketData();
-
+  await addLiquidityDual(BN.from(1));
   await swapTokenToXyt(BN.from(100000000));
   await addLiquidityDual(BN.from(100000000));
   await testConstantK(BN.from(66500));
@@ -499,6 +498,7 @@ export async function ProtocolFeeTest(
 
 
   await swapXytToToken(BN.from(100000000));
+  await addLiquidityDual(BN.from(1));
   await swapTokenToXyt(BN.from(100000000));
   await addLiquidityDual(BN.from(100000000));
   await testConstantK(BN.from(132764));
@@ -506,6 +506,7 @@ export async function ProtocolFeeTest(
   
   
   await swapXytToToken(BN.from(100000000));
+  await addLiquidityDual(BN.from(1));
   await swapTokenToXyt(BN.from(100000000));
   await addLiquidityDual(BN.from(100000000));
   await testConstantK(BN.from(198826));
@@ -515,6 +516,7 @@ export async function ProtocolFeeTest(
 
 
   await swapXytToToken(BN.from(100000000));
+  await addLiquidityDual(BN.from(1));
   await swapTokenToXyt(BN.from(100000000));
   await addLiquidityDual(BN.from(100000000));
   await testConstantK(BN.from(264716));
