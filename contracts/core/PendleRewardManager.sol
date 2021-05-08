@@ -32,6 +32,9 @@ import "../interfaces/IPendleRewardManager.sol";
 import "../interfaces/IPendleForge.sol";
 
 /**
+@notice for each Forge deployed, there will be a corresponding PendleRewardManager contract,
+    which manages the COMP/StkAAVE rewards accrued in the PendleYieldTokenHolder contracts created by the Forge
+    for each yield contract.
 @dev the logic of distributing rewards is very similar to that of PendleCompoundMarket & PendleCompoundLiquidityMining
     Any major differences are likely to be bugs
 */
@@ -41,6 +44,8 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     bytes32 public override forgeId;
     IPendleForge private forge;
     IERC20 private rewardToken;
+
+    // This MULTIPLIER is to scale the real paramL value up, to preserve precision
     uint256 private constant MULTIPLIER = 1e20;
     IPendleData private data;
     IPendleRouter private router;
@@ -51,6 +56,9 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         mapping(address => uint256) lastParamL;
     }
 
+    // rewardData[underlyingAsset][expiry] stores the information related
+    // to the rewards stored in the corresponding PendleYieldTokenHolder
+    // as well as information needed to calculate rewards for each user (lastParamL)
     mapping(address => mapping(uint256 => RewardData)) private rewardData;
 
     modifier onlyForge() {
@@ -79,7 +87,16 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         router = forge.router();
     }
 
-    // INVARIANT: this function must be called before any action that changes the OT balance of account
+    /**
+    Use:
+        To claim the COMP/StkAAVE for any OT holder.
+        Newly acrrued rewards are equally accrued to all OT holders in the process.
+    Conditions:
+        * Can be called by anyone, to claim for anyone
+    INVARIANTs:
+        * this function must be called before any action that changes the OT balance of account
+          * To ensure this, we call this function in the _beforeTokenTransfer hook of the OT token contract (indirectly through the forge)
+    */
     function claimRewards(
         address _underlyingAsset,
         uint256 _expiry,
@@ -98,28 +115,42 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         if (dueRewards == 0) return 0;
 
         rwd.lastRewardBalance = rwd.lastRewardBalance.sub(dueRewards);
+
+        // The yieldTokenHolder already approved this reward manager contract to spend max uint256
         rewardToken.transferFrom(_yieldTokenHolder, _account, dueRewards);
     }
 
     // INVARIANT: this function must be called before any action that changes the total OT
+    // To ensure this, we call it in the beginning of claimRewards, which has the same invariant.
     function _updateParamL(
         address _underlyingAsset,
         uint256 _expiry,
         address yieldTokenHolder
     ) internal {
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
+        if (rwd.paramL == 0) {
+            // paramL always from 1, to make sure that if a user's lastParamL is 0,
+            // they must be getting OT for the very first time, and we will know it in _getRewardsAmountPerOT()
+            rwd.paramL = 1;
+        }
 
+        // First, claim any pending COMP/StkAAVE rewards to the YieldTokenHolder
         IPendleYieldTokenHolder(yieldTokenHolder).claimRewards();
 
         IPendleYieldToken ot = data.otTokens(forgeId, _underlyingAsset, _expiry);
 
         uint256 currentRewardBalance = rewardToken.balanceOf(yieldTokenHolder);
+
+        // * firstTerm is always paramL. But we are still doing this way to make it consistent
+        // in the way that we calculate interests/rewards, across Market, LiquidityMining and RewardManager
+        // * paramR is basically the new amount of rewards that came in since the last time we call _updateParamL
         (uint256 firstTerm, uint256 paramR) =
             _getFirstTermAndParamR(_underlyingAsset, _expiry, currentRewardBalance);
 
         uint256 totalOT = ot.totalSupply();
-        uint256 secondTerm;
 
+        // secondTerm is basically the amount of new rewards per LP
+        uint256 secondTerm;
         if (totalOT != 0) {
             secondTerm = paramR.mul(MULTIPLIER).div(totalOT);
         }
@@ -145,7 +176,10 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         address account
     ) internal returns (uint256 interestValuePerLP) {
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
+
         if (rwd.lastParamL[account] == 0) {
+            // ParamL is always >=1, so this user must have gotten OT for the first time,
+            // and shouldn't get any interests.
             interestValuePerLP = 0;
         } else {
             interestValuePerLP = rwd.paramL.sub(rwd.lastParamL[account]);
