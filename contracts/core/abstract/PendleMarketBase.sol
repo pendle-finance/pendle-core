@@ -67,8 +67,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     mapping(address => uint256) internal lastParamL;
 
     // paramK used for mintProtocolFee. ParamK = xytBal ^ xytWeight * tokenBal ^ tokenW
-    // paramK must be updated whenever the above equation changes but not due to a swapping action
-    // I.e: Must update paramK after add/remove/bootstrap liquidity or curveShift
     uint256 internal lastParamK;
 
     // the last block that we do curveShift
@@ -747,7 +745,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     /*
-     * To add/remove/swap/claim, the market must have been
+     To add/remove/swap/claim, the market must have been
      * bootstrapped
      * only Router can call it
      * if the function is not removeMarketLiquidityDual, then must check the market hasn't been locked yet
@@ -762,46 +760,84 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     //curve shift will be called before any calculation using weight
-    // INVARIANT: if mintProtocolFee is false:
-    //    - there must be a _mintProtocolFees() before calling _curveShift()
+    //Note: there must be a _mintProtocolFees() before calling _curveShift()
     function _curveShift() internal {
         if (!checkNeedCurveShift()) return;
         _updateWeight();
         lastCurveShiftBlock = block.number;
     }
 
+    /**
+    @notice calc & transferOut the interests from Lp that the user is entitled to
+    @dev This must be called before any transfer / mint/ burn action of LP
+        (and this has been implemented in the beforeTokenTransfer of this contract)
+    */
     function _settleLpInterests(address account) internal returns (uint256 dueInterests) {
         if (account == address(this)) return 0;
 
+        // before calc the interest for users, updateParamL
         _updateParamL();
         uint256 interestValuePerLP = _getInterestValuePerLP(account);
         if (interestValuePerLP == 0) return 0;
 
+        // dueInterests simply equals to the balanceOf LP * the value of each LP
+        // divide by MULTIPLIER since interestValuePerLP has been multiplied by MULTIPLIER before
         dueInterests = balanceOf(account).mul(interestValuePerLP).div(MULTIPLIER);
         if (dueInterests == 0) return 0;
 
+        // Use subMax0 to handle the extreme case of the market lacking a few way of tokens to send out
         lastNYield = lastNYield.subMax0(dueInterests);
         underlyingYieldToken.safeTransfer(account, dueInterests);
     }
 
+    /**
+     * We will only updateParamL if the normalisedIncome / exchangeRate has increased more than a delta
+     * This delta is expected to be very small (~0.01%)
+     */
     function checkNeedUpdateParamL() internal returns (bool) {
         return _getIncomeIndexIncreaseRate() > data.interestUpdateRateDeltaForMarket();
     }
 
+    /**
+     * We will only do curveShift() once every curveShiftBlockDelta blocks
+     */
     function checkNeedCurveShift() internal view returns (bool) {
         return block.number > lastCurveShiftBlock.add(data.curveShiftBlockDelta());
     }
 
+    /**
+     * @notice use to updateParamL. Must only be called by _settleLpInterests
+     * ParamL can be thought of as an always-increase incomeIndex for 1 LP
+     Consideration:
+     * Theoretically we have to updateParamL whenever the _settleLpInterests is called, since the external incomeIndex
+        (normalisedIncome/exchangeRate) is always increasing, and there are always interests to be claimed
+     * Yet, if we do so, the amount of interests to be claimed maybe negligible while the amount of gas spent is
+        tremendous (100k~200k last time we checked) => Caching is actually beneficial to user
+     * The users may lose some negligible amount of interest when they do removeLiquidity or transfer LP to others
+        (to be exact, they will lose NO MORE THAN interestUpdateRateDeltaForMarket%). In exchange, they will save
+        a lot of gas. And the delta is expected to be ~ 0.01%, so it's almost impossible for a user to lose more than the
+        amount of gas they saved (unless they have a few hundred millions. Well in that case 0.01% is negligible for them)
+     * The correctness of caching can be thought of like this: We just pretend that there are only income once in a while,
+     and when that income come, they will come in large amount, and we will distribute them fairly to all users
+     */
     function _updateParamL() internal {
         if (!checkNeedUpdateParamL()) return;
+        // redeem the interest from XYT
         router.redeemDueInterests(forgeId, underlyingAsset, expiry);
 
         uint256 currentNYield = underlyingYieldToken.balanceOf(address(this));
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(currentNYield);
         uint256 secondTerm;
+
+        /*
+        * paramR can be thought of as the amount of interest earned by the market
+        (but excluding the compound effect). paramR is normally small & totalSupply is
+        normally much larger so we need to multiply them with MULTIPLIER
+        */
         if (totalSupply() != 0) secondTerm = paramR.mul(MULTIPLIER).div(totalSupply());
 
-        // update new states
+        // firstTerm & secondTerm are not the best names, but please refer to AMM specs
+        // to understand the meaning of these 2 params
         paramL = firstTerm.add(secondTerm);
         lastNYield = currentNYield;
     }
@@ -817,6 +853,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         if (to != address(0)) _settleLpInterests(to);
     }
 
+    /**
+     * @notice used to _initialize the lock of the market. Must only be called in bootstrap
+     */
     function _initializeLock() internal {
         uint256 duration = expiry - xytStartTime; // market expiry = xyt expiry
         uint256 lockDuration = (duration * data.lockNumerator()) / data.lockDenominator();
@@ -824,6 +863,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     /**
+    @notice _mint new LP for protocol fee. Mint them directly to the treasury
     @dev this function should be very similar to Uniswap
     */
     function _mintProtocolFees() internal {
@@ -848,14 +888,19 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         }
     }
 
-    // INVARIANT: this function must be called right after:
-    //    - either the weights are updated
-    //    - or the balances of xyt and base token are updated due to adding/removing liquidity
+    /**
+    Equation for paramK: paramK = xytBal ^ xytWeight * tokenBal ^ tokenW
+    * @dev must be called whenever the above equation changes but not due to a swapping action
+    I.e: after add/remove/bootstrap liquidity or curveShift
+    */
     function _updateLastParamK() internal {
         if (data.protocolSwapFee() == 0) return;
         lastParamK = _calcParamK();
     }
 
+    /**
+     * @notice calc the value of paramK. The formula for this can be referred in the AMM specs
+     */
     function _calcParamK() internal view returns (uint256 paramK) {
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
             readReserveData();

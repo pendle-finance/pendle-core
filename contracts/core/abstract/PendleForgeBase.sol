@@ -478,7 +478,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     Use:
         * Must be the only way to transfer aToken/cToken out
     Consideration:
-        * Due to mathematical precision, in some extreme cases, the forge may lac a few wei of tokens to transfer back
+        * Due to mathematical precision, in some extreme cases, the forge may lack a few wei of tokens to transfer back
             That's why there is a call to minimize the amount to transfer out with the balance of the contract
         * Nonetheless, because we are collecting some forge fee, so it's expected that all users will receive the full
         amount of aToken/cToken (and we will receive a little less than the correct amount)
