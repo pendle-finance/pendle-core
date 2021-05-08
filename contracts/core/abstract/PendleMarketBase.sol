@@ -79,15 +79,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     IPendlePausingManager private immutable pausingManager;
     uint256 private immutable xytStartTime;
 
-    function isAddRemoveSwapClaimAllowed(bool skipOpenCheck) internal view {
-        checkNotPaused();
-        require(bootstrapped, "NOT_BOOTSTRAPPED");
-        require(msg.sender == address(router), "ONLY_ROUTER");
-        if (!skipOpenCheck) {
-            require(block.timestamp < lockStartTime, "MARKET_LOCKED");
-        }
-    }
-
     constructor(
         address _router,
         address _forge,
@@ -239,7 +230,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 _xytMinAmount,
         uint256 _tokenMinAmount
     ) external override returns (PendingTransfer[3] memory transfers, uint256 lpOut) {
-        isAddRemoveSwapClaimAllowed(false);
+        checkAddRemoveSwapClaimAllowed(false);
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -286,15 +277,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         address _inToken,
         uint256 _exactIn,
         uint256 _minOutLp
-    )
-        external
-        override
-        returns (
-            /* isAddRemoveSwapClaimAllowed(false) */
-            PendingTransfer[3] memory transfers
-        )
-    {
-        isAddRemoveSwapClaimAllowed(false);
+    ) external override returns (PendingTransfer[3] memory transfers) {
+        checkAddRemoveSwapClaimAllowed(false);
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -343,15 +327,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 _inLp,
         uint256 _minOutXyt,
         uint256 _minOutToken
-    )
-        external
-        override
-        returns (
-            /* isAddRemoveSwapClaimAllowed(true) */
-            PendingTransfer[3] memory transfers
-        )
-    {
-        isAddRemoveSwapClaimAllowed(false);
+    ) external override returns (PendingTransfer[3] memory transfers) {
+        checkAddRemoveSwapClaimAllowed(false);
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -396,15 +373,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         address _outToken,
         uint256 _inLp,
         uint256 _minOutAmountToken
-    )
-        external
-        override
-        returns (
-            /* isAddRemoveSwapClaimAllowed(false) */
-            PendingTransfer[3] memory transfers
-        )
-    {
-        isAddRemoveSwapClaimAllowed(false);
+    ) external override returns (PendingTransfer[3] memory transfers) {
+        checkAddRemoveSwapClaimAllowed(false);
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -443,13 +413,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         external
         override
         returns (
-            /* isAddRemoveSwapClaimAllowed(false) */
             uint256 outAmount,
             uint256 spotPriceAfter,
             PendingTransfer[3] memory transfers
         )
     {
-        isAddRemoveSwapClaimAllowed(false);
+        checkAddRemoveSwapClaimAllowed(false);
         if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
@@ -491,13 +460,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         external
         override
         returns (
-            /* isAddRemoveSwapClaimAllowed(false) */
             uint256 inAmount,
             uint256 spotPriceAfter,
             PendingTransfer[3] memory transfers
         )
     {
-        isAddRemoveSwapClaimAllowed(false);
+        checkAddRemoveSwapClaimAllowed(false);
         if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
@@ -530,15 +498,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[1].isOut = true;
     }
 
-    function claimLpInterests(address account)
-        external
-        override
-        returns (
-            /* isAddRemoveSwapClaimAllowed(true) */
-            uint256 interests
-        )
-    {
-        isAddRemoveSwapClaimAllowed(true);
+    function claimLpInterests(address account) external override returns (uint256 interests) {
+        checkAddRemoveSwapClaimAllowed(true);
         checkNotPaused();
         interests = _settleLpInterests(account);
     }
@@ -707,6 +668,15 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         xytWeightUpdated = xytWeight.sub(theta);
         tokenWeightUpdated = tokenWeight.add(theta);
+    }
+
+    function checkAddRemoveSwapClaimAllowed(bool skipOpenCheck) internal view {
+        checkNotPaused();
+        require(bootstrapped, "NOT_BOOTSTRAPPED");
+        require(msg.sender == address(router), "ONLY_ROUTER");
+        if (!skipOpenCheck) {
+            require(block.timestamp < lockStartTime, "MARKET_LOCKED");
+        }
     }
 
     //curve shift will be called before any calculation using weight
