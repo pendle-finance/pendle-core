@@ -53,7 +53,7 @@ contract PendleMarketReader {
         For example, if they want to query market WETH/XYT, they must pass in WETH & XYT
         and not ETH & XYT
      */
-    function getMarketRateExactIn(
+    /* function getMarketRateExactIn(
         address _tokenIn,
         address _tokenOut,
         uint256 _inSwapAmount,
@@ -74,12 +74,12 @@ contract PendleMarketReader {
         });
 
         return (swap, outSwapAmount);
-    }
+    } */
 
     /**
      * @dev no wrapping here for the same reason as getMarketRateExactIn
      */
-    function getMarketRateExactOut(
+    /* function getMarketRateExactOut(
         address _tokenIn,
         address _tokenOut,
         uint256 _outSwapAmount,
@@ -100,7 +100,7 @@ contract PendleMarketReader {
         });
 
         return (swap, inSwapAmount);
-    }
+    } */
 
     /**
      * @dev no wrapping here for the same reason as getMarketRateExactIn
@@ -179,47 +179,47 @@ contract PendleMarketReader {
         return returnMarket;
     }
 
-    function _calcExactIn(uint256 outAmount, Market memory market)
+    /* function _calcExactIn(uint256 outAmount, Market memory market)
         internal
         view
         returns (uint256 totalInput)
     {
-        IPendleMarket.TokenReserve memory inTokenReserve;
-        IPendleMarket.TokenReserve memory outTokenReserve;
+        TokenReserve memory inTokenReserve;
+        TokenReserve memory outTokenReserve;
 
         inTokenReserve.balance = market.tokenBalanceIn;
         inTokenReserve.weight = market.tokenWeightIn;
         outTokenReserve.balance = market.tokenBalanceOut;
         outTokenReserve.weight = market.tokenWeightOut;
 
-        totalInput = IPendleMarket(market.market).calcExactIn(
+        totalInput = MarketCalculator.calcExactIn(
             inTokenReserve,
             outTokenReserve,
             outAmount,
             data.swapFee()
         );
-    }
+    } */
 
-    function _calcExactOut(uint256 inAmount, Market memory market)
+    /* function _calcExactOut(uint256 inAmount, Market memory market)
         internal
         view
         returns (uint256 totalOutput)
     {
-        IPendleMarket.TokenReserve memory inTokenReserve;
-        IPendleMarket.TokenReserve memory outTokenReserve;
+        TokenReserve memory inTokenReserve;
+        TokenReserve memory outTokenReserve;
 
         inTokenReserve.balance = market.tokenBalanceIn;
         inTokenReserve.weight = market.tokenWeightIn;
         outTokenReserve.balance = market.tokenBalanceOut;
         outTokenReserve.weight = market.tokenWeightOut;
 
-        totalOutput = IPendleMarket(market.market).calcExactOut(
+        totalOutput = MarketCalculator.calcExactOut(
             inTokenReserve,
             outTokenReserve,
             inAmount,
             data.swapFee()
         );
-    }
+    } */
 
     function _calcEffectiveLiquidity(
         uint256 tokenWeightIn,

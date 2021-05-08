@@ -104,20 +104,6 @@ interface IPendleMarket is IERC20, IPendleStructs {
 
     function claimLpInterests(address account) external returns (uint256 interests);
 
-    function calcExactIn(
-        TokenReserve memory inTokenReserve,
-        TokenReserve memory outTokenReserve,
-        uint256 outAmount,
-        uint256 swapFee
-    ) external pure returns (uint256 exactIn);
-
-    function calcExactOut(
-        TokenReserve memory inTokenReserve,
-        TokenReserve memory outTokenReserve,
-        uint256 exactIn,
-        uint256 swapFee
-    ) external pure returns (uint256 exactOut);
-
     function getReserves()
         external
         view
@@ -128,8 +114,6 @@ interface IPendleMarket is IERC20, IPendleStructs {
             uint256 tokenWeight,
             uint256 lastBlockTimestamp
         );
-
-    function spotPrice(address inToken, address outToken) external view returns (uint256 spot);
 
     function factoryId() external view returns (bytes32);
 

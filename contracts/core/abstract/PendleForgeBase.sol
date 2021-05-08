@@ -111,7 +111,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
     // INVARIANT: All write functions must go through this check.
     // All XYT/OT transfers must go through this check as well. As such, XYT/OT transfers are also paused
-    function checkNotPaused(address _underlyingAsset, uint256 _expiry) internal {
+    function checkNotPaused(address _underlyingAsset, uint256 _expiry) internal view {
         (bool paused, ) =
             pausingManager.checkYieldContractStatus(forgeId, _underlyingAsset, _expiry);
         require(!paused, "YIELD_CONTRACT_PAUSED");
