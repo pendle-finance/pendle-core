@@ -28,6 +28,7 @@ import "../../interfaces/IPendleMarket.sol";
 import "../../interfaces/IPendleForge.sol";
 import "../../interfaces/IPendleMarketFactory.sol";
 import "../../interfaces/IPendleYieldToken.sol";
+import "../../interfaces/IPendlePausingManager.sol";
 import "../../tokens/PendleBaseToken.sol";
 import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -55,7 +56,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     uint256 internal lastNYield;
     mapping(address => uint256) internal lastParamL;
 
-    uint256 public lastParamK;
+    uint256 internal lastParamK;
 
     uint256 private constant MULTIPLIER = 10**20;
     uint256 private reserveData;
@@ -75,16 +76,16 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     address internal immutable underlyingAsset;
     IERC20 private immutable underlyingYieldToken;
     IPendleData private immutable data;
-    /* IPendleRouter private immutable router; */
+    IPendlePausingManager private immutable pausingManager;
     uint256 private immutable xytStartTime;
 
-    modifier isAddRemoveSwapClaimAllowed(bool skipOpenCheck) {
+    function isAddRemoveSwapClaimAllowed(bool skipOpenCheck) internal view {
+        checkNotPaused();
         require(bootstrapped, "NOT_BOOTSTRAPPED");
         require(msg.sender == address(router), "ONLY_ROUTER");
         if (!skipOpenCheck) {
             require(block.timestamp < lockStartTime, "MARKET_LOCKED");
         }
-        _;
     }
 
     constructor(
@@ -110,11 +111,19 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         require(_router == address(IPendleMarketFactory(msg.sender).router()), "ROUTER_MISMATCH");
         /* router = IPendleRouter(_router); */
         data = IPendleForge(_forge).data();
+        pausingManager = IPendleForge(_forge).data().pausingManager();
         xytStartTime = IPendleYieldToken(_xyt).start();
         factoryId = IPendleMarketFactory(msg.sender).marketFactoryId();
         _approve(address(this), _router, type(uint256).max);
         IERC20(_xyt).safeApprove(_router, type(uint256).max);
         IERC20(_token).safeApprove(_router, type(uint256).max);
+    }
+
+    // INVARIANT: All write functions, except for ERC20's approve(), increaseAllowance(), decreaseAllowance()
+    // must go through this check. This means that transfering of LP tokens is paused too.
+    function checkNotPaused() internal view {
+        (bool paused, ) = pausingManager.checkMarketStatus(factoryId, address(this));
+        require(!paused, "MARKET_PAUSED");
     }
 
     function readReserveData()
@@ -170,12 +179,26 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         reserveData = (xytBalance << 148) | (tokenBalance << 40) | xytWeight;
     }
 
+    // Only the marketEmergencyHandler can call this function, when its in emergencyMode
+    // this will allow a spender to spend the whole balance of the specified tokens
+    // the spender should ideally be a contract with logic for users to withdraw out their funds.
+    function setUpEmergencyMode(address[] calldata tokens, address spender) external override {
+        (, bool emergencyMode) = pausingManager.checkMarketStatus(factoryId, address(this));
+        require(emergencyMode, "NOT_EMERGENCY");
+        (address marketEmergencyHandler, , ) = pausingManager.marketEmergencyHandler();
+        require(msg.sender == marketEmergencyHandler, "NOT_EMERGENCY_HANDLER");
+        for (uint256 i = 0; i < tokens.length; i++) {
+            IERC20(tokens[i]).safeApprove(spender, type(uint256).max);
+        }
+    }
+
     function bootstrap(uint256 initialXytLiquidity, uint256 initialTokenLiquidity)
         external
         override
         returns (PendingTransfer[3] memory transfers)
     {
         require(msg.sender == address(router), "ONLY_ROUTER");
+        checkNotPaused();
         require(!bootstrapped, "ALREADY_BOOTSTRAPPED");
         _initializeLock(); // market's lock params should be initialized at bootstrap time
 
@@ -215,12 +238,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 _desiredTokenAmount,
         uint256 _xytMinAmount,
         uint256 _tokenMinAmount
-    )
-        external
-        override
-        isAddRemoveSwapClaimAllowed(false)
-        returns (PendingTransfer[3] memory transfers, uint256 lpOut)
-    {
+    ) external override returns (PendingTransfer[3] memory transfers, uint256 lpOut) {
+        isAddRemoveSwapClaimAllowed(false);
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -270,9 +289,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        isAddRemoveSwapClaimAllowed(false)
-        returns (PendingTransfer[3] memory transfers)
+        returns (
+            /* isAddRemoveSwapClaimAllowed(false) */
+            PendingTransfer[3] memory transfers
+        )
     {
+        isAddRemoveSwapClaimAllowed(false);
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -324,9 +346,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        isAddRemoveSwapClaimAllowed(true)
-        returns (PendingTransfer[3] memory transfers)
+        returns (
+            /* isAddRemoveSwapClaimAllowed(true) */
+            PendingTransfer[3] memory transfers
+        )
     {
+        isAddRemoveSwapClaimAllowed(false);
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -374,9 +399,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        isAddRemoveSwapClaimAllowed(false)
-        returns (PendingTransfer[3] memory transfers)
+        returns (
+            /* isAddRemoveSwapClaimAllowed(false) */
+            PendingTransfer[3] memory transfers
+        )
     {
+        isAddRemoveSwapClaimAllowed(false);
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -414,13 +442,14 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        isAddRemoveSwapClaimAllowed(false)
         returns (
+            /* isAddRemoveSwapClaimAllowed(false) */
             uint256 outAmount,
             uint256 spotPriceAfter,
             PendingTransfer[3] memory transfers
         )
     {
+        isAddRemoveSwapClaimAllowed(false);
         if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
@@ -432,7 +461,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 swapFee = data.swapFee();
 
         // calc out amount of token to be swapped out
-        outAmount = calcExactOut(inTokenReserve, outTokenReserve, inAmount, swapFee);
+        outAmount = _calcExactOut(inTokenReserve, outTokenReserve, inAmount, swapFee);
         require(outAmount >= minOutAmount, "HIGH_OUT_LIMIT");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
@@ -461,13 +490,14 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     )
         external
         override
-        isAddRemoveSwapClaimAllowed(false)
         returns (
+            /* isAddRemoveSwapClaimAllowed(false) */
             uint256 inAmount,
             uint256 spotPriceAfter,
             PendingTransfer[3] memory transfers
         )
     {
+        isAddRemoveSwapClaimAllowed(false);
         if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
@@ -479,7 +509,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 swapFee = data.swapFee();
 
         // Calc in amount.
-        inAmount = calcExactIn(inTokenReserve, outTokenReserve, outAmount, swapFee);
+        inAmount = _calcExactIn(inTokenReserve, outTokenReserve, outAmount, swapFee);
         require(inAmount <= maxInAmount, "LOW_IN_LIMIT");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
@@ -503,9 +533,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     function claimLpInterests(address account)
         external
         override
-        isAddRemoveSwapClaimAllowed(true)
-        returns (uint256 interests)
+        returns (
+            /* isAddRemoveSwapClaimAllowed(true) */
+            uint256 interests
+        )
     {
+        isAddRemoveSwapClaimAllowed(true);
+        checkNotPaused();
         interests = _settleLpInterests(account);
     }
 
@@ -527,12 +561,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         lastUpdatedBlock = blockNumLast;
     }
 
-    function calcExactIn(
+    function _calcExactIn(
         TokenReserve memory inTokenReserve,
         TokenReserve memory outTokenReserve,
         uint256 exactOut,
         uint256 swapFee
-    ) public pure override returns (uint256 exactIn) {
+    ) internal pure returns (uint256 exactIn) {
         uint256 weightRatio = Math.rdiv(outTokenReserve.weight, inTokenReserve.weight);
         uint256 diff = outTokenReserve.balance.sub(exactOut);
         uint256 y = Math.rdiv(outTokenReserve.balance, diff);
@@ -543,12 +577,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         exactIn = Math.rdiv(Math.rmul(inTokenReserve.balance, foo), exactIn);
     }
 
-    function calcExactOut(
+    function _calcExactOut(
         TokenReserve memory inTokenReserve,
         TokenReserve memory outTokenReserve,
         uint256 exactIn,
         uint256 swapFee
-    ) public pure override returns (uint256 exactOut) {
+    ) internal pure returns (uint256 exactOut) {
         uint256 weightRatio = Math.rdiv(inTokenReserve.weight, outTokenReserve.weight);
         uint256 adjustedIn = Math.RONE.sub(swapFee);
         adjustedIn = Math.rmul(exactIn, adjustedIn);
@@ -557,17 +591,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 bar = Math.RONE.sub(foo);
 
         exactOut = Math.rmul(outTokenReserve.balance, bar);
-    }
-
-    function spotPrice(address inToken, address outToken)
-        external
-        view
-        override
-        returns (uint256 spot)
-    {
-        TokenReserve memory inTokenReserve = parseTokenReserveData(inToken);
-        TokenReserve memory outTokenReserve = parseTokenReserveData(outToken);
-        return _calcSpotPrice(inTokenReserve, outTokenReserve, data.swapFee());
     }
 
     function _calcSpotPrice(
@@ -750,6 +773,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         address to,
         uint256
     ) internal override {
+        checkNotPaused();
         if (from != address(0)) _settleLpInterests(from);
         if (to != address(0)) _settleLpInterests(to);
     }

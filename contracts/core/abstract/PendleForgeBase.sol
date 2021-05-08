@@ -31,6 +31,9 @@ import "../../interfaces/IPendleData.sol";
 import "../../interfaces/IPendleForge.sol";
 import "../../interfaces/IPendleRewardManager.sol";
 import "../../interfaces/IPendleYieldContractDeployer.sol";
+import "../../interfaces/IPendleYieldTokenHolder.sol";
+import "../../tokens/PendleFutureYieldToken.sol";
+import "../../tokens/PendleOwnershipToken.sol";
 import "../../periphery/Permissions.sol";
 import "../../libraries/MathLib.sol";
 
@@ -53,6 +56,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     IERC20 public immutable override rewardToken; // COMP/StkAAVE
     IPendleRewardManager public override rewardManager;
     IPendleYieldContractDeployer public override yieldContractDeployer;
+    IPendlePausingManager public pausingManager;
 
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         public
@@ -81,6 +85,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         rewardToken = IERC20(_rewardToken);
         rewardManager = IPendleRewardManager(_rewardManager);
         yieldContractDeployer = IPendleYieldContractDeployer(_yieldContractDeployer);
+        pausingManager = data.pausingManager();
     }
 
     modifier onlyRouter() {
@@ -104,12 +109,41 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         _;
     }
 
+    // INVARIANT: All write functions must go through this check.
+    // All XYT/OT transfers must go through this check as well. As such, XYT/OT transfers are also paused
+    function checkNotPaused(address _underlyingAsset, uint256 _expiry) internal view {
+        (bool paused, ) =
+            pausingManager.checkYieldContractStatus(forgeId, _underlyingAsset, _expiry);
+        require(!paused, "YIELD_CONTRACT_PAUSED");
+    }
+
+    // Only the forgeEmergencyHandler can call this function, when its in emergencyMode
+    // this will allow a spender to spend the whole balance of the specified tokens of the yieldTokenHolder contract
+    // the spender should ideally be a contract with logic for users to withdraw out their funds.
+    function setUpEmergencyMode(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address[] calldata tokens,
+        address spender
+    ) external override {
+        (, bool emergencyMode) =
+            pausingManager.checkYieldContractStatus(forgeId, _underlyingAsset, _expiry);
+        require(emergencyMode, "NOT_EMERGENCY");
+        (address forgeEmergencyHandler, , ) = pausingManager.forgeEmergencyHandler();
+        require(msg.sender == forgeEmergencyHandler, "NOT_EMERGENCY_HANDLER");
+        IPendleYieldTokenHolder(yieldTokenHolders[_underlyingAsset][_expiry]).setUpEmergencyMode(
+            tokens,
+            spender
+        );
+    }
+
     function newYieldContracts(address _underlyingAsset, uint256 _expiry)
         external
         override
         onlyRouter
         returns (address ot, address xyt)
     {
+        checkNotPaused(_underlyingAsset, _expiry);
         address yieldToken = _getYieldBearingToken(_underlyingAsset);
         uint8 yieldTokenDecimals = IPendleYieldToken(yieldToken).decimals();
 
@@ -155,6 +189,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
             uint256 amountToRenew
         )
     {
+        checkNotPaused(_underlyingAsset, _expiry);
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         uint256 expiredOTamount = IERC20(address(tokens.ot)).balanceOf(_account);
@@ -185,6 +220,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         uint256 _expiry,
         uint256 _amountToRedeem
     ) external override onlyRouter returns (uint256 redeemedAmount) {
+        checkNotPaused(_underlyingAsset, _expiry);
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         require(tokens.ot.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_OT_AMOUNT");
         require(tokens.xyt.balanceOf(_account) >= _amountToRedeem, "INSUFFICIENT_XYT_AMOUNT");
@@ -210,6 +246,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         address _underlyingAsset,
         uint256 _expiry
     ) external override onlyRouter returns (uint256 amountOut) {
+        checkNotPaused(_underlyingAsset, _expiry);
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
         amountOut = _beforeTransferDueInterests(
@@ -227,6 +264,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         uint256 _expiry,
         address _account
     ) external override onlyXYT(_underlyingAsset, _expiry) {
+        checkNotPaused(_underlyingAsset, _expiry);
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         uint256 principal = tokens.xyt.balanceOf(_account);
         _updateDueInterests(principal, _underlyingAsset, _expiry, _account);
@@ -237,6 +275,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         uint256 _expiry,
         address _account
     ) external override onlyOT(_underlyingAsset, _expiry) {
+        checkNotPaused(_underlyingAsset, _expiry);
         rewardManager.claimRewards(_underlyingAsset, _expiry, _account);
     }
 
@@ -255,6 +294,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
             uint256 amountTokenMinted
         )
     {
+        checkNotPaused(_underlyingAsset, _expiry);
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
 
         amountTokenMinted = _calcAmountToMint(_underlyingAsset, _amountToTokenize);
@@ -271,6 +311,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         override
         onlyGovernance
     {
+        checkNotPaused(_underlyingAsset, _expiry);
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
 
         _updateForgeFee(_underlyingAsset, _expiry, 0); //ping to update interest up to now
@@ -287,6 +328,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         uint256 _toExpiry,
         uint256 _amount
     ) external override onlyRouter {
+        checkNotPaused(_underlyingAsset, _fromExpiry);
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
         _safeTransfer(
             yieldToken,
