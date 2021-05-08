@@ -149,6 +149,7 @@ describe("compound-liquidityMining", async () => {
   let snapshotId: string;
   let globalSnapshotId: string;
   let liqWeb3: any; // TODO: move this to fixture
+  let EXPIRY: BN = consts.T0_C.add(consts.SIX_MONTH);
   before(async () => {
     globalSnapshotId = await evm_snapshot();
     const fixture = await loadFixture(liquidityMiningFixture);
@@ -174,23 +175,13 @@ describe("compound-liquidityMining", async () => {
   });
 
   async function doStake(person: Wallet, amount: BN) {
-    await liq
-      .connect(person)
-      .stake(
-        consts.T0_C.add(consts.SIX_MONTH),
-        amount,
-        consts.HIGH_GAS_OVERRIDE
-      );
+    await liq.connect(person).stake(EXPIRY, amount, consts.HIGH_GAS_OVERRIDE);
   }
 
   async function doWithdraw(person: Wallet, amount: BN) {
     await liq
       .connect(person)
-      .withdraw(
-        consts.T0_C.add(consts.SIX_MONTH),
-        amount,
-        consts.HIGH_GAS_OVERRIDE
-      );
+      .withdraw(EXPIRY, amount, consts.HIGH_GAS_OVERRIDE);
   }
 
   async function getLpBalanceOfAllUsers(): Promise<BN[]> {
@@ -265,7 +256,7 @@ describe("compound-liquidityMining", async () => {
     let allocationRateDiv =
       _allocationRateDiv !== undefined ? _allocationRateDiv : 1;
     for (let userId = 0; userId < numUser; userId++) {
-      await liq.connect(wallets[userId]).claimRewards();
+      await liq.claimRewards(EXPIRY, wallets[userId].address);
       // console.log(expectedRewards[userId][0].toString(), (await pdl.balanceOf(wallets[userId].address)).toString());
       approxBigNumber(
         await pdl.balanceOf(wallets[userId].address),
@@ -314,11 +305,7 @@ describe("compound-liquidityMining", async () => {
     await setTimeNextBlock(provider, params.START_TIME);
     await liq
       .connect(bob)
-      .stake(
-        consts.T0_C.add(consts.SIX_MONTH),
-        amountToStake,
-        consts.HIGH_GAS_OVERRIDE
-      );
+      .stake(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
 
     await setTimeNextBlock(
       provider,
@@ -326,17 +313,13 @@ describe("compound-liquidityMining", async () => {
     );
     await liq
       .connect(bob)
-      .withdraw(
-        consts.T0_C.add(consts.SIX_MONTH),
-        amountToStake,
-        consts.HIGH_GAS_OVERRIDE
-      );
-    await liq.connect(bob).claimRewards();
+      .withdraw(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
+    await liq.claimRewards(EXPIRY, bob.address);
     await setTimeNextBlock(
       provider,
       params.START_TIME.add(params.EPOCH_DURATION).add(params.EPOCH_DURATION)
     );
-    await liq.connect(bob).claimRewards();
+    await liq.claimRewards(EXPIRY, bob.address);
   });
 
   it("can stake and withdraw", async () => {
@@ -357,15 +340,9 @@ describe("compound-liquidityMining", async () => {
     await advanceTime(provider, params.START_TIME.sub(consts.T0_C));
     await liq
       .connect(bob)
-      .stake(
-        consts.T0_C.add(consts.SIX_MONTH),
-        amountToStake,
-        consts.HIGH_GAS_OVERRIDE
-      );
+      .stake(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
     console.log("\tStaked");
-    const lpHolderContract = await liq.lpHolderForExpiry(
-      consts.T0_C.add(consts.SIX_MONTH)
-    );
+    const lpHolderContract = await liq.lpHolderForExpiry(EXPIRY);
     const cTokenBalanceOfLpHolderContract = await cUSDT.balanceOf(
       lpHolderContract
     );
@@ -381,7 +358,7 @@ describe("compound-liquidityMining", async () => {
     await liq
       .connect(bob)
       .withdraw(
-        consts.T0_C.add(consts.SIX_MONTH),
+        EXPIRY,
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
@@ -404,11 +381,7 @@ describe("compound-liquidityMining", async () => {
     );
 
     //stake using another user - alice, for the same amount as bob's stake now (amountToStake/2)
-    await liq.stake(
-      consts.T0_C.add(consts.SIX_MONTH),
-      amountToStake.div(2),
-      consts.HIGH_GAS_OVERRIDE
-    );
+    await liq.stake(EXPIRY, amountToStake.div(2), consts.HIGH_GAS_OVERRIDE);
 
     // Now we wait for another 15 days to withdraw (at the very start of epoch 4), then the rewards to be withdrawn for bob should be:
     // From epoch 1: rewardsForEpoch[0] * 2/4    ( 1/4 is released at start of epoch 3, 1/4 is released at start of epoch 4)
@@ -420,23 +393,21 @@ describe("compound-liquidityMining", async () => {
     // console.log(`abi = ${liq.abi}`);
     // console.log(liq);
 
-    const liqWeb3 = new hre.web3.eth.Contract(
-      PendleCompoundLiquidityMining.abi,
-      liq.address
+    const { interests } = await liq.callStatic.claimLpInterests(
+      EXPIRY,
+      alice.address
     );
-    const { interests } = await liqWeb3.methods
-      .claimLpInterests()
-      .call({ from: alice.address });
-    const { rewards } = await liqWeb3.methods
-      .claimRewards()
-      .call({ from: alice.address });
+    const { rewards } = await liq.callStatic.claimRewards(
+      EXPIRY,
+      alice.address
+    );
     console.log(`\tInterests for alice = ${interests}`);
     console.log(`\tRewards available for epochs from now: ${rewards}`);
 
     await liq
       .connect(bob)
       .withdraw(
-        consts.T0_C.add(consts.SIX_MONTH),
+        EXPIRY,
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
@@ -459,11 +430,7 @@ describe("compound-liquidityMining", async () => {
       expectedPdlBalanceOfUsersAfter2ndTnx.toNumber() / 1000
     );
 
-    await liq.withdraw(
-      consts.T0_C.add(consts.SIX_MONTH),
-      amountToStake.div(2),
-      consts.HIGH_GAS_OVERRIDE
-    );
+    await liq.withdraw(EXPIRY, amountToStake.div(2), consts.HIGH_GAS_OVERRIDE);
     const cTokenBalanceOfLpHolderContractAfter = await cUSDT.balanceOf(
       lpHolderContract
     );

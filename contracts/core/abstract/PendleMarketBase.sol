@@ -49,7 +49,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     uint256 private constant MINIMUM_LIQUIDITY = 10**3;
     uint8 private constant DECIMALS = 18;
     uint256 private priceLast = Math.RONE;
-    uint256 private blockNumLast;
+    uint256 private lastCurveShiftBlock;
     uint256 private constant LN_PI_PLUSONE = 1562071538258; // this is equal to Math.ln(Math.PI_PLUSONE,Math.RONE)
 
     uint256 internal paramL;
@@ -78,15 +78,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     IPendleData private immutable data;
     IPendlePausingManager private immutable pausingManager;
     uint256 private immutable xytStartTime;
-
-    function isAddRemoveSwapClaimAllowed(bool skipOpenCheck) internal view {
-        checkNotPaused();
-        require(bootstrapped, "NOT_BOOTSTRAPPED");
-        require(msg.sender == address(router), "ONLY_ROUTER");
-        if (!skipOpenCheck) {
-            require(block.timestamp < lockStartTime, "MARKET_LOCKED");
-        }
-    }
 
     constructor(
         address _router,
@@ -218,7 +209,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[2].amount = liquidity;
         transfers[2].isOut = true;
 
-        blockNumLast = block.number;
+        lastCurveShiftBlock = block.number;
         bootstrapped = true;
         _afterBootstrap();
     }
@@ -239,7 +230,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 _xytMinAmount,
         uint256 _tokenMinAmount
     ) external override returns (PendingTransfer[3] memory transfers, uint256 lpOut) {
-        isAddRemoveSwapClaimAllowed(false);
+        checkAddRemoveSwapClaimAllowed(false);
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -286,15 +277,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         address _inToken,
         uint256 _exactIn,
         uint256 _minOutLp
-    )
-        external
-        override
-        returns (
-            /* isAddRemoveSwapClaimAllowed(false) */
-            PendingTransfer[3] memory transfers
-        )
-    {
-        isAddRemoveSwapClaimAllowed(false);
+    ) external override returns (PendingTransfer[3] memory transfers) {
+        checkAddRemoveSwapClaimAllowed(false);
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -343,15 +327,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 _inLp,
         uint256 _minOutXyt,
         uint256 _minOutToken
-    )
-        external
-        override
-        returns (
-            /* isAddRemoveSwapClaimAllowed(true) */
-            PendingTransfer[3] memory transfers
-        )
-    {
-        isAddRemoveSwapClaimAllowed(false);
+    ) external override returns (PendingTransfer[3] memory transfers) {
+        checkAddRemoveSwapClaimAllowed(false);
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -396,15 +373,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         address _outToken,
         uint256 _inLp,
         uint256 _minOutAmountToken
-    )
-        external
-        override
-        returns (
-            /* isAddRemoveSwapClaimAllowed(false) */
-            PendingTransfer[3] memory transfers
-        )
-    {
-        isAddRemoveSwapClaimAllowed(false);
+    ) external override returns (PendingTransfer[3] memory transfers) {
+        checkAddRemoveSwapClaimAllowed(false);
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
@@ -443,13 +413,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         external
         override
         returns (
-            /* isAddRemoveSwapClaimAllowed(false) */
             uint256 outAmount,
             uint256 spotPriceAfter,
             PendingTransfer[3] memory transfers
         )
     {
-        isAddRemoveSwapClaimAllowed(false);
+        checkAddRemoveSwapClaimAllowed(false);
         if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
@@ -491,13 +460,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         external
         override
         returns (
-            /* isAddRemoveSwapClaimAllowed(false) */
             uint256 inAmount,
             uint256 spotPriceAfter,
             PendingTransfer[3] memory transfers
         )
     {
-        isAddRemoveSwapClaimAllowed(false);
+        checkAddRemoveSwapClaimAllowed(false);
         if (checkNeedCurveShift()) {
             _mintProtocolFees();
             _curveShift();
@@ -530,15 +498,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         transfers[1].isOut = true;
     }
 
-    function claimLpInterests(address account)
-        external
-        override
-        returns (
-            /* isAddRemoveSwapClaimAllowed(true) */
-            uint256 interests
-        )
-    {
-        isAddRemoveSwapClaimAllowed(true);
+    function claimLpInterests(address account) external override returns (uint256 interests) {
+        checkAddRemoveSwapClaimAllowed(true);
         checkNotPaused();
         interests = _settleLpInterests(account);
     }
@@ -558,7 +519,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // get the weight right now of the market, not the weight of the last update
         (xytWeight, tokenWeight, ) = _updateWeightDry();
         (xytBalance, tokenBalance, , ) = readReserveData();
-        lastUpdatedBlock = blockNumLast;
+        lastUpdatedBlock = lastCurveShiftBlock;
     }
 
     function _calcExactIn(
@@ -653,21 +614,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _mint(address(this), amount);
     }
 
-    /**
-    * @notice update the priceLast & emit event, but not the real weight
-    * @dev this function read the reserveData directly from storage. But the reserveData is guaranteed
-    not to be obsolete because:
-    * this function will be called at most ONCE in every transaction
-    * all functions that call this function will eventually update the reserveData
-    => it doesn't matter if the reserveData gets updated immediately or not
-     */
     function _updateWeight() internal {
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
         (uint256 xytWeightUpdated, , uint256 priceNow) = _updateWeightDry();
         writeReserveData(xytBalance, tokenBalance, xytWeightUpdated); // repack data
 
         priceLast = priceNow;
-        // the weight is not updated yet, but all functions that call curveShift will eventually update the weight, so we just emit event first
         emit Shift(xytWeight, xytWeightUpdated);
     }
 
@@ -718,13 +670,22 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         tokenWeightUpdated = tokenWeight.add(theta);
     }
 
+    function checkAddRemoveSwapClaimAllowed(bool skipOpenCheck) internal view {
+        checkNotPaused();
+        require(bootstrapped, "NOT_BOOTSTRAPPED");
+        require(msg.sender == address(router), "ONLY_ROUTER");
+        if (!skipOpenCheck) {
+            require(block.timestamp < lockStartTime, "MARKET_LOCKED");
+        }
+    }
+
     //curve shift will be called before any calculation using weight
     // INVARIANT: if mintProtocolFee is false:
     //    - there must be a _mintProtocolFees() before calling _curveShift()
     function _curveShift() internal {
         if (!checkNeedCurveShift()) return;
         _updateWeight();
-        blockNumLast = block.number;
+        lastCurveShiftBlock = block.number;
     }
 
     function _settleLpInterests(address account) internal returns (uint256 dueInterests) {
@@ -742,24 +703,20 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     function checkNeedUpdateParamL() internal returns (bool) {
-        if (_getIncomeIndexIncreaseRate() > data.interestUpdateRateDeltaForMarket()) {
-            return true;
-        }
-        return false;
+        return _getIncomeIndexIncreaseRate() > data.interestUpdateRateDeltaForMarket();
     }
 
     function checkNeedCurveShift() internal view returns (bool) {
-        return block.number > blockNumLast.add(data.curveShiftBlockDelta());
+        return block.number > lastCurveShiftBlock.add(data.curveShiftBlockDelta());
     }
 
     function _updateParamL() internal {
-        if (!checkNeedUpdateParamL()) {
-            return;
-        }
+        if (!checkNeedUpdateParamL()) return;
+
         router.redeemDueInterests(forgeId, underlyingAsset, expiry);
+
         uint256 currentNYield = underlyingYieldToken.balanceOf(address(this));
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(currentNYield);
-
         uint256 secondTerm = paramR.mul(MULTIPLIER).div(totalSupply());
 
         // update new states

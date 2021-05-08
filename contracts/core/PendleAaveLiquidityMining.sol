@@ -82,6 +82,10 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         return IPendleAaveForge(forge).getReserveNormalizedIncome(underlyingAsset);
     }
 
+    /**
+    * Very similar to the function in PendleAaveMarket. Any major differences are likely to be bugs
+        Please refer to it for more details
+    */
     function _getInterestValuePerLP(uint256 expiry, address account)
         internal
         override
@@ -101,6 +105,10 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         exd.lastParamL[account] = exd.paramL;
     }
 
+    /**
+    * Very similar to the function in PendleAaveMarket. Any major differences are likely to be bugs
+        Please refer to it for more details
+    */
     function _getFirstTermAndParamR(uint256 expiry, uint256 currentNYield)
         internal
         override
@@ -123,6 +131,10 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         globalLastNormalizedIncome[expiry] = _getReserveNormalizedIncome();
     }
 
+    /**
+    * Very similar to the function in PendleAaveMarket. Any major differences are likely to be bugs
+        Please refer to it for more details
+    */
     function _getIncomeIndexIncreaseRate(uint256 expiry)
         internal
         override

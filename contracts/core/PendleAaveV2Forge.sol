@@ -72,7 +72,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         aaveLendingPool = _aaveLendingPool;
     }
 
-    //calculate the (principal + interest) from the last action before expiry to now.
+    /// Refer to PendleAaveForge
     function _calcTotalAfterExpiry(
         address _underlyingAsset,
         uint256 _expiry,
@@ -84,10 +84,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         );
     }
 
-    /**
-    @dev this function serves functions that take into account the lastNormalisedIncomeBeforeExpiry
-    else, functions can just call the pool directly
-    */
+    /// Refer to PendleAaveForge
     function getReserveNormalizedIncomeBeforeExpiry(address _underlyingAsset, uint256 _expiry)
         internal
         returns (uint256)
@@ -102,9 +99,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         return normalizedIncome;
     }
 
-    /**
-    @dev directly get the normalizedIncome from Aave
-    */
+    /// Refer to PendleAaveForge
     function getReserveNormalizedIncome(address _underlyingAsset)
         public
         view
@@ -114,6 +109,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         return aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset);
     }
 
+    /// Refer to PendleAaveForge
     function _getYieldBearingToken(address _underlyingAsset) internal override returns (address) {
         if (reserveATokenAddress[_underlyingAsset] == address(0)) {
             reserveATokenAddress[_underlyingAsset] = aaveLendingPool
@@ -127,6 +123,8 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         return reserveATokenAddress[_underlyingAsset];
     }
 
+    /// @inheritdoc PendleForgeBase
+    // Copy pasted from PendleAaveForge
     function _updateDueInterests(
         uint256 _principal,
         address _underlyingAsset,
@@ -136,6 +134,8 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         uint256 lastIncome = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
         uint256 normIncomeBeforeExpiry =
             getReserveNormalizedIncomeBeforeExpiry(_underlyingAsset, _expiry);
+        // if the XYT hasn't expired, normIncomeNow = normIncomeBeforeExpiry
+        // else, get the current income from Aave directly
         uint256 normIncomeNow =
             block.timestamp > _expiry
                 ? getReserveNormalizedIncome(_underlyingAsset)
@@ -149,8 +149,8 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
 
         uint256 interestFromXyt;
 
+        // if this if is true, means that there are still unclaimed interests from XYT
         if (normIncomeBeforeExpiry >= lastIncome) {
-            // There are still unclaimed interests from XYT
             interestFromXyt = _principal.mul(normIncomeBeforeExpiry).div(lastIncome).sub(
                 _principal
             );
@@ -160,6 +160,8 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
             interestFromXyt = interestFromXyt.mul(normIncomeNow).div(normIncomeBeforeExpiry);
         }
 
+        // update the dueInterest (because it can generate compound interest on its own)
+        // then add the newly received interestFromXyt
         dueInterests[_underlyingAsset][_expiry][_account] = dueInterests[_underlyingAsset][
             _expiry
         ][_account]
@@ -170,16 +172,21 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normIncomeNow;
     }
 
+    /// @inheritdoc PendleForgeBase
+    // Copy pasted from PendleAaveForge
     function _updateForgeFee(
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _feeAmount
     ) internal override {
         uint256 normIncomeNow = getReserveNormalizedIncome(_underlyingAsset);
+        // first time receiving fee
         if (lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] == 0) {
             lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] = normIncomeNow;
         }
 
+        // update the totalFee (because it can generate compound interest on its own)
+        // then add the newly received fee
         totalFee[_underlyingAsset][_expiry] = totalFee[_underlyingAsset][_expiry]
             .mul(normIncomeNow)
             .div(lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry])

@@ -77,9 +77,11 @@ export function runTest(isAaveV1: boolean) {
 
     async function redeemAll() {
       for (let user of [alice, bob, charlie, dave]) {
-        await router
-          .connect(user)
-          .claimLpInterests([stdMarket.address], consts.HIGH_GAS_OVERRIDE);
+        await router.claimLpInterests(
+          stdMarket.address,
+          user.address,
+          consts.HIGH_GAS_OVERRIDE
+        );
         await router
           .connect(user)
           .redeemDueInterests(
