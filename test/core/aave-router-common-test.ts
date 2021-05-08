@@ -356,33 +356,6 @@ export function runTest(isAaveV1: boolean) {
       expect(allEvents[allEvents.length - 1].args!.expiry).to.eq(futureTime);
     });
 
-    it("Should be able to redeemDueInterestsMultiple", async () => {
-      await startCalInterest(dave, refAmount);
-      await router.newYieldContracts(
-        testEnv.FORGE_ID,
-        tokenUSDT.address,
-        testEnv.T0.add(consts.ONE_YEAR)
-      );
-      await tokenizeYield(alice, refAmount.div(2));
-      await router.tokenizeYield(
-        testEnv.FORGE_ID,
-        tokenUSDT.address,
-        testEnv.T0.add(consts.ONE_YEAR),
-        refAmount.div(2),
-        alice.address,
-        consts.HIGH_GAS_OVERRIDE
-      );
-      await setTimeNextBlock(provider, testEnv.T0.add(consts.FIVE_MONTH));
-      await router.redeemDueInterestsMultiple(
-        [testEnv.FORGE_ID, testEnv.FORGE_ID],
-        [tokenUSDT.address, tokenUSDT.address],
-        [testEnv.T0.add(consts.SIX_MONTH), testEnv.T0.add(consts.ONE_YEAR)]
-      );
-      let actualGain = await aUSDT.balanceOf(alice.address);
-      let expectedGain = await getCurInterest(dave, refAmount);
-      approxBigNumber(actualGain, expectedGain, testEnv.TEST_DELTA);
-    });
-
     it("Should be able to renewYield", async () => {
       await router.newYieldContracts(
         testEnv.FORGE_ID,

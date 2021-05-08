@@ -67,7 +67,7 @@ function calExpectedRewards(
 
   userStakingData.forEach((epochData, i) => {
     let epochId = i + 1;
-    if (epochId >= currentEpoch) return; // only count for epoches before currentEpoch
+    if (epochId >= currentEpoch) return; // only count for epochs before currentEpoch
     let userStakeSeconds: BN[] = [];
     let totalStakeSeconds = BN.from(0);
 
@@ -243,7 +243,7 @@ describe("aaveV1-liquidityMining", async () => {
       }
       await setTimeNextBlock(provider, action.time);
       if (action.isStaking) {
-        await doStake(wallets[action.id], action.amount); // acess users directly by their id instead of names
+        await doStake(wallets[action.id], action.amount); // access users directly by their id instead of names
         expectedLpBalance[action.id] = expectedLpBalance[action.id].sub(
           action.amount
         );
