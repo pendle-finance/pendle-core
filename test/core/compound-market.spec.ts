@@ -182,19 +182,6 @@ describe("compound-market", async () => {
     );
   });
 
-  it("should be able to get spot price", async () => {
-    const amount = amountToWei(BN.from(100), 6);
-
-    await bootstrapSampleMarket(amount);
-
-    let spotPrice = await stdMarket.spotPrice(testToken.address, xyt.address);
-
-    expect(spotPrice.toNumber()).to.be.approximately(
-      1000000000000,
-      100000000000
-    );
-  });
-
   it("should be able to exit a pool by dual tokens", async () => {
     const amount = amountToWei(BN.from(100), 6);
     await bootstrapSampleMarket(amount);

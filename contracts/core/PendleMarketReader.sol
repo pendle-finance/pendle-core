@@ -53,7 +53,7 @@ contract PendleMarketReader {
         For example, if they want to query market WETH/XYT, they must pass in WETH & XYT
         and not ETH & XYT
      */
-    /* function getMarketRateExactIn(
+    function getMarketRateExactIn(
         address _tokenIn,
         address _tokenOut,
         uint256 _inSwapAmount,
@@ -74,12 +74,12 @@ contract PendleMarketReader {
         });
 
         return (swap, outSwapAmount);
-    } */
+    }
 
     /**
      * @dev no wrapping here for the same reason as getMarketRateExactIn
      */
-    /* function getMarketRateExactOut(
+    function getMarketRateExactOut(
         address _tokenIn,
         address _tokenOut,
         uint256 _outSwapAmount,
@@ -100,7 +100,7 @@ contract PendleMarketReader {
         });
 
         return (swap, inSwapAmount);
-    } */
+    }
 
     /**
      * @dev no wrapping here for the same reason as getMarketRateExactIn
@@ -179,47 +179,37 @@ contract PendleMarketReader {
         return returnMarket;
     }
 
-    /* function _calcExactIn(uint256 outAmount, Market memory market)
+    function _calcExactIn(uint256 outAmount, Market memory market)
         internal
         view
         returns (uint256 totalInput)
     {
-        TokenReserve memory inTokenReserve;
-        TokenReserve memory outTokenReserve;
+        IPendleMarket.TokenReserve memory inTokenReserve;
+        IPendleMarket.TokenReserve memory outTokenReserve;
 
         inTokenReserve.balance = market.tokenBalanceIn;
         inTokenReserve.weight = market.tokenWeightIn;
         outTokenReserve.balance = market.tokenBalanceOut;
         outTokenReserve.weight = market.tokenWeightOut;
 
-        totalInput = MarketCalculator.calcExactIn(
-            inTokenReserve,
-            outTokenReserve,
-            outAmount,
-            data.swapFee()
-        );
-    } */
+        totalInput = _calcExactInFunc(inTokenReserve, outTokenReserve, outAmount, data.swapFee());
+    }
 
-    /* function _calcExactOut(uint256 inAmount, Market memory market)
+    function _calcExactOut(uint256 inAmount, Market memory market)
         internal
         view
         returns (uint256 totalOutput)
     {
-        TokenReserve memory inTokenReserve;
-        TokenReserve memory outTokenReserve;
+        IPendleMarket.TokenReserve memory inTokenReserve;
+        IPendleMarket.TokenReserve memory outTokenReserve;
 
         inTokenReserve.balance = market.tokenBalanceIn;
         inTokenReserve.weight = market.tokenWeightIn;
         outTokenReserve.balance = market.tokenBalanceOut;
         outTokenReserve.weight = market.tokenWeightOut;
 
-        totalOutput = MarketCalculator.calcExactOut(
-            inTokenReserve,
-            outTokenReserve,
-            inAmount,
-            data.swapFee()
-        );
-    } */
+        totalOutput = _calcExactOutFunc(inTokenReserve, outTokenReserve, inAmount, data.swapFee());
+    }
 
     function _calcEffectiveLiquidity(
         uint256 tokenWeightIn,
@@ -233,5 +223,38 @@ contract PendleMarketReader {
             .div(Math.RONE);
 
         return effectiveLiquidity;
+    }
+
+    // copied from market
+    function _calcExactOutFunc(
+        IPendleMarket.TokenReserve memory inTokenReserve,
+        IPendleMarket.TokenReserve memory outTokenReserve,
+        uint256 exactIn,
+        uint256 swapFee
+    ) internal pure returns (uint256 exactOut) {
+        uint256 weightRatio = Math.rdiv(inTokenReserve.weight, outTokenReserve.weight);
+        uint256 adjustedIn = Math.RONE.sub(swapFee);
+        adjustedIn = Math.rmul(exactIn, adjustedIn);
+        uint256 y = Math.rdiv(inTokenReserve.balance, inTokenReserve.balance.add(adjustedIn));
+        uint256 foo = Math.rpow(y, weightRatio);
+        uint256 bar = Math.RONE.sub(foo);
+
+        exactOut = Math.rmul(outTokenReserve.balance, bar);
+    }
+
+    function _calcExactInFunc(
+        IPendleMarket.TokenReserve memory inTokenReserve,
+        IPendleMarket.TokenReserve memory outTokenReserve,
+        uint256 exactOut,
+        uint256 swapFee
+    ) internal pure returns (uint256 exactIn) {
+        uint256 weightRatio = Math.rdiv(outTokenReserve.weight, inTokenReserve.weight);
+        uint256 diff = outTokenReserve.balance.sub(exactOut);
+        uint256 y = Math.rdiv(outTokenReserve.balance, diff);
+        uint256 foo = Math.rpow(y, weightRatio);
+
+        foo = foo.sub(Math.RONE);
+        exactIn = Math.RONE.sub(swapFee);
+        exactIn = Math.rdiv(Math.rmul(inTokenReserve.balance, foo), exactIn);
     }
 }
