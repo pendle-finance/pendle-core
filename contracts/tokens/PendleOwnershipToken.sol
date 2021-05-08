@@ -23,15 +23,16 @@
 pragma solidity 0.7.6;
 
 import "./PendleBaseToken.sol";
-import "../interfaces/IPendleYieldToken.sol";
+import "../interfaces/IPendleYieldTokenCommon.sol";
 import "../interfaces/IPendleForge.sol";
 
-contract PendleOwnershipToken is PendleBaseToken, IPendleYieldToken {
+contract PendleOwnershipToken is PendleBaseToken, IPendleYieldTokenCommon {
     address public override forge;
     address public override underlyingAsset;
     address public override underlyingYieldToken;
 
     constructor(
+        address _router,
         address _forge,
         address _underlyingAsset,
         address _underlyingYieldToken,
@@ -40,7 +41,7 @@ contract PendleOwnershipToken is PendleBaseToken, IPendleYieldToken {
         uint8 _underlyingYieldTokenDecimals,
         uint256 _start,
         uint256 _expiry
-    ) PendleBaseToken(_name, _symbol, _underlyingYieldTokenDecimals, _start, _expiry) {
+    ) PendleBaseToken(_router, _name, _symbol, _underlyingYieldTokenDecimals, _start, _expiry) {
         require(
             _underlyingAsset != address(0) && _underlyingYieldToken != address(0),
             "ZERO_ADDRESS"

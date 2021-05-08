@@ -27,8 +27,9 @@ pragma experimental ABIEncoderV2;
 import "./IPendleRouter.sol";
 import "./IPendleBaseToken.sol";
 import "./IPendleStructs.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IPendleMarket is IPendleBaseToken, IPendleStructs {
+interface IPendleMarket is IERC20, IPendleStructs {
     struct TokenReserve {
         uint256 weight;
         uint256 balance;

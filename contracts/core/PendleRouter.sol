@@ -44,6 +44,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     IPendleData public override data;
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     address private constant DUMMY_ERC20 = address(0x123);
+    // if someone's allowance for the router is below this amount,
+    // we will approve the router again (to spend from their account)
+    // if we already call .approveRouter for the a token, we shouldn't need to approve again
+    uint256 private constant REASONABLE_ALLOWANCE_AMOUNT = type(uint256).max / 2;
 
     constructor(address _governance, IWETH _weth)
         Permissions(_governance)
@@ -359,7 +363,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         amountXytUsed = transfers[0].amount;
         amountTokenUsed = transfers[1].amount;
         emit Join(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
-
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
     }
 
@@ -387,13 +390,12 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         PendingTransfer[3] memory transfers =
             market.addMarketLiquiditySingle(assetForMarket, _exactInAsset, _minOutLp);
 
-        _settlePendingTransfers(transfers, assetToTransferIn, DUMMY_ERC20, address(market));
-
         if (_forXyt) {
             emit Join(msg.sender, _exactInAsset, 0, address(market));
         } else {
             emit Join(msg.sender, 0, _exactInAsset, address(market));
         }
+        _settlePendingTransfers(transfers, assetToTransferIn, DUMMY_ERC20, address(market));
     }
 
     /**
@@ -522,7 +524,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             market.bootstrap(_initialXytLiquidity, _initialTokenLiquidity);
 
         emit Join(msg.sender, _initialXytLiquidity, _initialTokenLiquidity, address(market));
-
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
     }
 
@@ -718,6 +719,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                 );
                 if (j == 0) break;
             }
+
             _settleTokenTransfer(
                 _tokenIn,
                 PendingTransfer({amount: tokenAmountIn, isOut: false}),
@@ -822,6 +824,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                 weth.deposit{value: msg.value}();
                 weth.transfer(market, transfer.amount);
             } else {
+                // its a transfer in of token. If its an XYT or the LP of the related market,
+                // we will auto approve the router to spend from the user account;
+                if (data.isXyt(token) || token == market) {
+                    _checkApproveRouter(token);
+                }
                 IERC20(token).safeTransferFrom(msg.sender, market, transfer.amount);
             }
         }
@@ -846,5 +853,13 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     function _getMarketToken(address token) internal view returns (address) {
         if (_isETH(token)) return address(weth);
         return token;
+    }
+
+    // Check if an account has approved the router to spend the amount
+    // if not, approve the router to spend the token from the user account
+    function _checkApproveRouter(address token) internal {
+        uint256 allowance = IPendleBaseToken(token).allowance(msg.sender, address(this));
+        if (allowance >= REASONABLE_ALLOWANCE_AMOUNT) return;
+        IPendleBaseToken(token).approveRouter(msg.sender);
     }
 }

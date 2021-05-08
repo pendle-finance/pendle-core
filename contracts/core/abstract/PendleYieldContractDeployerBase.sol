@@ -71,6 +71,7 @@ abstract contract PendleYieldContractDeployerBase is
             type(PendleFutureYieldToken).creationCode,
             abi.encodePacked(yieldToken, _underlyingAsset),
             abi.encode(
+                address(forge.router()),
                 address(forge),
                 _underlyingAsset,
                 yieldToken,
@@ -96,6 +97,7 @@ abstract contract PendleYieldContractDeployerBase is
             type(PendleOwnershipToken).creationCode,
             abi.encodePacked(yieldToken, _underlyingAsset),
             abi.encode(
+                address(forge.router()),
                 address(forge),
                 _underlyingAsset,
                 yieldToken,
