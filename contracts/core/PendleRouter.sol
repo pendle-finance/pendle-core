@@ -49,11 +49,13 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     // if we already call .approveRouter for the a token, we shouldn't need to approve again
     uint256 private constant REASONABLE_ALLOWANCE_AMOUNT = type(uint256).max / 2;
 
-    constructor(address _governance, IWETH _weth)
-        Permissions(_governance)
-        PendleRouterNonReentrant()
-    {
+    constructor(
+        address _governance,
+        IWETH _weth,
+        IPendleData _data
+    ) Permissions(_governance) PendleRouterNonReentrant() {
         weth = _weth;
+        data = _data;
     }
 
     /**
@@ -61,25 +63,12 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
      **/
     receive() external payable {}
 
-    function initialize(IPendleData _data) external {
-        require(msg.sender == initializer, "FORBIDDEN");
-        require(address(_data) != address(0), "ZERO_ADDRESS");
-
-        initializer = address(0);
-        data = _data;
-    }
-
-    /***********
-     *  FORGE  *
-     ***********/
-
     /**
      * @notice forges are identified by forgeIds
      **/
     function addForge(bytes32 _forgeId, address _forgeAddress)
         external
         override
-        initialized
         onlyGovernance
         nonReentrant
     {
@@ -284,7 +273,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     function addMarketFactory(bytes32 _marketFactoryId, address _marketFactoryAddress)
         external
         override
-        initialized
         onlyGovernance
         nonReentrant
     {

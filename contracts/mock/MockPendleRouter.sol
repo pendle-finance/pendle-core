@@ -29,7 +29,8 @@ contract MockPendleRouter is PendleRouter {
     constructor()
         PendleRouter(
             0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa,
-            IWETH(0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB)
+            IWETH(0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB),
+            IPendleData(0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa)
         )
     {}
 }
