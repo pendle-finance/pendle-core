@@ -49,7 +49,7 @@ abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder {
         IERC20(_yieldToken).safeApprove(_router, type(uint256).max);
         IERC20(_yieldToken).safeApprove(_forge, type(uint256).max);
 
-        forge = msg.sender;
+        forge = _forge;
         IERC20(_rewardToken).safeApprove(_rewardManager, type(uint256).max);
     }
 
