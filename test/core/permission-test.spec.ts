@@ -100,7 +100,6 @@ describe("permission-test", async () => {
 
     await expect(
       market.swapExactOut(
-        alice.address,
         consts.RANDOM_ADDRESS,
         amount,
         consts.RANDOM_ADDRESS,

@@ -463,7 +463,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     function swapExactIn(
-        address,
         address inToken,
         uint256 inAmount,
         address outToken,
@@ -503,7 +502,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     function swapExactOut(
-        address,
         address inToken,
         uint256 maxInAmount,
         address outToken,

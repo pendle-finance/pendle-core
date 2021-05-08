@@ -574,7 +574,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
 
         PendingTransfer[2] memory transfers;
         (outSwapAmount, transfers) = market.swapExactIn(
-            msg.sender,
             _tokenIn,
             _inAmount,
             _tokenOut,
@@ -612,7 +611,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
 
         PendingTransfer[2] memory transfers;
         (inSwapAmount, transfers) = market.swapExactOut(
-            msg.sender,
             _tokenIn,
             _maxInAmount,
             _tokenOut,
@@ -672,7 +670,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                 data.checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
 
                 (tokenAmountOut, ) = market.swapExactIn(
-                    msg.sender,
                     swap.tokenIn,
                     swap.swapAmount,
                     swap.tokenOut,
@@ -736,7 +733,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
 
                 data.checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
                 (tokenAmountIn, ) = market.swapExactOut(
-                    msg.sender,
                     swap.tokenIn,
                     swap.limitReturnAmount,
                     swap.tokenOut,

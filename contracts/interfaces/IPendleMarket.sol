@@ -83,7 +83,6 @@ interface IPendleMarket is IERC20, IPendleStructs {
     ) external returns (PendingTransfer[2] memory transfers);
 
     function swapExactIn(
-        address account,
         address inToken,
         uint256 inAmount,
         address outToken,
@@ -91,7 +90,6 @@ interface IPendleMarket is IERC20, IPendleStructs {
     ) external returns (uint256 outAmount, PendingTransfer[2] memory transfers);
 
     function swapExactOut(
-        address account,
         address inToken,
         uint256 maxInAmount,
         address outToken,
