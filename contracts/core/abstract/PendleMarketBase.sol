@@ -33,6 +33,13 @@ import "../../tokens/PendleBaseToken.sol";
 import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
+/**
+@dev HIGH LEVEL PRINCIPAL:
+* So most of the functions in market is only callable by Router, except view/pure functions.
+    If a function is non view/pure and is callable by anyone, it must be explicitly stated so
+* Market will not do any yieldToken/baseToken/LP transfer but instead will fill in the transfer array
+    and router will do them instead. (This is to reduce the number of approval users need to do)
+*/
 abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     using Math for uint256;
     using SafeMath for uint256;
@@ -44,21 +51,35 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     address public immutable override token;
     address public immutable override xyt;
     bool public bootstrapped;
+
     string private constant NAME = "Pendle Market";
     string private constant SYMBOL = "PENDLE-LPT";
     uint256 private constant MINIMUM_LIQUIDITY = 10**3;
     uint8 private constant DECIMALS = 18;
     uint256 private priceLast = Math.RONE;
-    uint256 private lastCurveShiftBlock;
     uint256 private constant LN_PI_PLUSONE = 1562071538258; // this is equal to Math.ln(Math.PI_PLUSONE,Math.RONE)
+    uint256 private constant MULTIPLIER = 10**20;
 
+    // 3 variables for LP interests calc
     uint256 internal paramL;
     uint256 internal lastNYield;
     mapping(address => uint256) internal lastParamL;
 
+    // paramK used for mintProtocolFee
     uint256 internal lastParamK;
 
-    uint256 private constant MULTIPLIER = 10**20;
+    // the last block that we do curveShift
+    uint256 private lastCurveShiftBlock;
+
+    /*
+    * The reserveData will consist of 3 variables: xytBalance, tokenBalance & xytWeight
+    To save gas, we will pack these 3 variables into a single uint256 variable as follows:
+        Bit 148 -> 255: xytBalance
+        Bit 40 -> 147: tokenBalance
+        Bit 0 -> 39: xytWeight
+        tokenWeight = Math.RONE - xytWeight
+    Refer to writeReserveData and readReserveData for more details
+    */
     uint256 private reserveData;
 
     uint256 private constant MASK_148_TO_255 = type(uint256).max ^ ((1 << 148) - 1);
@@ -66,8 +87,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     uint256 private constant MASK_0_TO_39 = ((1 << 40) - 1);
     uint256 private constant MAX_TOKEN_RESERVE_BALANCE = (1 << 108) - 1;
 
-    // the lockStartTime is set at the bootstrap time of the market, and will not
-    // be changed for the entire market duration
+    /*
+    * the lockStartTime is set at the bootstrap time of the market, and will not be changed for the entire market duration
+    Once the market has been locked, only removeMarketLiquidityDual is allowed
+    * Why lock the market? Because when the time is very close to the end of the market, the ratio of weights are either
+    extremely big or small, which leads to high precision error
+    */
     uint256 public lockStartTime;
 
     /* these variables are used often, so we get them once in the constructor
@@ -117,6 +142,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         require(!paused, "MARKET_PAUSED");
     }
 
+    /// Refer to the docs for reserveData
     function readReserveData()
         internal
         view
@@ -133,6 +159,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         tokenWeight = Math.RONE - xytWeight;
     }
 
+    /// parse an asset address to tokenReserve
+    /// _asset will only be either xyt or baseToken
     function parseTokenReserveData(address _asset)
         internal
         view
@@ -147,10 +175,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         }
     }
 
+    /// pass in a tokenReserve & the type of token (through _asset), update the reserveData
     function updateReserveData(TokenReserve memory tokenReserve, address _asset) internal {
         require(tokenReserve.balance <= MAX_TOKEN_RESERVE_BALANCE, "EXCEED_TOKEN_BALANCE_LIMIT");
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
             readReserveData();
+        // Basically just update the weight & bal of the corresponding token & write the reserveData again
         if (_asset == xyt) {
             (xytWeight, xytBalance) = (tokenReserve.weight, tokenReserve.balance);
         } else {
@@ -160,6 +190,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         writeReserveData(xytBalance, tokenBalance, xytWeight);
     }
 
+    /// Refer to the docs for reserveData
     function writeReserveData(
         uint256 xytBalance,
         uint256 tokenBalance,
@@ -191,13 +222,21 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         require(msg.sender == address(router), "ONLY_ROUTER");
         checkNotPaused();
         require(!bootstrapped, "ALREADY_BOOTSTRAPPED");
-        _initializeLock(); // market's lock params should be initialized at bootstrap time
 
+        // market's lock params should be initialized at bootstrap time
+        _initializeLock();
+
+        // at the start of the market, xytWeight = tokenWeight = Math.RONE / 2
+        // As such, we will write it into the reserveData
         writeReserveData(initialXytLiquidity, initialTokenLiquidity, Math.RONE / 2);
+
+        // Also need to updateLastParamK
         _updateLastParamK();
 
         emit Sync(initialXytLiquidity, Math.RONE / 2, initialTokenLiquidity);
 
+        _afterBootstrap();
+        // Taking inspiration from Uniswap, we will keep MINIMUM_LIQUIDITY in the market to make sure the market is always non-empty
         uint256 liquidity =
             Math.sqrt(initialXytLiquidity.mul(initialTokenLiquidity)).sub(MINIMUM_LIQUIDITY);
         _mintLp(MINIMUM_LIQUIDITY.add(liquidity));
@@ -211,7 +250,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         lastCurveShiftBlock = block.number;
         bootstrapped = true;
-        _afterBootstrap();
     }
 
     /**
@@ -223,6 +261,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     * @param _tokenMinAmount min amount of tokens user wants to be able to contribute
     * @dev no curveShift to save gas because this function
               doesn't depend on weights of tokens
+    * Conditions:
+        * isAddRemoveSwapClaimAllowed(false) is true
     */
     function addMarketLiquidityDual(
         uint256 _desiredXytAmount,
@@ -670,6 +710,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         tokenWeightUpdated = tokenWeight.add(theta);
     }
 
+    /*
+     * To add/remove/swap/claim, the market must have been
+     * bootstrapped
+     * only Router can call it
+     * if the function is not removeMarketLiquidityDual, then must check the market hasn't been locked yet
+     */
     function checkAddRemoveSwapClaimAllowed(bool skipOpenCheck) internal view {
         checkNotPaused();
         require(bootstrapped, "NOT_BOOTSTRAPPED");
@@ -717,7 +763,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
         uint256 currentNYield = underlyingYieldToken.balanceOf(address(this));
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(currentNYield);
-        uint256 secondTerm = paramR.mul(MULTIPLIER).div(totalSupply());
+        uint256 secondTerm;
+        if (totalSupply() != 0) secondTerm = paramR.mul(MULTIPLIER).div(totalSupply());
 
         // update new states
         paramL = firstTerm.add(secondTerm);
