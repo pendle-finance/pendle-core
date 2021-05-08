@@ -669,7 +669,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                 }
 
                 IPendleMarket market = IPendleMarket(swap.market);
-                _checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
+                data.checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
 
                 (tokenAmountOut, ) = market.swapExactIn(
                     msg.sender,
@@ -734,7 +734,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
 
                 IPendleMarket market = IPendleMarket(swap.market);
 
-                _checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
+                data.checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
                 (tokenAmountIn, ) = market.swapExactOut(
                     msg.sender,
                     swap.tokenIn,
@@ -843,19 +843,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                 IERC20(token).safeTransferFrom(msg.sender, market, transfer.amount);
             }
         }
-    }
-
-    /// Check if the market's underlying tokens are token1 & token2
-    function _checkMarketTokens(
-        address token1,
-        address token2,
-        IPendleMarket market
-    ) internal view {
-        require(data.isMarket(address(market)), "INVALID_MARKET");
-        require(
-            data.getMarketFromKey(token1, token2, market.factoryId()) == address(market),
-            "INVALID_MARKET"
-        );
     }
 
     /**
