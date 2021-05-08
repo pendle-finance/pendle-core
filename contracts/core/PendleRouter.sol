@@ -555,7 +555,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             _minOutTotalAmount
         );
 
-        if (data.isXyt(_tokenIn)) {}
         _settlePendingTransfers(transfers, originalTokenIn, originalTokenOut, address(market));
 
         emit SwapEvent(
@@ -596,7 +595,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             _outTotalAmount
         );
 
-        if (data.isXyt(_tokenIn)) {}
         _settlePendingTransfers(transfers, originalTokenIn, originalTokenOut, address(market));
 
         emit SwapEvent(
