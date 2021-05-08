@@ -137,7 +137,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     // INVARIANT: All write functions, except for ERC20's approve(), increaseAllowance(), decreaseAllowance()
-    // must go through this check. This means that minting & burning of LP tokens is paused too.
+    // must go through this check. This means that minting/burning/transferring of LP tokens is paused too.
     function checkNotPaused() internal view {
         (bool paused, ) = pausingManager.checkMarketStatus(factoryId, address(this));
         require(!paused, "MARKET_PAUSED");
@@ -230,7 +230,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         // at the start of the market, xytWeight = tokenWeight = Math.RONE / 2
         // As such, we will write it into the reserveData
         writeReserveData(initialXytLiquidity, initialTokenLiquidity, Math.RONE / 2);
-        _updateLastParamK(); // update paramK since it has changed not due to swap
+        _updateLastParamK(); // update paramK since this is the first time it's set
 
         emit Sync(initialXytLiquidity, Math.RONE / 2, initialTokenLiquidity);
 
