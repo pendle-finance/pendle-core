@@ -82,14 +82,13 @@ export function runTest(isAaveV1: boolean) {
           user.address,
           consts.HIGH_GAS_OVERRIDE
         );
-        await router
-          .connect(user)
-          .redeemDueInterests(
-            testEnv.FORGE_ID,
-            tokenUSDT.address,
-            testEnv.T0.add(consts.SIX_MONTH),
-            consts.HIGH_GAS_OVERRIDE
-          );
+        await router.redeemDueInterests(
+          testEnv.FORGE_ID,
+          tokenUSDT.address,
+          testEnv.T0.add(consts.SIX_MONTH),
+          user.address,
+          consts.HIGH_GAS_OVERRIDE
+        );
       }
     }
 

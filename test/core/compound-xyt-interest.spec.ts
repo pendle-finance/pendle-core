@@ -84,14 +84,13 @@ describe("compound-xyt-interest", async () => {
   });
 
   async function redeemDueInterests(user: Wallet) {
-    await router
-      .connect(user)
-      .redeemDueInterests(
-        consts.FORGE_COMPOUND,
-        tokenUSDT.address,
-        consts.T0_C.add(consts.SIX_MONTH),
-        consts.HIGH_GAS_OVERRIDE
-      );
+    await router.redeemDueInterests(
+      consts.FORGE_COMPOUND,
+      tokenUSDT.address,
+      consts.T0_C.add(consts.SIX_MONTH),
+      user.address,
+      consts.HIGH_GAS_OVERRIDE
+    );
   }
 
   async function redeemUnderlying(user: Wallet, amount: BN) {

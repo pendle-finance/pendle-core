@@ -713,7 +713,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     function _updateParamL() internal {
         if (!checkNeedUpdateParamL()) return;
 
-        router.redeemDueInterests(forgeId, underlyingAsset, expiry);
+        router.redeemDueInterests(forgeId, underlyingAsset, expiry, address(this));
 
         uint256 currentNYield = underlyingYieldToken.balanceOf(address(this));
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(currentNYield);

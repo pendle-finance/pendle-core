@@ -168,14 +168,13 @@ describe("aaveV1-liquidityMining", async () => {
 
     await fixture.core.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
     for (let user of [bob, charlie, dave]) {
-      await router
-        .connect(user)
-        .redeemDueInterests(
-          consts.FORGE_AAVE,
-          tokens.USDT.address,
-          EXPIRY,
-          consts.HIGH_GAS_OVERRIDE
-        );
+      await router.redeemDueInterests(
+        consts.FORGE_AAVE,
+        tokens.USDT.address,
+        EXPIRY,
+        user.address,
+        consts.HIGH_GAS_OVERRIDE
+      );
       await emptyToken(aUSDT, user);
       await emptyToken(xyt, user);
     }
@@ -354,9 +353,12 @@ describe("aaveV1-liquidityMining", async () => {
     console.log(`\tbob claimed interests`);
     let actualGainBob = (await aUSDT.balanceOf(bob.address)).sub(preBalanceBob);
 
-    await router
-      .connect(charlie)
-      .redeemDueInterests(consts.FORGE_AAVE, tokens.USDT.address, EXPIRY);
+    await router.redeemDueInterests(
+      consts.FORGE_AAVE,
+      tokens.USDT.address,
+      EXPIRY,
+      charlie.address
+    );
     const actualGainCharlie = (await aUSDT.balanceOf(charlie.address)).sub(
       preBalanceCharlie
     );
