@@ -301,11 +301,7 @@ interface IPendleData {
 
     function curveShiftBlockDelta() external view returns (uint256);
 
-    /**
-     * @notice Gets all the markets.
-     * @return Returns an array of all markets.
-     **/
-    function getAllMarkets() external view returns (address[] calldata);
+    function getMarketByIndex(uint256 index) external view returns (address market);
 
     /**
      * @notice Gets a market given a future yield token and an ERC20 token.
