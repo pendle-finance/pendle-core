@@ -57,7 +57,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     string private constant SYMBOL = "PENDLE-LPT";
     uint256 private constant MINIMUM_LIQUIDITY = 10**3;
     uint8 private constant DECIMALS = 18;
-    uint256 private priceLast = Math.RONE;
     uint256 private constant LN_PI_PLUSONE = 1562071538258; // this is equal to Math.ln(Math.PI_PLUSONE,Math.RONE)
     uint256 private constant MULTIPLIER = 10**20;
 
@@ -82,6 +81,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     Refer to writeReserveData and readReserveData for more details
     */
     uint256 private reserveData;
+    uint256 private lastRelativePrice = Math.RONE;
 
     uint256 private constant MASK_148_TO_255 = type(uint256).max ^ ((1 << 148) - 1);
     uint256 private constant MASK_40_TO_147 = ((1 << 148) - 1) ^ ((1 << 40) - 1);
@@ -690,10 +690,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
      */
     function _updateWeight() internal {
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
-        (uint256 xytWeightUpdated, , uint256 priceNow) = _updateWeightDry();
+        (uint256 xytWeightUpdated, , uint256 currentRelativePrice) = _updateWeightDry();
         writeReserveData(xytBalance, tokenBalance, xytWeightUpdated); // repack data
 
-        priceLast = priceNow;
+        lastRelativePrice = currentRelativePrice;
         emit Shift(xytWeight, xytWeightUpdated);
     }
 
@@ -704,7 +704,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         returns (
             uint256 xytWeightUpdated,
             uint256 tokenWeightUpdated,
-            uint256 priceNow
+            uint256 currentRelativePrice
         )
     {
         // get current timestamp currentTime
@@ -726,12 +726,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 timeToMature = Math.rdiv(timeLeft * Math.RONE, duration * Math.RONE);
 
         // get price for now = ln(3.14 * t + 1) / ln(4.14)
-        priceNow = Math.rdiv(
+        currentRelativePrice = Math.rdiv(
             Math.ln(Math.rmul(Math.PI, timeToMature).add(Math.RONE), Math.RONE),
             LN_PI_PLUSONE
         );
 
-        uint256 r = Math.rdiv(priceNow, priceLast);
+        uint256 r = Math.rdiv(currentRelativePrice, lastRelativePrice);
         assert(Math.RONE >= r);
 
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
