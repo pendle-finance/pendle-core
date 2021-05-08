@@ -33,5 +33,5 @@ contract PendleAaveYieldTokenHolder is PendleYieldTokenHolderBase {
         address _rewardManager
     ) PendleYieldTokenHolderBase(_forge, _router, _yieldToken, _rewardToken, _rewardManager) {}
 
-    function claimRewards() external override {}
+    function redeemRewards() external override {}
 }

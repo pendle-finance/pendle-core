@@ -256,7 +256,7 @@ describe("compound-liquidityMining", async () => {
     let allocationRateDiv =
       _allocationRateDiv !== undefined ? _allocationRateDiv : 1;
     for (let userId = 0; userId < numUser; userId++) {
-      await liq.claimRewards(EXPIRY, wallets[userId].address);
+      await liq.redeemRewards(EXPIRY, wallets[userId].address);
       // console.log(expectedRewards[userId][0].toString(), (await pdl.balanceOf(wallets[userId].address)).toString());
       approxBigNumber(
         await pdl.balanceOf(wallets[userId].address),
@@ -314,12 +314,12 @@ describe("compound-liquidityMining", async () => {
     await liq
       .connect(bob)
       .withdraw(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
-    await liq.claimRewards(EXPIRY, bob.address);
+    await liq.redeemRewards(EXPIRY, bob.address);
     await setTimeNextBlock(
       provider,
       params.START_TIME.add(params.EPOCH_DURATION).add(params.EPOCH_DURATION)
     );
-    await liq.claimRewards(EXPIRY, bob.address);
+    await liq.redeemRewards(EXPIRY, bob.address);
   });
 
   it("can stake and withdraw", async () => {
@@ -393,11 +393,11 @@ describe("compound-liquidityMining", async () => {
     // console.log(`abi = ${liq.abi}`);
     // console.log(liq);
 
-    const { interests } = await liq.callStatic.claimLpInterests(
+    const { interests } = await liq.callStatic.redeemLpInterests(
       EXPIRY,
       alice.address
     );
-    const { rewards } = await liq.callStatic.claimRewards(
+    const { rewards } = await liq.callStatic.redeemRewards(
       EXPIRY,
       alice.address
     );

@@ -128,7 +128,7 @@ interface IPendleRouter is IPendleStructs {
         bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry,
-        address account
+        address user
     ) external returns (uint256 interests);
 
     function redeemUnderlying(
@@ -269,7 +269,5 @@ interface IPendleRouter is IPendleStructs {
         uint256 maxInTotalAmount
     ) external payable returns (uint256 inTotalAmount);
 
-    function claimLpInterests(address market, address account)
-        external
-        returns (uint256 interests);
+    function redeemLpInterests(address market, address user) external returns (uint256 interests);
 }

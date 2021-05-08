@@ -40,7 +40,7 @@ import "./abstract/PendleLiquidityMiningBase.sol";
 
 /**
     @dev things that must hold in this contract:
-     - If an account's stake information is updated (hence lastTimeUserStakeUpdated is changed),
+     - If an user's stake information is updated (hence lastTimeUserStakeUpdated is changed),
         then his pending rewards are calculated as well
         (and saved in availableRewardsForEpoch[user][epochId])
  */
@@ -86,23 +86,23 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
     * Very similar to the function in PendleAaveMarket. Any major differences are likely to be bugs
         Please refer to it for more details
     */
-    function _getInterestValuePerLP(uint256 expiry, address account)
+    function _getInterestValuePerLP(uint256 expiry, address user)
         internal
         override
         returns (uint256 interestValuePerLP)
     {
         ExpiryData storage exd = expiryData[expiry];
-        if (userLastNormalizedIncome[expiry][account] == 0) {
+        if (userLastNormalizedIncome[expiry][user] == 0) {
             interestValuePerLP = 0;
         } else {
             interestValuePerLP = exd.paramL.subMax0(
-                exd.lastParamL[account].mul(globalLastNormalizedIncome[expiry]).div(
-                    userLastNormalizedIncome[expiry][account]
+                exd.lastParamL[user].mul(globalLastNormalizedIncome[expiry]).div(
+                    userLastNormalizedIncome[expiry][user]
                 )
             );
         }
-        userLastNormalizedIncome[expiry][account] = globalLastNormalizedIncome[expiry];
-        exd.lastParamL[account] = exd.paramL;
+        userLastNormalizedIncome[expiry][user] = globalLastNormalizedIncome[expiry];
+        exd.lastParamL[user] = exd.paramL;
     }
 
     /**

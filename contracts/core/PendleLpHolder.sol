@@ -62,8 +62,8 @@ contract PendleLpHolder is IPendleLpHolder {
         IERC20(underlyingYieldToken).safeTransfer(user, amount);
     }
 
-    function claimLpInterests() external override {
+    function redeemLpInterests() external override {
         require(msg.sender == pendleLiquidityMining, "NOT_AUTHORIZED");
-        IPendleRouter(router).claimLpInterests(pendleMarket, address(this));
+        IPendleRouter(router).redeemLpInterests(pendleMarket, address(this));
     }
 }
