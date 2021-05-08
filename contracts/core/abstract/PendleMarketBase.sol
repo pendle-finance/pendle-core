@@ -854,7 +854,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     /**
-     * @notice used to _initialize the lock of the market. Must only be called in bootstrap
+     * @notice _initialize the lock of the market. Must only be called in bootstrap
      */
     function _initializeLock() internal {
         uint256 duration = expiry - xytStartTime; // market expiry = xyt expiry
@@ -917,10 +917,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         virtual
         returns (uint256 interestValuePerLP);
 
+    /// @notice Get params to update paramL. Must only be called by updateParamL
     function _getFirstTermAndParamR(uint256 currentNYield)
         internal
         virtual
         returns (uint256 firstTerm, uint256 paramR);
 
+    /// @notice Get the increase rate of normalisedIncome / exchangeRate
     function _getIncomeIndexIncreaseRate() internal virtual returns (uint256 increaseRate);
 }

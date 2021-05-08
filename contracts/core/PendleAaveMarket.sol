@@ -57,6 +57,7 @@ contract PendleAaveMarket is PendleMarketBase {
         globalLastNormalizedIncome = _getReserveNormalizedIncome();
     }
 
+    /// @inheritdoc PendleMarketBase
     function _getInterestValuePerLP(address account)
         internal
         override
@@ -67,6 +68,20 @@ contract PendleAaveMarket is PendleMarketBase {
         if (userLastNormalizedIncome[account] == 0) {
             interestValuePerLP = 0;
         } else {
+            /*
+            this part can be thought of as follows:
+                * the last time the user redeems interest, the value of a LP is lastParamL[account]
+                    and he has redeemed all the available interest out
+                * the market has 2 sources of income: compound interest of the yieldTokens in the market right now
+                AND external income (XYT interest, people transferring wrongly...)
+                * now the value of param L is paramL. So there has been an increase of paramL - lastParamL[account]
+                    in value of a single LP. But in Aave, even if there are no external income, the value of a paramL
+                    can grow on its own
+                * so since the last time the user has fully redeemed all the available interest, he shouldn't receive
+                the compound interest sof the asset in the pool at the moment he last withdrew
+                * so the value of 1 LP for him will be paramL - compound(lastParamL[account])
+                    = paramL -  lastParamL[account] * globalLastNormalizedIncome /userLastNormalizedIncome[account]
+            */
             interestValuePerLP = paramL.subMax0(
                 lastParamL[account].mul(globalLastNormalizedIncome).div(
                     userLastNormalizedIncome[account]
@@ -78,23 +93,24 @@ contract PendleAaveMarket is PendleMarketBase {
         lastParamL[account] = paramL;
     }
 
-    /**
-    @dev this can only be called by _updateParamL
-    */
+    /// @inheritdoc PendleMarketBase
     function _getFirstTermAndParamR(uint256 currentNYield)
         internal
         override
         returns (uint256 firstTerm, uint256 paramR)
     {
         uint256 currentNormalizedIncome = _getReserveNormalizedIncome();
+        // for Aave, the paramL can grow on its own (compound effect)
         firstTerm = paramL.mul(currentNormalizedIncome).div(globalLastNormalizedIncome);
 
         uint256 ix = lastNYield.mul(currentNormalizedIncome).div(globalLastNormalizedIncome);
+        // paramR's meaning has been explained in the updateParamL function
         paramR = (currentNYield >= ix ? currentNYield - ix : 0);
 
         globalLastNormalizedIncome = currentNormalizedIncome;
     }
 
+    /// @inheritdoc PendleMarketBase
     function _getIncomeIndexIncreaseRate() internal override returns (uint256 increaseRate) {
         return _getReserveNormalizedIncome().rdiv(globalLastNormalizedIncome) - Math.RONE;
     }

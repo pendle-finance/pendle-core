@@ -57,6 +57,13 @@ contract PendleCompoundMarket is PendleMarketBase {
         globalLastExchangeRate = _getExchangeRate();
     }
 
+    /// @inheritdoc PendleMarketBase
+    /*
+     * Please refer to AaveMarket's _getInterestValuePerLP to better understand this function better
+     * The key difference between Aave & Compound is in Compound there is no compound effect for locked in asset
+        I.e: Only when the user use the cToken to redeem the underlyingAsset that he will enjoy the
+        compound effect
+     */
     function _getInterestValuePerLP(address account)
         internal
         override
@@ -70,6 +77,8 @@ contract PendleCompoundMarket is PendleMarketBase {
         lastParamL[account] = paramL;
     }
 
+    /// @inheritdoc PendleMarketBase
+    // Please refer to AaveMarket's _getFirstTermAndParamR to better understand this function better
     function _getFirstTermAndParamR(uint256 currentNYield)
         internal
         override
@@ -80,6 +89,7 @@ contract PendleCompoundMarket is PendleMarketBase {
         globalLastExchangeRate = _getExchangeRate();
     }
 
+    /// @inheritdoc PendleMarketBase
     function _getIncomeIndexIncreaseRate() internal override returns (uint256 increaseRate) {
         return _getExchangeRate().rdiv(globalLastExchangeRate) - Math.RONE;
     }
