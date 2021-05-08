@@ -73,7 +73,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     /**
      * @dev Accepts ETH via fallback from the WETH contract.
      **/
-    receive() external payable {}
+    receive() external payable {
+        assert(msg.sender == address(weth));
+    }
 
     /**
      * @notice add forge by _forgeId & _forgeAddress
