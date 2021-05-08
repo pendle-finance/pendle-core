@@ -328,7 +328,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 _minOutXyt,
         uint256 _minOutToken
     ) external override returns (PendingTransfer[3] memory transfers) {
-        checkAddRemoveSwapClaimAllowed(false);
+        checkAddRemoveSwapClaimAllowed(true);
         _updateParamL();
 
         // mint protocol fees after updating paramL, because the new liquidity is only minted to
