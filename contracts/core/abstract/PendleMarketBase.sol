@@ -663,7 +663,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     => it doesn't matter if the reserveData gets updated immediately or not
      */
     function _updateWeight() internal {
-        console.log("update weight!!");
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
         (uint256 xytWeightUpdated, , uint256 priceNow) = _updateWeightDry();
         writeReserveData(xytBalance, tokenBalance, xytWeightUpdated); // repack data

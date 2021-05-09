@@ -333,7 +333,8 @@ export async function ProtocolFeeTest(
       xyt.address,
       inAmount,
       BN.from(0),
-      consts.MARKET_FACTORY_AAVE
+      consts.MARKET_FACTORY_AAVE,
+      consts.HIGH_GAS_OVERRIDE
     );
   }
 
@@ -343,7 +344,8 @@ export async function ProtocolFeeTest(
       testToken.address,
       inAmount,
       BN.from(0),
-      consts.MARKET_FACTORY_AAVE
+      consts.MARKET_FACTORY_AAVE,
+      consts.HIGH_GAS_OVERRIDE
     );
   }
 
@@ -476,96 +478,51 @@ export async function ProtocolFeeTest(
 
   /*-------------------------------------------------------------*/
 
-  const amount = amountToWei(BN.from(1000), 6);
+  const amount = BN.from(10000000000);
+  const constSwapAmount = BN.from(1500500 * 15);
+  let treasuryEarned = BN.from(0);
+
+  async function checkTreasuryLP(expectedLP: BN) {
+    let currentTreasuryLP = BN.from(await market.balanceOf(treasury));
+    approxBigNumber(currentTreasuryLP, expectedLP, consts.TEST_TOKEN_DELTA.toNumber() * 2);
+  }
+
   await bootstrapSampleMarket(amount);
   await testToken.approve(market.address, consts.INF);
 
-  // await addLiquidityDual(BN.from(1000000000));
-
-  for(let i = 0; i < 51; ++i) {
-    (await testToken.connect(alice).transfer(bob.address, BN.from(1)));
-  }
-
-  await setTimeNextBlock(provider, consts.T0.add(3600));
-  await swapXytToToken(BN.from(100000000));
-  await addLiquidityDual(BN.from(1));
-  await swapTokenToXyt(BN.from(100000000));
-  await addLiquidityDual(BN.from(100000000));
-  await testConstantK(BN.from(66500));
-  console.log((await market.balanceOf(treasury)).toString(), (await market.totalSupply()).toString());
-
-  await printMarketData();
+  setTimeNextBlock(provider, consts.T0.add(3600));
+  await xyt.connect(bob).transfer(alice.address, BN.from(10000000000), consts.HIGH_GAS_OVERRIDE);
+  await testToken.connect(bob).transfer(alice.address, BN.from(10000000000), consts.HIGH_GAS_OVERRIDE);
+  await swapTokenToXyt(constSwapAmount);
+  await swapXytToToken(constSwapAmount);
+  await addLiquidityDual(constSwapAmount);
+  await checkTreasuryLP(BN.from(7860));
 
 
-  await swapXytToToken(BN.from(100000000));
-  await addLiquidityDual(BN.from(1));
-  await swapTokenToXyt(BN.from(100000000));
-  await addLiquidityDual(BN.from(100000000));
-  await testConstantK(BN.from(132764));
-  console.log((await market.balanceOf(treasury)).toString(), (await market.totalSupply()).toString());
-  
-  
-  await swapXytToToken(BN.from(100000000));
-  await addLiquidityDual(BN.from(1));
-  await swapTokenToXyt(BN.from(100000000));
-  await addLiquidityDual(BN.from(100000000));
-  await testConstantK(BN.from(198826));
-  console.log((await market.balanceOf(treasury)).toString(), (await market.totalSupply()).toString());
-  
-  await printMarketData();
+  setTimeNextBlock(provider, consts.T0.add(3600 * 10));
+  await swapTokenToXyt(constSwapAmount.mul(2));
+  await swapXytToToken(constSwapAmount.mul(3));
+  await addLiquidityDual(constSwapAmount.mul(4));
+  await checkTreasuryLP(BN.from(31431));
 
 
-  await swapXytToToken(BN.from(100000000));
-  await addLiquidityDual(BN.from(1));
-  await swapTokenToXyt(BN.from(100000000));
-  await addLiquidityDual(BN.from(100000000));
-  await testConstantK(BN.from(264716));
-  console.log((await market.balanceOf(treasury)).toString(), (await market.totalSupply()).toString());
-  
+  setTimeNextBlock(provider, consts.T0.add(3600 * 100));
+  await swapTokenToXyt(constSwapAmount.mul(5));
+  await swapXytToToken(constSwapAmount.mul(6));
+  await addLiquidityDual(constSwapAmount.mul(7));
+  await checkTreasuryLP(BN.from(94281));
 
 
-  await addLiquidityDual(BN.from(100000000));
-  await addLiquidityDual(BN.from(100000000));
-  await addLiquidityDual(BN.from(100000000));
-  await addLiquidityDual(BN.from(100000000));
-  await addLiquidityDual(BN.from(100000000));
-  console.log((await market.balanceOf(treasury)).toString());
-  await testConstantK(BN.from(264716));
-
-  return;
-
-  await runTestTokenToXyt(
-    BN.from(consts.T0.add(3600)), 
-    BN.from(220000), 
-    BN.from(219233)
-  );
+  setTimeNextBlock(provider, consts.T0.add(3600 * 300));
+  await swapTokenToXyt(constSwapAmount.mul(8));
+  await swapXytToToken(constSwapAmount.mul(9));
+  await addLiquidityDual(constSwapAmount.mul(10));
+  await checkTreasuryLP(BN.from(204450));
 
 
-  await runTestXytToToken(
-    BN.from(consts.T0.add(36000)), 
-    BN.from(25000), 
-    BN.from(24886)
-  );
-
-  await runSwap(consts.T0.add(36000 + 3600), 10);
-
-  await runTestXytToToken(
-    BN.from(consts.T0.add(360000)), 
-    BN.from(725000), 
-    BN.from(648208)
-  );
-
-  await runTestTokenToXyt(
-    BN.from(consts.T0.add(1692000)), 
-    BN.from(400000), 
-    BN.from(467078)
-  );
-
-  await runSwap(consts.T0.add(1692000+3600+3600), 10);
-
-
-  // console.log((await xyt.balanceOf[alice.address]).toString());
-  // (await xyt.connect(router.address).mint(bob.address, BN.from(1000000), consts.HIGH_GAS_OVERRIDE));
-  // console.log((await xyt.balanceOf[bob.address]).toString());
-
+  setTimeNextBlock(provider, consts.T0.add(3600 * 500));
+  await swapTokenToXyt(constSwapAmount.mul(11));
+  await swapXytToToken(constSwapAmount.mul(12));
+  await addLiquidityDual(constSwapAmount.mul(13));
+  await checkTreasuryLP(BN.from(361534));
 }

@@ -51,7 +51,6 @@ describe("aaveV1-market", async () => {
     ethMarket = fixture.ethMarket;
     tokenUSDT = tokens.USDT;
     WETH = new Contract(tokens.WETH.address, ERC20.abi, alice);
-    await data.setCurveShiftBlockDelta(BN.from(50));
     await data.setMarketFees(toFixedPoint("0.0035"), toFixedPoint("0.0"), toFixedPoint("0.2"), consts.HIGH_GAS_OVERRIDE);
     snapshotId = await evm_snapshot();
   });
@@ -94,16 +93,17 @@ describe("aaveV1-market", async () => {
   }
 
   async function addLiquidityDual(amount: BN) {
+    return;
     await router.addMarketLiquidityDual(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
       testToken.address,
       amount, 
       amount,
-      BN.from(0),
-      BN.from(0),
+      BN.from(1),
+      BN.from(1),
       consts.HIGH_GAS_OVERRIDE
-    )
+    );
   }
 
   /*
