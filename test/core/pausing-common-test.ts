@@ -11,6 +11,7 @@ import {
   setTimeNextBlock,
   Token,
   tokens,
+  toFixedPoint
 } from "../helpers";
 import { marketFixture, MarketFixture } from "./fixtures";
 
@@ -100,7 +101,23 @@ export function runTest(isAaveV1: boolean) {
       await expect(
         ot.transfer(charlie.address, 1, consts.HIGH_GAS_OVERRIDE)
       ).to.be.revertedWith(errMsg.YIELD_CONTRACT_PAUSED);
-      //TODO: test all other forge functions
+      //TODO: the functions with expired yield contract are remained untested
+      await expect(
+        router.connect(bob).redeemDueInterests(
+          testEnv.FORGE_ID,
+          tokenUSDT.address,
+          testEnv.EXPIRY,
+          consts.HIGH_GAS_OVERRIDE
+        )
+      ).to.be.revertedWith(errMsg.YIELD_CONTRACT_PAUSED);
+
+      await expect(
+        aaveForge.withdrawForgeFee(
+          tokenUSDT.address,
+          testEnv.EXPIRY,
+          consts.HIGH_GAS_OVERRIDE
+        )
+      ).to.be.revertedWith(errMsg.YIELD_CONTRACT_PAUSED);
     }
 
     async function checkYieldContractUnpaused() {
@@ -113,11 +130,30 @@ export function runTest(isAaveV1: boolean) {
       await router.redeemUnderlying(...forgeArgs, 1, consts.HIGH_GAS_OVERRIDE);
       await xyt.transfer(charlie.address, 1, consts.HIGH_GAS_OVERRIDE);
       await ot.transfer(charlie.address, 1, consts.HIGH_GAS_OVERRIDE);
-      //TODO: test all other forge functions
       //TODO: refactor checkYieldContractPaused and checkYieldContractUnpaused
+      await router.connect(bob).redeemDueInterests(
+        testEnv.FORGE_ID,
+        tokenUSDT.address,
+        testEnv.EXPIRY,
+        consts.HIGH_GAS_OVERRIDE
+      );
+
+      await aaveForge.withdrawForgeFee(
+        tokenUSDT.address,
+        testEnv.EXPIRY,
+        consts.HIGH_GAS_OVERRIDE
+      );
     }
 
     async function checkMarketPaused() {
+      await expect(
+        router.bootstrapMarket(
+          ...marketArgs,
+          1000,
+          1000,
+          consts.HIGH_GAS_OVERRIDE
+        )
+      ).to.be.revertedWith(errMsg.MARKET_PAUSED);
       await expect(
         router.addMarketLiquidityDual(
           ...marketArgs,
@@ -147,7 +183,23 @@ export function runTest(isAaveV1: boolean) {
           consts.HIGH_GAS_OVERRIDE
         )
       ).to.be.revertedWith(errMsg.MARKET_PAUSED);
-      //TODO: test all other market functions
+      await expect(
+        router.swapExactOut(
+          xyt.address,
+          baseToken.address,
+          1000,
+          1000000,
+          consts.MARKET_FACTORY_AAVE,
+          consts.HIGH_GAS_OVERRIDE
+        )
+      ).to.be.revertedWith(errMsg.MARKET_PAUSED);
+      await expect(
+        router.claimLpInterests(
+          market.address,
+          bob.address,
+          consts.HIGH_GAS_OVERRIDE
+        )
+      ).to.be.revertedWith(errMsg.MARKET_PAUSED);
     }
 
     async function checkMarketUnpaused() {
@@ -174,7 +226,20 @@ export function runTest(isAaveV1: boolean) {
         consts.MARKET_FACTORY_AAVE,
         consts.HIGH_GAS_OVERRIDE
       );
-      //TODO: test all other market functions
+      await router.swapExactOut(
+        xyt.address,
+        baseToken.address,
+        1000,
+        1000000,
+        consts.MARKET_FACTORY_AAVE,
+        consts.HIGH_GAS_OVERRIDE
+      );
+
+      await router.claimLpInterests(
+        market.address,
+        bob.address,
+        consts.HIGH_GAS_OVERRIDE
+      );
     }
 
     async function checkYieldContractLocked() {
@@ -293,14 +358,21 @@ export function runTest(isAaveV1: boolean) {
     it("Should be able to set pausing admins", async () => {
       await pausingManager.setPausingAdmin(bob.address, true);
       expect(await pausingManager.isPausingAdmin(bob.address)).to.be.eq(true);
-      //TODO: check events
+      await expect(
+        pausingManager.setPausingAdmin(bob.address, true)
+      ).to.be.revertedWith(errMsg.REDUNDANT_SET);
+      await expect(
+        pausingManager.setPausingAdmin(bob.address, false)
+      ).to.emit(pausingManager, "RemovePausingAdmin").withArgs(bob.address);
+      await expect(
+        pausingManager.setPausingAdmin(bob.address, true)
+      ).to.emit(pausingManager, "AddPausingAdmin").withArgs(bob.address);
     });
     it("Should be able to unset pausing admins", async () => {
       await pausingManager.setPausingAdmin(bob.address, true);
       expect(await pausingManager.isPausingAdmin(bob.address)).to.be.eq(true);
       await pausingManager.setPausingAdmin(bob.address, false);
       expect(await pausingManager.isPausingAdmin(bob.address)).to.be.eq(false);
-      //TODO: check events
     });
     describe("Forge pausing", async () => {
       beforeEach(async () => {
@@ -433,7 +505,73 @@ export function runTest(isAaveV1: boolean) {
         await checkMarketLocked();
       });
     });
-    //TODO: test for permLock, permMarketHandlerLocked and permForgeHandlerLocked
-    //TODO: test for changing marketEmergencyHandler and forgeEmergencyHandler
+    describe("Permalock tests", async() => {
+      let permaLockSnapshot;
+      beforeEach(async () => {
+        permaLockSnapshot = evm_snapshot();
+
+        await pausingManager.setPausingAdmin(bob.address, true);
+      });
+
+      async function permaLockTests() {
+        await expect(
+          pausingManager.setPausingAdmin(dave.address, true)
+        ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
+        await expect(
+          pausingManager.applyForgeHandlerChange()
+        ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
+        await expect(
+          pausingManager.lockPausingManagerPermanently()
+        ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
+        await expect(
+          pausingManager.connect(bob).setForgePaused(testEnv.FORGE_ID, true)
+        ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
+        await expect(
+          pausingManager.connect(bob).setForgeAssetPaused(testEnv.FORGE_ID, tokenUSDT.address, true)
+        ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
+        await expect(
+          pausingManager.connect(bob).setForgeAssetExpiryPaused(testEnv.FORGE_ID, tokenUSDT.address, testEnv.EXPIRY, true)
+        ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
+        await expect(
+          pausingManager.setForgeLocked(testEnv.FORGE_ID)
+        ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
+        await expect(
+          pausingManager.setForgeAssetLocked(testEnv.FORGE_ID, tokenUSDT.address)
+        ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
+        await expect(
+          pausingManager.setForgeAssetExpiryLocked(testEnv.FORGE_ID, tokenUSDT.address, testEnv.EXPIRY)
+        ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
+        await expect(
+          pausingManager.requestForgeHandlerChange(bob.address)
+        ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
+        await expect(
+          pausingManager.requestMarketHandlerChange(bob.address)
+        ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
+      }
+      
+      it("Only governance should be able to lock permanently", async () => {
+        await expect(
+          pausingManager.connect(bob).lockPausingManagerPermanently()
+        ).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
+        await expect(
+          pausingManager.connect(bob).lockForgeHandlerPermanently()
+        ).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
+      });
+
+      it("All features should be paused after locking", async () => {
+        await pausingManager.lockForgeHandlerPermanently();
+        await expect(
+          pausingManager.requestForgeHandlerChange(bob.address)
+        ).to.be.revertedWith(errMsg.FORGE_HANDLER_LOCKED);
+
+        await pausingManager.lockMarketHandlerPermanently();
+        await expect(
+          pausingManager.requestMarketHandlerChange(bob.address)
+        ).to.be.revertedWith(errMsg.MARKET_HANDLER_LOCKED);
+        
+        await pausingManager.lockPausingManagerPermanently();
+        await permaLockTests();
+      });
+    });
   });
 }
