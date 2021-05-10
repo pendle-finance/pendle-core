@@ -8,7 +8,7 @@ import { aaveV2ForgeFixture, AaveV2ForgeFixture } from './aaveV2Forge.fixture';
 import { CompoundFixture, compoundForgeFixture } from './compoundForge.fixture';
 import { coreFixture, CoreFixture } from './core.fixture';
 import { governanceFixture } from './governance.fixture';
-export interface PendleFixture {
+export interface RouterFixture {
   core: CoreFixture,
   aave: AaveFixture,
   aaveV2: AaveV2Fixture,
@@ -17,10 +17,10 @@ export interface PendleFixture {
   cForge: CompoundFixture,
 }
 
-export async function pendleFixture(
+export async function routerFixture(
   wallets: Wallet[],
   provider: providers.Web3Provider
-): Promise<PendleFixture> {
+): Promise<RouterFixture> {
   const [alice] = wallets;
   const core = await coreFixture(wallets, provider);
   const governance = await governanceFixture(wallets, provider);

@@ -20,9 +20,9 @@ import {
 } from "../helpers";
 import {
   Mode,
-  parseTestEnvPendleFixture,
-  pendleFixture,
-  PendleFixture,
+  parseTestEnvRouterFixture,
+  routerFixture,
+  RouterFixture,
   TestEnv,
 } from "./fixtures";
 
@@ -43,10 +43,10 @@ export function runTest(isAaveV1: boolean) {
     let env: TestEnv = {} as TestEnv;
 
     async function buildTestEnv() {
-      let fixture: PendleFixture = await loadFixture(pendleFixture);
+      let fixture: RouterFixture = await loadFixture(routerFixture);
       if (isAaveV1)
-        await parseTestEnvPendleFixture(alice, Mode.AAVE_V1, env, fixture);
-      else await parseTestEnvPendleFixture(alice, Mode.AAVE_V2, env, fixture);
+        await parseTestEnvRouterFixture(alice, Mode.AAVE_V1, env, fixture);
+      else await parseTestEnvRouterFixture(alice, Mode.AAVE_V2, env, fixture);
       USDT = tokens.USDT;
       env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
       env.TEST_DELTA = BN.from(10000);

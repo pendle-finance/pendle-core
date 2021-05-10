@@ -20,9 +20,9 @@ import {
 } from "../helpers";
 import {
   Mode,
-  parseTestEnvPendleFixture,
-  pendleFixture,
-  PendleFixture,
+  parseTestEnvRouterFixture,
+  routerFixture,
+  RouterFixture,
   TestEnv,
 } from "./fixtures";
 
@@ -36,7 +36,7 @@ export function runTest(isAaveV1: boolean) {
     const [alice, bob, charlie, dave] = wallets;
     const forgeFee = randomBN(consts.RONE.toNumber() / 10);
 
-    let fixture: PendleFixture;
+    let fixture: RouterFixture;
     let snapshotId: string;
     let globalSnapshotId: string;
     let USDT: Token;
@@ -44,10 +44,10 @@ export function runTest(isAaveV1: boolean) {
     let env: TestEnv = {} as TestEnv;
 
     async function buildTestEnv() {
-      fixture = await loadFixture(pendleFixture);
+      fixture = await loadFixture(routerFixture);
       if (isAaveV1)
-        await parseTestEnvPendleFixture(alice, Mode.AAVE_V1, env, fixture);
-      else await parseTestEnvPendleFixture(alice, Mode.AAVE_V2, env, fixture);
+        await parseTestEnvRouterFixture(alice, Mode.AAVE_V1, env, fixture);
+      else await parseTestEnvRouterFixture(alice, Mode.AAVE_V2, env, fixture);
       USDT = tokens.USDT;
       env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
       env.TEST_DELTA = BN.from(10000);

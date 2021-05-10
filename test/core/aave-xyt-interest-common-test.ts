@@ -12,7 +12,7 @@ import {
   Token,
   tokens,
 } from "../helpers";
-import { pendleFixture, PendleFixture } from "./fixtures";
+import { routerFixture, RouterFixture } from "./fixtures";
 import testData from "./fixtures/yieldTokenizeAndRedeem.scenario.json";
 
 const { waffle } = require("hardhat");
@@ -38,7 +38,7 @@ export function runTest(isAaveV1: boolean) {
     const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob, charlie, dave] = wallets;
 
-    let fixture: PendleFixture;
+    let fixture: RouterFixture;
     let router: Contract;
     let ot: Contract;
     let aaveForge: Contract;
@@ -49,7 +49,7 @@ export function runTest(isAaveV1: boolean) {
     let testEnv: TestEnv = {} as TestEnv;
 
     async function buildCommonTestEnv() {
-      fixture = await loadFixture(pendleFixture);
+      fixture = await loadFixture(routerFixture);
       router = fixture.core.router;
       testEnv.INITIAL_AAVE_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
       testEnv.TEST_DELTA = BN.from(6000);

@@ -17,7 +17,7 @@ import {
   Token,
   tokens,
 } from "../helpers";
-import { pendleFixture, PendleFixture } from "./fixtures";
+import { routerFixture, RouterFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
@@ -27,7 +27,7 @@ describe("router-negative-test", async () => {
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave] = wallets;
 
-  let fixture: PendleFixture;
+  let fixture: RouterFixture;
   let router: Contract;
   let routerWeb3: any;
   let ot: Contract;
@@ -43,7 +43,7 @@ describe("router-negative-test", async () => {
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
-    fixture = await loadFixture(pendleFixture);
+    fixture = await loadFixture(routerFixture);
     router = fixture.core.router;
     routerWeb3 = fixture.core.routerWeb3;
     tokenUSDT = tokens.USDT;

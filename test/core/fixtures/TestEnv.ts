@@ -1,5 +1,5 @@
 import { BigNumber as BN, Contract, Wallet } from "ethers";
-import { PendleFixture } from "./pendle.fixture";
+import { RouterFixture } from "./pendle.fixture";
 import { CoreFixture } from "./core.fixture";
 import { assert } from "chai";
 import {
@@ -36,8 +36,6 @@ export interface TestEnv {
   EXPIRY: BN;
 }
 
-
-
 export function parseTestEnvCoreFixture(env: TestEnv, fixture: CoreFixture) {
   env.router = fixture.router;
   env.data = fixture.data;
@@ -46,7 +44,7 @@ export function parseTestEnvCoreFixture(env: TestEnv, fixture: CoreFixture) {
   env.pausingManager = fixture.pausingManager;
 }
 
-export async function parseTestEnvPendleFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: PendleFixture) {
+export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: RouterFixture) {
   env.mode = mode;
   parseTestEnvCoreFixture(env, fixture.core);
 

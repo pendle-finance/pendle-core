@@ -9,6 +9,7 @@ import {
   CompoundFixture, compoundForgeFixture
 } from './compoundForge.fixture';
 import { CoreFixture, coreFixture } from "./core.fixture";
+import { routerFixture, RouterFixture } from "./pendle.fixture";
 import {
   governanceFixture
 } from "./governance.fixture";

@@ -14,7 +14,7 @@ import {
   Token,
   tokens,
 } from "../helpers";
-import { pendleFixture } from "./fixtures";
+import { routerFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
@@ -37,7 +37,7 @@ describe("compound-router", async () => {
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
-    const fixture = await loadFixture(pendleFixture);
+    const fixture = await loadFixture(routerFixture);
     router = fixture.core.router;
     cOt = fixture.cForge.cOwnershipToken;
     cXyt = fixture.cForge.cFutureYieldToken;

@@ -14,7 +14,7 @@ import {
   Token,
   tokens,
 } from "../helpers";
-import { pendleFixture } from "./fixtures";
+import { routerFixture } from "./fixtures";
 import testData from "./fixtures/yieldTokenizeAndRedeem.scenario.json";
 
 const { waffle } = require("hardhat");
@@ -43,7 +43,7 @@ describe("compound-xyt-interest", async () => {
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
-    const fixture = await loadFixture(pendleFixture);
+    const fixture = await loadFixture(routerFixture);
     router = fixture.core.router;
     cOt = fixture.cForge.cOwnershipToken;
     tokenUSDT = tokens.USDT;
