@@ -1,5 +1,5 @@
 import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract, Wallet } from "ethers";
+import { BigNumber as BN, Wallet } from "ethers";
 import {
   advanceTime,
   approxBigNumber,
@@ -7,85 +7,46 @@ import {
   emptyToken,
   evm_revert,
   evm_snapshot,
-  getAContract,
-  mintAaveToken,
   mintOtAndXyt,
   Token,
   tokens,
 } from "../helpers";
-import { marketFixture, MarketFixture } from "./fixtures";
+import { marketFixture, MarketFixture, TestEnv, Mode, parseTestEnvMarketFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const { provider } = waffle;
-
-interface TestEnv {
-  MARKET_FACTORY_ID: string;
-  T0: BN;
-  FORGE_ID: string;
-  TEST_DELTA: BN;
-}
 
 export function runTest(isAaveV1: boolean) {
   describe("", async () => {
     const wallets = provider.getWallets();
     const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob, charlie, dave, eve] = wallets;
-    let router: Contract;
-    let fixture: MarketFixture;
-    let xyt: Contract;
-    let ot: Contract;
-    let stdMarket: Contract;
-    let testToken: Contract;
     let snapshotId: string;
     let globalSnapshotId: string;
-    let aUSDT: Contract;
-    let tokenUSDT: Token;
-    let aaveForge: Contract;
-    let aaveV2Forge: Contract;
+    let USDT: Token;
     let amountXytRef = BN.from(10).pow(10);
-    let testEnv: TestEnv = {} as TestEnv;
+    let env: TestEnv = {} as TestEnv;
 
-    async function buildCommonTestEnv() {
-      fixture = await loadFixture(marketFixture);
-      router = fixture.core.router;
-      testToken = fixture.testToken;
-      tokenUSDT = tokens.USDT;
-      aaveForge = fixture.aForge.aaveForge;
-      aaveV2Forge = fixture.a2Forge.aaveV2Forge;
-      testEnv.TEST_DELTA = BN.from(60000);
-    }
-
-    async function buildTestEnvV1() {
-      ot = fixture.aForge.aOwnershipToken;
-      xyt = fixture.aForge.aFutureYieldToken;
-      stdMarket = fixture.aMarket;
-      aUSDT = await getAContract(alice, aaveForge, tokens.USDT);
-      testEnv.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE;
-      testEnv.T0 = consts.T0;
-      testEnv.FORGE_ID = consts.FORGE_AAVE;
-    }
-
-    async function buildTestEnvV2() {
-      ot = fixture.a2Forge.a2OwnershipToken;
-      xyt = fixture.a2Forge.a2FutureYieldToken;
-      stdMarket = fixture.a2Market;
-      aUSDT = await getAContract(alice, aaveV2Forge, tokens.USDT);
-      testEnv.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE_V2;
-      testEnv.T0 = consts.T0_A2;
-      testEnv.FORGE_ID = consts.FORGE_AAVE_V2;
+    async function buildTestEnv() {
+      let fixture: MarketFixture = await loadFixture(marketFixture);
+      if (isAaveV1)
+        await parseTestEnvMarketFixture(alice, Mode.AAVE_V1, env, fixture);
+      else await parseTestEnvMarketFixture(alice, Mode.AAVE_V2, env, fixture);
+      USDT = tokens.USDT;
+      env.TEST_DELTA = BN.from(60000);
     }
 
     async function redeemAll() {
       for (let user of [alice, bob, charlie, dave]) {
-        await router.redeemLpInterests(
-          stdMarket.address,
+        await env.router.redeemLpInterests(
+          env.stdMarket.address,
           user.address,
           consts.HIGH_GAS_OVERRIDE
         );
-        await router.redeemDueInterests(
-          testEnv.FORGE_ID,
-          tokenUSDT.address,
-          testEnv.T0.add(consts.SIX_MONTH),
+        await env.router.redeemDueInterests(
+          env.FORGE_ID,
+          USDT.address,
+          env.T0.add(consts.SIX_MONTH),
           user.address,
           consts.HIGH_GAS_OVERRIDE
         );
@@ -94,26 +55,21 @@ export function runTest(isAaveV1: boolean) {
 
     before(async () => {
       globalSnapshotId = await evm_snapshot();
-      await buildCommonTestEnv();
-      if (isAaveV1) {
-        await buildTestEnvV1();
-      } else {
-        await buildTestEnvV2();
-      }
+      await buildTestEnv();
       for (let user of [alice, bob, charlie, dave, eve]) {
-        await emptyToken(ot, user);
-        await emptyToken(xyt, user);
+        await emptyToken(env.ot, user);
+        await emptyToken(env.xyt, user);
       }
 
       await mintOtAndXytUSDT(alice, amountXytRef.div(10 ** 6).mul(4));
-      amountXytRef = (await xyt.balanceOf(alice.address)).div(4);
+      amountXytRef = (await env.xyt.balanceOf(alice.address)).div(4);
       for (let user of [bob, charlie, dave]) {
-        await ot.transfer(user.address, amountXytRef);
-        await xyt.transfer(user.address, amountXytRef);
+        await env.ot.transfer(user.address, amountXytRef);
+        await env.xyt.transfer(user.address, amountXytRef);
       }
 
       for (let user of [alice, bob, charlie, dave, eve]) {
-        await emptyToken(aUSDT, user);
+        await emptyToken(env.aUSDT, user);
       }
       snapshotId = await evm_snapshot();
     });
@@ -128,23 +84,23 @@ export function runTest(isAaveV1: boolean) {
     });
 
     async function bootstrapSampleMarket(amount: BN) {
-      await router.bootstrapMarket(
-        testEnv.MARKET_FACTORY_ID,
-        xyt.address,
-        testToken.address,
+      await env.router.bootstrapMarket(
+        env.MARKET_FACTORY_ID,
+        env.xyt.address,
+        env.testToken.address,
         amount,
-        await testToken.balanceOf(alice.address),
+        await env.testToken.balanceOf(alice.address),
         consts.HIGH_GAS_OVERRIDE
       );
     }
 
     async function addMarketLiquidityDualByXyt(user: Wallet, amountXyt: BN) {
-      await router
+      await env.router
         .connect(user)
         .addMarketLiquidityDual(
-          testEnv.MARKET_FACTORY_ID,
-          xyt.address,
-          testToken.address,
+          env.MARKET_FACTORY_ID,
+          env.xyt.address,
+          env.testToken.address,
           amountXyt,
           consts.INF,
           amountXyt,
@@ -154,12 +110,12 @@ export function runTest(isAaveV1: boolean) {
     }
 
     async function addMarketLiquidityToken(user: Wallet, amount: BN) {
-      await router
+      await env.router
         .connect(user)
         .addMarketLiquiditySingle(
-          testEnv.MARKET_FACTORY_ID,
-          xyt.address,
-          testToken.address,
+          env.MARKET_FACTORY_ID,
+          env.xyt.address,
+          env.testToken.address,
           false,
           amount,
           BN.from(0),
@@ -168,12 +124,12 @@ export function runTest(isAaveV1: boolean) {
     }
 
     async function addMarketLiquidityXyt(user: Wallet, amount: BN) {
-      await router
+      await env.router
         .connect(user)
         .addMarketLiquiditySingle(
-          testEnv.MARKET_FACTORY_ID,
-          xyt.address,
-          testToken.address,
+          env.MARKET_FACTORY_ID,
+          env.xyt.address,
+          env.testToken.address,
           true,
           amount,
           BN.from(0),
@@ -182,12 +138,12 @@ export function runTest(isAaveV1: boolean) {
     }
 
     async function removeMarketLiquidityDual(user: Wallet, amount: BN) {
-      await router
+      await env.router
         .connect(user)
         .removeMarketLiquidityDual(
-          testEnv.MARKET_FACTORY_ID,
-          xyt.address,
-          testToken.address,
+          env.MARKET_FACTORY_ID,
+          env.xyt.address,
+          env.testToken.address,
           amount,
           BN.from(0),
           BN.from(0),
@@ -196,12 +152,12 @@ export function runTest(isAaveV1: boolean) {
     }
 
     async function removeMarketLiquidityXyt(user: Wallet, amount: BN) {
-      await router
+      await env.router
         .connect(user)
         .removeMarketLiquiditySingle(
-          testEnv.MARKET_FACTORY_ID,
-          xyt.address,
-          testToken.address,
+          env.MARKET_FACTORY_ID,
+          env.xyt.address,
+          env.testToken.address,
           true,
           amount,
           BN.from(0),
@@ -210,12 +166,12 @@ export function runTest(isAaveV1: boolean) {
     }
 
     async function removeMarketLiquidityToken(user: Wallet, amount: BN) {
-      await router
+      await env.router
         .connect(user)
         .removeMarketLiquiditySingle(
-          testEnv.MARKET_FACTORY_ID,
-          xyt.address,
-          testToken.address,
+          env.MARKET_FACTORY_ID,
+          env.xyt.address,
+          env.testToken.address,
           false,
           amount,
           BN.from(0),
@@ -226,55 +182,55 @@ export function runTest(isAaveV1: boolean) {
     async function mintOtAndXytUSDT(user: Wallet, amount: BN) {
       await mintOtAndXyt(
         provider,
-        tokenUSDT,
+        USDT,
         user,
         amount,
-        router,
-        aaveForge,
-        aaveV2Forge
+        env.router,
+        env.routerFixture.aForge.aaveForge,
+        env.routerFixture.a2Forge.aaveV2Forge
       );
     }
 
     async function swapExactInTokenToXyt(user: Wallet, inAmount: BN) {
-      await router
+      await env.router
         .connect(user)
         .swapExactIn(
-          testToken.address,
-          xyt.address,
+          env.testToken.address,
+          env.xyt.address,
           inAmount,
           BN.from(0),
-          testEnv.MARKET_FACTORY_ID,
+          env.MARKET_FACTORY_ID,
           consts.HIGH_GAS_OVERRIDE
         );
     }
 
     async function swapExactInXytToToken(user: Wallet, inAmount: BN) {
-      await router
+      await env.router
         .connect(user)
         .swapExactIn(
-          xyt.address,
-          testToken.address,
+          env.xyt.address,
+          env.testToken.address,
           inAmount,
           BN.from(0),
-          testEnv.MARKET_FACTORY_ID,
+          env.MARKET_FACTORY_ID,
           consts.HIGH_GAS_OVERRIDE
         );
     }
 
     async function addFakeXyt(user: Wallet, amount: BN) {
-      await xyt.connect(user).transfer(stdMarket.address, amount);
+      await env.xyt.connect(user).transfer(env.stdMarket.address, amount);
     }
 
     async function getLPBalance(user: Wallet) {
-      return await stdMarket.balanceOf(user.address);
+      return await env.stdMarket.balanceOf(user.address);
     }
 
     async function checkAUSDTBalance(expectedResult: number[]) {
       for (let id = 0; id < 4; id++) {
         approxBigNumber(
-          await aUSDT.balanceOf(wallets[id].address),
+          await env.aUSDT.balanceOf(wallets[id].address),
           BN.from(expectedResult[id]),
-          testEnv.TEST_DELTA
+          env.TEST_DELTA
         );
       }
     }
@@ -316,7 +272,7 @@ export function runTest(isAaveV1: boolean) {
       await redeemAll();
 
       // for (let user of [alice, bob, charlie, dave]) {
-      //   console.log((await aUSDT.balanceOf(user.address)).toString());
+      //   console.log((await env.aUSDT.balanceOf(user.address)).toString());
       // }
       const aaveV1ExpectedResult: number[] = [
         374114313,
@@ -374,7 +330,7 @@ export function runTest(isAaveV1: boolean) {
       await redeemAll();
 
       // for (let user of [alice, bob, charlie, dave]) {
-      //   console.log((await aUSDT.balanceOf(user.address)).toString());
+      //   console.log((await env.aUSDT.balanceOf(user.address)).toString());
       // }
 
       const aaveV1ExpectedResult: number[] = [
@@ -432,31 +388,31 @@ export function runTest(isAaveV1: boolean) {
 
     //   await redeemAll();
 
-    //   // for (let user of [alice, bob, charlie, dave]) {
-    //   //   console.log((await aUSDT.balanceOf(user.address)).toString());
-    //   // }
+    // for (let user of [alice, bob, charlie, dave]) {
+    //   console.log((await env.aUSDT.balanceOf(user.address)).toString());
+    // }
 
     //   console.log(1);
     //   approxBigNumber(
-    //     await aUSDT.balanceOf(alice.address),
+    //     await env.aUSDT.balanceOf(alice.address),
     //     BN.from(803722622),
     //     acceptedDelta
     //   );
     //   console.log(1);
     //   approxBigNumber(
-    //     await aUSDT.balanceOf(bob.address),
+    //     await env.aUSDT.balanceOf(bob.address),
     //     BN.from(803722622),
     //     acceptedDelta
     //   );
     //   console.log(1);
     //   approxBigNumber(
-    //     await aUSDT.balanceOf(charlie.address),
+    //     await env.aUSDT.balanceOf(charlie.address),
     //     BN.from(803722622),
     //     acceptedDelta
     //   );
     //   console.log(1);
     //   approxBigNumber(
-    //     await aUSDT.balanceOf(dave.address),
+    //     await env.aUSDT.balanceOf(dave.address),
     //     BN.from(803722622),
     //     acceptedDelta
     //   );
@@ -482,7 +438,7 @@ export function runTest(isAaveV1: boolean) {
       await swapExactInXytToToken(eve, BN.from(10).pow(9));
       await addMarketLiquidityDualByXyt(
         alice,
-        await xyt.balanceOf(alice.address)
+        await env.xyt.balanceOf(alice.address)
       );
 
       await advanceTime(provider, consts.FIFTEEN_DAY);
@@ -514,7 +470,7 @@ export function runTest(isAaveV1: boolean) {
       await redeemAll();
 
       // for (let user of [alice, bob, charlie, dave]) {
-      //   console.log((await aUSDT.balanceOf(user.address)).toString());
+      //   console.log((await env.aUSDT.balanceOf(user.address)).toString());
       // }
 
       const aaveV1ExpectedResult: number[] = [
@@ -553,7 +509,7 @@ export function runTest(isAaveV1: boolean) {
 
       await addMarketLiquidityDualByXyt(
         alice,
-        (await xyt.balanceOf(alice.address)).div(2)
+        (await env.xyt.balanceOf(alice.address)).div(2)
       );
 
       await advanceTime(provider, consts.FIFTEEN_DAY);
@@ -575,23 +531,23 @@ export function runTest(isAaveV1: boolean) {
         if ((await getLPBalance(user)).gt(0)) {
           await removeMarketLiquidityDual(user, await getLPBalance(user));
         }
-        if ((await ot.balanceOf(user.address)).gt(0)) {
-          await router
+        if ((await env.ot.balanceOf(user.address)).gt(0)) {
+          await env.router
             .connect(user)
             .redeemAfterExpiry(
-              testEnv.FORGE_ID,
-              tokenUSDT.address,
-              testEnv.T0.add(consts.SIX_MONTH)
+              env.FORGE_ID,
+              USDT.address,
+              env.T0.add(consts.SIX_MONTH)
             );
         }
       }
 
-      let expectedResult = await aUSDT.balanceOf(dave.address);
+      let expectedResult = await env.aUSDT.balanceOf(dave.address);
       for (let user of [alice, bob, charlie]) {
         approxBigNumber(
-          await aUSDT.balanceOf(user.address),
+          await env.aUSDT.balanceOf(user.address),
           expectedResult,
-          testEnv.TEST_DELTA
+          env.TEST_DELTA
         );
       }
     });

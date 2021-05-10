@@ -1,5 +1,6 @@
 import { BigNumber as BN, Contract, Wallet } from "ethers";
 import { RouterFixture } from "./pendle.fixture";
+import { MarketFixture } from "./market.fixture";
 import { CoreFixture } from "./core.fixture";
 import { assert } from "chai";
 import {
@@ -27,6 +28,8 @@ export interface TestEnv {
   xyt: Contract;
   aUSDT: Contract;
   cUSDT: Contract;
+  testToken: Contract;
+  stdMarket: Contract;
 
   // test params
   T0: BN;
@@ -34,6 +37,11 @@ export interface TestEnv {
   INITIAL_YIELD_TOKEN_AMOUNT: BN;
   TEST_DELTA: BN;
   EXPIRY: BN;
+  MARKET_FACTORY_ID: string;
+
+  // fixture
+  routerFixture: RouterFixture;
+  marketFixture: MarketFixture
 }
 
 export function parseTestEnvCoreFixture(env: TestEnv, fixture: CoreFixture) {
@@ -48,6 +56,7 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
   env.mode = mode;
   parseTestEnvCoreFixture(env, fixture.core);
 
+  env.routerFixture = fixture;
   if (env.mode == Mode.AAVE_V1) {
     env.T0 = consts.T0;
     env.forge = fixture.aForge.aaveForge;
@@ -71,5 +80,26 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
     env.xyt = fixture.cForge.cFutureYieldToken;
     env.cUSDT = await getCContract(alice, tokens.USDT);
     env.FORGE_ID = consts.FORGE_COMPOUND;
+  }
+}
+
+export async function parseTestEnvMarketFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: MarketFixture) {
+  env.mode = mode;
+  parseTestEnvRouterFixture(alice, mode, env, fixture.routerFix);
+
+  env.testToken = fixture.testToken;
+  env.marketFixture = fixture;
+
+  if (env.mode == Mode.AAVE_V1) {
+    env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE;
+    env.stdMarket = fixture.aMarket;
+  }
+  else if (env.mode == Mode.AAVE_V2) {
+    env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE_V2;
+    env.stdMarket = fixture.a2Market;
+  }
+  else if (env.mode == Mode.COMPOUND) {
+    env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_COMPOUND;
+    env.stdMarket = fixture.cMarket;
   }
 }

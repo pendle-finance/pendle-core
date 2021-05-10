@@ -18,6 +18,7 @@ const { waffle } = require("hardhat");
 const { deployContract } = waffle;
 
 export interface MarketFixture {
+  routerFix: RouterFixture
   core: CoreFixture,
   aForge: AaveForgeFixture,
   a2Forge: AaveV2ForgeFixture,
@@ -164,5 +165,5 @@ export async function marketFixture(
     await ethMarket.connect(person).approve(router.address, consts.INF);
   }
 
-  return { core, aForge, a2Forge, cForge, testToken, aMarket, a2Market, cMarket, ethMarket }
+  return { routerFix, core, aForge, a2Forge, cForge, testToken, aMarket, a2Market, cMarket, ethMarket }
 }
