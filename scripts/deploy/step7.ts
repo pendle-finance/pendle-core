@@ -12,17 +12,44 @@ export async function step7(deployer: any, hre: any, deployment: Deployment, con
   console.log(`\tAAVE_LENDING_POOL_CORE_ADDRESS used = ${consts.misc.AAVE_LENDING_POOL_CORE_ADDRESS}`);
   console.log(`\tForge Id used = ${consts.misc.FORGE_AAVE}`);
 
-  const pendleAaveForge = await deploy(hre, deployment, 'PendleAaveForge', [
+  const aRewardManager = await deploy(hre, deployment, "PendleRewardManager", [
+    governanceMultisig,
+    consts.misc.FORGE_AAVE,
+  ]);
+
+  const aYieldContractDeployer = await deploy(
+    hre,
+    deployment,
+    "PendleAaveYieldContractDeployer",
+    [governanceMultisig, consts.misc.FORGE_AAVE]
+  );
+
+  const pendleAaveForge = await deploy(hre, deployment, "PendleAaveForge", [
     governanceMultisig,
     pendleRouterAddress,
     consts.misc.AAVE_LENDING_POOL_CORE_ADDRESS,
     consts.misc.FORGE_AAVE,
+    consts.misc.STKAAVE_ADDRESS,
+    aRewardManager.address,
+    aYieldContractDeployer.address,
   ]);
 
+<<<<<<< HEAD
   const pendleAaveMarketFactory = await deploy(hre, deployment, 'PendleAaveMarketFactory', [
     governanceMultisig,
     consts.misc.MARKET_FACTORY_AAVE,
   ]);
+=======
+  await aRewardManager.initialize(pendleAaveForge.address);
+  await aYieldContractDeployer.initialize(pendleAaveForge.address);
+
+  const pendleAaveMarketFactory = await deploy(
+    hre,
+    deployment,
+    "PendleAaveMarketFactory",
+    [governanceMultisig, consts.misc.MARKET_FACTORY_AAVE]
+  );
+>>>>>>> aa77253 (Update deploy scripts for latest contract changes)
 
   await pendleAaveMarketFactory.initialize(pendleRouterAddress);
   const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
