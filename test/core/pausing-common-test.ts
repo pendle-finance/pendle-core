@@ -104,11 +104,11 @@ export function runTest(isAaveV1: boolean) {
       //TODO: the functions with expired yield contract are remained untested
       await expect(
         router
-          .connect(bob)
           .redeemDueInterests(
             testEnv.FORGE_ID,
             tokenUSDT.address,
             testEnv.EXPIRY,
+            bob.address,
             consts.HIGH_GAS_OVERRIDE
           )
       ).to.be.revertedWith(errMsg.YIELD_CONTRACT_PAUSED);
@@ -134,11 +134,11 @@ export function runTest(isAaveV1: boolean) {
       await ot.transfer(charlie.address, 1, consts.HIGH_GAS_OVERRIDE);
       //TODO: refactor checkYieldContractPaused and checkYieldContractUnpaused
       await router
-        .connect(bob)
         .redeemDueInterests(
           testEnv.FORGE_ID,
           tokenUSDT.address,
           testEnv.EXPIRY,
+          bob.address,
           consts.HIGH_GAS_OVERRIDE
         );
 
