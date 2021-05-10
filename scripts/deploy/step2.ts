@@ -14,9 +14,18 @@ export async function step2(
   console.log(
     `\t\tTreasury address = ${treasuryAddress} (same as GOVERNANCE_MULTISIG)`
   );
+  const governanceMultisig = deployment.variables.GOVERNANCE_MULTISIG;
+  const forgeEmergencyHandler = deployment.variables.FORGE_EMERGENCY_HANDLER;
+  const marketEmergencyHandler = deployment.variables.MARKET_EMERGENCY_HANDLER;
+  const pausingManager = await deploy(hre, deployment, "PendlePausingManager", [
+    governanceMultisig,
+    forgeEmergencyHandler,
+    marketEmergencyHandler,
+  ]);
 
-  await deploy(hre, deployment, "PendleData", [
+  const data = await deploy(hre, deployment, "PendleData", [
     deployment.variables.GOVERNANCE_MULTISIG,
     treasuryAddress,
+    pausingManager.address,
   ]);
 }

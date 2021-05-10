@@ -14,16 +14,16 @@ export async function step6(
   const pendleRouterAddress = deployment.contracts.PendleRouter.address;
   const pendleDataAddress = deployment.contracts.PendleData.address;
 
-  if (!validAddress("PendleRouter address", pendleRouterAddress))
-    process.exit(1);
-  if (!validAddress("PendleData address", pendleDataAddress)) process.exit(1);
-
-  const pendleRouter = await getContractFromDeployment(
-    hre,
-    deployment,
-    "PendleRouter"
-  );
-  await pendleRouter.initialize(pendleDataAddress);
-  console.log(`\tPendleRouter address used = ${pendleRouterAddress}`);
-  console.log(`\tPendleData address used = ${pendleDataAddress}`);
+  // if (!validAddress("PendleRouter address", pendleRouterAddress))
+  //   process.exit(1);
+  // if (!validAddress("PendleData address", pendleDataAddress)) process.exit(1);
+  //
+  // const pendleRouter = await getContractFromDeployment(
+  //   hre,
+  //   deployment,
+  //   "PendleRouter"
+  // );
+  // await pendleRouter.initialize(pendleDataAddress);
+  // console.log(`\tPendleRouter address used = ${pendleRouterAddress}`);
+  // console.log(`\tPendleData address used = ${pendleDataAddress}`);
 }

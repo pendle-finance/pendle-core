@@ -13,6 +13,7 @@ import fs from "fs";
 //   misc: Record<string, any>;
 // };
 const ONE_E_18 = BN.from(10).pow(18);
+const RONE = BN.from(2).pow(40);
 
 export const devConstants = {
   misc: {
@@ -57,6 +58,17 @@ export const devConstants = {
 
     LIQ_MINING_ALLOCATION_DENOMINATOR: 1000000000,
     HIGH_GAS_OVERRIDE: { gasLimit: 80000000 },
+    INTEREST_UPDATE_RATE_DELTA_FOR_MARKET: BN.from(2).pow(40).div(10000), // 0.01% delta
+
+    // OT rewards
+    STKAAVE_ADDRESS: "0x4da27a545c0c5b758a6ba100e3a049001de870f5",
+    COMP_ADDRESS: "0xc00e94cb662c3520282e6f5717214004a7f26888",
+    AAVE_INCENTIVES_CONTROLLER: "0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5",
+
+    // Fee
+    FORGE_FEE: RONE.div(100).mul(1), // 1% forge fee
+    SWAP_FEE: RONE.div(10000).mul(35), // 0.35%
+    PROTOCOL_SWAP_FEE: RONE.div(5), // 1/5 * 0.35% = 0.07%
   },
   tokens: {
     USDT_AAVE: {
@@ -131,6 +143,17 @@ export const kovanConstants = {
 
     LIQ_MINING_ALLOCATION_DENOMINATOR: 1000000000,
     HIGH_GAS_OVERRIDE: { gasLimit: 12500000 },
+    INTEREST_UPDATE_RATE_DELTA_FOR_MARKET: BN.from(2).pow(40).div(10000),
+
+    // OT rewards
+    STKAAVE_ADDRESS: "0x4da27a545c0c5b758a6ba100e3a049001de870f5",
+    COMP_ADDRESS: "0xc00e94cb662c3520282e6f5717214004a7f26888",
+    AAVE_INCENTIVES_CONTROLLER: "0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5",
+
+    // Fee
+    FORGE_FEE: RONE.div(100).mul(1), // 1% forge fee
+    SWAP_FEE: RONE.div(10000).mul(35), // 0.35%
+    PROTOCOL_SWAP_FEE: RONE.div(5), // 1/5 * 0.35% = 0.07%
   },
   tokens: {
     USDT_AAVE: {

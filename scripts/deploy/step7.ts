@@ -25,12 +25,30 @@ export async function step7(
   );
   console.log(`\tForge Id used = ${consts.misc.FORGE_AAVE}`);
 
+  const aRewardManager = await deploy(hre, deployment, "PendleRewardManager", [
+    governanceMultisig,
+    consts.misc.FORGE_AAVE,
+  ]);
+
+  const aYieldContractDeployer = await deploy(
+    hre,
+    deployment,
+    "PendleAaveYieldContractDeployer",
+    [governanceMultisig, consts.misc.FORGE_AAVE]
+  );
+
   const pendleAaveForge = await deploy(hre, deployment, "PendleAaveForge", [
     governanceMultisig,
     pendleRouterAddress,
     consts.misc.AAVE_LENDING_POOL_CORE_ADDRESS,
     consts.misc.FORGE_AAVE,
+    consts.misc.STKAAVE_ADDRESS,
+    aRewardManager.address,
+    aYieldContractDeployer.address,
   ]);
+
+  await aRewardManager.initialize(pendleAaveForge.address);
+  await aYieldContractDeployer.initialize(pendleAaveForge.address);
 
   const pendleAaveMarketFactory = await deploy(
     hre,

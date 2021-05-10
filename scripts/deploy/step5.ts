@@ -31,6 +31,15 @@ export async function step5(
   );
   console.log(`\t\tSet lock parameters for markets`);
 
+  await pendleData.setInterestUpdateRateDeltaForMarket(
+    consts.misc.INTEREST_UPDATE_RATE_DELTA_FOR_MARKET
+  );
+  await pendleData.setForgeFee(consts.misc.FORGE_FEE);
+  await pendleData.setMarketFees(
+    consts.misc.SWAP_FEE,
+    consts.misc.PROTOCOL_SWAP_FEE
+  );
+
   console.log(`\tPendleRouter address used = ${pendleRouterAddress}`);
   console.log(`\tPendleData address used = ${pendleDataAddress}`);
 }

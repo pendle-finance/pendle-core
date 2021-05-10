@@ -25,12 +25,33 @@ export async function step9(
   );
   console.log(`\tForge Id used = ${consts.misc.FORGE_AAVE_V2}`);
 
+  const a2RewardManager = await deploy(hre, deployment, "PendleRewardManager", [
+    governanceMultisig,
+    consts.misc.FORGE_AAVE_V2,
+  ]);
+
+  //TODO: use proper V2 reward manager
+  const a2YieldContractDeployer = await deploy(
+    hre,
+    deployment,
+    "PendleAaveYieldContractDeployer",
+    [governanceMultisig, consts.misc.FORGE_AAVE_V2]
+  );
+
   const pendleAaveV2Forge = await deploy(hre, deployment, "PendleAaveV2Forge", [
     governanceMultisig,
     pendleRouterAddress,
     consts.misc.AAVE_V2_LENDING_POOL_ADDRESS,
     consts.misc.FORGE_AAVE_V2,
+    consts.misc.STKAAVE_ADDRESS,
+    a2RewardManager.address,
+    a2YieldContractDeployer.address,
+    consts.misc.AAVE_INCENTIVES_CONTROLLER,
   ]);
+
+  await a2RewardManager.initialize(pendleAaveV2Forge.address);
+
+  await a2YieldContractDeployer.initialize(pendleAaveV2Forge.address);
 
   const pendleRouter = await getContractFromDeployment(
     hre,

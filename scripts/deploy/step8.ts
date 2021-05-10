@@ -25,6 +25,19 @@ export async function step8(
   );
   console.log(`\tForge Id used = ${consts.misc.FORGE_COMPOUND}`);
 
+  const cRewardManager = await deploy(hre, deployment, "PendleRewardManager", [
+    governanceMultisig,
+    consts.misc.FORGE_COMPOUND,
+  ]);
+
+  //TODO: change it to a Compound one
+  const cYieldContractDeployer = await deploy(
+    hre,
+    deployment,
+    "PendleAaveYieldContractDeployer",
+    [governanceMultisig, consts.misc.FORGE_COMPOUND]
+  );
+
   const pendleCompoundForge = await deploy(
     hre,
     deployment,
@@ -34,8 +47,14 @@ export async function step8(
       pendleRouterAddress,
       consts.misc.COMPOUND_COMPTROLLER_ADDRESS,
       consts.misc.FORGE_COMPOUND,
+      consts.misc.COMP_ADDRESS,
+      cRewardManager.address,
+      cYieldContractDeployer.address,
     ]
   );
+
+  await cRewardManager.initialize(pendleCompoundForge.address);
+  await cYieldContractDeployer.initialize(pendleCompoundForge.address);
 
   const pendleCompoundMarketFactory = await deploy(
     hre,
