@@ -13,6 +13,10 @@ import {
   setTimeNextBlock,
   Token,
   tokens,
+  tokenizeYield,
+  redeemDueInterests,
+  redeemAfterExpiry,
+  redeemUnderlying
 } from "../helpers";
 import {
   Mode,
@@ -31,7 +35,6 @@ export function runTest(isAaveV1: boolean) {
     const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob, charlie, dave] = wallets;
 
-    let fixture: PendleFixture;
     let snapshotId: string;
     let globalSnapshotId: string;
     let refAmount: BN;
@@ -40,7 +43,7 @@ export function runTest(isAaveV1: boolean) {
     let env: TestEnv = {} as TestEnv;
 
     async function buildTestEnv() {
-      fixture = await loadFixture(pendleFixture);
+      let fixture: PendleFixture = await loadFixture(pendleFixture);
       if (isAaveV1)
         await parseTestEnvPendleFixture(alice, Mode.AAVE_V1, env, fixture);
       else await parseTestEnvPendleFixture(alice, Mode.AAVE_V2, env, fixture);
@@ -66,31 +69,6 @@ export function runTest(isAaveV1: boolean) {
       snapshotId = await evm_snapshot();
       initialAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
     });
-
-    async function tokenizeYield(user: Wallet, amount: BN): Promise<BN> {
-      let amountTokenMinted = await env.ot.balanceOf(user.address);
-      await env.router.tokenizeYield(
-        env.FORGE_ID,
-        USDT.address,
-        env.EXPIRY,
-        amount,
-        user.address,
-        consts.HIGH_GAS_OVERRIDE
-      );
-      amountTokenMinted = (await env.ot.balanceOf(user.address)).sub(
-        amountTokenMinted
-      );
-      return amountTokenMinted;
-    }
-
-    async function redeemDueInterests(user: Wallet, expiry: BN) {
-      await env.router.redeemDueInterests(
-        env.FORGE_ID,
-        USDT.address,
-        expiry,
-        user.address
-      );
-    }
 
     async function startCalInterest(walletToUse: Wallet, initialAmount: BN) {
       // divide by 10^decimal since mintAaveToken will multiply that number back
@@ -139,7 +117,7 @@ export function runTest(isAaveV1: boolean) {
     });
 
     it("should be able to deposit aUSDT to get back OT and XYT", async () => {
-      let amount = await tokenizeYield(alice, refAmount);
+      let amount = await tokenizeYield(env, alice, refAmount);
       const balanceOwnershipToken = await env.ot.balanceOf(alice.address);
       const balanceFutureYieldToken = await env.xyt.balanceOf(alice.address);
       expect(balanceOwnershipToken).to.be.eq(amount);
@@ -147,7 +125,7 @@ export function runTest(isAaveV1: boolean) {
     });
 
     it("shouldn't be able to call redeemUnderlying if the yield contract has expired", async () => {
-      let amount = await tokenizeYield(alice, refAmount);
+      let amount = await tokenizeYield(env, alice, refAmount);
 
       await setTimeNextBlock(provider, env.T0.add(consts.ONE_YEAR));
 
@@ -164,16 +142,10 @@ export function runTest(isAaveV1: boolean) {
 
     it("[After 1 month] should be able to redeem aUSDT to get back OT, XYT and interests $", async () => {
       await startCalInterest(charlie, refAmount);
-      let amount = await tokenizeYield(alice, refAmount);
+      let amount = await tokenizeYield(env, alice, refAmount);
       await setTimeNextBlock(provider, env.T0.add(consts.ONE_MONTH));
 
-      await env.router.redeemUnderlying(
-        env.FORGE_ID,
-        USDT.address,
-        env.EXPIRY,
-        amount,
-        consts.HIGH_GAS_OVERRIDE
-      );
+      await redeemUnderlying(env, alice, amount);
 
       const finalAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
 
@@ -186,7 +158,7 @@ export function runTest(isAaveV1: boolean) {
 
     it("[After 1 month] should be able to get due interests", async () => {
       await startCalInterest(charlie, refAmount);
-      let amount = await tokenizeYield(alice, refAmount);
+      await tokenizeYield(env, alice, refAmount);
 
       await env.ot.transfer(bob.address, await env.ot.balanceOf(alice.address));
 
@@ -194,7 +166,7 @@ export function runTest(isAaveV1: boolean) {
 
       await setTimeNextBlock(provider, env.T0.add(consts.ONE_MONTH));
 
-      await redeemDueInterests(alice, env.EXPIRY);
+      await redeemDueInterests(env, alice);
 
       const expectedGain = await getCurInterest(charlie, refAmount);
       const finalAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
@@ -209,13 +181,13 @@ export function runTest(isAaveV1: boolean) {
     it("Another wallet should be able to receive interests from XYT", async () => {
       await startCalInterest(charlie, refAmount);
 
-      let amount = await tokenizeYield(alice, refAmount);
+      let amount = await tokenizeYield(env, alice, refAmount);
       await env.xyt.transfer(bob.address, amount);
 
       const T1 = env.EXPIRY.sub(1);
       await setTimeNextBlock(provider, T1);
 
-      await redeemDueInterests(bob, env.EXPIRY);
+      await redeemDueInterests(env, bob);
 
       const actualGain = await env.aUSDT.balanceOf(bob.address);
       const expectedGain = await getCurInterest(charlie, refAmount);
@@ -229,13 +201,13 @@ export function runTest(isAaveV1: boolean) {
     it("Short after expiry, should be able to redeem aUSDT from OT", async () => {
       await startCalInterest(charlie, refAmount);
 
-      let amount = await tokenizeYield(alice, refAmount);
+      let amount = await tokenizeYield(env, alice, refAmount);
       await env.xyt.transfer(bob.address, amount);
 
       const T1 = env.EXPIRY.sub(1);
       await setTimeNextBlock(provider, T1);
 
-      await redeemDueInterests(bob, env.EXPIRY);
+      await redeemDueInterests(env, bob);
 
       approxBigNumber(
         await env.aUSDT.balanceOf(bob.address),
@@ -249,11 +221,7 @@ export function runTest(isAaveV1: boolean) {
       const T2 = T1.add(10);
       await setTimeNextBlock(provider, T2);
 
-      await env.router.redeemAfterExpiry(
-        env.FORGE_ID,
-        USDT.address,
-        env.EXPIRY
-      );
+      await redeemAfterExpiry(env, alice);
 
       const expectedGain = await getCurInterest(dave, refAmount);
       const finalAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
@@ -261,36 +229,30 @@ export function runTest(isAaveV1: boolean) {
         finalAUSDTbalance,
         initialAUSDTbalance.add(expectedGain),
         env.TEST_DELTA,
-        false
       );
     });
 
     it("One month after expiry, should be able to redeem aUSDT with interest", async () => {
       await startCalInterest(charlie, refAmount);
-      let amount = await tokenizeYield(alice, refAmount);
+      let amount = await tokenizeYield(env, alice, refAmount);
       await env.xyt.transfer(bob.address, amount);
 
       const T1 = env.EXPIRY.sub(1);
       await setTimeNextBlock(provider, T1);
 
-      await redeemDueInterests(bob, env.EXPIRY);
+      await redeemDueInterests(env, bob);
 
       await startCalInterest(dave, refAmount);
       approxBigNumber(
         await env.aUSDT.balanceOf(bob.address),
         await getCurInterest(charlie, refAmount),
         env.TEST_DELTA,
-        true
       );
 
       const T2 = T1.add(consts.ONE_MONTH);
       await setTimeNextBlock(provider, T2);
 
-      await env.router.redeemAfterExpiry(
-        env.FORGE_ID,
-        USDT.address,
-        env.EXPIRY
-      );
+      await redeemAfterExpiry(env, alice);
 
       const expectedGain = await getCurInterest(dave, refAmount);
       const finalAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
@@ -325,7 +287,7 @@ export function runTest(isAaveV1: boolean) {
         env.T0.add(consts.ONE_YEAR)
       );
       await startCalInterest(dave, refAmount);
-      await tokenizeYield(alice, refAmount);
+      await tokenizeYield(env, alice, refAmount);
       await setTime(provider, env.T0.add(consts.ONE_MONTH.mul(7)));
 
       let {
@@ -351,7 +313,7 @@ export function runTest(isAaveV1: boolean) {
 
       let renewedAmount = redeemedAmount.sub(amountTransferOut);
       await setTimeNextBlock(provider, env.T0.add(consts.ONE_MONTH.mul(11)));
-      await redeemDueInterests(alice, env.T0.add(consts.ONE_YEAR));
+      await redeemDueInterests(env, alice, env.T0.add(consts.ONE_YEAR));
       let actualGain = await env.aUSDT.balanceOf(alice.address);
       let expectedGain = await getCurInterest(dave, renewedAmount);
       approxBigNumber(actualGain, expectedGain, env.TEST_DELTA);
@@ -359,12 +321,12 @@ export function runTest(isAaveV1: boolean) {
 
     it("should receive the interest from xyt when do tokenizeYield", async () => {
       await startCalInterest(charlie, refAmount);
-      await tokenizeYield(alice, refAmount.div(2));
+      await tokenizeYield(env, alice, refAmount.div(2));
 
       await setTimeNextBlock(provider, env.T0.add(consts.ONE_MONTH));
-      await tokenizeYield(alice, refAmount.div(2));
+      await tokenizeYield(env, alice, refAmount.div(2));
 
-      await redeemDueInterests(alice, env.EXPIRY);
+      await redeemDueInterests(env, alice);
       const expectedGain = await getCurInterest(charlie, refAmount);
 
       // because we have tokenized all aUSDT of alice, curAUSDTbalance will equal to the interest

@@ -3,7 +3,7 @@ import { PendleFixture } from "./pendle.fixture";
 import { CoreFixture } from "./core.fixture";
 import { assert } from "chai";
 import {
-  consts, tokens, getAContract, getA2Contract, getCContract
+  consts, tokens, getAContract, getA2Contract, getCContract, Token
 } from "../../helpers";
 
 export enum Mode {
