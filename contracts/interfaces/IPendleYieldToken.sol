@@ -29,31 +29,31 @@ import "./IPendleBaseToken.sol";
 interface IPendleYieldToken is IERC20, IPendleBaseToken {
     /**
      * @notice Emitted when burning OT or XYT tokens.
-     * @param account The address performing the burn.
+     * @param user The address performing the burn.
      * @param amount The amount to be burned.
      **/
-    event Burn(address indexed account, uint256 amount);
+    event Burn(address indexed user, uint256 amount);
 
     /**
      * @notice Emitted when minting OT or XYT tokens.
-     * @param account The address performing the mint.
+     * @param user The address performing the mint.
      * @param amount The amount to be minted.
      **/
-    event Mint(address indexed account, uint256 amount);
+    event Mint(address indexed user, uint256 amount);
 
     /**
-     * @notice Burns OT or XYT tokens from account, reducing the total supply.
-     * @param account The address performing the burn.
+     * @notice Burns OT or XYT tokens from user, reducing the total supply.
+     * @param user The address performing the burn.
      * @param amount The amount to be burned.
      **/
-    function burn(address account, uint256 amount) external;
+    function burn(address user, uint256 amount) external;
 
     /**
-     * @notice Mints new OT or XYT tokens for account, increasing the total supply.
-     * @param account The address to send the minted tokens.
+     * @notice Mints new OT or XYT tokens for user, increasing the total supply.
+     * @param user The address to send the minted tokens.
      * @param amount The amount to be minted.
      **/
-    function mint(address account, uint256 amount) external;
+    function mint(address user, uint256 amount) external;
 
     /**
      * @notice Gets the forge address of the PendleForge contract for this yield token.

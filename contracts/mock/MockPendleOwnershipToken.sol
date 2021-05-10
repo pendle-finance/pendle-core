@@ -54,12 +54,12 @@ contract MockPendleOwnershipToken is PendleOwnershipToken {
     /**
     @dev comment out these 2 functions since mint and burn are already non-internal
      */
-    // function mint(address account, uint256 amount) public {
-    //     _mint(account, amount);
+    // function mint(address user, uint256 amount) public {
+    //     _mint(user, amount);
     // }
 
-    // function burn(address account, uint256 amount) public {
-    //     _burn(account, amount);
+    // function burn(address user, uint256 amount) public {
+    //     _burn(user, amount);
     // }
 
     function transferInternal(

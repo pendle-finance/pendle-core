@@ -28,20 +28,19 @@ export async function coreFixture(
   [alice]: Wallet[],
   provider: providers.Web3Provider
 ): Promise<CoreFixture> {
-  const router = await deployContract(alice, PendleRouter, [alice.address, tokens.WETH.address]);
   const treasury = await deployContract(alice, PendleTreasury, [alice.address]);
   const aMarketFactory = await deployContract(alice, PendleAaveMarketFactory, [alice.address, consts.MARKET_FACTORY_AAVE]);
   const a2MarketFactory = await deployContract(alice, PendleAaveMarketFactory, [alice.address, consts.MARKET_FACTORY_AAVE_V2]);
   const cMarketFactory = await deployContract(alice, PendleCompoundMarketFactory, [alice.address, consts.MARKET_FACTORY_COMPOUND]);
   const pausingManager = await deployContract(alice, PendlePausingManager, [alice.address, alice.address, alice.address]);
   const data = await deployContract(alice, PendleData, [alice.address, treasury.address, pausingManager.address]);
+  const router = await deployContract(alice, PendleRouter, [alice.address, tokens.WETH.address, data.address]);
   const marketReader = await deployContract(alice, PendleMarketReader, [data.address]);
 
   await aMarketFactory.initialize(router.address);
   await a2MarketFactory.initialize(router.address);
   await cMarketFactory.initialize(router.address);
   await data.initialize(router.address);
-  await router.initialize(data.address);
 
   await data.setExpiryDivisor(BN.from(10)); // for ease of testing
   await data.setLockParams(BN.from(consts.LOCK_NUMERATOR), BN.from(consts.LOCK_DENOMINATOR)); // lock market

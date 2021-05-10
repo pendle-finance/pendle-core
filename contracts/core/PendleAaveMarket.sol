@@ -58,39 +58,39 @@ contract PendleAaveMarket is PendleMarketBase {
     }
 
     /// @inheritdoc PendleMarketBase
-    function _getInterestValuePerLP(address account)
+    function _getInterestValuePerLP(address user)
         internal
         override
         returns (uint256 interestValuePerLP)
     {
         // if userLastNormalizedIncome is 0 then it's certain that this is the first time the user stakes
         // since globalLastNormalizedIncome is always > 0
-        if (userLastNormalizedIncome[account] == 0) {
+        if (userLastNormalizedIncome[user] == 0) {
             interestValuePerLP = 0;
         } else {
             /*
             this part can be thought of as follows:
-                * the last time the user redeems interest, the value of a LP is lastParamL[account]
+                * the last time the user redeems interest, the value of a LP is lastParamL[user]
                     and he has redeemed all the available interest out
                 * the market has 2 sources of income: compound interest of the yieldTokens in the market right now
                 AND external income (XYT interest, people transferring wrongly...)
-                * now the value of param L is paramL. So there has been an increase of paramL - lastParamL[account]
+                * now the value of param L is paramL. So there has been an increase of paramL - lastParamL[user]
                     in value of a single LP. But in Aave, even if there are no external income, the value of a paramL
                     can grow on its own
                 * so since the last time the user has fully redeemed all the available interest, he shouldn't receive
                 the compound interest sof the asset in the pool at the moment he last withdrew
-                * so the value of 1 LP for him will be paramL - compound(lastParamL[account])
-                    = paramL -  lastParamL[account] * globalLastNormalizedIncome /userLastNormalizedIncome[account]
+                * so the value of 1 LP for him will be paramL - compound(lastParamL[user])
+                    = paramL -  lastParamL[user] * globalLastNormalizedIncome /userLastNormalizedIncome[user]
             */
             interestValuePerLP = paramL.subMax0(
-                lastParamL[account].mul(globalLastNormalizedIncome).div(
-                    userLastNormalizedIncome[account]
+                lastParamL[user].mul(globalLastNormalizedIncome).div(
+                    userLastNormalizedIncome[user]
                 )
             );
         }
 
-        userLastNormalizedIncome[account] = globalLastNormalizedIncome;
-        lastParamL[account] = paramL;
+        userLastNormalizedIncome[user] = globalLastNormalizedIncome;
+        lastParamL[user] = paramL;
     }
 
     /// @inheritdoc PendleMarketBase

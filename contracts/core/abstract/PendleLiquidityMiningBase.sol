@@ -41,7 +41,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
 @dev things that must hold in this contract:
- - If an account's stake information is updated (hence lastTimeUserStakeUpdated is changed),
+ - If an user's stake information is updated (hence lastTimeUserStakeUpdated is changed),
     then his pending rewards are calculated as well
     (and saved in availableRewardsForEpoch[user][epochId])
 @dev We define 1 Unit = 1 LP stake in contract 1 second. For example, 20 LP stakes 30 secs will create 600 units for the user
@@ -72,7 +72,7 @@ abstract contract PendleLiquidityMiningBase is
         mapping(uint256 => uint256) stakeUnitsForExpiry;
         // the last time in this epoch that we updated the stakeUnits for this expiry
         mapping(uint256 => uint256) lastUpdatedForExpiry;
-        /* availableRewardsForEpoch[account][epochId] is the amount of PENDLEs the account can withdraw
+        /* availableRewardsForEpoch[user][epochId] is the amount of PENDLEs the user can withdraw
         at the beginning of epochId*/
         mapping(address => uint256) availableRewardsForUser;
         // number of units an user has contributed in this epoch & expiry
@@ -86,7 +86,7 @@ abstract contract PendleLiquidityMiningBase is
     // For each expiry, we will have one struct
     struct ExpiryData {
         // the last time the units of an user was updated in this expiry
-        mapping(address => uint256) lastTimeUserStakeUpdated; // map account => time
+        mapping(address => uint256) lastTimeUserStakeUpdated; // map user => time
         // the last epoch the user claimed rewards. After the rewards an epoch has been claimed, there won't be any
         // additional rewards in that epoch for the user to claim
         mapping(address => uint256) lastEpochClaimed;
@@ -343,7 +343,7 @@ abstract contract PendleLiquidityMiningBase is
         * only be called if 0 < current epoch (always can withdraw)
         * Anyone can call it (and claim it for any other user)
      */
-    function claimRewards(uint256 expiry, address account)
+    function redeemRewards(uint256 expiry, address user)
         external
         override
         isFunded
@@ -354,7 +354,7 @@ abstract contract PendleLiquidityMiningBase is
         require(curEpoch > 0, "NOT_STARTED");
 
         // _settlePendingRewards is the function that really push the rewards out
-        rewards = _settlePendingRewards(expiry, account);
+        rewards = _settlePendingRewards(expiry, user);
     }
 
     /**
@@ -363,14 +363,14 @@ abstract contract PendleLiquidityMiningBase is
         * must have Reentrancy protection
         * Anyone can call it (and claim it for any other user)
      */
-    function claimLpInterests(uint256 expiry, address account)
+    function redeemLpInterests(uint256 expiry, address user)
         external
         override
         nonReentrant
         returns (uint256 interests)
     {
         // _settleLpInterests is the function that really push the interest out
-        interests = _settleLpInterests(expiry, account);
+        interests = _settleLpInterests(expiry, user);
     }
 
     function totalRewardsForEpoch(uint256 epochId)
@@ -441,25 +441,25 @@ abstract contract PendleLiquidityMiningBase is
     @notice Transfer any pending rewards to users
         The rewards are calculated since the last time rewards was calculated for him,
         I.e. Since the last time his stake was "updated"
-        I.e. Since lastTimeUserStakeUpdated[account]
+        I.e. Since lastTimeUserStakeUpdated[user]
     @dev The user's stake since lastTimeUserStakeUpdated[user] until now = balances[user][expiry]
     @dev After this function, the following should be updated correctly up to this point:
-            - availableRewardsForEpoch[account][all epochData]
+            - availableRewardsForEpoch[user][all epochData]
             - epochData[all epochData].stakeUnitsForUser
     @dev Must be called before the amount of LP tokens changes or when claim rewards
     Note: Bear in mind that every single time the amount of LP changes (for the entire market, for any user),
     this function must & will be called
      */
-    function _settlePendingRewards(uint256 expiry, address account)
+    function _settlePendingRewards(uint256 expiry, address user)
         internal
         returns (uint256 _rewardsWithdrawableNow)
     {
         _updateStakeDataForExpiry(expiry);
         ExpiryData storage exd = expiryData[expiry];
 
-        // account has not staked this LP_expiry before, no need to do anything
-        if (exd.lastTimeUserStakeUpdated[account] == 0) {
-            exd.lastTimeUserStakeUpdated[account] = block.timestamp;
+        // user has not staked this LP_expiry before, no need to do anything
+        if (exd.lastTimeUserStakeUpdated[user] == 0) {
+            exd.lastTimeUserStakeUpdated[user] = block.timestamp;
             return 0;
         }
 
@@ -470,7 +470,7 @@ abstract contract PendleLiquidityMiningBase is
         // => the endEpoch hasn't ended yet (since endEpoch=curEpoch)
         bool _isEndEpochOver = (_curEpoch > numberOfEpochs);
 
-        uint256 _startEpoch = _epochOfTimestamp(exd.lastTimeUserStakeUpdated[account]);
+        uint256 _startEpoch = _epochOfTimestamp(exd.lastTimeUserStakeUpdated[user]);
 
         /* Go through all epochs until now
         to update stakeUnitsForUser and availableRewardsForEpoch
@@ -484,12 +484,12 @@ abstract contract PendleLiquidityMiningBase is
 
             // updating stakeUnits for users. The logic of this is similar to that of _updateStakeDataForExpiry
             // Please refer to _updateStakeDataForExpiry for more details
-            epochData[epochId].stakeUnitsForUser[account][expiry] = epochData[epochId]
-                .stakeUnitsForUser[account][expiry]
+            epochData[epochId].stakeUnitsForUser[user][expiry] = epochData[epochId]
+                .stakeUnitsForUser[user][expiry]
                 .add(
                 _calcUnitsStakeInEpoch(
-                    exd.balances[account],
-                    exd.lastTimeUserStakeUpdated[account],
+                    exd.balances[user],
+                    exd.lastTimeUserStakeUpdated[user],
                     epochId
                 )
             );
@@ -510,20 +510,21 @@ abstract contract PendleLiquidityMiningBase is
 
             // calc the amount of rewards the user is eligible to receive from this epoch
             uint256 rewardsPerVestingEpoch =
-                _calcAmountRewardsForUserInEpoch(expiry, account, epochId);
+                _calcAmountRewardsForUserInEpoch(expiry, user, epochId);
 
             // Now we distribute this rewards over the vestingEpochs starting from epochId + 1
             // to epochId + vestingEpochs
             for (uint256 i = epochId + 1; i <= epochId + vestingEpochs; i++) {
-                epochData[i].availableRewardsForUser[account] = epochData[i]
-                    .availableRewardsForUser[account]
+                epochData[i].availableRewardsForUser[user] = epochData[i].availableRewardsForUser[
+                    user
+                ]
                     .add(rewardsPerVestingEpoch);
             }
         }
 
-        exd.lastTimeUserStakeUpdated[account] = block.timestamp;
+        exd.lastTimeUserStakeUpdated[user] = block.timestamp;
         // push the rewards out
-        _rewardsWithdrawableNow = _pushRewardsWithdrawableNow(expiry, account);
+        _rewardsWithdrawableNow = _pushRewardsWithdrawableNow(expiry, user);
     }
 
     /**
@@ -556,10 +557,10 @@ abstract contract PendleLiquidityMiningBase is
     // but we will return the amount per vestingEpoch instead
     function _calcAmountRewardsForUserInEpoch(
         uint256 expiry,
-        address account,
+        address user,
         uint256 epochId
     ) internal view returns (uint256 rewardsPerVestingEpoch) {
-        uint256 stakeUnitsForUser = epochData[epochId].stakeUnitsForUser[account][expiry];
+        uint256 stakeUnitsForUser = epochData[epochId].stakeUnitsForUser[user][expiry];
 
         uint256 settingId =
             epochId >= latestSetting.firstEpochToApply
@@ -628,28 +629,28 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     /**
-     * @dev even if exd.balances[account]==0, this function must still be called
+     * @dev even if exd.balances[user]==0, this function must still be called
      * Very similar to the function in PendleMarketBase. Any major differences are likely to be bugs
        Please refer to it for more details
      */
-    function _settleLpInterests(uint256 expiry, address account)
+    function _settleLpInterests(uint256 expiry, address user)
         internal
         returns (uint256 dueInterests)
     {
         ExpiryData storage exd = expiryData[expiry];
 
-        if (account == address(exd.lpHolder)) return 0;
+        if (user == address(exd.lpHolder)) return 0;
 
         _updateParamL(expiry);
 
-        uint256 interestValuePerLP = _getInterestValuePerLP(expiry, account);
+        uint256 interestValuePerLP = _getInterestValuePerLP(expiry, user);
         if (interestValuePerLP == 0) return 0;
 
-        dueInterests = exd.balances[account].mul(interestValuePerLP).div(MULTIPLIER);
+        dueInterests = exd.balances[user].mul(interestValuePerLP).div(MULTIPLIER);
         if (dueInterests == 0) return 0;
 
         exd.lastNYield = exd.lastNYield.sub(dueInterests);
-        IPendleLpHolder(exd.lpHolder).sendInterests(account, dueInterests);
+        IPendleLpHolder(exd.lpHolder).sendInterests(user, dueInterests);
     }
 
     /**
@@ -679,7 +680,7 @@ abstract contract PendleLiquidityMiningBase is
             return;
         }
 
-        IPendleLpHolder(exd.lpHolder).claimLpInterests();
+        IPendleLpHolder(exd.lpHolder).redeemLpInterests();
 
         IERC20 underlyingYieldToken =
             IERC20(
@@ -738,7 +739,7 @@ abstract contract PendleLiquidityMiningBase is
         return startTime + (t) * epochDuration;
     }
 
-    function _getInterestValuePerLP(uint256 expiry, address account)
+    function _getInterestValuePerLP(uint256 expiry, address user)
         internal
         virtual
         returns (uint256 interestValuePerLP);

@@ -61,14 +61,13 @@ describe("compound-lp-interest", async () => {
     cUSDTWeb3 = new hre.web3.eth.Contract(ICToken.abi, cUSDT.address);
 
     for (let user of [alice, bob, charlie, dave, eve]) {
-      await router
-        .connect(user)
-        .redeemDueInterests(
-          consts.FORGE_COMPOUND,
-          tokenUSDT.address,
-          consts.T0_C.add(consts.SIX_MONTH),
-          consts.HIGH_GAS_OVERRIDE
-        );
+      await router.redeemDueInterests(
+        consts.FORGE_COMPOUND,
+        tokenUSDT.address,
+        consts.T0_C.add(consts.SIX_MONTH),
+        user.address,
+        consts.HIGH_GAS_OVERRIDE
+      );
       await emptyToken(ot, user);
       await emptyToken(xyt, user);
       await emptyToken(cUSDT, user);
@@ -239,19 +238,18 @@ describe("compound-lp-interest", async () => {
 
   async function claimAll() {
     for (let user of [alice, bob, charlie, dave]) {
-      await router.claimLpInterests(
+      await router.redeemLpInterests(
         stdMarket.address,
         user.address,
         consts.HIGH_GAS_OVERRIDE
       );
-      await router
-        .connect(user)
-        .redeemDueInterests(
-          consts.FORGE_COMPOUND,
-          tokenUSDT.address,
-          consts.T0_C.add(consts.SIX_MONTH),
-          consts.HIGH_GAS_OVERRIDE
-        );
+      await router.redeemDueInterests(
+        consts.FORGE_COMPOUND,
+        tokenUSDT.address,
+        consts.T0_C.add(consts.SIX_MONTH),
+        user.address,
+        consts.HIGH_GAS_OVERRIDE
+      );
     }
   }
 
@@ -448,19 +446,18 @@ describe("compound-lp-interest", async () => {
 
     await advanceTime(provider, consts.ONE_DAY);
     for (let user of [dave, charlie, bob, alice]) {
-      await router.claimLpInterests(
+      await router.redeemLpInterests(
         stdMarket.address,
         user.address,
         consts.HIGH_GAS_OVERRIDE
       );
-      await router
-        .connect(user)
-        .redeemDueInterests(
-          consts.FORGE_COMPOUND,
-          tokenUSDT.address,
-          consts.T0_C.add(consts.SIX_MONTH),
-          consts.HIGH_GAS_OVERRIDE
-        );
+      await router.redeemDueInterests(
+        consts.FORGE_COMPOUND,
+        tokenUSDT.address,
+        consts.T0_C.add(consts.SIX_MONTH),
+        user.address,
+        consts.HIGH_GAS_OVERRIDE
+      );
     }
 
     // for (let user of [alice, bob, charlie, dave]) {

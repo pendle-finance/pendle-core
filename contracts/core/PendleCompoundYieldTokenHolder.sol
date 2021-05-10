@@ -40,8 +40,8 @@ contract PendleCompoundYieldTokenHolder is PendleYieldTokenHolderBase {
         comptroller = IComptroller(_comptroller);
     }
 
-    // TODO: skip claimRewards if the incentive programme has already ended?
-    function claimRewards() external override {
+    // TODO: skip redeemRewards if the incentive programme has already ended?
+    function redeemRewards() external override {
         address[] memory cTokens = new address[](1);
         address[] memory holders = new address[](1);
         cTokens[0] = yieldToken;

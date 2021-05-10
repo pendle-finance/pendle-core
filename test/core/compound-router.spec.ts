@@ -72,9 +72,12 @@ describe("compound-router", async () => {
   }
 
   async function redeemDueInterests(user: Wallet, expiry: BN) {
-    await router
-      .connect(user)
-      .redeemDueInterests(consts.FORGE_COMPOUND, tokenUSDT.address, expiry);
+    await router.redeemDueInterests(
+      consts.FORGE_COMPOUND,
+      tokenUSDT.address,
+      expiry,
+      user.address
+    );
   }
 
   async function convertToCAmount(amount: BN) {

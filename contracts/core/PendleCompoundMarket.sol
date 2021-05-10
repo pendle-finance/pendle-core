@@ -64,17 +64,17 @@ contract PendleCompoundMarket is PendleMarketBase {
         I.e: Only when the user use the cToken to redeem the underlyingAsset that he will enjoy the
         compound effect
      */
-    function _getInterestValuePerLP(address account)
+    function _getInterestValuePerLP(address user)
         internal
         override
         returns (uint256 interestValuePerLP)
     {
-        if (lastParamL[account] == 0) {
+        if (lastParamL[user] == 0) {
             interestValuePerLP = 0;
         } else {
-            interestValuePerLP = paramL.sub(lastParamL[account]);
+            interestValuePerLP = paramL.sub(lastParamL[user]);
         }
-        lastParamL[account] = paramL;
+        lastParamL[user] = paramL;
     }
 
     /// @inheritdoc PendleMarketBase

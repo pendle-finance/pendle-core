@@ -60,7 +60,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     mapping(address => bool) public override isMarket;
     mapping(address => bool) public override isXyt;
     mapping(bytes32 => address) private markets;
-    address[] private allMarkets;
+    address[] public allMarkets;
 
     uint256 private constant FEE_HARD_LIMIT = 109951162777; // equals to MATH.RONE / 10 = 10%
 
@@ -270,17 +270,31 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         return allMarkets.length;
     }
 
-    function getAllMarkets() external view override returns (address[] memory) {
-        return allMarkets;
+    function getMarketByIndex(uint256 index) external view override returns (address market) {
+        require(index + 1 <= allMarkets.length, "INVALID_INDEX");
+        market = allMarkets[index];
     }
 
     function getMarketFromKey(
         address _tokenIn,
         address _tokenOut,
         bytes32 _marketFactoryId
-    ) external view override returns (address market) {
+    ) public view override returns (address market) {
         bytes32 key = _createKey(_tokenIn, _tokenOut, _marketFactoryId);
         market = markets[key];
+    }
+
+    /// Check if the market's underlying tokens are token1 & token2
+    function checkMarketTokens(
+        address token1,
+        address token2,
+        IPendleMarket market
+    ) external view override {
+        require(isMarket[address(market)], "INVALID_MARKET");
+        require(
+            getMarketFromKey(token1, token2, market.factoryId()) == address(market),
+            "INVALID_MARKET"
+        );
     }
 
     function _createKey(

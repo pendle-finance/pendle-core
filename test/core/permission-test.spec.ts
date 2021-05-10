@@ -69,9 +69,9 @@ describe("permission-test", async () => {
       consts.HIGH_GAS_OVERRIDE
     );
 
-    await expect(market.bootstrap(amount, amount)).to.be.revertedWith(
-      errMsg.ONLY_ROUTER
-    );
+    await expect(
+      market.bootstrap(alice.address, amount, amount)
+    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
     await expect(
       market.addMarketLiquidityDual(
@@ -116,7 +116,6 @@ describe("permission-test", async () => {
 
     await expect(
       market.swapExactOut(
-        alice.address,
         consts.RANDOM_ADDRESS,
         amount,
         consts.RANDOM_ADDRESS,
@@ -125,7 +124,7 @@ describe("permission-test", async () => {
     ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
     await expect(
-      market.claimLpInterests(consts.RANDOM_ADDRESS)
+      market.redeemLpInterests(consts.RANDOM_ADDRESS)
     ).to.be.revertedWith(errMsg.ONLY_ROUTER);
   });
 

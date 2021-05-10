@@ -53,7 +53,7 @@ abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder {
         IERC20(_rewardToken).safeApprove(_rewardManager, type(uint256).max);
     }
 
-    function claimRewards() external virtual override;
+    function redeemRewards() external virtual override;
 
     // Only forge can call this function
     // this will allow a spender to spend the whole balance of the specified tokens

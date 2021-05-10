@@ -27,6 +27,7 @@ pragma solidity 0.7.6;
 import "./IPendleRouter.sol";
 import "./IPendleYieldToken.sol";
 import "./IPendlePausingManager.sol";
+import "./IPendleMarket.sol";
 
 interface IPendleData {
     /**
@@ -300,11 +301,7 @@ interface IPendleData {
 
     function curveShiftBlockDelta() external view returns (uint256);
 
-    /**
-     * @notice Gets all the markets.
-     * @return Returns an array of all markets.
-     **/
-    function getAllMarkets() external view returns (address[] calldata);
+    function getMarketByIndex(uint256 index) external view returns (address market);
 
     /**
      * @notice Gets a market given a future yield token and an ERC20 token.
@@ -343,4 +340,11 @@ interface IPendleData {
         address token,
         bytes32 marketFactoryId
     ) external view returns (address market);
+
+    /// Check if the market's underlying tokens are token1 & token2
+    function checkMarketTokens(
+        address token1,
+        address token2,
+        IPendleMarket market
+    ) external view;
 }

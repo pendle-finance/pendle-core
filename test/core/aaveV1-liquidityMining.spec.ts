@@ -168,14 +168,13 @@ describe("aaveV1-liquidityMining", async () => {
 
     await fixture.core.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
     for (let user of [bob, charlie, dave]) {
-      await router
-        .connect(user)
-        .redeemDueInterests(
-          consts.FORGE_AAVE,
-          tokens.USDT.address,
-          EXPIRY,
-          consts.HIGH_GAS_OVERRIDE
-        );
+      await router.redeemDueInterests(
+        consts.FORGE_AAVE,
+        tokens.USDT.address,
+        EXPIRY,
+        user.address,
+        consts.HIGH_GAS_OVERRIDE
+      );
       await emptyToken(aUSDT, user);
       await emptyToken(xyt, user);
     }
@@ -274,7 +273,7 @@ describe("aaveV1-liquidityMining", async () => {
     let allocationRateDiv =
       _allocationRateDiv !== undefined ? _allocationRateDiv : 1;
     for (let userId = 0; userId < numUser; userId++) {
-      await liq.claimRewards(EXPIRY, wallets[userId].address);
+      await liq.redeemRewards(EXPIRY, wallets[userId].address);
       // console.log(expectedRewards[userId][0].toString(), (await pdl.balanceOf(wallets[userId].address)).toString());
       approxBigNumber(
         await pdl.balanceOf(wallets[userId].address),
@@ -350,18 +349,21 @@ describe("aaveV1-liquidityMining", async () => {
       params.START_TIME.add(consts.ONE_MONTH.mul(2))
     );
 
-    await liq.claimLpInterests(EXPIRY, bob.address);
+    await liq.redeemLpInterests(EXPIRY, bob.address);
     console.log(`\tbob claimed interests`);
     let actualGainBob = (await aUSDT.balanceOf(bob.address)).sub(preBalanceBob);
 
-    await router
-      .connect(charlie)
-      .redeemDueInterests(consts.FORGE_AAVE, tokens.USDT.address, EXPIRY);
+    await router.redeemDueInterests(
+      consts.FORGE_AAVE,
+      tokens.USDT.address,
+      EXPIRY,
+      charlie.address
+    );
     const actualGainCharlie = (await aUSDT.balanceOf(charlie.address)).sub(
       preBalanceCharlie
     );
 
-    await router.claimLpInterests(market.address, dave.address);
+    await router.redeemLpInterests(market.address, dave.address);
     let actualGainDave = (await aUSDT.balanceOf(dave.address)).sub(
       preBalanceDave
     );
@@ -443,12 +445,12 @@ describe("aaveV1-liquidityMining", async () => {
     await liq
       .connect(bob)
       .withdraw(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
-    await liq.claimRewards(EXPIRY, bob.address);
+    await liq.redeemRewards(EXPIRY, bob.address);
     await setTimeNextBlock(
       provider,
       params.START_TIME.add(params.EPOCH_DURATION).add(params.EPOCH_DURATION)
     );
-    await liq.claimRewards(EXPIRY, bob.address);
+    await liq.redeemRewards(EXPIRY, bob.address);
   });
 
   it("can stake and withdraw", async () => {
@@ -528,11 +530,11 @@ describe("aaveV1-liquidityMining", async () => {
     // console.log(`abi = ${liq.abi}`);
     // console.log(liq);
 
-    const { interests } = await liq.callStatic.claimLpInterests(
+    const { interests } = await liq.callStatic.redeemLpInterests(
       EXPIRY,
       alice.address
     );
-    const { rewards } = await liq.callStatic.claimRewards(
+    const { rewards } = await liq.callStatic.redeemRewards(
       EXPIRY,
       alice.address
     );

@@ -37,6 +37,12 @@ abstract contract PendleRouterNonReentrant {
         _guardCounter = 1;
     }
 
+    /**
+    * We allow markets to make at most ONE Reentrant call
+    in the case of redeemLpInterests
+    * The flow of redeemLpInterests will be: Router.redeemLpInterests -> market.redeemLpInterests
+    -> Router.redeemDueInterests (so there is at most ONE Reentrant call)
+    */
     function _checkNonReentrancy() internal {
         if (_getData().isMarket(msg.sender)) {
             require(_guardCounter <= 2, "REENTRANT_CALL");

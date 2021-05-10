@@ -40,19 +40,20 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
 
     uint256 private constant EMERGENCY_HANDLER_CHANGE_TIMELOCK = 7 days;
 
-    mapping(bytes32 => mapping(address => mapping(uint256 => PausingData))) forgeAssetExpiryPaused; // reversible
-    mapping(bytes32 => mapping(address => PausingData)) forgeAssetPaused; // reversible
-    mapping(bytes32 => PausingData) forgePaused; // reversible
+    mapping(bytes32 => mapping(address => mapping(uint256 => PausingData)))
+        public forgeAssetExpiryPaused; // reversible
+    mapping(bytes32 => mapping(address => PausingData)) public forgeAssetPaused; // reversible
+    mapping(bytes32 => PausingData) public forgePaused; // reversible
 
-    mapping(bytes32 => mapping(address => mapping(uint256 => bool))) forgeAssetExpiryLocked; // non-reversible
-    mapping(bytes32 => mapping(address => bool)) forgeAssetLocked; // non-reversible
-    mapping(bytes32 => bool) forgeLocked; // non-reversible
+    mapping(bytes32 => mapping(address => mapping(uint256 => bool))) public forgeAssetExpiryLocked; // non-reversible
+    mapping(bytes32 => mapping(address => bool)) public forgeAssetLocked; // non-reversible
+    mapping(bytes32 => bool) public forgeLocked; // non-reversible
 
-    mapping(bytes32 => mapping(address => PausingData)) marketPaused; // reversible
-    mapping(bytes32 => PausingData) marketFactoryPaused; // reversible
+    mapping(bytes32 => mapping(address => PausingData)) public marketPaused; // reversible
+    mapping(bytes32 => PausingData) public marketFactoryPaused; // reversible
 
-    mapping(bytes32 => mapping(address => bool)) marketLocked; // non-reversible
-    mapping(bytes32 => bool) marketFactoryLocked; // non-reversible
+    mapping(bytes32 => mapping(address => bool)) public marketLocked; // non-reversible
+    mapping(bytes32 => bool) public marketFactoryLocked; // non-reversible
 
     EmergencyHandlerSetting public override forgeEmergencyHandler;
     EmergencyHandlerSetting public override marketEmergencyHandler;
