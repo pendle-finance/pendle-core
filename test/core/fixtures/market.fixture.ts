@@ -34,11 +34,8 @@ export async function marketFixture(
   provider: providers.Web3Provider
 ): Promise<MarketFixture> {
   const [alice, bob, charlie, dave, eve] = wallets
-  const core = await coreFixture(wallets, provider);
-  const governance = await governanceFixture(wallets, provider);
-  const aForge = await aaveForgeFixture(alice, provider, core, governance);
-  const a2Forge = await aaveV2ForgeFixture(alice, provider, core, governance);
-  const cForge = await compoundForgeFixture(alice, provider, core, governance);
+  const routerFix = await routerFixture(wallets, provider);
+  const { core, aForge, a2Forge, cForge } = routerFix;
   const { router, aMarketFactory, a2MarketFactory, cMarketFactory, data } = core;
   const {
     aFutureYieldToken,
@@ -53,19 +50,18 @@ export async function marketFixture(
   } = cForge;
   const token = tokens.USDT;
 
-  for (var person of [alice, bob, charlie, dave]) {
-    await mintOtAndXyt(provider, token, person, consts.INITIAL_OT_XYT_AMOUNT, router, aaveForge, aaveV2Forge);
-  }
-
   const testToken = await deployContract(alice, TestToken, [
     "Test Token",
     "TEST",
     6,
   ]);
-  const totalSupply = await testToken.totalSupply();
 
+  for (var person of [alice, bob, charlie, dave]) {
+    await mintOtAndXyt(provider, token, person, consts.INITIAL_OT_XYT_AMOUNT, router, aaveForge, aaveV2Forge);
+  }
+
+  const totalSupply = await testToken.totalSupply();
   for (var person of [bob, charlie, dave, eve]) {
-    // no alice since alice is holding all tokens
     await testToken.transfer(person.address, totalSupply.div(5));
   }
 

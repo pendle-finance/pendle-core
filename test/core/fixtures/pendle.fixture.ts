@@ -7,9 +7,10 @@ import { aaveV2Fixture, AaveV2Fixture } from './aaveV2.fixture';
 import { aaveV2ForgeFixture, AaveV2ForgeFixture } from './aaveV2Forge.fixture';
 import { CompoundFixture, compoundForgeFixture } from './compoundForge.fixture';
 import { coreFixture, CoreFixture } from './core.fixture';
-import { governanceFixture } from './governance.fixture';
+import { GovernanceFixture, governanceFixture } from './governance.fixture';
 export interface RouterFixture {
   core: CoreFixture,
+  governance: GovernanceFixture,
   aave: AaveFixture,
   aaveV2: AaveV2Fixture,
   aForge: AaveForgeFixture,
@@ -45,5 +46,5 @@ export async function routerFixture(
   const cContract = await getCContract(alice, tokens.USDT);
   await cContract.approve(core.router.address, consts.INF);
 
-  return { core, aave, aaveV2, aForge, a2Forge, cForge }
+  return { core, governance, aave, aaveV2, aForge, a2Forge, cForge }
 }
