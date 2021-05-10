@@ -101,7 +101,7 @@ describe("aaveV1-market", async () => {
     await bootstrapSampleMarket(amount);
 
     let totalSupply = await stdMarket.totalSupply();
-    let initalWalletBalance = await stdMarket.balanceOf(alice.address);
+    let initialWalletBalance = await stdMarket.balanceOf(alice.address);
     await router.addMarketLiquiditySingle(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
@@ -112,7 +112,7 @@ describe("aaveV1-market", async () => {
       consts.HIGH_GAS_OVERRIDE
     );
     let currentWalletBalance = await stdMarket.balanceOf(alice.address);
-    expect(currentWalletBalance).to.be.gt(initalWalletBalance);
+    expect(currentWalletBalance).to.be.gt(initialWalletBalance);
   });
   it("should be able to bootstrap", async () => {
     const amount = amountToWei(BN.from(100), 6);
@@ -432,9 +432,9 @@ describe("aaveV1-market", async () => {
     await bootstrapSampleMarket(amount);
     await testToken.approve(stdMarket.address, consts.INF);
 
-    let initalLpTokenBal = await stdMarket.balanceOf(alice.address);
-    let initalXytBal = await xyt.balanceOf(alice.address);
-    let initalTestTokenBal = await testToken.balanceOf(alice.address);
+    let initialLpTokenBal = await stdMarket.balanceOf(alice.address);
+    let initialXytBal = await xyt.balanceOf(alice.address);
+    let initialTestTokenBal = await testToken.balanceOf(alice.address);
 
     let totalSupply = await stdMarket.totalSupply();
     await router.addMarketLiquiditySingle(
@@ -451,9 +451,9 @@ describe("aaveV1-market", async () => {
     let currentXytBal = await xyt.balanceOf(alice.address);
     let currentTestTokenBal = await testToken.balanceOf(alice.address);
 
-    expect(currentLpTokenBal).to.be.gt(initalLpTokenBal);
-    expect(currentTestTokenBal).to.be.lt(initalTestTokenBal);
-    expect(currentXytBal).to.be.equal(initalXytBal);
+    expect(currentLpTokenBal).to.be.gt(initialLpTokenBal);
+    expect(currentTestTokenBal).to.be.lt(initialTestTokenBal);
+    expect(currentXytBal).to.be.equal(initialXytBal);
   });
 
   it("should be able to add XYT market liquidity_sample", async () => {
@@ -462,9 +462,9 @@ describe("aaveV1-market", async () => {
     await bootstrapSampleMarket(amount);
     await testToken.approve(stdMarket.address, consts.INF);
 
-    let initalLpTokenBal = await stdMarket.balanceOf(alice.address);
-    let initalXytBal = await xyt.balanceOf(alice.address);
-    let initalTestTokenBal = await testToken.balanceOf(alice.address);
+    let initialLpTokenBal = await stdMarket.balanceOf(alice.address);
+    let initialXytBal = await xyt.balanceOf(alice.address);
+    let initialTestTokenBal = await testToken.balanceOf(alice.address);
 
     let totalSupply = await stdMarket.totalSupply();
     await router.addMarketLiquiditySingle(
@@ -481,9 +481,9 @@ describe("aaveV1-market", async () => {
     let currentXytBal = await xyt.balanceOf(alice.address);
     let currentTestTokenBal = await testToken.balanceOf(alice.address);
 
-    expect(currentLpTokenBal).to.be.gt(initalLpTokenBal);
-    expect(currentTestTokenBal).to.be.equal(initalTestTokenBal);
-    expect(currentXytBal).to.be.lt(initalXytBal);
+    expect(currentLpTokenBal).to.be.gt(initialLpTokenBal);
+    expect(currentTestTokenBal).to.be.equal(initialTestTokenBal);
+    expect(currentXytBal).to.be.lt(initialXytBal);
   });
 
   it("should be able to getMarketTokenAddresses", async () => {
@@ -698,7 +698,7 @@ describe("aaveV1-market", async () => {
     await bootstrapSampleMarketEth(amount);
 
     let totalSupply = await ethMarket.totalSupply();
-    let initalWalletBalance = await ethMarket.balanceOf(alice.address);
+    let initialWalletBalance = await ethMarket.balanceOf(alice.address);
     await router.addMarketLiquiditySingle(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
@@ -709,7 +709,7 @@ describe("aaveV1-market", async () => {
       wrapEth(consts.HIGH_GAS_OVERRIDE, amount.div(10))
     );
     let currentWalletBalance = await ethMarket.balanceOf(alice.address);
-    expect(currentWalletBalance).to.be.gt(initalWalletBalance);
+    expect(currentWalletBalance).to.be.gt(initialWalletBalance);
   });
 
   it("Aave-ETH should be able to join a bootstrapped pool by dual tokens_sample", async () => {
@@ -936,9 +936,9 @@ describe("aaveV1-market", async () => {
 
     await bootstrapSampleMarketEth(amount);
 
-    let initalLpTokenBal = await ethMarket.balanceOf(alice.address);
-    let initalXytBal = await xyt.balanceOf(alice.address);
-    let initalTokenBal = await provider.getBalance(alice.address);
+    let initialLpTokenBal = await ethMarket.balanceOf(alice.address);
+    let initialXytBal = await xyt.balanceOf(alice.address);
+    let initialTokenBal = await provider.getBalance(alice.address);
 
     let totalSupply = await ethMarket.totalSupply();
     await router.addMarketLiquiditySingle(
@@ -955,9 +955,9 @@ describe("aaveV1-market", async () => {
     let currentXytBal = await xyt.balanceOf(alice.address);
     let currentTokenBal = await provider.getBalance(alice.address);
 
-    expect(currentLpTokenBal).to.be.gt(initalLpTokenBal);
-    expect(currentTokenBal).to.be.lt(initalTokenBal);
-    expect(currentXytBal).to.be.equal(initalXytBal);
+    expect(currentLpTokenBal).to.be.gt(initialLpTokenBal);
+    expect(currentTokenBal).to.be.lt(initialTokenBal);
+    expect(currentXytBal).to.be.equal(initialXytBal);
   });
 
   it("Aave-ETH should be able to add XYT market liquidity_sample", async () => {
@@ -965,9 +965,9 @@ describe("aaveV1-market", async () => {
 
     await bootstrapSampleMarketEth(amount);
 
-    let initalLpTokenBal = await ethMarket.balanceOf(alice.address);
-    let initalXytBal = await xyt.balanceOf(alice.address);
-    let initalTokenBal = await WETH.balanceOf(alice.address);
+    let initialLpTokenBal = await ethMarket.balanceOf(alice.address);
+    let initialXytBal = await xyt.balanceOf(alice.address);
+    let initialTokenBal = await WETH.balanceOf(alice.address);
 
     let totalSupply = await ethMarket.totalSupply();
     await router.addMarketLiquiditySingle(
@@ -984,9 +984,9 @@ describe("aaveV1-market", async () => {
     let currentXytBal = await xyt.balanceOf(alice.address);
     let currentTokenBal = await WETH.balanceOf(alice.address);
 
-    expect(currentLpTokenBal).to.be.gt(initalLpTokenBal);
-    expect(currentTokenBal).to.be.equal(initalTokenBal);
-    expect(currentXytBal).to.be.lt(initalXytBal);
+    expect(currentLpTokenBal).to.be.gt(initialLpTokenBal);
+    expect(currentTokenBal).to.be.equal(initialTokenBal);
+    expect(currentXytBal).to.be.lt(initialXytBal);
   });
 
   it("AMM's formula should be correct for swapExactIn", async () => {

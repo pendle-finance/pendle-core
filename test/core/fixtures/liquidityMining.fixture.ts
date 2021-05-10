@@ -1,5 +1,5 @@
 import { BigNumber as BN, Contract, providers, Wallet } from 'ethers';
-import PendleAaveLiquidityMining from "../../../build/artifacts/contracts/core/PendleAaveLiquidityMining.sol/PendleAaveLiquidityMining.json";
+import MockPendleAaveLiquidityMining from "../../../build/artifacts/contracts/mock/MockPendleAaveLiquidityMining.sol/MockPendleAaveLiquidityMining.json";
 import PendleCompoundLiquidityMining from "../../../build/artifacts/contracts/core/PendleCompoundLiquidityMining.sol/PendleCompoundLiquidityMining.json";
 import PENDLE from "../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
 import { amountToWei, consts, tokens } from '../../helpers';
@@ -91,7 +91,7 @@ export async function liquidityMiningFixture(
 
   let aLiquidityMining = await deployContract(
     alice,
-    PendleAaveLiquidityMining,
+    MockPendleAaveLiquidityMining,
     [
       alice.address,
       pdl.address,
@@ -168,7 +168,7 @@ export async function liquidityMiningFixture(
   }
 
   let aLiquidityMiningWeb3 = new hre.web3.eth.Contract(
-    PendleAaveLiquidityMining.abi,
+    MockPendleAaveLiquidityMining.abi,
     aLiquidityMining.address
   );
 

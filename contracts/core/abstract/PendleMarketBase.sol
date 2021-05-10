@@ -303,7 +303,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         writeReserveData(xytBalance, tokenBalance, xytWeight);
         _updateLastParamK(); // update paramK since it has changed due to a non-swap event
 
-        // Mint LP direclty to the user
+        // Mint LP directly to the user
         _mint(user, lpOut);
 
         emit Sync(xytBalance, xytWeight, tokenBalance);

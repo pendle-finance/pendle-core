@@ -90,7 +90,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     /**
     Use:
         To claim the COMP/StkAAVE for any OT holder.
-        Newly acrrued rewards are equally accrued to all OT holders in the process.
+        Newly accrued rewards are equally accrued to all OT holders in the process.
     Conditions:
         * Can be called by anyone, to claim for anyone
     INVARIANTs:

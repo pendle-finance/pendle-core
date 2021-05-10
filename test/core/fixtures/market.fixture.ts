@@ -1,5 +1,5 @@
 import { BigNumber as BN, Contract, providers, Wallet } from "ethers";
-import PendleAaveMarket from "../../../build/artifacts/contracts/core/PendleAaveMarket.sol/PendleAaveMarket.json";
+import MockPendleAaveMarket from "../../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json";
 import PendleCompoundMarket from "../../../build/artifacts/contracts/core/PendleCompoundMarket.sol/PendleCompoundMarket.json";
 import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
 import { consts, mintOtAndXyt, tokens } from "../../helpers";
@@ -143,12 +143,12 @@ export async function marketFixture(
 
   const aMarket = new Contract(
     aMarketAddress,
-    PendleAaveMarket.abi,
+    MockPendleAaveMarket.abi,
     alice
   );
   const a2Market = new Contract(
     a2MarketAddress,
-    PendleAaveMarket.abi,
+    MockPendleAaveMarket.abi,
     alice
   );
   const cMarket = new Contract(
@@ -158,7 +158,7 @@ export async function marketFixture(
   );
   const ethMarket = new Contract(
     ethMarketAddress,
-    PendleAaveMarket.abi,
+    MockPendleAaveMarket.abi,
     alice
   );
 
