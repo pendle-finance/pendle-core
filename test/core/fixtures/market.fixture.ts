@@ -58,7 +58,7 @@ export async function marketFixture(
   ]);
 
   for (var person of [alice, bob, charlie, dave]) {
-    await mintOtAndXyt(provider, token, person, consts.INITIAL_OT_XYT_AMOUNT, router, aaveForge, aaveV2Forge);
+    await mintOtAndXyt(token, person, consts.INITIAL_OT_XYT_AMOUNT, router, aaveForge, aaveV2Forge);
   }
 
   const totalSupply = await testToken.totalSupply();

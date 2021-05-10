@@ -108,7 +108,7 @@ describe("router-negative-test", async () => {
   it("shouldn't be able to redeemUnderlying if the yield contract has expired", async () => {
     let amount = await tokenizeYield(alice, refAmount);
 
-    await setTimeNextBlock(provider, consts.T0.add(consts.ONE_YEAR));
+    await setTimeNextBlock(consts.T0.add(consts.ONE_YEAR));
 
     await expect(
       router.redeemUnderlying(
@@ -164,7 +164,7 @@ describe("router-negative-test", async () => {
   });
 
   it("shouldn't be able to renewYield to invalid expiry", async () => {
-    await advanceTime(provider, consts.SIX_MONTH);
+    await advanceTime(consts.SIX_MONTH);
     await expect(
       router.renewYield(
         consts.FORGE_AAVE,
@@ -183,7 +183,7 @@ describe("router-negative-test", async () => {
       tokenUSDT.address,
       futureTime
     );
-    await advanceTime(provider, consts.FIVE_MONTH);
+    await advanceTime(consts.FIVE_MONTH);
     await expect(
       router.renewYield(
         consts.FORGE_AAVE,
@@ -202,7 +202,7 @@ describe("router-negative-test", async () => {
       tokenUSDT.address,
       futureTime
     );
-    await advanceTime(provider, consts.SIX_MONTH);
+    await advanceTime(consts.SIX_MONTH);
     await expect(
       router.renewYield(
         consts.FORGE_AAVE,
@@ -224,7 +224,7 @@ describe("router-negative-test", async () => {
   });
 
   it("shouldn't be able to tokenizeYield to an expired contract", async () => {
-    await advanceTime(provider, consts.SIX_MONTH);
+    await advanceTime(consts.SIX_MONTH);
     await expect(
       router.tokenizeYield(
         consts.FORGE_AAVE,

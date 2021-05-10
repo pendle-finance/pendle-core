@@ -16,7 +16,7 @@ import {
   tokens,
   randomBN,
   redeemDueInterests,
-  tokenizeYield
+  tokenizeYield,
 } from "../helpers";
 import {
   Mode,
@@ -70,7 +70,6 @@ export function runTest(isAaveV1: boolean) {
       snapshotId = await evm_snapshot();
       REF_AMOUNT = amountToWei(env.INITIAL_YIELD_TOKEN_AMOUNT, 6);
       await mintAaveToken(
-        provider,
         USDT,
         alice,
         REF_AMOUNT.mul(10).div(10 ** USDT.decimal),
@@ -85,7 +84,7 @@ export function runTest(isAaveV1: boolean) {
       await env.aUSDT.transfer(charlie.address, REF_AMOUNT);
       await tokenizeYield(env, alice, REF_AMOUNT, bob);
 
-      await setTimeNextBlock(provider, env.T0.add(consts.ONE_MONTH));
+      await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
       await redeemDueInterests(env, bob);
       const bobInterest = await env.aUSDT.balanceOf(bob.address);
       const charlieInterest = (await env.aUSDT.balanceOf(charlie.address)).sub(
@@ -97,43 +96,32 @@ export function runTest(isAaveV1: boolean) {
         BN.from(200)
       );
 
-      const totalFee = await env.forge.totalFee(
-        USDT.address,
-        env.EXPIRY
-      );
+      const totalFee = await env.forge.totalFee(USDT.address, env.EXPIRY);
       approxBigNumber(charlieInterest.sub(bobInterest), totalFee, BN.from(200));
     });
 
     it("Governance address should be able to withdraw forge fees", async () => {
       await tokenizeYield(env, alice, REF_AMOUNT, bob);
 
-      await setTimeNextBlock(provider, env.T0.add(consts.ONE_MONTH));
+      await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
       await redeemDueInterests(env, bob);
 
-      const totalFee = await env.forge.totalFee(
-        USDT.address,
-        env.EXPIRY
-      );
+      const totalFee = await env.forge.totalFee(USDT.address, env.EXPIRY);
       await env.forge.withdrawForgeFee(USDT.address, env.EXPIRY);
       const treasuryAddress = await env.data.treasury();
       const treasuryBalance = await env.aUSDT.balanceOf(treasuryAddress);
       approxBigNumber(totalFee, treasuryBalance, BN.from(5));
-      const forgeFeeLeft = await env.forge.totalFee(
-        USDT.address,
-        env.EXPIRY
-      );
+      const forgeFeeLeft = await env.forge.totalFee(USDT.address, env.EXPIRY);
       approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(5));
     });
     it("Non-governance address should not be able to withdraw forge fees", async () => {
       await tokenizeYield(env, alice, REF_AMOUNT, bob);
 
-      await setTimeNextBlock(provider, env.T0.add(consts.ONE_MONTH));
+      await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
       await redeemDueInterests(env, bob);
 
       await expect(
-        env.forge
-          .connect(bob)
-          .withdrawForgeFee(USDT.address, env.EXPIRY)
+        env.forge.connect(bob).withdrawForgeFee(USDT.address, env.EXPIRY)
       ).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
     });
   });

@@ -222,7 +222,7 @@ describe("aaveV1-market", async () => {
   it("should be able to exit a pool by dual tokens_sample", async () => {
     const amount = amountToWei(BN.from(100), 6);
     await bootstrapSampleMarket(amount);
-    await advanceTime(provider, consts.ONE_MONTH);
+    await advanceTime(consts.ONE_MONTH);
     const totalSupply = await stdMarket.totalSupply();
 
     await router.removeMarketLiquidityDual(
@@ -278,7 +278,7 @@ describe("aaveV1-market", async () => {
     const amount = amountToWei(BN.from(10), 6);
     await bootstrapSampleMarket(amount);
 
-    advanceTime(provider, consts.ONE_YEAR);
+    advanceTime(consts.ONE_YEAR);
 
     await expect(
       router
@@ -302,7 +302,7 @@ describe("aaveV1-market", async () => {
     await bootstrapSampleMarket(amount);
 
     let totalSupply = await stdMarket.totalSupply();
-    await advanceTime(provider, consts.ONE_YEAR);
+    await advanceTime(consts.ONE_YEAR);
     await expect(
       router.addMarketLiquiditySingle(
         consts.MARKET_FACTORY_AAVE,
@@ -322,7 +322,7 @@ describe("aaveV1-market", async () => {
 
     const totalSupply = await stdMarket.totalSupply();
 
-    await advanceTime(provider, consts.ONE_YEAR);
+    await advanceTime(consts.ONE_YEAR);
 
     await expect(
       router.removeMarketLiquiditySingle(
@@ -352,7 +352,7 @@ describe("aaveV1-market", async () => {
   it("should be able to exit a pool by dual tokens after xyt has expired", async () => {
     const amount = amountToWei(BN.from(100), 6);
     await bootstrapSampleMarket(amount);
-    await advanceTime(provider, consts.ONE_YEAR);
+    await advanceTime(consts.ONE_YEAR);
     const totalSupply = await stdMarket.totalSupply();
 
     await router.removeMarketLiquidityDual(
@@ -809,7 +809,7 @@ describe("aaveV1-market", async () => {
   it("Aave-ETH should be able to exit a pool by dual tokens_sample", async () => {
     const amount = amountToWei(BN.from(100), 6);
     await bootstrapSampleMarketEth(amount);
-    await advanceTime(provider, consts.ONE_MONTH);
+    await advanceTime(consts.ONE_MONTH);
     const totalSupply = await ethMarket.totalSupply();
 
     await router.removeMarketLiquidityDual(
@@ -989,7 +989,7 @@ describe("aaveV1-market", async () => {
     expect(currentXytBal).to.be.lt(initialXytBal);
   });
 
-  it("AMM's formula should be correct for swapExactIn", async () => {
+  it("AMM's formulas should be correct for swapExactIn", async () => {
     await AMMTest(
       router,
       stdMarket,
@@ -1000,7 +1000,7 @@ describe("aaveV1-market", async () => {
       true
     );
   });
-  it("AMM's formula should be correct for swapExactOut", async () => {
+  it("AMM's formulas should be correct for swapExactOut", async () => {
     await AMMTest(
       router,
       stdMarket,

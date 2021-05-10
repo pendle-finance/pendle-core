@@ -11,7 +11,13 @@ import {
   Token,
   tokens,
 } from "../helpers";
-import { marketFixture, MarketFixture, TestEnv, Mode, parseTestEnvMarketFixture } from "./fixtures";
+import {
+  marketFixture,
+  MarketFixture,
+  TestEnv,
+  Mode,
+  parseTestEnvMarketFixture,
+} from "./fixtures";
 
 const { waffle } = require("hardhat");
 const { provider } = waffle;
@@ -181,7 +187,6 @@ export function runTest(isAaveV1: boolean) {
 
     async function mintOtAndXytUSDT(user: Wallet, amount: BN) {
       await mintOtAndXyt(
-        provider,
         USDT,
         user,
         amount,
@@ -240,32 +245,32 @@ export function runTest(isAaveV1: boolean) {
 
       await bootstrapSampleMarket(BN.from(10).pow(10));
 
-      await advanceTime(provider, consts.FIFTEEN_DAY);
+      await advanceTime(consts.FIFTEEN_DAY);
       await addMarketLiquidityDualByXyt(bob, amountXytRef.div(10));
       await swapExactInXytToToken(eve, BN.from(10).pow(9));
 
-      await advanceTime(provider, consts.FIFTEEN_DAY);
+      await advanceTime(consts.FIFTEEN_DAY);
       await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
       await swapExactInXytToToken(eve, BN.from(10).pow(9));
 
-      await advanceTime(provider, consts.FIFTEEN_DAY);
+      await advanceTime(consts.FIFTEEN_DAY);
       await addMarketLiquidityDualByXyt(dave, amountXytRef.div(2));
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
       await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
       await swapExactInXytToToken(eve, BN.from(10).pow(10));
       await addMarketLiquidityDualByXyt(bob, amountXytRef.div(6));
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
       await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
       await swapExactInXytToToken(eve, BN.from(10).pow(10));
       await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
       await swapExactInXytToToken(eve, BN.from(10).pow(10));
       await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
       await swapExactInXytToToken(eve, BN.from(10).pow(10));
       await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
@@ -298,32 +303,32 @@ export function runTest(isAaveV1: boolean) {
 
       await bootstrapSampleMarket(BN.from(10).pow(10));
 
-      await advanceTime(provider, consts.FIFTEEN_DAY);
+      await advanceTime(consts.FIFTEEN_DAY);
       await addMarketLiquidityXyt(bob, amountXytRef.div(10));
       await swapExactInXytToToken(eve, BN.from(10).pow(9));
 
-      await advanceTime(provider, consts.FIFTEEN_DAY);
+      await advanceTime(consts.FIFTEEN_DAY);
       await addMarketLiquidityXyt(charlie, amountXytRef.div(5));
       await swapExactInXytToToken(eve, BN.from(10).pow(9));
 
-      await advanceTime(provider, consts.FIFTEEN_DAY);
+      await advanceTime(consts.FIFTEEN_DAY);
       await addMarketLiquidityXyt(dave, amountXytRef.div(2));
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
       await addMarketLiquidityXyt(dave, amountXytRef.div(3));
       await swapExactInXytToToken(eve, BN.from(10).pow(10));
       await addMarketLiquidityXyt(bob, amountXytRef.div(6));
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
       await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
       await swapExactInXytToToken(eve, BN.from(10).pow(10));
       await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
       await swapExactInXytToToken(eve, BN.from(10).pow(10));
       await addMarketLiquidityXyt(bob, amountXytRef.div(2));
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
       await swapExactInXytToToken(eve, BN.from(10).pow(10));
       await addMarketLiquidityXyt(bob, amountXytRef.div(5));
 
@@ -357,32 +362,32 @@ export function runTest(isAaveV1: boolean) {
 
     //   await bootstrapSampleMarket(BN.from(10).pow(10));
 
-    //   await advanceTime(provider, consts.FIFTEEN_DAY);
+    //   await advanceTime(consts.FIFTEEN_DAY);
     //   await addMarketLiquidityDualByXyt(bob, amountXytRef.div(10));
     //   await addFakeXyt(eve, BN.from(10).pow(9));
 
-    //   await advanceTime(provider, consts.FIFTEEN_DAY);
+    //   await advanceTime(consts.FIFTEEN_DAY);
     //   await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
     //   await addFakeXyt(eve, BN.from(10).pow(9));
 
-    //   await advanceTime(provider, consts.FIFTEEN_DAY);
+    //   await advanceTime(consts.FIFTEEN_DAY);
     //   await addMarketLiquidityDualByXyt(dave, amountXytRef.div(2));
 
-    //   await advanceTime(provider, consts.ONE_MONTH);
+    //   await advanceTime(consts.ONE_MONTH);
     //   await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
     //   await addFakeXyt(eve, BN.from(10).pow(10));
     //   await addMarketLiquidityDualByXyt(bob, amountXytRef.div(6));
 
-    //   await advanceTime(provider, consts.ONE_MONTH);
+    //   await advanceTime(consts.ONE_MONTH);
     //   await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
     //   await addFakeXyt(eve, BN.from(10).pow(10));
     //   await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
 
-    //   await advanceTime(provider, consts.ONE_MONTH);
+    //   await advanceTime(consts.ONE_MONTH);
     //   await addFakeXyt(eve, BN.from(10).pow(10));
     //   await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
 
-    //   await advanceTime(provider, consts.ONE_MONTH);
+    //   await advanceTime(consts.ONE_MONTH);
     //   await addFakeXyt(eve, BN.from(10).pow(10));
     //   await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
@@ -422,17 +427,17 @@ export function runTest(isAaveV1: boolean) {
       await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
       await bootstrapSampleMarket(BN.from(10).pow(10));
-      await advanceTime(provider, consts.ONE_DAY.mul(5));
+      await advanceTime(consts.ONE_DAY.mul(5));
       await removeMarketLiquidityDual(
         alice,
         (await getLPBalance(alice)).div(2)
       );
 
-      await advanceTime(provider, consts.FIFTEEN_DAY);
+      await advanceTime(consts.FIFTEEN_DAY);
       await addMarketLiquidityXyt(bob, amountXytRef.div(10));
       await swapExactInXytToToken(eve, BN.from(10).pow(9));
 
-      await advanceTime(provider, consts.FIFTEEN_DAY);
+      await advanceTime(consts.FIFTEEN_DAY);
       await removeMarketLiquidityXyt(bob, await getLPBalance(bob));
       await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
       await swapExactInXytToToken(eve, BN.from(10).pow(9));
@@ -441,31 +446,31 @@ export function runTest(isAaveV1: boolean) {
         await env.xyt.balanceOf(alice.address)
       );
 
-      await advanceTime(provider, consts.FIFTEEN_DAY);
+      await advanceTime(consts.FIFTEEN_DAY);
       await addMarketLiquidityXyt(dave, amountXytRef.div(2));
       await removeMarketLiquidityToken(
         charlie,
         (await getLPBalance(charlie)).div(3)
       );
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
       await addMarketLiquidityXyt(dave, amountXytRef.div(3));
       await swapExactInXytToToken(eve, BN.from(10).pow(10));
       await addMarketLiquidityXyt(bob, amountXytRef.div(6));
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
       await removeMarketLiquidityXyt(dave, (await getLPBalance(dave)).div(3));
       await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
       await swapExactInXytToToken(eve, BN.from(10).pow(10));
       await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
       await swapExactInXytToToken(eve, BN.from(10).pow(10));
       await addMarketLiquidityXyt(bob, amountXytRef.div(2));
       await swapExactInXytToToken(eve, BN.from(10).pow(10));
       await addMarketLiquidityXyt(bob, amountXytRef.div(5));
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
 
       await redeemAll();
 
@@ -495,16 +500,16 @@ export function runTest(isAaveV1: boolean) {
     it("test 5", async () => {
       await bootstrapSampleMarket(BN.from(10).pow(10));
 
-      await advanceTime(provider, consts.ONE_DAY.mul(5));
+      await advanceTime(consts.ONE_DAY.mul(5));
       await removeMarketLiquidityDual(
         alice,
         (await getLPBalance(alice)).div(2)
       );
 
-      await advanceTime(provider, consts.FIFTEEN_DAY);
+      await advanceTime(consts.FIFTEEN_DAY);
       await addMarketLiquidityDualByXyt(bob, amountXytRef.div(10));
 
-      await advanceTime(provider, consts.FIFTEEN_DAY);
+      await advanceTime(consts.FIFTEEN_DAY);
       await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
 
       await addMarketLiquidityDualByXyt(
@@ -512,20 +517,20 @@ export function runTest(isAaveV1: boolean) {
         (await env.xyt.balanceOf(alice.address)).div(2)
       );
 
-      await advanceTime(provider, consts.FIFTEEN_DAY);
+      await advanceTime(consts.FIFTEEN_DAY);
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
       await addMarketLiquidityDualByXyt(bob, amountXytRef.div(6));
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
       await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
       await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
 
-      await advanceTime(provider, consts.ONE_MONTH);
+      await advanceTime(consts.ONE_MONTH);
       await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
       await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
-      await advanceTime(provider, consts.ONE_MONTH.mul(24));
+      await advanceTime(consts.ONE_MONTH.mul(24));
 
       for (let user of [alice, bob, charlie, dave]) {
         if ((await getLPBalance(user)).gt(0)) {

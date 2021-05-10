@@ -16,7 +16,7 @@ import {
   tokenizeYield,
   redeemDueInterests,
   redeemAfterExpiry,
-  redeemUnderlying
+  redeemUnderlying,
 } from "../helpers";
 import {
   Mode,
@@ -73,7 +73,6 @@ export function runTest(isAaveV1: boolean) {
     async function startCalInterest(walletToUse: Wallet, initialAmount: BN) {
       // divide by 10^decimal since mintAaveToken will multiply that number back
       await mintAaveToken(
-        provider,
         USDT,
         walletToUse,
         initialAmount.div(10 ** USDT.decimal),
@@ -127,7 +126,7 @@ export function runTest(isAaveV1: boolean) {
     it("shouldn't be able to call redeemUnderlying if the yield contract has expired", async () => {
       let amount = await tokenizeYield(env, alice, refAmount);
 
-      await setTimeNextBlock(provider, env.T0.add(consts.ONE_YEAR));
+      await setTimeNextBlock(env.T0.add(consts.ONE_YEAR));
 
       await expect(
         env.router.redeemUnderlying(
@@ -143,7 +142,7 @@ export function runTest(isAaveV1: boolean) {
     it("[After 1 month] should be able to redeem aUSDT to get back OT, XYT and interests $", async () => {
       await startCalInterest(charlie, refAmount);
       let amount = await tokenizeYield(env, alice, refAmount);
-      await setTimeNextBlock(provider, env.T0.add(consts.ONE_MONTH));
+      await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
 
       await redeemUnderlying(env, alice, amount);
 
@@ -164,7 +163,7 @@ export function runTest(isAaveV1: boolean) {
 
       const afterLendingAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
 
-      await setTimeNextBlock(provider, env.T0.add(consts.ONE_MONTH));
+      await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
 
       await redeemDueInterests(env, alice);
 
@@ -185,7 +184,7 @@ export function runTest(isAaveV1: boolean) {
       await env.xyt.transfer(bob.address, amount);
 
       const T1 = env.EXPIRY.sub(1);
-      await setTimeNextBlock(provider, T1);
+      await setTimeNextBlock(T1);
 
       await redeemDueInterests(env, bob);
 
@@ -205,7 +204,7 @@ export function runTest(isAaveV1: boolean) {
       await env.xyt.transfer(bob.address, amount);
 
       const T1 = env.EXPIRY.sub(1);
-      await setTimeNextBlock(provider, T1);
+      await setTimeNextBlock(T1);
 
       await redeemDueInterests(env, bob);
 
@@ -219,7 +218,7 @@ export function runTest(isAaveV1: boolean) {
       await startCalInterest(dave, refAmount);
 
       const T2 = T1.add(10);
-      await setTimeNextBlock(provider, T2);
+      await setTimeNextBlock(T2);
 
       await redeemAfterExpiry(env, alice);
 
@@ -228,7 +227,7 @@ export function runTest(isAaveV1: boolean) {
       approxBigNumber(
         finalAUSDTbalance,
         initialAUSDTbalance.add(expectedGain),
-        env.TEST_DELTA,
+        env.TEST_DELTA
       );
     });
 
@@ -238,7 +237,7 @@ export function runTest(isAaveV1: boolean) {
       await env.xyt.transfer(bob.address, amount);
 
       const T1 = env.EXPIRY.sub(1);
-      await setTimeNextBlock(provider, T1);
+      await setTimeNextBlock(T1);
 
       await redeemDueInterests(env, bob);
 
@@ -246,11 +245,11 @@ export function runTest(isAaveV1: boolean) {
       approxBigNumber(
         await env.aUSDT.balanceOf(bob.address),
         await getCurInterest(charlie, refAmount),
-        env.TEST_DELTA,
+        env.TEST_DELTA
       );
 
       const T2 = T1.add(consts.ONE_MONTH);
-      await setTimeNextBlock(provider, T2);
+      await setTimeNextBlock(T2);
 
       await redeemAfterExpiry(env, alice);
 
@@ -288,7 +287,7 @@ export function runTest(isAaveV1: boolean) {
       );
       await startCalInterest(dave, refAmount);
       await tokenizeYield(env, alice, refAmount);
-      await setTime(provider, env.T0.add(consts.ONE_MONTH.mul(7)));
+      await setTime(env.T0.add(consts.ONE_MONTH.mul(7)));
 
       let {
         redeemedAmount,
@@ -312,7 +311,7 @@ export function runTest(isAaveV1: boolean) {
       );
 
       let renewedAmount = redeemedAmount.sub(amountTransferOut);
-      await setTimeNextBlock(provider, env.T0.add(consts.ONE_MONTH.mul(11)));
+      await setTimeNextBlock(env.T0.add(consts.ONE_MONTH.mul(11)));
       await redeemDueInterests(env, alice, env.T0.add(consts.ONE_YEAR));
       let actualGain = await env.aUSDT.balanceOf(alice.address);
       let expectedGain = await getCurInterest(dave, renewedAmount);
@@ -323,7 +322,7 @@ export function runTest(isAaveV1: boolean) {
       await startCalInterest(charlie, refAmount);
       await tokenizeYield(env, alice, refAmount.div(2));
 
-      await setTimeNextBlock(provider, env.T0.add(consts.ONE_MONTH));
+      await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
       await tokenizeYield(env, alice, refAmount.div(2));
 
       await redeemDueInterests(env, alice);

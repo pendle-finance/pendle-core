@@ -82,21 +82,18 @@ export function runTest(isAaveV1: boolean) {
         await buildTestEnvV2();
       }
       await mintAaveToken(
-        provider,
         tokens.USDT,
         bob,
         testEnv.INITIAL_AAVE_TOKEN_AMOUNT,
         isAaveV1
       );
       await mintAaveToken(
-        provider,
         tokens.USDT,
         charlie,
         testEnv.INITIAL_AAVE_TOKEN_AMOUNT,
         isAaveV1
       );
       await mintAaveToken(
-        provider,
         tokens.USDT,
         dave,
         testEnv.INITIAL_AAVE_TOKEN_AMOUNT,
@@ -157,7 +154,7 @@ export function runTest(isAaveV1: boolean) {
         let curTest = yieldTest[id];
         let user = wallets[curTest.user];
         curTime = curTime.add(BN.from(curTest.timeDelta));
-        await setTimeNextBlock(provider, curTime);
+        await setTimeNextBlock(curTime);
         if (curTest.type == "redeemDueInterests") {
           await redeemDueInterests(user);
         } else if (curTest.type == "redeemUnderlying") {

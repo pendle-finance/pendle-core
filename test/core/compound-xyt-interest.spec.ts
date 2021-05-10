@@ -51,19 +51,16 @@ describe("compound-xyt-interest", async () => {
     cUSDT = await getCContract(alice, tokenUSDT);
 
     await mintCompoundToken(
-      provider,
       tokens.USDT,
       bob,
       consts.INITIAL_COMPOUND_TOKEN_AMOUNT
     );
     await mintCompoundToken(
-      provider,
       tokens.USDT,
       charlie,
       consts.INITIAL_COMPOUND_TOKEN_AMOUNT
     );
     await mintCompoundToken(
-      provider,
       tokens.USDT,
       dave,
       consts.INITIAL_COMPOUND_TOKEN_AMOUNT
@@ -119,7 +116,7 @@ describe("compound-xyt-interest", async () => {
   }
 
   async function addFakeIncome(token: Token, user: Wallet, amount: BN) {
-    await mint(provider, token, user, amount);
+    await mint(token, user, amount);
     let USDTcontract = await getERC20Contract(user, token);
     USDTcontract.connect(user).transfer(
       cUSDT.address,
@@ -133,7 +130,7 @@ describe("compound-xyt-interest", async () => {
       let curTest = yieldTest[id];
       let user = wallets[curTest.user];
       curTime = curTime.add(BN.from(curTest.timeDelta));
-      await setTimeNextBlock(provider, curTime);
+      await setTimeNextBlock(curTime);
       if (curTest.type == "redeemDueInterests") {
         await redeemDueInterests(user);
       } else if (curTest.type == "redeemUnderlying") {

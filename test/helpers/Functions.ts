@@ -4,7 +4,12 @@ import { tokens, consts, Token } from "./Constants";
 
 let USDT: Token = tokens.USDT;
 
-export async function tokenizeYield(env: TestEnv, user: Wallet, amount: BN, to?: Wallet): Promise<BN> {
+export async function tokenizeYield(
+  env: TestEnv,
+  user: Wallet,
+  amount: BN,
+  to?: Wallet
+): Promise<BN> {
   if (to == null) {
     to = user;
   }
@@ -25,39 +30,48 @@ export async function tokenizeYield(env: TestEnv, user: Wallet, amount: BN, to?:
   return amountTokenMinted;
 }
 
-export async function redeemDueInterests(env: TestEnv, user: Wallet, expiry?: BN) {
+export async function redeemDueInterests(
+  env: TestEnv,
+  user: Wallet,
+  expiry?: BN
+) {
   if (expiry == null) {
     expiry = env.EXPIRY;
   }
-  await env.router.connect(user).redeemDueInterests(
-    env.FORGE_ID,
-    USDT.address,
-    expiry,
-    user.address
-  );
+  await env.router
+    .connect(user)
+    .redeemDueInterests(env.FORGE_ID, USDT.address, expiry, user.address);
 }
 
-export async function redeemAfterExpiry(env: TestEnv, user: Wallet, expiry?: BN) {
+export async function redeemAfterExpiry(
+  env: TestEnv,
+  user: Wallet,
+  expiry?: BN
+) {
   if (expiry == null) {
     expiry = env.EXPIRY;
   }
-  await env.router.connect(user).redeemAfterExpiry(
-    env.FORGE_ID,
-    USDT.address,
-    expiry
-  );
+  await env.router
+    .connect(user)
+    .redeemAfterExpiry(env.FORGE_ID, USDT.address, expiry);
 }
 
-export async function redeemUnderlying(env: TestEnv, user: Wallet, amount: BN, expiry?: BN) {
+export async function redeemUnderlying(
+  env: TestEnv,
+  user: Wallet,
+  amount: BN,
+  expiry?: BN
+) {
   if (expiry == null) {
     expiry = env.EXPIRY;
   }
-  await env.router.connect(user).redeemUnderlying(
-    env.FORGE_ID,
-    USDT.address,
-    expiry,
-    amount,
-    consts.HIGH_GAS_OVERRIDE
-  );
+  await env.router
+    .connect(user)
+    .redeemUnderlying(
+      env.FORGE_ID,
+      USDT.address,
+      expiry,
+      amount,
+      consts.HIGH_GAS_OVERRIDE
+    );
 }
-

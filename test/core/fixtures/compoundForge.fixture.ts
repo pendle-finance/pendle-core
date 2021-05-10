@@ -50,7 +50,7 @@ export async function compoundForgeFixture(
 
   await compoundForge.registerCTokens([tokens.USDT.address], [tokens.USDT.compound]);
 
-  await setTimeNextBlock(provider, consts.T0_C); // set the minting time for the first OT and XYT
+  await setTimeNextBlock(consts.T0_C); // set the minting time for the first OT and XYT
   await router.newYieldContracts(consts.FORGE_COMPOUND, tokens.USDT.address, consts.T0_C.add(consts.SIX_MONTH));
 
   const otTokenAddress = await data.otTokens(

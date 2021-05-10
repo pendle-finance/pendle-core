@@ -235,7 +235,7 @@ describe("aaveV1-liquidityMining", async () => {
         // console.log(flatData[i - 1], flatData[i]);
         assert(flatData[i - 1].time < flatData[i].time);
       }
-      await setTimeNextBlock(provider, action.time);
+      await setTimeNextBlock(action.time);
       if (action.isStaking) {
         await doStake(wallets[action.id], action.amount); // access users directly by their id instead of names
         expectedLpBalance[action.id] = expectedLpBalance[action.id].sub(
@@ -268,7 +268,7 @@ describe("aaveV1-liquidityMining", async () => {
       params,
       epochToCheck
     );
-    await setTime(provider, startOfEpoch(params, epochToCheck));
+    await setTime(startOfEpoch(params, epochToCheck));
     let numUser = expectedRewards.length;
     let allocationRateDiv =
       _allocationRateDiv !== undefined ? _allocationRateDiv : 1;
@@ -326,7 +326,7 @@ describe("aaveV1-liquidityMining", async () => {
   //=> after 2 months, all three of them should get the same interests
   it("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests", async () => {
     const INITIAL_LP_AMOUNT: BN = await market.balanceOf(bob.address);
-    await setTimeNextBlock(provider, params.START_TIME.add(100));
+    await setTimeNextBlock(params.START_TIME.add(100));
     const xytBalanceOfMarket = await xyt.balanceOf(market.address);
 
     // Charlie holds same equivalent amount of XYTs as 10% of the market
@@ -341,13 +341,10 @@ describe("aaveV1-liquidityMining", async () => {
     console.log(`\talice staked`);
     await doStake(bob, INITIAL_LP_AMOUNT.div(2));
     console.log(`\tbob staked`);
-    await setTimeNextBlock(provider, params.START_TIME.add(consts.ONE_MONTH));
+    await setTimeNextBlock(params.START_TIME.add(consts.ONE_MONTH));
     await doStake(bob, INITIAL_LP_AMOUNT.div(2));
     console.log(`\tbob staked round 2`);
-    await setTimeNextBlock(
-      provider,
-      params.START_TIME.add(consts.ONE_MONTH.mul(2))
-    );
+    await setTimeNextBlock(params.START_TIME.add(consts.ONE_MONTH.mul(2)));
 
     await liq.redeemLpInterests(EXPIRY, bob.address);
     console.log(`\tbob claimed interests`);
@@ -433,21 +430,17 @@ describe("aaveV1-liquidityMining", async () => {
   it("this test shouldn't crash", async () => {
     const amountToStake = await market.balanceOf(bob.address);
 
-    await setTimeNextBlock(provider, params.START_TIME);
+    await setTimeNextBlock(params.START_TIME);
     await liq
       .connect(bob)
       .stake(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
 
-    await setTimeNextBlock(
-      provider,
-      params.START_TIME.add(params.EPOCH_DURATION)
-    );
+    await setTimeNextBlock(params.START_TIME.add(params.EPOCH_DURATION));
     await liq
       .connect(bob)
       .withdraw(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
     await liq.redeemRewards(EXPIRY, bob.address);
     await setTimeNextBlock(
-      provider,
       params.START_TIME.add(params.EPOCH_DURATION).add(params.EPOCH_DURATION)
     );
     await liq.redeemRewards(EXPIRY, bob.address);
@@ -468,7 +461,7 @@ describe("aaveV1-liquidityMining", async () => {
     console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
     console.log(`\tLP balance of user before: ${lpBalanceOfUser}`);
 
-    await advanceTime(provider, params.START_TIME.sub(consts.T0));
+    await advanceTime(params.START_TIME.sub(consts.T0));
     await liq
       .connect(bob)
       .stake(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
@@ -485,7 +478,7 @@ describe("aaveV1-liquidityMining", async () => {
       `\t[LP interests] aUSDT balance of User after first staking = ${aTokenBalanceOfUser}`
     );
 
-    await advanceTime(provider, FIFTEEN_DAYS);
+    await advanceTime(FIFTEEN_DAYS);
     await liq
       .connect(bob)
       .withdraw(
@@ -525,7 +518,7 @@ describe("aaveV1-liquidityMining", async () => {
     // From epoch 2: (rewardsForEpoch/2 + rewardsForEpoch/2/2) * 2/4  ( first half: get all the rewards = rewardsForEpoch/2, 2nd half: get half)
     // From epoch 3: rewardsForEpoch/2 * 1/4  ( two stakers with the same stake & duration => each gets rewardsForEpoch/2)
     //  Total: rewardsForEpoch * (1/2 + 3/8 + 1/8) = rewardsForEpoch
-    await advanceTime(provider, FIFTEEN_DAYS);
+    await advanceTime(FIFTEEN_DAYS);
 
     // console.log(`abi = ${liq.abi}`);
     // console.log(liq);

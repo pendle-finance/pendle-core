@@ -17,12 +17,11 @@ import { consts, Token } from "./Constants";
 import { impersonateAccount } from "./Evm";
 
 const hre = require("hardhat");
+const { waffle } = require("hardhat");
+const { provider } = waffle;
 const PRECISION = BN.from(2).pow(40);
 
-type MutyiplierMap = Record<string, BN>;
-
 export async function mintOtAndXyt(
-  provider: providers.Web3Provider,
   token: Token,
   user: Wallet,
   amount: BN,
@@ -38,9 +37,9 @@ export async function mintOtAndXyt(
   let preA2TokenBal = await a2Contract.balanceOf(user.address);
   let preCTokenBal = await cContract.balanceOf(user.address);
 
-  await mintAaveToken(provider, token, user, amount, true);
-  await mintAaveToken(provider, token, user, amount, false);
-  await mintCompoundToken(provider, token, user, amount);
+  await mintAaveToken(token, user, amount, true);
+  await mintAaveToken(token, user, amount, false);
+  await mintCompoundToken(token, user, amount);
   await aContract.approve(router.address, consts.INF);
   await a2Contract.approve(router.address, consts.INF);
   await cContract.approve(router.address, consts.INF);
@@ -83,12 +82,7 @@ export async function mintOtAndXyt(
   };
 }
 
-export async function mint(
-  provider: providers.Web3Provider,
-  token: Token,
-  alice: Wallet,
-  amount: BN
-) {
+export async function mint(token: Token, alice: Wallet, amount: BN) {
   await impersonateAccount(token.owner!);
   const signer = await provider.getSigner(token.owner!);
 
@@ -146,13 +140,12 @@ export async function convertToCompoundToken(
 }
 
 export async function mintAaveToken(
-  provider: providers.Web3Provider,
   token: Token,
   alice: Wallet,
   amount: BN,
   isAaveV1: boolean
 ) {
-  await mint(provider, token, alice, amount);
+  await mint(token, alice, amount);
   if (isAaveV1) {
     await convertToAaveToken(token, alice, amount);
   } else {
@@ -161,12 +154,11 @@ export async function mintAaveToken(
 }
 
 export async function mintCompoundToken(
-  provider: providers.Web3Provider,
   token: Token,
   alice: Wallet,
   amount: BN
 ) {
-  await mint(provider, token, alice, amount);
+  await mint(token, alice, amount);
   await convertToCompoundToken(token, alice, amount);
 }
 

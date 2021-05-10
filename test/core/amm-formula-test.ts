@@ -60,7 +60,7 @@ export async function AMMTest(
       tokenBalance: initialTokenBalance,
     } = await market.getReserves();
 
-    await setTimeNextBlock(provider, time);
+    await setTimeNextBlock(time);
     if (useSwapIn) {
       await swapExactInTokenToXyt(tokenIn);
     } else {
@@ -88,7 +88,7 @@ export async function AMMTest(
       tokenBalance: initialTokenBalance,
     } = await market.getReserves();
 
-    await setTimeNextBlock(provider, time);
+    await setTimeNextBlock(time);
     if (useSwapIn) {
       await swapExactInXytToToken(xytIn);
     } else {

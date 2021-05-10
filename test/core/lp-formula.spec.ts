@@ -54,7 +54,6 @@ describe("lp-formula", async () => {
     await data.setMarketFees(toFixedPoint("0.0035"), 0); // 0.35%
     for (var person of [alice, bob, charlie]) {
       await mintOtAndXyt(
-        provider,
         tokenUSDT,
         person,
         BN.from(10).pow(10),
@@ -188,7 +187,7 @@ describe("lp-formula", async () => {
       amountToWei(test.initTokenAmount, 6)
     );
     // console.log((await xyt.balanceOf(alice.address)), (await testToken.balanceOf(alice.address)));
-    await setTimeNextBlock(provider, T1);
+    await setTimeNextBlock(T1);
 
     let initialTokenBalance: BN = await testToken.balanceOf(bob.address);
     let initialXytBalance: BN = await xyt.balanceOf(bob.address);
@@ -200,7 +199,7 @@ describe("lp-formula", async () => {
     );
     await checkLpBalance(bob, test.expectedLpBal1);
 
-    await setTimeNextBlock(provider, T2);
+    await setTimeNextBlock(T2);
     // console.log((await xyt.balanceOf(bob.address)));
     // console.log(amountToWei(test.amountXytChange, 6));
     await addLiquiditySingleToken(
@@ -237,7 +236,7 @@ describe("lp-formula", async () => {
     let amountToRemove: BN = lpBalanceAlice.mul(test.ratioLpForToken).div(100);
     totalLpAmountRemoved = totalLpAmountRemoved.add(amountToRemove);
 
-    await setTimeNextBlock(provider, T1);
+    await setTimeNextBlock(T1);
     let balanceDiff: BN = await removeLiquiditySingleToken(
       alice,
       testToken.address,
@@ -245,7 +244,7 @@ describe("lp-formula", async () => {
     );
     approxBigNumber(balanceDiff, test.expectedTokenDiff, LOCAL_TOKEN_DELTA);
 
-    await setTimeNextBlock(provider, T2);
+    await setTimeNextBlock(T2);
     amountToRemove = lpBalanceAlice.mul(test.ratioLpForXyt).div(100);
     totalLpAmountRemoved = totalLpAmountRemoved.add(amountToRemove);
     balanceDiff = await removeLiquiditySingleToken(

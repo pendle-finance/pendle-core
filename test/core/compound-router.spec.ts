@@ -89,7 +89,7 @@ describe("compound-router", async () => {
   }
 
   async function borrow(amount: BN, user: Wallet) {
-    await mint(provider, tokens.USDT, user, amount);
+    await mint(tokens.USDT, user, amount);
     const cToken = await getCContract(user, tokens.USDT);
     await cToken.borrow(amount);
   }
@@ -113,7 +113,7 @@ describe("compound-router", async () => {
       .div(consts.ONE_E_18);
     await tokenizeYield(alice, initialcUSDTbalance.div(2));
     await borrow(amount, charlie);
-    await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
+    await setTimeNextBlock(consts.T0_C.add(consts.FIFTEEN_DAY));
     await tokenizeYield(alice, initialcUSDTbalance.div(2));
     await redeemDueInterests(alice, consts.T0_C.add(consts.SIX_MONTH));
 
@@ -153,7 +153,7 @@ describe("compound-router", async () => {
   it("shouldn't be able to call redeemUnderlying if the yield contract has expired", async () => {
     await tokenizeYield(alice, initialcUSDTbalance);
 
-    await setTimeNextBlock(provider, consts.T0_C.add(consts.ONE_YEAR));
+    await setTimeNextBlock(consts.T0_C.add(consts.ONE_YEAR));
 
     await expect(
       router.redeemUnderlying(
@@ -170,7 +170,7 @@ describe("compound-router", async () => {
     await tokenizeYield(alice, initialcUSDTbalance);
     await borrow(amount, charlie);
 
-    await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
+    await setTimeNextBlock(consts.T0_C.add(consts.FIFTEEN_DAY));
 
     await router.redeemUnderlying(
       consts.FORGE_COMPOUND,
@@ -197,7 +197,7 @@ describe("compound-router", async () => {
 
     await cOt.transfer(bob.address, await cOt.balanceOf(alice.address));
 
-    await setTimeNextBlock(provider, consts.T0_C.add(consts.ONE_MONTH));
+    await setTimeNextBlock(consts.T0_C.add(consts.ONE_MONTH));
 
     await redeemDueInterests(alice, consts.T0_C.add(consts.SIX_MONTH));
 
@@ -240,7 +240,7 @@ describe("compound-router", async () => {
     await borrow(amount, charlie);
 
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
-    await setTimeNextBlock(provider, T1);
+    await setTimeNextBlock(T1);
 
     await redeemDueInterests(bob, consts.T0_C.add(consts.SIX_MONTH));
 
@@ -277,12 +277,12 @@ describe("compound-router", async () => {
     await borrow(amount, charlie);
 
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
-    await setTimeNextBlock(provider, T1);
+    await setTimeNextBlock(T1);
 
     await redeemDueInterests(bob, consts.T0_C.add(consts.SIX_MONTH));
 
     const T2 = T1.add(10);
-    await setTimeNextBlock(provider, T2);
+    await setTimeNextBlock(T2);
 
     await router.redeemAfterExpiry(
       consts.FORGE_COMPOUND,
@@ -304,7 +304,7 @@ describe("compound-router", async () => {
     );
   });
 
-  it("One month after expiry, should be able to redeem cUSDT with intrest", async () => {
+  it("One month after expiry, should be able to redeem cUSDT with interest", async () => {
     await tokenizeYield(alice, initialcUSDTbalance);
     await cXyt.transfer(bob.address, initialcUSDTbalance);
     const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
@@ -314,12 +314,12 @@ describe("compound-router", async () => {
     await borrow(amount, charlie);
 
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
-    await setTimeNextBlock(provider, T1);
+    await setTimeNextBlock(T1);
 
     await redeemDueInterests(bob, consts.T0_C.add(consts.SIX_MONTH));
 
     const T2 = T1.add(consts.ONE_MONTH);
-    await setTimeNextBlock(provider, T2);
+    await setTimeNextBlock(T2);
 
     await router.redeemAfterExpiry(
       consts.FORGE_COMPOUND,
@@ -359,7 +359,7 @@ describe("compound-router", async () => {
 
   it("should receive back exactly the same amount of cTokens", async () => {
     await tokenizeYield(alice, initialcUSDTbalance);
-    await setTimeNextBlock(provider, consts.T0_C.add(consts.FIFTEEN_DAY));
+    await setTimeNextBlock(consts.T0_C.add(consts.FIFTEEN_DAY));
 
     await redeemDueInterests(alice, consts.T0_C.add(consts.SIX_MONTH));
 

@@ -32,11 +32,11 @@ export async function routerFixture(
   const aaveV2 = await aaveV2Fixture(alice);
 
 
-  await mint(provider, tokens.USDT, alice, consts.INITIAL_AAVE_USDT_AMOUNT);
+  await mint(tokens.USDT, alice, consts.INITIAL_AAVE_USDT_AMOUNT);
   await convertToAaveToken(tokens.USDT, alice, consts.INITIAL_AAVE_TOKEN_AMOUNT);
-  await mint(provider, tokens.USDT, alice, consts.INITIAL_AAVE_USDT_AMOUNT);
+  await mint(tokens.USDT, alice, consts.INITIAL_AAVE_USDT_AMOUNT);
   await convertToAaveV2Token(tokens.USDT, alice, consts.INITIAL_AAVE_TOKEN_AMOUNT);
-  await mint(provider, tokens.USDT, alice, consts.INITIAL_COMPOUND_USDT_AMOUNT);
+  await mint(tokens.USDT, alice, consts.INITIAL_COMPOUND_USDT_AMOUNT);
   await convertToCompoundToken(tokens.USDT, alice, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
 
   const aContract = await getAContract(alice, aForge.aaveForge, tokens.USDT);
