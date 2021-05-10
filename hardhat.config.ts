@@ -113,10 +113,10 @@ const config: HardhatUserConfig = {
   mocha: {
     timeout: 500000,
   },
-  tenderly: {
-    username: "Yongkhang",
-    project: "pendle-finance"
-  }
+  // tenderly: {
+  //   username: "Yongkhang",
+  //   project: "pendle-finance"
+  // }
 };
 
 export default config;
