@@ -146,8 +146,8 @@ export const kovanConstants = {
     INTEREST_UPDATE_RATE_DELTA_FOR_MARKET: BN.from(2).pow(40).div(10000),
 
     // OT rewards
-    STKAAVE_ADDRESS: "0x4da27a545c0c5b758a6ba100e3a049001de870f5",
-    COMP_ADDRESS: "0xc00e94cb662c3520282e6f5717214004a7f26888",
+    STKAAVE_ADDRESS: "0xa1c74a9a3e59ffe9bee7b85cd6e91c0751289ebd", //WETH for kovan
+    COMP_ADDRESS: "0xa1c74a9a3e59ffe9bee7b85cd6e91c0751289ebd", //WETH for kovan
     AAVE_INCENTIVES_CONTROLLER: "0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5",
 
     // Fee
