@@ -198,7 +198,7 @@ export function runTest(isAaveV1: boolean) {
         )
       ).to.be.revertedWith(errMsg.MARKET_PAUSED);
       await expect(
-        router.claimLpInterests(
+        router.redeemLpInterests(
           market.address,
           bob.address,
           consts.HIGH_GAS_OVERRIDE
@@ -239,7 +239,7 @@ export function runTest(isAaveV1: boolean) {
         consts.HIGH_GAS_OVERRIDE
       );
 
-      await router.claimLpInterests(
+      await router.redeemLpInterests(
         market.address,
         bob.address,
         consts.HIGH_GAS_OVERRIDE
