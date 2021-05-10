@@ -26,7 +26,8 @@ interface TestEnv {
   EXPIRY: BN;
 }
 
-export function runTest(isAaveV1: boolean) {
+
+function runTest(isAaveV1: boolean) {
   describe("", async () => {
     const wallets = provider.getWallets();
     const loadFixture = createFixtureLoader(wallets, provider);
@@ -595,3 +596,7 @@ export function runTest(isAaveV1: boolean) {
     });
   });
 }
+
+describe("Pausing tests", function() {
+  runTest(true);
+});
