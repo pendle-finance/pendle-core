@@ -34,6 +34,7 @@ export const consts = {
   ETH_ADDRESS: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
   INF: BN.from(2).pow(256).sub(1),
   DEFAULT_CHAIN_ID: 31337,
+  ONE_HOUR: BN.from(3600),
   ONE_DAY: BN.from(86400),
   ONE_WEEK: BN.from(86400 * 7),
   FIFTEEN_DAY: BN.from(86400 * 15),
