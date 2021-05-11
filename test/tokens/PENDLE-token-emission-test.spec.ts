@@ -428,7 +428,7 @@ describe("Token name test [@skip-on-coverage]", async () => {
         try {
           /// Might not have been 1 week yet
           if (getRandomNumber(100) < 10) await applyConfigSimulator();
-        } catch (error) { }
+        } catch (error) {}
 
         await advanceTime(consts.ONE_WEEK);
       }

@@ -201,12 +201,7 @@ describe("compound-lp-interest", async () => {
     user: Wallet,
     amount: BN
   ): Promise<{ ATokenMinted: BN; A2TokenMinted: BN; CTokenMinted: BN }> {
-    return await mintOtAndXyt(
-      tokenUSDT,
-      user,
-      amount,
-      fixture.routerFix
-    );
+    return await mintOtAndXyt(tokenUSDT, user, amount, fixture.routerFix);
   }
 
   async function swapExactInXytToToken(user: Wallet, inAmount: BN) {

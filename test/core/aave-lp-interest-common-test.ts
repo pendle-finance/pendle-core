@@ -10,6 +10,15 @@ import {
   mintOtAndXyt,
   Token,
   tokens,
+  bootstrapMarket,
+  swapExactInXytToToken,
+  addMarketLiquiditySingleXyt,
+  removeMarketLiquidityDual,
+  removeMarketLiquidityXyt,
+  removeMarketLiquiditySingleToken,
+  addMarketLiquidityDualXyt,
+  redeemDueInterests,
+  redeemLpInterests,
 } from "../helpers";
 import {
   marketFixture,
@@ -40,22 +49,13 @@ export function runTest(isAaveV1: boolean) {
       else await parseTestEnvMarketFixture(alice, Mode.AAVE_V2, env, fixture);
       USDT = tokens.USDT;
       env.TEST_DELTA = BN.from(60000);
+      env.EXPIRY = env.T0.add(consts.SIX_MONTH);
     }
 
     async function redeemAll() {
       for (let user of [alice, bob, charlie, dave]) {
-        await env.router.redeemLpInterests(
-          env.stdMarket.address,
-          user.address,
-          consts.HIGH_GAS_OVERRIDE
-        );
-        await env.router.redeemDueInterests(
-          env.FORGE_ID,
-          USDT.address,
-          env.T0.add(consts.SIX_MONTH),
-          user.address,
-          consts.HIGH_GAS_OVERRIDE
-        );
+        await redeemDueInterests(env, user);
+        await redeemLpInterests(env, user);
       }
     }
 
@@ -89,139 +89,8 @@ export function runTest(isAaveV1: boolean) {
       snapshotId = await evm_snapshot();
     });
 
-    async function bootstrapSampleMarket(amount: BN) {
-      await env.router.bootstrapMarket(
-        env.MARKET_FACTORY_ID,
-        env.xyt.address,
-        env.testToken.address,
-        amount,
-        await env.testToken.balanceOf(alice.address),
-        consts.HIGH_GAS_OVERRIDE
-      );
-    }
-
-    async function addMarketLiquidityDualByXyt(user: Wallet, amountXyt: BN) {
-      await env.router
-        .connect(user)
-        .addMarketLiquidityDual(
-          env.MARKET_FACTORY_ID,
-          env.xyt.address,
-          env.testToken.address,
-          amountXyt,
-          consts.INF,
-          amountXyt,
-          BN.from(0),
-          consts.HIGH_GAS_OVERRIDE
-        );
-    }
-
-    async function addMarketLiquidityToken(user: Wallet, amount: BN) {
-      await env.router
-        .connect(user)
-        .addMarketLiquiditySingle(
-          env.MARKET_FACTORY_ID,
-          env.xyt.address,
-          env.testToken.address,
-          false,
-          amount,
-          BN.from(0),
-          consts.HIGH_GAS_OVERRIDE
-        );
-    }
-
-    async function addMarketLiquidityXyt(user: Wallet, amount: BN) {
-      await env.router
-        .connect(user)
-        .addMarketLiquiditySingle(
-          env.MARKET_FACTORY_ID,
-          env.xyt.address,
-          env.testToken.address,
-          true,
-          amount,
-          BN.from(0),
-          consts.HIGH_GAS_OVERRIDE
-        );
-    }
-
-    async function removeMarketLiquidityDual(user: Wallet, amount: BN) {
-      await env.router
-        .connect(user)
-        .removeMarketLiquidityDual(
-          env.MARKET_FACTORY_ID,
-          env.xyt.address,
-          env.testToken.address,
-          amount,
-          BN.from(0),
-          BN.from(0),
-          consts.HIGH_GAS_OVERRIDE
-        );
-    }
-
-    async function removeMarketLiquidityXyt(user: Wallet, amount: BN) {
-      await env.router
-        .connect(user)
-        .removeMarketLiquiditySingle(
-          env.MARKET_FACTORY_ID,
-          env.xyt.address,
-          env.testToken.address,
-          true,
-          amount,
-          BN.from(0),
-          consts.HIGH_GAS_OVERRIDE
-        );
-    }
-
-    async function removeMarketLiquidityToken(user: Wallet, amount: BN) {
-      await env.router
-        .connect(user)
-        .removeMarketLiquiditySingle(
-          env.MARKET_FACTORY_ID,
-          env.xyt.address,
-          env.testToken.address,
-          false,
-          amount,
-          BN.from(0),
-          consts.HIGH_GAS_OVERRIDE
-        );
-    }
-
     async function mintOtAndXytUSDT(user: Wallet, amount: BN) {
-      await mintOtAndXyt(
-        USDT,
-        user,
-        amount,
-        env.routerFixture,
-      );
-    }
-
-    async function swapExactInTokenToXyt(user: Wallet, inAmount: BN) {
-      await env.router
-        .connect(user)
-        .swapExactIn(
-          env.testToken.address,
-          env.xyt.address,
-          inAmount,
-          BN.from(0),
-          env.MARKET_FACTORY_ID,
-          consts.HIGH_GAS_OVERRIDE
-        );
-    }
-
-    async function swapExactInXytToToken(user: Wallet, inAmount: BN) {
-      await env.router
-        .connect(user)
-        .swapExactIn(
-          env.xyt.address,
-          env.testToken.address,
-          inAmount,
-          BN.from(0),
-          env.MARKET_FACTORY_ID,
-          consts.HIGH_GAS_OVERRIDE
-        );
-    }
-
-    async function addFakeXyt(user: Wallet, amount: BN) {
-      await env.xyt.connect(user).transfer(env.stdMarket.address, amount);
+      await mintOtAndXyt(USDT, user, amount, env.routerFixture);
     }
 
     async function getLPBalance(user: Wallet) {
@@ -241,36 +110,36 @@ export function runTest(isAaveV1: boolean) {
     it("test 1", async () => {
       await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
-      await bootstrapSampleMarket(BN.from(10).pow(10));
+      await bootstrapMarket(env, alice, BN.from(10).pow(10));
 
       await advanceTime(consts.FIFTEEN_DAY);
-      await addMarketLiquidityDualByXyt(bob, amountXytRef.div(10));
-      await swapExactInXytToToken(eve, BN.from(10).pow(9));
+      await addMarketLiquidityDualXyt(env, bob, amountXytRef.div(10));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(9));
 
       await advanceTime(consts.FIFTEEN_DAY);
-      await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
-      await swapExactInXytToToken(eve, BN.from(10).pow(9));
+      await addMarketLiquidityDualXyt(env, charlie, amountXytRef.div(5));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(9));
 
       await advanceTime(consts.FIFTEEN_DAY);
-      await addMarketLiquidityDualByXyt(dave, amountXytRef.div(2));
+      await addMarketLiquidityDualXyt(env, dave, amountXytRef.div(2));
 
       await advanceTime(consts.ONE_MONTH);
-      await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
-      await swapExactInXytToToken(eve, BN.from(10).pow(10));
-      await addMarketLiquidityDualByXyt(bob, amountXytRef.div(6));
+      await addMarketLiquidityDualXyt(env, dave, amountXytRef.div(3));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(10));
+      await addMarketLiquidityDualXyt(env, bob, amountXytRef.div(6));
 
       await advanceTime(consts.ONE_MONTH);
-      await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
-      await swapExactInXytToToken(eve, BN.from(10).pow(10));
-      await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
+      await addMarketLiquidityDualXyt(env, charlie, amountXytRef.div(3));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(10));
+      await addMarketLiquidityDualXyt(env, charlie, amountXytRef.div(3));
 
       await advanceTime(consts.ONE_MONTH);
-      await swapExactInXytToToken(eve, BN.from(10).pow(10));
-      await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(10));
+      await addMarketLiquidityDualXyt(env, bob, amountXytRef.div(2));
 
       await advanceTime(consts.ONE_MONTH);
-      await swapExactInXytToToken(eve, BN.from(10).pow(10));
-      await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(10));
+      await addMarketLiquidityDualXyt(env, bob, amountXytRef.div(5));
 
       await redeemAll();
 
@@ -299,36 +168,36 @@ export function runTest(isAaveV1: boolean) {
     it("test 2", async () => {
       await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
-      await bootstrapSampleMarket(BN.from(10).pow(10));
+      await bootstrapMarket(env, alice, BN.from(10).pow(10));
 
       await advanceTime(consts.FIFTEEN_DAY);
-      await addMarketLiquidityXyt(bob, amountXytRef.div(10));
-      await swapExactInXytToToken(eve, BN.from(10).pow(9));
+      await addMarketLiquiditySingleXyt(env, bob, amountXytRef.div(10));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(9));
 
       await advanceTime(consts.FIFTEEN_DAY);
-      await addMarketLiquidityXyt(charlie, amountXytRef.div(5));
-      await swapExactInXytToToken(eve, BN.from(10).pow(9));
+      await addMarketLiquiditySingleXyt(env, charlie, amountXytRef.div(5));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(9));
 
       await advanceTime(consts.FIFTEEN_DAY);
-      await addMarketLiquidityXyt(dave, amountXytRef.div(2));
+      await addMarketLiquiditySingleXyt(env, dave, amountXytRef.div(2));
 
       await advanceTime(consts.ONE_MONTH);
-      await addMarketLiquidityXyt(dave, amountXytRef.div(3));
-      await swapExactInXytToToken(eve, BN.from(10).pow(10));
-      await addMarketLiquidityXyt(bob, amountXytRef.div(6));
+      await addMarketLiquiditySingleXyt(env, dave, amountXytRef.div(3));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(10));
+      await addMarketLiquiditySingleXyt(env, bob, amountXytRef.div(6));
 
       await advanceTime(consts.ONE_MONTH);
-      await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
-      await swapExactInXytToToken(eve, BN.from(10).pow(10));
-      await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
+      await addMarketLiquiditySingleXyt(env, charlie, amountXytRef.div(3));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(10));
+      await addMarketLiquiditySingleXyt(env, charlie, amountXytRef.div(3));
 
       await advanceTime(consts.ONE_MONTH);
-      await swapExactInXytToToken(eve, BN.from(10).pow(10));
-      await addMarketLiquidityXyt(bob, amountXytRef.div(2));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(10));
+      await addMarketLiquiditySingleXyt(env, bob, amountXytRef.div(2));
 
       await advanceTime(consts.ONE_MONTH);
-      await swapExactInXytToToken(eve, BN.from(10).pow(10));
-      await addMarketLiquidityXyt(bob, amountXytRef.div(5));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(10));
+      await addMarketLiquiditySingleXyt(env, bob, amountXytRef.div(5));
 
       await redeemAll();
 
@@ -358,36 +227,36 @@ export function runTest(isAaveV1: boolean) {
     // xit("test 3", async () => {
     //   await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
-    //   await bootstrapSampleMarket(BN.from(10).pow(10));
+    //   await bootstrapMarket(env,alice,BN.from(10).pow(10));
 
     //   await advanceTime(consts.FIFTEEN_DAY);
-    //   await addMarketLiquidityDualByXyt(bob, amountXytRef.div(10));
+    //   await addMarketLiquidityDualXyt(env,bob, amountXytRef.div(10));
     //   await addFakeXyt(eve, BN.from(10).pow(9));
 
     //   await advanceTime(consts.FIFTEEN_DAY);
-    //   await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
+    //   await addMarketLiquidityDualXyt(env,charlie, amountXytRef.div(5));
     //   await addFakeXyt(eve, BN.from(10).pow(9));
 
     //   await advanceTime(consts.FIFTEEN_DAY);
-    //   await addMarketLiquidityDualByXyt(dave, amountXytRef.div(2));
+    //   await addMarketLiquidityDualXyt(env,dave, amountXytRef.div(2));
 
     //   await advanceTime(consts.ONE_MONTH);
-    //   await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
+    //   await addMarketLiquidityDualXyt(env,dave, amountXytRef.div(3));
     //   await addFakeXyt(eve, BN.from(10).pow(10));
-    //   await addMarketLiquidityDualByXyt(bob, amountXytRef.div(6));
+    //   await addMarketLiquidityDualXyt(env,bob, amountXytRef.div(6));
 
     //   await advanceTime(consts.ONE_MONTH);
-    //   await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
+    //   await addMarketLiquidityDualXyt(env,charlie, amountXytRef.div(3));
     //   await addFakeXyt(eve, BN.from(10).pow(10));
-    //   await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
-
-    //   await advanceTime(consts.ONE_MONTH);
-    //   await addFakeXyt(eve, BN.from(10).pow(10));
-    //   await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
+    //   await addMarketLiquidityDualXyt(env,charlie, amountXytRef.div(3));
 
     //   await advanceTime(consts.ONE_MONTH);
     //   await addFakeXyt(eve, BN.from(10).pow(10));
-    //   await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
+    //   await addMarketLiquidityDualXyt(env,bob, amountXytRef.div(2));
+
+    //   await advanceTime(consts.ONE_MONTH);
+    //   await addFakeXyt(eve, BN.from(10).pow(10));
+    //   await addMarketLiquidityDualXyt(env,bob, amountXytRef.div(5));
 
     //   await redeemAll();
 
@@ -424,49 +293,56 @@ export function runTest(isAaveV1: boolean) {
     it("test 4", async () => {
       await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
-      await bootstrapSampleMarket(BN.from(10).pow(10));
+      await bootstrapMarket(env, alice, BN.from(10).pow(10));
       await advanceTime(consts.ONE_DAY.mul(5));
       await removeMarketLiquidityDual(
+        env,
         alice,
         (await getLPBalance(alice)).div(2)
       );
 
       await advanceTime(consts.FIFTEEN_DAY);
-      await addMarketLiquidityXyt(bob, amountXytRef.div(10));
-      await swapExactInXytToToken(eve, BN.from(10).pow(9));
+      await addMarketLiquiditySingleXyt(env, bob, amountXytRef.div(10));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(9));
 
       await advanceTime(consts.FIFTEEN_DAY);
-      await removeMarketLiquidityXyt(bob, await getLPBalance(bob));
-      await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
-      await swapExactInXytToToken(eve, BN.from(10).pow(9));
-      await addMarketLiquidityDualByXyt(
+      await removeMarketLiquidityXyt(env, bob, await getLPBalance(bob));
+      await addMarketLiquidityDualXyt(env, charlie, amountXytRef.div(5));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(9));
+      await addMarketLiquidityDualXyt(
+        env,
         alice,
         await env.xyt.balanceOf(alice.address)
       );
 
       await advanceTime(consts.FIFTEEN_DAY);
-      await addMarketLiquidityXyt(dave, amountXytRef.div(2));
-      await removeMarketLiquidityToken(
+      await addMarketLiquiditySingleXyt(env, dave, amountXytRef.div(2));
+      await removeMarketLiquiditySingleToken(
+        env,
         charlie,
         (await getLPBalance(charlie)).div(3)
       );
 
       await advanceTime(consts.ONE_MONTH);
-      await addMarketLiquidityXyt(dave, amountXytRef.div(3));
-      await swapExactInXytToToken(eve, BN.from(10).pow(10));
-      await addMarketLiquidityXyt(bob, amountXytRef.div(6));
+      await addMarketLiquiditySingleXyt(env, dave, amountXytRef.div(3));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(10));
+      await addMarketLiquiditySingleXyt(env, bob, amountXytRef.div(6));
 
       await advanceTime(consts.ONE_MONTH);
-      await removeMarketLiquidityXyt(dave, (await getLPBalance(dave)).div(3));
-      await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
-      await swapExactInXytToToken(eve, BN.from(10).pow(10));
-      await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
+      await removeMarketLiquidityXyt(
+        env,
+        dave,
+        (await getLPBalance(dave)).div(3)
+      );
+      await addMarketLiquiditySingleXyt(env, charlie, amountXytRef.div(3));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(10));
+      await addMarketLiquidityDualXyt(env, charlie, amountXytRef.div(3));
 
       await advanceTime(consts.ONE_MONTH);
-      await swapExactInXytToToken(eve, BN.from(10).pow(10));
-      await addMarketLiquidityXyt(bob, amountXytRef.div(2));
-      await swapExactInXytToToken(eve, BN.from(10).pow(10));
-      await addMarketLiquidityXyt(bob, amountXytRef.div(5));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(10));
+      await addMarketLiquiditySingleXyt(env, bob, amountXytRef.div(2));
+      await swapExactInXytToToken(env, eve, BN.from(10).pow(10));
+      await addMarketLiquiditySingleXyt(env, bob, amountXytRef.div(5));
 
       await advanceTime(consts.ONE_MONTH);
 
@@ -496,21 +372,23 @@ export function runTest(isAaveV1: boolean) {
     });
 
     it("test 5", async () => {
-      await bootstrapSampleMarket(BN.from(10).pow(10));
+      await bootstrapMarket(env, alice, BN.from(10).pow(10));
 
       await advanceTime(consts.ONE_DAY.mul(5));
       await removeMarketLiquidityDual(
+        env,
         alice,
         (await getLPBalance(alice)).div(2)
       );
 
       await advanceTime(consts.FIFTEEN_DAY);
-      await addMarketLiquidityDualByXyt(bob, amountXytRef.div(10));
+      await addMarketLiquidityDualXyt(env, bob, amountXytRef.div(10));
 
       await advanceTime(consts.FIFTEEN_DAY);
-      await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
+      await addMarketLiquidityDualXyt(env, charlie, amountXytRef.div(5));
 
-      await addMarketLiquidityDualByXyt(
+      await addMarketLiquidityDualXyt(
+        env,
         alice,
         (await env.xyt.balanceOf(alice.address)).div(2)
       );
@@ -518,21 +396,21 @@ export function runTest(isAaveV1: boolean) {
       await advanceTime(consts.FIFTEEN_DAY);
 
       await advanceTime(consts.ONE_MONTH);
-      await addMarketLiquidityDualByXyt(bob, amountXytRef.div(6));
+      await addMarketLiquidityDualXyt(env, bob, amountXytRef.div(6));
 
       await advanceTime(consts.ONE_MONTH);
-      await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
-      await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
+      await addMarketLiquidityDualXyt(env, charlie, amountXytRef.div(3));
+      await addMarketLiquidityDualXyt(env, charlie, amountXytRef.div(3));
 
       await advanceTime(consts.ONE_MONTH);
-      await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
-      await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
+      await addMarketLiquidityDualXyt(env, bob, amountXytRef.div(2));
+      await addMarketLiquidityDualXyt(env, bob, amountXytRef.div(5));
 
       await advanceTime(consts.ONE_MONTH.mul(24));
 
       for (let user of [alice, bob, charlie, dave]) {
         if ((await getLPBalance(user)).gt(0)) {
-          await removeMarketLiquidityDual(user, await getLPBalance(user));
+          await removeMarketLiquidityDual(env, user, await getLPBalance(user));
         }
         if ((await env.ot.balanceOf(user.address)).gt(0)) {
           await env.router

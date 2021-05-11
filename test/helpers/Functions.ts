@@ -75,3 +75,172 @@ export async function redeemUnderlying(
       consts.HIGH_GAS_OVERRIDE
     );
 }
+
+export async function bootstrapMarket(env: TestEnv, user: Wallet, amount: BN) {
+  await env.router
+    .connect(user)
+    .bootstrapMarket(
+      env.MARKET_FACTORY_ID,
+      env.xyt.address,
+      env.testToken.address,
+      amount,
+      amount,
+      consts.HIGH_GAS_OVERRIDE
+    );
+}
+
+export async function swapExactInTokenToXyt(
+  env: TestEnv,
+  user: Wallet,
+  inAmount: BN
+) {
+  await env.router
+    .connect(user)
+    .swapExactIn(
+      env.testToken.address,
+      env.xyt.address,
+      inAmount,
+      BN.from(0),
+      env.MARKET_FACTORY_ID,
+      consts.HIGH_GAS_OVERRIDE
+    );
+}
+
+export async function swapExactInXytToToken(
+  env: TestEnv,
+  user: Wallet,
+  inAmount: BN
+) {
+  await env.router
+    .connect(user)
+    .swapExactIn(
+      env.xyt.address,
+      env.testToken.address,
+      inAmount,
+      BN.from(0),
+      env.MARKET_FACTORY_ID,
+      consts.HIGH_GAS_OVERRIDE
+    );
+}
+
+export async function addMarketLiquiditySingleXyt(
+  env: TestEnv,
+  user: Wallet,
+  amount: BN
+) {
+  await env.router
+    .connect(user)
+    .addMarketLiquiditySingle(
+      env.MARKET_FACTORY_ID,
+      env.xyt.address,
+      env.testToken.address,
+      true,
+      amount,
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
+    );
+}
+
+export async function addMarketLiquidityDualXyt(
+  env: TestEnv,
+  user: Wallet,
+  amountXyt: BN
+) {
+  await env.router
+    .connect(user)
+    .addMarketLiquidityDual(
+      env.MARKET_FACTORY_ID,
+      env.xyt.address,
+      env.testToken.address,
+      amountXyt,
+      consts.INF,
+      amountXyt,
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
+    );
+}
+
+export async function addMarketLiquiditySingleToken(
+  env: TestEnv,
+  user: Wallet,
+  amount: BN
+) {
+  await env.router
+    .connect(user)
+    .addMarketLiquiditySingle(
+      env.MARKET_FACTORY_ID,
+      env.xyt.address,
+      env.testToken.address,
+      false,
+      amount,
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
+    );
+}
+
+export async function removeMarketLiquidityDual(
+  env: TestEnv,
+  user: Wallet,
+  amount: BN
+) {
+  await env.router
+    .connect(user)
+    .removeMarketLiquidityDual(
+      env.MARKET_FACTORY_ID,
+      env.xyt.address,
+      env.testToken.address,
+      amount,
+      BN.from(0),
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
+    );
+}
+
+export async function removeMarketLiquidityXyt(
+  env: TestEnv,
+  user: Wallet,
+  amount: BN
+) {
+  await env.router
+    .connect(user)
+    .removeMarketLiquiditySingle(
+      env.MARKET_FACTORY_ID,
+      env.xyt.address,
+      env.testToken.address,
+      true,
+      amount,
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
+    );
+}
+
+export async function removeMarketLiquiditySingleToken(
+  env: TestEnv,
+  user: Wallet,
+  amount: BN
+) {
+  await env.router
+    .connect(user)
+    .removeMarketLiquiditySingle(
+      env.MARKET_FACTORY_ID,
+      env.xyt.address,
+      env.testToken.address,
+      false,
+      amount,
+      BN.from(0),
+      consts.HIGH_GAS_OVERRIDE
+    );
+}
+
+export async function redeemLpInterests(
+  env: TestEnv,
+  user: Wallet,
+  market?: Contract
+) {
+  if (market == null) {
+    market = env.stdMarket;
+  }
+  await env.router
+    .connect(user)
+    .redeemLpInterests(market.address, user.address, consts.HIGH_GAS_OVERRIDE);
+}
