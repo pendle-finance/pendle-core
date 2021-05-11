@@ -14,6 +14,7 @@ import {
   setTime,
   setTimeNextBlock,
   startOfEpoch,
+  calcExpectedRewards,
   tokens,
 } from "../helpers";
 import { liqParams, liquidityMiningFixture, UserStakeAction } from "./fixtures";
@@ -22,127 +23,11 @@ import * as scenario from "./fixtures/liquidityMiningScenario.fixture";
 const { waffle } = require("hardhat");
 const { provider } = waffle;
 
-// returns a rewards object = BN[][]
-//    rewards[userId][0] is the rewards withdrawable at currentEpoch
-//    rewards[userId][1] is the rewards withdrawable at currentEpoch + 1
-//    ...
-function calExpectedRewards(
-  userStakingData: UserStakeAction[][][],
-  params: liqParams,
-  currentEpoch: number
-): BN[][] {
-  let nUsers = userStakingData[0].length;
-  /*
-  pushing params.NUMBER_OF_EPOCHS empty epochs to mimic the real-life situation where users
-  will continue to receive rewards even if they don't do any action
-  */
-  for (let i = 1; i <= params.NUMBER_OF_EPOCHS.toNumber(); i++) {
-    let emptyArr = [];
-    for (let j = 1; j <= nUsers; j++) {
-      emptyArr.push([]);
-    }
-    userStakingData.push(emptyArr);
-  }
-
-  let userCurrentStakes: BN[] = [];
-  let rewards: BN[][] = [];
-
-  let availableRewardsForEpoch: BN[][] = []; // availableRewardsForEpoch[userId][epochId]
-
-  for (let i: number = 0; i < nUsers; i++) {
-    userCurrentStakes.push(BN.from(0));
-    rewards.push([]);
-    availableRewardsForEpoch.push([]);
-    for (
-      let j: number = 0;
-      j < params.NUMBER_OF_EPOCHS.add(params.VESTING_EPOCHS).toNumber();
-      j++
-    ) {
-      availableRewardsForEpoch[i].push(BN.from(0));
-    }
-    for (let j: number = 0; j < params.VESTING_EPOCHS.toNumber(); j++) {
-      rewards[i].push(BN.from(0));
-    }
-  }
-
-  userStakingData.forEach((epochData, i) => {
-    let epochId = i + 1;
-    if (epochId >= currentEpoch) return; // only count for epochs before currentEpoch
-    let userStakeSeconds: BN[] = [];
-    let totalStakeSeconds = BN.from(0);
-
-    epochData.forEach((userData, userId) => {
-      userStakeSeconds.push(BN.from(0));
-      let lastTimeUpdated = startOfEpoch(params, epochId);
-      userData.push(
-        new UserStakeAction(
-          startOfEpoch(params, epochId + 1),
-          BN.from(0),
-          true,
-          -1
-        )
-      );
-      userData.forEach((userAction, actionId) => {
-        // console.log(`\t[calculateExpectedRewards] Processing userAction: ${userAction.time} ${userAction.amount} ${userAction.isStaking} for user ${userId}`);
-        const timeElapsed = userAction.time.sub(lastTimeUpdated);
-        const additionalStakeSeconds = userCurrentStakes[userId].mul(
-          timeElapsed
-        );
-        userStakeSeconds[userId] = userStakeSeconds[userId].add(
-          additionalStakeSeconds
-        );
-        // console.log(`\t\ttotalStakeSeconds before = ${totalStakeSeconds}, ${totalStakeSeconds.add(additionalStakeSeconds)}`);
-        totalStakeSeconds = totalStakeSeconds.add(additionalStakeSeconds);
-        // console.log(`\t\t[calculateExpectedRewards] additionalStakeSeconds = ${additionalStakeSeconds}, timeElapsed = ${timeElapsed}, totalStakeSeconds = ${totalStakeSeconds}`);
-
-        if (userAction.isStaking) {
-          userCurrentStakes[userId] = userCurrentStakes[userId].add(
-            userAction.amount
-          );
-        } else {
-          userCurrentStakes[userId] = userCurrentStakes[userId].sub(
-            userAction.amount
-          );
-        }
-        lastTimeUpdated = userAction.time;
-      });
-    });
-    // console.log(`\t[calculateExpectedRewards] Epoch = ${epochId}, totalStakeSeconds = ${totalStakeSeconds}`);
-
-    epochData.forEach((userData, userId) => {
-      const rewardsPerVestingEpoch = params.REWARDS_PER_EPOCH[epochId - 1]
-        .mul(userStakeSeconds[userId])
-        .div(totalStakeSeconds)
-        .div(params.VESTING_EPOCHS);
-      for (
-        let e: number = epochId + 1;
-        e <= epochId + params.VESTING_EPOCHS.toNumber();
-        e++
-      ) {
-        if (e <= currentEpoch) {
-          rewards[userId][0] = rewards[userId][0].add(rewardsPerVestingEpoch);
-          continue;
-        }
-        if (e < currentEpoch + params.VESTING_EPOCHS.toNumber()) {
-          rewards[userId][e - currentEpoch] = rewards[userId][
-            e - currentEpoch
-          ].add(rewardsPerVestingEpoch);
-        }
-      }
-    });
-  });
-  // rewards.forEach((userReward, userId) => {
-  //   console.log(`\tRewards for user ${userId}: ${userReward}`);
-  // });
-  return rewards;
-}
-
 describe("aaveV1-liquidityMining", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
   let liq: Contract;
-  let liqWeb3: any;
   let router: Contract;
   let market: Contract;
   let xyt: Contract;
@@ -157,7 +42,6 @@ describe("aaveV1-liquidityMining", async () => {
     globalSnapshotId = await evm_snapshot();
     const fixture = await loadFixture(liquidityMiningFixture);
     liq = fixture.aLiquidityMining;
-    liqWeb3 = fixture.aLiquidityMiningWeb3;
     router = fixture.core.router;
     baseToken = fixture.testToken;
     market = fixture.aMarket;
@@ -235,7 +119,7 @@ describe("aaveV1-liquidityMining", async () => {
         // console.log(flatData[i - 1], flatData[i]);
         assert(flatData[i - 1].time < flatData[i].time);
       }
-      await setTimeNextBlock(provider, action.time);
+      await setTimeNextBlock(action.time);
       if (action.isStaking) {
         await doStake(wallets[action.id], action.amount); // access users directly by their id instead of names
         expectedLpBalance[action.id] = expectedLpBalance[action.id].sub(
@@ -263,12 +147,12 @@ describe("aaveV1-liquidityMining", async () => {
     epochToCheck: number,
     _allocationRateDiv?: number
   ) {
-    let expectedRewards: BN[][] = calExpectedRewards(
+    let expectedRewards: BN[][] = calcExpectedRewards(
       userStakingData,
       params,
       epochToCheck
     );
-    await setTime(provider, startOfEpoch(params, epochToCheck));
+    await setTime(startOfEpoch(params, epochToCheck));
     let numUser = expectedRewards.length;
     let allocationRateDiv =
       _allocationRateDiv !== undefined ? _allocationRateDiv : 1;
@@ -298,26 +182,6 @@ describe("aaveV1-liquidityMining", async () => {
     }
   }
 
-  async function calEffectiveLiquidity(): Promise<{
-    xytAmount: BN;
-    tokenAmount: BN;
-  }> {
-    const MINIMUM_LIQUIDITY: BN = BN.from(3000);
-    let totalSupply = await market.totalSupply();
-    let totalEffectiveLP = totalSupply.sub(MINIMUM_LIQUIDITY);
-    let xytAmount = (await xyt.balanceOf(market.address))
-      .mul(totalEffectiveLP)
-      .div(totalSupply);
-    console.log(
-      xytAmount.toString(),
-      (await xyt.balanceOf(market.address)).toString()
-    );
-    let tokenAmount = (await baseToken.balanceOf(market.address))
-      .mul(totalEffectiveLP)
-      .div(totalSupply);
-    return { xytAmount, tokenAmount };
-  }
-
   // Bob, Dave and Charlie all starts with 0 AUSDTs and 0 XYTs in their wallet
   // Both Bob and Dave has 10% of LP of the Market
   //  - Charlie will receive XYTs equivalent to 10% of whats in the market, and hold it
@@ -326,7 +190,7 @@ describe("aaveV1-liquidityMining", async () => {
   //=> after 2 months, all three of them should get the same interests
   it("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests", async () => {
     const INITIAL_LP_AMOUNT: BN = await market.balanceOf(bob.address);
-    await setTimeNextBlock(provider, params.START_TIME.add(100));
+    await setTimeNextBlock(params.START_TIME.add(100));
     const xytBalanceOfMarket = await xyt.balanceOf(market.address);
 
     // Charlie holds same equivalent amount of XYTs as 10% of the market
@@ -341,13 +205,10 @@ describe("aaveV1-liquidityMining", async () => {
     console.log(`\talice staked`);
     await doStake(bob, INITIAL_LP_AMOUNT.div(2));
     console.log(`\tbob staked`);
-    await setTimeNextBlock(provider, params.START_TIME.add(consts.ONE_MONTH));
+    await setTimeNextBlock(params.START_TIME.add(consts.ONE_MONTH));
     await doStake(bob, INITIAL_LP_AMOUNT.div(2));
     console.log(`\tbob staked round 2`);
-    await setTimeNextBlock(
-      provider,
-      params.START_TIME.add(consts.ONE_MONTH.mul(2))
-    );
+    await setTimeNextBlock(params.START_TIME.add(consts.ONE_MONTH.mul(2)));
 
     await liq.redeemLpInterests(EXPIRY, bob.address);
     console.log(`\tbob claimed interests`);
@@ -433,21 +294,17 @@ describe("aaveV1-liquidityMining", async () => {
   it("this test shouldn't crash", async () => {
     const amountToStake = await market.balanceOf(bob.address);
 
-    await setTimeNextBlock(provider, params.START_TIME);
+    await setTimeNextBlock(params.START_TIME);
     await liq
       .connect(bob)
       .stake(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
 
-    await setTimeNextBlock(
-      provider,
-      params.START_TIME.add(params.EPOCH_DURATION)
-    );
+    await setTimeNextBlock(params.START_TIME.add(params.EPOCH_DURATION));
     await liq
       .connect(bob)
       .withdraw(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
     await liq.redeemRewards(EXPIRY, bob.address);
     await setTimeNextBlock(
-      provider,
       params.START_TIME.add(params.EPOCH_DURATION).add(params.EPOCH_DURATION)
     );
     await liq.redeemRewards(EXPIRY, bob.address);
@@ -468,7 +325,7 @@ describe("aaveV1-liquidityMining", async () => {
     console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
     console.log(`\tLP balance of user before: ${lpBalanceOfUser}`);
 
-    await advanceTime(provider, params.START_TIME.sub(consts.T0));
+    await advanceTime(params.START_TIME.sub(consts.T0));
     await liq
       .connect(bob)
       .stake(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
@@ -485,7 +342,7 @@ describe("aaveV1-liquidityMining", async () => {
       `\t[LP interests] aUSDT balance of User after first staking = ${aTokenBalanceOfUser}`
     );
 
-    await advanceTime(provider, FIFTEEN_DAYS);
+    await advanceTime(FIFTEEN_DAYS);
     await liq
       .connect(bob)
       .withdraw(
@@ -525,7 +382,7 @@ describe("aaveV1-liquidityMining", async () => {
     // From epoch 2: (rewardsForEpoch/2 + rewardsForEpoch/2/2) * 2/4  ( first half: get all the rewards = rewardsForEpoch/2, 2nd half: get half)
     // From epoch 3: rewardsForEpoch/2 * 1/4  ( two stakers with the same stake & duration => each gets rewardsForEpoch/2)
     //  Total: rewardsForEpoch * (1/2 + 3/8 + 1/8) = rewardsForEpoch
-    await advanceTime(provider, FIFTEEN_DAYS);
+    await advanceTime(FIFTEEN_DAYS);
 
     // console.log(`abi = ${liq.abi}`);
     // console.log(liq);

@@ -17,7 +17,7 @@ import {
   Token,
   tokens,
 } from "../helpers";
-import { pendleFixture, PendleFixture } from "./fixtures";
+import { routerFixture, RouterFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
@@ -27,9 +27,8 @@ describe("router-negative-test", async () => {
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave] = wallets;
 
-  let fixture: PendleFixture;
+  let fixture: RouterFixture;
   let router: Contract;
-  let routerWeb3: any;
   let ot: Contract;
   let xyt: Contract;
   let aaveForge: Contract;
@@ -43,9 +42,8 @@ describe("router-negative-test", async () => {
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
-    fixture = await loadFixture(pendleFixture);
+    fixture = await loadFixture(routerFixture);
     router = fixture.core.router;
-    routerWeb3 = fixture.core.routerWeb3;
     tokenUSDT = tokens.USDT;
     data = fixture.core.data;
     ot = fixture.aForge.aOwnershipToken;
@@ -108,7 +106,7 @@ describe("router-negative-test", async () => {
   it("shouldn't be able to redeemUnderlying if the yield contract has expired", async () => {
     let amount = await tokenizeYield(alice, refAmount);
 
-    await setTimeNextBlock(provider, consts.T0.add(consts.ONE_YEAR));
+    await setTimeNextBlock(consts.T0.add(consts.ONE_YEAR));
 
     await expect(
       router.redeemUnderlying(
@@ -164,7 +162,7 @@ describe("router-negative-test", async () => {
   });
 
   it("shouldn't be able to renewYield to invalid expiry", async () => {
-    await advanceTime(provider, consts.SIX_MONTH);
+    await advanceTime(consts.SIX_MONTH);
     await expect(
       router.renewYield(
         consts.FORGE_AAVE,
@@ -183,7 +181,7 @@ describe("router-negative-test", async () => {
       tokenUSDT.address,
       futureTime
     );
-    await advanceTime(provider, consts.FIVE_MONTH);
+    await advanceTime(consts.FIVE_MONTH);
     await expect(
       router.renewYield(
         consts.FORGE_AAVE,
@@ -202,7 +200,7 @@ describe("router-negative-test", async () => {
       tokenUSDT.address,
       futureTime
     );
-    await advanceTime(provider, consts.SIX_MONTH);
+    await advanceTime(consts.SIX_MONTH);
     await expect(
       router.renewYield(
         consts.FORGE_AAVE,
@@ -224,7 +222,7 @@ describe("router-negative-test", async () => {
   });
 
   it("shouldn't be able to tokenizeYield to an expired contract", async () => {
-    await advanceTime(provider, consts.SIX_MONTH);
+    await advanceTime(consts.SIX_MONTH);
     await expect(
       router.tokenizeYield(
         consts.FORGE_AAVE,

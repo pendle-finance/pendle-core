@@ -23,7 +23,6 @@ interface LiquidityMiningFixture {
   cMarket: Contract,
   aLiquidityMining: Contract,
   cLiquidityMining: Contract,
-  aLiquidityMiningWeb3: any
   params: liqParams,
 }
 
@@ -39,7 +38,7 @@ export class UserStakeAction {
   time: BN;
   isStaking: boolean;
   amount: BN;
-  id: number; // will not be used in calExpectedRewards
+  id: number; // will not be used in calcExpectedRewards
   constructor(time: BN, amount: BN, isStaking: boolean, id: number) {
     this.time = time;
     this.amount = amount;
@@ -167,10 +166,5 @@ export async function liquidityMiningFixture(
     await cMarket.transfer(person.address, lpBalanceAlice.div(10));
   }
 
-  let aLiquidityMiningWeb3 = new hre.web3.eth.Contract(
-    MockPendleAaveLiquidityMining.abi,
-    aLiquidityMining.address
-  );
-
-  return { core, aForge, cForge, testToken, pdl, aMarket, cMarket, aLiquidityMining, cLiquidityMining, aLiquidityMiningWeb3, params };
+  return { core, aForge, cForge, testToken, pdl, aMarket, cMarket, aLiquidityMining, cLiquidityMining, params };
 }
