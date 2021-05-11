@@ -13,7 +13,7 @@ import {
   Token,
   tokens,
 } from "../helpers";
-import { AMMTest } from "./amm-formula-test";
+import { AMMTest, AMMNearCloseTest, AMMCheckLPNearCloseTest } from "./amm-formula-test";
 import { marketFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
@@ -85,6 +85,17 @@ describe("aaveV1-market", async () => {
       amount,
       amount,
       wrapEth(consts.HIGH_GAS_OVERRIDE, amount)
+    );
+  }
+
+  async function bootstrapMarket(amountXyt:BN, amountTestToken: BN) {
+    await router.bootstrapMarket(
+      consts.MARKET_FACTORY_AAVE,
+      xyt.address,
+      testToken.address,
+      amountXyt,
+      amountTestToken,
+      consts.HIGH_GAS_OVERRIDE
     );
   }
 
@@ -1009,6 +1020,33 @@ describe("aaveV1-market", async () => {
       xyt,
       bootstrapSampleMarket,
       false
+    );
+  });
+  it("AMM's swap outcome should be correct near the expiry", async () => {
+    await xyt.connect(bob).transfer(alice.address, (await xyt.balanceOf(bob.address)), consts.HIGH_GAS_OVERRIDE);
+    await testToken.connect(bob).transfer(alice.address, (await testToken.balanceOf(bob.address)), consts.HIGH_GAS_OVERRIDE);
+    
+    await AMMNearCloseTest(
+      router,
+      stdMarket,
+      tokenUSDT,
+      testToken,
+      xyt,
+      bootstrapMarket,
+      false
+    );
+  });
+
+  it("AMM's LP outcome should be correct near the expiry", async () => {
+    await AMMCheckLPNearCloseTest(
+      router,
+      stdMarket,
+      tokenUSDT,
+      testToken,
+      xyt,
+      bootstrapMarket,
+      false,
+      bob
     );
   });
 });

@@ -320,3 +320,14 @@ export function randomBN(range?: number): BN {
   if (range == undefined) range = 1e15;
   return BN.from(Math.floor(Math.random() * range));
 }
+
+export async function logMarketReservesData(market: Contract) {
+  let marketData = await market.getReserves();
+  console.log("=============MARKET===DATA===============");
+  console.log("xytBalance: ", marketData.xytBalance.toString());
+  console.log("xytWeight: ", marketData.xytWeight.toString());
+  console.log("tokenBalance: ", marketData.tokenBalance.toString());
+  console.log("tokenWeight: ", marketData.tokenWeight.toString());
+  console.log("totalSupply: ", (await market.totalSupply()).toString());
+  console.log("=========================================");
+}
