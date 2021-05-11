@@ -53,7 +53,7 @@ export async function aaveForgeFixture(
 
   await router.addForge(consts.FORGE_AAVE, aaveForge.address);
 
-  await setTimeNextBlock(provider, consts.T0); // set the minting time for the first OT and XYT
+  await setTimeNextBlock(consts.T0); // set the minting time for the first OT and XYT
 
   // USDT
   await router.newYieldContracts(

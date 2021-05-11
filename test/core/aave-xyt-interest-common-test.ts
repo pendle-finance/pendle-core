@@ -11,8 +11,17 @@ import {
   setTimeNextBlock,
   Token,
   tokens,
+  redeemDueInterests,
+  redeemUnderlying,
+  tokenizeYield,
 } from "../helpers";
-import { pendleFixture, PendleFixture } from "./fixtures";
+import {
+  Mode,
+  parseTestEnvRouterFixture,
+  routerFixture,
+  RouterFixture,
+  TestEnv,
+} from "./fixtures";
 import testData from "./fixtures/yieldTokenizeAndRedeem.scenario.json";
 
 const { waffle } = require("hardhat");
@@ -25,85 +34,36 @@ interface YieldTest {
   timeDelta: number;
 }
 
-interface TestEnv {
-  T0: BN;
-  FORGE_ID: string;
-  INITIAL_AAVE_TOKEN_AMOUNT: BN;
-  TEST_DELTA: BN;
-}
-
 export function runTest(isAaveV1: boolean) {
   describe("", async () => {
     const wallets = provider.getWallets();
     const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob, charlie, dave] = wallets;
 
-    let fixture: PendleFixture;
-    let router: Contract;
-    let ot: Contract;
-    let aaveForge: Contract;
-    let aUSDT: Contract;
     let snapshotId: string;
     let globalSnapshotId: string;
-    let tokenUSDT: Token;
-    let testEnv: TestEnv = {} as TestEnv;
+    let env: TestEnv = {} as TestEnv;
 
-    async function buildCommonTestEnv() {
-      fixture = await loadFixture(pendleFixture);
-      router = fixture.core.router;
-      testEnv.INITIAL_AAVE_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
-      testEnv.TEST_DELTA = BN.from(6000);
-    }
-
-    async function buildTestEnvV1() {
-      ot = fixture.aForge.aOwnershipToken;
-      aaveForge = fixture.aForge.aaveForge;
-      tokenUSDT = tokens.USDT;
-      aUSDT = await getAContract(alice, aaveForge, tokenUSDT);
-      testEnv.FORGE_ID = consts.FORGE_AAVE;
-      testEnv.T0 = consts.T0;
-    }
-
-    async function buildTestEnvV2() {
-      ot = fixture.a2Forge.a2OwnershipToken;
-      aaveForge = fixture.a2Forge.aaveV2Forge;
-      tokenUSDT = tokens.USDT;
-      aUSDT = await getA2Contract(alice, aaveForge, tokenUSDT);
-      testEnv.FORGE_ID = consts.FORGE_AAVE_V2;
-      testEnv.T0 = consts.T0_A2;
+    async function buildTestEnv() {
+      let fixture: RouterFixture = await loadFixture(routerFixture);
+      if (isAaveV1)
+        await parseTestEnvRouterFixture(alice, Mode.AAVE_V1, env, fixture);
+      else await parseTestEnvRouterFixture(alice, Mode.AAVE_V2, env, fixture);
+      env.TEST_DELTA = BN.from(6000);
     }
 
     before(async () => {
       globalSnapshotId = await evm_snapshot();
-      await buildCommonTestEnv();
-      if (isAaveV1) {
-        await buildTestEnvV1();
-      } else {
-        await buildTestEnvV2();
+      await buildTestEnv();
+      for (var person of [bob, charlie, dave]) {
+        await mintAaveToken(
+          tokens.USDT,
+          person,
+          env.INITIAL_YIELD_TOKEN_AMOUNT,
+          isAaveV1
+        );
+        await env.aUSDT.connect(person).approve(env.router.address, consts.INF);
       }
-      await mintAaveToken(
-        provider,
-        tokens.USDT,
-        bob,
-        testEnv.INITIAL_AAVE_TOKEN_AMOUNT,
-        isAaveV1
-      );
-      await mintAaveToken(
-        provider,
-        tokens.USDT,
-        charlie,
-        testEnv.INITIAL_AAVE_TOKEN_AMOUNT,
-        isAaveV1
-      );
-      await mintAaveToken(
-        provider,
-        tokens.USDT,
-        dave,
-        testEnv.INITIAL_AAVE_TOKEN_AMOUNT,
-        isAaveV1
-      );
-      await aUSDT.connect(bob).approve(router.address, consts.INF);
-      await aUSDT.connect(charlie).approve(router.address, consts.INF);
       snapshotId = await evm_snapshot();
     });
 
@@ -116,75 +76,32 @@ export function runTest(isAaveV1: boolean) {
       snapshotId = await evm_snapshot();
     });
 
-    async function redeemDueInterests(user: Wallet) {
-      await router.redeemDueInterests(
-        testEnv.FORGE_ID,
-        tokenUSDT.address,
-        testEnv.T0.add(consts.SIX_MONTH),
-        user.address,
-        consts.HIGH_GAS_OVERRIDE
-      );
-    }
-
-    async function redeemUnderlying(user: Wallet, amount: BN) {
-      await router
-        .connect(user)
-        .redeemUnderlying(
-          testEnv.FORGE_ID,
-          tokenUSDT.address,
-          testEnv.T0.add(consts.SIX_MONTH),
-          amount,
-          consts.HIGH_GAS_OVERRIDE
-        );
-    }
-
-    async function tokenizeYield(user: Wallet, amount: BN) {
-      await router
-        .connect(user)
-        .tokenizeYield(
-          testEnv.FORGE_ID,
-          tokenUSDT.address,
-          testEnv.T0.add(consts.SIX_MONTH),
-          amount,
-          user.address,
-          consts.HIGH_GAS_OVERRIDE
-        );
-    }
-
     async function runTest(yieldTest: YieldTest[]) {
-      let curTime = testEnv.T0;
+      let curTime = env.T0;
       for (let id = 0; id < yieldTest.length; id++) {
         let curTest = yieldTest[id];
         let user = wallets[curTest.user];
         curTime = curTime.add(BN.from(curTest.timeDelta));
-        await setTimeNextBlock(provider, curTime);
+        await setTimeNextBlock(curTime);
         if (curTest.type == "redeemDueInterests") {
-          await redeemDueInterests(user);
+          await redeemDueInterests(env, user);
         } else if (curTest.type == "redeemUnderlying") {
-          await redeemUnderlying(user, BN.from(curTest.amount));
+          await redeemUnderlying(env, user, BN.from(curTest.amount));
         } else if (curTest.type == "tokenizeYield") {
-          await tokenizeYield(user, BN.from(curTest.amount));
+          await tokenizeYield(env, user, BN.from(curTest.amount));
         } else if (curTest.type == "redeemUnderlyingAll") {
-          let balance = await ot.balanceOf(user.address);
-          await redeemUnderlying(user, balance);
+          let balance = await env.ot.balanceOf(user.address);
+          await redeemUnderlying(env, user, balance);
         }
       }
-      const expectedBalance = await aUSDT.balanceOf(dave.address);
-      approxBigNumber(
-        await aUSDT.balanceOf(alice.address),
-        expectedBalance,
-        testEnv.TEST_DELTA
-      );
-      approxBigNumber(
-        await aUSDT.balanceOf(bob.address),
-        expectedBalance,
-        testEnv.TEST_DELTA
-      );
-      approxBigNumber(
-        await aUSDT.balanceOf(charlie.address),
-        expectedBalance,
-        testEnv.TEST_DELTA
-      );
+      const expectedBalance = await env.aUSDT.balanceOf(dave.address);
+      for (var person of [alice, bob, charlie]) {
+        approxBigNumber(
+          await env.aUSDT.balanceOf(person.address),
+          expectedBalance,
+          env.TEST_DELTA
+        );
+      }
     }
     it("test 1", async () => {
       await runTest((<any>testData).test1);
