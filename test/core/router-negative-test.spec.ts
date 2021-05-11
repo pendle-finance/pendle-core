@@ -29,7 +29,6 @@ describe("router-negative-test", async () => {
 
   let fixture: RouterFixture;
   let router: Contract;
-  let routerWeb3: any;
   let ot: Contract;
   let xyt: Contract;
   let aaveForge: Contract;
@@ -45,7 +44,6 @@ describe("router-negative-test", async () => {
     globalSnapshotId = await evm_snapshot();
     fixture = await loadFixture(routerFixture);
     router = fixture.core.router;
-    routerWeb3 = fixture.core.routerWeb3;
     tokenUSDT = tokens.USDT;
     data = fixture.core.data;
     ot = fixture.aForge.aOwnershipToken;

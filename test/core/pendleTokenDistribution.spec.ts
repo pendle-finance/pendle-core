@@ -7,7 +7,7 @@ import { consts, evm_revert, evm_snapshot, setTimeNextBlock } from "../helpers";
 const { waffle } = require("hardhat");
 const { provider, deployContract } = waffle;
 
-describe("pendleTokenDistribution", async () => {
+describe("pendleTokenDistribution [@skip-on-coverage]", async () => {
   const wallets = provider.getWallets();
   const [
     governance,
