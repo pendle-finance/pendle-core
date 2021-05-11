@@ -13,7 +13,6 @@ import {
   governanceFixture
 } from "./governance.fixture";
 import { consts, getA2Contract, tokens, getAContract, getCContract, emptyToken, mintOtAndXyt } from "../../helpers";
-import TetherToken from "../../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json";
 
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;

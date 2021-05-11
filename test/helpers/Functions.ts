@@ -123,6 +123,26 @@ export async function swapExactInXytToToken(
     );
 }
 
+export async function swapExactOutTokenToXyt(env: TestEnv, user: Wallet, outAmount: BN) {
+  await env.router.swapExactOut(
+    env.testToken.address,
+    env.xyt.address,
+    outAmount,
+    consts.INF,
+    consts.MARKET_FACTORY_AAVE
+  );
+}
+
+export async function swapExactOutXytToToken(env: TestEnv, user: Wallet, outAmount: BN) {
+  await env.router.swapExactOut(
+    env.xyt.address,
+    env.testToken.address,
+    outAmount,
+    consts.INF,
+    consts.MARKET_FACTORY_AAVE
+  );
+}
+
 export async function addMarketLiquiditySingleXyt(
   env: TestEnv,
   user: Wallet,

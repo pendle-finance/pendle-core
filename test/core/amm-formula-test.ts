@@ -1,119 +1,68 @@
 import { expect } from "chai";
 import { BigNumber as BN, Contract } from "ethers";
-import { amountToWei, consts, setTimeNextBlock, Token } from "../helpers";
+import { amountToWei, consts, setTimeNextBlock, Token, bootstrapMarket, swapExactInTokenToXyt, swapExactInXytToToken, swapExactOutTokenToXyt, swapExactOutXytToToken, approxBigNumber } from "../helpers";
+import {
+  TestEnv,
+} from "./fixtures";
+
 
 const { waffle } = require("hardhat");
 const { provider } = waffle;
+const wallets = provider.getWallets();
+const [alice, bob] = wallets;
 
 export async function AMMTest(
-  router: Contract,
-  market: Contract,
-  tokenUSDT: Token,
-  testToken: Contract,
-  xyt: Contract,
-  bootstrapSampleMarket: Function,
+  env: TestEnv,
   useSwapIn: boolean // if this is true, use swapExactIn. use swapExactOut otherwise.
 ) {
-  async function swapExactInTokenToXyt(inAmount: BN) {
-    await router.swapExactIn(
-      testToken.address,
-      xyt.address,
-      inAmount,
-      BN.from(0),
-      consts.MARKET_FACTORY_AAVE
-    );
-  }
-
-  async function swapExactInXytToToken(inAmount: BN) {
-    await router.swapExactIn(
-      xyt.address,
-      testToken.address,
-      inAmount,
-      BN.from(0),
-      consts.MARKET_FACTORY_AAVE
-    );
-  }
-
-  async function swapExactOutTokenToXyt(outAmount: BN, inAmountLimit: BN) {
-    await router.swapExactOut(
-      testToken.address,
-      xyt.address,
-      outAmount,
-      inAmountLimit,
-      consts.MARKET_FACTORY_AAVE
-    );
-  }
-
-  async function swapExactOutXytToToken(outAmount: BN, inAmountLimit: BN) {
-    await router.swapExactOut(
-      xyt.address,
-      testToken.address,
-      outAmount,
-      inAmountLimit,
-      consts.MARKET_FACTORY_AAVE
-    );
-  }
 
   async function runTestTokenToXyt(time: BN, tokenIn: BN, xytOut: BN) {
     var {
       xytBalance: initialXytBalance,
       tokenBalance: initialTokenBalance,
-    } = await market.getReserves();
+    } = await env.stdMarket.getReserves();
 
     await setTimeNextBlock(time);
     if (useSwapIn) {
-      await swapExactInTokenToXyt(tokenIn);
+      await swapExactInTokenToXyt(env, alice, tokenIn);
     } else {
-      // tokenIn.mul(2): double the expected rate to make sure the transaction is successful.
-      await swapExactOutTokenToXyt(xytOut, tokenIn.mul(2));
+      await swapExactOutTokenToXyt(env, alice, xytOut);
     }
-    var { xytBalance, tokenBalance } = await market.getReserves();
+    var { xytBalance, tokenBalance } = await env.stdMarket.getReserves();
 
     var actualXytOut = initialXytBalance.sub(xytBalance);
     var actualTokenIn = tokenBalance.sub(initialTokenBalance);
 
-    expect(tokenIn.toNumber()).to.be.approximately(
-      actualTokenIn.toNumber(),
-      consts.TEST_TOKEN_DELTA.toNumber()
-    );
-    expect(xytOut.toNumber()).to.be.approximately(
-      actualXytOut.toNumber(),
-      consts.TEST_TOKEN_DELTA.toNumber()
-    );
+    approxBigNumber(actualTokenIn, tokenIn, consts.TEST_TOKEN_DELTA, false);
+    approxBigNumber(actualXytOut, xytOut, consts.TEST_TOKEN_DELTA, false);
   }
 
   async function runTestXytToToken(time: BN, xytIn: BN, tokenOut: BN) {
     var {
       xytBalance: initialXytBalance,
       tokenBalance: initialTokenBalance,
-    } = await market.getReserves();
+    } = await env.stdMarket.getReserves();
 
     await setTimeNextBlock(time);
     if (useSwapIn) {
-      await swapExactInXytToToken(xytIn);
+      await swapExactInXytToToken(env, alice, xytIn);
     } else {
       // tokenIn.mul(2): double the expected rate to make sure the transaction is successful.
-      await swapExactOutXytToToken(tokenOut, xytIn.mul(2));
+      await swapExactOutXytToToken(env, alice, tokenOut);
     }
-    var { xytBalance, tokenBalance } = await market.getReserves();
+    var { xytBalance, tokenBalance } = await env.stdMarket.getReserves();
 
     var actualXytIn: BN = xytBalance.sub(initialXytBalance);
     var actualTokenOut: BN = initialTokenBalance.sub(tokenBalance);
 
-    expect(tokenOut.toNumber()).to.be.approximately(
-      actualTokenOut.toNumber(),
-      consts.TEST_TOKEN_DELTA.toNumber()
-    );
-    expect(xytIn.toNumber()).to.be.approximately(
-      actualXytIn.toNumber(),
-      consts.TEST_TOKEN_DELTA.toNumber()
-    );
+    approxBigNumber(actualTokenOut, tokenOut, consts.TEST_TOKEN_DELTA);
+    approxBigNumber(actualXytIn, xytIn, consts.TEST_TOKEN_DELTA);
   }
 
   /*-------------------------------------------------------------*/
   const amount = amountToWei(BN.from(1000), 6);
-  await bootstrapSampleMarket(amount);
-  await testToken.approve(market.address, consts.INF);
+  await bootstrapMarket(env, alice, amount);
+  await env.testToken.approve(env.stdMarket.address, consts.INF);
 
   await runTestTokenToXyt(
     consts.T0.add(3600),

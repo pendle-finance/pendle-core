@@ -26,10 +26,12 @@ export interface TestEnv {
 
   ot: Contract;
   xyt: Contract;
+  xyt2: Contract;
   aUSDT: Contract;
   cUSDT: Contract;
   testToken: Contract;
   stdMarket: Contract;
+  ethMarket: Contract;
 
   // test params
   T0: BN;
@@ -50,6 +52,7 @@ export function parseTestEnvCoreFixture(env: TestEnv, fixture: CoreFixture) {
   env.treasury = fixture.treasury;
   env.marketReader = fixture.marketReader;
   env.pausingManager = fixture.pausingManager;
+  env.marketReader = fixture.marketReader;
 }
 
 export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: RouterFixture) {
@@ -62,6 +65,7 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
     env.forge = fixture.aForge.aaveForge;
     env.ot = fixture.aForge.aOwnershipToken;
     env.xyt = fixture.aForge.aFutureYieldToken;
+    env.xyt2 = fixture.aForge.aFutureYieldToken2;
     env.aUSDT = await getAContract(alice, env.forge, tokens.USDT);
     env.FORGE_ID = consts.FORGE_AAVE;
     env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
@@ -71,6 +75,7 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
     env.forge = fixture.a2Forge.aaveV2Forge;
     env.ot = fixture.a2Forge.a2OwnershipToken;
     env.xyt = fixture.a2Forge.a2FutureYieldToken;
+    env.xyt2 = fixture.a2Forge.a2FutureYieldToken2;
     env.aUSDT = await getA2Contract(alice, env.forge, tokens.USDT);
     env.FORGE_ID = consts.FORGE_AAVE_V2;
     env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
@@ -80,6 +85,7 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
     env.forge = fixture.cForge.compoundForge;
     env.ot = fixture.cForge.cOwnershipToken;
     env.xyt = fixture.cForge.cFutureYieldToken;
+    // no xyt2
     env.cUSDT = await getCContract(alice, tokens.USDT);
     env.FORGE_ID = consts.FORGE_COMPOUND;
     env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_COMPOUND_TOKEN_AMOUNT;
@@ -96,13 +102,16 @@ export async function parseTestEnvMarketFixture(alice: Wallet, mode: Mode, env: 
   if (env.mode == Mode.AAVE_V1) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE;
     env.stdMarket = fixture.aMarket;
+    env.ethMarket = fixture.ethMarket;
   }
   else if (env.mode == Mode.AAVE_V2) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE_V2;
     env.stdMarket = fixture.a2Market;
+    // no ethMarket for AaveV2
   }
   else if (env.mode == Mode.COMPOUND) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_COMPOUND;
     env.stdMarket = fixture.cMarket;
+    // no ethMarket for Compound
   }
 }
