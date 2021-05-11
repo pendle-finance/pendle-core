@@ -265,8 +265,12 @@ async function runTestTokenToXyt(
   time: BN,
   tokenIn: BN,
   xytOut: BN,
-  useSwapIn: boolean
+  useSwapIn: boolean,
+  delta?: BigNumberish
 ) {
+  if (delta == null) {
+    delta = consts.TEST_TOKEN_DELTA;
+  }
   var {
     xytBalance: initialXytBalance,
     tokenBalance: initialTokenBalance,
@@ -283,8 +287,8 @@ async function runTestTokenToXyt(
   var actualXytOut = initialXytBalance.sub(xytBalance);
   var actualTokenIn = tokenBalance.sub(initialTokenBalance);
 
-  approxBigNumber(actualTokenIn, tokenIn, consts.TEST_TOKEN_DELTA, false);
-  approxBigNumber(actualXytOut, xytOut, consts.TEST_TOKEN_DELTA, false);
+  approxBigNumber(actualTokenIn, tokenIn, delta, false);
+  approxBigNumber(actualXytOut, xytOut, delta, false);
 }
 
 async function runTestXytToToken(
@@ -292,8 +296,12 @@ async function runTestXytToToken(
   time: BN,
   xytIn: BN,
   tokenOut: BN,
-  useSwapIn: boolean
+  useSwapIn: boolean,
+  delta?: BigNumberish
 ) {
+  if (delta == null) {
+    delta = consts.TEST_TOKEN_DELTA;
+  }
   var {
     xytBalance: initialXytBalance,
     tokenBalance: initialTokenBalance,
@@ -310,6 +318,6 @@ async function runTestXytToToken(
   var actualXytIn: BN = xytBalance.sub(initialXytBalance);
   var actualTokenOut: BN = initialTokenBalance.sub(tokenBalance);
 
-  approxBigNumber(actualTokenOut, tokenOut, consts.TEST_TOKEN_DELTA);
-  approxBigNumber(actualXytIn, xytIn, consts.TEST_TOKEN_DELTA);
+  approxBigNumber(actualTokenOut, tokenOut, delta);
+  approxBigNumber(actualXytIn, xytIn, delta);
 }
