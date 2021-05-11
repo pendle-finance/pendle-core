@@ -170,7 +170,6 @@ export async function marketFixture(
 
   for (var person of [alice, bob, charlie, dave, eve]) {
     await testToken.connect(person).approve(router.address, totalSupply);
-    await ethMarket.connect(person).approve(router.address, consts.INF);
   }
 
   return { routerFix, core, aForge, a2Forge, cForge, testToken, aMarket, a2Market, cMarket, ethMarket }

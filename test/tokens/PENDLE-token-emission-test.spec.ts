@@ -15,7 +15,7 @@ import {
 const { waffle } = require("hardhat");
 const { provider, deployContract } = waffle;
 
-describe("Token name test", async () => {
+describe("Token name test [@skip-on-coverage]", async () => {
   const wallets: Wallet[] = provider.getWallets();
 
   const [root, a1, a2, a3, a4] = wallets;
@@ -428,7 +428,7 @@ describe("Token name test", async () => {
         try {
           /// Might not have been 1 week yet
           if (getRandomNumber(100) < 10) await applyConfigSimulator();
-        } catch (error) {}
+        } catch (error) { }
 
         await advanceTime(consts.ONE_WEEK);
       }
