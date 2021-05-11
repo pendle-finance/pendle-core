@@ -58,28 +58,31 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
 
   env.routerFixture = fixture;
   if (env.mode == Mode.AAVE_V1) {
-    env.T0 = consts.T0;
+    env.T0 = consts.T0; env.EXPIRY = env.T0.add(consts.SIX_MONTH);
     env.forge = fixture.aForge.aaveForge;
     env.ot = fixture.aForge.aOwnershipToken;
     env.xyt = fixture.aForge.aFutureYieldToken;
     env.aUSDT = await getAContract(alice, env.forge, tokens.USDT);
     env.FORGE_ID = consts.FORGE_AAVE;
+    env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
   }
   else if (env.mode == Mode.AAVE_V2) {
-    env.T0 = consts.T0_A2;
+    env.T0 = consts.T0_A2; env.EXPIRY = env.T0.add(consts.SIX_MONTH);
     env.forge = fixture.a2Forge.aaveV2Forge;
     env.ot = fixture.a2Forge.a2OwnershipToken;
     env.xyt = fixture.a2Forge.a2FutureYieldToken;
     env.aUSDT = await getA2Contract(alice, env.forge, tokens.USDT);
     env.FORGE_ID = consts.FORGE_AAVE_V2;
+    env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
   }
   else if (env.mode == Mode.COMPOUND) {
-    env.T0 = consts.T0_C;
+    env.T0 = consts.T0_C; env.EXPIRY = env.T0.add(consts.SIX_MONTH);
     env.forge = fixture.cForge.compoundForge;
     env.ot = fixture.cForge.cOwnershipToken;
     env.xyt = fixture.cForge.cFutureYieldToken;
     env.cUSDT = await getCContract(alice, tokens.USDT);
     env.FORGE_ID = consts.FORGE_COMPOUND;
+    env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_COMPOUND_TOKEN_AMOUNT;
   }
 }
 

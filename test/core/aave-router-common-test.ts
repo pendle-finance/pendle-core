@@ -48,9 +48,7 @@ export function runTest(isAaveV1: boolean) {
         await parseTestEnvRouterFixture(alice, Mode.AAVE_V1, env, fixture);
       else await parseTestEnvRouterFixture(alice, Mode.AAVE_V2, env, fixture);
       USDT = tokens.USDT;
-      env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
       env.TEST_DELTA = BN.from(10000);
-      env.EXPIRY = env.T0.add(consts.SIX_MONTH);
     }
 
     before(async () => {

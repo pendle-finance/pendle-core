@@ -40,7 +40,7 @@ export async function redeemDueInterests(
   }
   await env.router
     .connect(user)
-    .redeemDueInterests(env.FORGE_ID, USDT.address, expiry, user.address);
+    .redeemDueInterests(env.FORGE_ID, USDT.address, expiry, user.address, consts.HIGH_GAS_OVERRIDE);
 }
 
 export async function redeemAfterExpiry(
