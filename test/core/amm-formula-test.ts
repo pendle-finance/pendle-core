@@ -105,51 +105,56 @@ export async function AMMNearCloseTest(
   env: TestEnv,
   useSwapIn: boolean // if this is true, use swapExactIn. use swapExactOut otherwise.
 ) {
-  let T = env.T0.add(consts.SIX_MONTH).sub(consts.ONE_DAY.add(consts.ONE_HOUR));
+  let T1 = env.T0.add(consts.SIX_MONTH).sub(consts.ONE_DAY.add(consts.ONE_HOUR)), block = BN.from(1);
   const amount = amountToWei(BN.from(10000), 6);
   await bootstrapMarket(env, alice, amount, amount.div(BN.from(10).pow(5)));
 
-  await setTimeNextBlock(T);
+  await setTimeNextBlock(T1);
   await addMarketLiquidityDualXyt(env, alice, BN.from(1));
 
-  await runTestXytToTokenCustom(
+  await runTestXytToToken(
     env,
+    T1.add(block.mul(1)),
     BN.from(993586042),
     BN.from(120),
-    BN.from(15000),
-    useSwapIn
+    useSwapIn,
+    BN.from(15000)
   );
 
-  await runTestXytToTokenCustom(
+  await runTestXytToToken(
     env,
+    T1.add(block.mul(2)),
     BN.from(2297718631),
     BN.from(240),
+    useSwapIn,
     BN.from(30000),
-    useSwapIn
   );
 
-  await runTestXytToTokenCustom(
+  await runTestXytToToken(
     env,
+    T1.add(block.mul(3)),
     BN.from(6163346979),
     BN.from(480),
+    useSwapIn,
     BN.from(90000),
-    useSwapIn
   );
 
-  await runTestTokenToXytCustom(
+  await runTestXytToToken(
     env,
+    T1.add(block.mul(4)),
     BN.from(1000),
     BN.from(10639807417),
+    useSwapIn,
     BN.from(100),
-    useSwapIn
   );
 
-  await runTestTokenToXytCustom(
+  await runTestXytToToken(
     env,
+    T1.add(block.mul(5)),
     BN.from(10),
     BN.from(69158563),
+    useSwapIn,
     BN.from(100),
-    useSwapIn
   );
 }
 
