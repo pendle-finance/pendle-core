@@ -22,7 +22,11 @@ import {
   getMarketRateExactIn,
   removeMarketLiquiditySingle,
 } from "../helpers";
-import { AMMTest } from "./amm-formula-test";
+import {
+  AMMTest,
+  AMMNearCloseTest,
+  AMMCheckLPNearCloseTest,
+} from "./amm-formula-test";
 import {
   marketFixture,
   MarketFixture,
@@ -338,8 +342,23 @@ export function runTest(isAaveV1: boolean) {
     it("AMM's formulas should be correct for swapExactIn", async () => {
       await AMMTest(env, true);
     });
+
     it("AMM's formulas should be correct for swapExactOut", async () => {
       await AMMTest(env, false);
+    });
+
+    it("AMM's swap outcome should be correct near the expiry", async () => {
+      await env.xyt
+        .connect(bob)
+        .transfer(alice.address, await env.xyt.balanceOf(bob.address));
+      await env.testToken
+        .connect(bob)
+        .transfer(alice.address, await env.testToken.balanceOf(bob.address));
+      await AMMNearCloseTest(env, false);
+    });
+
+    it("AMM's LP outcome should be correct near the expiry", async () => {
+      await AMMCheckLPNearCloseTest(env);
     });
   });
 }
