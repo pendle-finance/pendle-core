@@ -2,17 +2,18 @@ import { BigNumber as BN, Contract, providers, Wallet } from "ethers";
 import MockPendleAaveMarket from "../../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json";
 import PendleCompoundMarket from "../../../build/artifacts/contracts/core/PendleCompoundMarket.sol/PendleCompoundMarket.json";
 import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
-import { consts, mintOtAndXyt, tokens } from "../../helpers";
 import { aaveForgeFixture, AaveForgeFixture } from "./aaveForge.fixture";
 import { aaveV2ForgeFixture, AaveV2ForgeFixture } from "./aaveV2Forge.fixture";
 import {
   CompoundFixture, compoundForgeFixture
 } from './compoundForge.fixture';
 import { CoreFixture, coreFixture } from "./core.fixture";
-import { routerFixture, RouterFixture } from "./pendle.fixture";
+import { routerFixture, RouterFixture, routerFixtureNoMint } from "./pendle.fixture";
 import {
   governanceFixture
 } from "./governance.fixture";
+import { consts, getA2Contract, tokens, getAContract, getCContract, emptyToken, mintOtAndXyt } from "../../helpers";
+import TetherToken from "../../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json";
 
 const { waffle } = require("hardhat");
 const { deployContract } = waffle;
@@ -35,7 +36,7 @@ export async function marketFixture(
   provider: providers.Web3Provider
 ): Promise<MarketFixture> {
   const [alice, bob, charlie, dave, eve] = wallets
-  const routerFix = await routerFixture(wallets, provider);
+  const routerFix = await routerFixtureNoMint(wallets, provider);
   const { core, aForge, a2Forge, cForge } = routerFix;
   const { router, aMarketFactory, a2MarketFactory, cMarketFactory, data } = core;
   const {
@@ -56,6 +57,13 @@ export async function marketFixture(
     "TEST",
     6,
   ]);
+
+  const aContract = await getAContract(alice, aForge.aaveForge, tokens.USDT);
+  await emptyToken(aContract, alice);
+  const a2Contract = await getA2Contract(alice, a2Forge.aaveV2Forge, tokens.USDT);
+  await emptyToken(a2Contract, alice);
+  const cContract = await getCContract(alice, tokens.USDT);
+  await emptyToken(cContract, alice);
 
   for (var person of [alice, bob, charlie, dave]) {
     await mintOtAndXyt(token, person, consts.INITIAL_OT_XYT_AMOUNT, router, aaveForge, aaveV2Forge);
