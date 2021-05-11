@@ -17,7 +17,7 @@ import {
   tokens,
   mintCompoundToken,
 } from "../helpers";
-import { marketFixture } from "./fixtures";
+import { marketFixture, MarketFixture } from "./fixtures";
 const hre = require("hardhat");
 
 const { waffle } = require("hardhat");
@@ -44,11 +44,12 @@ describe("compound-lp-interest", async () => {
   let amountCTokenRef: BN;
   const TEST_DELTA = BN.from(3000000);
   const FAKE_INCOME_AMOUNT = consts.INITIAL_COMPOUND_TOKEN_AMOUNT;
+  let fixture: MarketFixture;
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
-    const fixture = await loadFixture(marketFixture);
+    fixture = await loadFixture(marketFixture);
     router = fixture.core.router;
     ot = fixture.cForge.cOwnershipToken;
     xyt = fixture.cForge.cFutureYieldToken;
@@ -204,9 +205,7 @@ describe("compound-lp-interest", async () => {
       tokenUSDT,
       user,
       amount,
-      router,
-      aaveForge,
-      aaveV2Forge
+      fixture.routerFix
     );
   }
 

@@ -190,9 +190,7 @@ export function runTest(isAaveV1: boolean) {
         USDT,
         user,
         amount,
-        env.router,
-        env.routerFixture.aForge.aaveForge,
-        env.routerFixture.a2Forge.aaveV2Forge
+        env.routerFixture,
       );
     }
 

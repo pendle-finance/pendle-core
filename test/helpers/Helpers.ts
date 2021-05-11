@@ -10,7 +10,7 @@ import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC
 import AToken from "../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json";
 import CToken from "../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json";
 import TetherToken from "../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json";
-import { liqParams } from "../core/fixtures/";
+import { liqParams, RouterFixture, TestEnv } from "../core/fixtures/";
 import { aaveFixture } from "../core/fixtures/aave.fixture";
 import { aaveV2Fixture } from "../core/fixtures/aaveV2.fixture";
 import { consts, Token } from "./Constants";
@@ -25,12 +25,11 @@ export async function mintOtAndXyt(
   token: Token,
   user: Wallet,
   amount: BN,
-  router: Contract,
-  aaveForge: Contract,
-  aaveV2Forge: Contract
+  env: RouterFixture
 ): Promise<{ ATokenMinted: BN; A2TokenMinted: BN; CTokenMinted: BN }> {
-  const aContract = await getAContract(user, aaveForge, token);
-  const a2Contract = await getA2Contract(user, aaveV2Forge, token);
+  let router = env.core.router;
+  const aContract = await getAContract(user, env.aForge.aaveForge, token);
+  const a2Contract = await getA2Contract(user, env.a2Forge.aaveV2Forge, token);
   const cContract = await getCContract(user, token);
 
   let preATokenBal = await aContract.balanceOf(user.address);

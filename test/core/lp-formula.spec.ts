@@ -57,9 +57,7 @@ describe("lp-formula", async () => {
         tokenUSDT,
         person,
         BN.from(10).pow(10),
-        router,
-        aaveForge,
-        aaveV2Forge
+        fixture.routerFix
       );
     }
     snapshotId = await evm_snapshot();
