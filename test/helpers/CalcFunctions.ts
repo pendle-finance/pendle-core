@@ -116,7 +116,9 @@ export function calcExpectedRewards(
   return rewards;
 }
 
-async function calEffectiveLiquidity(env: TestEnv): Promise<{
+async function calEffectiveLiquidity(
+  env: TestEnv
+): Promise<{
   xytAmount: BN;
   tokenAmount: BN;
 }> {

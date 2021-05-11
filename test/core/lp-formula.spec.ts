@@ -10,7 +10,12 @@ import {
   setTimeNextBlock,
   toFixedPoint,
   Token,
-  tokens, bootstrapMarket, addMarketLiquiditySingle, removeMarketLiquiditySingle, addMarketLiquidityDualXyt, removeMarketLiquidityDual
+  tokens,
+  bootstrapMarket,
+  addMarketLiquiditySingle,
+  removeMarketLiquiditySingle,
+  addMarketLiquidityDualXyt,
+  removeMarketLiquidityDual,
 } from "../helpers";
 import {
   marketFixture,
@@ -81,7 +86,9 @@ describe("lp-formula", async () => {
   async function runTestAddLiqSingleToken(test: TestAddLiq) {
     const T1 = consts.T0.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
-    await bootstrapMarket(env, alice,
+    await bootstrapMarket(
+      env,
+      alice,
       amountToWei(test.initXytAmount, 6),
       amountToWei(test.initTokenAmount, 6)
     );
@@ -90,12 +97,22 @@ describe("lp-formula", async () => {
     let initialTokenBalance: BN = await env.testToken.balanceOf(bob.address);
     let initialXytBalance: BN = await env.xyt.balanceOf(bob.address);
 
-    await addMarketLiquiditySingle(env, bob, amountToWei(test.amountTokenChange, 6), false);
+    await addMarketLiquiditySingle(
+      env,
+      bob,
+      amountToWei(test.amountTokenChange, 6),
+      false
+    );
     await checkLpBalance(bob, test.expectedLpBal1);
 
     await setTimeNextBlock(T2);
 
-    await addMarketLiquiditySingle(env, bob, amountToWei(test.amountXytChange, 6), true);
+    await addMarketLiquiditySingle(
+      env,
+      bob,
+      amountToWei(test.amountXytChange, 6),
+      true
+    );
     await checkLpBalance(bob, test.expectedLpBal1.add(test.expectedLpBal2));
 
     let finalTokenBalance: BN = await env.testToken.balanceOf(bob.address);
@@ -116,7 +133,9 @@ describe("lp-formula", async () => {
   async function runTestRemoveLiqSingleToken(test: TestRemoveLiq) {
     const T1 = consts.T0.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
-    await bootstrapMarket(env, alice,
+    await bootstrapMarket(
+      env,
+      alice,
       amountToWei(test.initXytAmount, 6),
       amountToWei(test.initTokenAmount, 6)
     );
@@ -127,14 +146,24 @@ describe("lp-formula", async () => {
     totalLpAmountRemoved = totalLpAmountRemoved.add(amountToRemove);
 
     await setTimeNextBlock(T1);
-    let balanceDiff: BN = await removeMarketLiquiditySingle(env, alice, amountToRemove, false);
+    let balanceDiff: BN = await removeMarketLiquiditySingle(
+      env,
+      alice,
+      amountToRemove,
+      false
+    );
     approxBigNumber(balanceDiff, test.expectedTokenDiff, env.TEST_DELTA);
 
     await setTimeNextBlock(T2);
     amountToRemove = lpBalanceAlice.mul(test.ratioLpForXyt).div(100);
     totalLpAmountRemoved = totalLpAmountRemoved.add(amountToRemove);
 
-    balanceDiff = await removeMarketLiquiditySingle(env, alice, amountToRemove, true);
+    balanceDiff = await removeMarketLiquiditySingle(
+      env,
+      alice,
+      amountToRemove,
+      true
+    );
     approxBigNumber(test.expectedXytDiff, balanceDiff, env.TEST_DELTA);
     approxBigNumber(
       lpBalanceAlice.sub(totalLpAmountRemoved),
@@ -194,7 +223,7 @@ describe("lp-formula", async () => {
     let initialXytBalance: BN = await env.xyt.balanceOf(bob.address);
     let initialTokenBalance: BN = await env.testToken.balanceOf(bob.address);
 
-    await addMarketLiquidityDualXyt(env, bob, amountOfXyt.mul(3))
+    await addMarketLiquidityDualXyt(env, bob, amountOfXyt.mul(3));
 
     let finalXytBalance = await env.xyt.balanceOf(bob.address);
     let finalTokenBalance = await env.testToken.balanceOf(bob.address);
@@ -255,10 +284,6 @@ describe("lp-formula", async () => {
       0,
       env.TEST_DELTA
     );
-    approxBigNumber(
-      await env.stdMarket.totalSupply(),
-      MINIMUM_LIQUIDITY,
-      0
-    );
+    approxBigNumber(await env.stdMarket.totalSupply(), MINIMUM_LIQUIDITY, 0);
   });
 });

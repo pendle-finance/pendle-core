@@ -1,9 +1,16 @@
 import { BigNumber as BN } from "ethers";
-import { amountToWei, consts, setTimeNextBlock, bootstrapMarket, swapExactInTokenToXyt, swapExactInXytToToken, swapExactOutTokenToXyt, swapExactOutXytToToken, approxBigNumber } from "../helpers";
 import {
-  TestEnv,
-} from "./fixtures";
-
+  amountToWei,
+  consts,
+  setTimeNextBlock,
+  bootstrapMarket,
+  swapExactInTokenToXyt,
+  swapExactInXytToToken,
+  swapExactOutTokenToXyt,
+  swapExactOutXytToToken,
+  approxBigNumber,
+} from "../helpers";
+import { TestEnv } from "./fixtures";
 
 const { waffle } = require("hardhat");
 const { provider } = waffle;
@@ -14,7 +21,6 @@ export async function AMMTest(
   env: TestEnv,
   useSwapIn: boolean // if this is true, use swapExactIn. use swapExactOut otherwise.
 ) {
-
   async function runTestTokenToXyt(time: BN, tokenIn: BN, xytOut: BN) {
     var {
       xytBalance: initialXytBalance,

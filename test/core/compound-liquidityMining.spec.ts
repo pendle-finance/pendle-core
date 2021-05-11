@@ -13,7 +13,7 @@ import {
   setTimeNextBlock,
   startOfEpoch,
   tokens,
-  calcExpectedRewards
+  calcExpectedRewards,
 } from "../helpers";
 import { liqParams, liquidityMiningFixture, UserStakeAction } from "./fixtures";
 import * as scenario from "./fixtures/liquidityMiningScenario.fixture";

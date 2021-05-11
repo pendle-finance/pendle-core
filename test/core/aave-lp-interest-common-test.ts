@@ -305,7 +305,12 @@ export function runTest(isAaveV1: boolean) {
       await swapExactInXytToToken(env, eve, BN.from(10).pow(9));
 
       await advanceTime(consts.FIFTEEN_DAY);
-      await removeMarketLiquiditySingle(env, bob, await getLPBalance(bob), true);
+      await removeMarketLiquiditySingle(
+        env,
+        bob,
+        await getLPBalance(bob),
+        true
+      );
       await addMarketLiquidityDualXyt(env, charlie, amountXytRef.div(5));
       await swapExactInXytToToken(env, eve, BN.from(10).pow(9));
       await addMarketLiquidityDualXyt(
@@ -319,7 +324,8 @@ export function runTest(isAaveV1: boolean) {
       await removeMarketLiquiditySingle(
         env,
         charlie,
-        (await getLPBalance(charlie)).div(3), false
+        (await getLPBalance(charlie)).div(3),
+        false
       );
 
       await advanceTime(consts.ONE_MONTH);
