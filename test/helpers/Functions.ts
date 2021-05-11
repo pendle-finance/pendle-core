@@ -1,6 +1,7 @@
+import { use } from "chai";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
 import { TestEnv } from "../core/fixtures";
-import { tokens, consts, Token } from "./Constants";
+import { tokens, consts, Token, amountToWei } from "../helpers";
 
 let USDT: Token = tokens.USDT;
 
@@ -76,15 +77,18 @@ export async function redeemUnderlying(
     );
 }
 
-export async function bootstrapMarket(env: TestEnv, user: Wallet, amount: BN) {
+export async function bootstrapMarket(env: TestEnv, user: Wallet, amountXyt: BN, amountToken?: BN) {
+  if (amountToken == null) {
+    amountToken = amountXyt;
+  }
   await env.router
     .connect(user)
     .bootstrapMarket(
       env.MARKET_FACTORY_ID,
       env.xyt.address,
       env.testToken.address,
-      amount,
-      amount,
+      amountXyt,
+      amountToken,
       consts.HIGH_GAS_OVERRIDE
     );
 }
@@ -129,7 +133,7 @@ export async function swapExactOutTokenToXyt(env: TestEnv, user: Wallet, outAmou
     env.xyt.address,
     outAmount,
     consts.INF,
-    consts.MARKET_FACTORY_AAVE
+    env.MARKET_FACTORY_ID
   );
 }
 
@@ -139,14 +143,15 @@ export async function swapExactOutXytToToken(env: TestEnv, user: Wallet, outAmou
     env.testToken.address,
     outAmount,
     consts.INF,
-    consts.MARKET_FACTORY_AAVE
+    env.MARKET_FACTORY_ID
   );
 }
 
-export async function addMarketLiquiditySingleXyt(
+export async function addMarketLiquiditySingle(
   env: TestEnv,
   user: Wallet,
-  amount: BN
+  amount: BN,
+  useXyt: boolean
 ) {
   await env.router
     .connect(user)
@@ -154,7 +159,7 @@ export async function addMarketLiquiditySingleXyt(
       env.MARKET_FACTORY_ID,
       env.xyt.address,
       env.testToken.address,
-      true,
+      useXyt,
       amount,
       BN.from(0),
       consts.HIGH_GAS_OVERRIDE
@@ -180,24 +185,6 @@ export async function addMarketLiquidityDualXyt(
     );
 }
 
-export async function addMarketLiquiditySingleToken(
-  env: TestEnv,
-  user: Wallet,
-  amount: BN
-) {
-  await env.router
-    .connect(user)
-    .addMarketLiquiditySingle(
-      env.MARKET_FACTORY_ID,
-      env.xyt.address,
-      env.testToken.address,
-      false,
-      amount,
-      BN.from(0),
-      consts.HIGH_GAS_OVERRIDE
-    );
-}
-
 export async function removeMarketLiquidityDual(
   env: TestEnv,
   user: Wallet,
@@ -216,40 +203,27 @@ export async function removeMarketLiquidityDual(
     );
 }
 
-export async function removeMarketLiquidityXyt(
+export async function removeMarketLiquiditySingle(
   env: TestEnv,
   user: Wallet,
-  amount: BN
-) {
-  await env.router
-    .connect(user)
-    .removeMarketLiquiditySingle(
-      env.MARKET_FACTORY_ID,
-      env.xyt.address,
-      env.testToken.address,
-      true,
-      amount,
-      BN.from(0),
-      consts.HIGH_GAS_OVERRIDE
-    );
-}
+  amount: BN,
+  forXyt: boolean
+): Promise<BN> {
+  let initialBalance: BN = (forXyt ? await env.xyt.balanceOf(user.address) : await env.testToken.balanceOf(user.address));
 
-export async function removeMarketLiquiditySingleToken(
-  env: TestEnv,
-  user: Wallet,
-  amount: BN
-) {
   await env.router
     .connect(user)
     .removeMarketLiquiditySingle(
       env.MARKET_FACTORY_ID,
       env.xyt.address,
       env.testToken.address,
-      false,
+      forXyt,
       amount,
       BN.from(0),
       consts.HIGH_GAS_OVERRIDE
     );
+  let postBalance: BN = (forXyt ? await env.xyt.balanceOf(user.address) : await env.testToken.balanceOf(user.address));
+  return postBalance.sub(initialBalance);
 }
 
 export async function redeemLpInterests(
@@ -263,4 +237,23 @@ export async function redeemLpInterests(
   await env.router
     .connect(user)
     .redeemLpInterests(market.address, user.address, consts.HIGH_GAS_OVERRIDE);
+}
+
+export async function getMarketRateExactIn(env: TestEnv, amount: BN): Promise<any[]> {
+  return await env.marketReader.getMarketRateExactIn(
+    env.testToken.address,
+    env.xyt.address,
+    amount,
+    env.MARKET_FACTORY_ID
+  );
+}
+
+
+export async function getMarketRateExactOut(env: TestEnv, amount: BN): Promise<any[]> {
+  return await env.marketReader.getMarketRateExactOut(
+    env.xyt.address,
+    env.testToken.address,
+    amount,
+    env.MARKET_FACTORY_ID
+  );
 }

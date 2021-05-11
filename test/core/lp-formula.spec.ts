@@ -10,9 +10,15 @@ import {
   setTimeNextBlock,
   toFixedPoint,
   Token,
-  tokens,
+  tokens, bootstrapMarket, addMarketLiquiditySingle, removeMarketLiquiditySingle, addMarketLiquidityDualXyt, removeMarketLiquidityDual
 } from "../helpers";
-import { marketFixture } from "./fixtures";
+import {
+  marketFixture,
+  MarketFixture,
+  TestEnv,
+  Mode,
+  parseTestEnvMarketFixture,
+} from "./fixtures";
 import * as scenario from "./fixtures/lpFormulaScenario.fixture";
 import {
   TestAddLiq,
@@ -26,35 +32,27 @@ describe("lp-formula", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie] = wallets;
-  let router: Contract;
-  let data: Contract;
-  let xyt: Contract;
-  let stdMarket: Contract;
-  let testToken: Contract;
-  let aaveForge: Contract;
-  let aaveV2Forge: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
-  let tokenUSDT: Token;
-  const LOCAL_TOKEN_DELTA: BN = BN.from(10000);
+  let env: TestEnv = {} as TestEnv;
+
   const MINIMUM_LIQUIDITY: BN = BN.from(1000);
+
+  async function buildTestEnv() {
+    let fixture: MarketFixture = await loadFixture(marketFixture);
+    await parseTestEnvMarketFixture(alice, Mode.AAVE_V1, env, fixture);
+    env.TEST_DELTA = BN.from(10000);
+  }
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
     const fixture = await loadFixture(marketFixture);
-    router = fixture.core.router;
-    data = fixture.core.data;
-    xyt = fixture.aForge.aFutureYieldToken;
-    testToken = fixture.testToken;
-    stdMarket = fixture.aMarket;
-    tokenUSDT = tokens.USDT;
-    aaveForge = fixture.aForge.aaveForge;
-    aaveV2Forge = fixture.a2Forge.aaveV2Forge;
-    await data.setMarketFees(toFixedPoint("0.0035"), 0); // 0.35%
+    await buildTestEnv();
+    await env.data.setMarketFees(toFixedPoint("0.0035"), 0); // 0.35%
     for (var person of [alice, bob, charlie]) {
       await mintOtAndXyt(
-        tokenUSDT,
+        tokens.USDT,
         person,
         BN.from(10).pow(10),
         fixture.routerFix
@@ -72,193 +70,79 @@ describe("lp-formula", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  async function bootstrapMarket(amountOfXyt: BN, amountOfToken: BN) {
-    await router
-      .connect(alice)
-      .bootstrapMarket(
-        consts.MARKET_FACTORY_AAVE,
-        xyt.address,
-        testToken.address,
-        amountOfXyt,
-        amountOfToken,
-        consts.HIGH_GAS_OVERRIDE
-      );
-  }
-
-  async function printMarketData() {
-    console.log(
-      `USDT weight: ${await stdMarket.getWeight(
-        testToken.address
-      )} USDT balance: ${await stdMarket.getBalance(
-        testToken.address
-      )} XYT weight: ${await stdMarket.getWeight(
-        xyt.address
-      )} XYT balance: ${await stdMarket.getBalance(
-        xyt.address
-      )} totalLp: ${await stdMarket.totalSupply()}`
-    );
-  }
-
-  async function addLiquiditySingleToken(
-    user: Wallet,
-    tokenAddress: string,
-    amount: BN
-  ) {
-    if (tokenAddress == testToken.address) {
-      await router
-        .connect(user)
-        .addMarketLiquiditySingle(
-          consts.MARKET_FACTORY_AAVE,
-          xyt.address,
-          testToken.address,
-          false,
-          amount,
-          BN.from(0)
-        );
-    } else {
-      // if (tokenAddress == xyt.address) {
-      await router
-        .connect(user)
-        .addMarketLiquiditySingle(
-          consts.MARKET_FACTORY_AAVE,
-          xyt.address,
-          testToken.address,
-          true,
-          amount,
-          BN.from(0)
-        );
-    }
-  }
-
-  async function removeLiquiditySingleToken(
-    user: Wallet,
-    tokenAddress: string,
-    amount: BN
-  ): Promise<BN> {
-    let initialBalance: BN;
-    let postBalance: BN;
-    if (tokenAddress == testToken.address) {
-      initialBalance = await testToken.balanceOf(user.address);
-      await router
-        .connect(user)
-        .removeMarketLiquiditySingle(
-          consts.MARKET_FACTORY_AAVE,
-          xyt.address,
-          testToken.address,
-          false,
-          amount,
-          BN.from(0)
-        );
-      postBalance = await testToken.balanceOf(user.address);
-    } else {
-      // if (tokenAddress == xyt.address)
-      initialBalance = await xyt.balanceOf(user.address);
-      await router
-        .connect(user)
-        .removeMarketLiquiditySingle(
-          consts.MARKET_FACTORY_AAVE,
-          xyt.address,
-          testToken.address,
-          true,
-          amount,
-          BN.from(0)
-        );
-      postBalance = await xyt.balanceOf(user.address);
-    }
-    return postBalance.sub(initialBalance);
-  }
-
   async function checkLpBalance(user: Wallet, expected: BN) {
     approxBigNumber(
-      await stdMarket.balanceOf(user.address),
+      await env.stdMarket.balanceOf(user.address),
       expected,
-      LOCAL_TOKEN_DELTA
+      env.TEST_DELTA
     );
   }
 
   async function runTestAddLiqSingleToken(test: TestAddLiq) {
     const T1 = consts.T0.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
-    // console.log((await xyt.balanceOf(alice.address)), (await testToken.balanceOf(alice.address)));
-    await bootstrapMarket(
+    await bootstrapMarket(env, alice,
       amountToWei(test.initXytAmount, 6),
       amountToWei(test.initTokenAmount, 6)
     );
-    // console.log((await xyt.balanceOf(alice.address)), (await testToken.balanceOf(alice.address)));
     await setTimeNextBlock(T1);
 
-    let initialTokenBalance: BN = await testToken.balanceOf(bob.address);
-    let initialXytBalance: BN = await xyt.balanceOf(bob.address);
-    // console.log((await testToken.balanceOf(bob.address)));
-    await addLiquiditySingleToken(
-      bob,
-      testToken.address,
-      amountToWei(test.amountTokenChange, 6)
-    );
+    let initialTokenBalance: BN = await env.testToken.balanceOf(bob.address);
+    let initialXytBalance: BN = await env.xyt.balanceOf(bob.address);
+
+    await addMarketLiquiditySingle(env, bob, amountToWei(test.amountTokenChange, 6), false);
     await checkLpBalance(bob, test.expectedLpBal1);
 
     await setTimeNextBlock(T2);
-    // console.log((await xyt.balanceOf(bob.address)));
-    // console.log(amountToWei(test.amountXytChange, 6));
-    await addLiquiditySingleToken(
-      bob,
-      xyt.address,
-      amountToWei(test.amountXytChange, 6)
-    );
+
+    await addMarketLiquiditySingle(env, bob, amountToWei(test.amountXytChange, 6), true);
     await checkLpBalance(bob, test.expectedLpBal1.add(test.expectedLpBal2));
 
-    let finalTokenBalance: BN = await testToken.balanceOf(bob.address);
-    let finalXytBalance: BN = await xyt.balanceOf(bob.address);
+    let finalTokenBalance: BN = await env.testToken.balanceOf(bob.address);
+    let finalXytBalance: BN = await env.xyt.balanceOf(bob.address);
+
     approxBigNumber(
       amountToWei(test.amountTokenChange, 6),
       initialTokenBalance.sub(finalTokenBalance),
-      LOCAL_TOKEN_DELTA
+      env.TEST_DELTA
     );
     approxBigNumber(
       amountToWei(test.amountXytChange, 6),
       initialXytBalance.sub(finalXytBalance),
-      LOCAL_TOKEN_DELTA
+      env.TEST_DELTA
     );
   }
 
   async function runTestRemoveLiqSingleToken(test: TestRemoveLiq) {
     const T1 = consts.T0.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
-    await bootstrapMarket(
+    await bootstrapMarket(env, alice,
       amountToWei(test.initXytAmount, 6),
       amountToWei(test.initTokenAmount, 6)
     );
 
-    let lpBalanceAlice: BN = await stdMarket.balanceOf(alice.address);
+    let lpBalanceAlice: BN = await env.stdMarket.balanceOf(alice.address);
     let totalLpAmountRemoved: BN = BN.from(0);
     let amountToRemove: BN = lpBalanceAlice.mul(test.ratioLpForToken).div(100);
     totalLpAmountRemoved = totalLpAmountRemoved.add(amountToRemove);
 
     await setTimeNextBlock(T1);
-    let balanceDiff: BN = await removeLiquiditySingleToken(
-      alice,
-      testToken.address,
-      amountToRemove
-    );
-    approxBigNumber(balanceDiff, test.expectedTokenDiff, LOCAL_TOKEN_DELTA);
+    let balanceDiff: BN = await removeMarketLiquiditySingle(env, alice, amountToRemove, false);
+    approxBigNumber(balanceDiff, test.expectedTokenDiff, env.TEST_DELTA);
 
     await setTimeNextBlock(T2);
     amountToRemove = lpBalanceAlice.mul(test.ratioLpForXyt).div(100);
     totalLpAmountRemoved = totalLpAmountRemoved.add(amountToRemove);
-    balanceDiff = await removeLiquiditySingleToken(
-      alice,
-      xyt.address,
-      amountToRemove
-    );
-    approxBigNumber(test.expectedXytDiff, balanceDiff, LOCAL_TOKEN_DELTA);
+
+    balanceDiff = await removeMarketLiquiditySingle(env, alice, amountToRemove, true);
+    approxBigNumber(test.expectedXytDiff, balanceDiff, env.TEST_DELTA);
     approxBigNumber(
       lpBalanceAlice.sub(totalLpAmountRemoved),
-      await stdMarket.balanceOf(alice.address),
+      await env.stdMarket.balanceOf(alice.address),
       BN.from(1)
     ); // should remove the exact amount
   }
 
-  // TODO: Investigate why market can handle a large amount of token swapping in
   it("add liquidity with single token test 1", async () => {
     await runTestAddLiqSingleToken(scenario.scenarioAdd01());
   });
@@ -302,48 +186,37 @@ describe("lp-formula", async () => {
   it("add liquidity dual token test 1", async () => {
     const amountOfXyt = amountToWei(BN.from(331), 6);
     const amountOfToken = amountToWei(BN.from(891), 6);
-    await bootstrapMarket(amountOfXyt, amountOfToken);
+    await bootstrapMarket(env, alice, amountOfXyt, amountOfToken);
 
-    const totalSupply: BN = await stdMarket.totalSupply();
+    const totalSupply: BN = await env.stdMarket.totalSupply();
     // weights: Token: 660606624370, XYT: 438905003406
 
-    let initialXytBalance: BN = await xyt.balanceOf(bob.address);
-    let initialTokenBalance: BN = await testToken.balanceOf(bob.address);
+    let initialXytBalance: BN = await env.xyt.balanceOf(bob.address);
+    let initialTokenBalance: BN = await env.testToken.balanceOf(bob.address);
 
-    await router
-      .connect(bob)
-      .addMarketLiquidityDual(
-        consts.MARKET_FACTORY_AAVE,
-        xyt.address,
-        testToken.address,
-        amountOfXyt.mul(3),
-        amountOfToken.mul(3),
-        BN.from(0),
-        BN.from(0),
-        consts.HIGH_GAS_OVERRIDE
-      );
+    await addMarketLiquidityDualXyt(env, bob, amountOfXyt.mul(3))
 
-    let finalXytBalance = await xyt.balanceOf(bob.address);
-    let finalTokenBalance = await testToken.balanceOf(bob.address);
+    let finalXytBalance = await env.xyt.balanceOf(bob.address);
+    let finalTokenBalance = await env.testToken.balanceOf(bob.address);
     let amountXytUsed = initialXytBalance.sub(finalXytBalance);
     let amountTokenUsed = initialTokenBalance.sub(finalTokenBalance);
 
     await checkLpBalance(bob, totalSupply.mul(3));
-    approxBigNumber(amountXytUsed, amountOfXyt.mul(3), LOCAL_TOKEN_DELTA);
-    approxBigNumber(amountTokenUsed, amountOfToken.mul(3), LOCAL_TOKEN_DELTA);
+    approxBigNumber(amountXytUsed, amountOfXyt.mul(3), env.TEST_DELTA);
+    approxBigNumber(amountTokenUsed, amountOfToken.mul(3), env.TEST_DELTA);
 
     approxBigNumber(
-      await xyt.balanceOf(stdMarket.address),
+      await env.xyt.balanceOf(env.stdMarket.address),
       amountOfXyt.mul(4),
       BN.from(0)
     );
     approxBigNumber(
-      await testToken.balanceOf(stdMarket.address),
+      await env.testToken.balanceOf(env.stdMarket.address),
       amountOfToken.mul(4),
       BN.from(0)
     );
     approxBigNumber(
-      await stdMarket.totalSupply(),
+      await env.stdMarket.totalSupply(),
       totalSupply.mul(4),
       BN.from(0)
     );
@@ -352,48 +225,40 @@ describe("lp-formula", async () => {
   it("remove liquidity dual token test 1", async () => {
     const amountOfXyt = amountToWei(BN.from(331), 6);
     const amountOfToken = amountToWei(BN.from(891), 6);
-    await bootstrapMarket(amountOfXyt, amountOfToken);
+    await bootstrapMarket(env, alice, amountOfXyt, amountOfToken);
 
-    const totalSupply: BN = await stdMarket.balanceOf(alice.address);
+    const lpBalanceAlice: BN = await env.stdMarket.balanceOf(alice.address);
     // weights: Token: 660606624370, XYT: 438905003406
 
-    let initialXytBalance: BN = await xyt.balanceOf(alice.address);
-    let initialTokenBalance: BN = await testToken.balanceOf(alice.address);
+    let initialXytBalance: BN = await env.xyt.balanceOf(alice.address);
+    let initialTokenBalance: BN = await env.testToken.balanceOf(alice.address);
 
-    await router.removeMarketLiquidityDual(
-      consts.MARKET_FACTORY_AAVE,
-      xyt.address,
-      testToken.address,
-      totalSupply,
-      BN.from(0),
-      BN.from(0),
-      consts.HIGH_GAS_OVERRIDE
-    );
+    await removeMarketLiquidityDual(env, alice, lpBalanceAlice);
 
     await checkLpBalance(alice, BN.from(0));
 
-    let finalXytBalance = await xyt.balanceOf(alice.address);
-    let finalTokenBalance = await testToken.balanceOf(alice.address);
+    let finalXytBalance = await env.xyt.balanceOf(alice.address);
+    let finalTokenBalance = await env.testToken.balanceOf(alice.address);
     let amountXytReceived = finalXytBalance.sub(initialXytBalance);
     let amountTokenReceived = finalTokenBalance.sub(initialTokenBalance);
 
-    approxBigNumber(amountXytReceived, amountOfXyt, LOCAL_TOKEN_DELTA);
-    approxBigNumber(amountTokenReceived, amountOfToken, LOCAL_TOKEN_DELTA);
+    approxBigNumber(amountXytReceived, amountOfXyt, env.TEST_DELTA);
+    approxBigNumber(amountTokenReceived, amountOfToken, env.TEST_DELTA);
 
     approxBigNumber(
-      await xyt.balanceOf(stdMarket.address),
-      BN.from(0),
-      LOCAL_TOKEN_DELTA
+      await env.xyt.balanceOf(env.stdMarket.address),
+      0,
+      env.TEST_DELTA
     );
     approxBigNumber(
-      await testToken.balanceOf(stdMarket.address),
-      BN.from(0),
-      LOCAL_TOKEN_DELTA
+      await env.testToken.balanceOf(env.stdMarket.address),
+      0,
+      env.TEST_DELTA
     );
     approxBigNumber(
-      await stdMarket.totalSupply(),
+      await env.stdMarket.totalSupply(),
       MINIMUM_LIQUIDITY,
-      BN.from(0)
+      0
     );
   });
 });

@@ -1,6 +1,5 @@
-import { expect } from "chai";
-import { BigNumber as BN, Contract } from "ethers";
-import { amountToWei, consts, setTimeNextBlock, Token, bootstrapMarket, swapExactInTokenToXyt, swapExactInXytToToken, swapExactOutTokenToXyt, swapExactOutXytToToken, approxBigNumber } from "../helpers";
+import { BigNumber as BN } from "ethers";
+import { amountToWei, consts, setTimeNextBlock, bootstrapMarket, swapExactInTokenToXyt, swapExactInXytToToken, swapExactOutTokenToXyt, swapExactOutXytToToken, approxBigNumber } from "../helpers";
 import {
   TestEnv,
 } from "./fixtures";
@@ -65,52 +64,52 @@ export async function AMMTest(
   await env.testToken.approve(env.stdMarket.address, consts.INF);
 
   await runTestTokenToXyt(
-    consts.T0.add(3600),
+    env.T0.add(3600),
     BN.from(20405615),
     BN.from(20000000)
   );
   await runTestXytToToken(
-    consts.T0.add(3660),
+    env.T0.add(3660),
     BN.from(120000000),
     BN.from(111303781)
   );
   await runTestTokenToXyt(
-    consts.T0.add(43200),
+    env.T0.add(43200),
     BN.from(300000000),
     BN.from(273280448)
   );
   await runTestXytToToken(
-    consts.T0.add(43210),
+    env.T0.add(43210),
     BN.from(74655258),
     BN.from(100000000)
   );
   await runTestXytToToken(
-    consts.T0.add(2592030),
+    env.T0.add(2592030),
     BN.from(100000000),
     BN.from(100716340)
   );
   await runTestXytToToken(
-    consts.T0.add(14515300),
+    env.T0.add(14515300),
     BN.from(200000000),
     BN.from(24266823)
   );
   await runTestTokenToXyt(
-    consts.T0.add(14861000),
+    env.T0.add(14861000),
     BN.from(26338047),
     BN.from(300000000)
   );
   await runTestXytToToken(
-    consts.T0.add(15120300),
+    env.T0.add(15120300),
     BN.from(400000000),
     BN.from(21595046)
   );
   await runTestTokenToXyt(
-    consts.T0.add(15120360),
+    env.T0.add(15120360),
     BN.from(3696839),
     BN.from(80000000)
   );
   await runTestXytToToken(
-    consts.T0.add(15379200),
+    env.T0.add(15379200),
     BN.from(800000016),
     BN.from(11997610)
   );

@@ -167,7 +167,7 @@ describe("compound-lp-interest", async () => {
       );
   }
 
-  async function removeMarketLiquidityXyt(user: Wallet, amount: BN) {
+  async function removeMarketLiquiditySingle(user: Wallet, amount: BN) {
     await router
       .connect(user)
       .removeMarketLiquiditySingle(
@@ -393,7 +393,7 @@ describe("compound-lp-interest", async () => {
 
     await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
-    await removeMarketLiquidityXyt(bob, await getLPBalance(bob));
+    await removeMarketLiquiditySingle(bob, await getLPBalance(bob));
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await swapExactInXytToToken(eve, BN.from(10).pow(9));
@@ -419,7 +419,7 @@ describe("compound-lp-interest", async () => {
     await addMarketLiquidityXyt(bob, amountXytRef.div(6));
 
     await advanceTime(consts.ONE_MONTH);
-    await removeMarketLiquidityXyt(dave, (await getLPBalance(dave)).div(3));
+    await removeMarketLiquiditySingle(dave, (await getLPBalance(dave)).div(3));
     await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await swapExactInXytToToken(eve, BN.from(10).pow(10));
