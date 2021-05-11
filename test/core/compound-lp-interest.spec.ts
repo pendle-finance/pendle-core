@@ -37,7 +37,6 @@ describe("compound-lp-interest", async () => {
   let aaveForge: Contract;
   let aaveV2Forge: Contract;
   let cUSDT: Contract;
-  let cUSDTWeb3: any;
   let tokenUSDT: Token;
   const amountUSDTRef = BN.from(10).pow(8);
   let amountXytRef: BN;
@@ -59,7 +58,6 @@ describe("compound-lp-interest", async () => {
     aaveForge = fixture.aForge.aaveForge;
     aaveV2Forge = fixture.a2Forge.aaveV2Forge;
     cUSDT = await getCContract(alice, tokenUSDT);
-    cUSDTWeb3 = new hre.web3.eth.Contract(ICToken.abi, cUSDT.address);
 
     for (let user of [alice, bob, charlie, dave, eve]) {
       await router.redeemDueInterests(

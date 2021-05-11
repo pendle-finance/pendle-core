@@ -294,19 +294,6 @@ export function toFPWei(val: string | number): BN {
   return toFixedPoint(val).mul(1000000);
 }
 
-export function epochRelativeTime(params: liqParams, t: BN): BN {
-  return t.sub(params.START_TIME).mod(params.EPOCH_DURATION);
-}
-
-export function epochOfTimestamp(params: liqParams, t: BN): BN {
-  if (t.lt(params.START_TIME)) return BN.from(0);
-  return t.sub(params.START_TIME).div(params.EPOCH_DURATION).add(BN.from(1));
-}
-
-export function startOfEpoch(params: liqParams, e: number): BN {
-  return params.EPOCH_DURATION.mul(e - 1).add(params.START_TIME);
-}
-
 export function randomBN(range?: number): BN {
   if (range == undefined) range = 1e15;
   return BN.from(Math.floor(Math.random() * range));
