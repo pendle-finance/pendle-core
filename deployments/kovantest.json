@@ -64,6 +64,10 @@
     "PendleAaveYieldContractDeployer": {
       "address": "0xA78Bae90f7457d3822a7e975AD14D1105E7c5eE6",
       "tx": "0xd5891cd9152c1f789c6a44fd368a962e4e0d66da1f6ca21e8066c6340d07e1a0"
+    },
+    "PendleRedeemProxy": {
+      "address": "0x0EBDA0e2446852FeD30Cc1bb9edB17b9999A92b5",
+      "tx": "0x5f9cd3947c11d6c71bc846662114350cc188ac3df7d40c13884063e7844d8e4c"
     }
   },
   "variables": {

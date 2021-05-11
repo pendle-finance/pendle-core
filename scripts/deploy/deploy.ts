@@ -103,7 +103,7 @@ async function main() {
         break;
       }
       case 6: {
-        console.log(`\n[Step ${step}]: Initializing PendleRouter`);
+        console.log(`\n[Step ${step}]: Deploying PendleRedeemProxy`);
         await step6(deployer, hre, deployment, consts);
         break;
       }

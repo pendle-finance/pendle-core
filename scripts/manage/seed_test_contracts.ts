@@ -49,8 +49,14 @@ async function main() {
   console.log(`\n\tNetwork = ${network}, deployer = ${deployer.address}`);
   console.log(`\tDeployment's filePath = ${filePath}`);
 
-  if (network !== "kovan" && network !== "kovantest" && network !== "development") {
-    console.log("[ERROR] Must be for kovan or kovantest network or development");
+  if (
+    network !== "kovan" &&
+    network !== "kovantest" &&
+    network !== "development"
+  ) {
+    console.log(
+      "[ERROR] Must be for kovan or kovantest network or development"
+    );
     process.exit(1);
   }
   if (network == 'development' || network == 'hardhat') {

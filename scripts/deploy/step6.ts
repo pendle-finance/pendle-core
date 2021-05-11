@@ -4,6 +4,7 @@ export async function step6(deployer: any, hre: any, deployment: Deployment, con
   const pendleRouterAddress = deployment.contracts.PendleRouter.address;
   const pendleDataAddress = deployment.contracts.PendleData.address;
 
+  await deploy(hre, deployment, "PendleRedeemProxy", [pendleRouterAddress]);
   // if (!validAddress("PendleRouter address", pendleRouterAddress))
   //   process.exit(1);
   // if (!validAddress("PendleData address", pendleDataAddress)) process.exit(1);
