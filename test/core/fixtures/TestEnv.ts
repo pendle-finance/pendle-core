@@ -1,5 +1,5 @@
 import { BigNumber as BN, Contract, Wallet } from "ethers";
-import { RouterFixture } from "./pendle.fixture";
+import { RouterFixture } from "./router.fixture";
 import { MarketFixture } from "./market.fixture";
 import { CoreFixture } from "./core.fixture";
 import { assert } from "chai";
