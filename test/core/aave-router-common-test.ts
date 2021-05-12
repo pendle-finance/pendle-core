@@ -16,14 +16,14 @@ import {
   setTimeNextBlock,
   Token,
   tokenizeYield,
-  tokens,
+  tokens
 } from "../helpers";
 import {
   Mode,
   parseTestEnvRouterFixture,
   routerFixture,
   RouterFixture,
-  TestEnv,
+  TestEnv
 } from "./fixtures";
 
 const { waffle } = require("hardhat");
@@ -87,7 +87,7 @@ export function runTest(isAaveV1: boolean) {
       );
     }
 
-    it("underlying asset's address should match the original asset", async () => {
+    it("OT & XYT's underlyingAsset's address should be correct", async () => {
       expect((await env.ot.underlyingAsset()).toLowerCase()).to.be.equal(
         tokens.USDT.address.toLowerCase()
       );
@@ -96,14 +96,14 @@ export function runTest(isAaveV1: boolean) {
       );
     });
 
-    it("shouldn't be able to do newYieldContract with an expiry in the past", async () => {
+    it("newYieldContract is not possible [if the expiry is in the past ]", async () => {
       let futureTime = env.T0.sub(consts.ONE_MONTH);
       await expect(
         env.router.newYieldContracts(env.FORGE_ID, USDT.address, futureTime)
       ).to.be.revertedWith(errMsg.INVALID_EXPIRY);
     });
 
-    it("shouldn't be able to do newYieldContract with an expiry not divisible for expiryDivisor", async () => {
+    it("newYieldContract is not possible [if the expiry is not divisible for expiryDivisor]", async () => {
       let futureTime = env.T0.add(consts.ONE_YEAR);
       if (futureTime.mod(await env.data.expiryDivisor()).eq(0)) {
         futureTime = futureTime.add(1);
@@ -113,7 +113,7 @@ export function runTest(isAaveV1: boolean) {
       ).to.be.revertedWith(errMsg.INVALID_EXPIRY);
     });
 
-    it("should be able to deposit aUSDT to get back OT and XYT", async () => {
+    it("tokenizeYield", async () => {
       let amount = await tokenizeYield(env, alice, refAmount);
       const balanceOwnershipToken = await env.ot.balanceOf(alice.address);
       const balanceFutureYieldToken = await env.xyt.balanceOf(alice.address);
@@ -121,23 +121,17 @@ export function runTest(isAaveV1: boolean) {
       expect(balanceFutureYieldToken).to.be.eq(amount);
     });
 
-    it("shouldn't be able to call redeemUnderlying if the yield contract has expired", async () => {
-      let amount = await tokenizeYield(env, alice, refAmount);
+    it("redeemUnderlying is not possible [if the yield contract has expired]", async () => {
+      await tokenizeYield(env, alice, refAmount);
 
       await setTimeNextBlock(env.T0.add(consts.ONE_YEAR));
 
       await expect(
-        env.router.redeemUnderlying(
-          env.FORGE_ID,
-          USDT.address,
-          env.EXPIRY,
-          refAmount,
-          consts.HIGH_GAS_OVERRIDE
-        )
+        redeemUnderlying(env, alice, refAmount)
       ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
     });
 
-    it("[After 1 month] should be able to redeem aUSDT to get back OT, XYT and interests $", async () => {
+    it("redeemUnderlying [after 1 month]", async () => {
       await startCalInterest(charlie, refAmount);
       let amount = await tokenizeYield(env, alice, refAmount);
       await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
@@ -153,7 +147,7 @@ export function runTest(isAaveV1: boolean) {
       );
     });
 
-    it("[After 1 month] should be able to get due interests", async () => {
+    it("redeemDueInterests [after 1 month]", async () => {
       await startCalInterest(charlie, refAmount);
       await tokenizeYield(env, alice, refAmount);
 
@@ -175,7 +169,7 @@ export function runTest(isAaveV1: boolean) {
       );
     });
 
-    it("Another wallet should be able to receive interests from XYT", async () => {
+    it("Anybody holding XYTs can redeemDueInterests from it", async () => {
       await startCalInterest(charlie, refAmount);
 
       let amount = await tokenizeYield(env, alice, refAmount);
@@ -195,7 +189,7 @@ export function runTest(isAaveV1: boolean) {
       );
     });
 
-    it("Short after expiry, should be able to redeem aUSDT from OT", async () => {
+    it("redeemAfterExpiry [short after expiry]", async () => {
       await startCalInterest(charlie, refAmount);
 
       let amount = await tokenizeYield(env, alice, refAmount);
@@ -229,7 +223,7 @@ export function runTest(isAaveV1: boolean) {
       );
     });
 
-    it("One month after expiry, should be able to redeem aUSDT with interest", async () => {
+    it("redeemAfterExpiry [1 month after expiry]", async () => {
       await startCalInterest(charlie, refAmount);
       let amount = await tokenizeYield(env, alice, refAmount);
       await env.xyt.transfer(bob.address, amount);
@@ -261,7 +255,7 @@ export function runTest(isAaveV1: boolean) {
       );
     });
 
-    it("Should be able to newYieldContracts", async () => {
+    it("newYieldContracts", async () => {
       let futureTime = env.EXPIRY.add(consts.ONE_DAY);
       let filter = env.forge.filters.NewYieldContracts();
       let tx = await env.router.newYieldContracts(
@@ -277,7 +271,7 @@ export function runTest(isAaveV1: boolean) {
       expect(allEvents[allEvents.length - 1].args!.expiry).to.eq(futureTime);
     });
 
-    it("Should be able to renewYield", async () => {
+    it("renewYield", async () => {
       await env.router.newYieldContracts(
         env.FORGE_ID,
         USDT.address,
@@ -332,7 +326,7 @@ export function runTest(isAaveV1: boolean) {
       approxBigNumber(curAUSDTbalance, expectedGain, env.TEST_DELTA);
     });
 
-    it("shouldn't be able to newYieldContracts with an invalid underlyingAsset", async () => {
+    it("newYieldContracts is not possible [if underlyingAsset is invalid]", async () => {
       // random underlyingAsset
       await expect(
         env.router.newYieldContracts(

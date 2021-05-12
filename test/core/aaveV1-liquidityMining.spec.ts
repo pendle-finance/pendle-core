@@ -17,7 +17,7 @@ import {
   setTimeNextBlock,
   stake,
   startOfEpoch,
-  withdraw
+  withdraw,
 } from "../helpers";
 import {
   liquidityMiningFixture,
@@ -25,7 +25,7 @@ import {
   Mode,
   parseTestEnvLiquidityMiningFixture,
   TestEnv,
-  UserStakeAction
+  UserStakeAction,
 } from "./fixtures";
 import * as scenario from "./fixtures/liquidityMiningScenario.fixture";
 
@@ -178,7 +178,7 @@ describe("aaveV1-liquidityMining", async () => {
 
     // Charlie holds same equivalent amount of XYTs as 10% of the market
     // which is the same as what Bob and Dave holds
-    console.log
+    console.log;
     await env.xyt.transfer(
       charlie.address,
       (await env.xyt.balanceOf(env.market.address)).div(10)

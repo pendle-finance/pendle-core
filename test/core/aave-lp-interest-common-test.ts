@@ -17,14 +17,14 @@ import {
   removeMarketLiquiditySingle,
   swapExactInXytToToken,
   Token,
-  tokens
+  tokens,
 } from "../helpers";
 import {
   marketFixture,
   MarketFixture,
   Mode,
   parseTestEnvMarketFixture,
-  TestEnv
+  TestEnv,
 } from "./fixtures";
 
 const { waffle } = require("hardhat");
@@ -164,7 +164,7 @@ export function runTest(isAaveV1: boolean) {
       }
     });
 
-    it("test 2", async () => {
+    it("Users should still receive correct amount of LP interest if markets have many addMarketLiquiditySingle & swapExactInXytToToken actions", async () => {
       await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
       await bootstrapMarket(env, alice, BN.from(10).pow(10));
@@ -289,7 +289,7 @@ export function runTest(isAaveV1: boolean) {
     //   );
     // });
 
-    it("test 4", async () => {
+    it("Users should still receive correct amount of LP interest if markets have many addMarketLiquiditySingle, removeMarketLiquidityDual, removeMarketLiquiditySingle, swapExactInXytToToken actions", async () => {
       await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
       await bootstrapMarket(env, alice, BN.from(10).pow(10));
@@ -377,7 +377,7 @@ export function runTest(isAaveV1: boolean) {
       }
     });
 
-    it("test 5", async () => {
+    it("Users should still receive correct amount of LP interest if markets have many addMarketLiquidityDual, removeMarketLiquidityDual actions and they only redeemLpInterests a long time after the XYT has expired", async () => {
       await bootstrapMarket(env, alice, BN.from(10).pow(10));
 
       await advanceTime(consts.ONE_DAY.mul(5));
