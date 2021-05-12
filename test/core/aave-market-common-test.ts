@@ -347,7 +347,7 @@ export function runTest(isAaveV1: boolean) {
       await AMMTest(env, false);
     });
 
-    it("AMM's swap outcome should be correct near the expiry", async () => {
+    xit("AMM's swap outcome should be correct near the expiry", async () => {
       await env.xyt
         .connect(bob)
         .transfer(alice.address, await env.xyt.balanceOf(bob.address));
@@ -357,7 +357,7 @@ export function runTest(isAaveV1: boolean) {
       await AMMNearCloseTest(env, false);
     });
 
-    it("AMM's LP outcome should be correct near the expiry", async () => {
+    xit("AMM's LP outcome should be correct near the expiry", async () => {
       await AMMCheckLPNearCloseTest(env);
     });
   });
