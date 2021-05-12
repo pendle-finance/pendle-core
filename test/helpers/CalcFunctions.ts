@@ -1,5 +1,5 @@
-import { liqParams, TestEnv, UserStakeAction } from "../core/fixtures";
 import { BigNumber as BN } from "ethers";
+import { LiqParams, TestEnv, UserStakeAction } from "../core/fixtures";
 
 // returns a rewards object = BN[][]
 //    rewards[userId][0] is the rewards withdrawable at currentEpoch
@@ -7,7 +7,7 @@ import { BigNumber as BN } from "ethers";
 //    ...
 export function calcExpectedRewards(
   userStakingData: UserStakeAction[][][],
-  params: liqParams,
+  params: LiqParams,
   currentEpoch: number
 ): BN[][] {
   let nUsers = userStakingData[0].length;
@@ -123,30 +123,30 @@ async function calEffectiveLiquidity(
   tokenAmount: BN;
 }> {
   const MINIMUM_LIQUIDITY: BN = BN.from(3000);
-  let totalSupply = await env.stdMarket.totalSupply();
+  let totalSupply = await env.market.totalSupply();
   let totalEffectiveLP = totalSupply.sub(MINIMUM_LIQUIDITY);
-  let xytAmount = (await env.xyt.balanceOf(env.stdMarket.address))
+  let xytAmount = (await env.xyt.balanceOf(env.market.address))
     .mul(totalEffectiveLP)
     .div(totalSupply);
   console.log(
     xytAmount.toString(),
-    (await env.xyt.balanceOf(env.stdMarket.address)).toString()
+    (await env.xyt.balanceOf(env.market.address)).toString()
   );
-  let tokenAmount = (await env.testToken.balanceOf(env.stdMarket.address))
+  let tokenAmount = (await env.testToken.balanceOf(env.market.address))
     .mul(totalEffectiveLP)
     .div(totalSupply);
   return { xytAmount, tokenAmount };
 }
 
-export function epochRelativeTime(params: liqParams, t: BN): BN {
+export function epochRelativeTime(params: LiqParams, t: BN): BN {
   return t.sub(params.START_TIME).mod(params.EPOCH_DURATION);
 }
 
-export function epochOfTimestamp(params: liqParams, t: BN): BN {
+export function epochOfTimestamp(params: LiqParams, t: BN): BN {
   if (t.lt(params.START_TIME)) return BN.from(0);
   return t.sub(params.START_TIME).div(params.EPOCH_DURATION).add(BN.from(1));
 }
 
-export function startOfEpoch(params: liqParams, e: number): BN {
+export function startOfEpoch(params: LiqParams, e: number): BN {
   return params.EPOCH_DURATION.mul(e - 1).add(params.START_TIME);
 }

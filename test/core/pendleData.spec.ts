@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
 import { Contract } from "ethers";
-import { consts, evm_revert, evm_snapshot, Token, tokens } from "../helpers";
+import { evm_revert, evm_snapshot, Token, tokens } from "../helpers";
 import { marketFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");

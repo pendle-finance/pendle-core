@@ -1,19 +1,15 @@
 import { expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract, Wallet, utils } from "ethers";
+import { BigNumber as BN, Contract, utils, Wallet } from "ethers";
 import {
   advanceTime,
   amountToWei,
-  approxBigNumber,
   consts,
   errMsg,
   evm_revert,
   evm_snapshot,
-  getA2Contract,
   getAContract,
-  mintAaveToken,
   setTimeNextBlock,
-  setTime,
   Token,
   tokens,
 } from "../helpers";

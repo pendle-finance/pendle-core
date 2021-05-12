@@ -1,7 +1,6 @@
-import { use } from "chai";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
 import { TestEnv } from "../core/fixtures";
-import { tokens, consts, Token, amountToWei } from "../helpers";
+import { consts, Token, tokens } from "../helpers";
 
 let USDT: Token = tokens.USDT;
 
@@ -256,7 +255,7 @@ export async function redeemLpInterests(
   market?: Contract
 ) {
   if (market == null) {
-    market = env.stdMarket;
+    market = env.market;
   }
   await env.router
     .connect(user)
@@ -285,4 +284,31 @@ export async function getMarketRateExactOut(
     amount,
     env.MARKET_FACTORY_ID
   );
+}
+
+export async function stake(
+  env: TestEnv,
+  user: Wallet,
+  amount: BN,
+  expiry?: BN
+) {
+  if (expiry == null) expiry = env.EXPIRY;
+  await env.liq.connect(user).stake(expiry, amount, consts.HIGH_GAS_OVERRIDE);
+}
+
+export async function withdraw(
+  env: TestEnv,
+  user: Wallet,
+  amount: BN,
+  expiry?: BN
+) {
+  if (expiry == null) expiry = env.EXPIRY;
+  await env.liq
+    .connect(user)
+    .withdraw(expiry, amount, consts.HIGH_GAS_OVERRIDE);
+}
+
+export async function redeemRewards(env: TestEnv, user: Wallet, expiry?: BN) {
+  if (expiry == null) expiry = env.EXPIRY;
+  await env.liq.redeemRewards(expiry, user.address, consts.HIGH_GAS_OVERRIDE);
 }

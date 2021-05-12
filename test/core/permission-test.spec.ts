@@ -3,9 +3,6 @@ import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract } from "ethers";
 import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
 import {
-  advanceTime,
-  amountToWei,
-  approxBigNumber,
   consts,
   errMsg,
   evm_revert,
@@ -13,7 +10,6 @@ import {
   Token,
   tokens,
 } from "../helpers";
-import { AMMTest } from "./amm-formula-test";
 import { marketFixture } from "./fixtures";
 
 const { waffle } = require("hardhat");
@@ -28,7 +24,7 @@ describe("permission-test", async () => {
   let xyt: Contract;
   let xyt2: Contract;
   let market: Contract;
-  let ethMarket: Contract;
+  let marketEth: Contract;
   let testToken: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;

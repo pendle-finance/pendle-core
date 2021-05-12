@@ -1,6 +1,5 @@
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
-import ICToken from "../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json";
 import {
   advanceTime,
   amountToWei,
@@ -15,7 +14,6 @@ import {
   mintOtAndXyt,
   Token,
   tokens,
-  mintCompoundToken,
 } from "../helpers";
 import { marketFixture, MarketFixture } from "./fixtures";
 const hre = require("hardhat");
@@ -30,7 +28,7 @@ describe("compound-lp-interest", async () => {
   let router: Contract;
   let xyt: Contract;
   let ot: Contract;
-  let stdMarket: Contract;
+  let market: Contract;
   let testToken: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
@@ -53,7 +51,7 @@ describe("compound-lp-interest", async () => {
     ot = fixture.cForge.cOwnershipToken;
     xyt = fixture.cForge.cFutureYieldToken;
     testToken = fixture.testToken;
-    stdMarket = fixture.cMarket;
+    market = fixture.cMarket;
     tokenUSDT = tokens.USDT;
     aaveForge = fixture.aForge.aaveForge;
     aaveV2Forge = fixture.a2Forge.aaveV2Forge;
@@ -230,7 +228,7 @@ describe("compound-lp-interest", async () => {
   async function claimAll() {
     for (let user of [alice, bob, charlie, dave]) {
       await router.redeemLpInterests(
-        stdMarket.address,
+        market.address,
         user.address,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -255,7 +253,7 @@ describe("compound-lp-interest", async () => {
   }
 
   async function getLPBalance(user: Wallet) {
-    return await stdMarket.balanceOf(user.address);
+    return await market.balanceOf(user.address);
   }
 
   it("test 1", async () => {
@@ -438,7 +436,7 @@ describe("compound-lp-interest", async () => {
     await advanceTime(consts.ONE_DAY);
     for (let user of [dave, charlie, bob, alice]) {
       await router.redeemLpInterests(
-        stdMarket.address,
+        market.address,
         user.address,
         consts.HIGH_GAS_OVERRIDE
       );

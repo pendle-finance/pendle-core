@@ -1,10 +1,10 @@
 import { assert, expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
-import PendleCompoundLiquidityMining from "../../build/artifacts/contracts/core/PendleCompoundLiquidityMining.sol/PendleCompoundLiquidityMining.json";
 import {
   advanceTime,
   approxBigNumber,
+  calcExpectedRewards,
   consts,
   evm_revert,
   evm_snapshot,
@@ -13,9 +13,8 @@ import {
   setTimeNextBlock,
   startOfEpoch,
   tokens,
-  calcExpectedRewards,
 } from "../helpers";
-import { liqParams, liquidityMiningFixture, UserStakeAction } from "./fixtures";
+import { LiqParams, liquidityMiningFixture, UserStakeAction } from "./fixtures";
 import * as scenario from "./fixtures/liquidityMiningScenario.fixture";
 
 const { waffle } = require("hardhat");
@@ -30,7 +29,7 @@ describe("compound-liquidityMining", async () => {
   let liq: Contract;
   let market: Contract;
   let pdl: Contract;
-  let params: liqParams;
+  let params: LiqParams;
   let cUSDT: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;

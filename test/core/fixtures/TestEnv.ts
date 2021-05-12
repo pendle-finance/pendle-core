@@ -1,11 +1,11 @@
 import { BigNumber as BN, Contract, Wallet } from "ethers";
-import { RouterFixture } from "./router.fixture";
-import { MarketFixture } from "./market.fixture";
-import { CoreFixture } from "./core.fixture";
-import { assert } from "chai";
 import {
-  consts, tokens, getAContract, getA2Contract, getCContract, Token
+  consts, getA2Contract, getAContract, getCContract, tokens
 } from "../../helpers";
+import { CoreFixture } from "./core.fixture";
+import { LiqParams, LiquidityMiningFixture } from "./liquidityMining.fixture";
+import { MarketFixture } from "./market.fixture";
+import { RouterFixture } from "./router.fixture";
 
 export enum Mode {
   AAVE_V1 = 1,
@@ -30,8 +30,10 @@ export interface TestEnv {
   aUSDT: Contract;
   cUSDT: Contract;
   testToken: Contract;
-  stdMarket: Contract;
-  ethMarket: Contract;
+  market: Contract;
+  marketEth: Contract;
+  pdl: Contract;
+  liq: Contract;
 
   // test params
   T0: BN;
@@ -40,10 +42,12 @@ export interface TestEnv {
   TEST_DELTA: BN;
   EXPIRY: BN;
   MARKET_FACTORY_ID: string;
+  liqParams: LiqParams;
 
   // fixture
   routerFixture: RouterFixture;
-  marketFixture: MarketFixture
+  marketFixture: MarketFixture;
+  liqMiningFixture: LiquidityMiningFixture;
 }
 
 export function parseTestEnvCoreFixture(env: TestEnv, fixture: CoreFixture) {
@@ -101,17 +105,36 @@ export async function parseTestEnvMarketFixture(alice: Wallet, mode: Mode, env: 
 
   if (env.mode == Mode.AAVE_V1) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE;
-    env.stdMarket = fixture.aMarket;
-    env.ethMarket = fixture.ethMarket;
+    env.market = fixture.aMarket;
+    env.marketEth = fixture.marketEth;
   }
   else if (env.mode == Mode.AAVE_V2) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE_V2;
-    env.stdMarket = fixture.a2Market;
-    // no ethMarket for AaveV2
+    env.market = fixture.a2Market;
+    // no marketEth for AaveV2
   }
   else if (env.mode == Mode.COMPOUND) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_COMPOUND;
-    env.stdMarket = fixture.cMarket;
-    // no ethMarket for Compound
+    env.market = fixture.cMarket;
+    // no marketEth for Compound
   }
+}
+
+export async function parseTestEnvLiquidityMiningFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: LiquidityMiningFixture) {
+  env.mode = mode;
+  parseTestEnvMarketFixture(alice, mode, env, fixture.marketFix);
+
+  env.pdl = fixture.pdl;
+  env.liqMiningFixture = fixture;
+  env.liqParams = fixture.params;
+
+  if (env.mode == Mode.AAVE_V1) {
+    env.liq = fixture.aLiquidityMining;
+  }
+  else if (env.mode == Mode.AAVE_V2) {
+  }
+  else if (env.mode == Mode.COMPOUND) {
+    env.liq = fixture.cLiquidityMining;
+  }
+
 }

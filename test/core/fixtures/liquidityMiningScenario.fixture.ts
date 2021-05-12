@@ -1,9 +1,9 @@
 import { BigNumber as BN } from "ethers";
 import { startOfEpoch } from "../../helpers";
-import { liqParams, UserStakeAction } from "./liquidityMining.fixture";
+import { LiqParams, UserStakeAction } from "./liquidityMining.fixture";
 const SAME_AMOUNT: BN = BN.from(10000);
 
-export function scenario01(params: liqParams): UserStakeAction[][][] {
+export function scenario01(params: LiqParams): UserStakeAction[][][] {
   let LENGTH = params.EPOCH_DURATION;
   return [
     [
@@ -69,7 +69,7 @@ export function scenario01(params: liqParams): UserStakeAction[][][] {
   ];
 }
 
-export function scenario04(params: liqParams): UserStakeAction[][][] {
+export function scenario04(params: LiqParams): UserStakeAction[][][] {
   return [
     [
       [
@@ -183,7 +183,7 @@ export function scenario04(params: liqParams): UserStakeAction[][][] {
   ]
 }
 
-export function scenario06(params: liqParams): UserStakeAction[][][] {
+export function scenario06(params: LiqParams): UserStakeAction[][][] {
   return [
     [
       [

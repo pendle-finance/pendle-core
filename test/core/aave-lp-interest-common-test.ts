@@ -1,30 +1,30 @@
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Wallet } from "ethers";
 import {
+  addMarketLiquidityDualXyt,
+  addMarketLiquiditySingle,
   advanceTime,
   approxBigNumber,
+  bootstrapMarket,
   consts,
   emptyToken,
   evm_revert,
   evm_snapshot,
   mintOtAndXyt,
-  Token,
-  tokens,
-  bootstrapMarket,
-  swapExactInXytToToken,
-  addMarketLiquiditySingle,
-  removeMarketLiquidityDual,
-  removeMarketLiquiditySingle,
-  addMarketLiquidityDualXyt,
   redeemDueInterests,
   redeemLpInterests,
+  removeMarketLiquidityDual,
+  removeMarketLiquiditySingle,
+  swapExactInXytToToken,
+  Token,
+  tokens
 } from "../helpers";
 import {
   marketFixture,
   MarketFixture,
-  TestEnv,
   Mode,
   parseTestEnvMarketFixture,
+  TestEnv
 } from "./fixtures";
 
 const { waffle } = require("hardhat");
@@ -93,7 +93,7 @@ export function runTest(isAaveV1: boolean) {
     }
 
     async function getLPBalance(user: Wallet) {
-      return await env.stdMarket.balanceOf(user.address);
+      return await env.market.balanceOf(user.address);
     }
 
     async function checkAUSDTBalance(expectedResult: number[]) {
@@ -106,7 +106,7 @@ export function runTest(isAaveV1: boolean) {
       }
     }
 
-    it("test 1", async () => {
+    it("Users should still receive correct amount of LP interest if markets have many addMarketLiquidityDual & swapExactInXytToToken actions", async () => {
       await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
       await bootstrapMarket(env, alice, BN.from(10).pow(10));
