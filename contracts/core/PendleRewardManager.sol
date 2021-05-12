@@ -54,6 +54,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         uint256 paramL;
         uint256 lastRewardBalance;
         mapping(address => uint256) lastParamL;
+        mapping(address => uint256) dueRewards;
     }
 
     // rewardData[underlyingAsset][expiry] stores the information related
@@ -102,26 +103,85 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         uint256 _expiry,
         address _account
     ) external override nonReentrant returns (uint256 dueRewards) {
+        dueRewards = _beforeTransferPendingRewards(_underlyingAsset, _expiry, _account);
+
+        address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
+        if (dueRewards != 0) {
+            // The yieldTokenHolder already approved this reward manager contract to spend max uint256
+            rewardToken.transferFrom(_yieldTokenHolder, _account, dueRewards);
+        }
+    }
+
+    /**
+    @notice Update the pending rewards for an user
+    @dev This must be called before any transfer / mint/ burn action of OT
+        (and this has been implemented in the beforeTokenTransfer of the PendleOwnershipToken)
+    Conditions:
+        * Can be called by anyone, to update for anyone
+    */
+    function updatePendingRewards(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) external override nonReentrant {
+        _updatePendingRewards(_underlyingAsset, _expiry, _account);
+    }
+
+    /**
+    @notice To be called before the pending rewards of any users is redeemed
+    */
+    function _beforeTransferPendingRewards(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) internal returns (uint256 amountOut) {
+        _updatePendingRewards(_underlyingAsset, _expiry, _account);
+
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
 
+        amountOut = rwd.dueRewards[_account];
+        rwd.dueRewards[_account] = 0;
+
+        rwd.lastRewardBalance = rwd.lastRewardBalance.sub(amountOut);
+    }
+
+    /**
+    * Very similar to updateLpInterests in PendleCompoundLiquidityMining. Any major differences are likely to be bugs
+        Please refer to it for more details
+    */
+    function _updatePendingRewards(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _account
+    ) internal {
         address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
         _updateParamL(_underlyingAsset, _expiry, _yieldTokenHolder);
 
-        uint256 rewardsAmountPerOT = _getRewardsAmountPerOT(_underlyingAsset, _expiry, _account);
-        if (rewardsAmountPerOT == 0) return 0;
+        RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
+
+        if (rwd.lastParamL[_account] == 0) {
+            // ParamL is always >=1, so this user must have gotten OT for the first time,
+            // and shouldn't get any rewards
+            rwd.lastParamL[_account] = rwd.paramL;
+            return;
+        }
 
         IPendleYieldToken ot = data.otTokens(forgeId, _underlyingAsset, _expiry);
-        dueRewards = ot.balanceOf(_account).mul(rewardsAmountPerOT).div(MULTIPLIER);
-        if (dueRewards == 0) return 0;
 
-        rwd.lastRewardBalance = rwd.lastRewardBalance.sub(dueRewards);
+        uint256 principal = ot.balanceOf(_account);
+        uint256 rewardsAmountPerOT = rwd.paramL.sub(rwd.lastParamL[_account]);
 
-        // The yieldTokenHolder already approved this reward manager contract to spend max uint256
-        rewardToken.transferFrom(_yieldTokenHolder, _account, dueRewards);
+        uint256 rewardsFromOT = principal.mul(rewardsAmountPerOT).div(MULTIPLIER);
+
+        rwd.dueRewards[_account] = rwd.dueRewards[_account].add(rewardsFromOT);
+        rwd.lastParamL[_account] = rwd.paramL;
     }
 
-    // INVARIANT: this function must be called before any action that changes the total OT
-    // To ensure this, we call it in the beginning of redeemRewards, which has the same invariant.
+    /**
+    * Very similar to updateLpInterests in PendleCompoundLiquidityMining. Any major differences are likely to be bugs
+        Please refer to it for more details
+    * This function must be called only by updatePendingRewards
+    */
     function _updateParamL(
         address _underlyingAsset,
         uint256 _expiry,
@@ -168,22 +228,5 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
         firstTerm = rwd.paramL;
         paramR = currentRewardBalance.sub(rwd.lastRewardBalance);
-    }
-
-    function _getRewardsAmountPerOT(
-        address _underlyingAsset,
-        uint256 _expiry,
-        address user
-    ) internal returns (uint256 interestValuePerLP) {
-        RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
-
-        if (rwd.lastParamL[user] == 0) {
-            // ParamL is always >=1, so this user must have gotten OT for the first time,
-            // and shouldn't get any interests.
-            interestValuePerLP = 0;
-        } else {
-            interestValuePerLP = rwd.paramL.sub(rwd.lastParamL[user]);
-        }
-        rwd.lastParamL[user] = rwd.paramL;
     }
 }

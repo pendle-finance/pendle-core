@@ -126,7 +126,7 @@ interface IPendleForge {
         address user
     ) external;
 
-    function redeemRewardsBeforeOtTransfer(
+    function updatePendingRewards(
         address _underlyingAsset,
         uint256 _expiry,
         address _account

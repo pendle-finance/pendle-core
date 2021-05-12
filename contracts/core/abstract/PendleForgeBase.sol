@@ -338,14 +338,13 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     Conditions:
         * Should only be called by the OT contract
     */
-    function redeemRewardsBeforeOtTransfer(
+    function updatePendingRewards(
         address _underlyingAsset,
         uint256 _expiry,
         address _account
     ) external override onlyOT(_underlyingAsset, _expiry) {
         checkNotPaused(_underlyingAsset, _expiry);
-        // simply forward the call to the rewardManager
-        rewardManager.redeemRewards(_underlyingAsset, _expiry, _account);
+        rewardManager.updatePendingRewards(_underlyingAsset, _expiry, _account);
     }
 
     /**
@@ -376,7 +375,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         amountTokenMinted = _calcAmountToMint(_underlyingAsset, _amountToTokenize);
 
-        // redeemRewardsBeforeOtTransfer will be called in mint
+        // updatePendingRewards will be called in mint
         tokens.ot.mint(_to, amountTokenMinted);
 
         // updateDueInterests will be called in mint
