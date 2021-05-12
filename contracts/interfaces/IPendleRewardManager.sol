@@ -23,6 +23,8 @@
 pragma solidity 0.7.6;
 
 interface IPendleRewardManager {
+    event SkippingRewardsSet(bool);
+
     function redeemRewards(
         address _underlyingAsset,
         uint256 _expiry,
@@ -34,6 +36,10 @@ interface IPendleRewardManager {
         uint256 _expiry,
         address _user
     ) external;
+
+    function setSkippingRewards(bool) external;
+
+    function skippingRewards() external returns (bool);
 
     function forgeId() external returns (bytes32);
 }

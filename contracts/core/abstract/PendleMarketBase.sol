@@ -549,9 +549,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkAddRemoveSwapClaimAllowed(true);
         checkNotPaused();
         interests = _beforeTransferDueInterests(user);
-        if (interests > 0) {
-            underlyingYieldToken.safeTransfer(user, interests);
-        }
+        _safeTransferYieldToken(user, interests);
     }
 
     /**
@@ -843,6 +841,16 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         checkNotPaused();
         if (from != address(0)) _updateDueInterests(from);
         if (to != address(0)) _updateDueInterests(to);
+    }
+
+    /**
+    @dev Must be the only way to transfer aToken/cToken out
+    // Please refer to _safeTransfer of PendleForgeBase for the rationale of this function
+    */
+    function _safeTransferYieldToken(address _user, uint256 _amount) internal {
+        if (_amount == 0) return;
+        _amount = Math.min(_amount, underlyingYieldToken.balanceOf(address(this)));
+        underlyingYieldToken.safeTransfer(_user, _amount);
     }
 
     /**

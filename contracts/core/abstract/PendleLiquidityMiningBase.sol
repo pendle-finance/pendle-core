@@ -117,6 +117,7 @@ abstract contract PendleLiquidityMiningBase is
     bytes32 public override marketFactoryId;
 
     address public override underlyingAsset;
+    address public override underlyingYieldToken;
     address public override baseToken;
     uint256 public override startTime;
     uint256 public override epochDuration;
@@ -171,6 +172,7 @@ abstract contract PendleLiquidityMiningBase is
 
         marketFactory = IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));
         forge = data.getForgeAddress(_forgeId);
+        underlyingYieldToken = IPendleForge(forge).getYieldBearingToken(_underlyingAsset);
         marketFactoryId = _marketFactoryId;
         forgeId = _forgeId;
         underlyingAsset = _underlyingAsset;
@@ -380,9 +382,7 @@ abstract contract PendleLiquidityMiningBase is
         returns (uint256 interests)
     {
         interests = _beforeTransferDueInterests(expiry, user);
-        if (interests > 0) {
-            IPendleLpHolder(expiryData[expiry].lpHolder).sendInterests(user, interests);
-        }
+        _safeTransferYieldToken(expiry, user, interests);
     }
 
     function totalRewardsForEpoch(uint256 epochId)
@@ -656,6 +656,23 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     /**
+    @dev Must be the only way to transfer aToken/cToken out
+    // Please refer to _safeTransfer of PendleForgeBase for the rationale of this function
+    */
+    function _safeTransferYieldToken(
+        uint256 _expiry,
+        address _user,
+        uint256 _amount
+    ) internal {
+        if (_amount == 0) return;
+        _amount = Math.min(
+            _amount,
+            IERC20(underlyingYieldToken).balanceOf(expiryData[_expiry].lpHolder)
+        );
+        IPendleLpHolder(expiryData[_expiry].lpHolder).sendInterests(_user, _amount);
+    }
+
+    /**
     @notice Calc the amount of rewards that the user can receive now.
     @dev To be called before any rewards is transferred out
     */
@@ -707,13 +724,7 @@ abstract contract PendleLiquidityMiningBase is
 
         IPendleLpHolder(exd.lpHolder).redeemLpInterests();
 
-        IERC20 underlyingYieldToken =
-            IERC20(
-                IPendleYieldToken(data.xytTokens(forgeId, underlyingAsset, expiry))
-                    .underlyingYieldToken()
-            );
-
-        uint256 currentNYield = underlyingYieldToken.balanceOf(exd.lpHolder);
+        uint256 currentNYield = IERC20(underlyingYieldToken).balanceOf(exd.lpHolder);
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(expiry, currentNYield);
 
         // exd.totalStakeLP has been checked to be != 0
@@ -728,13 +739,11 @@ abstract contract PendleLiquidityMiningBase is
      * @notice Use to create a new lpHolder contract
      * Must only be called by Stake
      */
-    function _addNewExpiry(
-        uint256 expiry,
-        address xyt,
-        address marketAddress
-    ) internal returns (address newLpHoldingContractAddress) {
+    function _addNewExpiry(uint256 expiry, address marketAddress)
+        internal
+        returns (address newLpHoldingContractAddress)
+    {
         allExpiries.push(expiry);
-        address underlyingYieldToken = IPendleYieldToken(xyt).underlyingYieldToken();
         newLpHoldingContractAddress = Factory.createContract(
             type(PendleLpHolder).creationCode,
             abi.encodePacked(marketAddress, marketFactory.router(), underlyingYieldToken),
