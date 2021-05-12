@@ -58,38 +58,44 @@ contract PendleAaveMarket is PendleMarketBase {
     }
 
     /// @inheritdoc PendleMarketBase
-    function _getInterestValuePerLP(address user)
-        internal
-        override
-        returns (uint256 interestValuePerLP)
-    {
-        // if userLastNormalizedIncome is 0 then it's certain that this is the first time the user stakes
-        // since globalLastNormalizedIncome is always > 0
-        if (userLastNormalizedIncome[user] == 0) {
-            interestValuePerLP = 0;
-        } else {
-            /*
-            this part can be thought of as follows:
-                * the last time the user redeems interest, the value of a LP is lastParamL[user]
-                    and he has redeemed all the available interest out
-                * the market has 2 sources of income: compound interest of the yieldTokens in the market right now
-                AND external income (XYT interest, people transferring wrongly...)
-                * now the value of param L is paramL. So there has been an increase of paramL - lastParamL[user]
-                    in value of a single LP. But in Aave, even if there are no external income, the value of a paramL
-                    can grow on its own
-                * so since the last time the user has fully redeemed all the available interest, he shouldn't receive
-                the compound interest sof the asset in the pool at the moment he last withdrew
-                * so the value of 1 LP for him will be paramL - compound(lastParamL[user])
-                    = paramL -  lastParamL[user] * globalLastNormalizedIncome /userLastNormalizedIncome[user]
-            */
-            interestValuePerLP = paramL.subMax0(
-                lastParamL[user].mul(globalLastNormalizedIncome).div(
-                    userLastNormalizedIncome[user]
-                )
-            );
+    function _updateDueInterests(address user) internal override {
+        // before calc the interest for users, updateParamL
+        _updateParamL();
+
+        uint256 lastIncome = userLastNormalizedIncome[user];
+        uint256 normIncomeNow = globalLastNormalizedIncome;
+        uint256 principal = balanceOf(user);
+
+        if (lastIncome == 0) {
+            userLastNormalizedIncome[user] = normIncomeNow;
+            lastParamL[user] = paramL;
+            return;
         }
 
-        userLastNormalizedIncome[user] = globalLastNormalizedIncome;
+        /*
+        this part can be thought of as follows:
+            * the last time the user redeems interest, the value of a LP is lastParamL[user]
+                and he has redeemed all the available interest out
+            * the market has 2 sources of income: compound interest of the yieldTokens in the market right now
+            AND external income (XYT interest, people transferring wrongly...)
+            * now the value of param L is paramL. So there has been an increase of paramL - lastParamL[user]
+                in value of a single LP. But in Aave, even if there are no external income, the value of a paramL
+                can grow on its own
+            * so since the last time the user has fully redeemed all the available interest, he shouldn't receive
+            the compound interest sof the asset in the pool at the moment he last withdrew
+            * so the value of 1 LP for him will be paramL - compound(lastParamL[user])
+                = paramL -  lastParamL[user] * globalLastNormalizedIncome /userLastNormalizedIncome[user]
+        */
+        uint256 interestValuePerLP =
+            paramL.subMax0(lastParamL[user].mul(normIncomeNow).div(lastIncome));
+
+        uint256 interestFromLp = principal.mul(interestValuePerLP).div(MULTIPLIER);
+
+        dueInterests[user] = dueInterests[user].mul(normIncomeNow).div(lastIncome).add(
+            interestFromLp
+        );
+
+        userLastNormalizedIncome[user] = normIncomeNow;
         lastParamL[user] = paramL;
     }
 

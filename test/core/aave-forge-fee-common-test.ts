@@ -196,7 +196,7 @@ export function runTest(isAaveV1: boolean) {
         tokenUSDT.address,
         testEnv.EXPIRY
       );
-      approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(5));
+      approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(100));
     });
     it("Non-governance address should not be able to withdraw forge fees", async () => {
       await tokenizeYield(bob, refAmount);

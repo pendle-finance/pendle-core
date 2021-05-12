@@ -254,20 +254,5 @@ interface IPendleRouter is IPendleStructs {
         bytes32 marketFactoryId
     ) external payable returns (uint256 inTotalAmount);
 
-    function swapPathExactIn(
-        Swap[][] memory swapPath,
-        address tokenIn,
-        address tokenOut,
-        uint256 inTotalAmount,
-        uint256 minOutTotalAmount
-    ) external payable returns (uint256 outTotalAmount);
-
-    function swapPathExactOut(
-        Swap[][] memory swapPath,
-        address tokenIn,
-        address tokenOut,
-        uint256 maxInTotalAmount
-    ) external payable returns (uint256 inTotalAmount);
-
     function redeemLpInterests(address market, address user) external returns (uint256 interests);
 }

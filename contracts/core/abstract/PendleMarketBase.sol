@@ -58,12 +58,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     uint256 private constant MINIMUM_LIQUIDITY = 10**3;
     uint8 private constant DECIMALS = 18;
     uint256 private constant LN_PI_PLUSONE = 1562071538258; // this is equal to Math.ln(Math.PI_PLUSONE,Math.RONE)
-    uint256 private constant MULTIPLIER = 10**20;
+    uint256 internal constant MULTIPLIER = 10**20;
 
     // 3 variables for LP interests calc
     uint256 internal paramL;
     uint256 internal lastNYield;
     mapping(address => uint256) internal lastParamL;
+    mapping(address => uint256) internal dueInterests;
 
     // paramK used for mintProtocolFee. ParamK = xytBal ^ xytWeight * tokenBal ^ tokenW
     uint256 internal lastParamK;
@@ -303,7 +304,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         writeReserveData(xytBalance, tokenBalance, xytWeight);
         _updateLastParamK(); // update paramK since it has changed due to a non-swap event
 
-        // Mint LP direclty to the user
+        // Mint LP directly to the user
         _mint(user, lpOut);
 
         emit Sync(xytBalance, xytWeight, tokenBalance);
@@ -547,7 +548,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     function redeemLpInterests(address user) external override returns (uint256 interests) {
         checkAddRemoveSwapClaimAllowed(true);
         checkNotPaused();
-        interests = _settleLpInterests(user);
+        interests = _beforeTransferDueInterests(user);
+        if (interests > 0) {
+            underlyingYieldToken.safeTransfer(user, interests);
+        }
     }
 
     /**
@@ -763,26 +767,18 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     /**
-    @notice calc & transferOut the interests from Lp that the user is entitled to
-    @dev This must be called before any transfer / mint/ burn action of LP
-        (and this has been implemented in the beforeTokenTransfer of this contract)
+    @notice To be called before the dueInterest of any users is redeemed
     */
-    function _settleLpInterests(address user) internal returns (uint256 dueInterests) {
+    function _beforeTransferDueInterests(address user) internal returns (uint256 amountOut) {
         if (user == address(this)) return 0;
 
-        // before calc the interest for users, updateParamL
-        _updateParamL();
-        uint256 interestValuePerLP = _getInterestValuePerLP(user);
-        if (interestValuePerLP == 0) return 0;
+        _updateDueInterests(user);
 
-        // dueInterests simply equals to the balanceOf LP * the value of each LP
-        // divide by MULTIPLIER since interestValuePerLP has been multiplied by MULTIPLIER before
-        dueInterests = balanceOf(user).mul(interestValuePerLP).div(MULTIPLIER);
-        if (dueInterests == 0) return 0;
+        amountOut = dueInterests[user];
+        dueInterests[user] = 0;
 
-        // Use subMax0 to handle the extreme case of the market lacking a few way of tokens to send out
-        lastNYield = lastNYield.subMax0(dueInterests);
-        underlyingYieldToken.safeTransfer(user, dueInterests);
+        // Use subMax0 to handle the extreme case of the market lacking a few wei of tokens to send out
+        lastNYield = lastNYield.subMax0(amountOut);
     }
 
     /**
@@ -801,10 +797,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     }
 
     /**
-     * @notice use to updateParamL. Must only be called by _settleLpInterests
+     * @notice use to updateParamL. Must only be called by _updateDueInterests
      * ParamL can be thought of as an always-increase incomeIndex for 1 LP
      Consideration:
-     * Theoretically we have to updateParamL whenever the _settleLpInterests is called, since the external incomeIndex
+     * Theoretically we have to updateParamL whenever the _updateDueInterests is called, since the external incomeIndex
         (normalisedIncome/exchangeRate) is always increasing, and there are always interests to be claimed
      * Yet, if we do so, the amount of interests to be claimed maybe negligible while the amount of gas spent is
         tremendous (100k~200k last time we checked) => Caching is actually beneficial to user
@@ -838,15 +834,15 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         lastNYield = currentNYield;
     }
 
-    // before we send LPs, we need to settle due interests for both the to and from addresses
+    // before we send LPs, we need to update LP interests for both the to and from addresses
     function _beforeTokenTransfer(
         address from,
         address to,
         uint256
     ) internal override {
         checkNotPaused();
-        if (from != address(0)) _settleLpInterests(from);
-        if (to != address(0)) _settleLpInterests(to);
+        if (from != address(0)) _updateDueInterests(from);
+        if (to != address(0)) _updateDueInterests(to);
     }
 
     /**
@@ -908,10 +904,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
 
     function _afterBootstrap() internal virtual;
 
-    function _getInterestValuePerLP(address user)
-        internal
-        virtual
-        returns (uint256 interestValuePerLP);
+    /**
+    @notice update the LP interest for users (before their balances of LP changes)
+    @dev This must be called before any transfer / mint/ burn action of LP
+        (and this has been implemented in the beforeTokenTransfer of this contract)
+    */
+    function _updateDueInterests(address user) internal virtual;
 
     /// @notice Get params to update paramL. Must only be called by updateParamL
     function _getFirstTermAndParamR(uint256 currentNYield)
