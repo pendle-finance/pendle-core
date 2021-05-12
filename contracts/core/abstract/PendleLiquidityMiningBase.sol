@@ -427,7 +427,7 @@ abstract contract PendleLiquidityMiningBase is
 
         // there is no lpHolder for this expiry yet, we will create one
         if (exd.lpHolder == address(0)) {
-            newLpHoldingContractAddress = _addNewExpiry(expiry, xyt, marketAddress);
+            newLpHoldingContractAddress = _addNewExpiry(expiry, marketAddress);
         }
 
         if (!userExpiries[msg.sender].hasExpiry[expiry]) {
