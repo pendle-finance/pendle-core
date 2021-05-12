@@ -26,13 +26,13 @@ interface IPendleRewardManager {
     function redeemRewards(
         address _underlyingAsset,
         uint256 _expiry,
-        address _account
+        address _user
     ) external returns (uint256 dueRewards);
 
     function updatePendingRewards(
         address _underlyingAsset,
         uint256 _expiry,
-        address _account
+        address _user
     ) external;
 
     function forgeId() external returns (bytes32);

@@ -159,11 +159,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry,
-        address _account
+        address _user
     ) external override nonReentrant returns (uint256 interests) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        interests = forge.redeemDueInterests(_account, _underlyingAsset, _expiry);
+        interests = forge.redeemDueInterests(_user, _underlyingAsset, _expiry);
     }
 
     /**

@@ -101,14 +101,14 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     function redeemRewards(
         address _underlyingAsset,
         uint256 _expiry,
-        address _account
+        address _user
     ) external override nonReentrant returns (uint256 dueRewards) {
-        dueRewards = _beforeTransferPendingRewards(_underlyingAsset, _expiry, _account);
+        dueRewards = _beforeTransferPendingRewards(_underlyingAsset, _expiry, _user);
 
         address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
         if (dueRewards != 0) {
             // The yieldTokenHolder already approved this reward manager contract to spend max uint256
-            rewardToken.transferFrom(_yieldTokenHolder, _account, dueRewards);
+            rewardToken.transferFrom(_yieldTokenHolder, _user, dueRewards);
         }
     }
 
@@ -122,9 +122,9 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     function updatePendingRewards(
         address _underlyingAsset,
         uint256 _expiry,
-        address _account
+        address _user
     ) external override nonReentrant {
-        _updatePendingRewards(_underlyingAsset, _expiry, _account);
+        _updatePendingRewards(_underlyingAsset, _expiry, _user);
     }
 
     /**
@@ -133,14 +133,14 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     function _beforeTransferPendingRewards(
         address _underlyingAsset,
         uint256 _expiry,
-        address _account
+        address _user
     ) internal returns (uint256 amountOut) {
-        _updatePendingRewards(_underlyingAsset, _expiry, _account);
+        _updatePendingRewards(_underlyingAsset, _expiry, _user);
 
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
 
-        amountOut = rwd.dueRewards[_account];
-        rwd.dueRewards[_account] = 0;
+        amountOut = rwd.dueRewards[_user];
+        rwd.dueRewards[_user] = 0;
 
         rwd.lastRewardBalance = rwd.lastRewardBalance.sub(amountOut);
     }
@@ -152,29 +152,29 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     function _updatePendingRewards(
         address _underlyingAsset,
         uint256 _expiry,
-        address _account
+        address _user
     ) internal {
         address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
         _updateParamL(_underlyingAsset, _expiry, _yieldTokenHolder);
 
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
 
-        if (rwd.lastParamL[_account] == 0) {
+        if (rwd.lastParamL[_user] == 0) {
             // ParamL is always >=1, so this user must have gotten OT for the first time,
             // and shouldn't get any rewards
-            rwd.lastParamL[_account] = rwd.paramL;
+            rwd.lastParamL[_user] = rwd.paramL;
             return;
         }
 
         IPendleYieldToken ot = data.otTokens(forgeId, _underlyingAsset, _expiry);
 
-        uint256 principal = ot.balanceOf(_account);
-        uint256 rewardsAmountPerOT = rwd.paramL.sub(rwd.lastParamL[_account]);
+        uint256 principal = ot.balanceOf(_user);
+        uint256 rewardsAmountPerOT = rwd.paramL.sub(rwd.lastParamL[_user]);
 
         uint256 rewardsFromOT = principal.mul(rewardsAmountPerOT).div(MULTIPLIER);
 
-        rwd.dueRewards[_account] = rwd.dueRewards[_account].add(rewardsFromOT);
-        rwd.lastParamL[_account] = rwd.paramL;
+        rwd.dueRewards[_user] = rwd.dueRewards[_user].add(rewardsFromOT);
+        rwd.lastParamL[_user] = rwd.paramL;
     }
 
     /**

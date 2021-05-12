@@ -387,13 +387,13 @@ abstract contract PendleLiquidityMiningBase is
         rewards = epochData[epochId].totalRewards;
     }
 
-    function readUserExpiries(address _account)
+    function readUserExpiries(address _user)
         external
         view
         override
         returns (uint256[] memory _expiries)
     {
-        _expiries = userExpiries[_account].expiries;
+        _expiries = userExpiries[_user].expiries;
     }
 
     function balances(uint256 expiry, address user) external view override returns (uint256) {

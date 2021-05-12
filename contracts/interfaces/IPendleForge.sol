@@ -129,7 +129,7 @@ interface IPendleForge {
     function updatePendingRewards(
         address _underlyingAsset,
         uint256 _expiry,
-        address _account
+        address _user
     ) external;
 
     function redeemUnderlying(
@@ -186,7 +186,7 @@ interface IPendleForge {
     function dueInterests(
         address _underlyingAsset,
         uint256 expiry,
-        address _account
+        address _user
     ) external view returns (uint256);
 
     function yieldTokenHolders(address _underlyingAsset, uint256 _expiry)

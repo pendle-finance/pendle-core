@@ -122,9 +122,9 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         uint256 _principal,
         address _underlyingAsset,
         uint256 _expiry,
-        address _account
+        address _user
     ) internal override {
-        uint256 lastIncome = lastNormalisedIncome[_underlyingAsset][_expiry][_account];
+        uint256 lastIncome = lastNormalisedIncome[_underlyingAsset][_expiry][_user];
         uint256 normIncomeBeforeExpiry =
             getReserveNormalizedIncomeBeforeExpiry(_underlyingAsset, _expiry);
         // if the XYT hasn't expired, normIncomeNow = normIncomeBeforeExpiry
@@ -136,7 +136,7 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
 
         // first time getting XYT
         if (lastIncome == 0) {
-            lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normIncomeNow;
+            lastNormalisedIncome[_underlyingAsset][_expiry][_user] = normIncomeNow;
             return;
         }
 
@@ -155,14 +155,14 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
 
         // update the dueInterest (because it can generate compound interest on its own)
         // then add the newly received interestFromXyt
-        dueInterests[_underlyingAsset][_expiry][_account] = dueInterests[_underlyingAsset][
-            _expiry
-        ][_account]
+        dueInterests[_underlyingAsset][_expiry][_user] = dueInterests[_underlyingAsset][_expiry][
+            _user
+        ]
             .mul(normIncomeNow)
             .div(lastIncome)
             .add(interestFromXyt);
 
-        lastNormalisedIncome[_underlyingAsset][_expiry][_account] = normIncomeNow;
+        lastNormalisedIncome[_underlyingAsset][_expiry][_user] = normIncomeNow;
     }
 
     /// @inheritdoc PendleForgeBase
