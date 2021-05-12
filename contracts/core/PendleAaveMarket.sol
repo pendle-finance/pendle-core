@@ -38,6 +38,7 @@ contract PendleAaveMarket is PendleMarketBase {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
+    // the normalisedIncome of the last time paramL got updated
     uint256 private globalLastNormalizedIncome;
     mapping(address => uint256) private userLastNormalizedIncome;
 
@@ -63,6 +64,9 @@ contract PendleAaveMarket is PendleMarketBase {
         _updateParamL();
 
         uint256 lastIncome = userLastNormalizedIncome[user];
+        // why use globalLastNormalizedIncome? Because of the caching of paramL, we pretend that there is no source
+        // of income externally (from Xyt, compound interest...), that's why we have to use globalLastNormalizedIncome
+        // , which is the normalisedIncome from the last time paramL got updated (aka the last time we get external income)
         uint256 normIncomeNow = globalLastNormalizedIncome;
         uint256 principal = balanceOf(user);
 
