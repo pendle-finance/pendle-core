@@ -110,7 +110,7 @@ export function runTest(isAaveV1: boolean) {
       const treasuryBalance = await env.aUSDT.balanceOf(treasuryAddress);
       approxBigNumber(totalFee, treasuryBalance, BN.from(5));
       const forgeFeeLeft = await env.forge.totalFee(USDT.address, env.EXPIRY);
-      approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(5));
+      approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(100));
     });
     it("Non-governance address should not be able to withdraw forge fees", async () => {
       await tokenizeYield(env, alice, REF_AMOUNT, bob);

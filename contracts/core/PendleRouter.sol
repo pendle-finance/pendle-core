@@ -73,7 +73,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     /**
      * @dev Accepts ETH via fallback from the WETH contract.
      **/
-    receive() external payable {}
+    receive() external payable {
+        assert(msg.sender == address(weth));
+    }
 
     /**
      * @notice add forge by _forgeId & _forgeAddress
@@ -157,11 +159,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry,
-        address _account
+        address _user
     ) external override nonReentrant returns (uint256 interests) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        interests = forge.redeemDueInterests(_account, _underlyingAsset, _expiry);
+        interests = forge.redeemDueInterests(_user, _underlyingAsset, _expiry);
     }
 
     /**
@@ -620,146 +622,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         _settlePendingTransfers(transfers, originalTokenIn, originalTokenOut, address(market));
 
         emit SwapEvent(msg.sender, _tokenIn, _tokenOut, inSwapAmount, _outAmount, address(market));
-    }
-
-    /**
-     * @dev Needed for multi-path off-chain routing
-     * @dev _swapPath = [swapRoute1, swapRoute2] where swapRoute1 = [Swap1, swap2..] is a series of
-     *             swaps to convert from _tokenIn to _tokenOut
-     * @dev _tokenIn and _tokenOut can be ETH_ADDRESS, which means we will use ETH to trade
-     * @dev however, any tokens in between the swap route must be a real ERC20 address (so it should be WETH if ETH is involved)
-    Conditions:
-     * Have Reentrancy protection
-     */
-    function swapPathExactIn(
-        Swap[][] memory _swapPath,
-        address _tokenIn,
-        address _tokenOut,
-        uint256 _inTotalAmount,
-        uint256 _minOutTotalAmount
-    ) external payable override nonReentrant returns (uint256 outTotalAmount) {
-        require(_inTotalAmount != 0, "ZERO_IN_AMOUNT");
-
-        uint256 sumInAmount;
-        for (uint256 i = 0; i < _swapPath.length; i++) {
-            uint256 swapRouteLength = _swapPath[i].length;
-            require(
-                _swapPath[i][0].tokenIn == _tokenIn &&
-                    _swapPath[i][swapRouteLength - 1].tokenOut == _tokenOut,
-                "INVALID_PATH"
-            );
-            sumInAmount = sumInAmount.add(_swapPath[i][0].swapAmount);
-            uint256 tokenAmountOut;
-
-            for (uint256 j = 0; j < _swapPath[i].length; j++) {
-                Swap memory swap = _swapPath[i][j];
-                swap.tokenIn = _getMarketToken(swap.tokenIn); // make it weth if its eth
-                swap.tokenOut = _getMarketToken(swap.tokenOut); // make it weth if its eth
-                if (j >= 1) {
-                    swap.swapAmount = tokenAmountOut;
-                    // if its not the first swap, then we need to send the output of the last swap
-                    // to the current market as input for the current swap
-                    IERC20(swap.tokenIn).safeTransferFrom(
-                        _swapPath[i][j - 1].market,
-                        swap.market,
-                        swap.swapAmount
-                    );
-                }
-
-                IPendleMarket market = IPendleMarket(swap.market);
-                data.checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
-
-                (tokenAmountOut, ) = market.swapExactIn(
-                    swap.tokenIn,
-                    swap.swapAmount,
-                    swap.tokenOut,
-                    swap.limitReturnAmount
-                );
-            }
-
-            // sends in the exactAmount into the market of the first swap
-            _settleTokenTransfer(
-                _tokenIn,
-                PendingTransfer({amount: _swapPath[i][0].swapAmount, isOut: false}),
-                _swapPath[i][0].market
-            );
-            // gets the tokenOut from the market of the last swap
-            _settleTokenTransfer(
-                _tokenOut,
-                PendingTransfer({amount: tokenAmountOut, isOut: true}),
-                _swapPath[i][swapRouteLength - 1].market
-            );
-            outTotalAmount = tokenAmountOut.add(outTotalAmount);
-        }
-        require(sumInAmount == _inTotalAmount, "INVALID_AMOUNTS");
-        require(outTotalAmount >= _minOutTotalAmount, "LIMIT_OUT_ERROR");
-    }
-
-    /**
-     * @dev Needed for multi-path off-chain routing
-     * @dev Similarly to swapPathExactIn, but we do the swaps in reverse
-     Conditions:
-     * Have Reentrancy protection
-     */
-    function swapPathExactOut(
-        Swap[][] memory _swapPath,
-        address _tokenIn,
-        address _tokenOut,
-        uint256 _maxInTotalAmount
-    ) external payable override nonReentrant returns (uint256 inTotalAmount) {
-        for (uint256 i = 0; i < _swapPath.length; i++) {
-            uint256 swapRouteLength = _swapPath[i].length;
-            require(
-                _swapPath[i][0].tokenIn == _tokenIn &&
-                    _swapPath[i][swapRouteLength - 1].tokenOut == _tokenOut,
-                "INVALID_PATH"
-            );
-            uint256 tokenAmountIn;
-
-            for (uint256 j = _swapPath[i].length - 1; ; j--) {
-                Swap memory swap = _swapPath[i][j];
-                swap.tokenIn = _getMarketToken(swap.tokenIn); // make it weth if its eth
-                swap.tokenOut = _getMarketToken(swap.tokenOut); // make it weth if its eth
-                if (j < _swapPath[i].length - 1) {
-                    swap.swapAmount = tokenAmountIn;
-                    IERC20(swap.tokenOut).safeTransferFrom(
-                        swap.market,
-                        _swapPath[i][j + 1].market,
-                        swap.swapAmount
-                    );
-                }
-
-                IPendleMarket market = IPendleMarket(swap.market);
-
-                data.checkMarketTokens(swap.tokenIn, swap.tokenOut, market);
-                (tokenAmountIn, ) = market.swapExactOut(
-                    swap.tokenIn,
-                    swap.limitReturnAmount,
-                    swap.tokenOut,
-                    swap.swapAmount
-                );
-                if (j == 0) break;
-            }
-
-            _settleTokenTransfer(
-                _tokenIn,
-                PendingTransfer({amount: tokenAmountIn, isOut: false}),
-                _swapPath[i][0].market
-            );
-
-            // send out _tokenOut last
-            _settleTokenTransfer(
-                _tokenOut,
-                PendingTransfer({
-                    amount: _swapPath[i][swapRouteLength - 1].swapAmount,
-                    isOut: true
-                }),
-                _swapPath[i][swapRouteLength - 1].market
-            );
-
-            inTotalAmount = tokenAmountIn.add(inTotalAmount);
-        }
-        require(inTotalAmount <= _maxInTotalAmount, "LIMIT_IN_ERROR");
     }
 
     /**

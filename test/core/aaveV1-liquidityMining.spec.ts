@@ -204,9 +204,12 @@ describe("aaveV1-liquidityMining", async () => {
     await doStake(alice, INITIAL_LP_AMOUNT); // Alice also stake into liq-mining
     console.log(`\talice staked`);
     await doStake(bob, INITIAL_LP_AMOUNT.div(2));
+    await liq.redeemLpInterests(EXPIRY, bob.address);
     console.log(`\tbob staked`);
     await setTimeNextBlock(params.START_TIME.add(consts.ONE_MONTH));
     await doStake(bob, INITIAL_LP_AMOUNT.div(2));
+    await liq.redeemLpInterests(EXPIRY, bob.address);
+    await router.redeemLpInterests(market.address, bob.address);
     console.log(`\tbob staked round 2`);
     await setTimeNextBlock(params.START_TIME.add(consts.ONE_MONTH.mul(2)));
 
@@ -350,6 +353,7 @@ describe("aaveV1-liquidityMining", async () => {
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
+    await liq.redeemRewards(EXPIRY, bob.address);
 
     const pdlBalanceOfContractAfter = await pdl.balanceOf(liq.address);
     const pdlBalanceOfUserAfter = await pdl.balanceOf(bob.address);
@@ -384,25 +388,6 @@ describe("aaveV1-liquidityMining", async () => {
     //  Total: rewardsForEpoch * (1/2 + 3/8 + 1/8) = rewardsForEpoch
     await advanceTime(FIFTEEN_DAYS);
 
-    // console.log(`abi = ${liq.abi}`);
-    // console.log(liq);
-
-    const { interests } = await liq.callStatic.redeemLpInterests(
-      EXPIRY,
-      alice.address
-    );
-    const { rewards } = await liq.callStatic.redeemRewards(
-      EXPIRY,
-      alice.address
-    );
-    console.log(`\tInterests for alice = ${interests}`);
-    console.log(`\tRewards available for epochs from now: ${rewards}`);
-    console.log(
-      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
-        lpHolderContract
-      )}`
-    );
-
     await liq
       .connect(bob)
       .withdraw(
@@ -410,6 +395,8 @@ describe("aaveV1-liquidityMining", async () => {
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
+    await liq.redeemRewards(EXPIRY, bob.address);
+
     const pdlBalanceOfUserAfter2ndTnx = await pdl.balanceOf(bob.address);
     const expectedPdlBalanceOfUsersAfter2ndTnx = expectedPdlBalanceOfUserAfter.add(
       params.REWARDS_PER_EPOCH[0]
@@ -436,6 +423,7 @@ describe("aaveV1-liquidityMining", async () => {
     );
 
     await liq.withdraw(EXPIRY, amountToStake.div(2), consts.HIGH_GAS_OVERRIDE);
+    await liq.redeemRewards(EXPIRY, bob.address);
     const aTokenBalanceOfLpHolderContractAfter = await aUSDT.balanceOf(
       lpHolderContract
     );

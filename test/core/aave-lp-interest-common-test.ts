@@ -414,6 +414,7 @@ export function runTest(isAaveV1: boolean) {
 
       await advanceTime(consts.ONE_MONTH.mul(24));
 
+      await redeemAll();
       for (let user of [alice, bob, charlie, dave]) {
         if ((await getLPBalance(user)).gt(0)) {
           await removeMarketLiquidityDual(env, user, await getLPBalance(user));

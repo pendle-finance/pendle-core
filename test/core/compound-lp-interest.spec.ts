@@ -591,6 +591,7 @@ describe("compound-lp-interest", async () => {
       await advanceTime(consts.SIX_MONTH);
     }
 
+    await claimAll();
     for (let user of [alice, bob, charlie, dave]) {
       if ((await getLPBalance(user)).gt(0)) {
         await removeMarketLiquidityDual(user, await getLPBalance(user));

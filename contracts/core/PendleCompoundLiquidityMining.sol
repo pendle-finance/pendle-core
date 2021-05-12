@@ -85,17 +85,22 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
     * Very similar to the function in PendleAaveMarket. Any major differences are likely to be bugs
         Please refer to it for more details
     */
-    function _getInterestValuePerLP(uint256 expiry, address user)
-        internal
-        override
-        returns (uint256 interestValuePerLP)
-    {
+    function _updateDueInterests(uint256 expiry, address user) internal override {
+        _updateParamL(expiry);
+
         ExpiryData storage exd = expiryData[expiry];
+
         if (exd.lastParamL[user] == 0) {
-            interestValuePerLP = 0;
-        } else {
-            interestValuePerLP = exd.paramL.sub(exd.lastParamL[user]);
+            exd.lastParamL[user] = exd.paramL;
+            return;
         }
+
+        uint256 principal = exd.balances[user];
+        uint256 interestValuePerLP = exd.paramL.sub(exd.lastParamL[user]);
+
+        uint256 interestFromLp = principal.mul(interestValuePerLP).div(MULTIPLIER);
+
+        exd.dueInterests[user] = exd.dueInterests[user].add(interestFromLp);
         exd.lastParamL[user] = exd.paramL;
     }
 
