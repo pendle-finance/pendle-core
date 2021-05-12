@@ -441,8 +441,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     }
 
     /**
-    Use:
-        * To be called before the dueInterest of any users is redeemed
+    @notice To be called before the dueInterest of any users is redeemed
     */
     function _beforeTransferDueInterests(
         PendleTokens memory _tokens,

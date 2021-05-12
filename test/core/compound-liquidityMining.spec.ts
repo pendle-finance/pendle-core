@@ -362,6 +362,7 @@ describe("compound-liquidityMining", async () => {
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
+    await liq.redeemRewards(EXPIRY, bob.address);
 
     const pdlBalanceOfContractAfter = await pdl.balanceOf(liq.address);
     const pdlBalanceOfUserAfter = await pdl.balanceOf(bob.address);
@@ -411,6 +412,8 @@ describe("compound-liquidityMining", async () => {
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
+    await liq.redeemRewards(EXPIRY, bob.address);
+
     const pdlBalanceOfUserAfter2ndTnx = await pdl.balanceOf(bob.address);
     const expectedPdlBalanceOfUsersAfter2ndTnx = expectedPdlBalanceOfUserAfter.add(
       params.REWARDS_PER_EPOCH[0]
