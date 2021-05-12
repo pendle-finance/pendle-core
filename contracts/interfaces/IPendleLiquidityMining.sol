@@ -85,6 +85,8 @@ interface IPendleLiquidityMining {
 
     function underlyingAsset() external view returns (address);
 
+    function underlyingYieldToken() external view returns (address);
+
     function pendleTokenAddress() external view returns (address);
 
     function marketFactoryId() external view returns (bytes32);
