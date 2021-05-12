@@ -77,4 +77,17 @@ interface IPendleBaseToken is IERC20 {
      * @param user user to approve
      **/
     function approveRouter(address user) external;
+
+    /**
+     * @notice approve using the owner's signature
+     **/
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external;
 }
