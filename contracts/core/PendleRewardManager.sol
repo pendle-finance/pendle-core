@@ -44,6 +44,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     bytes32 public override forgeId;
     IPendleForge private forge;
     IERC20 private rewardToken;
+    bool public override skippingRewards;
 
     // This MULTIPLIER is to scale the real paramL value up, to preserve precision
     uint256 private constant MULTIPLIER = 1e20;
@@ -86,6 +87,11 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         rewardToken = forge.rewardToken();
         data = forge.data();
         router = forge.router();
+    }
+
+    function setSkippingRewards(bool _skippingRewards) external override onlyGovernance {
+        skippingRewards = _skippingRewards;
+        emit SkippingRewardsSet(_skippingRewards);
     }
 
     /**
@@ -154,6 +160,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         uint256 _expiry,
         address _user
     ) internal {
+        if (skippingRewards) return;
         address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
         _updateParamL(_underlyingAsset, _expiry, _yieldTokenHolder);
 
@@ -190,7 +197,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
         if (rwd.paramL == 0) {
             // paramL always from 1, to make sure that if a user's lastParamL is 0,
-            // they must be getting OT for the very first time, and we will know it in _getRewardsAmountPerOT()
+            // they must be getting OT for the very first time, and we will know it in _updatePendingRewards()
             rwd.paramL = 1;
         }
 
