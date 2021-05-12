@@ -39,7 +39,7 @@ interface IPendleRewardManager {
 
     function setSkippingRewards(bool) external;
 
-    function skippingRewards() external returns(bool);
+    function skippingRewards() external returns (bool);
 
     function forgeId() external returns (bytes32);
 }
