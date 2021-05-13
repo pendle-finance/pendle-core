@@ -44,6 +44,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     bytes32 public override forgeId;
     IPendleForge private forge;
     IERC20 private rewardToken;
+    bool public override skippingRewards;
 
     // This MULTIPLIER is to scale the real paramL value up, to preserve precision
     uint256 private constant MULTIPLIER = 1e20;
@@ -54,6 +55,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         uint256 paramL;
         uint256 lastRewardBalance;
         mapping(address => uint256) lastParamL;
+        mapping(address => uint256) dueRewards;
     }
 
     // rewardData[underlyingAsset][expiry] stores the information related
@@ -87,10 +89,15 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         router = forge.router();
     }
 
+    function setSkippingRewards(bool _skippingRewards) external override onlyGovernance {
+        skippingRewards = _skippingRewards;
+        emit SkippingRewardsSet(_skippingRewards);
+    }
+
     /**
     Use:
         To claim the COMP/StkAAVE for any OT holder.
-        Newly acrrued rewards are equally accrued to all OT holders in the process.
+        Newly accrued rewards are equally accrued to all OT holders in the process.
     Conditions:
         * Can be called by anyone, to claim for anyone
     INVARIANTs:
@@ -100,28 +107,88 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     function redeemRewards(
         address _underlyingAsset,
         uint256 _expiry,
-        address _account
+        address _user
     ) external override nonReentrant returns (uint256 dueRewards) {
+        dueRewards = _beforeTransferPendingRewards(_underlyingAsset, _expiry, _user);
+
+        address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
+        if (dueRewards != 0) {
+            // The yieldTokenHolder already approved this reward manager contract to spend max uint256
+            rewardToken.transferFrom(_yieldTokenHolder, _user, dueRewards);
+        }
+    }
+
+    /**
+    @notice Update the pending rewards for an user
+    @dev This must be called before any transfer / mint/ burn action of OT
+        (and this has been implemented in the beforeTokenTransfer of the PendleOwnershipToken)
+    Conditions:
+        * Can be called by anyone, to update for anyone
+    */
+    function updatePendingRewards(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _user
+    ) external override nonReentrant {
+        _updatePendingRewards(_underlyingAsset, _expiry, _user);
+    }
+
+    /**
+    @notice To be called before the pending rewards of any users is redeemed
+    */
+    function _beforeTransferPendingRewards(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _user
+    ) internal returns (uint256 amountOut) {
+        _updatePendingRewards(_underlyingAsset, _expiry, _user);
+
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
 
+        amountOut = rwd.dueRewards[_user];
+        rwd.dueRewards[_user] = 0;
+
+        rwd.lastRewardBalance = rwd.lastRewardBalance.sub(amountOut);
+    }
+
+    /**
+    * Very similar to updateLpInterests in PendleCompoundLiquidityMining. Any major differences are likely to be bugs
+        Please refer to it for more details
+    */
+    function _updatePendingRewards(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _user
+    ) internal {
+        if (skippingRewards) return;
         address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
         _updateParamL(_underlyingAsset, _expiry, _yieldTokenHolder);
 
-        uint256 rewardsAmountPerOT = _getRewardsAmountPerOT(_underlyingAsset, _expiry, _account);
-        if (rewardsAmountPerOT == 0) return 0;
+        RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
+
+        if (rwd.lastParamL[_user] == 0) {
+            // ParamL is always >=1, so this user must have gotten OT for the first time,
+            // and shouldn't get any rewards
+            rwd.lastParamL[_user] = rwd.paramL;
+            return;
+        }
 
         IPendleYieldToken ot = data.otTokens(forgeId, _underlyingAsset, _expiry);
-        dueRewards = ot.balanceOf(_account).mul(rewardsAmountPerOT).div(MULTIPLIER);
-        if (dueRewards == 0) return 0;
 
-        rwd.lastRewardBalance = rwd.lastRewardBalance.sub(dueRewards);
+        uint256 principal = ot.balanceOf(_user);
+        uint256 rewardsAmountPerOT = rwd.paramL.sub(rwd.lastParamL[_user]);
 
-        // The yieldTokenHolder already approved this reward manager contract to spend max uint256
-        rewardToken.transferFrom(_yieldTokenHolder, _account, dueRewards);
+        uint256 rewardsFromOT = principal.mul(rewardsAmountPerOT).div(MULTIPLIER);
+
+        rwd.dueRewards[_user] = rwd.dueRewards[_user].add(rewardsFromOT);
+        rwd.lastParamL[_user] = rwd.paramL;
     }
 
-    // INVARIANT: this function must be called before any action that changes the total OT
-    // To ensure this, we call it in the beginning of redeemRewards, which has the same invariant.
+    /**
+    * Very similar to updateLpInterests in PendleCompoundLiquidityMining. Any major differences are likely to be bugs
+        Please refer to it for more details
+    * This function must be called only by updatePendingRewards
+    */
     function _updateParamL(
         address _underlyingAsset,
         uint256 _expiry,
@@ -130,7 +197,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
         if (rwd.paramL == 0) {
             // paramL always from 1, to make sure that if a user's lastParamL is 0,
-            // they must be getting OT for the very first time, and we will know it in _getRewardsAmountPerOT()
+            // they must be getting OT for the very first time, and we will know it in _updatePendingRewards()
             rwd.paramL = 1;
         }
 
@@ -168,22 +235,5 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
         firstTerm = rwd.paramL;
         paramR = currentRewardBalance.sub(rwd.lastRewardBalance);
-    }
-
-    function _getRewardsAmountPerOT(
-        address _underlyingAsset,
-        uint256 _expiry,
-        address user
-    ) internal returns (uint256 interestValuePerLP) {
-        RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
-
-        if (rwd.lastParamL[user] == 0) {
-            // ParamL is always >=1, so this user must have gotten OT for the first time,
-            // and shouldn't get any interests.
-            interestValuePerLP = 0;
-        } else {
-            interestValuePerLP = rwd.paramL.sub(rwd.lastParamL[user]);
-        }
-        rwd.lastParamL[user] = rwd.paramL;
     }
 }

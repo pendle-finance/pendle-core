@@ -1,7 +1,7 @@
 import { Contract, providers, Wallet } from "ethers";
 import PendleAaveV2Forge from "../../../build/artifacts/contracts/core/PendleAaveV2Forge.sol/PendleAaveV2Forge.json";
-import PendleRewardManager from "../../../build/artifacts/contracts/core/PendleRewardManager.sol/PendleRewardManager.json";
 import PendleAaveV2YieldContractDeployer from "../../../build/artifacts/contracts/core/PendleAaveV2YieldContractDeployer.sol/PendleAaveV2YieldContractDeployer.json";
+import MockPendleRewardManager from "../../../build/artifacts/contracts/mock/MockPendleRewardManager.sol/MockPendleRewardManager.json";
 import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
 import PendleOwnershipToken from "../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json";
 import { consts, setTimeNextBlock, tokens } from "../../helpers";
@@ -26,7 +26,7 @@ export async function aaveV2ForgeFixture(
   { router, data }: CoreFixture,
   { pendle }: GovernanceFixture
 ): Promise<AaveV2ForgeFixture> {
-  const a2RewardManager = await deployContract(alice, PendleRewardManager, [
+  const a2RewardManager = await deployContract(alice, MockPendleRewardManager, [
     alice.address, //governance
     consts.FORGE_AAVE_V2
   ]);
@@ -53,7 +53,7 @@ export async function aaveV2ForgeFixture(
 
   await router.addForge(consts.FORGE_AAVE_V2, aaveV2Forge.address);
 
-  await setTimeNextBlock(provider, consts.T0_A2); // set the minting time for the first OT and XYT
+  await setTimeNextBlock(consts.T0_A2); // set the minting time for the first OT and XYT
 
   // USDT
   await router.newYieldContracts(

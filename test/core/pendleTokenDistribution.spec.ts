@@ -7,7 +7,7 @@ import { consts, evm_revert, evm_snapshot, setTimeNextBlock } from "../helpers";
 const { waffle } = require("hardhat");
 const { provider, deployContract } = waffle;
 
-describe("pendleTokenDistribution", async () => {
+describe("pendleTokenDistribution [@skip-on-coverage]", async () => {
   const wallets = provider.getWallets();
   const [
     governance,
@@ -71,7 +71,7 @@ describe("pendleTokenDistribution", async () => {
       ]
     );
 
-    await setTimeNextBlock(provider, consts.PENDLE_START_TIME);
+    await setTimeNextBlock(consts.PENDLE_START_TIME);
     pendle = await deployContract(governance, PENDLE, [
       governance.address,
       teamTokensContract.address,
@@ -122,7 +122,7 @@ describe("pendleTokenDistribution", async () => {
     expect(await pendle.lastWeekEmissionSent()).to.be.eq(BN.from(26));
   });
   it("should be able to initiateConfigChanges", async () => {
-    await setTimeNextBlock(provider, initiateConfigChangesTimestamp);
+    await setTimeNextBlock(initiateConfigChangesTimestamp);
     await pendle.initiateConfigChanges(
       newEmissionRateMultiplierNumerator,
       newTerminalInflationRateNumerator,
@@ -161,7 +161,7 @@ describe("pendleTokenDistribution", async () => {
     );
   });
   it("should be able to applyConfigChanges", async () => {
-    await setTimeNextBlock(provider, initiateConfigChangesTimestamp);
+    await setTimeNextBlock(initiateConfigChangesTimestamp);
     await pendle.initiateConfigChanges(
       newEmissionRateMultiplierNumerator,
       newTerminalInflationRateNumerator,
@@ -169,7 +169,6 @@ describe("pendleTokenDistribution", async () => {
       newIsBurningAllowed
     );
     await setTimeNextBlock(
-      provider,
       initiateConfigChangesTimestamp.add(consts.CONFIG_CHANGES_TIME_LOCK).add(1)
     );
     await pendle.connect(salesMultisig).applyConfigChanges(); // Anyone can call this
@@ -186,7 +185,7 @@ describe("pendleTokenDistribution", async () => {
     expect(await pendle.configChangesInitiated()).to.be.eq(BN.from(0));
   });
   it("should not be able to applyConfigChanges within timelock", async () => {
-    await setTimeNextBlock(provider, initiateConfigChangesTimestamp);
+    await setTimeNextBlock(initiateConfigChangesTimestamp);
     await pendle.initiateConfigChanges(
       newEmissionRateMultiplierNumerator,
       newTerminalInflationRateNumerator,
@@ -194,7 +193,6 @@ describe("pendleTokenDistribution", async () => {
       newIsBurningAllowed
     );
     await setTimeNextBlock(
-      provider,
       initiateConfigChangesTimestamp.add(consts.CONFIG_CHANGES_TIME_LOCK)
     );
     await expect(
@@ -211,7 +209,7 @@ describe("pendleTokenDistribution", async () => {
     );
   });
   it("should be able to burn if isBurningAllowed==true", async () => {
-    await setTimeNextBlock(provider, initiateConfigChangesTimestamp);
+    await setTimeNextBlock(initiateConfigChangesTimestamp);
     await pendle.initiateConfigChanges(
       newEmissionRateMultiplierNumerator,
       newTerminalInflationRateNumerator,
@@ -219,7 +217,6 @@ describe("pendleTokenDistribution", async () => {
       newIsBurningAllowed // = true
     );
     await setTimeNextBlock(
-      provider,
       initiateConfigChangesTimestamp.add(consts.CONFIG_CHANGES_TIME_LOCK).add(1)
     );
     await pendle.connect(salesMultisig).applyConfigChanges(); // Anyone can call this
@@ -239,7 +236,7 @@ describe("pendleTokenDistribution", async () => {
     let totalSupply = await pendle.totalSupply();
 
     const week316start = consts.ONE_WEEK.mul(315).add(consts.PENDLE_START_TIME);
-    await setTimeNextBlock(provider, week316start);
+    await setTimeNextBlock(week316start);
     const balanceBefore = await pendle.balanceOf(
       liqIncentivesRecipient.address
     );
@@ -303,10 +300,7 @@ describe("pendleTokenDistribution", async () => {
   });
   it("should be able to claim team tokens after one quarter", async () => {
     const balanceBefore = await pendle.balanceOf(governance.address);
-    await setTimeNextBlock(
-      provider,
-      consts.PENDLE_START_TIME.add(consts.ONE_QUARTER)
-    );
+    await setTimeNextBlock(consts.PENDLE_START_TIME.add(consts.ONE_QUARTER));
     await teamTokensContract.claimTokens(BN.from(0));
     const balanceAfter = await pendle.balanceOf(governance.address);
     expect(balanceAfter).to.be.eq(

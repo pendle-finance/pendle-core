@@ -1,93 +1,60 @@
 import { expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract, Wallet } from "ethers";
+import { BigNumber as BN, Wallet } from "ethers";
 import {
-  advanceTime,
   amountToWei,
   approxBigNumber,
   consts,
   errMsg,
   evm_revert,
   evm_snapshot,
-  getA2Contract,
-  getAContract,
   mintAaveToken,
-  setTimeNextBlock,
+  redeemAfterExpiry,
+  redeemDueInterests,
+  redeemUnderlying,
   setTime,
+  setTimeNextBlock,
   Token,
+  tokenizeYield,
   tokens,
 } from "../helpers";
-import { pendleFixture, PendleFixture } from "./fixtures";
+import {
+  Mode,
+  parseTestEnvRouterFixture,
+  routerFixture,
+  RouterFixture,
+  TestEnv,
+} from "./fixtures";
 
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 
-interface TestEnv {
-  T0: BN;
-  FORGE_ID: string;
-  INITIAL_AAVE_TOKEN_AMOUNT: BN;
-  TEST_DELTA: BN;
-}
-
 export function runTest(isAaveV1: boolean) {
   describe("", async () => {
     const wallets = provider.getWallets();
-    // const wallets = await hre.ethers.getSigners();
-    // console.log(``)
     const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob, charlie, dave] = wallets;
 
-    let fixture: PendleFixture;
-    let router: Contract;
-    let routerWeb3: any;
-    let ot: Contract;
-    let xyt: Contract;
-    let aaveForge: Contract;
-    let aUSDT: Contract;
     let snapshotId: string;
     let globalSnapshotId: string;
-    let tokenUSDT: Token;
     let refAmount: BN;
+    let USDT: Token;
     let initialAUSDTbalance: BN;
-    let testEnv: TestEnv = {} as TestEnv;
-    let data: Contract;
+    let env: TestEnv = {} as TestEnv;
 
-    async function buildCommonTestEnv() {
-      fixture = await loadFixture(pendleFixture);
-      router = fixture.core.router;
-      routerWeb3 = fixture.core.routerWeb3;
-      tokenUSDT = tokens.USDT;
-      data = fixture.core.data;
-      testEnv.INITIAL_AAVE_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
-      testEnv.TEST_DELTA = BN.from(10000);
-    }
-
-    async function buildTestEnvV1() {
-      ot = fixture.aForge.aOwnershipToken;
-      xyt = fixture.aForge.aFutureYieldToken;
-      aaveForge = fixture.aForge.aaveForge;
-      aUSDT = await getAContract(alice, aaveForge, tokenUSDT);
-      testEnv.FORGE_ID = consts.FORGE_AAVE;
-      testEnv.T0 = consts.T0;
-    }
-
-    async function buildTestEnvV2() {
-      ot = fixture.a2Forge.a2OwnershipToken;
-      xyt = fixture.a2Forge.a2FutureYieldToken;
-      aaveForge = fixture.a2Forge.aaveV2Forge;
-      aUSDT = await getA2Contract(alice, aaveForge, tokenUSDT);
-      testEnv.FORGE_ID = consts.FORGE_AAVE_V2;
-      testEnv.T0 = consts.T0_A2;
+    async function buildTestEnv() {
+      let fixture: RouterFixture = await loadFixture(routerFixture);
+      if (isAaveV1)
+        await parseTestEnvRouterFixture(alice, Mode.AAVE_V1, env, fixture);
+      else await parseTestEnvRouterFixture(alice, Mode.AAVE_V2, env, fixture);
+      USDT = tokens.USDT;
+      env.TEST_DELTA = BN.from(10000);
     }
 
     before(async () => {
       globalSnapshotId = await evm_snapshot();
-      await buildCommonTestEnv();
-      if (isAaveV1) {
-        await buildTestEnvV1();
-      } else {
-        await buildTestEnvV2();
-      }
+      await buildTestEnv();
+      refAmount = amountToWei(env.INITIAL_YIELD_TOKEN_AMOUNT, 6);
       snapshotId = await evm_snapshot();
     });
 
@@ -98,42 +65,15 @@ export function runTest(isAaveV1: boolean) {
     beforeEach(async () => {
       await evm_revert(snapshotId);
       snapshotId = await evm_snapshot();
-      refAmount = amountToWei(testEnv.INITIAL_AAVE_TOKEN_AMOUNT, 6);
-      initialAUSDTbalance = await aUSDT.balanceOf(alice.address);
+      initialAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
     });
-
-    async function tokenizeYield(user: Wallet, amount: BN): Promise<BN> {
-      let amountTokenMinted = await ot.balanceOf(user.address);
-      await router.tokenizeYield(
-        testEnv.FORGE_ID,
-        tokenUSDT.address,
-        testEnv.T0.add(consts.SIX_MONTH),
-        amount,
-        user.address,
-        consts.HIGH_GAS_OVERRIDE
-      );
-      amountTokenMinted = (await ot.balanceOf(user.address)).sub(
-        amountTokenMinted
-      );
-      return amountTokenMinted;
-    }
-
-    async function redeemDueInterests(user: Wallet, expiry: BN) {
-      await router.redeemDueInterests(
-        testEnv.FORGE_ID,
-        tokenUSDT.address,
-        expiry,
-        user.address
-      );
-    }
 
     async function startCalInterest(walletToUse: Wallet, initialAmount: BN) {
       // divide by 10^decimal since mintAaveToken will multiply that number back
       await mintAaveToken(
-        provider,
-        tokenUSDT,
+        USDT,
         walletToUse,
-        initialAmount.div(10 ** tokenUSDT.decimal),
+        initialAmount.div(10 ** USDT.decimal),
         isAaveV1
       );
     }
@@ -142,81 +82,63 @@ export function runTest(isAaveV1: boolean) {
       walletToUse: Wallet,
       initialAmount: BN
     ): Promise<BN> {
-      return (await aUSDT.balanceOf(walletToUse.address)).sub(initialAmount);
+      return (await env.aUSDT.balanceOf(walletToUse.address)).sub(
+        initialAmount
+      );
     }
 
-    it("underlying asset's address should match the original asset", async () => {
-      expect((await ot.underlyingAsset()).toLowerCase()).to.be.equal(
+    it("OT & XYT's underlyingAsset's address should be correct", async () => {
+      expect((await env.ot.underlyingAsset()).toLowerCase()).to.be.equal(
         tokens.USDT.address.toLowerCase()
       );
-      expect((await xyt.underlyingAsset()).toLowerCase()).to.be.equal(
+      expect((await env.xyt.underlyingAsset()).toLowerCase()).to.be.equal(
         tokens.USDT.address.toLowerCase()
       );
     });
 
-    it("shouldn't be able to do newYieldContract with an expiry in the past", async () => {
-      let futureTime = testEnv.T0.sub(consts.ONE_MONTH);
+    it("newYieldContract is not possible [if the expiry is in the past ]", async () => {
+      let futureTime = env.T0.sub(consts.ONE_MONTH);
       await expect(
-        router.newYieldContracts(
-          testEnv.FORGE_ID,
-          tokenUSDT.address,
-          futureTime
-        )
+        env.router.newYieldContracts(env.FORGE_ID, USDT.address, futureTime)
       ).to.be.revertedWith(errMsg.INVALID_EXPIRY);
     });
 
-    it("shouldn't be able to do newYieldContract with an expiry not divisible for expiryDivisor", async () => {
-      let futureTime = testEnv.T0.add(consts.ONE_YEAR);
-      if (futureTime.mod(await data.expiryDivisor()).eq(0)) {
+    it("newYieldContract is not possible [if the expiry is not divisible for expiryDivisor]", async () => {
+      let futureTime = env.T0.add(consts.ONE_YEAR);
+      if (futureTime.mod(await env.data.expiryDivisor()).eq(0)) {
         futureTime = futureTime.add(1);
       }
       await expect(
-        router.newYieldContracts(
-          testEnv.FORGE_ID,
-          tokenUSDT.address,
-          futureTime
-        )
+        env.router.newYieldContracts(env.FORGE_ID, USDT.address, futureTime)
       ).to.be.revertedWith(errMsg.INVALID_EXPIRY);
     });
 
-    it("should be able to deposit aUSDT to get back OT and XYT", async () => {
-      let amount = await tokenizeYield(alice, refAmount);
-      const balanceOwnershipToken = await ot.balanceOf(alice.address);
-      const balanceFutureYieldToken = await xyt.balanceOf(alice.address);
+    it("tokenizeYield", async () => {
+      let amount = await tokenizeYield(env, alice, refAmount);
+      const balanceOwnershipToken = await env.ot.balanceOf(alice.address);
+      const balanceFutureYieldToken = await env.xyt.balanceOf(alice.address);
       expect(balanceOwnershipToken).to.be.eq(amount);
       expect(balanceFutureYieldToken).to.be.eq(amount);
     });
 
-    it("shouldn't be able to call redeemUnderlying if the yield contract has expired", async () => {
-      let amount = await tokenizeYield(alice, refAmount);
+    it("redeemUnderlying is not possible [if the yield contract has expired]", async () => {
+      await tokenizeYield(env, alice, refAmount);
 
-      await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_YEAR));
+      await setTimeNextBlock(env.T0.add(consts.ONE_YEAR));
 
-      await expect(
-        router.redeemUnderlying(
-          testEnv.FORGE_ID,
-          tokenUSDT.address,
-          testEnv.T0.add(consts.SIX_MONTH),
-          refAmount,
-          consts.HIGH_GAS_OVERRIDE
-        )
-      ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
+      await expect(redeemUnderlying(env, alice, refAmount)).to.be.revertedWith(
+        errMsg.YIELD_CONTRACT_EXPIRED
+      );
     });
 
-    it("[After 1 month] should be able to redeem aUSDT to get back OT, XYT and interests $", async () => {
+    it("redeemUnderlying [after 1 month]", async () => {
       await startCalInterest(charlie, refAmount);
-      let amount = await tokenizeYield(alice, refAmount);
-      await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
+      let amount = await tokenizeYield(env, alice, refAmount);
+      await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
 
-      await router.redeemUnderlying(
-        testEnv.FORGE_ID,
-        tokenUSDT.address,
-        testEnv.T0.add(consts.SIX_MONTH),
-        amount,
-        consts.HIGH_GAS_OVERRIDE
-      );
+      await redeemUnderlying(env, alice, amount);
 
-      const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
+      const finalAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
 
       const expectedGain = await getCurInterest(charlie, refAmount);
       expect(finalAUSDTbalance.toNumber()).to.be.approximately(
@@ -225,20 +147,20 @@ export function runTest(isAaveV1: boolean) {
       );
     });
 
-    it("[After 1 month] should be able to get due interests", async () => {
+    it("redeemDueInterests [after 1 month]", async () => {
       await startCalInterest(charlie, refAmount);
-      let amount = await tokenizeYield(alice, refAmount);
+      await tokenizeYield(env, alice, refAmount);
 
-      await ot.transfer(bob.address, await ot.balanceOf(alice.address));
+      await env.ot.transfer(bob.address, await env.ot.balanceOf(alice.address));
 
-      const afterLendingAUSDTbalance = await aUSDT.balanceOf(alice.address);
+      const afterLendingAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
 
-      await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
+      await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
 
-      await redeemDueInterests(alice, testEnv.T0.add(consts.SIX_MONTH));
+      await redeemDueInterests(env, alice);
 
       const expectedGain = await getCurInterest(charlie, refAmount);
-      const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
+      const finalAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
 
       expect(finalAUSDTbalance).to.be.below(initialAUSDTbalance);
       expect(finalAUSDTbalance.toNumber()).to.be.approximately(
@@ -247,18 +169,18 @@ export function runTest(isAaveV1: boolean) {
       );
     });
 
-    it("Another wallet should be able to receive interests from XYT", async () => {
+    it("Anybody holding XYTs can redeemDueInterests from it", async () => {
       await startCalInterest(charlie, refAmount);
 
-      let amount = await tokenizeYield(alice, refAmount);
-      await xyt.transfer(bob.address, amount);
+      let amount = await tokenizeYield(env, alice, refAmount);
+      await env.xyt.transfer(bob.address, amount);
 
-      const T1 = testEnv.T0.add(consts.SIX_MONTH).sub(1);
-      await setTimeNextBlock(provider, T1);
+      const T1 = env.EXPIRY.sub(1);
+      await setTimeNextBlock(T1);
 
-      await redeemDueInterests(bob, testEnv.T0.add(consts.SIX_MONTH));
+      await redeemDueInterests(env, bob);
 
-      const actualGain = await aUSDT.balanceOf(bob.address);
+      const actualGain = await env.aUSDT.balanceOf(bob.address);
       const expectedGain = await getCurInterest(charlie, refAmount);
 
       expect(actualGain.toNumber()).to.be.approximately(
@@ -267,161 +189,148 @@ export function runTest(isAaveV1: boolean) {
       );
     });
 
-    it("Short after expiry, should be able to redeem aUSDT from OT", async () => {
+    it("redeemAfterExpiry [short after expiry]", async () => {
       await startCalInterest(charlie, refAmount);
 
-      let amount = await tokenizeYield(alice, refAmount);
-      await xyt.transfer(bob.address, amount);
+      let amount = await tokenizeYield(env, alice, refAmount);
+      await env.xyt.transfer(bob.address, amount);
 
-      const T1 = testEnv.T0.add(consts.SIX_MONTH).sub(1);
-      await setTimeNextBlock(provider, T1);
+      const T1 = env.EXPIRY.sub(1);
+      await setTimeNextBlock(T1);
 
-      await redeemDueInterests(bob, testEnv.T0.add(consts.SIX_MONTH));
+      await redeemDueInterests(env, bob);
 
       approxBigNumber(
-        await aUSDT.balanceOf(bob.address),
+        await env.aUSDT.balanceOf(bob.address),
         await getCurInterest(charlie, refAmount),
-        testEnv.TEST_DELTA,
+        env.TEST_DELTA,
         false
       );
 
       await startCalInterest(dave, refAmount);
 
       const T2 = T1.add(10);
-      await setTimeNextBlock(provider, T2);
+      await setTimeNextBlock(T2);
 
-      await router.redeemAfterExpiry(
-        testEnv.FORGE_ID,
-        tokenUSDT.address,
-        testEnv.T0.add(consts.SIX_MONTH)
-      );
+      await redeemAfterExpiry(env, alice);
 
       const expectedGain = await getCurInterest(dave, refAmount);
-      const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
+      const finalAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
       approxBigNumber(
         finalAUSDTbalance,
         initialAUSDTbalance.add(expectedGain),
-        testEnv.TEST_DELTA,
-        false
+        env.TEST_DELTA
       );
     });
 
-    it("One month after expiry, should be able to redeem aUSDT with interest", async () => {
+    it("redeemAfterExpiry [1 month after expiry]", async () => {
       await startCalInterest(charlie, refAmount);
-      let amount = await tokenizeYield(alice, refAmount);
-      await xyt.transfer(bob.address, amount);
+      let amount = await tokenizeYield(env, alice, refAmount);
+      await env.xyt.transfer(bob.address, amount);
 
-      const T1 = testEnv.T0.add(consts.SIX_MONTH).sub(1);
-      await setTimeNextBlock(provider, T1);
+      const T1 = env.EXPIRY.sub(1);
+      await setTimeNextBlock(T1);
 
-      await redeemDueInterests(bob, testEnv.T0.add(consts.SIX_MONTH));
+      await redeemDueInterests(env, bob);
 
       await startCalInterest(dave, refAmount);
       approxBigNumber(
-        await aUSDT.balanceOf(bob.address),
+        await env.aUSDT.balanceOf(bob.address),
         await getCurInterest(charlie, refAmount),
-        testEnv.TEST_DELTA,
-        true
+        env.TEST_DELTA
       );
 
       const T2 = T1.add(consts.ONE_MONTH);
-      await setTimeNextBlock(provider, T2);
+      await setTimeNextBlock(T2);
 
-      await router.redeemAfterExpiry(
-        testEnv.FORGE_ID,
-        tokenUSDT.address,
-        testEnv.T0.add(consts.SIX_MONTH)
-      );
+      await redeemAfterExpiry(env, alice);
 
       const expectedGain = await getCurInterest(dave, refAmount);
-      const finalAUSDTbalance = await aUSDT.balanceOf(alice.address);
+      const finalAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
       approxBigNumber(
         finalAUSDTbalance,
         initialAUSDTbalance.add(expectedGain),
-        testEnv.TEST_DELTA,
+        env.TEST_DELTA,
         true
       );
     });
 
-    it("Should be able to newYieldContracts", async () => {
-      let futureTime = testEnv.T0.add(consts.SIX_MONTH).add(consts.ONE_DAY);
-      let filter = aaveForge.filters.NewYieldContracts();
-      let tx = await router.newYieldContracts(
-        testEnv.FORGE_ID,
-        tokenUSDT.address,
+    it("newYieldContracts", async () => {
+      let futureTime = env.EXPIRY.add(consts.ONE_DAY);
+      let filter = env.forge.filters.NewYieldContracts();
+      let tx = await env.router.newYieldContracts(
+        env.FORGE_ID,
+        USDT.address,
         futureTime
       );
 
-      let allEvents = await aaveForge.queryFilter(filter, tx.blockHash);
+      let allEvents = await env.forge.queryFilter(filter, tx.blockHash);
       expect(allEvents.length).to.be.eq(3); // there is two events of the same type before this event
       expect(allEvents[allEvents.length - 1].args!.ot).to.not.eq(0);
       expect(allEvents[allEvents.length - 1].args!.xyt).to.not.eq(0);
       expect(allEvents[allEvents.length - 1].args!.expiry).to.eq(futureTime);
     });
 
-    it("Should be able to renewYield", async () => {
-      await router.newYieldContracts(
-        testEnv.FORGE_ID,
-        tokenUSDT.address,
-        testEnv.T0.add(consts.ONE_YEAR)
+    it("renewYield", async () => {
+      await env.router.newYieldContracts(
+        env.FORGE_ID,
+        USDT.address,
+        env.T0.add(consts.ONE_YEAR)
       );
       await startCalInterest(dave, refAmount);
-      await tokenizeYield(alice, refAmount);
-      await setTime(provider, testEnv.T0.add(consts.ONE_MONTH.mul(7)));
+      await tokenizeYield(env, alice, refAmount);
+      await setTime(env.T0.add(consts.ONE_MONTH.mul(7)));
 
       let {
         redeemedAmount,
         amountTransferOut,
-      } = await router.callStatic.renewYield(
-        testEnv.FORGE_ID,
-        testEnv.T0.add(consts.SIX_MONTH),
-        tokenUSDT.address,
-        testEnv.T0.add(consts.ONE_YEAR),
+      } = await env.router.callStatic.renewYield(
+        env.FORGE_ID,
+        env.EXPIRY,
+        USDT.address,
+        env.T0.add(consts.ONE_YEAR),
         consts.RONE.div(2), // 50%
         consts.HIGH_GAS_OVERRIDE
       );
 
-      await router.renewYield(
-        testEnv.FORGE_ID,
-        testEnv.T0.add(consts.SIX_MONTH),
-        tokenUSDT.address,
-        testEnv.T0.add(consts.ONE_YEAR),
+      await env.router.renewYield(
+        env.FORGE_ID,
+        env.EXPIRY,
+        USDT.address,
+        env.T0.add(consts.ONE_YEAR),
         consts.RONE.div(2),
         consts.HIGH_GAS_OVERRIDE
       );
 
       let renewedAmount = redeemedAmount.sub(amountTransferOut);
-      await setTimeNextBlock(
-        provider,
-        testEnv.T0.add(consts.ONE_MONTH.mul(11))
-      );
-      await redeemDueInterests(alice, testEnv.T0.add(consts.ONE_YEAR));
-      let actualGain = await aUSDT.balanceOf(alice.address);
+      await setTimeNextBlock(env.T0.add(consts.ONE_MONTH.mul(11)));
+      await redeemDueInterests(env, alice, env.T0.add(consts.ONE_YEAR));
+      let actualGain = await env.aUSDT.balanceOf(alice.address);
       let expectedGain = await getCurInterest(dave, renewedAmount);
-      approxBigNumber(actualGain, expectedGain, testEnv.TEST_DELTA);
+      approxBigNumber(actualGain, expectedGain, env.TEST_DELTA);
     });
 
     it("should receive the interest from xyt when do tokenizeYield", async () => {
       await startCalInterest(charlie, refAmount);
-      await tokenizeYield(alice, refAmount.div(2));
+      await tokenizeYield(env, alice, refAmount.div(2));
 
-      await setTimeNextBlock(provider, testEnv.T0.add(consts.ONE_MONTH));
-      await tokenizeYield(alice, refAmount.div(2));
+      await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
+      await tokenizeYield(env, alice, refAmount.div(2));
 
-      await redeemDueInterests(alice, testEnv.T0.add(consts.SIX_MONTH));
+      await redeemDueInterests(env, alice);
       const expectedGain = await getCurInterest(charlie, refAmount);
 
       // because we have tokenized all aUSDT of alice, curAUSDTbalance will equal to the interest
       // she has received from her xyt
-      const curAUSDTbalance = await aUSDT.balanceOf(alice.address);
-      approxBigNumber(curAUSDTbalance, expectedGain, testEnv.TEST_DELTA);
+      const curAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
+      approxBigNumber(curAUSDTbalance, expectedGain, env.TEST_DELTA);
     });
 
-    it("shouldn't be able to newYieldContracts with an invalid underlyingAsset", async () => {
+    it("newYieldContracts is not possible [if underlyingAsset is invalid]", async () => {
       // random underlyingAsset
       await expect(
-        router.newYieldContracts(
-          testEnv.FORGE_ID,
+        env.router.newYieldContracts(
+          env.FORGE_ID,
           consts.RANDOM_ADDRESS,
           consts.T0.add(consts.ONE_YEAR)
         )

@@ -1,6 +1,5 @@
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
-import ICToken from "../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json";
 import {
   advanceTime,
   amountToWei,
@@ -15,9 +14,8 @@ import {
   mintOtAndXyt,
   Token,
   tokens,
-  mintCompoundToken,
 } from "../helpers";
-import { marketFixture } from "./fixtures";
+import { marketFixture, MarketFixture } from "./fixtures";
 const hre = require("hardhat");
 
 const { waffle } = require("hardhat");
@@ -30,35 +28,34 @@ describe("compound-lp-interest", async () => {
   let router: Contract;
   let xyt: Contract;
   let ot: Contract;
-  let stdMarket: Contract;
+  let market: Contract;
   let testToken: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
   let aaveForge: Contract;
   let aaveV2Forge: Contract;
   let cUSDT: Contract;
-  let cUSDTWeb3: any;
   let tokenUSDT: Token;
   const amountUSDTRef = BN.from(10).pow(8);
   let amountXytRef: BN;
   let amountCTokenRef: BN;
   const TEST_DELTA = BN.from(3000000);
   const FAKE_INCOME_AMOUNT = consts.INITIAL_COMPOUND_TOKEN_AMOUNT;
+  let fixture: MarketFixture;
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
-    const fixture = await loadFixture(marketFixture);
+    fixture = await loadFixture(marketFixture);
     router = fixture.core.router;
     ot = fixture.cForge.cOwnershipToken;
     xyt = fixture.cForge.cFutureYieldToken;
     testToken = fixture.testToken;
-    stdMarket = fixture.cMarket;
+    market = fixture.cMarket;
     tokenUSDT = tokens.USDT;
     aaveForge = fixture.aForge.aaveForge;
     aaveV2Forge = fixture.a2Forge.aaveV2Forge;
     cUSDT = await getCContract(alice, tokenUSDT);
-    cUSDTWeb3 = new hre.web3.eth.Contract(ICToken.abi, cUSDT.address);
 
     for (let user of [alice, bob, charlie, dave, eve]) {
       await router.redeemDueInterests(
@@ -168,7 +165,7 @@ describe("compound-lp-interest", async () => {
       );
   }
 
-  async function removeMarketLiquidityXyt(user: Wallet, amount: BN) {
+  async function removeMarketLiquiditySingle(user: Wallet, amount: BN) {
     await router
       .connect(user)
       .removeMarketLiquiditySingle(
@@ -200,15 +197,7 @@ describe("compound-lp-interest", async () => {
     user: Wallet,
     amount: BN
   ): Promise<{ ATokenMinted: BN; A2TokenMinted: BN; CTokenMinted: BN }> {
-    return await mintOtAndXyt(
-      provider,
-      tokenUSDT,
-      user,
-      amount,
-      router,
-      aaveForge,
-      aaveV2Forge
-    );
+    return await mintOtAndXyt(tokenUSDT, user, amount, fixture.routerFix);
   }
 
   async function swapExactInXytToToken(user: Wallet, inAmount: BN) {
@@ -225,7 +214,7 @@ describe("compound-lp-interest", async () => {
   }
 
   async function addFakeIncome(token: Token, user: Wallet, amount: BN) {
-    await mint(provider, token, user, amount);
+    await mint(token, user, amount);
     let USDTcontract = await getERC20Contract(user, token);
     USDTcontract.connect(user).transfer(
       cUSDT.address,
@@ -239,7 +228,7 @@ describe("compound-lp-interest", async () => {
   async function claimAll() {
     for (let user of [alice, bob, charlie, dave]) {
       await router.redeemLpInterests(
-        stdMarket.address,
+        market.address,
         user.address,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -264,7 +253,7 @@ describe("compound-lp-interest", async () => {
   }
 
   async function getLPBalance(user: Wallet) {
-    return await stdMarket.balanceOf(user.address);
+    return await market.balanceOf(user.address);
   }
 
   it("test 1", async () => {
@@ -273,43 +262,43 @@ describe("compound-lp-interest", async () => {
     await bootstrapSampleMarket(BN.from(10).pow(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(10));
     await swapExactInXytToToken(eve, BN.from(10).pow(9));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
     await swapExactInXytToToken(eve, BN.from(10).pow(9));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addMarketLiquidityDualByXyt(dave, amountXytRef.div(2));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    await advanceTime(provider, consts.ONE_MONTH);
+    await advanceTime(consts.ONE_MONTH);
     await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
     await swapExactInXytToToken(eve, BN.from(10).pow(10));
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(6));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    await advanceTime(provider, consts.ONE_MONTH);
+    await advanceTime(consts.ONE_MONTH);
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
     await swapExactInXytToToken(eve, BN.from(10).pow(10));
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    await advanceTime(provider, consts.ONE_MONTH);
+    await advanceTime(consts.ONE_MONTH);
     await swapExactInXytToToken(eve, BN.from(10).pow(10));
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    await advanceTime(provider, consts.ONE_MONTH);
+    await advanceTime(consts.ONE_MONTH);
     await swapExactInXytToToken(eve, BN.from(10).pow(10));
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    await advanceTime(provider, consts.ONE_DAY);
+    await advanceTime(consts.ONE_DAY);
     await claimAll();
 
     // for (let user of [alice, bob, charlie, dave]) {
@@ -330,45 +319,45 @@ describe("compound-lp-interest", async () => {
     await bootstrapSampleMarket(BN.from(10).pow(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addMarketLiquidityXyt(bob, amountXytRef.div(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await swapExactInXytToToken(eve, BN.from(10).pow(9));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityXyt(charlie, amountXytRef.div(5));
     await swapExactInXytToToken(eve, BN.from(10).pow(9));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addMarketLiquidityXyt(dave, amountXytRef.div(2));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    await advanceTime(provider, consts.ONE_MONTH);
+    await advanceTime(consts.ONE_MONTH);
     await addMarketLiquidityXyt(dave, amountXytRef.div(3));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await swapExactInXytToToken(eve, BN.from(10).pow(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityXyt(bob, amountXytRef.div(6));
 
-    await advanceTime(provider, consts.ONE_MONTH);
+    await advanceTime(consts.ONE_MONTH);
     await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
     await swapExactInXytToToken(eve, BN.from(10).pow(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
 
-    await advanceTime(provider, consts.ONE_MONTH);
+    await advanceTime(consts.ONE_MONTH);
     await swapExactInXytToToken(eve, BN.from(10).pow(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityXyt(bob, amountXytRef.div(2));
 
-    await advanceTime(provider, consts.ONE_MONTH);
+    await advanceTime(consts.ONE_MONTH);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await swapExactInXytToToken(eve, BN.from(10).pow(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityXyt(bob, amountXytRef.div(5));
 
-    await advanceTime(provider, consts.ONE_DAY);
+    await advanceTime(consts.ONE_DAY);
     await claimAll();
 
     // for (let user of [alice, bob, charlie, dave]) {
@@ -389,20 +378,20 @@ describe("compound-lp-interest", async () => {
     await bootstrapSampleMarket(BN.from(10).pow(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    await advanceTime(provider, consts.ONE_DAY.mul(5));
+    await advanceTime(consts.ONE_DAY.mul(5));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await removeMarketLiquidityDual(alice, (await getLPBalance(alice)).div(2));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityXyt(bob, amountXytRef.div(10));
     await swapExactInXytToToken(eve, BN.from(10).pow(9));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
-    await removeMarketLiquidityXyt(bob, await getLPBalance(bob));
+    await removeMarketLiquiditySingle(bob, await getLPBalance(bob));
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await swapExactInXytToToken(eve, BN.from(10).pow(9));
@@ -411,7 +400,7 @@ describe("compound-lp-interest", async () => {
       await xyt.balanceOf(alice.address)
     );
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityXyt(dave, amountXytRef.div(2));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
@@ -420,34 +409,34 @@ describe("compound-lp-interest", async () => {
       (await getLPBalance(charlie)).div(3)
     );
 
-    await advanceTime(provider, consts.ONE_MONTH);
+    await advanceTime(consts.ONE_MONTH);
     await addMarketLiquidityXyt(dave, amountXytRef.div(3));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await swapExactInXytToToken(eve, BN.from(10).pow(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityXyt(bob, amountXytRef.div(6));
 
-    await advanceTime(provider, consts.ONE_MONTH);
-    await removeMarketLiquidityXyt(dave, (await getLPBalance(dave)).div(3));
+    await advanceTime(consts.ONE_MONTH);
+    await removeMarketLiquiditySingle(dave, (await getLPBalance(dave)).div(3));
     await addMarketLiquidityXyt(charlie, amountXytRef.div(3));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await swapExactInXytToToken(eve, BN.from(10).pow(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
 
-    await advanceTime(provider, consts.ONE_MONTH);
+    await advanceTime(consts.ONE_MONTH);
     await swapExactInXytToToken(eve, BN.from(10).pow(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityXyt(bob, amountXytRef.div(2));
     await swapExactInXytToToken(eve, BN.from(10).pow(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityXyt(bob, amountXytRef.div(5));
-    await advanceTime(provider, consts.ONE_MONTH);
+    await advanceTime(consts.ONE_MONTH);
 
-    await advanceTime(provider, consts.ONE_DAY);
+    await advanceTime(consts.ONE_DAY);
     for (let user of [dave, charlie, bob, alice]) {
       await router.redeemLpInterests(
-        stdMarket.address,
+        market.address,
         user.address,
         consts.HIGH_GAS_OVERRIDE
       );
@@ -477,37 +466,37 @@ describe("compound-lp-interest", async () => {
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(10));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(dave, amountXytRef.div(2));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(6));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(3));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
-    await advanceTime(provider, consts.ONE_DAY);
+    await advanceTime(consts.ONE_DAY);
     await claimAll();
 
     const aliceCUSDTBalance = await cUSDT.balanceOf(alice.address);
@@ -522,36 +511,36 @@ describe("compound-lp-interest", async () => {
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(2));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(6));
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(6));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
-    await advanceTime(provider, consts.ONE_DAY);
+    await advanceTime(consts.ONE_DAY);
     await claimAll();
 
     const aliceCUSDTBalance = await cUSDT.balanceOf(alice.address);
@@ -566,40 +555,41 @@ describe("compound-lp-interest", async () => {
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(2));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(dave, amountXytRef.div(3));
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(5));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(6));
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(6));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityDualByXyt(bob, amountXytRef.div(2));
 
-    await advanceTime(provider, consts.FIFTEEN_DAY);
+    await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
 
     for (let i = 0; i < 6; i++) {
       await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
-      await advanceTime(provider, consts.SIX_MONTH);
+      await advanceTime(consts.SIX_MONTH);
     }
 
+    await claimAll();
     for (let user of [alice, bob, charlie, dave]) {
       if ((await getLPBalance(user)).gt(0)) {
         await removeMarketLiquidityDual(user, await getLPBalance(user));

@@ -22,24 +22,32 @@
  */
 pragma solidity 0.7.6;
 
-interface IPendleRewardManager {
-    event SkippingRewardsSet(bool);
+import "../core/PendleAaveLiquidityMining.sol";
 
-    function redeemRewards(
+contract MockPendleAaveLiquidityMining is PendleAaveLiquidityMining {
+    constructor(
+        address _governance,
+        address _pendleTokenAddress,
+        address _pendleRouter,
+        bytes32 _pendleMarketFactoryId,
+        bytes32 _pendleForgeId,
         address _underlyingAsset,
-        uint256 _expiry,
-        address _user
-    ) external returns (uint256 dueRewards);
-
-    function updatePendingRewards(
-        address _underlyingAsset,
-        uint256 _expiry,
-        address _user
-    ) external;
-
-    function setSkippingRewards(bool) external;
-
-    function skippingRewards() external returns (bool);
-
-    function forgeId() external returns (bytes32);
+        address _baseToken,
+        uint256 _startTime,
+        uint256 _epochDuration,
+        uint256 _vestingEpochs
+    )
+        PendleAaveLiquidityMining(
+            _governance,
+            _pendleTokenAddress,
+            _pendleRouter,
+            _pendleMarketFactoryId,
+            _pendleForgeId,
+            _underlyingAsset,
+            _baseToken,
+            _startTime,
+            _epochDuration,
+            _vestingEpochs
+        )
+    {}
 }

@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract, Wallet } from "ethers";
+import { BigNumber as BN, Contract } from "ethers";
 import {
   consts,
   errMsg,
@@ -8,7 +8,6 @@ import {
   evm_snapshot,
   getA2Contract,
   getAContract,
-  setTimeNextBlock,
   Token,
   tokens,
   toFixedPoint,

@@ -1,10 +1,10 @@
-import { Contract, providers, Wallet, BigNumber as BN } from 'ethers'
+import { BigNumber as BN, Contract, providers, Wallet } from 'ethers'
 import PendleAaveMarketFactory from "../../../build/artifacts/contracts/core/PendleAaveMarketFactory.sol/PendleAaveMarketFactory.json"
 import PendleCompoundMarketFactory from "../../../build/artifacts/contracts/core/PendleCompoundMarketFactory.sol/PendleCompoundMarketFactory.json"
 import PendleData from "../../../build/artifacts/contracts/core/PendleData.sol/PendleData.json"
 import PendleMarketReader from '../../../build/artifacts/contracts/core/PendleMarketReader.sol/PendleMarketReader.json'
-import PendleRouter from '../../../build/artifacts/contracts/core/PendleRouter.sol/PendleRouter.json'
 import PendlePausingManager from '../../../build/artifacts/contracts/core/PendlePausingManager.sol/PendlePausingManager.json'
+import PendleRouter from '../../../build/artifacts/contracts/core/PendleRouter.sol/PendleRouter.json'
 import PendleTreasury from '../../../build/artifacts/contracts/core/PendleTreasury.sol/PendleTreasury.json'
 import { consts, tokens } from "../../helpers"
 const hre = require("hardhat");
@@ -14,7 +14,6 @@ const { provider, deployContract } = waffle;
 
 export interface CoreFixture {
   router: Contract
-  routerWeb3: any
   treasury: Contract
   aMarketFactory: Contract
   a2MarketFactory: Contract
@@ -46,9 +45,5 @@ export async function coreFixture(
   await data.setLockParams(BN.from(consts.LOCK_NUMERATOR), BN.from(consts.LOCK_DENOMINATOR)); // lock market
   await data.setInterestUpdateRateDeltaForMarket(consts.INTEREST_UPDATE_RATE_DELTA_FOR_MARKET);
 
-  let routerWeb3 = new hre.web3.eth.Contract(
-    PendleRouter.abi,
-    router.address
-  );
-  return { router, routerWeb3, treasury, aMarketFactory, a2MarketFactory, cMarketFactory, data, marketReader, pausingManager }
+  return { router, treasury, aMarketFactory, a2MarketFactory, cMarketFactory, data, marketReader, pausingManager }
 }

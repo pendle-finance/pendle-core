@@ -15,7 +15,7 @@ import {
 const { waffle } = require("hardhat");
 const { provider, deployContract } = waffle;
 
-describe("Token name test", async () => {
+describe("Token name test [@skip-on-coverage]", async () => {
   const wallets: Wallet[] = provider.getWallets();
 
   const [root, a1, a2, a3, a4] = wallets;
@@ -72,7 +72,7 @@ describe("Token name test", async () => {
       let lastWeekClaimed = INITIAL_LIQUIDITY_EMISSION.div(26);
       let totalClaimed = BN.from(0);
 
-      await advanceTime(provider, consts.ONE_WEEK.mul(26));
+      await advanceTime(consts.ONE_WEEK.mul(26));
 
       for (let i = 27; i < 260; ++i) {
         let currentWeekClaimed = BN.from(
@@ -87,12 +87,12 @@ describe("Token name test", async () => {
         toBeExpected = BN.from(await connected.callStatic.getTotalSupply())
           .mul(379848538)
           .div(BN.from(1000000000000));
-        if (i < 259) await advanceTime(provider, consts.ONE_WEEK);
+        if (i < 259) await advanceTime(consts.ONE_WEEK);
       }
 
       totalClaimed = BN.from(0);
       await connected.claimLiquidityEmissions();
-      await advanceTime(provider, consts.ONE_WEEK);
+      await advanceTime(consts.ONE_WEEK);
       let totalSupply = BN.from(await connected.callStatic.getTotalSupply());
 
       for (let i = 260; i < 260 + 52; ++i) {
@@ -109,7 +109,7 @@ describe("Token name test", async () => {
         /// I put the second term expectedAmount to see if theres any minor problem. And apparently theres not.
         totalClaimed = totalClaimed.add(expectedAmount);
         totalSupply = totalSupply.add(expectedAmount);
-        await advanceTime(provider, consts.ONE_WEEK);
+        await advanceTime(consts.ONE_WEEK);
       }
     });
 
@@ -175,7 +175,7 @@ describe("Token name test", async () => {
           totalClaimed = totalClaimed.add(claimableAmount);
           totalSupply = totalSupply.add(claimableAmount);
         }
-        await advanceTime(provider, consts.ONE_WEEK);
+        await advanceTime(consts.ONE_WEEK);
       }
     });
 
@@ -247,8 +247,7 @@ describe("Token name test", async () => {
 
         const connected = PENDLE.connect(a4);
 
-        if (l > 2)
-          await advanceTime(provider, consts.ONE_WEEK.mul(BN.from(l - 2)));
+        if (l > 2) await advanceTime(consts.ONE_WEEK.mul(BN.from(l - 2)));
         const pastClaimed = BN.from(
           await connected.callStatic.claimLiquidityEmissions(
             consts.HIGH_GAS_OVERRIDE
@@ -256,10 +255,8 @@ describe("Token name test", async () => {
         );
         await connected.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE);
 
-        if (l == 1)
-          await advanceTime(provider, consts.ONE_WEEK.mul(BN.from(r - l)));
-        else
-          await advanceTime(provider, consts.ONE_WEEK.mul(BN.from(r - l + 1)));
+        if (l == 1) await advanceTime(consts.ONE_WEEK.mul(BN.from(r - l)));
+        else await advanceTime(consts.ONE_WEEK.mul(BN.from(r - l + 1)));
 
         const nowClaimed = BN.from(
           await connected.callStatic.claimLiquidityEmissions(
@@ -433,7 +430,7 @@ describe("Token name test", async () => {
           if (getRandomNumber(100) < 10) await applyConfigSimulator();
         } catch (error) {}
 
-        await advanceTime(provider, consts.ONE_WEEK);
+        await advanceTime(consts.ONE_WEEK);
       }
 
       await updateCorrectEmission(1000);
@@ -446,7 +443,7 @@ describe("Token name test", async () => {
   });
 
   // it("token after time....", async() => {
-  //     advanceTime(provider, consts.ONE_WEEK.mul(50));
+  //     advanceTime(consts.ONE_WEEK.mul(50));
   //     console.log((await PENDLE.balanceOf(root.address)).toString());
   //     // await PENDLE.connect(a1).claimLiquidityEmissions();
   //     console.log((await PENDLE.balanceOf(root.address)).toString());

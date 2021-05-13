@@ -1,7 +1,8 @@
-import { expect } from "chai";
-import { BigNumber as BN, providers } from "ethers";
+import { BigNumber as BN } from "ethers";
 
 const hre = require("hardhat");
+const { waffle } = require("hardhat");
+const { provider } = waffle;
 
 export async function impersonateAccount(address: String) {
   await hre.network.provider.request({
@@ -24,34 +25,28 @@ export async function evm_revert(snapshotId: string) {
   });
 }
 
-export async function advanceTime(
-  provider: providers.Web3Provider,
-  duration: BN
-) {
+export async function advanceTime(duration: BN) {
   await provider.send("evm_increaseTime", [duration.toNumber()]);
   await provider.send("evm_mine", []);
 }
 
-export async function setTimeNextBlock(
-  provider: providers.Web3Provider,
-  time: BN
-) {
+export async function setTimeNextBlock(time: BN) {
   await provider.send("evm_setNextBlockTimestamp", [time.toNumber()]);
 }
 
-export async function setTime(provider: providers.Web3Provider, time: BN) {
+export async function setTime(time: BN) {
   await provider.send("evm_setNextBlockTimestamp", [time.toNumber()]);
   await provider.send("evm_mine", []);
 }
 
-export async function mineBlock(provider: providers.Web3Provider) {
+export async function mineBlock() {
   await provider.send("evm_mine", []);
 }
 
-export async function minerStart(provider: providers.Web3Provider) {
+export async function minerStart() {
   await provider.send("evm_setAutomine", [true]);
 }
 
-export async function minerStop(provider: providers.Web3Provider) {
+export async function minerStop() {
   await provider.send("evm_setAutomine", [false]);
 }

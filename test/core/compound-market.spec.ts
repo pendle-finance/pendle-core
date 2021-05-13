@@ -20,7 +20,7 @@ describe("compound-market", async () => {
   let router: Contract;
   let marketReader: Contract;
   let xyt: Contract;
-  let stdMarket: Contract;
+  let market: Contract;
   let testToken: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
@@ -33,7 +33,7 @@ describe("compound-market", async () => {
     marketReader = fixture.core.marketReader;
     xyt = fixture.cForge.cFutureYieldToken;
     testToken = fixture.testToken;
-    stdMarket = fixture.cMarket;
+    market = fixture.cMarket;
     snapshotId = await evm_snapshot();
   });
 
@@ -62,8 +62,8 @@ describe("compound-market", async () => {
 
     await bootstrapSampleMarket(amount);
 
-    let totalSupply = await stdMarket.totalSupply();
-    let initalWalletBalance = await stdMarket.balanceOf(alice.address);
+    let totalSupply = await market.totalSupply();
+    let initialWalletBalance = await market.balanceOf(alice.address);
     await router.addMarketLiquiditySingle(
       consts.MARKET_FACTORY_COMPOUND,
       xyt.address,
@@ -73,16 +73,16 @@ describe("compound-market", async () => {
       totalSupply.div(21),
       consts.HIGH_GAS_OVERRIDE
     );
-    let currentWalletBalance = await stdMarket.balanceOf(alice.address);
-    expect(currentWalletBalance).to.be.gt(initalWalletBalance);
+    let currentWalletBalance = await market.balanceOf(alice.address);
+    expect(currentWalletBalance).to.be.gt(initialWalletBalance);
   });
 
   it("should be able to bootstrap", async () => {
     const amount = amountToWei(BN.from(100), 6);
 
     await bootstrapSampleMarket(amount);
-    let xytBalance = await xyt.balanceOf(stdMarket.address);
-    let testTokenBalance = await testToken.balanceOf(stdMarket.address);
+    let xytBalance = await xyt.balanceOf(market.address);
+    let testTokenBalance = await testToken.balanceOf(market.address);
 
     expect(xytBalance).to.be.equal(amount);
     expect(testTokenBalance).to.be.equal(amount);
@@ -93,7 +93,7 @@ describe("compound-market", async () => {
 
     await bootstrapSampleMarket(amount);
 
-    const totalSupply = await stdMarket.totalSupply();
+    const totalSupply = await market.totalSupply();
 
     await router
       .connect(bob)
@@ -108,9 +108,9 @@ describe("compound-market", async () => {
         consts.HIGH_GAS_OVERRIDE
       );
 
-    let xytBalance = await xyt.balanceOf(stdMarket.address);
-    let testTokenBalance = await testToken.balanceOf(stdMarket.address);
-    let totalSupplyBalance = await stdMarket.totalSupply();
+    let xytBalance = await xyt.balanceOf(market.address);
+    let testTokenBalance = await testToken.balanceOf(market.address);
+    let totalSupplyBalance = await market.totalSupply();
 
     expect(xytBalance).to.be.equal(amount.mul(2));
     expect(testTokenBalance).to.be.equal(amount.mul(2));
@@ -122,7 +122,7 @@ describe("compound-market", async () => {
 
     await bootstrapSampleMarket(amount);
 
-    let xytBalanceBefore = await xyt.balanceOf(stdMarket.address);
+    let xytBalanceBefore = await xyt.balanceOf(market.address);
 
     let result = await marketReader.getMarketRateExactOut(
       xyt.address,
@@ -142,8 +142,8 @@ describe("compound-market", async () => {
         consts.HIGH_GAS_OVERRIDE
       );
 
-    let xytBalance = await xyt.balanceOf(stdMarket.address);
-    let testTokenBalance = await testToken.balanceOf(stdMarket.address);
+    let xytBalance = await xyt.balanceOf(market.address);
+    let testTokenBalance = await testToken.balanceOf(market.address);
 
     expect(xytBalance.toNumber()).to.be.approximately(
       xytBalanceBefore.add(BN.from(result[1])).toNumber(),
@@ -168,8 +168,8 @@ describe("compound-market", async () => {
         consts.HIGH_GAS_OVERRIDE
       );
 
-    let xytBalance = await xyt.balanceOf(stdMarket.address);
-    let testTokenBalance = await testToken.balanceOf(stdMarket.address);
+    let xytBalance = await xyt.balanceOf(market.address);
+    let testTokenBalance = await testToken.balanceOf(market.address);
 
     expect(xytBalance.toNumber()).to.be.approximately(
       amount.add(amount.div(10)).toNumber(),
@@ -185,8 +185,8 @@ describe("compound-market", async () => {
   it("should be able to exit a pool by dual tokens", async () => {
     const amount = amountToWei(BN.from(100), 6);
     await bootstrapSampleMarket(amount);
-    await advanceTime(provider, consts.ONE_MONTH);
-    const totalSupply = await stdMarket.totalSupply();
+    await advanceTime(consts.ONE_MONTH);
+    const totalSupply = await market.totalSupply();
 
     await router.removeMarketLiquidityDual(
       consts.MARKET_FACTORY_COMPOUND,
@@ -198,8 +198,8 @@ describe("compound-market", async () => {
       consts.HIGH_GAS_OVERRIDE
     );
 
-    let xytBalance = await xyt.balanceOf(stdMarket.address);
-    let testTokenBalance = await testToken.balanceOf(stdMarket.address);
+    let xytBalance = await xyt.balanceOf(market.address);
+    let testTokenBalance = await testToken.balanceOf(market.address);
 
     expect(xytBalance).to.be.equal(amount.sub(amount.div(10)));
     expect(testTokenBalance).to.be.equal(amount.sub(amount.div(10)));
@@ -210,7 +210,7 @@ describe("compound-market", async () => {
 
     await bootstrapSampleMarket(amount);
 
-    let { xytBalance, tokenBalance } = await stdMarket.getReserves();
+    let { xytBalance, tokenBalance } = await market.getReserves();
     expect(xytBalance).to.be.equal(amount);
     expect(tokenBalance).to.be.equal(amount);
   });
@@ -269,13 +269,13 @@ describe("compound-market", async () => {
     const amount = amountToWei(BN.from(10), 6);
 
     await bootstrapSampleMarket(amount);
-    await testToken.approve(stdMarket.address, consts.INF);
+    await testToken.approve(market.address, consts.INF);
 
-    let initalLpTokenBal = await stdMarket.balanceOf(alice.address);
-    let initalXytBal = await xyt.balanceOf(alice.address);
-    let initalTestTokenBal = await testToken.balanceOf(alice.address);
+    let initialLpTokenBal = await market.balanceOf(alice.address);
+    let initialXytBal = await xyt.balanceOf(alice.address);
+    let initialTestTokenBal = await testToken.balanceOf(alice.address);
 
-    let totalSupply = await stdMarket.totalSupply();
+    let totalSupply = await market.totalSupply();
     await router.addMarketLiquiditySingle(
       consts.MARKET_FACTORY_COMPOUND,
       xyt.address,
@@ -286,26 +286,26 @@ describe("compound-market", async () => {
       consts.HIGH_GAS_OVERRIDE
     );
 
-    let currentLpTokenBal = await stdMarket.balanceOf(alice.address);
+    let currentLpTokenBal = await market.balanceOf(alice.address);
     let currentXytBal = await xyt.balanceOf(alice.address);
     let currentTestTokenBal = await testToken.balanceOf(alice.address);
 
-    expect(currentLpTokenBal).to.be.gt(initalLpTokenBal);
-    expect(currentTestTokenBal).to.be.lt(initalTestTokenBal);
-    expect(currentXytBal).to.be.equal(initalXytBal);
+    expect(currentLpTokenBal).to.be.gt(initialLpTokenBal);
+    expect(currentTestTokenBal).to.be.lt(initialTestTokenBal);
+    expect(currentXytBal).to.be.equal(initialXytBal);
   });
 
   it("should be able to add XYT market liquidity", async () => {
     const amount = amountToWei(BN.from(10), 6);
 
     await bootstrapSampleMarket(amount);
-    await testToken.approve(stdMarket.address, consts.INF);
+    await testToken.approve(market.address, consts.INF);
 
-    let initalLpTokenBal = await stdMarket.balanceOf(alice.address);
-    let initalXytBal = await xyt.balanceOf(alice.address);
-    let initalTestTokenBal = await testToken.balanceOf(alice.address);
+    let initialLpTokenBal = await market.balanceOf(alice.address);
+    let initialXytBal = await xyt.balanceOf(alice.address);
+    let initialTestTokenBal = await testToken.balanceOf(alice.address);
 
-    let totalSupply = await stdMarket.totalSupply();
+    let totalSupply = await market.totalSupply();
     await router.addMarketLiquiditySingle(
       consts.MARKET_FACTORY_COMPOUND,
       xyt.address,
@@ -316,20 +316,20 @@ describe("compound-market", async () => {
       consts.HIGH_GAS_OVERRIDE
     );
 
-    let currentLpTokenBal = await stdMarket.balanceOf(alice.address);
+    let currentLpTokenBal = await market.balanceOf(alice.address);
     let currentXytBal = await xyt.balanceOf(alice.address);
     let currentTestTokenBal = await testToken.balanceOf(alice.address);
 
-    expect(currentLpTokenBal).to.be.gt(initalLpTokenBal);
-    expect(currentTestTokenBal).to.be.equal(initalTestTokenBal);
-    expect(currentXytBal).to.be.lt(initalXytBal);
+    expect(currentLpTokenBal).to.be.gt(initialLpTokenBal);
+    expect(currentTestTokenBal).to.be.equal(initialTestTokenBal);
+    expect(currentXytBal).to.be.lt(initialXytBal);
   });
 
   it("should be able to getMarketTokenAddresses", async () => {
     let {
       token: receivedToken,
       xyt: receivedXyt,
-    } = await marketReader.getMarketTokenAddresses(stdMarket.address);
+    } = await marketReader.getMarketTokenAddresses(market.address);
     expect(receivedToken).to.be.equal(testToken.address);
     expect(receivedXyt).to.be.equal(xyt.address);
   });

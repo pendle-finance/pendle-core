@@ -22,24 +22,10 @@
  */
 pragma solidity 0.7.6;
 
-interface IPendleRewardManager {
-    event SkippingRewardsSet(bool);
+import "../core/PendleRewardManager.sol";
 
-    function redeemRewards(
-        address _underlyingAsset,
-        uint256 _expiry,
-        address _user
-    ) external returns (uint256 dueRewards);
-
-    function updatePendingRewards(
-        address _underlyingAsset,
-        uint256 _expiry,
-        address _user
-    ) external;
-
-    function setSkippingRewards(bool) external;
-
-    function skippingRewards() external returns (bool);
-
-    function forgeId() external returns (bytes32);
+contract MockPendleRewardManager is PendleRewardManager {
+    constructor(address _governance, bytes32 _forgeId)
+        PendleRewardManager(_governance, _forgeId)
+    {}
 }

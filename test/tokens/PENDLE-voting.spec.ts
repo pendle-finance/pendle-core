@@ -14,7 +14,7 @@ import {
 const { waffle } = require("hardhat");
 const { provider, deployContract } = waffle;
 
-describe("PENDLE-voting", () => {
+describe("PENDLE-voting [@skip-on-coverage]", () => {
   const wallets: Wallet[] = provider.getWallets();
   const [root, a1, a2, ...accounts] = wallets;
 
