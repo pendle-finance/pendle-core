@@ -5,14 +5,21 @@ import {
   setTimeNextBlock,
   evm_revert,
   evm_snapshot,
-  redeemDueInterests, stake, withdraw, consts, approxBigNumber, randomBN, randomNumber, redeemLpInterests
+  redeemDueInterests,
+  stake,
+  withdraw,
+  consts,
+  approxBigNumber,
+  randomBN,
+  randomNumber,
+  redeemLpInterests,
 } from "../helpers";
 import {
   liquidityMiningFixture,
   LiquidityMiningFixture,
   Mode,
   parseTestEnvLiquidityMiningFixture,
-  TestEnv
+  TestEnv,
 } from "./fixtures";
 
 const { waffle } = require("hardhat");
@@ -70,10 +77,13 @@ describe("aaveV1-liquidityMining-lp-interest", async () => {
 
     let liqBalance: BN[] = [BN.from(0), BN.from(0), BN.from(0), BN.from(0)];
     let lpBalance: BN[] = [];
-    for (let i = 0; i < 4; i++) lpBalance.push(await env.market.balanceOf(wallets[i].address));
+    for (let i = 0; i < 4; i++)
+      lpBalance.push(await env.market.balanceOf(wallets[i].address));
 
     for (let i = 1; i <= numTurns; i++) {
-      await setTimeNextBlock(env.liqParams.START_TIME.add(totalTime.div(numTurnsBeforeExpiry).mul(i)));
+      await setTimeNextBlock(
+        env.liqParams.START_TIME.add(totalTime.div(numTurnsBeforeExpiry).mul(i))
+      );
       let userID = randomBN(4).toNumber();
       let actionType: number = randomNumber(3);
       if (liqBalance[userID].eq(0)) {
@@ -85,14 +95,12 @@ describe("aaveV1-liquidityMining-lp-interest", async () => {
         await stake(env, wallets[userID], amount);
         liqBalance[userID] = liqBalance[userID].add(amount);
         lpBalance[userID] = lpBalance[userID].sub(amount);
-      }
-      else if (actionType == 1) {
+      } else if (actionType == 1) {
         let amount = randomBN(liqBalance[userID]);
         await withdraw(env, wallets[userID], amount);
         liqBalance[userID] = liqBalance[userID].sub(amount);
         lpBalance[userID] = lpBalance[userID].add(amount);
-      }
-      else if (actionType == 2) {
+      } else if (actionType == 2) {
         await env.liq.redeemLpInterests(env.EXPIRY, wallets[userID].address);
       }
     }
@@ -104,8 +112,16 @@ describe("aaveV1-liquidityMining-lp-interest", async () => {
       await redeemLpInterests(env, wallets[i]);
     }
     for (let i = 1; i < 4; i++) {
-      approxBigNumber(await env.aUSDT.balanceOf(wallets[i].address), expectedGain, env.TEST_DELTA);
-      approxBigNumber(await env.market.balanceOf(wallets[i].address), lpBalance[i], 0);
+      approxBigNumber(
+        await env.aUSDT.balanceOf(wallets[i].address),
+        expectedGain,
+        env.TEST_DELTA
+      );
+      approxBigNumber(
+        await env.market.balanceOf(wallets[i].address),
+        lpBalance[i],
+        0
+      );
     }
-  })
+  });
 });

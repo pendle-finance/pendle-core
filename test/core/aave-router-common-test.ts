@@ -16,14 +16,14 @@ import {
   setTimeNextBlock,
   Token,
   tokenizeYield,
-  tokens
+  tokens,
 } from "../helpers";
 import {
   Mode,
   parseTestEnvRouterFixture,
   routerFixture,
   RouterFixture,
-  TestEnv
+  TestEnv,
 } from "./fixtures";
 
 const { waffle } = require("hardhat");
@@ -126,9 +126,9 @@ export function runTest(isAaveV1: boolean) {
 
       await setTimeNextBlock(env.T0.add(consts.ONE_YEAR));
 
-      await expect(
-        redeemUnderlying(env, alice, refAmount)
-      ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
+      await expect(redeemUnderlying(env, alice, refAmount)).to.be.revertedWith(
+        errMsg.YIELD_CONTRACT_EXPIRED
+      );
     });
 
     it("redeemUnderlying [after 1 month]", async () => {
