@@ -178,12 +178,12 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         uint256 principal,
         address _underlyingAsset,
         uint256 _expiry,
-        address _account
+        address _user
     ) internal override {
-        uint256 prevRate = lastRate[_underlyingAsset][_expiry][_account];
+        uint256 prevRate = lastRate[_underlyingAsset][_expiry][_user];
         uint256 currentRate = getExchangeRateBeforeExpiry(_underlyingAsset, _expiry);
 
-        lastRate[_underlyingAsset][_expiry][_account] = currentRate;
+        lastRate[_underlyingAsset][_expiry][_user] = currentRate;
         // first time getting XYT
         if (prevRate == 0) {
             return;
@@ -192,9 +192,9 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         uint256 interestFromXyt = principal.mul(currentRate).div(prevRate).sub(principal);
         interestFromXyt = interestFromXyt.mul(initialRate[_underlyingAsset]).div(currentRate);
 
-        dueInterests[_underlyingAsset][_expiry][_account] = dueInterests[_underlyingAsset][
-            _expiry
-        ][_account]
+        dueInterests[_underlyingAsset][_expiry][_user] = dueInterests[_underlyingAsset][_expiry][
+            _user
+        ]
             .add(interestFromXyt);
     }
 

@@ -1,5 +1,4 @@
-import { expect } from "chai";
-import { BigNumber as BN, providers } from "ethers";
+import { BigNumber as BN } from "ethers";
 
 const hre = require("hardhat");
 const { waffle } = require("hardhat");

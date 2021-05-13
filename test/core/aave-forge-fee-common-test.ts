@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract, Wallet } from "ethers";
+import { BigNumber as BN } from "ethers";
 import {
   amountToWei,
   approxBigNumber,
@@ -8,15 +8,13 @@ import {
   errMsg,
   evm_revert,
   evm_snapshot,
-  getA2Contract,
-  getAContract,
   mintAaveToken,
-  setTimeNextBlock,
-  Token,
-  tokens,
   randomBN,
   redeemDueInterests,
+  setTimeNextBlock,
+  Token,
   tokenizeYield,
+  tokens,
 } from "../helpers";
 import {
   Mode,
@@ -110,7 +108,7 @@ export function runTest(isAaveV1: boolean) {
       const treasuryBalance = await env.aUSDT.balanceOf(treasuryAddress);
       approxBigNumber(totalFee, treasuryBalance, BN.from(5));
       const forgeFeeLeft = await env.forge.totalFee(USDT.address, env.EXPIRY);
-      approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(5));
+      approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(100));
     });
     it("Non-governance address should not be able to withdraw forge fees", async () => {
       await tokenizeYield(env, alice, REF_AMOUNT, bob);

@@ -1,10 +1,10 @@
 import { assert, expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN, Contract, Wallet } from "ethers";
-import PendleCompoundLiquidityMining from "../../build/artifacts/contracts/core/PendleCompoundLiquidityMining.sol/PendleCompoundLiquidityMining.json";
 import {
   advanceTime,
   approxBigNumber,
+  calcExpectedRewards,
   consts,
   evm_revert,
   evm_snapshot,
@@ -13,9 +13,8 @@ import {
   setTimeNextBlock,
   startOfEpoch,
   tokens,
-  calcExpectedRewards,
 } from "../helpers";
-import { liqParams, liquidityMiningFixture, UserStakeAction } from "./fixtures";
+import { LiqParams, liquidityMiningFixture, UserStakeAction } from "./fixtures";
 import * as scenario from "./fixtures/liquidityMiningScenario.fixture";
 
 const { waffle } = require("hardhat");
@@ -30,7 +29,7 @@ describe("compound-liquidityMining", async () => {
   let liq: Contract;
   let market: Contract;
   let pdl: Contract;
-  let params: liqParams;
+  let params: LiqParams;
   let cUSDT: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
@@ -239,6 +238,7 @@ describe("compound-liquidityMining", async () => {
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
+    await liq.redeemRewards(EXPIRY, bob.address);
 
     const pdlBalanceOfContractAfter = await pdl.balanceOf(liq.address);
     const pdlBalanceOfUserAfter = await pdl.balanceOf(bob.address);
@@ -288,6 +288,8 @@ describe("compound-liquidityMining", async () => {
         amountToStake.div(BN.from(2)),
         consts.HIGH_GAS_OVERRIDE
       );
+    await liq.redeemRewards(EXPIRY, bob.address);
+
     const pdlBalanceOfUserAfter2ndTnx = await pdl.balanceOf(bob.address);
     const expectedPdlBalanceOfUsersAfter2ndTnx = expectedPdlBalanceOfUserAfter.add(
       params.REWARDS_PER_EPOCH[0]

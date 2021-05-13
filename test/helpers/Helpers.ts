@@ -1,16 +1,10 @@
 import { expect } from "chai";
-import {
-  BigNumber as BN,
-  BigNumberish,
-  Contract,
-  providers,
-  Wallet,
-} from "ethers";
+import { BigNumber as BN, BigNumberish, Contract, Wallet } from "ethers";
 import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
 import AToken from "../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json";
 import CToken from "../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json";
 import TetherToken from "../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json";
-import { liqParams, RouterFixture, TestEnv } from "../core/fixtures/";
+import { RouterFixture } from "../core/fixtures/";
 import { aaveFixture } from "../core/fixtures/aave.fixture";
 import { aaveV2Fixture } from "../core/fixtures/aaveV2.fixture";
 import { consts, Token } from "./Constants";

@@ -1,19 +1,16 @@
 import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract, Wallet } from "ethers";
+import { BigNumber as BN } from "ethers";
 import {
   approxBigNumber,
   consts,
   evm_revert,
   evm_snapshot,
-  getA2Contract,
-  getAContract,
   mintAaveToken,
-  setTimeNextBlock,
-  Token,
-  tokens,
   redeemDueInterests,
   redeemUnderlying,
+  setTimeNextBlock,
   tokenizeYield,
+  tokens,
 } from "../helpers";
 import {
   Mode,

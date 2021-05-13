@@ -1,17 +1,17 @@
 import { BigNumber as BN, BigNumberish } from "ethers";
 import {
+  addMarketLiquidityDualXyt,
+  addMarketLiquiditySingle,
   amountToWei,
-  consts,
-  setTimeNextBlock,
+  approxBigNumber,
   bootstrapMarket,
+  consts,
+  removeMarketLiquiditySingle,
+  setTimeNextBlock,
   swapExactInTokenToXyt,
   swapExactInXytToToken,
   swapExactOutTokenToXyt,
   swapExactOutXytToToken,
-  approxBigNumber,
-  addMarketLiquidityDualXyt,
-  addMarketLiquiditySingle,
-  removeMarketLiquiditySingle,
 } from "../helpers";
 import { TestEnv } from "./fixtures";
 
@@ -27,7 +27,7 @@ export async function AMMTest(
   /*-------------------------------------------------------------*/
   const amount = amountToWei(BN.from(1000), 6);
   await bootstrapMarket(env, alice, amount);
-  await env.testToken.approve(env.stdMarket.address, consts.INF);
+  await env.testToken.approve(env.market.address, consts.INF);
 
   await runTestTokenToXyt(
     env,
@@ -164,7 +164,7 @@ export async function AMMCheckLPNearCloseTest(env: TestEnv) {
     bobToken: BN = BN.from(0);
 
   async function checkAmountLPGained(expectedLPGained: BN, delta: BN) {
-    let totalLPGained = await env.stdMarket.balanceOf(bob.address);
+    let totalLPGained = await env.market.balanceOf(bob.address);
     let LPGained = totalLPGained.sub(bobLP);
     bobLP = totalLPGained;
     approxBigNumber(LPGained, expectedLPGained, delta, true);
@@ -223,14 +223,14 @@ async function runTestTokenToXytCustom(
   var {
     xytBalance: initialXytBalance,
     tokenBalance: initialTokenBalance,
-  } = await env.stdMarket.getReserves();
+  } = await env.market.getReserves();
 
   if (useSwapIn) {
     await swapExactInTokenToXyt(env, alice, tokenIn);
   } else {
     await swapExactOutTokenToXyt(env, alice, xytOut);
   }
-  var { xytBalance, tokenBalance } = await env.stdMarket.getReserves();
+  var { xytBalance, tokenBalance } = await env.market.getReserves();
 
   var actualXytOut = initialXytBalance.sub(xytBalance);
   var actualTokenIn = tokenBalance.sub(initialTokenBalance);
@@ -249,14 +249,14 @@ async function runTestXytToTokenCustom(
   var {
     xytBalance: initialXytBalance,
     tokenBalance: initialTokenBalance,
-  } = await env.stdMarket.getReserves();
+  } = await env.market.getReserves();
 
   if (useSwapIn) {
     await swapExactInXytToToken(env, alice, xytIn);
   } else {
     await swapExactOutXytToToken(env, alice, tokenOut);
   }
-  var { xytBalance, tokenBalance } = await env.stdMarket.getReserves();
+  var { xytBalance, tokenBalance } = await env.market.getReserves();
 
   var actualXytIn: BN = xytBalance.sub(initialXytBalance);
   var actualTokenOut: BN = initialTokenBalance.sub(tokenBalance);
@@ -279,7 +279,7 @@ async function runTestTokenToXyt(
   var {
     xytBalance: initialXytBalance,
     tokenBalance: initialTokenBalance,
-  } = await env.stdMarket.getReserves();
+  } = await env.market.getReserves();
 
   await setTimeNextBlock(time);
   if (useSwapIn) {
@@ -287,7 +287,7 @@ async function runTestTokenToXyt(
   } else {
     await swapExactOutTokenToXyt(env, alice, xytOut);
   }
-  var { xytBalance, tokenBalance } = await env.stdMarket.getReserves();
+  var { xytBalance, tokenBalance } = await env.market.getReserves();
 
   var actualXytOut = initialXytBalance.sub(xytBalance);
   var actualTokenIn = tokenBalance.sub(initialTokenBalance);
@@ -310,7 +310,7 @@ async function runTestXytToToken(
   var {
     xytBalance: initialXytBalance,
     tokenBalance: initialTokenBalance,
-  } = await env.stdMarket.getReserves();
+  } = await env.market.getReserves();
 
   await setTimeNextBlock(time);
   if (useSwapIn) {
@@ -318,7 +318,7 @@ async function runTestXytToToken(
   } else {
     await swapExactOutXytToToken(env, alice, tokenOut);
   }
-  var { xytBalance, tokenBalance } = await env.stdMarket.getReserves();
+  var { xytBalance, tokenBalance } = await env.market.getReserves();
 
   var actualXytIn: BN = xytBalance.sub(initialXytBalance);
   var actualTokenOut: BN = initialTokenBalance.sub(tokenBalance);

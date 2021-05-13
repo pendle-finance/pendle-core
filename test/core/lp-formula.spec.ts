@@ -1,28 +1,27 @@
 import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract, Wallet } from "ethers";
+import { BigNumber as BN, Wallet } from "ethers";
 import {
+  addMarketLiquidityDualXyt,
+  addMarketLiquiditySingle,
   amountToWei,
   approxBigNumber,
+  bootstrapMarket,
   consts,
   evm_revert,
   evm_snapshot,
   mintOtAndXyt,
+  removeMarketLiquidityDual,
+  removeMarketLiquiditySingle,
   setTimeNextBlock,
   toFixedPoint,
-  Token,
   tokens,
-  bootstrapMarket,
-  addMarketLiquiditySingle,
-  removeMarketLiquiditySingle,
-  addMarketLiquidityDualXyt,
-  removeMarketLiquidityDual,
 } from "../helpers";
 import {
   marketFixture,
   MarketFixture,
-  TestEnv,
   Mode,
   parseTestEnvMarketFixture,
+  TestEnv,
 } from "./fixtures";
 import * as scenario from "./fixtures/lpFormulaScenario.fixture";
 import {
@@ -77,7 +76,7 @@ describe("lp-formula", async () => {
 
   async function checkLpBalance(user: Wallet, expected: BN) {
     approxBigNumber(
-      await env.stdMarket.balanceOf(user.address),
+      await env.market.balanceOf(user.address),
       expected,
       env.TEST_DELTA
     );
@@ -140,7 +139,7 @@ describe("lp-formula", async () => {
       amountToWei(test.initTokenAmount, 6)
     );
 
-    let lpBalanceAlice: BN = await env.stdMarket.balanceOf(alice.address);
+    let lpBalanceAlice: BN = await env.market.balanceOf(alice.address);
     let totalLpAmountRemoved: BN = BN.from(0);
     let amountToRemove: BN = lpBalanceAlice.mul(test.ratioLpForToken).div(100);
     totalLpAmountRemoved = totalLpAmountRemoved.add(amountToRemove);
@@ -167,7 +166,7 @@ describe("lp-formula", async () => {
     approxBigNumber(test.expectedXytDiff, balanceDiff, env.TEST_DELTA);
     approxBigNumber(
       lpBalanceAlice.sub(totalLpAmountRemoved),
-      await env.stdMarket.balanceOf(alice.address),
+      await env.market.balanceOf(alice.address),
       BN.from(1)
     ); // should remove the exact amount
   }
@@ -217,7 +216,7 @@ describe("lp-formula", async () => {
     const amountOfToken = amountToWei(BN.from(891), 6);
     await bootstrapMarket(env, alice, amountOfXyt, amountOfToken);
 
-    const totalSupply: BN = await env.stdMarket.totalSupply();
+    const totalSupply: BN = await env.market.totalSupply();
     // weights: Token: 660606624370, XYT: 438905003406
 
     let initialXytBalance: BN = await env.xyt.balanceOf(bob.address);
@@ -235,17 +234,17 @@ describe("lp-formula", async () => {
     approxBigNumber(amountTokenUsed, amountOfToken.mul(3), env.TEST_DELTA);
 
     approxBigNumber(
-      await env.xyt.balanceOf(env.stdMarket.address),
+      await env.xyt.balanceOf(env.market.address),
       amountOfXyt.mul(4),
       BN.from(0)
     );
     approxBigNumber(
-      await env.testToken.balanceOf(env.stdMarket.address),
+      await env.testToken.balanceOf(env.market.address),
       amountOfToken.mul(4),
       BN.from(0)
     );
     approxBigNumber(
-      await env.stdMarket.totalSupply(),
+      await env.market.totalSupply(),
       totalSupply.mul(4),
       BN.from(0)
     );
@@ -256,7 +255,7 @@ describe("lp-formula", async () => {
     const amountOfToken = amountToWei(BN.from(891), 6);
     await bootstrapMarket(env, alice, amountOfXyt, amountOfToken);
 
-    const lpBalanceAlice: BN = await env.stdMarket.balanceOf(alice.address);
+    const lpBalanceAlice: BN = await env.market.balanceOf(alice.address);
     // weights: Token: 660606624370, XYT: 438905003406
 
     let initialXytBalance: BN = await env.xyt.balanceOf(alice.address);
@@ -275,15 +274,15 @@ describe("lp-formula", async () => {
     approxBigNumber(amountTokenReceived, amountOfToken, env.TEST_DELTA);
 
     approxBigNumber(
-      await env.xyt.balanceOf(env.stdMarket.address),
+      await env.xyt.balanceOf(env.market.address),
       0,
       env.TEST_DELTA
     );
     approxBigNumber(
-      await env.testToken.balanceOf(env.stdMarket.address),
+      await env.testToken.balanceOf(env.market.address),
       0,
       env.TEST_DELTA
     );
-    approxBigNumber(await env.stdMarket.totalSupply(), MINIMUM_LIQUIDITY, 0);
+    approxBigNumber(await env.market.totalSupply(), MINIMUM_LIQUIDITY, 0);
   });
 });

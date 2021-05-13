@@ -1,23 +1,32 @@
 import { assert, expect } from "chai";
 import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract, Wallet } from "ethers";
+import { BigNumber as BN } from "ethers";
 import {
   advanceTime,
-  amountToWei,
   approxBigNumber,
+  calcExpectedRewards,
   consts,
   emptyToken,
   errMsg,
   evm_revert,
   evm_snapshot,
-  getAContract,
+  redeemDueInterests,
+  redeemLpInterests,
+  redeemRewards,
   setTime,
   setTimeNextBlock,
+  stake,
   startOfEpoch,
-  calcExpectedRewards,
-  tokens,
+  withdraw,
 } from "../helpers";
-import { liqParams, liquidityMiningFixture, UserStakeAction } from "./fixtures";
+import {
+  liquidityMiningFixture,
+  LiquidityMiningFixture,
+  Mode,
+  parseTestEnvLiquidityMiningFixture,
+  TestEnv,
+  UserStakeAction,
+} from "./fixtures";
 import * as scenario from "./fixtures/liquidityMiningScenario.fixture";
 
 const { waffle } = require("hardhat");
@@ -27,40 +36,27 @@ describe("aaveV1-liquidityMining", async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
-  let liq: Contract;
-  let router: Contract;
-  let market: Contract;
-  let xyt: Contract;
-  let baseToken: Contract;
-  let pdl: Contract;
-  let params: liqParams;
-  let aUSDT: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
-  let EXPIRY: BN = consts.T0.add(consts.SIX_MONTH);
+  let env: TestEnv = {} as TestEnv;
+
+  async function buildTestEnv() {
+    let fixture: LiquidityMiningFixture = await loadFixture(
+      liquidityMiningFixture
+    );
+    await parseTestEnvLiquidityMiningFixture(alice, Mode.AAVE_V1, env, fixture);
+    env.TEST_DELTA = BN.from(60000);
+  }
+
   before(async () => {
     globalSnapshotId = await evm_snapshot();
-    const fixture = await loadFixture(liquidityMiningFixture);
-    liq = fixture.aLiquidityMining;
-    router = fixture.core.router;
-    baseToken = fixture.testToken;
-    market = fixture.aMarket;
-    xyt = fixture.aForge.aFutureYieldToken;
-    params = fixture.params;
-    pdl = fixture.pdl;
-    aUSDT = await getAContract(alice, fixture.aForge.aaveForge, tokens.USDT);
+    await buildTestEnv();
 
-    await fixture.core.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
+    await env.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
     for (let user of [bob, charlie, dave]) {
-      await router.redeemDueInterests(
-        consts.FORGE_AAVE,
-        tokens.USDT.address,
-        EXPIRY,
-        user.address,
-        consts.HIGH_GAS_OVERRIDE
-      );
-      await emptyToken(aUSDT, user);
-      await emptyToken(xyt, user);
+      await redeemDueInterests(env, user);
+      await emptyToken(env.aUSDT, user);
+      await emptyToken(env.xyt, user);
     }
 
     snapshotId = await evm_snapshot();
@@ -75,20 +71,10 @@ describe("aaveV1-liquidityMining", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  async function doStake(person: Wallet, amount: BN) {
-    await liq.connect(person).stake(EXPIRY, amount, consts.HIGH_GAS_OVERRIDE);
-  }
-
-  async function doWithdraw(person: Wallet, amount: BN) {
-    await liq
-      .connect(person)
-      .withdraw(EXPIRY, amount, consts.HIGH_GAS_OVERRIDE);
-  }
-
   async function getLpBalanceOfAllUsers(): Promise<BN[]> {
     let res: BN[] = [];
     for (let i = 0; i < wallets.length; i++) {
-      res.push(await market.balanceOf(wallets[i].address));
+      res.push(await env.market.balanceOf(wallets[i].address));
     }
     return res;
   }
@@ -115,19 +101,16 @@ describe("aaveV1-liquidityMining", async () => {
 
     for (let i = 0; i < flatData.length; i++) {
       let action: UserStakeAction = flatData[i];
-      if (i != 0) {
-        // console.log(flatData[i - 1], flatData[i]);
-        assert(flatData[i - 1].time < flatData[i].time);
-      }
+      if (i != 0) assert(flatData[i - 1].time < flatData[i].time);
+
       await setTimeNextBlock(action.time);
       if (action.isStaking) {
-        await doStake(wallets[action.id], action.amount); // access users directly by their id instead of names
+        await stake(env, wallets[action.id], action.amount);
         expectedLpBalance[action.id] = expectedLpBalance[action.id].sub(
           action.amount
         );
       } else {
-        // withdrawing
-        await doWithdraw(wallets[action.id], action.amount);
+        await withdraw(env, wallets[action.id], action.amount);
         expectedLpBalance[action.id] = expectedLpBalance[action.id].add(
           action.amount
         );
@@ -149,18 +132,18 @@ describe("aaveV1-liquidityMining", async () => {
   ) {
     let expectedRewards: BN[][] = calcExpectedRewards(
       userStakingData,
-      params,
+      env.liqParams,
       epochToCheck
     );
-    await setTime(startOfEpoch(params, epochToCheck));
+    await setTime(startOfEpoch(env.liqParams, epochToCheck));
     let numUser = expectedRewards.length;
     let allocationRateDiv =
       _allocationRateDiv !== undefined ? _allocationRateDiv : 1;
     for (let userId = 0; userId < numUser; userId++) {
-      await liq.redeemRewards(EXPIRY, wallets[userId].address);
-      // console.log(expectedRewards[userId][0].toString(), (await pdl.balanceOf(wallets[userId].address)).toString());
+      await redeemRewards(env, wallets[userId]);
+      // console.log(expectedRewards[userId][0].toString(), (await env.pdl.balanceOf(wallets[userId].address)).toString());
       approxBigNumber(
-        await pdl.balanceOf(wallets[userId].address),
+        await env.pdl.balanceOf(wallets[userId].address),
         expectedRewards[userId][0].div(allocationRateDiv),
         BN.from(100), // 100 is much better than necessary, but usually the differences are 0
         false
@@ -189,43 +172,49 @@ describe("aaveV1-liquidityMining", async () => {
   //  - Bob stake the LP tokens into liq-mining contract, in two transactions
   //=> after 2 months, all three of them should get the same interests
   it("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests", async () => {
-    const INITIAL_LP_AMOUNT: BN = await market.balanceOf(bob.address);
-    await setTimeNextBlock(params.START_TIME.add(100));
-    const xytBalanceOfMarket = await xyt.balanceOf(market.address);
+    const INITIAL_LP_AMOUNT: BN = await env.market.balanceOf(bob.address);
+    await setTimeNextBlock(env.liqParams.START_TIME.add(100));
+    const xytBalanceOfMarket = await env.xyt.balanceOf(env.market.address);
 
     // Charlie holds same equivalent amount of XYTs as 10% of the market
     // which is the same as what Bob and Dave holds
-    await xyt.transfer(charlie.address, xytBalanceOfMarket.div(10));
-
-    let preBalanceBob = await aUSDT.balanceOf(bob.address);
-    let preBalanceDave = await aUSDT.balanceOf(dave.address);
-    let preBalanceCharlie = await aUSDT.balanceOf(charlie.address);
-
-    await doStake(alice, INITIAL_LP_AMOUNT); // Alice also stake into liq-mining
-    console.log(`\talice staked`);
-    await doStake(bob, INITIAL_LP_AMOUNT.div(2));
-    console.log(`\tbob staked`);
-    await setTimeNextBlock(params.START_TIME.add(consts.ONE_MONTH));
-    await doStake(bob, INITIAL_LP_AMOUNT.div(2));
-    console.log(`\tbob staked round 2`);
-    await setTimeNextBlock(params.START_TIME.add(consts.ONE_MONTH.mul(2)));
-
-    await liq.redeemLpInterests(EXPIRY, bob.address);
-    console.log(`\tbob claimed interests`);
-    let actualGainBob = (await aUSDT.balanceOf(bob.address)).sub(preBalanceBob);
-
-    await router.redeemDueInterests(
-      consts.FORGE_AAVE,
-      tokens.USDT.address,
-      EXPIRY,
-      charlie.address
+    console.log;
+    await env.xyt.transfer(
+      charlie.address,
+      (await env.xyt.balanceOf(env.market.address)).div(10)
     );
-    const actualGainCharlie = (await aUSDT.balanceOf(charlie.address)).sub(
+
+    let preBalanceBob = await env.aUSDT.balanceOf(bob.address);
+    let preBalanceDave = await env.aUSDT.balanceOf(dave.address);
+    let preBalanceCharlie = await env.aUSDT.balanceOf(charlie.address);
+
+    await stake(env, alice, INITIAL_LP_AMOUNT); // Alice also stake into liq-mining
+    console.log(`\talice staked`);
+    await stake(env, bob, INITIAL_LP_AMOUNT.div(2));
+    await redeemRewards(env, bob);
+    console.log(`\tbob staked`);
+    await setTimeNextBlock(env.liqParams.START_TIME.add(consts.ONE_MONTH));
+    await stake(env, bob, INITIAL_LP_AMOUNT.div(2));
+    await env.liq.redeemLpInterests(env.EXPIRY, bob.address);
+    await redeemLpInterests(env, bob);
+    console.log(`\tbob staked round 2`);
+    await setTimeNextBlock(
+      env.liqParams.START_TIME.add(consts.ONE_MONTH.mul(2))
+    );
+
+    await env.liq.redeemLpInterests(env.EXPIRY, bob.address);
+    console.log(`\tbob claimed interests`);
+    let actualGainBob = (await env.aUSDT.balanceOf(bob.address)).sub(
+      preBalanceBob
+    );
+
+    await redeemDueInterests(env, charlie);
+    const actualGainCharlie = (await env.aUSDT.balanceOf(charlie.address)).sub(
       preBalanceCharlie
     );
 
-    await router.redeemLpInterests(market.address, dave.address);
-    let actualGainDave = (await aUSDT.balanceOf(dave.address)).sub(
+    await redeemLpInterests(env, dave);
+    let actualGainDave = (await env.aUSDT.balanceOf(dave.address)).sub(
       preBalanceDave
     );
 
@@ -235,7 +224,9 @@ describe("aaveV1-liquidityMining", async () => {
   });
 
   it("should be able to receive enough PENDLE rewards - test 2", async () => {
-    let userStakingData: UserStakeAction[][][] = scenario.scenario04(params);
+    let userStakingData: UserStakeAction[][][] = scenario.scenario04(
+      env.liqParams
+    );
     await doSequence(userStakingData);
     await checkEqualRewardsForEpochs(
       userStakingData,
@@ -244,12 +235,17 @@ describe("aaveV1-liquidityMining", async () => {
   });
 
   it("should be able to receive enough PENDLE rewards - test 3", async () => {
-    await liq.setAllocationSetting(
-      [EXPIRY, consts.T0.add(consts.THREE_MONTH)],
-      [params.TOTAL_NUMERATOR.div(2), params.TOTAL_NUMERATOR.div(2)],
+    await env.liq.setAllocationSetting(
+      [env.EXPIRY, consts.T0.add(consts.THREE_MONTH)],
+      [
+        env.liqParams.TOTAL_NUMERATOR.div(2),
+        env.liqParams.TOTAL_NUMERATOR.div(2),
+      ],
       consts.HIGH_GAS_OVERRIDE
     );
-    let userStakingData: UserStakeAction[][][] = scenario.scenario04(params);
+    let userStakingData: UserStakeAction[][][] = scenario.scenario04(
+      env.liqParams
+    );
     await doSequence(userStakingData);
     await checkEqualRewardsForEpochs(
       userStakingData,
@@ -259,12 +255,17 @@ describe("aaveV1-liquidityMining", async () => {
   });
 
   it("should be able to receive enough PENDLE rewards - test 4", async () => {
-    await liq.setAllocationSetting(
-      [EXPIRY, consts.T0.add(consts.THREE_MONTH)],
-      [params.TOTAL_NUMERATOR.div(2), params.TOTAL_NUMERATOR.div(2)],
+    await env.liq.setAllocationSetting(
+      [env.EXPIRY, consts.T0.add(consts.THREE_MONTH)],
+      [
+        env.liqParams.TOTAL_NUMERATOR.div(2),
+        env.liqParams.TOTAL_NUMERATOR.div(2),
+      ],
       consts.HIGH_GAS_OVERRIDE
     );
-    let userStakingData: UserStakeAction[][][] = scenario.scenario06(params);
+    let userStakingData: UserStakeAction[][][] = scenario.scenario06(
+      env.liqParams
+    );
     await doSequence(userStakingData);
     await checkEqualRewardsForEpochs(
       userStakingData,
@@ -275,16 +276,16 @@ describe("aaveV1-liquidityMining", async () => {
 
   it("test invalid setAllocationSetting", async () => {
     await expect(
-      liq.setAllocationSetting(
+      env.liq.setAllocationSetting(
         [
-          EXPIRY,
+          env.EXPIRY,
           consts.T0.add(consts.THREE_MONTH),
           consts.T0.add(consts.ONE_MONTH),
         ],
         [
-          params.TOTAL_NUMERATOR.div(3),
-          params.TOTAL_NUMERATOR.div(3),
-          params.TOTAL_NUMERATOR.div(3),
+          env.liqParams.TOTAL_NUMERATOR.div(3),
+          env.liqParams.TOTAL_NUMERATOR.div(3),
+          env.liqParams.TOTAL_NUMERATOR.div(3),
         ],
         consts.HIGH_GAS_OVERRIDE
       )
@@ -292,32 +293,32 @@ describe("aaveV1-liquidityMining", async () => {
   });
 
   it("this test shouldn't crash", async () => {
-    const amountToStake = await market.balanceOf(bob.address);
+    const amountToStake = await env.market.balanceOf(bob.address);
 
-    await setTimeNextBlock(params.START_TIME);
-    await liq
-      .connect(bob)
-      .stake(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
+    await setTimeNextBlock(env.liqParams.START_TIME);
+    await stake(env, bob, amountToStake);
 
-    await setTimeNextBlock(params.START_TIME.add(params.EPOCH_DURATION));
-    await liq
-      .connect(bob)
-      .withdraw(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
-    await liq.redeemRewards(EXPIRY, bob.address);
     await setTimeNextBlock(
-      params.START_TIME.add(params.EPOCH_DURATION).add(params.EPOCH_DURATION)
+      env.liqParams.START_TIME.add(env.liqParams.EPOCH_DURATION)
     );
-    await liq.redeemRewards(EXPIRY, bob.address);
+    await withdraw(env, bob, amountToStake);
+    await redeemRewards(env, bob);
+    await setTimeNextBlock(
+      env.liqParams.START_TIME.add(env.liqParams.EPOCH_DURATION).add(
+        env.liqParams.EPOCH_DURATION
+      )
+    );
+    await redeemRewards(env, bob);
   });
 
   it("can stake and withdraw", async () => {
     const FIFTEEN_DAYS = consts.ONE_DAY.mul(15);
 
-    const amountToStake = await market.balanceOf(bob.address);
+    const amountToStake = await env.market.balanceOf(bob.address);
 
-    const pdlBalanceOfContract = await pdl.balanceOf(liq.address);
-    const pdlBalanceOfUser = await pdl.balanceOf(bob.address);
-    const lpBalanceOfUser = await market.balanceOf(bob.address);
+    const pdlBalanceOfContract = await env.pdl.balanceOf(env.liq.address);
+    const pdlBalanceOfUser = await env.pdl.balanceOf(bob.address);
+    const lpBalanceOfUser = await env.market.balanceOf(bob.address);
 
     console.log(
       `\tPDL balance of liq contract before: ${pdlBalanceOfContract}`
@@ -325,16 +326,14 @@ describe("aaveV1-liquidityMining", async () => {
     console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
     console.log(`\tLP balance of user before: ${lpBalanceOfUser}`);
 
-    await advanceTime(params.START_TIME.sub(consts.T0));
-    await liq
-      .connect(bob)
-      .stake(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
+    await advanceTime(env.liqParams.START_TIME.sub(consts.T0));
+    await stake(env, bob, amountToStake);
     console.log("\tStaked");
-    const lpHolderContract = await liq.lpHolderForExpiry(EXPIRY);
-    const aTokenBalanceOfLpHolderContract = await aUSDT.balanceOf(
+    const lpHolderContract = await env.liq.lpHolderForExpiry(env.EXPIRY);
+    const aTokenBalanceOfLpHolderContract = await env.aUSDT.balanceOf(
       lpHolderContract
     );
-    const aTokenBalanceOfUser = await aUSDT.balanceOf(bob.address);
+    const aTokenBalanceOfUser = await env.aUSDT.balanceOf(bob.address);
     console.log(
       `\t[LP interests] aUSDT balance of LpHolder after first staking = ${aTokenBalanceOfLpHolderContract}`
     );
@@ -343,17 +342,14 @@ describe("aaveV1-liquidityMining", async () => {
     );
 
     await advanceTime(FIFTEEN_DAYS);
-    await liq
-      .connect(bob)
-      .withdraw(
-        EXPIRY,
-        amountToStake.div(BN.from(2)),
-        consts.HIGH_GAS_OVERRIDE
-      );
+    await withdraw(env, bob, amountToStake.div(2));
+    await redeemRewards(env, bob);
 
-    const pdlBalanceOfContractAfter = await pdl.balanceOf(liq.address);
-    const pdlBalanceOfUserAfter = await pdl.balanceOf(bob.address);
-    const expectedPdlBalanceOfUserAfter = params.REWARDS_PER_EPOCH[0].div(4);
+    const pdlBalanceOfContractAfter = await env.pdl.balanceOf(env.liq.address);
+    const pdlBalanceOfUserAfter = await env.pdl.balanceOf(bob.address);
+    const expectedPdlBalanceOfUserAfter = env.liqParams.REWARDS_PER_EPOCH[0].div(
+      4
+    );
     console.log(
       `\tPDL balance of liq contract after: ${pdlBalanceOfContractAfter}`
     );
@@ -369,13 +365,13 @@ describe("aaveV1-liquidityMining", async () => {
     );
 
     console.log(
-      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
+      `\t\t\t lpHolderContract aToken bal = ${await env.aUSDT.balanceOf(
         lpHolderContract
       )}`
     );
 
     //stake using another user - alice, for the same amount as bob's stake now (amountToStake/2)
-    await liq.stake(EXPIRY, amountToStake.div(2), consts.HIGH_GAS_OVERRIDE);
+    await stake(env, alice, amountToStake.div(2));
 
     // Now we wait for another 15 days to withdraw (at the very start of epoch 4), then the rewards to be withdrawn for bob should be:
     // From epoch 1: rewardsForEpoch * 2/4    ( 1/4 is released at start of epoch 3, 1/4 is released at start of epoch 4)
@@ -384,39 +380,17 @@ describe("aaveV1-liquidityMining", async () => {
     //  Total: rewardsForEpoch * (1/2 + 3/8 + 1/8) = rewardsForEpoch
     await advanceTime(FIFTEEN_DAYS);
 
-    // console.log(`abi = ${liq.abi}`);
-    // console.log(liq);
+    await withdraw(env, bob, amountToStake.div(2));
+    await redeemRewards(env, bob);
 
-    const { interests } = await liq.callStatic.redeemLpInterests(
-      EXPIRY,
-      alice.address
-    );
-    const { rewards } = await liq.callStatic.redeemRewards(
-      EXPIRY,
-      alice.address
-    );
-    console.log(`\tInterests for alice = ${interests}`);
-    console.log(`\tRewards available for epochs from now: ${rewards}`);
-    console.log(
-      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
-        lpHolderContract
-      )}`
-    );
-
-    await liq
-      .connect(bob)
-      .withdraw(
-        EXPIRY,
-        amountToStake.div(BN.from(2)),
-        consts.HIGH_GAS_OVERRIDE
-      );
-    const pdlBalanceOfUserAfter2ndTnx = await pdl.balanceOf(bob.address);
+    const pdlBalanceOfUserAfter2ndTnx = await env.pdl.balanceOf(bob.address);
     const expectedPdlBalanceOfUsersAfter2ndTnx = expectedPdlBalanceOfUserAfter.add(
-      params.REWARDS_PER_EPOCH[0]
+      env.liqParams.REWARDS_PER_EPOCH[0]
         .div(2)
-        .add(params.REWARDS_PER_EPOCH[1].mul(3).div(8))
-        .add(params.REWARDS_PER_EPOCH[2].div(8))
+        .add(env.liqParams.REWARDS_PER_EPOCH[1].mul(3).div(8))
+        .add(env.liqParams.REWARDS_PER_EPOCH[2].div(8))
     );
+
     console.log(
       `\tPDL balance of user after 2nd withdraw: ${pdlBalanceOfUserAfter2ndTnx}`
     );
@@ -425,7 +399,7 @@ describe("aaveV1-liquidityMining", async () => {
     );
 
     console.log(
-      `\t\t\t lpHolderContract aToken bal = ${await aUSDT.balanceOf(
+      `\t\t\t lpHolderContract aToken bal = ${await env.aUSDT.balanceOf(
         lpHolderContract
       )}`
     );
@@ -435,13 +409,15 @@ describe("aaveV1-liquidityMining", async () => {
       expectedPdlBalanceOfUsersAfter2ndTnx.toNumber() / 1000
     );
 
-    await liq.withdraw(EXPIRY, amountToStake.div(2), consts.HIGH_GAS_OVERRIDE);
-    const aTokenBalanceOfLpHolderContractAfter = await aUSDT.balanceOf(
+    await withdraw(env, alice, amountToStake.div(2));
+    await redeemRewards(env, bob);
+
+    const aTokenBalanceOfLpHolderContractAfter = await env.aUSDT.balanceOf(
       lpHolderContract
     );
-    const aTokenBalanceOfUserAfter = await aUSDT.balanceOf(bob.address);
+    const aTokenBalanceOfUserAfter = await env.aUSDT.balanceOf(bob.address);
 
-    //now, the LP holding contract should hold almost 0 aUSDT. This means that we have calculated and gave the Lp interests back to the users properly
+    //now, the LP holding contract should hold almost 0 env.aUSDT. This means that we have calculated and gave the Lp interests back to the users properly
     console.log(
       `\t[LP interests] aUSDT balance of LpHolder after withdrawing all = ${aTokenBalanceOfLpHolderContractAfter}`
     );

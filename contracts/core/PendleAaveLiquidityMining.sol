@@ -86,22 +86,30 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
     * Very similar to the function in PendleAaveMarket. Any major differences are likely to be bugs
         Please refer to it for more details
     */
-    function _getInterestValuePerLP(uint256 expiry, address user)
-        internal
-        override
-        returns (uint256 interestValuePerLP)
-    {
+    function _updateDueInterests(uint256 expiry, address user) internal override {
+        _updateParamL(expiry);
         ExpiryData storage exd = expiryData[expiry];
-        if (userLastNormalizedIncome[expiry][user] == 0) {
-            interestValuePerLP = 0;
-        } else {
-            interestValuePerLP = exd.paramL.subMax0(
-                exd.lastParamL[user].mul(globalLastNormalizedIncome[expiry]).div(
-                    userLastNormalizedIncome[expiry][user]
-                )
-            );
+
+        uint256 lastIncome = userLastNormalizedIncome[expiry][user];
+        uint256 normIncomeNow = globalLastNormalizedIncome[expiry];
+        uint256 principal = exd.balances[user];
+
+        if (lastIncome == 0) {
+            userLastNormalizedIncome[expiry][user] = normIncomeNow;
+            exd.lastParamL[user] = exd.paramL;
+            return;
         }
-        userLastNormalizedIncome[expiry][user] = globalLastNormalizedIncome[expiry];
+
+        uint256 interestValuePerLP =
+            exd.paramL.subMax0(exd.lastParamL[user].mul(normIncomeNow).div(lastIncome));
+
+        uint256 interestFromLp = principal.mul(interestValuePerLP).div(MULTIPLIER);
+
+        exd.dueInterests[user] = exd.dueInterests[user].mul(normIncomeNow).div(lastIncome).add(
+            interestFromLp
+        );
+
+        userLastNormalizedIncome[expiry][user] = normIncomeNow;
         exd.lastParamL[user] = exd.paramL;
     }
 
