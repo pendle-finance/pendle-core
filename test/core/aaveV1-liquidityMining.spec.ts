@@ -178,7 +178,6 @@ describe("aaveV1-liquidityMining", async () => {
 
     // Charlie holds same equivalent amount of XYTs as 10% of the market
     // which is the same as what Bob and Dave holds
-    console.log;
     await env.xyt.transfer(
       charlie.address,
       (await env.xyt.balanceOf(env.market.address)).div(10)
@@ -189,21 +188,19 @@ describe("aaveV1-liquidityMining", async () => {
     let preBalanceCharlie = await env.aUSDT.balanceOf(charlie.address);
 
     await stake(env, alice, INITIAL_LP_AMOUNT); // Alice also stake into liq-mining
-    console.log(`\talice staked`);
     await stake(env, bob, INITIAL_LP_AMOUNT.div(2));
     await redeemRewards(env, bob);
-    console.log(`\tbob staked`);
+
     await setTimeNextBlock(env.liqParams.START_TIME.add(consts.ONE_MONTH));
+
     await stake(env, bob, INITIAL_LP_AMOUNT.div(2));
-    await env.liq.redeemLpInterests(env.EXPIRY, bob.address);
-    await redeemLpInterests(env, bob);
-    console.log(`\tbob staked round 2`);
+
     await setTimeNextBlock(
       env.liqParams.START_TIME.add(consts.ONE_MONTH.mul(2))
     );
-
     await env.liq.redeemLpInterests(env.EXPIRY, bob.address);
-    console.log(`\tbob claimed interests`);
+    await redeemLpInterests(env, bob);
+    await env.liq.redeemLpInterests(env.EXPIRY, bob.address);
     let actualGainBob = (await env.aUSDT.balanceOf(bob.address)).sub(
       preBalanceBob
     );
@@ -212,6 +209,7 @@ describe("aaveV1-liquidityMining", async () => {
     const actualGainCharlie = (await env.aUSDT.balanceOf(charlie.address)).sub(
       preBalanceCharlie
     );
+    // no redeemLpInterests for charlie since we are not caring about lpInterest for him
 
     await redeemLpInterests(env, dave);
     let actualGainDave = (await env.aUSDT.balanceOf(dave.address)).sub(

@@ -288,9 +288,17 @@ export function toFPWei(val: string | number): BN {
   return toFixedPoint(val).mul(1000000);
 }
 
-export function randomBN(range?: number): BN {
-  if (range == undefined) range = 1e15;
+export function randomBN(_range?: number | BN): BN {
+  let range: number;
+  if (_range == undefined) range = 1e15;
+  else if (typeof (_range) === "number") { range = _range; }
+  else range = _range.toNumber();
+
   return BN.from(Math.floor(Math.random() * range));
+}
+
+export function randomNumber(range?: number): number {
+  return randomBN(range).toNumber();
 }
 
 export async function logMarketReservesData(market: Contract) {

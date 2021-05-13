@@ -51,8 +51,8 @@ export class UserStakeAction {
 const params: LiqParams = {
   START_TIME: consts.T0_C.add(1000), // starts in 1000s
   EPOCH_DURATION: BN.from(3600 * 24 * 10), //10 days
-  REWARDS_PER_EPOCH: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map((a) => BN.from("10000000000").mul(a)), // = [10000000000, 20000000000, ..]
-  NUMBER_OF_EPOCHS: BN.from(20),
+  REWARDS_PER_EPOCH: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29].map((a) => BN.from("10000000000").mul(a)), // = [10000000000, 20000000000, ..]
+  NUMBER_OF_EPOCHS: BN.from(30),
   VESTING_EPOCHS: BN.from(4),
   TOTAL_NUMERATOR: BN.from(10 ** 9),
 };
