@@ -1,7 +1,9 @@
 name: Format
 on:
   pull_request:
-    branches: [master]
+    branches:
+      - master
+      - test-master
 jobs:
   format:
     runs-on: ubuntu-latest
