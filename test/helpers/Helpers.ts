@@ -291,8 +291,9 @@ export function toFPWei(val: string | number): BN {
 export function randomBN(_range?: number | BN): BN {
   let range: number;
   if (_range == undefined) range = 1e15;
-  else if (typeof (_range) === "number") { range = _range; }
-  else range = _range.toNumber();
+  else if (typeof _range === "number") {
+    range = _range;
+  } else range = _range.toNumber();
 
   return BN.from(Math.floor(Math.random() * range));
 }
