@@ -50,7 +50,7 @@ contract PendleAaveMarket is PendleMarketBase {
         uint256 _expiry
     ) PendleMarketBase(_router, _forge, _xyt, _token, _expiry) {}
 
-    function _getReserveNormalizedIncome() internal returns (uint256) {
+    function _getReserveNormalizedIncome() internal view returns (uint256) {
         return IPendleAaveForge(forge).getReserveNormalizedIncome(underlyingAsset);
     }
 
@@ -121,7 +121,7 @@ contract PendleAaveMarket is PendleMarketBase {
     }
 
     /// @inheritdoc PendleMarketBase
-    function _getIncomeIndexIncreaseRate() internal override returns (uint256 increaseRate) {
+    function _getIncomeIndexIncreaseRate() internal view override returns (uint256 increaseRate) {
         return _getReserveNormalizedIncome().rdiv(globalLastNormalizedIncome) - Math.RONE;
     }
 }
