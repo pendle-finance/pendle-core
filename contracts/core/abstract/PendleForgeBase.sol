@@ -36,10 +36,11 @@ import "../../tokens/PendleFutureYieldToken.sol";
 import "../../tokens/PendleOwnershipToken.sol";
 import "../../periphery/Permissions.sol";
 import "../../libraries/MathLib.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @notice Common contract base for a forge implementation.
 /// @dev Each specific forge implementation will need to implement the virtual functions
-abstract contract PendleForgeBase is IPendleForge, Permissions {
+abstract contract PendleForgeBase is IPendleForge, Permissions, ReentrancyGuard {
     using ExpiryUtils for string;
     using SafeMath for uint256;
     using Math for uint256;
@@ -90,22 +91,6 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
     modifier onlyRouter() {
         require(msg.sender == address(router), "ONLY_ROUTER");
-        _;
-    }
-
-    modifier onlyXYT(address _underlyingAsset, uint256 _expiry) {
-        require(
-            msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
-            "ONLY_XYT"
-        );
-        _;
-    }
-
-    modifier onlyOT(address _underlyingAsset, uint256 _expiry) {
-        require(
-            msg.sender == address(data.otTokens(forgeId, _underlyingAsset, _expiry)),
-            "ONLY_OT"
-        );
         _;
     }
 
@@ -311,13 +296,14 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         * This must be called before any transfer / mint/ burn action of XYT
         (and this has been implemented in the beforeTokenTransfer of the PendleFutureYieldToken)
     Conditions:
-        * Should only be called by the XYT contract
+        * Can be called by anyone
+        * Have Reentrancy protection (although it doesn't make any external calls to untrusted source)
     */
     function updateDueInterests(
         address _underlyingAsset,
         uint256 _expiry,
         address _user
-    ) external override onlyXYT(_underlyingAsset, _expiry) {
+    ) external override nonReentrant {
         checkNotPaused(_underlyingAsset, _expiry);
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         uint256 principal = tokens.xyt.balanceOf(_user);
@@ -330,13 +316,16 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         * This must be called before any transfer / mint/ burn action of OT
         (and this has been implemented in the beforeTokenTransfer of the PendleOwnershipToken)
     Conditions:
-        * Should only be called by the OT contract
+        * Can be called by anyone
+        * Have Reentrancy protection (although it doesn't make any external calls to untrusted source)
+    Note:
+        This function is just a proxy to call to rewardManager
     */
     function updatePendingRewards(
         address _underlyingAsset,
         uint256 _expiry,
         address _user
-    ) external override onlyOT(_underlyingAsset, _expiry) {
+    ) external override nonReentrant {
         checkNotPaused(_underlyingAsset, _expiry);
         rewardManager.updatePendingRewards(_underlyingAsset, _expiry, _user);
     }
