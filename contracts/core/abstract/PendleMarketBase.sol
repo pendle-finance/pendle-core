@@ -768,8 +768,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     @notice To be called before the dueInterest of any users is redeemed
     */
     function _beforeTransferDueInterests(address user) internal returns (uint256 amountOut) {
-        if (user == address(this)) return 0;
-
         _updateDueInterests(user);
 
         amountOut = dueInterests[user];
