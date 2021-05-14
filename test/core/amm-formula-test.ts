@@ -296,31 +296,31 @@ export async function ProtocolFeeTest(env: TestEnv, useSwapIn: boolean) {
   await swapExactInTokenToXyt(env, alice, constSwapAmount);
   await swapExactInXytToToken(env, alice, constSwapAmount);
   await addMarketLiquidityDual(env, alice, constSwapAmount);
-  await checkTreasuryLP(BN.from(7860));
+  await checkTreasuryLP(BN.from(15737));
 
   setTimeNextBlock(env.T0.add(3600 * 10));
   await swapExactInTokenToXyt(env, alice, constSwapAmount.mul(2));
   await swapExactInXytToToken(env, alice, constSwapAmount.mul(3));
   await addMarketLiquidityDual(env, alice, constSwapAmount.mul(4));
-  await checkTreasuryLP(BN.from(31431));
+  await checkTreasuryLP(BN.from(54997));
 
   setTimeNextBlock(env.T0.add(3600 * 100));
   await swapExactInTokenToXyt(env, alice, constSwapAmount.mul(5));
   await swapExactInXytToToken(env, alice, constSwapAmount.mul(6));
   await addMarketLiquidityDual(env, alice, constSwapAmount.mul(7));
-  await checkTreasuryLP(BN.from(94281));
+  await checkTreasuryLP(BN.from(141046));
 
   setTimeNextBlock(env.T0.add(3600 * 300));
   await swapExactInTokenToXyt(env, alice, constSwapAmount.mul(8));
   await swapExactInXytToToken(env, alice, constSwapAmount.mul(9));
   await addMarketLiquidityDual(env, alice, constSwapAmount.mul(10));
-  await checkTreasuryLP(BN.from(204450));
+  await checkTreasuryLP(BN.from(273551));
 
   setTimeNextBlock(env.T0.add(3600 * 500));
   await swapExactInTokenToXyt(env, alice, constSwapAmount.mul(11));
   await swapExactInXytToToken(env, alice, constSwapAmount.mul(12));
   await addMarketLiquidityDual(env, alice, constSwapAmount.mul(13));
-  await checkTreasuryLP(BN.from(361534));
+  await checkTreasuryLP(BN.from(452271));
 }
 
 async function runTestTokenToXytCustom(
