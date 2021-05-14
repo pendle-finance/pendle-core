@@ -147,7 +147,8 @@ export async function swapExactOutTokenToXyt(
     env.xyt.address,
     outAmount,
     consts.INF,
-    env.MARKET_FACTORY_ID
+    env.MARKET_FACTORY_ID,
+    consts.HIGH_GAS_OVERRIDE
   );
 }
 
