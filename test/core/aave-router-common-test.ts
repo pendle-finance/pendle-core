@@ -281,9 +281,7 @@ export function runTest(isAaveV1: boolean) {
       await tokenizeYield(env, alice, refAmount);
       await setTime(env.T0.add(consts.ONE_MONTH.mul(7)));
 
-      let {
-        amountRenewed,
-      } = await env.router.callStatic.renewYield(
+      let { amountRenewed } = await env.router.callStatic.renewYield(
         env.FORGE_ID,
         env.EXPIRY,
         USDT.address,
