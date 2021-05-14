@@ -298,27 +298,34 @@ abstract contract PendleLiquidityMiningBase is
         nonReentrant
         returns (address newLpHoldingContractAddress)
     {
-        ExpiryData storage exd = expiryData[expiry];
-        uint256 curEpoch = _getCurrentEpochId();
-        require(curEpoch > 0, "NOT_STARTED");
-        require(curEpoch <= numberOfEpochs, "INCENTIVES_PERIOD_OVER");
+        newLpHoldingContractAddress = _stake(expiry, amount);
+    }
 
+    /**
+     * @notice Similar to stake() function, but using a permit to approve for LP tokens first
+     */
+    function stakeWithPermit(
+        uint256 expiry,
+        uint256 amount,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external override isFunded nonReentrant returns (address newLpHoldingContractAddress) {
         address xyt = address(data.xytTokens(forgeId, underlyingAsset, expiry));
         address marketAddress = data.getMarket(marketFactoryId, xyt, baseToken);
-        require(xyt != address(0), "XYT_NOT_FOUND");
-        require(marketAddress != address(0), "MARKET_NOT_FOUND");
+        // Pendle Market LP tokens are EIP-2612 compliant, hence we can approve liq-mining contract using a signature
+        IPendleYieldToken(marketAddress).permit(
+            msg.sender,
+            address(this),
+            amount,
+            deadline,
+            v,
+            r,
+            s
+        );
 
-        // there is no lpHolder for this expiry yet, we will create one
-        if (exd.lpHolder == address(0)) {
-            newLpHoldingContractAddress = _addNewExpiry(expiry, marketAddress);
-        }
-
-        if (!userExpiries[msg.sender].hasExpiry[expiry]) {
-            userExpiries[msg.sender].expiries.push(expiry);
-            userExpiries[msg.sender].hasExpiry[expiry] = true;
-        }
-
-        _pullLpToken(marketAddress, expiry, amount);
+        newLpHoldingContractAddress = _stake(expiry, amount);
     }
 
     /**
@@ -402,6 +409,33 @@ abstract contract PendleLiquidityMiningBase is
 
     function lpHolderForExpiry(uint256 expiry) external view override returns (address) {
         return expiryData[expiry].lpHolder;
+    }
+
+    function _stake(uint256 expiry, uint256 amount)
+        internal
+        returns (address newLpHoldingContractAddress)
+    {
+        ExpiryData storage exd = expiryData[expiry];
+        uint256 curEpoch = _getCurrentEpochId();
+        require(curEpoch > 0, "NOT_STARTED");
+        require(curEpoch <= numberOfEpochs, "INCENTIVES_PERIOD_OVER");
+
+        address xyt = address(data.xytTokens(forgeId, underlyingAsset, expiry));
+        address marketAddress = data.getMarket(marketFactoryId, xyt, baseToken);
+        require(xyt != address(0), "XYT_NOT_FOUND");
+        require(marketAddress != address(0), "MARKET_NOT_FOUND");
+
+        // there is no lpHolder for this expiry yet, we will create one
+        if (exd.lpHolder == address(0)) {
+            newLpHoldingContractAddress = _addNewExpiry(expiry, marketAddress);
+        }
+
+        if (!userExpiries[msg.sender].hasExpiry[expiry]) {
+            userExpiries[msg.sender].expiries.push(expiry);
+            userExpiries[msg.sender].hasExpiry[expiry] = true;
+        }
+
+        _pullLpToken(marketAddress, expiry, amount);
     }
 
     /**
