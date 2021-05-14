@@ -106,7 +106,7 @@ export function runTest(isAaveV1: boolean) {
       await env.forge.withdrawForgeFee(USDT.address, env.EXPIRY);
       const treasuryAddress = await env.data.treasury();
       const treasuryBalance = await env.aUSDT.balanceOf(treasuryAddress);
-      approxBigNumber(totalFee, treasuryBalance, BN.from(5));
+      approxBigNumber(totalFee, treasuryBalance, BN.from(100));
       const forgeFeeLeft = await env.forge.totalFee(USDT.address, env.EXPIRY);
       approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(100));
     });
