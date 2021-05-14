@@ -106,25 +106,22 @@ export async function AMMNearCloseTest(
   env: TestEnv,
   useSwapIn: boolean // if this is true, use swapExactIn. use swapExactOut otherwise.
 ) {
-  let T1 = env.T0.add(consts.SIX_MONTH).sub(consts.ONE_DAY.add(consts.ONE_HOUR)), seg = BN.from(60);
+  let T1 = env.T0.add(consts.SIX_MONTH).sub(
+      consts.ONE_DAY.add(consts.ONE_HOUR)
+    ),
+    seg = BN.from(60);
   const amount = amountToWei(BN.from(10000), 6);
   await bootstrapMarket(env, alice, amount, amount.div(BN.from(10).pow(5)));
   await addMarketLiquidityDualXyt(env, alice, BN.from(1));
 
-  await runTestXytToToken(
-    env,
-    T1,
-    BN.from(993586042),
-    BN.from(120),
-    useSwapIn,
-  );
+  await runTestXytToToken(env, T1, BN.from(993586042), BN.from(120), useSwapIn);
 
   await runTestXytToToken(
     env,
     T1.add(seg.mul(1)),
     BN.from(2299356372),
     BN.from(240),
-    useSwapIn,
+    useSwapIn
   );
 
   await runTestXytToToken(
@@ -132,7 +129,7 @@ export async function AMMNearCloseTest(
     T1.add(seg.mul(2)),
     BN.from(6173735287),
     BN.from(480),
-    useSwapIn,
+    useSwapIn
   );
 
   await runTestXytToToken(
@@ -140,7 +137,7 @@ export async function AMMNearCloseTest(
     T1.add(seg.mul(3)),
     BN.from(46611784),
     BN.from(3),
-    useSwapIn,
+    useSwapIn
   );
 
   await runTestTokenToXyt(
@@ -155,7 +152,6 @@ export async function AMMNearCloseTest(
 }
 
 export async function AMMCheckLPNearCloseTest(env: TestEnv) {
-  
   let bobLP = BN.from(0),
     bobXyt: BN = BN.from(0),
     bobToken: BN = BN.from(0);
@@ -181,13 +177,15 @@ export async function AMMCheckLPNearCloseTest(env: TestEnv) {
     approxBigNumber(xytGained, expectedXytGained, delta, true);
   }
 
-  let T1 = env.T0.add(consts.SIX_MONTH).sub(consts.ONE_DAY.add(consts.ONE_HOUR)), seg = BN.from(60);
+  let T1 = env.T0.add(consts.SIX_MONTH).sub(
+      consts.ONE_DAY.add(consts.ONE_HOUR)
+    ),
+    seg = BN.from(60);
   const amount = amountToWei(BN.from(1000), 6);
   await bootstrapMarket(env, alice, amount, amount.div(BN.from(10).pow(5)));
 
   await setTimeNextBlock(T1);
   await addMarketLiquidityDualXyt(env, alice, BN.from(1));
-
 
   await setTimeNextBlock(T1.add(seg.mul(1)));
   await addMarketLiquiditySingle(env, bob, BN.from(53241241), true);
@@ -200,8 +198,6 @@ export async function AMMCheckLPNearCloseTest(env: TestEnv) {
   await setTimeNextBlock(T1.add(seg.mul(3)));
   await addMarketLiquiditySingle(env, bob, BN.from(100000000), true);
   await checkAmountLPGained(BN.from(22160), BN.from(30));
-
-
 
   await setTimeNextBlock(T1.add(seg.mul(4)));
   await addMarketLiquiditySingle(env, bob, BN.from(100000000), false);
