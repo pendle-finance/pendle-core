@@ -199,6 +199,9 @@ abstract contract PendleForgeBase is IPendleForge, Permissions, ReentrancyGuard 
         uint256 expiredOTamount = IERC20(address(tokens.ot)).balanceOf(_user);
         require(expiredOTamount > 0, "NOTHING_TO_REDEEM");
 
+        // burn ot only, since users don't need xyt to redeem this
+        tokens.ot.burn(_user, expiredOTamount);
+
         // calc the value of the OT after since it expired (total of its underlying value + dueInterests since expiry)
         // no forge fee is charged on redeeming OT. Forge fee is only charged on redeeming XYT
         redeemedAmount = _calcTotalAfterExpiry(_underlyingAsset, _expiry, expiredOTamount);
@@ -219,9 +222,6 @@ abstract contract PendleForgeBase is IPendleForge, Permissions, ReentrancyGuard 
 
         // transfer the amountTransferOut back to the user
         _safeTransfer(yieldToken, _underlyingAsset, _expiry, _user, amountTransferOut);
-
-        // burn ot only, since users don't need xyt to redeem this
-        tokens.ot.burn(_user, expiredOTamount);
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, expiredOTamount, redeemedAmount);
     }
