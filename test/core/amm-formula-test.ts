@@ -105,8 +105,8 @@ export async function AMMNearCloseTest(
   useSwapIn: boolean // if this is true, use swapExactIn. use swapExactOut otherwise.
 ) {
   let T1 = env.T0.add(consts.SIX_MONTH).sub(
-    consts.ONE_DAY.add(consts.ONE_HOUR)
-  ),
+      consts.ONE_DAY.add(consts.ONE_HOUR)
+    ),
     seg = BN.from(60);
   const amount = amountToWei(BN.from(10000), 6);
   await bootstrapMarket(env, alice, amount, amount.div(BN.from(10).pow(5)));
@@ -176,8 +176,8 @@ export async function AMMCheckLPNearCloseTest(env: TestEnv) {
   }
 
   let T1 = env.T0.add(consts.SIX_MONTH).sub(
-    consts.ONE_DAY.add(consts.ONE_HOUR)
-  ),
+      consts.ONE_DAY.add(consts.ONE_HOUR)
+    ),
     seg = BN.from(60);
   const amount = amountToWei(BN.from(1000), 6);
   await bootstrapMarket(env, alice, amount, amount.div(BN.from(10).pow(5)));
