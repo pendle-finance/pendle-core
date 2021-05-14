@@ -331,7 +331,7 @@ export function runTest(isAaveV1: boolean) {
       await ProtocolFeeTest(env, true);
     });
 
-    xit("AMM's swap outcome is correct near the market's freeze time", async () => {
+    it("AMM's swap outcome is correct near the market's freeze time", async () => {
       await env.xyt
         .connect(bob)
         .transfer(alice.address, await env.xyt.balanceOf(bob.address));
@@ -341,7 +341,7 @@ export function runTest(isAaveV1: boolean) {
       await AMMNearCloseTest(env, false);
     });
 
-    xit("AMM's LP outcome is correct near the market's freeze time", async () => {
+    it("AMM's LP outcome is correct near the market's freeze time", async () => {
       await AMMCheckLPNearCloseTest(env);
     });
   });
