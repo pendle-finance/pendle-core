@@ -40,11 +40,6 @@ abstract contract PendleYieldContractDeployerBase is
     bytes32 public override forgeId;
     IPendleForge public forge;
 
-    modifier onlyForge() {
-        require(msg.sender == address(forge), "ONLY_FORGE");
-        _;
-    }
-
     constructor(address _governance, bytes32 _forgeId) Permissions(_governance) {
         forgeId = _forgeId;
     }
