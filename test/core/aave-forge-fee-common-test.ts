@@ -77,13 +77,13 @@ export function runTest(isAaveV1: boolean) {
     // Charlie has equivalent amount of aUSDT
     // When bob redeem due interests, Bob should get the interest gotten by Charlie - fee portion
     it("User should get back interest minus forge fees", async () => {
-      await env.aUSDT.transfer(charlie.address, REF_AMOUNT);
+      await env.yUSDT.transfer(charlie.address, REF_AMOUNT);
       await tokenizeYield(env, alice, REF_AMOUNT, bob);
 
       await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
       await redeemDueInterests(env, bob);
-      const bobInterest = await env.aUSDT.balanceOf(bob.address);
-      const charlieInterest = (await env.aUSDT.balanceOf(charlie.address)).sub(
+      const bobInterest = await env.yUSDT.balanceOf(bob.address);
+      const charlieInterest = (await env.yUSDT.balanceOf(charlie.address)).sub(
         REF_AMOUNT
       );
       approxBigNumber(
@@ -105,7 +105,7 @@ export function runTest(isAaveV1: boolean) {
       const totalFee = await env.forge.totalFee(USDT.address, env.EXPIRY);
       await env.forge.withdrawForgeFee(USDT.address, env.EXPIRY);
       const treasuryAddress = await env.data.treasury();
-      const treasuryBalance = await env.aUSDT.balanceOf(treasuryAddress);
+      const treasuryBalance = await env.yUSDT.balanceOf(treasuryAddress);
       approxBigNumber(totalFee, treasuryBalance, BN.from(100));
       const forgeFeeLeft = await env.forge.totalFee(USDT.address, env.EXPIRY);
       approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(100));

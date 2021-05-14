@@ -65,7 +65,7 @@ export function runTest(isAaveV1: boolean) {
     beforeEach(async () => {
       await evm_revert(snapshotId);
       snapshotId = await evm_snapshot();
-      initialAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
+      initialAUSDTbalance = await env.yUSDT.balanceOf(alice.address);
     });
 
     async function startCalInterest(walletToUse: Wallet, initialAmount: BN) {
@@ -82,7 +82,7 @@ export function runTest(isAaveV1: boolean) {
       walletToUse: Wallet,
       initialAmount: BN
     ): Promise<BN> {
-      return (await env.aUSDT.balanceOf(walletToUse.address)).sub(
+      return (await env.yUSDT.balanceOf(walletToUse.address)).sub(
         initialAmount
       );
     }
@@ -138,7 +138,7 @@ export function runTest(isAaveV1: boolean) {
 
       await redeemUnderlying(env, alice, amount);
 
-      const finalAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
+      const finalAUSDTbalance = await env.yUSDT.balanceOf(alice.address);
 
       const expectedGain = await getCurInterest(charlie, refAmount);
       expect(finalAUSDTbalance.toNumber()).to.be.approximately(
@@ -153,14 +153,14 @@ export function runTest(isAaveV1: boolean) {
 
       await env.ot.transfer(bob.address, await env.ot.balanceOf(alice.address));
 
-      const afterLendingAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
+      const afterLendingAUSDTbalance = await env.yUSDT.balanceOf(alice.address);
 
       await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
 
       await redeemDueInterests(env, alice);
 
       const expectedGain = await getCurInterest(charlie, refAmount);
-      const finalAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
+      const finalAUSDTbalance = await env.yUSDT.balanceOf(alice.address);
 
       expect(finalAUSDTbalance).to.be.below(initialAUSDTbalance);
       expect(finalAUSDTbalance.toNumber()).to.be.approximately(
@@ -180,7 +180,7 @@ export function runTest(isAaveV1: boolean) {
 
       await redeemDueInterests(env, bob);
 
-      const actualGain = await env.aUSDT.balanceOf(bob.address);
+      const actualGain = await env.yUSDT.balanceOf(bob.address);
       const expectedGain = await getCurInterest(charlie, refAmount);
 
       expect(actualGain.toNumber()).to.be.approximately(
@@ -201,7 +201,7 @@ export function runTest(isAaveV1: boolean) {
       await redeemDueInterests(env, bob);
 
       approxBigNumber(
-        await env.aUSDT.balanceOf(bob.address),
+        await env.yUSDT.balanceOf(bob.address),
         await getCurInterest(charlie, refAmount),
         env.TEST_DELTA,
         false
@@ -215,7 +215,7 @@ export function runTest(isAaveV1: boolean) {
       await redeemAfterExpiry(env, alice);
 
       const expectedGain = await getCurInterest(dave, refAmount);
-      const finalAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
+      const finalAUSDTbalance = await env.yUSDT.balanceOf(alice.address);
       approxBigNumber(
         finalAUSDTbalance,
         initialAUSDTbalance.add(expectedGain),
@@ -235,7 +235,7 @@ export function runTest(isAaveV1: boolean) {
 
       await startCalInterest(dave, refAmount);
       approxBigNumber(
-        await env.aUSDT.balanceOf(bob.address),
+        await env.yUSDT.balanceOf(bob.address),
         await getCurInterest(charlie, refAmount),
         env.TEST_DELTA
       );
@@ -246,7 +246,7 @@ export function runTest(isAaveV1: boolean) {
       await redeemAfterExpiry(env, alice);
 
       const expectedGain = await getCurInterest(dave, refAmount);
-      const finalAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
+      const finalAUSDTbalance = await env.yUSDT.balanceOf(alice.address);
       approxBigNumber(
         finalAUSDTbalance,
         initialAUSDTbalance.add(expectedGain),
@@ -305,7 +305,7 @@ export function runTest(isAaveV1: boolean) {
       let renewedAmount = redeemedAmount.sub(amountTransferOut);
       await setTimeNextBlock(env.T0.add(consts.ONE_MONTH.mul(11)));
       await redeemDueInterests(env, alice, env.T0.add(consts.ONE_YEAR));
-      let actualGain = await env.aUSDT.balanceOf(alice.address);
+      let actualGain = await env.yUSDT.balanceOf(alice.address);
       let expectedGain = await getCurInterest(dave, renewedAmount);
       approxBigNumber(actualGain, expectedGain, env.TEST_DELTA);
     });
@@ -322,7 +322,7 @@ export function runTest(isAaveV1: boolean) {
 
       // because we have tokenized all aUSDT of alice, curAUSDTbalance will equal to the interest
       // she has received from her xyt
-      const curAUSDTbalance = await env.aUSDT.balanceOf(alice.address);
+      const curAUSDTbalance = await env.yUSDT.balanceOf(alice.address);
       approxBigNumber(curAUSDTbalance, expectedGain, env.TEST_DELTA);
     });
 

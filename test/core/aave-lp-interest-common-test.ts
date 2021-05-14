@@ -74,7 +74,7 @@ export function runTest(isAaveV1: boolean) {
       }
 
       for (let user of [alice, bob, charlie, dave, eve]) {
-        await emptyToken(env.aUSDT, user);
+        await emptyToken(env.yUSDT, user);
       }
       snapshotId = await evm_snapshot();
     });
@@ -99,7 +99,7 @@ export function runTest(isAaveV1: boolean) {
     async function checkAUSDTBalance(expectedResult: number[]) {
       for (let id = 0; id < 4; id++) {
         approxBigNumber(
-          await env.aUSDT.balanceOf(wallets[id].address),
+          await env.yUSDT.balanceOf(wallets[id].address),
           BN.from(expectedResult[id]),
           env.TEST_DELTA
         );
@@ -143,7 +143,7 @@ export function runTest(isAaveV1: boolean) {
       await redeemAll();
 
       // for (let user of [alice, bob, charlie, dave]) {
-      //   console.log((await env.aUSDT.balanceOf(user.address)).toString());
+      //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
       // }
       const aaveV1ExpectedResult: number[] = [
         374114313,
@@ -201,7 +201,7 @@ export function runTest(isAaveV1: boolean) {
       await redeemAll();
 
       // for (let user of [alice, bob, charlie, dave]) {
-      //   console.log((await env.aUSDT.balanceOf(user.address)).toString());
+      //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
       // }
 
       const aaveV1ExpectedResult: number[] = [
@@ -260,30 +260,30 @@ export function runTest(isAaveV1: boolean) {
     //   await redeemAll();
 
     // for (let user of [alice, bob, charlie, dave]) {
-    //   console.log((await env.aUSDT.balanceOf(user.address)).toString());
+    //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
     // }
 
     //   console.log(1);
     //   approxBigNumber(
-    //     await env.aUSDT.balanceOf(alice.address),
+    //     await env.yUSDT.balanceOf(alice.address),
     //     BN.from(803722622),
     //     acceptedDelta
     //   );
     //   console.log(1);
     //   approxBigNumber(
-    //     await env.aUSDT.balanceOf(bob.address),
+    //     await env.yUSDT.balanceOf(bob.address),
     //     BN.from(803722622),
     //     acceptedDelta
     //   );
     //   console.log(1);
     //   approxBigNumber(
-    //     await env.aUSDT.balanceOf(charlie.address),
+    //     await env.yUSDT.balanceOf(charlie.address),
     //     BN.from(803722622),
     //     acceptedDelta
     //   );
     //   console.log(1);
     //   approxBigNumber(
-    //     await env.aUSDT.balanceOf(dave.address),
+    //     await env.yUSDT.balanceOf(dave.address),
     //     BN.from(803722622),
     //     acceptedDelta
     //   );
@@ -355,7 +355,7 @@ export function runTest(isAaveV1: boolean) {
       await redeemAll();
 
       // for (let user of [alice, bob, charlie, dave]) {
-      //   console.log((await env.aUSDT.balanceOf(user.address)).toString());
+      //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
       // }
 
       const aaveV1ExpectedResult: number[] = [
@@ -430,10 +430,10 @@ export function runTest(isAaveV1: boolean) {
         }
       }
 
-      let expectedResult = await env.aUSDT.balanceOf(dave.address);
+      let expectedResult = await env.yUSDT.balanceOf(dave.address);
       for (let user of [alice, bob, charlie]) {
         approxBigNumber(
-          await env.aUSDT.balanceOf(user.address),
+          await env.yUSDT.balanceOf(user.address),
           expectedResult,
           env.TEST_DELTA
         );

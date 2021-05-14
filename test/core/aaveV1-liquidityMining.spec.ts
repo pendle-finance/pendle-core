@@ -55,7 +55,7 @@ describe("aaveV1-liquidityMining", async () => {
     await env.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
     for (let user of [bob, charlie, dave]) {
       await redeemDueInterests(env, user);
-      await emptyToken(env.aUSDT, user);
+      await emptyToken(env.yUSDT, user);
       await emptyToken(env.xyt, user);
     }
 
@@ -183,9 +183,9 @@ describe("aaveV1-liquidityMining", async () => {
       (await env.xyt.balanceOf(env.market.address)).div(10)
     );
 
-    let preBalanceBob = await env.aUSDT.balanceOf(bob.address);
-    let preBalanceDave = await env.aUSDT.balanceOf(dave.address);
-    let preBalanceCharlie = await env.aUSDT.balanceOf(charlie.address);
+    let preBalanceBob = await env.yUSDT.balanceOf(bob.address);
+    let preBalanceDave = await env.yUSDT.balanceOf(dave.address);
+    let preBalanceCharlie = await env.yUSDT.balanceOf(charlie.address);
 
     await stake(env, alice, INITIAL_LP_AMOUNT); // Alice also stake into liq-mining
     await stake(env, bob, INITIAL_LP_AMOUNT.div(2));
@@ -201,18 +201,18 @@ describe("aaveV1-liquidityMining", async () => {
     await env.liq.redeemLpInterests(env.EXPIRY, bob.address);
     await redeemLpInterests(env, bob);
     await env.liq.redeemLpInterests(env.EXPIRY, bob.address);
-    let actualGainBob = (await env.aUSDT.balanceOf(bob.address)).sub(
+    let actualGainBob = (await env.yUSDT.balanceOf(bob.address)).sub(
       preBalanceBob
     );
 
     await redeemDueInterests(env, charlie);
-    const actualGainCharlie = (await env.aUSDT.balanceOf(charlie.address)).sub(
+    const actualGainCharlie = (await env.yUSDT.balanceOf(charlie.address)).sub(
       preBalanceCharlie
     );
     // no redeemLpInterests for charlie since we are not caring about lpInterest for him
 
     await redeemLpInterests(env, dave);
-    let actualGainDave = (await env.aUSDT.balanceOf(dave.address)).sub(
+    let actualGainDave = (await env.yUSDT.balanceOf(dave.address)).sub(
       preBalanceDave
     );
 
@@ -328,10 +328,10 @@ describe("aaveV1-liquidityMining", async () => {
     await stake(env, bob, amountToStake);
     console.log("\tStaked");
     const lpHolderContract = await env.liq.lpHolderForExpiry(env.EXPIRY);
-    const aTokenBalanceOfLpHolderContract = await env.aUSDT.balanceOf(
+    const aTokenBalanceOfLpHolderContract = await env.yUSDT.balanceOf(
       lpHolderContract
     );
-    const aTokenBalanceOfUser = await env.aUSDT.balanceOf(bob.address);
+    const aTokenBalanceOfUser = await env.yUSDT.balanceOf(bob.address);
     console.log(
       `\t[LP interests] aUSDT balance of LpHolder after first staking = ${aTokenBalanceOfLpHolderContract}`
     );
@@ -363,7 +363,7 @@ describe("aaveV1-liquidityMining", async () => {
     );
 
     console.log(
-      `\t\t\t lpHolderContract aToken bal = ${await env.aUSDT.balanceOf(
+      `\t\t\t lpHolderContract aToken bal = ${await env.yUSDT.balanceOf(
         lpHolderContract
       )}`
     );
@@ -397,7 +397,7 @@ describe("aaveV1-liquidityMining", async () => {
     );
 
     console.log(
-      `\t\t\t lpHolderContract aToken bal = ${await env.aUSDT.balanceOf(
+      `\t\t\t lpHolderContract aToken bal = ${await env.yUSDT.balanceOf(
         lpHolderContract
       )}`
     );
@@ -410,12 +410,12 @@ describe("aaveV1-liquidityMining", async () => {
     await withdraw(env, alice, amountToStake.div(2));
     await redeemRewards(env, bob);
 
-    const aTokenBalanceOfLpHolderContractAfter = await env.aUSDT.balanceOf(
+    const aTokenBalanceOfLpHolderContractAfter = await env.yUSDT.balanceOf(
       lpHolderContract
     );
-    const aTokenBalanceOfUserAfter = await env.aUSDT.balanceOf(bob.address);
+    const aTokenBalanceOfUserAfter = await env.yUSDT.balanceOf(bob.address);
 
-    //now, the LP holding contract should hold almost 0 env.aUSDT. This means that we have calculated and gave the Lp interests back to the users properly
+    //now, the LP holding contract should hold almost 0 env.yUSDT. This means that we have calculated and gave the Lp interests back to the users properly
     console.log(
       `\t[LP interests] aUSDT balance of LpHolder after withdrawing all = ${aTokenBalanceOfLpHolderContractAfter}`
     );

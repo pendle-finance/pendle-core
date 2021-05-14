@@ -59,7 +59,7 @@ export function runTest(isAaveV1: boolean) {
           env.INITIAL_YIELD_TOKEN_AMOUNT,
           isAaveV1
         );
-        await env.aUSDT.connect(person).approve(env.router.address, consts.INF);
+        await env.yUSDT.connect(person).approve(env.router.address, consts.INF);
       }
       snapshotId = await evm_snapshot();
     });
@@ -91,10 +91,10 @@ export function runTest(isAaveV1: boolean) {
           await redeemUnderlying(env, user, balance);
         }
       }
-      const expectedBalance = await env.aUSDT.balanceOf(dave.address);
+      const expectedBalance = await env.yUSDT.balanceOf(dave.address);
       for (var person of [alice, bob, charlie]) {
         approxBigNumber(
-          await env.aUSDT.balanceOf(person.address),
+          await env.yUSDT.balanceOf(person.address),
           expectedBalance,
           env.TEST_DELTA
         );

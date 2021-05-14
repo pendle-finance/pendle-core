@@ -196,7 +196,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions, ReentrancyGuard 
         checkNotPaused(_underlyingAsset, _expiry);
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        uint256 expiredOTamount = IERC20(address(tokens.ot)).balanceOf(_user);
+        uint256 expiredOTamount = tokens.ot.balanceOf(_user);
         require(expiredOTamount > 0, "NOTHING_TO_REDEEM");
 
         // burn ot only, since users don't need xyt to redeem this

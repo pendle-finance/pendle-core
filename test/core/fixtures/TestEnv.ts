@@ -1,6 +1,6 @@
 import { BigNumber as BN, Contract, Wallet } from "ethers";
 import {
-  consts, getA2Contract, getAContract, getCContract, tokens
+  consts, getA2Contract, getAContract, getCContract, tokens, getERC20Contract
 } from "../../helpers";
 import { CoreFixture } from "./core.fixture";
 import { LiqParams, LiquidityMiningFixture } from "./liquidityMining.fixture";
@@ -27,13 +27,13 @@ export interface TestEnv {
   ot: Contract;
   xyt: Contract;
   xyt2: Contract;
-  aUSDT: Contract;
-  cUSDT: Contract;
+  yUSDT: Contract;
   testToken: Contract;
   market: Contract;
   marketEth: Contract;
   pdl: Contract;
   liq: Contract;
+  USDTContract: Contract;
 
   // test params
   T0: BN;
@@ -50,18 +50,19 @@ export interface TestEnv {
   liqMiningFixture: LiquidityMiningFixture;
 }
 
-export function parseTestEnvCoreFixture(env: TestEnv, fixture: CoreFixture) {
+export async function parseTestEnvCoreFixture(env: TestEnv, alice: Wallet, fixture: CoreFixture) {
   env.router = fixture.router;
   env.data = fixture.data;
   env.treasury = fixture.treasury;
   env.marketReader = fixture.marketReader;
   env.pausingManager = fixture.pausingManager;
   env.marketReader = fixture.marketReader;
+  env.USDTContract = await getERC20Contract(alice, tokens.USDT)
 }
 
 export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: RouterFixture) {
   env.mode = mode;
-  parseTestEnvCoreFixture(env, fixture.core);
+  await parseTestEnvCoreFixture(env, alice, fixture.core);
 
   env.routerFixture = fixture;
   if (env.mode == Mode.AAVE_V1) {
@@ -70,7 +71,7 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
     env.ot = fixture.aForge.aOwnershipToken;
     env.xyt = fixture.aForge.aFutureYieldToken;
     env.xyt2 = fixture.aForge.aFutureYieldToken2;
-    env.aUSDT = await getAContract(alice, env.forge, tokens.USDT);
+    env.yUSDT = await getAContract(alice, env.forge, tokens.USDT);
     env.FORGE_ID = consts.FORGE_AAVE;
     env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
   }
@@ -80,7 +81,7 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
     env.ot = fixture.a2Forge.a2OwnershipToken;
     env.xyt = fixture.a2Forge.a2FutureYieldToken;
     env.xyt2 = fixture.a2Forge.a2FutureYieldToken2;
-    env.aUSDT = await getA2Contract(alice, env.forge, tokens.USDT);
+    env.yUSDT = await getA2Contract(alice, env.forge, tokens.USDT);
     env.FORGE_ID = consts.FORGE_AAVE_V2;
     env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
   }
@@ -90,7 +91,7 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
     env.ot = fixture.cForge.cOwnershipToken;
     env.xyt = fixture.cForge.cFutureYieldToken;
     // no xyt2
-    env.cUSDT = await getCContract(alice, tokens.USDT);
+    env.yUSDT = await getCContract(alice, tokens.USDT);
     env.FORGE_ID = consts.FORGE_COMPOUND;
     env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_COMPOUND_TOKEN_AMOUNT;
   }
