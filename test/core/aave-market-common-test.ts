@@ -18,11 +18,14 @@ import {
   removeMarketLiquiditySingle,
   swapExactInXytToToken,
   swapExactOutXytToToken,
+  toFixedPoint,
 } from "../helpers";
 import {
   AMMCheckLPNearCloseTest,
   AMMNearCloseTest,
   AMMTest,
+  MarketFeesTest,
+  ProtocolFeeTest,
 } from "./amm-formula-test";
 import {
   marketFixture,
@@ -320,8 +323,15 @@ export function runTest(isAaveV1: boolean) {
       await AMMTest(env, false);
     });
 
+    it("MarketFeesTest", async () => {
+      await MarketFeesTest(env, true);
+    });
+
+    it("ProtocolFeeTest", async () => {
+      await ProtocolFeeTest(env, true);
+    });
+
     it("AMM's swap outcome is correct near the market's freeze time", async () => {
-      console.log("YES");
       await env.xyt
         .connect(bob)
         .transfer(alice.address, await env.xyt.balanceOf(bob.address));

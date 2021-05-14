@@ -3,10 +3,11 @@ import {
   addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
   amountToWei,
+  addMarketLiquidityDual,
   approxBigNumber,
   bootstrapMarket,
   consts,
-  logMarketReservesData,
+  toFixedPoint,
   removeMarketLiquiditySingle,
   setTimeNextBlock,
   swapExactInTokenToXyt,
@@ -21,14 +22,11 @@ const { provider } = waffle;
 const wallets = provider.getWallets();
 const [alice, bob] = wallets;
 
-export async function AMMTest(
-  env: TestEnv,
-  useSwapIn: boolean // if this is true, use swapExactIn. use swapExactOut otherwise.
-) {
+export async function AMMTest(env: TestEnv, useSwapIn: boolean) {
   /*-------------------------------------------------------------*/
   const amount = amountToWei(BN.from(1000), 6);
   await bootstrapMarket(env, alice, amount);
-  await env.testToken.approve(env.market.address, consts.INF);
+  // await env.testToken.approve(env.market.address, consts.INF);
 
   await runTestTokenToXyt(
     env,
@@ -107,8 +105,8 @@ export async function AMMNearCloseTest(
   useSwapIn: boolean // if this is true, use swapExactIn. use swapExactOut otherwise.
 ) {
   let T1 = env.T0.add(consts.SIX_MONTH).sub(
-      consts.ONE_DAY.add(consts.ONE_HOUR)
-    ),
+    consts.ONE_DAY.add(consts.ONE_HOUR)
+  ),
     seg = BN.from(60);
   const amount = amountToWei(BN.from(10000), 6);
   await bootstrapMarket(env, alice, amount, amount.div(BN.from(10).pow(5)));
@@ -148,7 +146,7 @@ export async function AMMNearCloseTest(
     useSwapIn
   );
 
-  await logMarketReservesData(env.market);
+  // await logMarketReservesData(env.market);
 }
 
 export async function AMMCheckLPNearCloseTest(env: TestEnv) {
@@ -178,8 +176,8 @@ export async function AMMCheckLPNearCloseTest(env: TestEnv) {
   }
 
   let T1 = env.T0.add(consts.SIX_MONTH).sub(
-      consts.ONE_DAY.add(consts.ONE_HOUR)
-    ),
+    consts.ONE_DAY.add(consts.ONE_HOUR)
+  ),
     seg = BN.from(60);
   const amount = amountToWei(BN.from(1000), 6);
   await bootstrapMarket(env, alice, amount, amount.div(BN.from(10).pow(5)));
@@ -213,6 +211,124 @@ export async function AMMCheckLPNearCloseTest(env: TestEnv) {
   await setTimeNextBlock(T1.add(seg.mul(6)));
   await removeMarketLiquiditySingle(env, bob, BN.from("14123754590"), false);
   await checkAmountTokenGained(BN.from(53095229), BN.from(10));
+}
+
+export async function MarketFeesTest(env: TestEnv, useSwapIn: boolean) {
+  await env.data.setMarketFees(
+    toFixedPoint("0.0035"),
+    toFixedPoint("0.2"),
+    consts.HIGH_GAS_OVERRIDE
+  );
+
+  const amount = amountToWei(BN.from(1000), 6);
+  await bootstrapMarket(env, alice, amount);
+  // await env.testToken.approve(env.market.address, consts.INF);
+
+  await runTestTokenToXyt(
+    env,
+    env.T0.add(3600),
+    BN.from(20405615),
+    BN.from(19931395),
+    useSwapIn
+  );
+
+  await runTestTokenToXyt(
+    env,
+    env.T0.add(21600),
+    BN.from(20405615),
+    BN.from(19162864),
+    useSwapIn
+  );
+
+  await runTestTokenToXyt(
+    env,
+    env.T0.add(93600),
+    BN.from(14832741),
+    BN.from(13498154),
+    useSwapIn
+  );
+
+  await runTestXytToToken(
+    env,
+    env.T0.add(205200),
+    BN.from(12731281),
+    BN.from(13851215),
+    useSwapIn
+  );
+
+  await runTestXytToToken(
+    env,
+    env.T0.add(720000),
+    BN.from(11241212),
+    BN.from(11713770),
+    useSwapIn
+  );
+
+  await runTestTokenToXyt(
+    env,
+    env.T0.add(900000),
+    BN.from(112411212),
+    BN.from(98219316),
+    useSwapIn
+  );
+}
+
+export async function ProtocolFeeTest(env: TestEnv, useSwapIn: boolean) {
+  await env.data.setMarketFees(
+    toFixedPoint("0.0035"),
+    toFixedPoint("0.2"),
+    consts.HIGH_GAS_OVERRIDE
+  );
+
+  const amount = BN.from(10 ** 10);
+  const constSwapAmount = BN.from(1500500 * 15);
+
+  async function checkTreasuryLP(expectedLP: BN) {
+    let currentTreasuryLP = BN.from(
+      await env.market.balanceOf(env.treasury.address)
+    );
+    approxBigNumber(
+      currentTreasuryLP,
+      expectedLP,
+      consts.TEST_TOKEN_DELTA.toNumber() * 2
+    );
+  }
+
+  await bootstrapMarket(env, alice, amount);
+  // await testToken.approve(env.market.address, consts.INF);
+
+  setTimeNextBlock(env.T0.add(3600));
+  await env.xyt.connect(bob).transfer(alice.address, amount);
+  await env.testToken.connect(bob).transfer(alice.address, amount);
+
+  await swapExactInTokenToXyt(env, alice, constSwapAmount);
+  await swapExactInXytToToken(env, alice, constSwapAmount);
+  await addMarketLiquidityDual(env, alice, constSwapAmount);
+  await checkTreasuryLP(BN.from(15737));
+
+  setTimeNextBlock(env.T0.add(3600 * 10));
+  await swapExactInTokenToXyt(env, alice, constSwapAmount.mul(2));
+  await swapExactInXytToToken(env, alice, constSwapAmount.mul(3));
+  await addMarketLiquidityDual(env, alice, constSwapAmount.mul(4));
+  await checkTreasuryLP(BN.from(54997));
+
+  setTimeNextBlock(env.T0.add(3600 * 100));
+  await swapExactInTokenToXyt(env, alice, constSwapAmount.mul(5));
+  await swapExactInXytToToken(env, alice, constSwapAmount.mul(6));
+  await addMarketLiquidityDual(env, alice, constSwapAmount.mul(7));
+  await checkTreasuryLP(BN.from(141046));
+
+  setTimeNextBlock(env.T0.add(3600 * 300));
+  await swapExactInTokenToXyt(env, alice, constSwapAmount.mul(8));
+  await swapExactInXytToToken(env, alice, constSwapAmount.mul(9));
+  await addMarketLiquidityDual(env, alice, constSwapAmount.mul(10));
+  await checkTreasuryLP(BN.from(273551));
+
+  setTimeNextBlock(env.T0.add(3600 * 500));
+  await swapExactInTokenToXyt(env, alice, constSwapAmount.mul(11));
+  await swapExactInXytToToken(env, alice, constSwapAmount.mul(12));
+  await addMarketLiquidityDual(env, alice, constSwapAmount.mul(13));
+  await checkTreasuryLP(BN.from(452271));
 }
 
 async function runTestTokenToXytCustom(

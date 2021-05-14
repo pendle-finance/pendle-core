@@ -205,6 +205,28 @@ export async function addMarketLiquidityDualXyt(
     );
 }
 
+export async function addMarketLiquidityDual(
+  env: TestEnv,
+  user: Wallet,
+  amountXyt: BN,
+  amountToken?: BN
+) {
+  if (amountToken == null) amountToken = amountXyt;
+
+  await env.router
+    .connect(user)
+    .addMarketLiquidityDual(
+      env.MARKET_FACTORY_ID,
+      env.xyt.address,
+      env.testToken.address,
+      amountXyt,
+      amountToken,
+      BN.from(1),
+      BN.from(1),
+      consts.HIGH_GAS_OVERRIDE
+    );
+}
+
 export async function removeMarketLiquidityDual(
   env: TestEnv,
   user: Wallet,
