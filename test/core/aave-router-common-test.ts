@@ -282,8 +282,7 @@ export function runTest(isAaveV1: boolean) {
       await setTime(env.T0.add(consts.ONE_MONTH.mul(7)));
 
       let {
-        redeemedAmount,
-        amountTransferOut,
+        amountRenewed,
       } = await env.router.callStatic.renewYield(
         env.FORGE_ID,
         env.EXPIRY,
@@ -302,11 +301,10 @@ export function runTest(isAaveV1: boolean) {
         consts.HIGH_GAS_OVERRIDE
       );
 
-      let renewedAmount = redeemedAmount.sub(amountTransferOut);
       await setTimeNextBlock(env.T0.add(consts.ONE_MONTH.mul(11)));
       await redeemDueInterests(env, alice, env.T0.add(consts.ONE_YEAR));
       let actualGain = await env.yUSDT.balanceOf(alice.address);
-      let expectedGain = await getCurInterest(dave, renewedAmount);
+      let expectedGain = await getCurInterest(dave, amountRenewed);
       approxBigNumber(actualGain, expectedGain, env.TEST_DELTA);
     });
 

@@ -181,18 +181,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions, ReentrancyGuard 
     function redeemAfterExpiry(
         address _user,
         address _underlyingAsset,
-        uint256 _expiry,
-        uint256 _transferOutRate
-    )
-        external
-        override
-        onlyRouter
-        returns (
-            uint256 redeemedAmount,
-            uint256 amountTransferOut,
-            uint256 amountToRenew
-        )
-    {
+        uint256 _expiry
+    ) external override onlyRouter returns (uint256 redeemedAmount) {
         checkNotPaused(_underlyingAsset, _expiry);
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
@@ -211,17 +201,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions, ReentrancyGuard 
             _beforeTransferDueInterests(tokens, _underlyingAsset, _expiry, _user, false)
         );
 
-        /*
-        * Not all the amount redeemed will be transferred out to the user. Instead, (1-_transferOutRate) will be kept
-        inside so that the Router can forward it to a new yieldTokenHolder contract in the case of renewingYield.
-        * the _transferOutRate should be different from Math.RONE <=> the user is doing a renewYield.
-        Else, the user will lose the fund. This is guaranteed by the Router since only Router can call this function
-        */
-        amountTransferOut = redeemedAmount.rmul(_transferOutRate);
-        amountToRenew = redeemedAmount.sub(amountTransferOut);
-
-        // transfer the amountTransferOut back to the user
-        _safeTransfer(yieldToken, _underlyingAsset, _expiry, _user, amountTransferOut);
+        // transfer back to the user
+        _safeTransfer(yieldToken, _underlyingAsset, _expiry, _user, redeemedAmount);
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, expiredOTamount, redeemedAmount);
     }
@@ -393,29 +374,6 @@ abstract contract PendleForgeBase is IPendleForge, Permissions, ReentrancyGuard 
 
         address treasuryAddress = data.treasury();
         _safeTransfer(yieldToken, _underlyingAsset, _expiry, treasuryAddress, _totalFee);
-    }
-
-    /**
-    Use:
-        * To forwardYieldToken from one yieldTokenHolder to another in the case of renewYield
-    Conditions:
-        * Should only be called by router, and only in the case of renewYield
-    */
-    function forwardYieldToken(
-        address _underlyingAsset,
-        uint256 _fromExpiry,
-        uint256 _toExpiry,
-        uint256 _amount
-    ) external override onlyRouter {
-        checkNotPaused(_underlyingAsset, _fromExpiry);
-        IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
-        _safeTransfer(
-            yieldToken,
-            _underlyingAsset,
-            _fromExpiry,
-            yieldTokenHolders[_underlyingAsset][_toExpiry],
-            _amount
-        );
     }
 
     function getYieldBearingToken(address _underlyingAsset) external override returns (address) {

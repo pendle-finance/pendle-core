@@ -148,7 +148,7 @@ interface IPendleRouter is IPendleStructs {
         external
         returns (
             uint256 redeemedAmount,
-            uint256 amountTransferOut,
+            uint256 amountRenewed,
             address ot,
             address xyt,
             uint256 amountTokenMinted

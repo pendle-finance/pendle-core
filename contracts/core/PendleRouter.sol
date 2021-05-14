@@ -51,6 +51,7 @@ import "../periphery/PendleRouterNonReentrant.sol";
 contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterNonReentrant {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
+    using Math for uint256;
 
     IWETH public immutable override weth;
     IPendleData public override data;
@@ -134,19 +135,14 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) external override nonReentrant returns (uint256 redeemedAmount) {
+    ) public override nonReentrant returns (uint256 redeemedAmount) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         require(_expiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
 
         // guaranteed to be a valid forge by the isValidXYT check
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
 
-        (redeemedAmount, , ) = forge.redeemAfterExpiry(
-            msg.sender,
-            _underlyingAsset,
-            _expiry,
-            Math.RONE
-        );
+        redeemedAmount = forge.redeemAfterExpiry(msg.sender, _underlyingAsset, _expiry);
     }
 
     /**
@@ -194,10 +190,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     }
 
     /**
-     * @notice Use to renewYield with a lower gas cost efficiency compared to calling redeemAfterExpiry & tokenizeYield
-     * @param _renewalRate a Fixed Point number, shows how much of the total redeemedAmount is renewed
+     * @notice Use to renewYield. Basically a proxy to call redeemAfterExpiry & tokenizeYield
+     * @param _renewalRate a Fixed Point number, shows how much of the total redeemedAmount is renewed.
+        We allowed _renewalRate > RONE in case the user wants to increase his position
      Conditions:
-     * Have Reentrancy protection
+     * No Reentrancy protection because it will just act as a proxy for 2 calls
      **/
     function renewYield(
         bytes32 _forgeId,
@@ -208,40 +205,22 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     )
         external
         override
-        nonReentrant
         returns (
             uint256 redeemedAmount,
-            uint256 amountTransferOut,
+            uint256 amountRenewed,
             address ot,
             address xyt,
             uint256 amountTokenMinted
         )
     {
-        require(_oldExpiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
-        require(_newExpiry > _oldExpiry, "INVALID_NEW_EXPIRY");
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _oldExpiry), "INVALID_XYT");
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _newExpiry), "INVALID_XYT");
-        require(0 < _renewalRate && _renewalRate <= Math.RONE, "INVALID_RENEWAL_RATE");
-
-        // guaranteed to be a valid forge by the isValidXYT check
-        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        uint256 amountToRenew;
-        (redeemedAmount, amountTransferOut, amountToRenew) = forge.redeemAfterExpiry(
-            msg.sender,
-            _underlyingAsset,
-            _oldExpiry,
-            Math.RONE - _renewalRate // only transfer out 1 - renewalRate
-        );
-
-        // after redeeming, we know that an amountToRenew is still in the old expiry
-        // So we will help users to forward it to the new expiry
-        forge.forwardYieldToken(_underlyingAsset, _oldExpiry, _newExpiry, amountToRenew);
-
-        // mint OT, XYT for them
-        (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
+        require(0 < _renewalRate, "INVALID_RENEWAL_RATE");
+        redeemedAmount = redeemAfterExpiry(_forgeId, _underlyingAsset, _oldExpiry);
+        amountRenewed = redeemedAmount.rmul(_renewalRate);
+        (ot, xyt, amountTokenMinted) = tokenizeYield(
+            _forgeId,
             _underlyingAsset,
             _newExpiry,
-            amountToRenew,
+            amountRenewed,
             msg.sender
         );
     }
@@ -260,7 +239,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         uint256 _amountToTokenize,
         address _to
     )
-        external
+        public
         override
         nonReentrant
         returns (

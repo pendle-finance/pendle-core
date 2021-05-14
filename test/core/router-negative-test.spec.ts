@@ -157,18 +157,18 @@ describe("router-negative-test", async () => {
     ).to.be.revertedWith(errMsg.ZERO_AMOUNT);
   });
 
-  it("shouldn't be able to renewYield to invalid expiry", async () => {
-    await advanceTime(consts.SIX_MONTH);
-    await expect(
-      router.renewYield(
-        consts.FORGE_AAVE,
-        consts.T0.add(consts.SIX_MONTH),
-        tokenUSDT.address,
-        consts.T0.add(consts.ONE_YEAR.add(100)),
-        consts.RONE
-      )
-    ).to.be.revertedWith(errMsg.INVALID_XYT);
-  });
+  // it("shouldn't be able to renewYield to invalid expiry", async () => {
+  //   await advanceTime(consts.SIX_MONTH);
+  //   await expect(
+  //     router.renewYield(
+  //       consts.FORGE_AAVE,
+  //       consts.T0.add(consts.SIX_MONTH),
+  //       tokenUSDT.address,
+  //       consts.T0.add(consts.ONE_YEAR.add(100)),
+  //       consts.RONE
+  //     )
+  //   ).to.be.revertedWith(errMsg.INVALID_XYT);
+  // });
 
   it("shouldn't be able to renewYield if the current yield has not expired yet", async () => {
     let futureTime = consts.T0.add(consts.ONE_YEAR.add(500));
@@ -204,15 +204,6 @@ describe("router-negative-test", async () => {
         tokenUSDT.address,
         futureTime,
         BN.from(0)
-      )
-    ).to.be.revertedWith(errMsg.INVALID_RENEWAL_RATE);
-    await expect(
-      router.renewYield(
-        consts.FORGE_AAVE,
-        consts.T0.add(consts.SIX_MONTH),
-        tokenUSDT.address,
-        futureTime,
-        consts.RONE.add(1)
       )
     ).to.be.revertedWith(errMsg.INVALID_RENEWAL_RATE);
   });
