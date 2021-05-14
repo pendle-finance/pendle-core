@@ -496,9 +496,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         require(data.validForgeFactoryPair(forgeId, _marketFactoryId), "INVALID_FORGE_FACTORY");
 
         market = factory.createMarket(_xyt, _token);
-        IERC20(_xyt).safeApprove(market, type(uint256).max);
-        IERC20(_token).safeApprove(market, type(uint256).max);
-        IERC20(market).safeApprove(market, type(uint256).max);
     }
 
     /**
