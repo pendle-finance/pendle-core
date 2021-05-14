@@ -12,7 +12,10 @@ import {
   approxBigNumber,
   randomBN,
   randomNumber,
-  redeemLpInterests, tokens, mint, amountToWei
+  redeemLpInterests,
+  tokens,
+  mint,
+  amountToWei,
 } from "../helpers";
 import {
   liquidityMiningFixture,
@@ -94,7 +97,9 @@ export function runTest(mode: Mode) {
 
       for (let i = 1; i <= numTurns; i++) {
         await setTimeNextBlock(
-          env.liqParams.START_TIME.add(totalTime.div(numTurnsBeforeExpiry).mul(i))
+          env.liqParams.START_TIME.add(
+            totalTime.div(numTurnsBeforeExpiry).mul(i)
+          )
         );
         let userID = randomBN(4).toNumber();
         let actionType: number = randomNumber(3);
@@ -115,7 +120,7 @@ export function runTest(mode: Mode) {
         } else if (actionType == 2) {
           await env.liq.redeemLpInterests(env.EXPIRY, wallets[userID].address);
         }
-        if (mode == Mode.COMPOUND) await addFakeIncomeCompound()
+        if (mode == Mode.COMPOUND) await addFakeIncomeCompound();
       }
 
       await redeemDueInterests(env, eve);
@@ -137,5 +142,5 @@ export function runTest(mode: Mode) {
         );
       }
     });
-  })
+  });
 }

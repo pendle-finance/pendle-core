@@ -721,7 +721,7 @@ abstract contract PendleLiquidityMiningBase is
 
         uint256 secondTerm;
 
-        if (exd.totalStakeLP!=0) secondTerm = paramR.mul(MULTIPLIER).div(exd.totalStakeLP);
+        if (exd.totalStakeLP != 0) secondTerm = paramR.mul(MULTIPLIER).div(exd.totalStakeLP);
 
         // Update new states
         exd.paramL = firstTerm.add(secondTerm);
