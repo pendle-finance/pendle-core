@@ -1,12 +1,12 @@
-import { expect } from "chai";
-import { createFixtureLoader } from "ethereum-waffle";
-import { constants, Contract } from "ethers";
-import { governanceFixture } from "./fixtures";
+import { expect } from 'chai';
+import { createFixtureLoader } from 'ethereum-waffle';
+import { constants, Contract } from 'ethers';
+import { governanceFixture } from './fixtures';
 
-const { waffle } = require("hardhat");
+const { waffle } = require('hardhat');
 const provider = waffle.provider;
 
-describe("PendleGovernance", () => {
+describe('PendleGovernance', () => {
   const [alice] = provider.getWallets();
   const loadFixture = createFixtureLoader([alice], provider);
 
@@ -20,7 +20,7 @@ describe("PendleGovernance", () => {
     governor = fixture.governor;
   });
 
-  it("timelock", async () => {
+  it('timelock', async () => {
     const admin = await timelock.admin();
     expect(admin).to.be.eq(alice.address);
     const pendingAdmin = await timelock.pendingAdmin();
@@ -29,7 +29,7 @@ describe("PendleGovernance", () => {
     expect(delay).to.be.eq(45000);
   });
 
-  it("governor", async () => {
+  it('governor', async () => {
     const votingPeriod = await governor.votingPeriod();
     expect(votingPeriod).to.be.eq(17280);
     const timelockAddress = await governor.timelock();

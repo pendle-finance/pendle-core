@@ -1,6 +1,6 @@
-import { assert, expect } from "chai";
-import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN } from "ethers";
+import { assert, expect } from 'chai';
+import { createFixtureLoader } from 'ethereum-waffle';
+import { BigNumber as BN } from 'ethers';
 import {
   advanceTime,
   approxBigNumber,
@@ -15,19 +15,19 @@ import {
   setTimeNextBlock,
   stake,
   withdraw,
-} from "../helpers";
+} from '../helpers';
 import {
   liquidityMiningFixture,
   LiquidityMiningFixture,
   Mode,
   parseTestEnvLiquidityMiningFixture,
   TestEnv,
-} from "./fixtures";
+} from './fixtures';
 
-const { waffle } = require("hardhat");
+const { waffle } = require('hardhat');
 const { provider } = waffle;
 
-describe("aaveV1-liquidityMining", async () => {
+describe('aaveV1-liquidityMining', async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
@@ -36,9 +36,7 @@ describe("aaveV1-liquidityMining", async () => {
   let env: TestEnv = {} as TestEnv;
 
   async function buildTestEnv() {
-    let fixture: LiquidityMiningFixture = await loadFixture(
-      liquidityMiningFixture
-    );
+    let fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);
     await parseTestEnvLiquidityMiningFixture(alice, Mode.AAVE_V1, env, fixture);
     env.TEST_DELTA = BN.from(60000);
   }
@@ -72,17 +70,14 @@ describe("aaveV1-liquidityMining", async () => {
   //  - Dave just holds the LP tokens
   //  - Bob stake the LP tokens into liq-mining contract, in two transactions
   //=> after 2 months, all three of them should get the same interests
-  it("Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests", async () => {
+  it('Staking to LP mining, holding LP tokens & holding equivalent XYTs should get same interests', async () => {
     const INITIAL_LP_AMOUNT: BN = await env.market.balanceOf(bob.address);
     await setTimeNextBlock(env.liqParams.START_TIME.add(100));
     const xytBalanceOfMarket = await env.xyt.balanceOf(env.market.address);
 
     // Charlie holds same equivalent amount of XYTs as 10% of the market
     // which is the same as what Bob and Dave holds
-    await env.xyt.transfer(
-      charlie.address,
-      (await env.xyt.balanceOf(env.market.address)).div(10)
-    );
+    await env.xyt.transfer(charlie.address, (await env.xyt.balanceOf(env.market.address)).div(10));
 
     let preBalanceBob = await env.yUSDT.balanceOf(bob.address);
     let preBalanceDave = await env.yUSDT.balanceOf(dave.address);
@@ -96,40 +91,28 @@ describe("aaveV1-liquidityMining", async () => {
 
     await stake(env, bob, INITIAL_LP_AMOUNT.div(2));
 
-    await setTimeNextBlock(
-      env.liqParams.START_TIME.add(consts.ONE_MONTH.mul(2))
-    );
+    await setTimeNextBlock(env.liqParams.START_TIME.add(consts.ONE_MONTH.mul(2)));
     await env.liq.redeemLpInterests(env.EXPIRY, bob.address);
     await redeemLpInterests(env, bob);
     await env.liq.redeemLpInterests(env.EXPIRY, bob.address);
-    let actualGainBob = (await env.yUSDT.balanceOf(bob.address)).sub(
-      preBalanceBob
-    );
+    let actualGainBob = (await env.yUSDT.balanceOf(bob.address)).sub(preBalanceBob);
 
     await redeemDueInterests(env, charlie);
-    const actualGainCharlie = (await env.yUSDT.balanceOf(charlie.address)).sub(
-      preBalanceCharlie
-    );
+    const actualGainCharlie = (await env.yUSDT.balanceOf(charlie.address)).sub(preBalanceCharlie);
     // no redeemLpInterests for charlie since we are not caring about lpInterest for him
 
     await redeemLpInterests(env, dave);
-    let actualGainDave = (await env.yUSDT.balanceOf(dave.address)).sub(
-      preBalanceDave
-    );
+    let actualGainDave = (await env.yUSDT.balanceOf(dave.address)).sub(preBalanceDave);
 
     // console.log(actualGainCharlie.toString(), actualGainDave.toString());
     approxBigNumber(actualGainBob, actualGainDave, consts.TEST_TOKEN_DELTA);
     approxBigNumber(actualGainCharlie, actualGainDave, consts.TEST_TOKEN_DELTA);
   });
 
-  it("test invalid setAllocationSetting", async () => {
+  it('test invalid setAllocationSetting', async () => {
     await expect(
       env.liq.setAllocationSetting(
-        [
-          env.EXPIRY,
-          consts.T0.add(consts.THREE_MONTH),
-          consts.T0.add(consts.ONE_MONTH),
-        ],
+        [env.EXPIRY, consts.T0.add(consts.THREE_MONTH), consts.T0.add(consts.ONE_MONTH)],
         [
           env.liqParams.TOTAL_NUMERATOR.div(3),
           env.liqParams.TOTAL_NUMERATOR.div(3),
@@ -140,7 +123,7 @@ describe("aaveV1-liquidityMining", async () => {
     ).to.be.revertedWith(errMsg.INVALID_ALLOCATION);
   });
 
-  it("can stake and withdraw", async () => {
+  it('can stake and withdraw', async () => {
     const FIFTEEN_DAYS = consts.ONE_DAY.mul(15);
 
     const amountToStake = await env.market.balanceOf(bob.address);
@@ -149,26 +132,18 @@ describe("aaveV1-liquidityMining", async () => {
     const pdlBalanceOfUser = await env.pdl.balanceOf(bob.address);
     const lpBalanceOfUser = await env.market.balanceOf(bob.address);
 
-    console.log(
-      `\tPDL balance of liq contract before: ${pdlBalanceOfContract}`
-    );
+    console.log(`\tPDL balance of liq contract before: ${pdlBalanceOfContract}`);
     console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
     console.log(`\tLP balance of user before: ${lpBalanceOfUser}`);
 
     await advanceTime(env.liqParams.START_TIME.sub(consts.T0));
     await stake(env, bob, amountToStake);
-    console.log("\tStaked");
+    console.log('\tStaked');
     const lpHolderContract = await env.liq.lpHolderForExpiry(env.EXPIRY);
-    const aTokenBalanceOfLpHolderContract = await env.yUSDT.balanceOf(
-      lpHolderContract
-    );
+    const aTokenBalanceOfLpHolderContract = await env.yUSDT.balanceOf(lpHolderContract);
     const aTokenBalanceOfUser = await env.yUSDT.balanceOf(bob.address);
-    console.log(
-      `\t[LP interests] aUSDT balance of LpHolder after first staking = ${aTokenBalanceOfLpHolderContract}`
-    );
-    console.log(
-      `\t[LP interests] aUSDT balance of User after first staking = ${aTokenBalanceOfUser}`
-    );
+    console.log(`\t[LP interests] aUSDT balance of LpHolder after first staking = ${aTokenBalanceOfLpHolderContract}`);
+    console.log(`\t[LP interests] aUSDT balance of User after first staking = ${aTokenBalanceOfUser}`);
 
     await advanceTime(FIFTEEN_DAYS);
     await withdraw(env, bob, amountToStake.div(2));
@@ -176,16 +151,10 @@ describe("aaveV1-liquidityMining", async () => {
 
     const pdlBalanceOfContractAfter = await env.pdl.balanceOf(env.liq.address);
     const pdlBalanceOfUserAfter = await env.pdl.balanceOf(bob.address);
-    const expectedPdlBalanceOfUserAfter = env.liqParams.REWARDS_PER_EPOCH[0].div(
-      4
-    );
-    console.log(
-      `\tPDL balance of liq contract after: ${pdlBalanceOfContractAfter}`
-    );
+    const expectedPdlBalanceOfUserAfter = env.liqParams.REWARDS_PER_EPOCH[0].div(4);
+    console.log(`\tPDL balance of liq contract after: ${pdlBalanceOfContractAfter}`);
     console.log(`\tPDL balance of user after: ${pdlBalanceOfUserAfter}`);
-    console.log(
-      `\tExpected PDL balance of user after: ${expectedPdlBalanceOfUserAfter}`
-    );
+    console.log(`\tExpected PDL balance of user after: ${expectedPdlBalanceOfUserAfter}`);
 
     // we need to do this properly
     expect(pdlBalanceOfUserAfter.toNumber()).to.be.approximately(
@@ -193,11 +162,7 @@ describe("aaveV1-liquidityMining", async () => {
       expectedPdlBalanceOfUserAfter.toNumber() / 1000
     );
 
-    console.log(
-      `\t\t\t lpHolderContract aToken bal = ${await env.yUSDT.balanceOf(
-        lpHolderContract
-      )}`
-    );
+    console.log(`\t\t\t lpHolderContract aToken bal = ${await env.yUSDT.balanceOf(lpHolderContract)}`);
 
     //stake using another user - alice, for the same amount as bob's stake now (amountToStake/2)
     await stake(env, alice, amountToStake.div(2));
@@ -220,18 +185,10 @@ describe("aaveV1-liquidityMining", async () => {
         .add(env.liqParams.REWARDS_PER_EPOCH[2].div(8))
     );
 
-    console.log(
-      `\tPDL balance of user after 2nd withdraw: ${pdlBalanceOfUserAfter2ndTnx}`
-    );
-    console.log(
-      `\tExpected PDL balance of user after 2nd withdraw: ${expectedPdlBalanceOfUsersAfter2ndTnx}`
-    );
+    console.log(`\tPDL balance of user after 2nd withdraw: ${pdlBalanceOfUserAfter2ndTnx}`);
+    console.log(`\tExpected PDL balance of user after 2nd withdraw: ${expectedPdlBalanceOfUsersAfter2ndTnx}`);
 
-    console.log(
-      `\t\t\t lpHolderContract aToken bal = ${await env.yUSDT.balanceOf(
-        lpHolderContract
-      )}`
-    );
+    console.log(`\t\t\t lpHolderContract aToken bal = ${await env.yUSDT.balanceOf(lpHolderContract)}`);
 
     expect(pdlBalanceOfUserAfter2ndTnx.toNumber()).to.be.approximately(
       expectedPdlBalanceOfUsersAfter2ndTnx.toNumber(),
@@ -241,17 +198,13 @@ describe("aaveV1-liquidityMining", async () => {
     await withdraw(env, alice, amountToStake.div(2));
     await redeemRewards(env, bob);
 
-    const aTokenBalanceOfLpHolderContractAfter = await env.yUSDT.balanceOf(
-      lpHolderContract
-    );
+    const aTokenBalanceOfLpHolderContractAfter = await env.yUSDT.balanceOf(lpHolderContract);
     const aTokenBalanceOfUserAfter = await env.yUSDT.balanceOf(bob.address);
 
     //now, the LP holding contract should hold almost 0 env.yUSDT. This means that we have calculated and gave the Lp interests back to the users properly
     console.log(
       `\t[LP interests] aUSDT balance of LpHolder after withdrawing all = ${aTokenBalanceOfLpHolderContractAfter}`
     );
-    console.log(
-      `\t[LP interests] aUSDT balance of user after withdrawing all = ${aTokenBalanceOfUserAfter}`
-    );
+    console.log(`\t[LP interests] aUSDT balance of user after withdrawing all = ${aTokenBalanceOfUserAfter}`);
   });
 });

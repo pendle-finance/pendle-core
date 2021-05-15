@@ -1,6 +1,6 @@
-import { assert, expect } from "chai";
-import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract, Wallet } from "ethers";
+import { assert, expect } from 'chai';
+import { createFixtureLoader } from 'ethereum-waffle';
+import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import {
   advanceTime,
   approxBigNumber,
@@ -13,15 +13,15 @@ import {
   setTimeNextBlock,
   startOfEpoch,
   tokens,
-} from "../helpers";
-import { LiqParams, liquidityMiningFixture, UserStakeAction } from "./fixtures";
-import * as scenario from "./fixtures/liquidityMiningScenario.fixture";
+} from '../helpers';
+import { LiqParams, liquidityMiningFixture, UserStakeAction } from './fixtures';
+import * as scenario from './fixtures/liquidityMiningScenario.fixture';
 
-const { waffle } = require("hardhat");
-const hre = require("hardhat");
+const { waffle } = require('hardhat');
+const hre = require('hardhat');
 const { provider } = waffle;
 
-describe("compound-liquidityMining", async () => {
+describe('compound-liquidityMining', async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
@@ -53,7 +53,7 @@ describe("compound-liquidityMining", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  it("can stake and withdraw", async () => {
+  it('can stake and withdraw', async () => {
     const FIFTEEN_DAYS = consts.ONE_DAY.mul(15);
 
     const amountToStake = await market.balanceOf(bob.address); //1e17 LP = 0.1 LP
@@ -62,49 +62,29 @@ describe("compound-liquidityMining", async () => {
     const pdlBalanceOfUser = await pdl.balanceOf(bob.address);
     const lpBalanceOfUser = await market.balanceOf(bob.address);
 
-    console.log(
-      `\tPDL balance of liq contract before: ${pdlBalanceOfContract}`
-    );
+    console.log(`\tPDL balance of liq contract before: ${pdlBalanceOfContract}`);
     console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
     console.log(`\tLP balance of user before: ${lpBalanceOfUser}`);
 
     await advanceTime(params.START_TIME.sub(consts.T0_C));
-    await liq
-      .connect(bob)
-      .stake(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
-    console.log("\tStaked");
+    await liq.connect(bob).stake(EXPIRY, amountToStake, consts.HIGH_GAS_OVERRIDE);
+    console.log('\tStaked');
     const lpHolderContract = await liq.lpHolderForExpiry(EXPIRY);
-    const cTokenBalanceOfLpHolderContract = await cUSDT.balanceOf(
-      lpHolderContract
-    );
+    const cTokenBalanceOfLpHolderContract = await cUSDT.balanceOf(lpHolderContract);
     const cTokenBalanceOfUser = await cUSDT.balanceOf(bob.address);
-    console.log(
-      `\t[LP interests] cUSDT balance of LpHolder after first staking = ${cTokenBalanceOfLpHolderContract}`
-    );
-    console.log(
-      `\t[LP interests] cUSDT balance of User after first staking = ${cTokenBalanceOfUser}`
-    );
+    console.log(`\t[LP interests] cUSDT balance of LpHolder after first staking = ${cTokenBalanceOfLpHolderContract}`);
+    console.log(`\t[LP interests] cUSDT balance of User after first staking = ${cTokenBalanceOfUser}`);
 
     await advanceTime(FIFTEEN_DAYS);
-    await liq
-      .connect(bob)
-      .withdraw(
-        EXPIRY,
-        amountToStake.div(BN.from(2)),
-        consts.HIGH_GAS_OVERRIDE
-      );
+    await liq.connect(bob).withdraw(EXPIRY, amountToStake.div(BN.from(2)), consts.HIGH_GAS_OVERRIDE);
     await liq.redeemRewards(EXPIRY, bob.address);
 
     const pdlBalanceOfContractAfter = await pdl.balanceOf(liq.address);
     const pdlBalanceOfUserAfter = await pdl.balanceOf(bob.address);
     const expectedPdlBalanceOfUserAfter = params.REWARDS_PER_EPOCH[0].div(4);
-    console.log(
-      `\tPDL balance of liq contract after: ${pdlBalanceOfContractAfter}`
-    );
+    console.log(`\tPDL balance of liq contract after: ${pdlBalanceOfContractAfter}`);
     console.log(`\tPDL balance of user after: ${pdlBalanceOfUserAfter}`);
-    console.log(
-      `\tExpected PDL balance of user after: ${expectedPdlBalanceOfUserAfter}`
-    );
+    console.log(`\tExpected PDL balance of user after: ${expectedPdlBalanceOfUserAfter}`);
 
     // we need to do this properly
     expect(pdlBalanceOfUserAfter.toNumber()).to.be.approximately(
@@ -125,24 +105,12 @@ describe("compound-liquidityMining", async () => {
     // console.log(`abi = ${liq.abi}`);
     // console.log(liq);
 
-    const { interests } = await liq.callStatic.redeemLpInterests(
-      EXPIRY,
-      alice.address
-    );
-    const { rewards } = await liq.callStatic.redeemRewards(
-      EXPIRY,
-      alice.address
-    );
+    const { interests } = await liq.callStatic.redeemLpInterests(EXPIRY, alice.address);
+    const { rewards } = await liq.callStatic.redeemRewards(EXPIRY, alice.address);
     console.log(`\tInterests for alice = ${interests}`);
     console.log(`\tRewards available for epochs from now: ${rewards}`);
 
-    await liq
-      .connect(bob)
-      .withdraw(
-        EXPIRY,
-        amountToStake.div(BN.from(2)),
-        consts.HIGH_GAS_OVERRIDE
-      );
+    await liq.connect(bob).withdraw(EXPIRY, amountToStake.div(BN.from(2)), consts.HIGH_GAS_OVERRIDE);
     await liq.redeemRewards(EXPIRY, bob.address);
 
     const pdlBalanceOfUserAfter2ndTnx = await pdl.balanceOf(bob.address);
@@ -152,12 +120,8 @@ describe("compound-liquidityMining", async () => {
         .add(params.REWARDS_PER_EPOCH[1].mul(3).div(8))
         .add(params.REWARDS_PER_EPOCH[2].div(8))
     );
-    console.log(
-      `\tPDL balance of user after 2nd withdraw: ${pdlBalanceOfUserAfter2ndTnx}`
-    );
-    console.log(
-      `\tExpected PDL balance of user after 2nd withdraw: ${expectedPdlBalanceOfUsersAfter2ndTnx}`
-    );
+    console.log(`\tPDL balance of user after 2nd withdraw: ${pdlBalanceOfUserAfter2ndTnx}`);
+    console.log(`\tExpected PDL balance of user after 2nd withdraw: ${expectedPdlBalanceOfUsersAfter2ndTnx}`);
 
     expect(pdlBalanceOfUserAfter2ndTnx.toNumber()).to.be.approximately(
       expectedPdlBalanceOfUsersAfter2ndTnx.toNumber(),
@@ -165,17 +129,13 @@ describe("compound-liquidityMining", async () => {
     );
 
     await liq.withdraw(EXPIRY, amountToStake.div(2), consts.HIGH_GAS_OVERRIDE);
-    const cTokenBalanceOfLpHolderContractAfter = await cUSDT.balanceOf(
-      lpHolderContract
-    );
+    const cTokenBalanceOfLpHolderContractAfter = await cUSDT.balanceOf(lpHolderContract);
     const cTokenBalanceOfUserAfter = await cUSDT.balanceOf(bob.address);
 
     //now, the LP holding contract should hold almost 0 cUSDT. This means that we have calculated and gave the Lp interests back to the users properly
     console.log(
       `\t[LP interests] cUSDT balance of LpHolder after withdrawing all = ${cTokenBalanceOfLpHolderContractAfter}`
     );
-    console.log(
-      `\t[LP interests] cUSDT balance of user after withdrawing all = ${cTokenBalanceOfUserAfter}`
-    );
+    console.log(`\t[LP interests] cUSDT balance of user after withdrawing all = ${cTokenBalanceOfUserAfter}`);
   });
 });

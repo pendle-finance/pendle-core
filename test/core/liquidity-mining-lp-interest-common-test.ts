@@ -1,5 +1,5 @@
-import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN } from "ethers";
+import { createFixtureLoader } from 'ethereum-waffle';
+import { BigNumber as BN } from 'ethers';
 import {
   emptyToken,
   setTimeNextBlock,
@@ -16,20 +16,20 @@ import {
   tokens,
   mint,
   amountToWei,
-} from "../helpers";
+} from '../helpers';
 import {
   liquidityMiningFixture,
   LiquidityMiningFixture,
   Mode,
   parseTestEnvLiquidityMiningFixture,
   TestEnv,
-} from "./fixtures";
+} from './fixtures';
 
-const { waffle } = require("hardhat");
+const { waffle } = require('hardhat');
 const { provider } = waffle;
 
 export function runTest(mode: Mode) {
-  describe("", async () => {
+  describe('', async () => {
     const wallets = provider.getWallets();
     const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob, charlie, dave, eve] = wallets;
@@ -39,9 +39,7 @@ export function runTest(mode: Mode) {
     const FAKE_INCOME_AMOUNT = consts.INITIAL_COMPOUND_TOKEN_AMOUNT;
 
     async function buildTestEnv() {
-      let fixture: LiquidityMiningFixture = await loadFixture(
-        liquidityMiningFixture
-      );
+      let fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);
       await parseTestEnvLiquidityMiningFixture(alice, mode, env, fixture);
       env.TEST_DELTA = BN.from(200);
     }
@@ -71,19 +69,13 @@ export function runTest(mode: Mode) {
 
     async function addFakeIncomeCompound() {
       await mint(tokens.USDT, alice, FAKE_INCOME_AMOUNT);
-      await env.USDTContract.connect(alice).transfer(
-        env.yUSDT.address,
-        amountToWei(FAKE_INCOME_AMOUNT, 6)
-      );
+      await env.USDTContract.connect(alice).transfer(env.yUSDT.address, amountToWei(FAKE_INCOME_AMOUNT, 6));
       await env.yUSDT.balanceOfUnderlying(alice.address); // interact with compound so that it updates all info
       // to have the most accurate result since the interest is only updated every DELTA seconds
     }
 
-    it("test 1", async () => {
-      await env.xyt.transfer(
-        eve.address,
-        (await env.xyt.balanceOf(env.market.address)).div(10)
-      );
+    it('test 1', async () => {
+      await env.xyt.transfer(eve.address, (await env.xyt.balanceOf(env.market.address)).div(10));
 
       let totalTime = consts.SIX_MONTH;
       let numTurnsBeforeExpiry = 40;
@@ -92,15 +84,10 @@ export function runTest(mode: Mode) {
 
       let liqBalance: BN[] = [BN.from(0), BN.from(0), BN.from(0), BN.from(0)];
       let lpBalance: BN[] = [];
-      for (let i = 0; i < 4; i++)
-        lpBalance.push(await env.market.balanceOf(wallets[i].address));
+      for (let i = 0; i < 4; i++) lpBalance.push(await env.market.balanceOf(wallets[i].address));
 
       for (let i = 1; i <= numTurns; i++) {
-        await setTimeNextBlock(
-          env.liqParams.START_TIME.add(
-            totalTime.div(numTurnsBeforeExpiry).mul(i)
-          )
-        );
+        await setTimeNextBlock(env.liqParams.START_TIME.add(totalTime.div(numTurnsBeforeExpiry).mul(i)));
         let userID = randomBN(4).toNumber();
         let actionType: number = randomNumber(3);
         if (liqBalance[userID].eq(0)) {
@@ -130,16 +117,8 @@ export function runTest(mode: Mode) {
         await redeemLpInterests(env, wallets[i]);
       }
       for (let i = 1; i < 4; i++) {
-        approxBigNumber(
-          await env.yUSDT.balanceOf(wallets[i].address),
-          expectedGain,
-          env.TEST_DELTA
-        );
-        approxBigNumber(
-          await env.market.balanceOf(wallets[i].address),
-          lpBalance[i],
-          0
-        );
+        approxBigNumber(await env.yUSDT.balanceOf(wallets[i].address), expectedGain, env.TEST_DELTA);
+        approxBigNumber(await env.market.balanceOf(wallets[i].address), lpBalance[i], 0);
       }
     });
   });

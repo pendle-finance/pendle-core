@@ -1,13 +1,13 @@
-import { expect } from "chai";
-import { createFixtureLoader } from "ethereum-waffle";
-import { Contract } from "ethers";
-import { evm_revert, evm_snapshot, Token, tokens } from "../helpers";
-import { marketFixture } from "./fixtures";
+import { expect } from 'chai';
+import { createFixtureLoader } from 'ethereum-waffle';
+import { Contract } from 'ethers';
+import { evm_revert, evm_snapshot, Token, tokens } from '../helpers';
+import { marketFixture } from './fixtures';
 
-const { waffle } = require("hardhat");
+const { waffle } = require('hardhat');
 const provider = waffle.provider;
 
-describe("PendleData", async () => {
+describe('PendleData', async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
 
@@ -46,7 +46,7 @@ describe("PendleData", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  it("should be able to setMarketFees", async () => {
+  it('should be able to setMarketFees', async () => {
     await data.setMarketFees(10, 101);
     let swapFee = await data.swapFee();
     let protocolSwapFee = await data.protocolSwapFee();
@@ -54,14 +54,12 @@ describe("PendleData", async () => {
     expect(protocolSwapFee).to.be.eq(101);
   });
 
-  it("should be able to get allMarketsLength", async () => {
+  it('should be able to get allMarketsLength', async () => {
     let allMarketsLength = await data.allMarketsLength();
     expect(allMarketsLength).to.be.eq(4); // numbers of markets that have been created in marketFixture
   });
 
-  it("Should be able to setTreasury", async () => {
-    await expect(data.setTreasury(treasury.address))
-      .to.emit(data, "TreasurySet")
-      .withArgs(treasury.address);
+  it('Should be able to setTreasury', async () => {
+    await expect(data.setTreasury(treasury.address)).to.emit(data, 'TreasurySet').withArgs(treasury.address);
   });
 });

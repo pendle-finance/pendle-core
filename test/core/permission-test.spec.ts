@@ -1,21 +1,14 @@
-import { expect } from "chai";
-import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract } from "ethers";
-import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
-import {
-  consts,
-  errMsg,
-  evm_revert,
-  evm_snapshot,
-  Token,
-  tokens,
-} from "../helpers";
-import { marketFixture } from "./fixtures";
+import { expect } from 'chai';
+import { createFixtureLoader } from 'ethereum-waffle';
+import { BigNumber as BN, Contract } from 'ethers';
+import ERC20 from '../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
+import { consts, errMsg, evm_revert, evm_snapshot, Token, tokens } from '../helpers';
+import { marketFixture } from './fixtures';
 
-const { waffle } = require("hardhat");
+const { waffle } = require('hardhat');
 const { provider } = waffle;
 
-describe("permission-test", async () => {
+describe('permission-test', async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;
@@ -55,7 +48,7 @@ describe("permission-test", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  it("PendleMarketBase", async () => {
+  it('PendleMarketBase', async () => {
     await router.bootstrapMarket(
       consts.MARKET_FACTORY_AAVE,
       xyt.address,
@@ -65,74 +58,42 @@ describe("permission-test", async () => {
       consts.HIGH_GAS_OVERRIDE
     );
 
-    await expect(
-      market.bootstrap(alice.address, amount, amount)
-    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
+    await expect(market.bootstrap(alice.address, amount, amount)).to.be.revertedWith(errMsg.ONLY_ROUTER);
+
+    await expect(market.addMarketLiquidityDual(alice.address, amount, amount, amount, amount)).to.be.revertedWith(
+      errMsg.ONLY_ROUTER
+    );
 
     await expect(
-      market.addMarketLiquidityDual(
-        alice.address,
-        amount,
-        amount,
-        amount,
-        amount
-      )
+      market.addMarketLiquiditySingle(alice.address, consts.ZERO_ADDRESS, amount, amount)
     ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
-    await expect(
-      market.addMarketLiquiditySingle(
-        alice.address,
-        consts.ZERO_ADDRESS,
-        amount,
-        amount
-      )
-    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
+    await expect(market.removeMarketLiquidityDual(alice.address, amount, amount, amount)).to.be.revertedWith(
+      errMsg.ONLY_ROUTER
+    );
 
     await expect(
-      market.removeMarketLiquidityDual(alice.address, amount, amount, amount)
+      market.removeMarketLiquiditySingle(alice.address, consts.RANDOM_ADDRESS, amount, amount)
     ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
-    await expect(
-      market.removeMarketLiquiditySingle(
-        alice.address,
-        consts.RANDOM_ADDRESS,
-        amount,
-        amount
-      )
-    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
+    await expect(market.swapExactIn(consts.RANDOM_ADDRESS, amount, consts.RANDOM_ADDRESS, amount)).to.be.revertedWith(
+      errMsg.ONLY_ROUTER
+    );
 
-    await expect(
-      market.swapExactIn(
-        consts.RANDOM_ADDRESS,
-        amount,
-        consts.RANDOM_ADDRESS,
-        amount
-      )
-    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
+    await expect(market.swapExactOut(consts.RANDOM_ADDRESS, amount, consts.RANDOM_ADDRESS, amount)).to.be.revertedWith(
+      errMsg.ONLY_ROUTER
+    );
 
-    await expect(
-      market.swapExactOut(
-        consts.RANDOM_ADDRESS,
-        amount,
-        consts.RANDOM_ADDRESS,
-        amount
-      )
-    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
-
-    await expect(
-      market.redeemLpInterests(consts.RANDOM_ADDRESS)
-    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
+    await expect(market.redeemLpInterests(consts.RANDOM_ADDRESS)).to.be.revertedWith(errMsg.ONLY_ROUTER);
   });
 
-  it("PendleRouter", async () => {
+  it('PendleRouter', async () => {
     await expect(
-      router
-        .connect(bob)
-        .addMarketFactory(consts.MARKET_FACTORY_AAVE, consts.RANDOM_ADDRESS)
+      router.connect(bob).addMarketFactory(consts.MARKET_FACTORY_AAVE, consts.RANDOM_ADDRESS)
     ).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
 
-    await expect(
-      router.connect(bob).addForge(consts.FORGE_AAVE, consts.RANDOM_ADDRESS)
-    ).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
+    await expect(router.connect(bob).addForge(consts.FORGE_AAVE, consts.RANDOM_ADDRESS)).to.be.revertedWith(
+      errMsg.ONLY_GOVERNANCE
+    );
   });
 });

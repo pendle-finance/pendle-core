@@ -1,6 +1,6 @@
-import { assert, expect } from "chai";
-import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN } from "ethers";
+import { assert, expect } from 'chai';
+import { createFixtureLoader } from 'ethereum-waffle';
+import { BigNumber as BN } from 'ethers';
 import {
   advanceTime,
   approxBigNumber,
@@ -18,7 +18,7 @@ import {
   stake,
   startOfEpoch,
   withdraw,
-} from "../helpers";
+} from '../helpers';
 import {
   liquidityMiningFixture,
   LiquidityMiningFixture,
@@ -26,14 +26,14 @@ import {
   parseTestEnvLiquidityMiningFixture,
   TestEnv,
   UserStakeAction,
-} from "./fixtures";
-import * as scenario from "./fixtures/liquidityMiningScenario.fixture";
+} from './fixtures';
+import * as scenario from './fixtures/liquidityMiningScenario.fixture';
 
-const { waffle } = require("hardhat");
+const { waffle } = require('hardhat');
 const { provider } = waffle;
 
 export function runTest(mode: Mode) {
-  describe("", async () => {
+  describe('', async () => {
     const wallets = provider.getWallets();
     const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob, charlie, dave, eve] = wallets;
@@ -42,9 +42,7 @@ export function runTest(mode: Mode) {
     let env: TestEnv = {} as TestEnv;
 
     async function buildTestEnv() {
-      let fixture: LiquidityMiningFixture = await loadFixture(
-        liquidityMiningFixture
-      );
+      let fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);
       await parseTestEnvLiquidityMiningFixture(alice, mode, env, fixture);
     }
 
@@ -98,23 +96,16 @@ export function runTest(mode: Mode) {
         await setTimeNextBlock(action.time);
         if (action.isStaking) {
           await stake(env, wallets[action.id], action.amount);
-          expectedLpBalance[action.id] = expectedLpBalance[action.id].sub(
-            action.amount
-          );
+          expectedLpBalance[action.id] = expectedLpBalance[action.id].sub(action.amount);
         } else {
           await withdraw(env, wallets[action.id], action.amount);
-          expectedLpBalance[action.id] = expectedLpBalance[action.id].add(
-            action.amount
-          );
+          expectedLpBalance[action.id] = expectedLpBalance[action.id].add(action.amount);
         }
       }
 
       /* check Lp balances*/
       let actualLpBalance: BN[] = await getLpBalanceOfAllUsers();
-      expect(
-        expectedLpBalance,
-        "lp balances don't match expected lp balances"
-      ).to.be.eql(actualLpBalance);
+      expect(expectedLpBalance, "lp balances don't match expected lp balances").to.be.eql(actualLpBalance);
     }
 
     async function checkEqualRewards(
@@ -122,15 +113,10 @@ export function runTest(mode: Mode) {
       epochToCheck: number,
       _allocationRateDiv?: number
     ) {
-      let expectedRewards: BN[][] = calcExpectedRewards(
-        userStakingData,
-        env.liqParams,
-        epochToCheck
-      );
+      let expectedRewards: BN[][] = calcExpectedRewards(userStakingData, env.liqParams, epochToCheck);
       await setTime(startOfEpoch(env.liqParams, epochToCheck));
       let numUser = expectedRewards.length;
-      let allocationRateDiv =
-        _allocationRateDiv !== undefined ? _allocationRateDiv : 1;
+      let allocationRateDiv = _allocationRateDiv !== undefined ? _allocationRateDiv : 1;
       for (let userId = 0; userId < numUser; userId++) {
         await redeemRewards(env, wallets[userId]);
         approxBigNumber(
@@ -148,63 +134,36 @@ export function runTest(mode: Mode) {
       _allocationRateDiv?: number
     ) {
       for (let i = 0; i < 4; i++) {
-        await checkEqualRewards(
-          userStakingData,
-          epochToCheck + i,
-          _allocationRateDiv
-        );
+        await checkEqualRewards(userStakingData, epochToCheck + i, _allocationRateDiv);
       }
     }
 
-    it("should be able to receive enough PENDLE rewards - test 2", async () => {
-      let userStakingData: UserStakeAction[][][] = scenario.scenario04(
-        env.liqParams
-      );
+    it('should be able to receive enough PENDLE rewards - test 2', async () => {
+      let userStakingData: UserStakeAction[][][] = scenario.scenario04(env.liqParams);
       await doSequence(userStakingData);
-      await checkEqualRewardsForEpochs(
-        userStakingData,
-        userStakingData.length + 1
-      );
+      await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1);
     });
 
-    it("should be able to receive enough PENDLE rewards - test 3", async () => {
+    it('should be able to receive enough PENDLE rewards - test 3', async () => {
       await env.liq.setAllocationSetting(
         [env.EXPIRY, consts.T0.add(consts.THREE_MONTH)],
-        [
-          env.liqParams.TOTAL_NUMERATOR.div(2),
-          env.liqParams.TOTAL_NUMERATOR.div(2),
-        ],
+        [env.liqParams.TOTAL_NUMERATOR.div(2), env.liqParams.TOTAL_NUMERATOR.div(2)],
         consts.HIGH_GAS_OVERRIDE
       );
-      let userStakingData: UserStakeAction[][][] = scenario.scenario04(
-        env.liqParams
-      );
+      let userStakingData: UserStakeAction[][][] = scenario.scenario04(env.liqParams);
       await doSequence(userStakingData);
-      await checkEqualRewardsForEpochs(
-        userStakingData,
-        userStakingData.length + 1,
-        2
-      );
+      await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1, 2);
     });
 
-    it("should be able to receive enough PENDLE rewards - test 4", async () => {
+    it('should be able to receive enough PENDLE rewards - test 4', async () => {
       await env.liq.setAllocationSetting(
         [env.EXPIRY, consts.T0.add(consts.THREE_MONTH)],
-        [
-          env.liqParams.TOTAL_NUMERATOR.div(2),
-          env.liqParams.TOTAL_NUMERATOR.div(2),
-        ],
+        [env.liqParams.TOTAL_NUMERATOR.div(2), env.liqParams.TOTAL_NUMERATOR.div(2)],
         consts.HIGH_GAS_OVERRIDE
       );
-      let userStakingData: UserStakeAction[][][] = scenario.scenario06(
-        env.liqParams
-      );
+      let userStakingData: UserStakeAction[][][] = scenario.scenario06(env.liqParams);
       await doSequence(userStakingData);
-      await checkEqualRewardsForEpochs(
-        userStakingData,
-        userStakingData.length + 1,
-        2
-      );
+      await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1, 2);
     });
 
     it("this test shouldn't crash", async () => {
@@ -213,15 +172,11 @@ export function runTest(mode: Mode) {
       await setTimeNextBlock(env.liqParams.START_TIME);
       await stake(env, bob, amountToStake);
 
-      await setTimeNextBlock(
-        env.liqParams.START_TIME.add(env.liqParams.EPOCH_DURATION)
-      );
+      await setTimeNextBlock(env.liqParams.START_TIME.add(env.liqParams.EPOCH_DURATION));
       await withdraw(env, bob, amountToStake);
       await redeemRewards(env, bob);
       await setTimeNextBlock(
-        env.liqParams.START_TIME.add(env.liqParams.EPOCH_DURATION).add(
-          env.liqParams.EPOCH_DURATION
-        )
+        env.liqParams.START_TIME.add(env.liqParams.EPOCH_DURATION).add(env.liqParams.EPOCH_DURATION)
       );
       await redeemRewards(env, bob);
     });

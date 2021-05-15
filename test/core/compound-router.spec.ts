@@ -1,6 +1,6 @@
-import { expect } from "chai";
-import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract, Wallet } from "ethers";
+import { expect } from 'chai';
+import { createFixtureLoader } from 'ethereum-waffle';
+import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import {
   amountToWei,
   approxBigNumber,
@@ -13,13 +13,13 @@ import {
   setTimeNextBlock,
   Token,
   tokens,
-} from "../helpers";
-import { routerFixture } from "./fixtures";
+} from '../helpers';
+import { routerFixture } from './fixtures';
 
-const { waffle } = require("hardhat");
+const { waffle } = require('hardhat');
 const provider = waffle.provider;
 
-describe("compound-router", async () => {
+describe('compound-router', async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave] = wallets;
@@ -72,12 +72,7 @@ describe("compound-router", async () => {
   }
 
   async function redeemDueInterests(user: Wallet, expiry: BN) {
-    await router.redeemDueInterests(
-      consts.FORGE_COMPOUND,
-      tokenUSDT.address,
-      expiry,
-      user.address
-    );
+    await router.redeemDueInterests(consts.FORGE_COMPOUND, tokenUSDT.address, expiry, user.address);
   }
 
   async function convertToCAmount(amount: BN) {
@@ -94,60 +89,39 @@ describe("compound-router", async () => {
     await cToken.borrow(amount);
   }
 
-  async function getCurInterest(
-    initialCAmount: BN,
-    initialUnderlyingAmount: BN
-  ): Promise<BN> {
+  async function getCurInterest(initialCAmount: BN, initialUnderlyingAmount: BN): Promise<BN> {
     const curRate = await cUSDT.callStatic.exchangeRateCurrent();
-    console.log("rateNow", curRate.toString());
-    return initialCAmount
-      .mul(curRate)
-      .div(consts.ONE_E_18)
-      .sub(initialUnderlyingAmount);
+    console.log('rateNow', curRate.toString());
+    return initialCAmount.mul(curRate).div(consts.ONE_E_18).sub(initialUnderlyingAmount);
   }
 
-  it("should receive the interest from xyt when do tokenizeYield", async () => {
+  it('should receive the interest from xyt when do tokenizeYield', async () => {
     const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
-    const initialUnderlyingBalance = initialRate
-      .mul(initialcUSDTbalance)
-      .div(consts.ONE_E_18);
+    const initialUnderlyingBalance = initialRate.mul(initialcUSDTbalance).div(consts.ONE_E_18);
     await tokenizeYield(alice, initialcUSDTbalance.div(2));
     await borrow(amount, charlie);
     await setTimeNextBlock(consts.T0_C.add(consts.FIFTEEN_DAY));
     await tokenizeYield(alice, initialcUSDTbalance.div(2));
     await redeemDueInterests(alice, consts.T0_C.add(consts.SIX_MONTH));
 
-    const expectedGain = await getCurInterest(
-      initialcUSDTbalance.div(2),
-      initialUnderlyingBalance.div(2)
-    );
+    const expectedGain = await getCurInterest(initialcUSDTbalance.div(2), initialUnderlyingBalance.div(2));
 
     // because we have tokenized all cUSDT of alice, curcUSDTbalanace will equal to the interest
     // she has received from her xyt
-    const curUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
-      alice.address
-    );
+    const curUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(alice.address);
     approxBigNumber(curUnderlyingBalance, expectedGain, BN.from(10));
   });
 
   it("underlying asset's address should match the original asset", async () => {
-    expect((await cOt.underlyingAsset()).toLowerCase()).to.be.equal(
-      tokens.USDT.address.toLowerCase()
-    );
-    expect((await cXyt.underlyingAsset()).toLowerCase()).to.be.equal(
-      tokens.USDT.address.toLowerCase()
-    );
+    expect((await cOt.underlyingAsset()).toLowerCase()).to.be.equal(tokens.USDT.address.toLowerCase());
+    expect((await cXyt.underlyingAsset()).toLowerCase()).to.be.equal(tokens.USDT.address.toLowerCase());
   });
 
   it("shouldn't be able to do newYieldContract with an expiry in the past", async () => {
     let futureTime = consts.T0_C.sub(consts.ONE_MONTH);
-    await expect(
-      router.newYieldContracts(
-        consts.FORGE_COMPOUND,
-        tokenUSDT.address,
-        futureTime
-      )
-    ).to.be.revertedWith(errMsg.INVALID_EXPIRY);
+    await expect(router.newYieldContracts(consts.FORGE_COMPOUND, tokenUSDT.address, futureTime)).to.be.revertedWith(
+      errMsg.INVALID_EXPIRY
+    );
   });
 
   it("shouldn't be able to call redeemUnderlying if the yield contract has expired", async () => {
@@ -166,7 +140,7 @@ describe("compound-router", async () => {
     ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
   });
 
-  it("[After 1 month] should be able to redeem cUSDT to get back OT, XYT and interests $", async () => {
+  it('[After 1 month] should be able to redeem cUSDT to get back OT, XYT and interests $', async () => {
     await tokenizeYield(alice, initialcUSDTbalance);
     await borrow(amount, charlie);
 
@@ -182,17 +156,13 @@ describe("compound-router", async () => {
 
     // if user can receive the exact amount of cUSDT that he has sent in, then he has already received
     // the interest.
-    expect(
-      (await cUSDT.balanceOf(alice.address)).toNumber()
-    ).to.be.approximately(initialcUSDTbalance.toNumber(), 10);
+    expect((await cUSDT.balanceOf(alice.address)).toNumber()).to.be.approximately(initialcUSDTbalance.toNumber(), 10);
   });
 
-  it("[After 1 month] should be able to get due interests", async () => {
+  it('[After 1 month] should be able to get due interests', async () => {
     await tokenizeYield(alice, initialcUSDTbalance);
     const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
-    const initialUnderlyingBalance = initialRate
-      .mul(initialcUSDTbalance)
-      .div(consts.ONE_E_18);
+    const initialUnderlyingBalance = initialRate.mul(initialcUSDTbalance).div(consts.ONE_E_18);
     await borrow(amount, charlie);
 
     await cOt.transfer(bob.address, await cOt.balanceOf(alice.address));
@@ -201,42 +171,26 @@ describe("compound-router", async () => {
 
     await redeemDueInterests(alice, consts.T0_C.add(consts.SIX_MONTH));
 
-    const expectedGain = await getCurInterest(
-      initialcUSDTbalance,
-      initialUnderlyingBalance
-    );
+    const expectedGain = await getCurInterest(initialcUSDTbalance, initialUnderlyingBalance);
     console.log(
       await cUSDT.callStatic.balanceOf(alice.address),
       await cUSDT.callStatic.balanceOfUnderlying(alice.address)
     );
-    let finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
-      alice.address
-    );
+    let finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(alice.address);
     finalUnderlyingBalance = finalUnderlyingBalance.add(
-      (
-        await cForge.dueInterests(
-          tokenUSDT.address,
-          consts.T0_C.add(consts.SIX_MONTH),
-          alice.address
-        )
-      )
+      (await cForge.dueInterests(tokenUSDT.address, consts.T0_C.add(consts.SIX_MONTH), alice.address))
         .mul(await cUSDT.callStatic.exchangeRateCurrent())
         .div(consts.ONE_E_18)
     );
     expect(finalUnderlyingBalance).to.be.below(initialUnderlyingBalance);
-    expect(finalUnderlyingBalance.toNumber()).to.be.approximately(
-      expectedGain.toNumber(),
-      10
-    );
+    expect(finalUnderlyingBalance.toNumber()).to.be.approximately(expectedGain.toNumber(), 10);
   });
 
-  it("Another wallet should be able to receive interests from XYT", async () => {
+  it('Another wallet should be able to receive interests from XYT', async () => {
     await tokenizeYield(alice, initialcUSDTbalance);
     await cXyt.transfer(bob.address, initialcUSDTbalance);
     const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
-    const initialUnderlyingBalance = initialRate
-      .mul(initialcUSDTbalance)
-      .div(consts.ONE_E_18);
+    const initialUnderlyingBalance = initialRate.mul(initialcUSDTbalance).div(consts.ONE_E_18);
     await borrow(amount, charlie);
 
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
@@ -246,34 +200,20 @@ describe("compound-router", async () => {
 
     let actualGain = await cUSDT.callStatic.balanceOfUnderlying(bob.address);
     actualGain = actualGain.add(
-      (
-        await cForge.dueInterests(
-          tokenUSDT.address,
-          consts.T0_C.add(consts.SIX_MONTH),
-          bob.address
-        )
-      )
+      (await cForge.dueInterests(tokenUSDT.address, consts.T0_C.add(consts.SIX_MONTH), bob.address))
         .mul(await cUSDT.callStatic.exchangeRateCurrent())
         .div(consts.ONE_E_18)
     );
 
-    const expectedGain = await getCurInterest(
-      initialcUSDTbalance,
-      initialUnderlyingBalance
-    );
-    expect(actualGain.toNumber()).to.be.approximately(
-      expectedGain.toNumber(),
-      10
-    );
+    const expectedGain = await getCurInterest(initialcUSDTbalance, initialUnderlyingBalance);
+    expect(actualGain.toNumber()).to.be.approximately(expectedGain.toNumber(), 10);
   });
 
-  it("Short after expiry, should be able to redeem cUSDT from OT", async () => {
+  it('Short after expiry, should be able to redeem cUSDT from OT', async () => {
     await tokenizeYield(alice, initialcUSDTbalance);
     await cXyt.transfer(bob.address, initialcUSDTbalance);
     const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
-    const initialUnderlyingBalance = initialRate
-      .mul(initialcUSDTbalance)
-      .div(consts.ONE_E_18);
+    const initialUnderlyingBalance = initialRate.mul(initialcUSDTbalance).div(consts.ONE_E_18);
     await borrow(amount, charlie);
 
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
@@ -284,19 +224,10 @@ describe("compound-router", async () => {
     const T2 = T1.add(10);
     await setTimeNextBlock(T2);
 
-    await router.redeemAfterExpiry(
-      consts.FORGE_COMPOUND,
-      tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH)
-    );
+    await router.redeemAfterExpiry(consts.FORGE_COMPOUND, tokenUSDT.address, consts.T0_C.add(consts.SIX_MONTH));
 
-    const lastRate = await cForge.lastRateBeforeExpiry(
-      tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH)
-    );
-    const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
-      alice.address
-    );
+    const lastRate = await cForge.lastRateBeforeExpiry(tokenUSDT.address, consts.T0_C.add(consts.SIX_MONTH));
+    const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(alice.address);
     const curRate = await cUSDT.callStatic.exchangeRateCurrent();
     expect(finalUnderlyingBalance.toNumber()).to.be.approximately(
       initialUnderlyingBalance.mul(curRate).div(lastRate).toNumber(),
@@ -304,13 +235,11 @@ describe("compound-router", async () => {
     );
   });
 
-  it("One month after expiry, should be able to redeem cUSDT with interest", async () => {
+  it('One month after expiry, should be able to redeem cUSDT with interest', async () => {
     await tokenizeYield(alice, initialcUSDTbalance);
     await cXyt.transfer(bob.address, initialcUSDTbalance);
     const initialRate = await cUSDT.callStatic.exchangeRateCurrent();
-    const initialUnderlyingBalance = initialRate
-      .mul(initialcUSDTbalance)
-      .div(consts.ONE_E_18);
+    const initialUnderlyingBalance = initialRate.mul(initialcUSDTbalance).div(consts.ONE_E_18);
     await borrow(amount, charlie);
 
     const T1 = consts.T0_C.add(consts.SIX_MONTH).sub(1);
@@ -321,19 +250,10 @@ describe("compound-router", async () => {
     const T2 = T1.add(consts.ONE_MONTH);
     await setTimeNextBlock(T2);
 
-    await router.redeemAfterExpiry(
-      consts.FORGE_COMPOUND,
-      tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH)
-    );
+    await router.redeemAfterExpiry(consts.FORGE_COMPOUND, tokenUSDT.address, consts.T0_C.add(consts.SIX_MONTH));
 
-    const lastRate = await cForge.lastRateBeforeExpiry(
-      tokenUSDT.address,
-      consts.T0_C.add(consts.SIX_MONTH)
-    );
-    const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(
-      alice.address
-    );
+    const lastRate = await cForge.lastRateBeforeExpiry(tokenUSDT.address, consts.T0_C.add(consts.SIX_MONTH));
+    const finalUnderlyingBalance = await cUSDT.callStatic.balanceOfUnderlying(alice.address);
     const curRate = await cUSDT.callStatic.exchangeRateCurrent();
     expect(finalUnderlyingBalance.toNumber()).to.be.approximately(
       initialUnderlyingBalance.mul(curRate).div(lastRate).toNumber(),
@@ -341,14 +261,10 @@ describe("compound-router", async () => {
     );
   });
 
-  it("Should be able to newYieldContracts", async () => {
+  it('Should be able to newYieldContracts', async () => {
     let futureTime = consts.T0_C.add(consts.SIX_MONTH).add(consts.ONE_DAY);
     let filter = cForge.filters.NewYieldContracts();
-    let tx = await router.newYieldContracts(
-      consts.FORGE_COMPOUND,
-      tokenUSDT.address,
-      futureTime
-    );
+    let tx = await router.newYieldContracts(consts.FORGE_COMPOUND, tokenUSDT.address, futureTime);
 
     let allEvents = await cForge.queryFilter(filter, tx.blockHash);
     expect(allEvents.length).to.be.eq(2);
@@ -357,7 +273,7 @@ describe("compound-router", async () => {
     expect(allEvents[allEvents.length - 1].args!.expiry).to.eq(futureTime);
   });
 
-  it("should receive back exactly the same amount of cTokens", async () => {
+  it('should receive back exactly the same amount of cTokens', async () => {
     await tokenizeYield(alice, initialcUSDTbalance);
     await setTimeNextBlock(consts.T0_C.add(consts.FIFTEEN_DAY));
 
@@ -372,9 +288,6 @@ describe("compound-router", async () => {
     );
 
     const curcUSDTbalanace = await cUSDT.balanceOf(alice.address);
-    expect(initialcUSDTbalance.toNumber()).to.be.approximately(
-      curcUSDTbalanace.toNumber(),
-      10
-    );
+    expect(initialcUSDTbalance.toNumber()).to.be.approximately(curcUSDTbalanace.toNumber(), 10);
   });
 });

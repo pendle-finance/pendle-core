@@ -1,21 +1,15 @@
-import { expect } from "chai";
-import { BigNumber as BN, Contract } from "ethers";
-import PendleTokenDistribution from "../../build/artifacts/contracts/core/PendleTokenDistribution.sol/PendleTokenDistribution.json";
-import PENDLE from "../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
-import { consts, evm_revert, evm_snapshot, setTimeNextBlock } from "../helpers";
+import { expect } from 'chai';
+import { BigNumber as BN, Contract } from 'ethers';
+import PendleTokenDistribution from '../../build/artifacts/contracts/core/PendleTokenDistribution.sol/PendleTokenDistribution.json';
+import PENDLE from '../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json';
+import { consts, evm_revert, evm_snapshot, setTimeNextBlock } from '../helpers';
 
-const { waffle } = require("hardhat");
+const { waffle } = require('hardhat');
 const { provider, deployContract } = waffle;
 
-describe("pendleTokenDistribution [@skip-on-coverage]", async () => {
+describe('pendleTokenDistribution [@skip-on-coverage]', async () => {
   const wallets = provider.getWallets();
-  const [
-    governance,
-    bob,
-    charlie,
-    salesMultisig,
-    liqIncentivesRecipient,
-  ] = wallets;
+  const [governance, bob, charlie, salesMultisig, liqIncentivesRecipient] = wallets;
   const newEmissionRateMultiplierNumerator = BN.from(123456);
   const newTerminalInflationRateNumerator = BN.from(123123);
   const newLiquidityIncentivesRecipient = consts.DUMMY_ADDRESS;
@@ -32,44 +26,34 @@ describe("pendleTokenDistribution [@skip-on-coverage]", async () => {
   before(async () => {
     globalSnapshotId = await evm_snapshot();
 
-    teamTokensContract = await deployContract(
-      governance,
-      PendleTokenDistribution,
+    teamTokensContract = await deployContract(governance, PendleTokenDistribution, [
+      governance.address,
       [
-        governance.address,
-        [
-          consts.ONE_QUARTER,
-          consts.ONE_QUARTER.mul(2),
-          consts.ONE_QUARTER.mul(3),
-          consts.ONE_QUARTER.mul(4),
-          consts.ONE_QUARTER.mul(5),
-          consts.ONE_QUARTER.mul(6),
-          consts.ONE_QUARTER.mul(7),
-          consts.ONE_QUARTER.mul(8),
-        ],
-        [
-          consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
-          consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
-          consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
-          consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT)
-            .div(4)
-            .add(consts.TEAM_AMOUNT.div(2)),
-          consts.TEAM_AMOUNT.div(8),
-          consts.TEAM_AMOUNT.div(8),
-          consts.TEAM_AMOUNT.div(8),
-          consts.INF,
-        ],
-      ]
-    );
-    ecosystemFundContract = await deployContract(
-      governance,
-      PendleTokenDistribution,
+        consts.ONE_QUARTER,
+        consts.ONE_QUARTER.mul(2),
+        consts.ONE_QUARTER.mul(3),
+        consts.ONE_QUARTER.mul(4),
+        consts.ONE_QUARTER.mul(5),
+        consts.ONE_QUARTER.mul(6),
+        consts.ONE_QUARTER.mul(7),
+        consts.ONE_QUARTER.mul(8),
+      ],
       [
-        governance.address,
-        [BN.from(0), consts.ONE_QUARTER.mul(4)],
-        [consts.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2), consts.INF],
-      ]
-    );
+        consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
+        consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
+        consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
+        consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4).add(consts.TEAM_AMOUNT.div(2)),
+        consts.TEAM_AMOUNT.div(8),
+        consts.TEAM_AMOUNT.div(8),
+        consts.TEAM_AMOUNT.div(8),
+        consts.INF,
+      ],
+    ]);
+    ecosystemFundContract = await deployContract(governance, PendleTokenDistribution, [
+      governance.address,
+      [BN.from(0), consts.ONE_QUARTER.mul(4)],
+      [consts.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2), consts.INF],
+    ]);
 
     await setTimeNextBlock(consts.PENDLE_START_TIME);
     pendle = await deployContract(governance, PENDLE, [
@@ -93,25 +77,17 @@ describe("pendleTokenDistribution [@skip-on-coverage]", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  it("should mint correct amounts after deployment", async () => {
+  it('should mint correct amounts after deployment', async () => {
     const totalSupply = await pendle.totalSupply();
-    const teamTokensBalance = await pendle.balanceOf(
-      teamTokensContract.address
-    );
-    const ecosystemFundBalance = await pendle.balanceOf(
-      ecosystemFundContract.address
-    );
+    const teamTokensBalance = await pendle.balanceOf(teamTokensContract.address);
+    const ecosystemFundBalance = await pendle.balanceOf(ecosystemFundContract.address);
     const salesMultisigBalance = await pendle.balanceOf(salesMultisig.address);
-    const liqIncentivesRecipientBalance = await pendle.balanceOf(
-      liqIncentivesRecipient.address
-    );
+    const liqIncentivesRecipientBalance = await pendle.balanceOf(liqIncentivesRecipient.address);
 
     expect(teamTokensBalance).to.be.eq(consts.TEAM_INVESTOR_ADVISOR_AMOUNT);
     expect(ecosystemFundBalance).to.be.eq(consts.ECOSYSTEM_FUND_TOKEN_AMOUNT);
     expect(salesMultisigBalance).to.be.eq(consts.PUBLIC_SALES_TOKEN_AMOUNT);
-    expect(liqIncentivesRecipientBalance).to.be.eq(
-      consts.INITIAL_LIQUIDITY_EMISSION.mul(26)
-    );
+    expect(liqIncentivesRecipientBalance).to.be.eq(consts.INITIAL_LIQUIDITY_EMISSION.mul(26));
     expect(totalSupply).to.be.eq(
       consts.INITIAL_LIQUIDITY_EMISSION.mul(26)
         .add(consts.TEAM_INVESTOR_ADVISOR_AMOUNT)
@@ -121,7 +97,7 @@ describe("pendleTokenDistribution [@skip-on-coverage]", async () => {
     expect(await pendle.startTime()).to.be.eq(consts.PENDLE_START_TIME);
     expect(await pendle.lastWeekEmissionSent()).to.be.eq(BN.from(26));
   });
-  it("should be able to initiateConfigChanges", async () => {
+  it('should be able to initiateConfigChanges', async () => {
     await setTimeNextBlock(initiateConfigChangesTimestamp);
     await pendle.initiateConfigChanges(
       newEmissionRateMultiplierNumerator,
@@ -130,23 +106,13 @@ describe("pendleTokenDistribution [@skip-on-coverage]", async () => {
       newIsBurningAllowed
     );
 
-    expect(await pendle.pendingEmissionRateMultiplierNumerator()).to.be.eq(
-      newEmissionRateMultiplierNumerator
-    );
-    expect(await pendle.pendingTerminalInflationRateNumerator()).to.be.eq(
-      newTerminalInflationRateNumerator
-    );
-    expect(await pendle.pendingLiquidityIncentivesRecipient()).to.be.eq(
-      newLiquidityIncentivesRecipient
-    );
-    expect(await pendle.pendingIsBurningAllowed()).to.be.eq(
-      newIsBurningAllowed
-    );
-    expect(await pendle.configChangesInitiated()).to.be.eq(
-      initiateConfigChangesTimestamp
-    );
+    expect(await pendle.pendingEmissionRateMultiplierNumerator()).to.be.eq(newEmissionRateMultiplierNumerator);
+    expect(await pendle.pendingTerminalInflationRateNumerator()).to.be.eq(newTerminalInflationRateNumerator);
+    expect(await pendle.pendingLiquidityIncentivesRecipient()).to.be.eq(newLiquidityIncentivesRecipient);
+    expect(await pendle.pendingIsBurningAllowed()).to.be.eq(newIsBurningAllowed);
+    expect(await pendle.configChangesInitiated()).to.be.eq(initiateConfigChangesTimestamp);
   });
-  it("should not be able to initiateConfigChanges from non-governance", async () => {
+  it('should not be able to initiateConfigChanges from non-governance', async () => {
     await expect(
       pendle
         .connect(salesMultisig)
@@ -156,11 +122,9 @@ describe("pendleTokenDistribution [@skip-on-coverage]", async () => {
           newLiquidityIncentivesRecipient,
           newIsBurningAllowed
         )
-    ).to.be.revertedWith(
-      "VM Exception while processing transaction: revert ONLY_GOVERNANCE"
-    );
+    ).to.be.revertedWith('VM Exception while processing transaction: revert ONLY_GOVERNANCE');
   });
-  it("should be able to applyConfigChanges", async () => {
+  it('should be able to applyConfigChanges', async () => {
     await setTimeNextBlock(initiateConfigChangesTimestamp);
     await pendle.initiateConfigChanges(
       newEmissionRateMultiplierNumerator,
@@ -168,23 +132,15 @@ describe("pendleTokenDistribution [@skip-on-coverage]", async () => {
       newLiquidityIncentivesRecipient,
       newIsBurningAllowed
     );
-    await setTimeNextBlock(
-      initiateConfigChangesTimestamp.add(consts.CONFIG_CHANGES_TIME_LOCK).add(1)
-    );
+    await setTimeNextBlock(initiateConfigChangesTimestamp.add(consts.CONFIG_CHANGES_TIME_LOCK).add(1));
     await pendle.connect(salesMultisig).applyConfigChanges(); // Anyone can call this
-    expect(await pendle.emissionRateMultiplierNumerator()).to.be.eq(
-      newEmissionRateMultiplierNumerator
-    );
-    expect(await pendle.terminalInflationRateNumerator()).to.be.eq(
-      newTerminalInflationRateNumerator
-    );
-    expect(await pendle.liquidityIncentivesRecipient()).to.be.eq(
-      newLiquidityIncentivesRecipient
-    );
+    expect(await pendle.emissionRateMultiplierNumerator()).to.be.eq(newEmissionRateMultiplierNumerator);
+    expect(await pendle.terminalInflationRateNumerator()).to.be.eq(newTerminalInflationRateNumerator);
+    expect(await pendle.liquidityIncentivesRecipient()).to.be.eq(newLiquidityIncentivesRecipient);
     expect(await pendle.isBurningAllowed()).to.be.eq(newIsBurningAllowed);
     expect(await pendle.configChangesInitiated()).to.be.eq(BN.from(0));
   });
-  it("should not be able to applyConfigChanges within timelock", async () => {
+  it('should not be able to applyConfigChanges within timelock', async () => {
     await setTimeNextBlock(initiateConfigChangesTimestamp);
     await pendle.initiateConfigChanges(
       newEmissionRateMultiplierNumerator,
@@ -192,23 +148,17 @@ describe("pendleTokenDistribution [@skip-on-coverage]", async () => {
       newLiquidityIncentivesRecipient,
       newIsBurningAllowed
     );
-    await setTimeNextBlock(
-      initiateConfigChangesTimestamp.add(consts.CONFIG_CHANGES_TIME_LOCK)
-    );
-    await expect(
-      pendle.connect(salesMultisig).applyConfigChanges()
-    ).to.be.revertedWith(
-      "VM Exception while processing transaction: revert TIMELOCK_IS_NOT_OVER"
+    await setTimeNextBlock(initiateConfigChangesTimestamp.add(consts.CONFIG_CHANGES_TIME_LOCK));
+    await expect(pendle.connect(salesMultisig).applyConfigChanges()).to.be.revertedWith(
+      'VM Exception while processing transaction: revert TIMELOCK_IS_NOT_OVER'
     );
   });
-  it("should not be able to burn with isBurningAllowed==false", async () => {
-    await expect(
-      pendle.connect(salesMultisig).burn(BN.from(1))
-    ).to.be.revertedWith(
-      "VM Exception while processing transaction: revert BURNING_NOT_ALLOWED"
+  it('should not be able to burn with isBurningAllowed==false', async () => {
+    await expect(pendle.connect(salesMultisig).burn(BN.from(1))).to.be.revertedWith(
+      'VM Exception while processing transaction: revert BURNING_NOT_ALLOWED'
     );
   });
-  it("should be able to burn if isBurningAllowed==true", async () => {
+  it('should be able to burn if isBurningAllowed==true', async () => {
     await setTimeNextBlock(initiateConfigChangesTimestamp);
     await pendle.initiateConfigChanges(
       newEmissionRateMultiplierNumerator,
@@ -216,9 +166,7 @@ describe("pendleTokenDistribution [@skip-on-coverage]", async () => {
       newLiquidityIncentivesRecipient,
       newIsBurningAllowed // = true
     );
-    await setTimeNextBlock(
-      initiateConfigChangesTimestamp.add(consts.CONFIG_CHANGES_TIME_LOCK).add(1)
-    );
+    await setTimeNextBlock(initiateConfigChangesTimestamp.add(consts.CONFIG_CHANGES_TIME_LOCK).add(1));
     await pendle.connect(salesMultisig).applyConfigChanges(); // Anyone can call this
 
     const balanceOfBefore = await pendle.balanceOf(salesMultisig.address);
@@ -230,16 +178,14 @@ describe("pendleTokenDistribution [@skip-on-coverage]", async () => {
     expect(balanceOfAfter).to.be.eq(balanceOfBefore.sub(burnAmount));
     expect(totalSupplyAfter).to.be.eq(totalSupplyBefore.sub(burnAmount));
   });
-  it("should be able to claimLiquidityEmissions until current week", async () => {
+  it('should be able to claimLiquidityEmissions until current week', async () => {
     let weeklyEmission = await pendle.lastWeeklyEmission();
     expect(weeklyEmission).to.be.eq(consts.INITIAL_WEEKLY_EMISSION);
     let totalSupply = await pendle.totalSupply();
 
     const week316start = consts.ONE_WEEK.mul(315).add(consts.PENDLE_START_TIME);
     await setTimeNextBlock(week316start);
-    const balanceBefore = await pendle.balanceOf(
-      liqIncentivesRecipient.address
-    );
+    const balanceBefore = await pendle.balanceOf(liqIncentivesRecipient.address);
     await pendle.connect(liqIncentivesRecipient).claimLiquidityEmissions();
     const balanceAfter = await pendle.balanceOf(liqIncentivesRecipient.address);
 
@@ -263,50 +209,36 @@ describe("pendleTokenDistribution [@skip-on-coverage]", async () => {
     expect(await pendle.totalSupply()).to.be.eq(totalSupply);
     expect(await pendle.lastWeekEmissionSent()).to.be.eq(BN.from(316));
   });
-  it("should be able to delegate and transfer PENDLE", async () => {
+  it('should be able to delegate and transfer PENDLE', async () => {
     const testAmount = BN.from(13).mul(consts.ONE_E_18);
-    await pendle
-      .connect(salesMultisig)
-      .transfer(consts.DUMMY_ADDRESS, testAmount, consts.HIGH_GAS_OVERRIDE);
+    await pendle.connect(salesMultisig).transfer(consts.DUMMY_ADDRESS, testAmount, consts.HIGH_GAS_OVERRIDE);
 
     await pendle.delegate(governance.address, consts.HIGH_GAS_OVERRIDE);
     const balanceBefore = await pendle.balanceOf(salesMultisig.address);
 
-    await pendle
-      .connect(salesMultisig)
-      .transfer(consts.DUMMY_ADDRESS, testAmount, consts.HIGH_GAS_OVERRIDE);
+    await pendle.connect(salesMultisig).transfer(consts.DUMMY_ADDRESS, testAmount, consts.HIGH_GAS_OVERRIDE);
     const balanceAfter = await pendle.balanceOf(salesMultisig.address);
     expect(balanceAfter).to.be.eq(balanceBefore.sub(testAmount));
   });
-  it("should be able to claim half ecosystem fund after launch, only once", async () => {
+  it('should be able to claim half ecosystem fund after launch, only once', async () => {
     const balanceBefore = await pendle.balanceOf(governance.address);
     await ecosystemFundContract.claimTokens(BN.from(0));
     const balanceAfter = await pendle.balanceOf(governance.address);
-    expect(balanceAfter).to.be.eq(
-      balanceBefore.add(consts.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2))
-    );
-    await expect(
-      ecosystemFundContract.claimTokens(BN.from(0))
-    ).to.be.revertedWith(
-      "VM Exception while processing transaction: revert ALREADY_CLAIMED"
+    expect(balanceAfter).to.be.eq(balanceBefore.add(consts.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2)));
+    await expect(ecosystemFundContract.claimTokens(BN.from(0))).to.be.revertedWith(
+      'VM Exception while processing transaction: revert ALREADY_CLAIMED'
     );
   });
   it("shouldn't be able to claim second half of ecosystem fund after launch", async () => {
-    await expect(
-      ecosystemFundContract.claimTokens(BN.from(1))
-    ).to.be.revertedWith(
-      "VM Exception while processing transaction: revert NOT_CLAIMABLE_YET"
+    await expect(ecosystemFundContract.claimTokens(BN.from(1))).to.be.revertedWith(
+      'VM Exception while processing transaction: revert NOT_CLAIMABLE_YET'
     );
   });
-  it("should be able to claim team tokens after one quarter", async () => {
+  it('should be able to claim team tokens after one quarter', async () => {
     const balanceBefore = await pendle.balanceOf(governance.address);
     await setTimeNextBlock(consts.PENDLE_START_TIME.add(consts.ONE_QUARTER));
     await teamTokensContract.claimTokens(BN.from(0));
     const balanceAfter = await pendle.balanceOf(governance.address);
-    expect(balanceAfter).to.be.eq(
-      balanceBefore.add(
-        consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4)
-      )
-    );
+    expect(balanceAfter).to.be.eq(balanceBefore.add(consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4)));
   });
 });

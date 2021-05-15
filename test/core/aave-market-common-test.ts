@@ -1,6 +1,6 @@
-import { expect } from "chai";
-import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN } from "ethers";
+import { expect } from 'chai';
+import { createFixtureLoader } from 'ethereum-waffle';
+import { BigNumber as BN } from 'ethers';
 import {
   addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
@@ -19,27 +19,21 @@ import {
   swapExactInXytToToken,
   swapExactOutXytToToken,
   toFixedPoint,
-} from "../helpers";
+} from '../helpers';
 import {
   AMMCheckLPNearCloseTest,
   AMMNearCloseTest,
   AMMTest,
   MarketFeesTest,
   ProtocolFeeTest,
-} from "./amm-formula-test";
-import {
-  marketFixture,
-  MarketFixture,
-  Mode,
-  parseTestEnvMarketFixture,
-  TestEnv,
-} from "./fixtures";
+} from './amm-formula-test';
+import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
 
-const { waffle } = require("hardhat");
+const { waffle } = require('hardhat');
 const { provider } = waffle;
 
 export function runTest(isAaveV1: boolean) {
-  describe("", async () => {
+  describe('', async () => {
     const wallets = provider.getWallets();
     const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob] = wallets;
@@ -50,8 +44,7 @@ export function runTest(isAaveV1: boolean) {
 
     async function buildTestEnv() {
       let fixture: MarketFixture = await loadFixture(marketFixture);
-      if (isAaveV1)
-        await parseTestEnvMarketFixture(alice, Mode.AAVE_V1, env, fixture);
+      if (isAaveV1) await parseTestEnvMarketFixture(alice, Mode.AAVE_V1, env, fixture);
       else await parseTestEnvMarketFixture(alice, Mode.AAVE_V2, env, fixture);
       env.TEST_DELTA = BN.from(60000);
     }
@@ -71,7 +64,7 @@ export function runTest(isAaveV1: boolean) {
       snapshotId = await evm_snapshot();
     });
 
-    it("bootstrapMarket", async () => {
+    it('bootstrapMarket', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
       let xytBalance = await env.xyt.balanceOf(env.market.address);
       let testTokenBalance = await env.testToken.balanceOf(env.market.address);
@@ -80,7 +73,7 @@ export function runTest(isAaveV1: boolean) {
       expect(testTokenBalance).to.be.equal(REF_AMOUNT);
     });
 
-    it("addMarketLiquidityDual", async () => {
+    it('addMarketLiquidityDual', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
       const totalSupply = await env.market.totalSupply();
       await addMarketLiquidityDualXyt(env, bob, REF_AMOUNT);
@@ -94,15 +87,12 @@ export function runTest(isAaveV1: boolean) {
       expect(totalSupplyBalance).to.be.equal(totalSupply.mul(2));
     });
 
-    it("swapExactOutXytToToken", async () => {
+    it('swapExactOutXytToToken', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
 
       let xytBalanceBefore = await env.xyt.balanceOf(env.market.address);
 
-      let result: any[] = await getMarketRateExactOut(
-        env,
-        amountToWei(BN.from(10), 6)
-      );
+      let result: any[] = await getMarketRateExactOut(env, amountToWei(BN.from(10), 6));
 
       await swapExactOutXytToToken(env, bob, amountToWei(BN.from(10), 6));
 
@@ -113,7 +103,7 @@ export function runTest(isAaveV1: boolean) {
       approxBigNumber(testTokenBalance, REF_AMOUNT.sub(REF_AMOUNT.div(10)), 0);
     });
 
-    it("swapExactInXytToToken", async () => {
+    it('swapExactInXytToToken', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
 
       await swapExactInXytToToken(env, bob, amountToWei(BN.from(10), 6));
@@ -122,14 +112,10 @@ export function runTest(isAaveV1: boolean) {
       let testTokenBalance = await env.testToken.balanceOf(env.market.address);
 
       approxBigNumber(xytBalance, REF_AMOUNT.add(REF_AMOUNT.div(10)), 30);
-      approxBigNumber(
-        testTokenBalance,
-        REF_AMOUNT.sub(REF_AMOUNT.div(10)),
-        REF_AMOUNT.div(100)
-      );
+      approxBigNumber(testTokenBalance, REF_AMOUNT.sub(REF_AMOUNT.div(10)), REF_AMOUNT.div(100));
     });
 
-    it("removeMarketLiquidityDual", async () => {
+    it('removeMarketLiquidityDual', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
       await advanceTime(consts.ONE_MONTH);
       const totalSupply = await env.market.totalSupply();
@@ -143,7 +129,7 @@ export function runTest(isAaveV1: boolean) {
       expect(testTokenBalance).to.be.equal(REF_AMOUNT.sub(REF_AMOUNT.div(10)));
     });
 
-    it("addMarketLiquidityDual is still possible after all liquidity has been withdrawn from the market", async () => {
+    it('addMarketLiquidityDual is still possible after all liquidity has been withdrawn from the market', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
       let lpBalanceBefore: BN = await env.market.balanceOf(alice.address);
 
@@ -158,40 +144,38 @@ export function runTest(isAaveV1: boolean) {
       approxBigNumber(testTokenBalance, REF_AMOUNT, BN.from(1000));
     });
 
-    it("addMarketLiquidityDual is not possible after xyt has expired", async () => {
+    it('addMarketLiquidityDual is not possible after xyt has expired', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
 
       advanceTime(consts.ONE_YEAR);
 
-      await expect(
-        addMarketLiquidityDualXyt(env, alice, REF_AMOUNT)
-      ).to.be.revertedWith(errMsg.MARKET_LOCKED);
+      await expect(addMarketLiquidityDualXyt(env, alice, REF_AMOUNT)).to.be.revertedWith(errMsg.MARKET_LOCKED);
     });
 
-    it("addMarketLiquiditySingle is not possible after xyt has expired", async () => {
+    it('addMarketLiquiditySingle is not possible after xyt has expired', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
 
       await advanceTime(consts.ONE_YEAR);
-      await expect(
-        addMarketLiquiditySingle(env, alice, REF_AMOUNT.div(10), false)
-      ).to.be.revertedWith(errMsg.MARKET_LOCKED);
+      await expect(addMarketLiquiditySingle(env, alice, REF_AMOUNT.div(10), false)).to.be.revertedWith(
+        errMsg.MARKET_LOCKED
+      );
     });
 
-    it("removeMarketLiquiditySingle is not possible after xyt has expired", async () => {
+    it('removeMarketLiquiditySingle is not possible after xyt has expired', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
 
       await advanceTime(consts.ONE_YEAR);
 
-      await expect(
-        removeMarketLiquiditySingle(env, alice, BN.from(100), false)
-      ).to.be.revertedWith(errMsg.MARKET_LOCKED);
+      await expect(removeMarketLiquiditySingle(env, alice, BN.from(100), false)).to.be.revertedWith(
+        errMsg.MARKET_LOCKED
+      );
 
-      await expect(
-        removeMarketLiquiditySingle(env, alice, BN.from(100), true)
-      ).to.be.revertedWith(errMsg.MARKET_LOCKED);
+      await expect(removeMarketLiquiditySingle(env, alice, BN.from(100), true)).to.be.revertedWith(
+        errMsg.MARKET_LOCKED
+      );
     });
 
-    it("removeMarketLiquidityDual is still possible after xyt has expired", async () => {
+    it('removeMarketLiquidityDual is still possible after xyt has expired', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
       await advanceTime(consts.ONE_YEAR);
       const totalSupply = await env.market.totalSupply();
@@ -205,7 +189,7 @@ export function runTest(isAaveV1: boolean) {
       expect(testTokenBalance).to.be.equal(REF_AMOUNT.sub(REF_AMOUNT.div(10)));
     });
 
-    it("getReserves", async () => {
+    it('getReserves', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
 
       let { xytBalance, tokenBalance } = await env.market.getReserves();
@@ -213,13 +197,10 @@ export function runTest(isAaveV1: boolean) {
       expect(tokenBalance).to.be.equal(REF_AMOUNT);
     });
 
-    it("marketReader.getMarketReserve", async () => {
+    it('marketReader.getMarketReserve', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
 
-      let {
-        xytBalance,
-        tokenBalance,
-      } = await env.marketReader.getMarketReserves(
+      let { xytBalance, tokenBalance } = await env.marketReader.getMarketReserves(
         env.MARKET_FACTORY_ID,
         env.xyt.address,
         env.testToken.address
@@ -228,25 +209,19 @@ export function runTest(isAaveV1: boolean) {
       expect(tokenBalance).to.be.equal(REF_AMOUNT);
     });
 
-    it("getMarketRateExactOut", async () => {
+    it('getMarketRateExactOut', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
-      let result: any[] = await getMarketRateExactOut(
-        env,
-        amountToWei(BN.from(10), 6)
-      );
+      let result: any[] = await getMarketRateExactOut(env, amountToWei(BN.from(10), 6));
       approxBigNumber(result[1], 11111205, 1000);
     });
 
-    it("getMarketRateExactIn", async () => {
+    it('getMarketRateExactIn', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
-      let result: any[] = await getMarketRateExactIn(
-        env,
-        amountToWei(BN.from(10), 6)
-      );
+      let result: any[] = await getMarketRateExactIn(env, amountToWei(BN.from(10), 6));
       approxBigNumber(result[1], 9090839, 1000);
     });
 
-    it("addMarketLiquiditySingle by token", async () => {
+    it('addMarketLiquiditySingle by token', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
       await env.testToken.approve(env.market.address, consts.INF);
 
@@ -265,7 +240,7 @@ export function runTest(isAaveV1: boolean) {
       expect(currentXytBal).to.be.equal(initialXytBal);
     });
 
-    it("addMarketLiquiditySingle by XYT", async () => {
+    it('addMarketLiquiditySingle by XYT', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT);
       await env.testToken.approve(env.market.address, consts.INF);
 
@@ -284,35 +259,24 @@ export function runTest(isAaveV1: boolean) {
       expect(currentXytBal).to.be.lt(initialXytBal);
     });
 
-    it("marketReader.getMarketTokenAddresses", async () => {
-      let {
-        token: receivedToken,
-        xyt: receivedXyt,
-      } = await env.marketReader.getMarketTokenAddresses(env.market.address);
+    it('marketReader.getMarketTokenAddresses', async () => {
+      let { token: receivedToken, xyt: receivedXyt } = await env.marketReader.getMarketTokenAddresses(
+        env.market.address
+      );
       expect(receivedToken).to.be.equal(env.testToken.address);
       expect(receivedXyt).to.be.equal(env.xyt.address);
     });
 
-    it("createMarket with a duplicated pair of XYT/token is not possible", async () => {
+    it('createMarket with a duplicated pair of XYT/token is not possible', async () => {
       await expect(
-        env.router.createMarket(
-          env.MARKET_FACTORY_ID,
-          env.xyt.address,
-          env.testToken.address,
-          consts.HIGH_GAS_OVERRIDE
-        )
-      ).to.be.revertedWith("EXISTED_MARKET");
+        env.router.createMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.testToken.address, consts.HIGH_GAS_OVERRIDE)
+      ).to.be.revertedWith('EXISTED_MARKET');
     });
 
-    it("createMarket using XYT as the quote pair is not possible", async () => {
+    it('createMarket using XYT as the quote pair is not possible', async () => {
       await expect(
-        env.router.createMarket(
-          env.MARKET_FACTORY_ID,
-          env.xyt.address,
-          env.xyt2.address,
-          consts.HIGH_GAS_OVERRIDE
-        )
-      ).to.be.revertedWith("XYT_QUOTE_PAIR_FORBIDDEN");
+        env.router.createMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.xyt2.address, consts.HIGH_GAS_OVERRIDE)
+      ).to.be.revertedWith('XYT_QUOTE_PAIR_FORBIDDEN');
     });
 
     it("AMM's formulas is correct for swapExactIn", async () => {
@@ -323,21 +287,17 @@ export function runTest(isAaveV1: boolean) {
       await AMMTest(env, false);
     });
 
-    it("MarketFeesTest", async () => {
+    it('MarketFeesTest', async () => {
       await MarketFeesTest(env, true);
     });
 
-    it("ProtocolFeeTest", async () => {
+    it('ProtocolFeeTest', async () => {
       await ProtocolFeeTest(env, true);
     });
 
     it("AMM's swap outcome is correct near the market's freeze time", async () => {
-      await env.xyt
-        .connect(bob)
-        .transfer(alice.address, await env.xyt.balanceOf(bob.address));
-      await env.testToken
-        .connect(bob)
-        .transfer(alice.address, await env.testToken.balanceOf(bob.address));
+      await env.xyt.connect(bob).transfer(alice.address, await env.xyt.balanceOf(bob.address));
+      await env.testToken.connect(bob).transfer(alice.address, await env.testToken.balanceOf(bob.address));
       await AMMNearCloseTest(env, false);
     });
 

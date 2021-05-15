@@ -1,28 +1,20 @@
-import { expect } from "chai";
-import { Contract, providers, Wallet, BigNumber as BN, utils } from "ethers";
-import PENDLE from "../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
-import MockPendle from "../../build/artifacts/contracts/mock/MockPENDLE.sol/MockPENDLE.json";
-import {
-  errMsg,
-  consts,
-  evm_revert,
-  evm_snapshot,
-  setTimeNextBlock,
-  advanceTime,
-  approxBigNumber,
-} from "../helpers";
+import { expect } from 'chai';
+import { Contract, providers, Wallet, BigNumber as BN, utils } from 'ethers';
+import PENDLE from '../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json';
+import MockPendle from '../../build/artifacts/contracts/mock/MockPENDLE.sol/MockPENDLE.json';
+import { errMsg, consts, evm_revert, evm_snapshot, setTimeNextBlock, advanceTime, approxBigNumber } from '../helpers';
 
-const { waffle } = require("hardhat");
+const { waffle } = require('hardhat');
 const { provider, deployContract } = waffle;
 
-describe("Token name test [@skip-on-coverage]", async () => {
+describe('Token name test [@skip-on-coverage]', async () => {
   const wallets: Wallet[] = provider.getWallets();
 
   const [root, a1, a2, a3, a4] = wallets;
 
-  const name = "Pendle";
-  const symbol = "PENDLE";
-  const initialSupply = BN.from("188700000000000000000000000");
+  const name = 'Pendle';
+  const symbol = 'PENDLE';
+  const initialSupply = BN.from('188700000000000000000000000');
   const CONFIG_DENOMINATOR = BN.from(1000000000000);
 
   let PENDLE: Contract;
@@ -53,21 +45,19 @@ describe("Token name test [@skip-on-coverage]", async () => {
     snapshotId = await evm_snapshot();
   });
 
-  describe("PENDLE emissions", async () => {
-    it("initial 26 weeks emissions", async () => {
+  describe('PENDLE emissions', async () => {
+    it('initial 26 weeks emissions', async () => {
       const connected = PENDLE.connect(a4);
       expect(await connected.balanceOf(a4.address)).to.be.equal(
-        BN.from(1200000 * 26).mul(BN.from("1000000000000000000"))
+        BN.from(1200000 * 26).mul(BN.from('1000000000000000000'))
       );
       expect(await connected.getCurrentWeek()).to.be.equal(1);
     });
 
-    it("try callstatic to check for amount claimable each week", async () => {
+    it('try callstatic to check for amount claimable each week', async () => {
       let toBeExpected = BN.from(0);
       const connected = await PENDLE.connect(a4);
-      const INITIAL_LIQUIDITY_EMISSION = BN.from(
-        await connected.balanceOf(a4.address)
-      );
+      const INITIAL_LIQUIDITY_EMISSION = BN.from(await connected.balanceOf(a4.address));
 
       let lastWeekClaimed = INITIAL_LIQUIDITY_EMISSION.div(26);
       let totalClaimed = BN.from(0);
@@ -75,9 +65,7 @@ describe("Token name test [@skip-on-coverage]", async () => {
       await advanceTime(consts.ONE_WEEK.mul(26));
 
       for (let i = 27; i < 260; ++i) {
-        let currentWeekClaimed = BN.from(
-          await connected.callStatic.claimLiquidityEmissions()
-        ).sub(totalClaimed);
+        let currentWeekClaimed = BN.from(await connected.callStatic.claimLiquidityEmissions()).sub(totalClaimed);
         expect(lastWeekClaimed.gt(currentWeekClaimed)).to.be.true;
         let expectedAmount = lastWeekClaimed.mul(989).div(1000);
         approxBigNumber(currentWeekClaimed, expectedAmount, 0, false);
@@ -97,12 +85,8 @@ describe("Token name test [@skip-on-coverage]", async () => {
 
       for (let i = 260; i < 260 + 52; ++i) {
         expect(await connected.getCurrentWeek()).to.be.equal(i);
-        let currentWeekClaimed = BN.from(
-          await connected.callStatic.claimLiquidityEmissions()
-        ).sub(totalClaimed);
-        let expectedAmount = totalSupply
-          .mul(BN.from(379848538))
-          .div(BN.from(1000000000000));
+        let currentWeekClaimed = BN.from(await connected.callStatic.claimLiquidityEmissions()).sub(totalClaimed);
+        let expectedAmount = totalSupply.mul(BN.from(379848538)).div(BN.from(1000000000000));
 
         approxBigNumber(currentWeekClaimed, expectedAmount, 10, false);
 
@@ -113,14 +97,12 @@ describe("Token name test [@skip-on-coverage]", async () => {
       }
     });
 
-    it("Multiple emissions claims for each week", async () => {
+    it('Multiple emissions claims for each week', async () => {
       const CLAIM_TRY = 5;
       const connected = PENDLE.connect(a4);
       expect(await connected.getCurrentWeek()).to.be.equal(1);
 
-      const INITIAL_LIQUIDITY_EMISSION = BN.from(
-        await connected.balanceOf(a4.address)
-      );
+      const INITIAL_LIQUIDITY_EMISSION = BN.from(await connected.balanceOf(a4.address));
 
       let totalSupply = BN.from(await connected.callStatic.getTotalSupply());
       let totalClaimed = BN.from(0);
@@ -130,9 +112,7 @@ describe("Token name test [@skip-on-coverage]", async () => {
       for (let week = 1; week < 260 + 52 * 10; ++week) {
         if (week < 27) {
           for (let t = 0; t < CLAIM_TRY; ++t) {
-            const emissionClaimable = BN.from(
-              await connected.callStatic.claimLiquidityEmissions()
-            ).sub(totalClaimed);
+            const emissionClaimable = BN.from(await connected.callStatic.claimLiquidityEmissions()).sub(totalClaimed);
             expect(emissionClaimable).to.be.equal(0);
           }
         } else if (week < 260) {
@@ -152,16 +132,10 @@ describe("Token name test [@skip-on-coverage]", async () => {
           totalClaimed = totalClaimed.add(claimableAmount);
           totalSupply = totalSupply.add(claimableAmount);
         } else {
-          let expectedAmount = totalSupply
-            .mul(379848538)
-            .div(BN.from(1000000000000));
-          let claimableAmount = BN.from(
-            await connected.callStatic.claimLiquidityEmissions()
-          );
+          let expectedAmount = totalSupply.mul(379848538).div(BN.from(1000000000000));
+          let claimableAmount = BN.from(await connected.callStatic.claimLiquidityEmissions());
           for (let t = 0; t < CLAIM_TRY; ++t) {
-            let currentClaimableAmount = BN.from(
-              await connected.callStatic.claimLiquidityEmissions()
-            );
+            let currentClaimableAmount = BN.from(await connected.callStatic.claimLiquidityEmissions());
 
             if (t == 0) {
               approxBigNumber(currentClaimableAmount, expectedAmount, 0, false);
@@ -179,7 +153,7 @@ describe("Token name test [@skip-on-coverage]", async () => {
       }
     });
 
-    it("test various ranges of waiting before claiming", async () => {
+    it('test various ranges of waiting before claiming', async () => {
       let testRanges = [[3, 5]];
       let points = [2, 26, 259, 400];
 
@@ -198,16 +172,10 @@ describe("Token name test [@skip-on-coverage]", async () => {
       }
 
       const startSupply = await PENDLE.callStatic.getTotalSupply();
-      const INITIAL_LIQUIDITY_EMISSION = await PENDLE.connect(a4).balanceOf(
-        a4.address
-      );
+      const INITIAL_LIQUIDITY_EMISSION = await PENDLE.connect(a4).balanceOf(a4.address);
       expect(INITIAL_LIQUIDITY_EMISSION);
 
-      function calculateClaimableAmount(
-        week: number,
-        totalSupply: BN,
-        lastWeekClaimed: BN
-      ) {
+      function calculateClaimableAmount(week: number, totalSupply: BN, lastWeekClaimed: BN) {
         if (week < 27) return BN.from(0);
         if (week < 260) return lastWeekClaimed.mul(989).div(1000);
         return totalSupply.mul(379848538).div(BN.from(1000000000000));
@@ -217,11 +185,7 @@ describe("Token name test [@skip-on-coverage]", async () => {
       let lastWeekClaimed = BN.from(0);
       let weeklyEmissions = [BN.from(0)];
       for (let week = 1; week < 600; ++week) {
-        let claimableAmount = calculateClaimableAmount(
-          week,
-          currentSupply,
-          lastWeekClaimed
-        );
+        let claimableAmount = calculateClaimableAmount(week, currentSupply, lastWeekClaimed);
         currentSupply = currentSupply.add(claimableAmount);
         lastWeekClaimed = claimableAmount;
         if (week <= 26) lastWeekClaimed = INITIAL_LIQUIDITY_EMISSION.div(26);
@@ -237,32 +201,18 @@ describe("Token name test [@skip-on-coverage]", async () => {
           shouldBeClaiming = shouldBeClaiming.add(weeklyEmissions[j]);
         }
 
-        PENDLE = await deployContract(root, MockPendle, [
-          root.address,
-          a1.address,
-          a2.address,
-          a3.address,
-          a4.address,
-        ]);
+        PENDLE = await deployContract(root, MockPendle, [root.address, a1.address, a2.address, a3.address, a4.address]);
 
         const connected = PENDLE.connect(a4);
 
         if (l > 2) await advanceTime(consts.ONE_WEEK.mul(BN.from(l - 2)));
-        const pastClaimed = BN.from(
-          await connected.callStatic.claimLiquidityEmissions(
-            consts.HIGH_GAS_OVERRIDE
-          )
-        );
+        const pastClaimed = BN.from(await connected.callStatic.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE));
         await connected.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE);
 
         if (l == 1) await advanceTime(consts.ONE_WEEK.mul(BN.from(r - l)));
         else await advanceTime(consts.ONE_WEEK.mul(BN.from(r - l + 1)));
 
-        const nowClaimed = BN.from(
-          await connected.callStatic.claimLiquidityEmissions(
-            consts.HIGH_GAS_OVERRIDE
-          )
-        );
+        const nowClaimed = BN.from(await connected.callStatic.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE));
         await connected.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE);
 
         const amountClaimed = nowClaimed;
@@ -270,7 +220,7 @@ describe("Token name test [@skip-on-coverage]", async () => {
       }
     });
 
-    it("test applying config changes to pendle", async () => {
+    it('test applying config changes to pendle', async () => {
       function getRandomNumber(max: number) {
         return Math.floor(Math.random() * max);
       }
@@ -280,44 +230,30 @@ describe("Token name test [@skip-on-coverage]", async () => {
       }
 
       const root_connected = PENDLE.connect(root);
-      const INITIAL_LIQUIDITY_EMISSION = BN.from(
-        await PENDLE.balanceOf(a4.address)
-      );
+      const INITIAL_LIQUIDITY_EMISSION = BN.from(await PENDLE.balanceOf(a4.address));
 
       const recipents = [a2, a3, a4];
 
       const addresses = [a2.address, a3.address, a4.address];
 
-      let correctEmissionForAddress = [
-        BN.from(0),
-        BN.from(0),
-        INITIAL_LIQUIDITY_EMISSION,
-      ];
+      let correctEmissionForAddress = [BN.from(0), BN.from(0), INITIAL_LIQUIDITY_EMISSION];
 
-      let emissionForAddress = [
-        BN.from(0),
-        BN.from(0),
-        INITIAL_LIQUIDITY_EMISSION,
-      ];
+      let emissionForAddress = [BN.from(0), BN.from(0), INITIAL_LIQUIDITY_EMISSION];
 
       let lastWeekClaimed = INITIAL_LIQUIDITY_EMISSION.div(26);
-      let totalSupplyNumber = await root_connected.callStatic.getTotalSupply(
-        consts.HIGH_GAS_OVERRIDE
-      );
+      let totalSupplyNumber = await root_connected.callStatic.getTotalSupply(consts.HIGH_GAS_OVERRIDE);
       let totalSupply = BN.from(totalSupplyNumber);
 
       let recipentIndex = 2;
       let pendingRecipentIndex = 2;
 
-      let emissionRateMultiplierNumerator = CONFIG_DENOMINATOR.mul(989).div(
-        1000
-      );
+      let emissionRateMultiplierNumerator = CONFIG_DENOMINATOR.mul(989).div(1000);
       let terminalInflationRateNumerator = BN.from(379848538);
       let liquidityIncentivesRecipient = a4.address;
 
       let pendingEmissionRateMultiplierNumerator = BN.from(0);
       let pendingTerminalInflationRateNumerator = BN.from(0);
-      let pendingLiquidityIncentivesRecipient = "0";
+      let pendingLiquidityIncentivesRecipient = '0';
       let configChangesInitiated = BN.from(0);
 
       async function initiateConfigChangeSimulator(
@@ -325,9 +261,7 @@ describe("Token name test [@skip-on-coverage]", async () => {
         _terminalInflationRateNumerator: BN,
         _liquidityIncentivesRecipient: string
       ) {
-        configChangesInitiated = await root_connected.getCurrentTime(
-          consts.HIGH_GAS_OVERRIDE
-        );
+        configChangesInitiated = await root_connected.getCurrentTime(consts.HIGH_GAS_OVERRIDE);
         pendingEmissionRateMultiplierNumerator = _emissionRateMultiplierNumerator;
         pendingTerminalInflationRateNumerator = _terminalInflationRateNumerator;
         pendingLiquidityIncentivesRecipient = _liquidityIncentivesRecipient;
@@ -356,17 +290,11 @@ describe("Token name test [@skip-on-coverage]", async () => {
         if (week > 26) {
           let amountClaimable = BN.from(0);
           if (week < 260) {
-            amountClaimable = lastWeekClaimed
-              .mul(emissionRateMultiplierNumerator)
-              .div(CONFIG_DENOMINATOR);
+            amountClaimable = lastWeekClaimed.mul(emissionRateMultiplierNumerator).div(CONFIG_DENOMINATOR);
           } else {
-            amountClaimable = totalSupply
-              .mul(terminalInflationRateNumerator)
-              .div(CONFIG_DENOMINATOR);
+            amountClaimable = totalSupply.mul(terminalInflationRateNumerator).div(CONFIG_DENOMINATOR);
           }
-          correctEmissionForAddress[recipentIndex] = correctEmissionForAddress[
-            recipentIndex
-          ].add(amountClaimable);
+          correctEmissionForAddress[recipentIndex] = correctEmissionForAddress[recipentIndex].add(amountClaimable);
           totalSupply = totalSupply.add(amountClaimable);
           lastWeekClaimed = amountClaimable;
         }
@@ -374,17 +302,11 @@ describe("Token name test [@skip-on-coverage]", async () => {
 
       async function applyConfigSimulator() {
         const recipent_connected = PENDLE.connect(recipents[recipentIndex]);
-        emissionForAddress[recipentIndex] = emissionForAddress[
-          recipentIndex
-        ].add(
-          await recipent_connected.callStatic.claimLiquidityEmissions(
-            consts.HIGH_GAS_OVERRIDE
-          )
+        emissionForAddress[recipentIndex] = emissionForAddress[recipentIndex].add(
+          await recipent_connected.callStatic.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE)
         );
 
-        await recipent_connected.claimLiquidityEmissions(
-          consts.HIGH_GAS_OVERRIDE
-        );
+        await recipent_connected.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE);
 
         if (configChangesInitiated.eq(BN.from(0))) return;
         await root_connected.applyConfigChanges(consts.HIGH_GAS_OVERRIDE);
@@ -397,27 +319,19 @@ describe("Token name test [@skip-on-coverage]", async () => {
       }
 
       async function claimLiquidityEmissionsSimulator() {
-        const claimedAmount = await PENDLE.connect(
-          recipents[recipentIndex]
-        ).callStatic.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE);
-        await PENDLE.connect(recipents[recipentIndex]).claimLiquidityEmissions(
+        const claimedAmount = await PENDLE.connect(recipents[recipentIndex]).callStatic.claimLiquidityEmissions(
           consts.HIGH_GAS_OVERRIDE
         );
-        emissionForAddress[recipentIndex] = emissionForAddress[
-          recipentIndex
-        ].add(claimedAmount);
+        await PENDLE.connect(recipents[recipentIndex]).claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE);
+        emissionForAddress[recipentIndex] = emissionForAddress[recipentIndex].add(claimedAmount);
         return claimedAmount;
       }
 
       for (let week = 1; week < 1000; ++week) {
         if (getRandomNumber(100) < 5) {
           await initiateConfigChange(
-            emissionRateMultiplierNumerator
-              .mul(getRandomBigNumber(200).add(BN.from(800)))
-              .div(BN.from(1000)),
-            terminalInflationRateNumerator
-              .mul(getRandomBigNumber(200).add(BN.from(800)))
-              .div(BN.from(1000)),
+            emissionRateMultiplierNumerator.mul(getRandomBigNumber(200).add(BN.from(800))).div(BN.from(1000)),
+            terminalInflationRateNumerator.mul(getRandomBigNumber(200).add(BN.from(800))).div(BN.from(1000)),
             getRandomNumber(3)
           );
         }

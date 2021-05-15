@@ -1,5 +1,5 @@
-import { BigNumber as BN } from "ethers";
-import { LiqParams, TestEnv, UserStakeAction } from "../core/fixtures";
+import { BigNumber as BN } from 'ethers';
+import { LiqParams, TestEnv, UserStakeAction } from '../core/fixtures';
 
 // returns a rewards object = BN[][]
 //    rewards[userId][0] is the rewards withdrawable at currentEpoch
@@ -32,11 +32,7 @@ export function calcExpectedRewards(
     userCurrentStakes.push(BN.from(0));
     rewards.push([]);
     availableRewardsForEpoch.push([]);
-    for (
-      let j: number = 0;
-      j < params.NUMBER_OF_EPOCHS.add(params.VESTING_EPOCHS).toNumber();
-      j++
-    ) {
+    for (let j: number = 0; j < params.NUMBER_OF_EPOCHS.add(params.VESTING_EPOCHS).toNumber(); j++) {
       availableRewardsForEpoch[i].push(BN.from(0));
     }
     for (let j: number = 0; j < params.VESTING_EPOCHS.toNumber(); j++) {
@@ -53,35 +49,20 @@ export function calcExpectedRewards(
     epochData.forEach((userData, userId) => {
       userStakeSeconds.push(BN.from(0));
       let lastTimeUpdated = startOfEpoch(params, epochId);
-      userData.push(
-        new UserStakeAction(
-          startOfEpoch(params, epochId + 1),
-          BN.from(0),
-          true,
-          -1
-        )
-      );
+      userData.push(new UserStakeAction(startOfEpoch(params, epochId + 1), BN.from(0), true, -1));
       userData.forEach((userAction, actionId) => {
         // console.log(`\t[calculateExpectedRewards] Processing userAction: ${userAction.time} ${userAction.amount} ${userAction.isStaking} for user ${userId}`);
         const timeElapsed = userAction.time.sub(lastTimeUpdated);
-        const additionalStakeSeconds = userCurrentStakes[userId].mul(
-          timeElapsed
-        );
-        userStakeSeconds[userId] = userStakeSeconds[userId].add(
-          additionalStakeSeconds
-        );
+        const additionalStakeSeconds = userCurrentStakes[userId].mul(timeElapsed);
+        userStakeSeconds[userId] = userStakeSeconds[userId].add(additionalStakeSeconds);
         // console.log(`\t\ttotalStakeSeconds before = ${totalStakeSeconds}, ${totalStakeSeconds.add(additionalStakeSeconds)}`);
         totalStakeSeconds = totalStakeSeconds.add(additionalStakeSeconds);
         // console.log(`\t\t[calculateExpectedRewards] additionalStakeSeconds = ${additionalStakeSeconds}, timeElapsed = ${timeElapsed}, totalStakeSeconds = ${totalStakeSeconds}`);
 
         if (userAction.isStaking) {
-          userCurrentStakes[userId] = userCurrentStakes[userId].add(
-            userAction.amount
-          );
+          userCurrentStakes[userId] = userCurrentStakes[userId].add(userAction.amount);
         } else {
-          userCurrentStakes[userId] = userCurrentStakes[userId].sub(
-            userAction.amount
-          );
+          userCurrentStakes[userId] = userCurrentStakes[userId].sub(userAction.amount);
         }
         lastTimeUpdated = userAction.time;
       });
@@ -93,19 +74,13 @@ export function calcExpectedRewards(
         .mul(userStakeSeconds[userId])
         .div(totalStakeSeconds)
         .div(params.VESTING_EPOCHS);
-      for (
-        let e: number = epochId + 1;
-        e <= epochId + params.VESTING_EPOCHS.toNumber();
-        e++
-      ) {
+      for (let e: number = epochId + 1; e <= epochId + params.VESTING_EPOCHS.toNumber(); e++) {
         if (e <= currentEpoch) {
           rewards[userId][0] = rewards[userId][0].add(rewardsPerVestingEpoch);
           continue;
         }
         if (e < currentEpoch + params.VESTING_EPOCHS.toNumber()) {
-          rewards[userId][e - currentEpoch] = rewards[userId][
-            e - currentEpoch
-          ].add(rewardsPerVestingEpoch);
+          rewards[userId][e - currentEpoch] = rewards[userId][e - currentEpoch].add(rewardsPerVestingEpoch);
         }
       }
     });
@@ -125,16 +100,9 @@ async function calEffectiveLiquidity(
   const MINIMUM_LIQUIDITY: BN = BN.from(3000);
   let totalSupply = await env.market.totalSupply();
   let totalEffectiveLP = totalSupply.sub(MINIMUM_LIQUIDITY);
-  let xytAmount = (await env.xyt.balanceOf(env.market.address))
-    .mul(totalEffectiveLP)
-    .div(totalSupply);
-  console.log(
-    xytAmount.toString(),
-    (await env.xyt.balanceOf(env.market.address)).toString()
-  );
-  let tokenAmount = (await env.testToken.balanceOf(env.market.address))
-    .mul(totalEffectiveLP)
-    .div(totalSupply);
+  let xytAmount = (await env.xyt.balanceOf(env.market.address)).mul(totalEffectiveLP).div(totalSupply);
+  console.log(xytAmount.toString(), (await env.xyt.balanceOf(env.market.address)).toString());
+  let tokenAmount = (await env.testToken.balanceOf(env.market.address)).mul(totalEffectiveLP).div(totalSupply);
   return { xytAmount, tokenAmount };
 }
 

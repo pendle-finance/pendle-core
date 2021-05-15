@@ -1,19 +1,13 @@
-import { expect } from "chai";
-import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract } from "ethers";
-import {
-  advanceTime,
-  amountToWei,
-  consts,
-  evm_revert,
-  evm_snapshot,
-} from "../helpers";
-import { marketFixture } from "./fixtures";
+import { expect } from 'chai';
+import { createFixtureLoader } from 'ethereum-waffle';
+import { BigNumber as BN, Contract } from 'ethers';
+import { advanceTime, amountToWei, consts, evm_revert, evm_snapshot } from '../helpers';
+import { marketFixture } from './fixtures';
 
-const { waffle } = require("hardhat");
+const { waffle } = require('hardhat');
 const { provider } = waffle;
 
-describe("compound-market", async () => {
+describe('compound-market', async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;
@@ -57,7 +51,7 @@ describe("compound-market", async () => {
     );
   }
 
-  it("should be able to join a bootstrapped market with a single standard token", async () => {
+  it('should be able to join a bootstrapped market with a single standard token', async () => {
     const amount = amountToWei(BN.from(100), 6);
 
     await bootstrapSampleMarket(amount);
@@ -77,7 +71,7 @@ describe("compound-market", async () => {
     expect(currentWalletBalance).to.be.gt(initialWalletBalance);
   });
 
-  it("should be able to bootstrap", async () => {
+  it('should be able to bootstrap', async () => {
     const amount = amountToWei(BN.from(100), 6);
 
     await bootstrapSampleMarket(amount);
@@ -88,7 +82,7 @@ describe("compound-market", async () => {
     expect(testTokenBalance).to.be.equal(amount);
   });
 
-  it("should be able to join a bootstrapped pool by dual tokens", async () => {
+  it('should be able to join a bootstrapped pool by dual tokens', async () => {
     const amount = amountToWei(BN.from(10), 6);
 
     await bootstrapSampleMarket(amount);
@@ -117,7 +111,7 @@ describe("compound-market", async () => {
     expect(totalSupplyBalance).to.be.equal(totalSupply.mul(2));
   });
 
-  it("should be able to swap amount out", async () => {
+  it('should be able to swap amount out', async () => {
     const amount = amountToWei(BN.from(100), 6);
 
     await bootstrapSampleMarket(amount);
@@ -145,14 +139,11 @@ describe("compound-market", async () => {
     let xytBalance = await xyt.balanceOf(market.address);
     let testTokenBalance = await testToken.balanceOf(market.address);
 
-    expect(xytBalance.toNumber()).to.be.approximately(
-      xytBalanceBefore.add(BN.from(result[1])).toNumber(),
-      20
-    );
+    expect(xytBalance.toNumber()).to.be.approximately(xytBalanceBefore.add(BN.from(result[1])).toNumber(), 20);
     expect(testTokenBalance).to.be.equal(amount.sub(amount.div(10)));
   });
 
-  it("should be able to swap amount in", async () => {
+  it('should be able to swap amount in', async () => {
     const amount = amountToWei(BN.from(100), 6);
 
     await bootstrapSampleMarket(amount);
@@ -171,10 +162,7 @@ describe("compound-market", async () => {
     let xytBalance = await xyt.balanceOf(market.address);
     let testTokenBalance = await testToken.balanceOf(market.address);
 
-    expect(xytBalance.toNumber()).to.be.approximately(
-      amount.add(amount.div(10)).toNumber(),
-      30
-    );
+    expect(xytBalance.toNumber()).to.be.approximately(amount.add(amount.div(10)).toNumber(), 30);
 
     expect(testTokenBalance.toNumber()).to.be.approximately(
       amount.sub(amount.div(10)).toNumber(),
@@ -182,7 +170,7 @@ describe("compound-market", async () => {
     );
   });
 
-  it("should be able to exit a pool by dual tokens", async () => {
+  it('should be able to exit a pool by dual tokens', async () => {
     const amount = amountToWei(BN.from(100), 6);
     await bootstrapSampleMarket(amount);
     await advanceTime(consts.ONE_MONTH);
@@ -205,7 +193,7 @@ describe("compound-market", async () => {
     expect(testTokenBalance).to.be.equal(amount.sub(amount.div(10)));
   });
 
-  it("should be able to getReserves", async () => {
+  it('should be able to getReserves', async () => {
     const amount = amountToWei(BN.from(100), 6);
 
     await bootstrapSampleMarket(amount);
@@ -215,7 +203,7 @@ describe("compound-market", async () => {
     expect(tokenBalance).to.be.equal(amount);
   });
 
-  it("should be able to getMarketReserve", async () => {
+  it('should be able to getMarketReserve', async () => {
     const amount = amountToWei(BN.from(100), 6);
 
     await bootstrapSampleMarket(amount);
@@ -229,7 +217,7 @@ describe("compound-market", async () => {
     expect(tokenBalance).to.be.equal(amount);
   });
 
-  it("should be able to getMarketRateExactOut", async () => {
+  it('should be able to getMarketRateExactOut', async () => {
     const amount = amountToWei(BN.from(100), 6);
 
     await bootstrapSampleMarket(amount);
@@ -241,13 +229,10 @@ describe("compound-market", async () => {
       consts.MARKET_FACTORY_COMPOUND
     );
 
-    expect(result[1].toNumber()).to.be.approximately(
-      11111111,
-      consts.TEST_TOKEN_DELTA.toNumber()
-    );
+    expect(result[1].toNumber()).to.be.approximately(11111111, consts.TEST_TOKEN_DELTA.toNumber());
   });
 
-  it("should be able to getMarketRateExactIn", async () => {
+  it('should be able to getMarketRateExactIn', async () => {
     const amount = amountToWei(BN.from(100), 6);
 
     await bootstrapSampleMarket(amount);
@@ -259,13 +244,10 @@ describe("compound-market", async () => {
       consts.MARKET_FACTORY_COMPOUND
     );
 
-    expect(result[1].toNumber()).to.be.approximately(
-      9090909,
-      consts.TEST_TOKEN_DELTA.toNumber()
-    );
+    expect(result[1].toNumber()).to.be.approximately(9090909, consts.TEST_TOKEN_DELTA.toNumber());
   });
 
-  it("should be able to add market liquidity for a token", async () => {
+  it('should be able to add market liquidity for a token', async () => {
     const amount = amountToWei(BN.from(10), 6);
 
     await bootstrapSampleMarket(amount);
@@ -295,7 +277,7 @@ describe("compound-market", async () => {
     expect(currentXytBal).to.be.equal(initialXytBal);
   });
 
-  it("should be able to add XYT market liquidity", async () => {
+  it('should be able to add XYT market liquidity', async () => {
     const amount = amountToWei(BN.from(10), 6);
 
     await bootstrapSampleMarket(amount);
@@ -325,23 +307,15 @@ describe("compound-market", async () => {
     expect(currentXytBal).to.be.lt(initialXytBal);
   });
 
-  it("should be able to getMarketTokenAddresses", async () => {
-    let {
-      token: receivedToken,
-      xyt: receivedXyt,
-    } = await marketReader.getMarketTokenAddresses(market.address);
+  it('should be able to getMarketTokenAddresses', async () => {
+    let { token: receivedToken, xyt: receivedXyt } = await marketReader.getMarketTokenAddresses(market.address);
     expect(receivedToken).to.be.equal(testToken.address);
     expect(receivedXyt).to.be.equal(xyt.address);
   });
 
   it("shouldn't be able to create duplicated markets", async () => {
     await expect(
-      router.createMarket(
-        consts.MARKET_FACTORY_COMPOUND,
-        xyt.address,
-        testToken.address,
-        consts.HIGH_GAS_OVERRIDE
-      )
-    ).to.be.revertedWith("EXISTED_MARKET");
+      router.createMarket(consts.MARKET_FACTORY_COMPOUND, xyt.address, testToken.address, consts.HIGH_GAS_OVERRIDE)
+    ).to.be.revertedWith('EXISTED_MARKET');
   });
 });

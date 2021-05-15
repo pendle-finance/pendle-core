@@ -1,5 +1,5 @@
-import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract, Wallet } from "ethers";
+import { createFixtureLoader } from 'ethereum-waffle';
+import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import {
   advanceTime,
   amountToWei,
@@ -14,14 +14,14 @@ import {
   mintOtAndXyt,
   Token,
   tokens,
-} from "../helpers";
-import { marketFixture, MarketFixture } from "./fixtures";
-const hre = require("hardhat");
+} from '../helpers';
+import { marketFixture, MarketFixture } from './fixtures';
+const hre = require('hardhat');
 
-const { waffle } = require("hardhat");
+const { waffle } = require('hardhat');
 const { provider } = waffle;
 
-describe("compound-lp-interest", async () => {
+describe('compound-lp-interest', async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
@@ -216,10 +216,7 @@ describe("compound-lp-interest", async () => {
   async function addFakeIncome(token: Token, user: Wallet, amount: BN) {
     await mint(token, user, amount);
     let USDTcontract = await getERC20Contract(user, token);
-    USDTcontract.connect(user).transfer(
-      cUSDT.address,
-      amountToWei(amount, token.decimal)
-    );
+    USDTcontract.connect(user).transfer(cUSDT.address, amountToWei(amount, token.decimal));
     await cUSDT.balanceOfUnderlying(user.address); // interact with compound so that it updates all info
 
     // to have the most accurate result since the interest is only updated every DELTA seconds
@@ -227,11 +224,7 @@ describe("compound-lp-interest", async () => {
 
   async function claimAll() {
     for (let user of [alice, bob, charlie, dave]) {
-      await router.redeemLpInterests(
-        market.address,
-        user.address,
-        consts.HIGH_GAS_OVERRIDE
-      );
+      await router.redeemLpInterests(market.address, user.address, consts.HIGH_GAS_OVERRIDE);
       await router.redeemDueInterests(
         consts.FORGE_COMPOUND,
         tokenUSDT.address,
@@ -244,11 +237,7 @@ describe("compound-lp-interest", async () => {
 
   async function checkCUSDTBalance(expectedResult: number[]) {
     for (let id = 0; id < 4; id++) {
-      approxBigNumber(
-        await cUSDT.balanceOf(wallets[id].address),
-        BN.from(expectedResult[id]),
-        TEST_DELTA
-      );
+      approxBigNumber(await cUSDT.balanceOf(wallets[id].address), BN.from(expectedResult[id]), TEST_DELTA);
     }
   }
 
@@ -256,7 +245,7 @@ describe("compound-lp-interest", async () => {
     return await market.balanceOf(user.address);
   }
 
-  it("test 1", async () => {
+  it('test 1', async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
@@ -304,16 +293,11 @@ describe("compound-lp-interest", async () => {
     // for (let user of [alice, bob, charlie, dave]) {
     //   console.log((await cUSDT.balanceOf(user.address)).toString());
     // }
-    const expectedResult: number[] = [
-      6298426144,
-      6329284079,
-      6346687878,
-      6385226675,
-    ];
+    const expectedResult: number[] = [6298426144, 6329284079, 6346687878, 6385226675];
     await checkCUSDTBalance(expectedResult);
   });
 
-  it("test 2", async () => {
+  it('test 2', async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
@@ -363,16 +347,11 @@ describe("compound-lp-interest", async () => {
     // for (let user of [alice, bob, charlie, dave]) {
     //   console.log((await cUSDT.balanceOf(user.address)).toString());
     // }
-    const expectedResult: number[] = [
-      9004048190,
-      8170338541,
-      7453587736,
-      6971317641,
-    ];
+    const expectedResult: number[] = [9004048190, 8170338541, 7453587736, 6971317641];
     await checkCUSDTBalance(expectedResult);
   });
 
-  it("test 3", async () => {
+  it('test 3', async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
@@ -395,19 +374,13 @@ describe("compound-lp-interest", async () => {
     await addMarketLiquidityDualByXyt(charlie, amountXytRef.div(5));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await swapExactInXytToToken(eve, BN.from(10).pow(9));
-    await addMarketLiquidityDualByXyt(
-      alice,
-      await xyt.balanceOf(alice.address)
-    );
+    await addMarketLiquidityDualByXyt(alice, await xyt.balanceOf(alice.address));
 
     await advanceTime(consts.FIFTEEN_DAY);
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
     await addMarketLiquidityXyt(dave, amountXytRef.div(2));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
-    await removeMarketLiquidityToken(
-      charlie,
-      (await getLPBalance(charlie)).div(3)
-    );
+    await removeMarketLiquidityToken(charlie, (await getLPBalance(charlie)).div(3));
 
     await advanceTime(consts.ONE_MONTH);
     await addMarketLiquidityXyt(dave, amountXytRef.div(3));
@@ -435,11 +408,7 @@ describe("compound-lp-interest", async () => {
 
     await advanceTime(consts.ONE_DAY);
     for (let user of [dave, charlie, bob, alice]) {
-      await router.redeemLpInterests(
-        market.address,
-        user.address,
-        consts.HIGH_GAS_OVERRIDE
-      );
+      await router.redeemLpInterests(market.address, user.address, consts.HIGH_GAS_OVERRIDE);
       await router.redeemDueInterests(
         consts.FORGE_COMPOUND,
         tokenUSDT.address,
@@ -452,16 +421,11 @@ describe("compound-lp-interest", async () => {
     // for (let user of [alice, bob, charlie, dave]) {
     //   console.log((await cUSDT.balanceOf(user.address)).toString());
     // }
-    const expectedResult: number[] = [
-      14132885215,
-      11089436798,
-      11134332033,
-      10506380313,
-    ];
+    const expectedResult: number[] = [14132885215, 11089436798, 11134332033, 10506380313];
     await checkCUSDTBalance(expectedResult);
   });
 
-  it("test 4", async () => {
+  it('test 4', async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
@@ -506,7 +470,7 @@ describe("compound-lp-interest", async () => {
     }
   });
 
-  it("test 5", async () => {
+  it('test 5', async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
@@ -550,7 +514,7 @@ describe("compound-lp-interest", async () => {
     }
   });
 
-  it("test 6", async () => {
+  it('test 6', async () => {
     await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
@@ -597,20 +561,12 @@ describe("compound-lp-interest", async () => {
       if ((await ot.balanceOf(user.address)).gt(0)) {
         await router
           .connect(user)
-          .redeemAfterExpiry(
-            consts.FORGE_COMPOUND,
-            tokenUSDT.address,
-            consts.T0_C.add(consts.SIX_MONTH)
-          );
+          .redeemAfterExpiry(consts.FORGE_COMPOUND, tokenUSDT.address, consts.T0_C.add(consts.SIX_MONTH));
       }
     }
 
     for (let user of [alice, bob, charlie, dave]) {
-      approxBigNumber(
-        await cUSDT.balanceOf(user.address),
-        amountCTokenRef,
-        TEST_DELTA
-      );
+      approxBigNumber(await cUSDT.balanceOf(user.address), amountCTokenRef, TEST_DELTA);
     }
   });
 });

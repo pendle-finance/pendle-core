@@ -1,17 +1,17 @@
-import { expect } from "chai";
-import { BigNumber as BN, BigNumberish, Contract, Wallet } from "ethers";
-import ERC20 from "../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json";
-import AToken from "../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json";
-import CToken from "../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json";
-import TetherToken from "../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json";
-import { RouterFixture } from "../core/fixtures/";
-import { aaveFixture } from "../core/fixtures/aave.fixture";
-import { aaveV2Fixture } from "../core/fixtures/aaveV2.fixture";
-import { consts, Token } from "./Constants";
-import { impersonateAccount } from "./Evm";
+import { expect } from 'chai';
+import { BigNumber as BN, BigNumberish, Contract, Wallet } from 'ethers';
+import ERC20 from '../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
+import AToken from '../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json';
+import CToken from '../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json';
+import TetherToken from '../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json';
+import { RouterFixture } from '../core/fixtures/';
+import { aaveFixture } from '../core/fixtures/aave.fixture';
+import { aaveV2Fixture } from '../core/fixtures/aaveV2.fixture';
+import { consts, Token } from './Constants';
+import { impersonateAccount } from './Evm';
 
-const hre = require("hardhat");
-const { waffle } = require("hardhat");
+const hre = require('hardhat');
+const { waffle } = require('hardhat');
 const { provider } = waffle;
 const PRECISION = BN.from(2).pow(40);
 
@@ -85,30 +85,17 @@ export async function mint(token: Token, alice: Wallet, amount: BN) {
   await contractToken.transfer(alice.address, tokenAmount);
 }
 
-export async function convertToAaveToken(
-  token: Token,
-  alice: Wallet,
-  amount: BN
-) {
+export async function convertToAaveToken(token: Token, alice: Wallet, amount: BN) {
   const { lendingPool, lendingPoolCore } = await aaveFixture(alice);
   const tokenAmount = amountToWei(amount, token.decimal);
 
   const erc20 = new Contract(token.address, ERC20.abi, alice);
   await erc20.approve(lendingPoolCore.address, tokenAmount);
 
-  await lendingPool.deposit(
-    token.address,
-    tokenAmount,
-    0,
-    consts.HIGH_GAS_OVERRIDE
-  );
+  await lendingPool.deposit(token.address, tokenAmount, 0, consts.HIGH_GAS_OVERRIDE);
 }
 
-export async function convertToAaveV2Token(
-  token: Token,
-  alice: Wallet,
-  amount: BN
-) {
+export async function convertToAaveV2Token(token: Token, alice: Wallet, amount: BN) {
   const { lendingPool } = await aaveV2Fixture(alice);
   const tokenAmount = amountToWei(amount, token.decimal);
 
@@ -118,11 +105,7 @@ export async function convertToAaveV2Token(
   await lendingPool.deposit(token.address, tokenAmount, alice.address, 0);
 }
 
-export async function convertToCompoundToken(
-  token: Token,
-  alice: Wallet,
-  amount: BN
-) {
+export async function convertToCompoundToken(token: Token, alice: Wallet, amount: BN) {
   const tokenAmount = amountToWei(amount, token.decimal);
 
   const cToken = new Contract(token.compound, CToken.abi, alice);
@@ -132,12 +115,7 @@ export async function convertToCompoundToken(
   await cToken.mint(tokenAmount);
 }
 
-export async function mintAaveToken(
-  token: Token,
-  alice: Wallet,
-  amount: BN,
-  isAaveV1: boolean
-) {
+export async function mintAaveToken(token: Token, alice: Wallet, amount: BN, isAaveV1: boolean) {
   await mint(token, alice, amount);
   if (isAaveV1) {
     await convertToAaveToken(token, alice, amount);
@@ -146,58 +124,31 @@ export async function mintAaveToken(
   }
 }
 
-export async function mintCompoundToken(
-  token: Token,
-  alice: Wallet,
-  amount: BN
-) {
+export async function mintCompoundToken(token: Token, alice: Wallet, amount: BN) {
   await mint(token, alice, amount);
   await convertToCompoundToken(token, alice, amount);
 }
 
-export async function transferToken(
-  token: Token,
-  from: Wallet,
-  to: string,
-  amount: BN
-) {
+export async function transferToken(token: Token, from: Wallet, to: string, amount: BN) {
   const erc20 = new Contract(token.address, ERC20.abi, from);
   await erc20.transfer(to, amount);
 }
 
-export async function getAContract(
-  alice: Wallet,
-  aaveForge: Contract,
-  token: Token
-): Promise<Contract> {
-  const aContractAddress = await aaveForge.callStatic.getYieldBearingToken(
-    token.address
-  );
+export async function getAContract(alice: Wallet, aaveForge: Contract, token: Token): Promise<Contract> {
+  const aContractAddress = await aaveForge.callStatic.getYieldBearingToken(token.address);
   return new Contract(aContractAddress, ERC20.abi, alice);
 }
 
-export async function getA2Contract(
-  alice: Wallet,
-  aaveV2Forge: Contract,
-  token: Token
-): Promise<Contract> {
-  const aContractAddress = await aaveV2Forge.callStatic.getYieldBearingToken(
-    token.address
-  );
+export async function getA2Contract(alice: Wallet, aaveV2Forge: Contract, token: Token): Promise<Contract> {
+  const aContractAddress = await aaveV2Forge.callStatic.getYieldBearingToken(token.address);
   return new Contract(aContractAddress, ERC20.abi, alice);
 }
 
-export async function getCContract(
-  alice: Wallet,
-  token: Token
-): Promise<Contract> {
+export async function getCContract(alice: Wallet, token: Token): Promise<Contract> {
   return new Contract(token.compound, CToken.abi, alice);
 }
 
-export async function getERC20Contract(
-  alice: Wallet,
-  token: Token
-): Promise<Contract> {
+export async function getERC20Contract(alice: Wallet, token: Token): Promise<Contract> {
   return new Contract(token.address, AToken.abi, alice);
 }
 
@@ -210,10 +161,7 @@ export function amountToWei(amount: BN, decimal: number) {
   return BN.from(10).pow(decimal).mul(amount);
 }
 
-export async function getLiquidityRate(
-  alice: Wallet,
-  token: Token
-): Promise<BN> {
+export async function getLiquidityRate(alice: Wallet, token: Token): Promise<BN> {
   const { lendingPool } = await aaveFixture(alice);
   const { liquidityRate } = await lendingPool.getReserveData(token.address);
   return liquidityRate;
@@ -222,23 +170,15 @@ export async function getLiquidityRate(
 export async function emptyToken(tokenContract: Contract, person: Wallet) {
   let bal: BN = await tokenContract.balanceOf(person.address);
   if (bal.eq(0)) return;
-  await tokenContract
-    .connect(person)
-    .transfer(consts.DUMMY_GOVERNANCE_ADDRESS, bal);
+  await tokenContract.connect(person).transfer(consts.DUMMY_GOVERNANCE_ADDRESS, bal);
   bal = await tokenContract.balanceOf(person.address);
   if (bal.eq(0)) return;
-  await tokenContract
-    .connect(person)
-    .transfer(consts.DUMMY_GOVERNANCE_ADDRESS, bal);
+  await tokenContract.connect(person).transfer(consts.DUMMY_GOVERNANCE_ADDRESS, bal);
 }
 
 export function getGain(amount: BN, rate: BN, duration: BN): BN {
   const precision = BN.from(10).pow(27);
-  const rateForDuration = rate
-    .mul(duration)
-    .mul(amount)
-    .div(consts.ONE_YEAR)
-    .div(precision);
+  const rateForDuration = rate.mul(duration).mul(amount).div(consts.ONE_YEAR).div(precision);
 
   return rateForDuration;
 }
@@ -272,15 +212,15 @@ export function approxBigNumber(
 }
 
 export function toFixedPoint(val: string | number): BN {
-  if (typeof val === "number") {
+  if (typeof val === 'number') {
     return BN.from(val).mul(PRECISION);
   }
-  var pos: number = val.indexOf(".");
+  var pos: number = val.indexOf('.');
   if (pos == -1) {
     return BN.from(val).mul(PRECISION);
   }
   var lenFrac = val.length - pos - 1;
-  val = val.replace(".", "");
+  val = val.replace('.', '');
   return BN.from(val).mul(PRECISION).div(BN.from(10).pow(lenFrac));
 }
 
@@ -291,7 +231,7 @@ export function toFPWei(val: string | number): BN {
 export function randomBN(_range?: number | BN): BN {
   let range: number;
   if (_range == undefined) range = 1e15;
-  else if (typeof _range === "number") {
+  else if (typeof _range === 'number') {
     range = _range;
   } else range = _range.toNumber();
 
@@ -304,11 +244,11 @@ export function randomNumber(range?: number): number {
 
 export async function logMarketReservesData(market: Contract) {
   let marketData = await market.getReserves();
-  console.log("=============MARKET===DATA===============");
-  console.log("xytBalance: ", marketData.xytBalance.toString());
-  console.log("xytWeight: ", marketData.xytWeight.toString());
-  console.log("tokenBalance: ", marketData.tokenBalance.toString());
-  console.log("tokenWeight: ", marketData.tokenWeight.toString());
-  console.log("totalSupply: ", (await market.totalSupply()).toString());
-  console.log("=========================================");
+  console.log('=============MARKET===DATA===============');
+  console.log('xytBalance: ', marketData.xytBalance.toString());
+  console.log('xytWeight: ', marketData.xytWeight.toString());
+  console.log('tokenBalance: ', marketData.tokenBalance.toString());
+  console.log('tokenWeight: ', marketData.tokenWeight.toString());
+  console.log('totalSupply: ', (await market.totalSupply()).toString());
+  console.log('=========================================');
 }

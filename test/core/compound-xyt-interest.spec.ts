@@ -1,5 +1,5 @@
-import { createFixtureLoader } from "ethereum-waffle";
-import { BigNumber as BN, Contract, Wallet } from "ethers";
+import { createFixtureLoader } from 'ethereum-waffle';
+import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import {
   amountToWei,
   approxBigNumber,
@@ -13,11 +13,11 @@ import {
   setTimeNextBlock,
   Token,
   tokens,
-} from "../helpers";
-import { routerFixture } from "./fixtures";
-import testData from "./fixtures/yieldTokenizeAndRedeem.scenario.json";
+} from '../helpers';
+import { routerFixture } from './fixtures';
+import testData from './fixtures/yieldTokenizeAndRedeem.scenario.json';
 
-const { waffle } = require("hardhat");
+const { waffle } = require('hardhat');
 const provider = waffle.provider;
 
 interface YieldTest {
@@ -27,7 +27,7 @@ interface YieldTest {
   timeDelta: number;
 }
 
-describe("compound-xyt-interest", async () => {
+describe('compound-xyt-interest', async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
@@ -50,21 +50,9 @@ describe("compound-xyt-interest", async () => {
     cForge = fixture.cForge.compoundForge;
     cUSDT = await getCContract(alice, tokenUSDT);
 
-    await mintCompoundToken(
-      tokens.USDT,
-      bob,
-      consts.INITIAL_COMPOUND_TOKEN_AMOUNT
-    );
-    await mintCompoundToken(
-      tokens.USDT,
-      charlie,
-      consts.INITIAL_COMPOUND_TOKEN_AMOUNT
-    );
-    await mintCompoundToken(
-      tokens.USDT,
-      dave,
-      consts.INITIAL_COMPOUND_TOKEN_AMOUNT
-    );
+    await mintCompoundToken(tokens.USDT, bob, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    await mintCompoundToken(tokens.USDT, charlie, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    await mintCompoundToken(tokens.USDT, dave, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
     await cUSDT.connect(bob).approve(router.address, consts.INF);
     await cUSDT.connect(charlie).approve(router.address, consts.INF);
 
@@ -118,10 +106,7 @@ describe("compound-xyt-interest", async () => {
   async function addFakeIncome(token: Token, user: Wallet, amount: BN) {
     await mint(token, user, amount);
     let USDTcontract = await getERC20Contract(user, token);
-    USDTcontract.connect(user).transfer(
-      cUSDT.address,
-      amountToWei(amount, token.decimal)
-    );
+    USDTcontract.connect(user).transfer(cUSDT.address, amountToWei(amount, token.decimal));
   }
 
   async function runTest(yieldTest: YieldTest[]) {
@@ -131,21 +116,17 @@ describe("compound-xyt-interest", async () => {
       let user = wallets[curTest.user];
       curTime = curTime.add(BN.from(curTest.timeDelta));
       await setTimeNextBlock(curTime);
-      if (curTest.type == "redeemDueInterests") {
+      if (curTest.type == 'redeemDueInterests') {
         await redeemDueInterests(user);
-      } else if (curTest.type == "redeemUnderlying") {
+      } else if (curTest.type == 'redeemUnderlying') {
         await redeemUnderlying(user, BN.from(curTest.amount));
-      } else if (curTest.type == "tokenizeYield") {
+      } else if (curTest.type == 'tokenizeYield') {
         await tokenizeYield(user, BN.from(curTest.amount));
-      } else if (curTest.type == "redeemUnderlyingAll") {
+      } else if (curTest.type == 'redeemUnderlyingAll') {
         let balance = await cOt.balanceOf(user.address);
         await redeemUnderlying(user, balance);
       }
-      await addFakeIncome(
-        tokens.USDT,
-        eve,
-        consts.INITIAL_COMPOUND_TOKEN_AMOUNT
-      );
+      await addFakeIncome(tokens.USDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
     }
     await cUSDT.balanceOfUnderlying(cForge.address);
     await cUSDT.balanceOfUnderlying(alice.address);
@@ -153,38 +134,24 @@ describe("compound-xyt-interest", async () => {
     await cUSDT.balanceOfUnderlying(dave.address);
     await cUSDT.balanceOfUnderlying(charlie.address);
 
-    const expectedBalance = await cUSDT.callStatic.balanceOfUnderlying(
-      dave.address
-    );
+    const expectedBalance = await cUSDT.callStatic.balanceOfUnderlying(dave.address);
     const allowedDelta = expectedBalance.div(10 ** 6 / 2); // 5e-5 % delta
 
-    approxBigNumber(
-      await cUSDT.callStatic.balanceOfUnderlying(alice.address),
-      expectedBalance,
-      BN.from(2 * 10 ** 6)
-    );
-    approxBigNumber(
-      await cUSDT.callStatic.balanceOfUnderlying(bob.address),
-      expectedBalance,
-      BN.from(2 * 10 ** 6)
-    );
-    approxBigNumber(
-      await cUSDT.callStatic.balanceOfUnderlying(charlie.address),
-      expectedBalance,
-      BN.from(2 * 10 ** 6)
-    );
+    approxBigNumber(await cUSDT.callStatic.balanceOfUnderlying(alice.address), expectedBalance, BN.from(2 * 10 ** 6));
+    approxBigNumber(await cUSDT.callStatic.balanceOfUnderlying(bob.address), expectedBalance, BN.from(2 * 10 ** 6));
+    approxBigNumber(await cUSDT.callStatic.balanceOfUnderlying(charlie.address), expectedBalance, BN.from(2 * 10 ** 6));
   }
-  it("test 1", async () => {
+  it('test 1', async () => {
     await runTest((<any>testData).test1);
   });
-  it("test 2", async () => {
+  it('test 2', async () => {
     await runTest((<any>testData).test2);
   });
 
-  xit("stress 1 [only enable when necessary]", async () => {
+  xit('stress 1 [only enable when necessary]', async () => {
     await runTest((<any>testData).stress1);
   });
-  xit("stress 2 [only enable when necessary]", async () => {
+  xit('stress 2 [only enable when necessary]', async () => {
     await runTest((<any>testData).stress2);
   });
 });
