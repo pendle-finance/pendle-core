@@ -115,11 +115,7 @@ describe("forge-market-pause-test", function () {
       alice.address,
       consts.HIGH_GAS_OVERRIDE
     );
-    await router.redeemUnderlying(
-      ...forgeArgs,
-      1,
-      consts.HIGH_GAS_OVERRIDE
-    );
+    await router.redeemUnderlying(...forgeArgs, 1, consts.HIGH_GAS_OVERRIDE);
     await xyt.transfer(charlie.address, 1, consts.HIGH_GAS_OVERRIDE);
     await ot.transfer(charlie.address, 1, consts.HIGH_GAS_OVERRIDE);
     //TODO: refactor checkYieldContractPaused and checkYieldContractUnpaused
@@ -287,31 +283,17 @@ describe("forge-market-pause-test", function () {
     console.log(`\t\tmarketXytBalanceBefore = ${marketXytBalanceBefore}`);
     await xyt
       .connect(charlie)
-      .transferFrom(
-        market.address,
-        charlie.address,
-        marketXytBalanceBefore
-      );
+      .transferFrom(market.address, charlie.address, marketXytBalanceBefore);
     const marketXytBalanceAfter = await xyt.balanceOf(market.address);
     expect(marketXytBalanceAfter).to.be.lt(BN.from(100));
     console.log(`\t\tmarketXytBalanceAfter = ${marketXytBalanceAfter}`);
 
-    const marketTokenBalanceBefore = await baseToken.balanceOf(
-      market.address
-    );
-    console.log(
-      `\t\tmarketTokenBalanceBefore = ${marketTokenBalanceBefore}`
-    );
+    const marketTokenBalanceBefore = await baseToken.balanceOf(market.address);
+    console.log(`\t\tmarketTokenBalanceBefore = ${marketTokenBalanceBefore}`);
     await baseToken
       .connect(charlie)
-      .transferFrom(
-        market.address,
-        charlie.address,
-        marketTokenBalanceBefore
-      );
-    const marketTokenBalanceAfter = await baseToken.balanceOf(
-      market.address
-    );
+      .transferFrom(market.address, charlie.address, marketTokenBalanceBefore);
+    const marketTokenBalanceAfter = await baseToken.balanceOf(market.address);
     expect(marketTokenBalanceAfter).to.be.lt(BN.from(100));
     console.log(`\t\tmarketTokenBalanceAfter = ${marketTokenBalanceAfter}`);
   }
@@ -322,11 +304,7 @@ describe("forge-market-pause-test", function () {
     await buildTestEnvV1();
     const aTokenBalance = await aUSDT.balanceOf(alice.address);
     forgeArgs = [testEnv.FORGE_ID, tokenUSDT.address, testEnv.EXPIRY];
-    marketArgs = [
-      consts.MARKET_FACTORY_AAVE,
-      xyt.address,
-      baseToken.address,
-    ];
+    marketArgs = [consts.MARKET_FACTORY_AAVE, xyt.address, baseToken.address];
     // mint some XYTs to alice
     await router.tokenizeYield(
       ...forgeArgs,
@@ -373,9 +351,7 @@ describe("forge-market-pause-test", function () {
     await pausingManager.setPausingAdmin(bob.address, true);
     expect(await pausingManager.isPausingAdmin(bob.address)).to.be.eq(true);
     await pausingManager.setPausingAdmin(bob.address, false);
-    expect(await pausingManager.isPausingAdmin(bob.address)).to.be.eq(
-      false
-    );
+    expect(await pausingManager.isPausingAdmin(bob.address)).to.be.eq(false);
   });
   describe("Forge pausing", async () => {
     beforeEach(async () => {
@@ -399,9 +375,7 @@ describe("forge-market-pause-test", function () {
       await checkYieldContractPaused();
     });
     it("Should be able to pause yield contracts based on forge", async () => {
-      await pausingManager
-        .connect(bob)
-        .setForgePaused(testEnv.FORGE_ID, true);
+      await pausingManager.connect(bob).setForgePaused(testEnv.FORGE_ID, true);
       await checkYieldContractPaused();
     });
     it("Pausing admins should not be able to unpause", async () => {
@@ -410,16 +384,12 @@ describe("forge-market-pause-test", function () {
       ).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
     });
     it("Governance should be able to unpause yield contracts", async () => {
-      await pausingManager
-        .connect(bob)
-        .setForgePaused(testEnv.FORGE_ID, true);
+      await pausingManager.connect(bob).setForgePaused(testEnv.FORGE_ID, true);
       await pausingManager.setForgePaused(testEnv.FORGE_ID, false);
       await checkYieldContractUnpaused();
     });
     it("Pausing globally & unpausing specific yield contracts should work", async () => {
-      await pausingManager
-        .connect(bob)
-        .setForgePaused(testEnv.FORGE_ID, true);
+      await pausingManager.connect(bob).setForgePaused(testEnv.FORGE_ID, true);
       await pausingManager.setForgeAssetExpiryPaused(
         testEnv.FORGE_ID,
         tokenUSDT.address,
@@ -504,9 +474,7 @@ describe("forge-market-pause-test", function () {
       await checkMarketLocked();
     });
     it("Should be able to lock markets by factory", async () => {
-      await pausingManager.setMarketFactoryLocked(
-        consts.MARKET_FACTORY_AAVE
-      );
+      await pausingManager.setMarketFactoryLocked(consts.MARKET_FACTORY_AAVE);
       await checkMarketLocked();
     });
   });
@@ -522,9 +490,9 @@ describe("forge-market-pause-test", function () {
       await expect(
         pausingManager.setPausingAdmin(dave.address, true)
       ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
-      await expect(
-        pausingManager.applyForgeHandlerChange()
-      ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
+      await expect(pausingManager.applyForgeHandlerChange()).to.be.revertedWith(
+        errMsg.PERMANENTLY_LOCKED
+      );
       await expect(
         pausingManager.lockPausingManagerPermanently()
       ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
@@ -550,10 +518,7 @@ describe("forge-market-pause-test", function () {
         pausingManager.setForgeLocked(testEnv.FORGE_ID)
       ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
       await expect(
-        pausingManager.setForgeAssetLocked(
-          testEnv.FORGE_ID,
-          tokenUSDT.address
-        )
+        pausingManager.setForgeAssetLocked(testEnv.FORGE_ID, tokenUSDT.address)
       ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
       await expect(
         pausingManager.setForgeAssetExpiryLocked(

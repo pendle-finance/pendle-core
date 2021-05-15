@@ -24,9 +24,7 @@ export async function tokenizeYield(
       to,
       consts.HIGH_GAS_OVERRIDE
     );
-  amountTokenMinted = (await env.ot.balanceOf(to)).sub(
-    amountTokenMinted
-  );
+  amountTokenMinted = (await env.ot.balanceOf(to)).sub(amountTokenMinted);
   return amountTokenMinted;
 }
 

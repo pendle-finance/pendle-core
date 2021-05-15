@@ -78,10 +78,11 @@ export function runTest(isAaveV1: boolean) {
     async function addFundsToForge() {
       if (randomNumber(2) == 0) {
         await tokenizeYield(env, eve, BN.from(10 ** 7), env.forge.address);
-      }
-      else {
+      } else {
         await tokenizeYield(env, eve, BN.from(10 ** 7));
-        await env.xyt.connect(eve).transfer(env.forge.address, await env.xyt.balanceOf(eve.address));
+        await env.xyt
+          .connect(eve)
+          .transfer(env.forge.address, await env.xyt.balanceOf(eve.address));
       }
     }
 
