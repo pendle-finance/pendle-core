@@ -8,12 +8,12 @@ export async function tokenizeYield(
   env: TestEnv,
   user: Wallet,
   amount: BN,
-  to?: Wallet
+  to?: string
 ): Promise<BN> {
   if (to == null) {
-    to = user;
+    to = user.address;
   }
-  let amountTokenMinted = await env.ot.balanceOf(to.address);
+  let amountTokenMinted = await env.ot.balanceOf(to);
   await env.router
     .connect(user)
     .tokenizeYield(
@@ -21,10 +21,10 @@ export async function tokenizeYield(
       USDT.address,
       env.EXPIRY,
       amount,
-      to.address,
+      to,
       consts.HIGH_GAS_OVERRIDE
     );
-  amountTokenMinted = (await env.ot.balanceOf(to.address)).sub(
+  amountTokenMinted = (await env.ot.balanceOf(to)).sub(
     amountTokenMinted
   );
   return amountTokenMinted;

@@ -1,11 +1,13 @@
 import { createFixtureLoader } from "ethereum-waffle";
 import { BigNumber as BN } from "ethers";
 import {
+  amountToWei,
   approxBigNumber,
   consts,
   evm_revert,
   evm_snapshot,
   mintAaveToken,
+  randomNumber,
   redeemDueInterests,
   redeemUnderlying,
   setTimeNextBlock,
@@ -35,7 +37,7 @@ export function runTest(isAaveV1: boolean) {
   describe("", async () => {
     const wallets = provider.getWallets();
     const loadFixture = createFixtureLoader(wallets, provider);
-    const [alice, bob, charlie, dave] = wallets;
+    const [alice, bob, charlie, dave, eve] = wallets;
 
     let snapshotId: string;
     let globalSnapshotId: string;
@@ -52,7 +54,7 @@ export function runTest(isAaveV1: boolean) {
     before(async () => {
       globalSnapshotId = await evm_snapshot();
       await buildTestEnv();
-      for (var person of [bob, charlie, dave]) {
+      for (var person of [bob, charlie, dave, eve]) {
         await mintAaveToken(
           tokens.USDT,
           person,
@@ -73,9 +75,22 @@ export function runTest(isAaveV1: boolean) {
       snapshotId = await evm_snapshot();
     });
 
+    async function addFundsToForge() {
+      if (randomNumber(2) == 0) {
+        await tokenizeYield(env, eve, BN.from(10 ** 7), env.forge.address);
+      }
+      else {
+        await tokenizeYield(env, eve, BN.from(10 ** 7));
+        await env.xyt.connect(eve).transfer(env.forge.address, await env.xyt.balanceOf(eve.address));
+      }
+    }
+
     async function runTest(yieldTest: YieldTest[]) {
       let curTime = env.T0;
       for (let id = 0; id < yieldTest.length; id++) {
+        if (id % 10 == 0) {
+          await addFundsToForge();
+        }
         let curTest = yieldTest[id];
         let user = wallets[curTest.user];
         curTime = curTime.add(BN.from(curTest.timeDelta));
