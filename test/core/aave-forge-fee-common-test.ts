@@ -66,7 +66,7 @@ export function runTest(isAaveV1: boolean) {
     // When bob redeem due interests, Bob should get the interest gotten by Charlie - fee portion
     it('User should get back interest minus forge fees', async () => {
       await env.yUSDT.transfer(charlie.address, REF_AMOUNT);
-      await tokenizeYield(env, alice, REF_AMOUNT, bob);
+      await tokenizeYield(env, alice, REF_AMOUNT, bob.address);
 
       await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
       await redeemDueInterests(env, bob);
@@ -79,7 +79,7 @@ export function runTest(isAaveV1: boolean) {
     });
 
     it('Governance address should be able to withdraw forge fees', async () => {
-      await tokenizeYield(env, alice, REF_AMOUNT, bob);
+      await tokenizeYield(env, alice, REF_AMOUNT, bob.address);
 
       await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
       await redeemDueInterests(env, bob);
@@ -93,7 +93,7 @@ export function runTest(isAaveV1: boolean) {
       approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(100));
     });
     it('Non-governance address should not be able to withdraw forge fees', async () => {
-      await tokenizeYield(env, alice, REF_AMOUNT, bob);
+      await tokenizeYield(env, alice, REF_AMOUNT, bob.address);
 
       await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
       await redeemDueInterests(env, bob);
