@@ -16,14 +16,14 @@ import {
   tokens,
   mint,
   amountToWei,
-} from '../helpers';
+} from '../../helpers';
 import {
   liquidityMiningFixture,
   LiquidityMiningFixture,
   Mode,
   parseTestEnvLiquidityMiningFixture,
   TestEnv,
-} from './fixtures';
+} from '../fixtures';
 
 const { waffle } = require('hardhat');
 const { provider } = waffle;

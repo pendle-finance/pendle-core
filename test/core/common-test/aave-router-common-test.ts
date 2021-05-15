@@ -17,8 +17,8 @@ import {
   Token,
   tokenizeYield,
   tokens,
-} from '../helpers';
-import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from './fixtures';
+} from '../../helpers';
+import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 
 const { waffle } = require('hardhat');
 const provider = waffle.provider;

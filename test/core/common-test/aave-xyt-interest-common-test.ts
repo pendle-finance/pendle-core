@@ -13,9 +13,9 @@ import {
   setTimeNextBlock,
   tokenizeYield,
   tokens,
-} from '../helpers';
-import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from './fixtures';
-import testData from './fixtures/yieldTokenizeAndRedeem.scenario.json';
+} from '../../helpers';
+import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
+import testData from '../fixtures/yieldTokenizeAndRedeem.scenario.json';
 
 const { waffle } = require('hardhat');
 const provider = waffle.provider;

@@ -14,8 +14,8 @@ import {
   swapExactInXytToToken,
   swapExactOutTokenToXyt,
   swapExactOutXytToToken,
-} from '../helpers';
-import { marketFixture, TestEnv } from './fixtures';
+} from '../../helpers';
+import { TestEnv } from '../fixtures';
 
 const { waffle } = require('hardhat');
 const { provider } = waffle;

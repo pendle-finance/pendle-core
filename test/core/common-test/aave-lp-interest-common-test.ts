@@ -18,8 +18,8 @@ import {
   swapExactInXytToToken,
   Token,
   tokens,
-} from '../helpers';
-import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
+} from '../../helpers';
+import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../fixtures';
 
 const { waffle } = require('hardhat');
 const { provider } = waffle;

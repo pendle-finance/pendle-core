@@ -19,7 +19,7 @@ import {
   swapExactInXytToToken,
   swapExactOutXytToToken,
   toFixedPoint,
-} from '../helpers';
+} from '../../helpers';
 import {
   AMMCheckLPNearCloseTest,
   AMMNearCloseTest,
@@ -27,7 +27,7 @@ import {
   MarketFeesTest,
   ProtocolFeeTest,
 } from './amm-formula-test';
-import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
+import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../fixtures';
 
 const { waffle } = require('hardhat');
 const { provider } = waffle;

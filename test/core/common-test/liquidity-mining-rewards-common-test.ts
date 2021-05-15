@@ -18,7 +18,7 @@ import {
   stake,
   startOfEpoch,
   withdraw,
-} from '../helpers';
+} from '../../helpers';
 import {
   liquidityMiningFixture,
   LiquidityMiningFixture,
@@ -26,8 +26,8 @@ import {
   parseTestEnvLiquidityMiningFixture,
   TestEnv,
   UserStakeAction,
-} from './fixtures';
-import * as scenario from './fixtures/liquidityMiningScenario.fixture';
+} from '../fixtures';
+import * as scenario from '../fixtures/liquidityMiningScenario.fixture';
 
 const { waffle } = require('hardhat');
 const { provider } = waffle;
