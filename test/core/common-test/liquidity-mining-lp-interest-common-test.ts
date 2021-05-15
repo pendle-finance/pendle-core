@@ -34,7 +34,6 @@ export function runTest(mode: Mode) {
     let snapshotId: string;
     let globalSnapshotId: string;
     let env: TestEnv = {} as TestEnv;
-    const FAKE_INCOME_AMOUNT = consts.INITIAL_COMPOUND_TOKEN_AMOUNT;
 
     async function buildTestEnv() {
       let fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);

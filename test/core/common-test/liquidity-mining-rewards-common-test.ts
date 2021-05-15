@@ -138,13 +138,13 @@ export function runTest(mode: Mode) {
       }
     }
 
-    it('should be able to receive enough PENDLE rewards - test 2', async () => {
+    it('test 2', async () => {
       let userStakingData: UserStakeAction[][][] = scenario.scenario04(env.liqParams);
       await doSequence(userStakingData);
       await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1);
     });
 
-    it('should be able to receive enough PENDLE rewards - test 3', async () => {
+    it('test 3', async () => {
       await env.liq.setAllocationSetting(
         [env.EXPIRY, consts.T0.add(consts.THREE_MONTH)],
         [env.liqParams.TOTAL_NUMERATOR.div(2), env.liqParams.TOTAL_NUMERATOR.div(2)],
@@ -155,7 +155,7 @@ export function runTest(mode: Mode) {
       await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1, 2);
     });
 
-    it('should be able to receive enough PENDLE rewards - test 4', async () => {
+    it('test 4', async () => {
       await env.liq.setAllocationSetting(
         [env.EXPIRY, consts.T0.add(consts.THREE_MONTH)],
         [env.liqParams.TOTAL_NUMERATOR.div(2), env.liqParams.TOTAL_NUMERATOR.div(2)],
