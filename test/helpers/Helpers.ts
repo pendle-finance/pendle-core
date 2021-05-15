@@ -255,6 +255,9 @@ export async function logMarketReservesData(market: Contract) {
 
 export async function addFakeIncomeCompound(env: TestEnv, user: Wallet) {
   await mint(tokens.USDT, user, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-  await env.USDTContract.connect(user).transfer(env.yUSDT.address, amountToWei(consts.INITIAL_COMPOUND_TOKEN_AMOUNT, 6));
+  await env.USDTContract.connect(user).transfer(
+    env.yUSDT.address,
+    amountToWei(consts.INITIAL_COMPOUND_TOKEN_AMOUNT, 6)
+  );
   await env.yUSDT.balanceOfUnderlying(user.address); // interact with compound so that it updates all info
 }
