@@ -65,10 +65,10 @@ export function runTest(isAaveV1: boolean) {
 
     async function addFundsToForge() {
       if (randomNumber(2) == 0) {
-        await tokenizeYield(env, eve, BN.from(10 ** 7), env.forge.address);
+        await tokenizeYield(env, eve, BN.from(10 ** 7), env.forge.yieldTokenHolders(tokens.USDT.address, env.EXPIRY));
       } else {
         await tokenizeYield(env, eve, BN.from(10 ** 7));
-        await env.xyt.connect(eve).transfer(env.forge.address, await env.xyt.balanceOf(eve.address));
+        await env.xyt.connect(eve).transfer(env.forge.yieldTokenHolders(tokens.USDT.address, env.EXPIRY), await env.xyt.balanceOf(eve.address));
       }
     }
 
@@ -92,6 +92,7 @@ export function runTest(isAaveV1: boolean) {
           let balance = await env.ot.balanceOf(user.address);
           await redeemUnderlying(env, user, balance);
         }
+
       }
       const expectedBalance = await env.yUSDT.balanceOf(dave.address);
       for (var person of [alice, bob, charlie]) {

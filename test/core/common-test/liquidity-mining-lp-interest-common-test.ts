@@ -13,9 +13,7 @@ import {
   randomBN,
   randomNumber,
   redeemLpInterests,
-  tokens,
-  mint,
-  amountToWei,
+  addFakeIncomeCompound
 } from '../../helpers';
 import {
   liquidityMiningFixture,
@@ -67,13 +65,6 @@ export function runTest(mode: Mode) {
       snapshotId = await evm_snapshot();
     });
 
-    async function addFakeIncomeCompound() {
-      await mint(tokens.USDT, alice, FAKE_INCOME_AMOUNT);
-      await env.USDTContract.connect(alice).transfer(env.yUSDT.address, amountToWei(FAKE_INCOME_AMOUNT, 6));
-      await env.yUSDT.balanceOfUnderlying(alice.address); // interact with compound so that it updates all info
-      // to have the most accurate result since the interest is only updated every DELTA seconds
-    }
-
     it('test 1', async () => {
       await env.xyt.transfer(eve.address, (await env.xyt.balanceOf(env.market.address)).div(10));
 
@@ -93,7 +84,6 @@ export function runTest(mode: Mode) {
         if (liqBalance[userID].eq(0)) {
           actionType = 0;
         }
-
         if (actionType == 0) {
           let amount = randomBN(lpBalance[userID]);
           await stake(env, wallets[userID], amount);
@@ -107,7 +97,7 @@ export function runTest(mode: Mode) {
         } else if (actionType == 2) {
           await env.liq.redeemLpInterests(env.EXPIRY, wallets[userID].address);
         }
-        if (mode == Mode.COMPOUND) await addFakeIncomeCompound();
+        if (mode == Mode.COMPOUND) await addFakeIncomeCompound(env, eve);
       }
 
       await redeemDueInterests(env, eve);

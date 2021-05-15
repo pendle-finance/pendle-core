@@ -4,10 +4,10 @@ import ERC20 from '../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC
 import AToken from '../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json';
 import CToken from '../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json';
 import TetherToken from '../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json';
-import { RouterFixture } from '../core/fixtures/';
+import { RouterFixture, TestEnv } from '../core/fixtures/';
 import { aaveFixture } from '../core/fixtures/aave.fixture';
 import { aaveV2Fixture } from '../core/fixtures/aaveV2.fixture';
-import { consts, Token } from './Constants';
+import { consts, Token, tokens } from './Constants';
 import { impersonateAccount } from './Evm';
 
 const hre = require('hardhat');
@@ -251,4 +251,10 @@ export async function logMarketReservesData(market: Contract) {
   console.log('tokenWeight: ', marketData.tokenWeight.toString());
   console.log('totalSupply: ', (await market.totalSupply()).toString());
   console.log('=========================================');
+}
+
+export async function addFakeIncomeCompound(env: TestEnv, user: Wallet) {
+  await mint(tokens.USDT, user, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+  await env.USDTContract.connect(user).transfer(env.yUSDT.address, amountToWei(consts.INITIAL_COMPOUND_TOKEN_AMOUNT, 6));
+  await env.yUSDT.balanceOfUnderlying(user.address); // interact with compound so that it updates all info
 }
