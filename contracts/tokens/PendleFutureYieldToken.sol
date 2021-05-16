@@ -48,6 +48,7 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldTokenCommon {
             _underlyingAsset != address(0) && _underlyingYieldToken != address(0),
             "ZERO_ADDRESS"
         );
+        require(_forge != address(0), "ZERO_ADDRESS");
         forge = _forge;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;
