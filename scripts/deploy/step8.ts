@@ -26,7 +26,7 @@ export async function step8(deployer: any, hre: any, deployment: Deployment, con
 
   await pendleCompoundMarketFactory.initialize(pendleRouterAddress);
   const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
-  await pendleRouter.addMarketFactory(consts.misc.MARKET_FACTORY_COMPOUND, pendleCompoundMarketFactory.address);
+  await pendledata.addMarketFactory(consts.misc.MARKET_FACTORY_COMPOUND, pendleCompoundMarketFactory.address);
   await pendleRouter.addForge(consts.misc.FORGE_COMPOUND, pendleCompoundForge.address);
 
   const pendleData = await getContractFromDeployment(hre, deployment, 'PendleData');

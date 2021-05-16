@@ -71,15 +71,15 @@ export async function marketFixture(
     await testToken.transfer(person.address, totalSupply.div(5));
   }
 
-  await router.addMarketFactory(
+  await data.addMarketFactory(
     consts.MARKET_FACTORY_AAVE,
     aMarketFactory.address
   );
-  await router.addMarketFactory(
+  await data.addMarketFactory(
     consts.MARKET_FACTORY_AAVE_V2,
     a2MarketFactory.address
   );
-  await router.addMarketFactory(
+  await data.addMarketFactory(
     consts.MARKET_FACTORY_COMPOUND,
     cMarketFactory.address
   );

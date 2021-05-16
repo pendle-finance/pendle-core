@@ -79,6 +79,13 @@ interface IPendleData {
     event CurveShiftBlockDeltaSet(uint256 _blockDelta);
 
     /**
+     * @dev Emitted when new forge is added
+     * @param marketFactoryId Human Readable Market Factory ID in Bytes
+     * @param marketFactoryAddress The Market Factory Address
+     */
+    event NewMarketFactory(bytes32 indexed marketFactoryId, address indexed marketFactoryAddress);
+
+    /**
      * @notice Set/update validity of a forge-factory pair
      * @param _forgeId the forge id
      * @param _marketFactoryId the market factory id

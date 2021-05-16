@@ -48,7 +48,7 @@ import "../periphery/PendleRouterNonReentrant.sol";
 * Markets will not transfer any XYT/baseToken, but instead make requests to Router through the transfer array
     and the Router will transfer them
 */
-contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterNonReentrant {
+contract PendleRouter is IPendleRouter, Withdrawable, PendleRouterNonReentrant {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using Math for uint256;
@@ -76,22 +76,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
      **/
     receive() external payable {
         assert(msg.sender == address(weth));
-    }
-
-    /**
-     * @notice add forge by _forgeId & _forgeAddress
-     Conditions:
-     * Only governance can call it. Hence no Reentrancy protection is needed
-     **/
-    function addForge(bytes32 _forgeId, address _forgeAddress) external override onlyGovernance {
-        require(_forgeId != bytes32(0), "ZERO_BYTES");
-        require(_forgeAddress != address(0), "ZERO_ADDRESS");
-        require(_forgeId == IPendleForge(_forgeAddress).forgeId(), "INVALID_ID");
-        require(data.getForgeAddress(_forgeId) == address(0), "EXISTED_ID");
-
-        data.addForge(_forgeId, _forgeAddress);
-
-        emit NewForge(_forgeId, _forgeAddress);
     }
 
     /**
@@ -275,29 +259,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
             _amountToTokenize,
             _to
         );
-    }
-
-    /**
-     * @notice add marketFactory by _marketFactoryId & _marketFactoryAddress
-     * @dev A market factory can work with XYTs from one or more Forges,
-          to be determined by data.validForgeFactoryPair mapping
-     Conditions:
-     * Only governance can call it. Hence no Reentrancy protection is needed
-     **/
-    function addMarketFactory(bytes32 _marketFactoryId, address _marketFactoryAddress)
-        external
-        override
-        onlyGovernance
-    {
-        require(_marketFactoryId != bytes32(0), "ZERO_BYTES");
-        require(_marketFactoryAddress != address(0), "ZERO_ADDRESS");
-        require(
-            _marketFactoryId == IPendleMarketFactory(_marketFactoryAddress).marketFactoryId(),
-            "INVALID_FACTORY_ID"
-        );
-        require(data.getMarketFactoryAddress(_marketFactoryId) == address(0), "EXISTED_ID");
-        data.addMarketFactory(_marketFactoryId, _marketFactoryAddress);
-        emit NewMarketFactory(_marketFactoryId, _marketFactoryAddress);
     }
 
     /**

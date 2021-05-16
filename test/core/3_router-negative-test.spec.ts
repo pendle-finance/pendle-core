@@ -110,9 +110,9 @@ describe('router-negative-test', async () => {
   });
 
   it("shouldn't be able to addForge if the forge is invalid", async () => {
-    await expect(router.addForge(consts.FORGE_AAVE, aaveForge.address)).to.be.revertedWith(errMsg.EXISTED_ID);
-    await expect(router.addForge(consts.FORGE_AAVE_V2, aaveForge.address)).to.be.revertedWith(errMsg.INVALID_ID);
-    await expect(router.addForge(consts.FORGE_AAVE, consts.RANDOM_ADDRESS)).to.be.reverted;
+    await expect(data.addForge(consts.FORGE_AAVE, aaveForge.address)).to.be.revertedWith(errMsg.EXISTED_ID);
+    await expect(data.addForge(consts.FORGE_AAVE_V2, aaveForge.address)).to.be.revertedWith(errMsg.INVALID_ID);
+    await expect(data.addForge(consts.FORGE_AAVE, consts.RANDOM_ADDRESS)).to.be.reverted;
   });
 
   it("shouldn't be able to newYieldContracts with an invalid forgeId", async () => {
@@ -184,7 +184,7 @@ describe('router-negative-test', async () => {
 
   it("shouldn't be able to add invalid market factories", async () => {
     await expect(
-      router.addMarketFactory(consts.MARKET_FACTORY_AAVE_V2, fixture.core.aMarketFactory.address)
+      data.addMarketFactory(consts.MARKET_FACTORY_AAVE_V2, fixture.core.aMarketFactory.address)
     ).to.be.revertedWith(errMsg.INVALID_FACTORY_ID);
   });
 });

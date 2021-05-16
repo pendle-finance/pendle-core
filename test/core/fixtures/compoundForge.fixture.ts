@@ -46,7 +46,7 @@ export async function compoundForgeFixture(
 
   await cYieldContractDeployer.initialize(compoundForge.address);
 
-  await router.addForge(consts.FORGE_COMPOUND, compoundForge.address);
+  await data.addForge(consts.FORGE_COMPOUND, compoundForge.address);
 
   await compoundForge.registerCTokens([tokens.USDT.address], [tokens.USDT.compound]);
 
