@@ -86,10 +86,10 @@ describe('permission-test', async () => {
 
   it('PendleRouter', async () => {
     await expect(
-      router.connect(bob).addMarketFactory(consts.MARKET_FACTORY_AAVE, consts.RANDOM_ADDRESS)
+      data.connect(bob).addMarketFactory(consts.MARKET_FACTORY_AAVE, consts.RANDOM_ADDRESS)
     ).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
 
-    await expect(router.connect(bob).addForge(consts.FORGE_AAVE, consts.RANDOM_ADDRESS)).to.be.revertedWith(
+    await expect(data.connect(bob).addForge(consts.FORGE_AAVE, consts.RANDOM_ADDRESS)).to.be.revertedWith(
       errMsg.ONLY_GOVERNANCE
     );
   });

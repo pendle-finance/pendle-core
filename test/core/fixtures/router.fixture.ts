@@ -71,6 +71,5 @@ export async function routerFixtureNoMint(
   const cContract = await getCContract(alice, tokens.USDT);
   await cContract.approve(core.router.address, consts.INF);
 
-  console.log(`\t[RouterFixture] Balance of alice = ${aContract.balanceOf(alice.address)}`);
   return { core, governance, aave, aaveV2, aForge, a2Forge, cForge, minted: false }
 }
