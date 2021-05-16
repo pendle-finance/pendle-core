@@ -1,5 +1,4 @@
 import { assert, expect } from 'chai';
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import {
   advanceTime,
@@ -17,13 +16,12 @@ import {
 import { LiqParams, liquidityMiningFixture, UserStakeAction } from './fixtures';
 import * as scenario from './fixtures/liquidityMiningScenario.fixture';
 
-const { waffle } = require('hardhat');
-const hre = require('hardhat');
-const { provider } = waffle;
+import hre from 'hardhat';
+const { waffle } = hre;
+const { loadFixture, provider } = waffle;
 
 describe('compound-liquidityMining', async () => {
   const wallets = provider.getWallets();
-  const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
   let liq: Contract;
   let market: Contract;

@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
 import {
   amountToWei,
@@ -18,13 +17,12 @@ import {
 } from '../../helpers';
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 
-const { waffle } = require('hardhat');
-const provider = waffle.provider;
+import { waffle } from 'hardhat';
+const { loadFixture, provider } = waffle;
 
 export function runTest(isAaveV1: boolean) {
   describe('', async () => {
     const wallets = provider.getWallets();
-    const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob, charlie, dave] = wallets;
     const forgeFee = randomBN(consts.RONE.toNumber() / 10);
 

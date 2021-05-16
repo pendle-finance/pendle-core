@@ -1,4 +1,3 @@
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN, Wallet } from 'ethers';
 import {
   addMarketLiquidityDualXyt,
@@ -20,12 +19,11 @@ import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv 
 import * as scenario from './fixtures/lpFormulaScenario.fixture';
 import { TestAddLiq, TestRemoveLiq } from './fixtures/lpFormulaScenario.fixture';
 
-const { waffle } = require('hardhat');
-const { provider } = waffle;
+import { waffle } from 'hardhat';
+const { loadFixture, provider } = waffle;
 
 describe('lp-formula', async () => {
   const wallets = provider.getWallets();
-  const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie] = wallets;
   let snapshotId: string;
   let globalSnapshotId: string;
@@ -41,8 +39,8 @@ describe('lp-formula', async () => {
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
-
     const fixture = await loadFixture(marketFixture);
+
     await buildTestEnv();
     await env.data.setMarketFees(toFixedPoint('0.0035'), 0); // 0.35%
     for (var person of [alice, bob, charlie]) {

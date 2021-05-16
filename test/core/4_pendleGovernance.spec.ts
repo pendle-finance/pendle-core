@@ -1,14 +1,12 @@
 import { expect } from 'chai';
-import { createFixtureLoader } from 'ethereum-waffle';
 import { constants, Contract } from 'ethers';
 import { governanceFixture } from './fixtures';
 
-const { waffle } = require('hardhat');
-const provider = waffle.provider;
+import { waffle } from 'hardhat';
+const { loadFixture, provider } = waffle;
 
 describe('PendleGovernance', () => {
   const [alice] = provider.getWallets();
-  const loadFixture = createFixtureLoader([alice], provider);
 
   let pendle: Contract;
   let timelock: Contract;

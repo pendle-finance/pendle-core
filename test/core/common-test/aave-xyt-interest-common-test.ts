@@ -1,4 +1,3 @@
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
 import {
   amountToWei,
@@ -17,8 +16,8 @@ import {
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 import testData from '../fixtures/yieldTokenizeAndRedeem.scenario.json';
 
-const { waffle } = require('hardhat');
-const provider = waffle.provider;
+import { waffle } from 'hardhat';
+const { loadFixture, provider } = waffle;
 
 interface YieldTest {
   type: string;
@@ -30,7 +29,6 @@ interface YieldTest {
 export function runTest(isAaveV1: boolean) {
   describe('', async () => {
     const wallets = provider.getWallets();
-    const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob, charlie, dave, eve] = wallets;
 
     let snapshotId: string;

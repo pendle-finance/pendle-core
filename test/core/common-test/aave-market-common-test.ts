@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
 import {
   addMarketLiquidityDualXyt,
@@ -29,13 +28,12 @@ import {
 } from './amm-formula-test';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../fixtures';
 
-const { waffle } = require('hardhat');
-const { provider } = waffle;
+import { waffle } from 'hardhat';
+const { loadFixture, provider } = waffle;
 
 export function runTest(isAaveV1: boolean) {
   describe('', async () => {
     const wallets = provider.getWallets();
-    const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob] = wallets;
     let snapshotId: string;
     let globalSnapshotId: string;

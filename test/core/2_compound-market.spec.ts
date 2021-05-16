@@ -1,15 +1,13 @@
 import { expect } from 'chai';
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
 import { advanceTime, amountToWei, consts, evm_revert, evm_snapshot } from '../helpers';
 import { marketFixture } from './fixtures';
 
-const { waffle } = require('hardhat');
-const { provider } = waffle;
+import { waffle } from 'hardhat';
+const { loadFixture, provider } = waffle;
 
 describe('compound-market', async () => {
   const wallets = provider.getWallets();
-  const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;
   let router: Contract;
   let marketReader: Contract;
@@ -21,8 +19,8 @@ describe('compound-market', async () => {
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
-
     const fixture = await loadFixture(marketFixture);
+
     router = fixture.core.router;
     marketReader = fixture.core.marketReader;
     xyt = fixture.cForge.cFutureYieldToken;

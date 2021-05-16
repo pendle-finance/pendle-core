@@ -3,7 +3,7 @@ import PendleGovernance from '../../../build/artifacts/contracts/core/PendleGove
 import Timelock from '../../../build/artifacts/contracts/periphery/Timelock.sol/Timelock.json';
 import PENDLE from '../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json';
 
-const { waffle } = require("hardhat");
+import { waffle } from 'hardhat';
 const { deployContract } = waffle;
 
 export interface GovernanceFixture {
@@ -13,9 +13,11 @@ export interface GovernanceFixture {
 }
 
 export async function governanceFixture(
-  [alice]: Wallet[],
+  _: Wallet[],
   provider: providers.Web3Provider
 ): Promise<GovernanceFixture> {
+  const wallets = waffle.provider.getWallets();
+  const [alice] = wallets;
   // deploy PDL, sending the total supply to the deployer.
   const pendle = await deployContract(alice, PENDLE, [alice.address, alice.address, alice.address, alice.address, alice.address])
 

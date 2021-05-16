@@ -1,16 +1,14 @@
 import { expect } from 'chai';
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
 import ERC20 from '../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 import { consts, errMsg, evm_revert, evm_snapshot, Token, tokens } from '../helpers';
 import { marketFixture } from './fixtures';
 
-const { waffle } = require('hardhat');
-const { provider } = waffle;
+import { waffle } from 'hardhat';
+const { loadFixture, provider } = waffle;
 
 describe('permission-test', async () => {
   const wallets = provider.getWallets();
-  const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;
   let router: Contract;
   let marketReader: Contract;
@@ -26,7 +24,6 @@ describe('permission-test', async () => {
   const amount: BN = BN.from(10).pow(6);
   before(async () => {
     globalSnapshotId = await evm_snapshot();
-
     const fixture = await loadFixture(marketFixture);
     router = fixture.core.router;
     marketReader = fixture.core.marketReader;

@@ -10,9 +10,9 @@ import {
 } from './compoundForge.fixture';
 import { CoreFixture } from "./core.fixture";
 import { RouterFixture, routerFixtureNoMint } from "./router.fixture";
-
-const { waffle } = require("hardhat");
-const { deployContract } = waffle;
+import hre from 'hardhat';
+const { waffle } = hre;
+const { deployContract, loadFixture } = waffle;
 
 export interface MarketFixture {
   routerFix: RouterFixture
@@ -28,11 +28,12 @@ export interface MarketFixture {
 }
 
 export async function marketFixture(
-  wallets: Wallet[],
+  _: Wallet[],
   provider: providers.Web3Provider
 ): Promise<MarketFixture> {
+  const wallets = waffle.provider.getWallets();
   const [alice, bob, charlie, dave, eve] = wallets
-  const routerFix = await routerFixtureNoMint(wallets, provider);
+  const routerFix = await loadFixture(routerFixtureNoMint);
   const { core, aForge, a2Forge, cForge } = routerFix;
   const { router, aMarketFactory, a2MarketFactory, cMarketFactory, data } = core;
   const {

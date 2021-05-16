@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
 import {
   consts,
@@ -14,8 +13,8 @@ import {
 } from '../helpers';
 import { marketFixture, MarketFixture } from './fixtures';
 
-const { waffle } = require('hardhat');
-const provider = waffle.provider;
+import { waffle } from 'hardhat';
+const { loadFixture, provider } = waffle;
 
 interface TestEnv {
   T0: BN;
@@ -27,7 +26,6 @@ interface TestEnv {
 
 describe('forge-market-pause-test', function () {
   const wallets = provider.getWallets();
-  const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave] = wallets;
 
   let fixture: MarketFixture;
@@ -52,6 +50,7 @@ describe('forge-market-pause-test', function () {
 
   async function buildCommonTestEnv() {
     fixture = await loadFixture(marketFixture);
+    globalSnapshotId = await evm_snapshot();
     router = fixture.core.router;
     tokenUSDT = tokens.USDT;
     data = fixture.core.data;

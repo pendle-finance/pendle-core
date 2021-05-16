@@ -1,4 +1,3 @@
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
 import {
   emptyToken,
@@ -23,13 +22,12 @@ import {
   TestEnv,
 } from '../fixtures';
 
-const { waffle } = require('hardhat');
-const { provider } = waffle;
+import { waffle } from 'hardhat';
+const { loadFixture, provider } = waffle;
 
 export function runTest(mode: Mode) {
   describe('', async () => {
     const wallets = provider.getWallets();
-    const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob, charlie, dave, eve] = wallets;
     let snapshotId: string;
     let globalSnapshotId: string;
