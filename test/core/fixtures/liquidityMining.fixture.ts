@@ -9,7 +9,7 @@ import { CoreFixture } from './core.fixture';
 import { marketFixture, MarketFixture } from './market.fixture';
 import hre from 'hardhat';
 const { waffle } = hre;
-const { deployContract } = waffle;
+const { deployContract, loadFixture } = waffle;
 
 export interface LiquidityMiningFixture {
   marketFix: MarketFixture,
@@ -63,7 +63,7 @@ export async function liquidityMiningFixture(
   const wallets = waffle.provider.getWallets();
   let [alice, bob, charlie, dave] = wallets;
 
-  let marketFix: MarketFixture = await marketFixture(wallets, provider);
+  let marketFix: MarketFixture = await loadFixture(marketFixture);
   let { core, aForge, cForge, testToken, aMarket, cMarket } = marketFix;
   let router = core.router;
   let aXyt = aForge.aFutureYieldToken;
