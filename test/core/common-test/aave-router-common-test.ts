@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN, Wallet } from 'ethers';
 import {
   amountToWei,
@@ -20,13 +19,12 @@ import {
 } from '../../helpers';
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 
-const { waffle } = require('hardhat');
-const provider = waffle.provider;
+import { waffle } from 'hardhat';
+const { loadFixture, provider } = waffle;
 
 export function runTest(isAaveV1: boolean) {
   describe('', async () => {
     const wallets = provider.getWallets();
-    const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob, charlie, dave] = wallets;
 
     let snapshotId: string;
@@ -93,6 +91,7 @@ export function runTest(isAaveV1: boolean) {
     });
 
     it('tokenizeYield', async () => {
+      console.log(`aUSDT balance = ${await env.yUSDT.balanceOf(alice.address)}`);
       let amount = await tokenizeYield(env, alice, refAmount);
       const balanceOwnershipToken = await env.ot.balanceOf(alice.address);
       const balanceFutureYieldToken = await env.xyt.balanceOf(alice.address);

@@ -1,4 +1,3 @@
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import {
   amountToWei,
@@ -17,8 +16,8 @@ import {
 import { routerFixture } from './fixtures';
 import testData from './fixtures/yieldTokenizeAndRedeem.scenario.json';
 
-const { waffle } = require('hardhat');
-const provider = waffle.provider;
+import { waffle } from 'hardhat';
+const { loadFixture, provider } = waffle;
 
 interface YieldTest {
   type: string;
@@ -29,7 +28,6 @@ interface YieldTest {
 
 describe('compound-xyt-interest', async () => {
   const wallets = provider.getWallets();
-  const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
 
   let router: Contract;
@@ -42,8 +40,8 @@ describe('compound-xyt-interest', async () => {
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
-
     const fixture = await loadFixture(routerFixture);
+
     router = fixture.core.router;
     cOt = fixture.cForge.cOwnershipToken;
     tokenUSDT = tokens.USDT;

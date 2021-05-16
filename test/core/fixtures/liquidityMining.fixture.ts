@@ -7,9 +7,8 @@ import { AaveForgeFixture } from './aaveForge.fixture';
 import { CompoundFixture } from './compoundForge.fixture';
 import { CoreFixture } from './core.fixture';
 import { marketFixture, MarketFixture } from './market.fixture';
-
-const { waffle } = require("hardhat");
-const hre = require("hardhat");
+import hre from 'hardhat';
+const { waffle } = hre;
 const { deployContract } = waffle;
 
 export interface LiquidityMiningFixture {
@@ -58,10 +57,12 @@ const params: LiqParams = {
 };
 
 export async function liquidityMiningFixture(
-  wallets: Wallet[],
+  _: Wallet[],
   provider: providers.Web3Provider,
 ): Promise<LiquidityMiningFixture> {
-  let [alice, bob, charlie, dave, eve] = wallets;
+  const wallets = waffle.provider.getWallets();
+  let [alice, bob, charlie, dave] = wallets;
+
   let marketFix: MarketFixture = await marketFixture(wallets, provider);
   let { core, aForge, cForge, testToken, aMarket, cMarket } = marketFix;
   let router = core.router;

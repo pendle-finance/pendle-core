@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import {
   amountToWei,
@@ -16,12 +15,11 @@ import {
 } from '../helpers';
 import { routerFixture } from './fixtures';
 
-const { waffle } = require('hardhat');
-const provider = waffle.provider;
+import { waffle } from 'hardhat';
+const { loadFixture, provider } = waffle;
 
 describe('compound-router', async () => {
   const wallets = provider.getWallets();
-  const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave] = wallets;
 
   let router: Contract;
@@ -36,8 +34,8 @@ describe('compound-router', async () => {
   let initialcUSDTbalance: BN;
   before(async () => {
     globalSnapshotId = await evm_snapshot();
-
     const fixture = await loadFixture(routerFixture);
+
     router = fixture.core.router;
     cOt = fixture.cForge.cOwnershipToken;
     cXyt = fixture.cForge.cFutureYieldToken;

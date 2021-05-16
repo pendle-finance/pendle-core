@@ -10,7 +10,7 @@ import { consts, tokens } from "../../helpers"
 const hre = require("hardhat");
 
 const { waffle } = require("hardhat");
-const { provider, deployContract } = waffle;
+const { deployContract } = waffle;
 
 export interface CoreFixture {
   router: Contract
@@ -24,9 +24,12 @@ export interface CoreFixture {
 }
 
 export async function coreFixture(
-  [alice]: Wallet[],
+  _: Wallet[],
   provider: providers.Web3Provider
 ): Promise<CoreFixture> {
+  const wallets = waffle.provider.getWallets();
+  const [alice] = wallets;
+
   const treasury = await deployContract(alice, PendleTreasury, [alice.address]);
   const aMarketFactory = await deployContract(alice, PendleAaveMarketFactory, [alice.address, consts.MARKET_FACTORY_AAVE]);
   const a2MarketFactory = await deployContract(alice, PendleAaveMarketFactory, [alice.address, consts.MARKET_FACTORY_AAVE_V2]);

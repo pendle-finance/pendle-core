@@ -1,5 +1,4 @@
 import { assert, expect } from 'chai';
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
 import {
   advanceTime,
@@ -29,13 +28,12 @@ import {
 } from '../fixtures';
 import * as scenario from '../fixtures/liquidityMiningScenario.fixture';
 
-const { waffle } = require('hardhat');
-const { provider } = waffle;
+import { waffle } from 'hardhat';
+const { loadFixture, provider } = waffle;
 
 export function runTest(mode: Mode) {
   describe('', async () => {
     const wallets = provider.getWallets();
-    const loadFixture = createFixtureLoader(wallets, provider);
     const [alice, bob, charlie, dave, eve] = wallets;
     let snapshotId: string;
     let globalSnapshotId: string;

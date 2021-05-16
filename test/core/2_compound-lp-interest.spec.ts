@@ -1,4 +1,3 @@
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import {
   advanceTime,
@@ -16,14 +15,12 @@ import {
   tokens,
 } from '../helpers';
 import { marketFixture, MarketFixture } from './fixtures';
-const hre = require('hardhat');
-
-const { waffle } = require('hardhat');
-const { provider } = waffle;
+import hre from 'hardhat';
+const { waffle } = hre;
+const { loadFixture, provider } = waffle;
 
 describe('compound-lp-interest', async () => {
   const wallets = provider.getWallets();
-  const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave, eve] = wallets;
   let router: Contract;
   let xyt: Contract;
@@ -45,7 +42,6 @@ describe('compound-lp-interest', async () => {
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
-
     fixture = await loadFixture(marketFixture);
     router = fixture.core.router;
     ot = fixture.cForge.cOwnershipToken;

@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN, Contract, utils, Wallet } from 'ethers';
 import {
   advanceTime,
@@ -15,12 +14,11 @@ import {
 } from '../helpers';
 import { routerFixture, RouterFixture } from './fixtures';
 
-const { waffle } = require('hardhat');
-const provider = waffle.provider;
+import { waffle } from 'hardhat';
+const { loadFixture, provider } = waffle;
 
 describe('router-negative-test', async () => {
   const wallets = provider.getWallets();
-  const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob, charlie, dave] = wallets;
 
   let fixture: RouterFixture;

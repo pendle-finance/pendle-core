@@ -1,16 +1,12 @@
 import { expect } from 'chai';
-import { createFixtureLoader } from 'ethereum-waffle';
 import { Contract } from 'ethers';
 import { evm_revert, evm_snapshot, Token, tokens } from '../helpers';
 import { marketFixture } from './fixtures';
 
-const { waffle } = require('hardhat');
-const provider = waffle.provider;
+import { waffle } from 'hardhat';
+const { loadFixture } = waffle;
 
 describe('PendleData', async () => {
-  const wallets = provider.getWallets();
-  const loadFixture = createFixtureLoader(wallets, provider);
-
   let router: Contract;
   let aMarketFactory: Contract;
   let a2MarketFactory: Contract;
@@ -24,8 +20,8 @@ describe('PendleData', async () => {
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
-
     const fixture = await loadFixture(marketFixture);
+
     router = fixture.core.router;
     treasury = fixture.core.treasury;
     data = fixture.core.data;
