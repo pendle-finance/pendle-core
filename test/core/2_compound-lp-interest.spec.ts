@@ -41,8 +41,8 @@ describe('compound-lp-interest', async () => {
   let fixture: MarketFixture;
 
   before(async () => {
-    globalSnapshotId = await evm_snapshot();
     fixture = await loadFixture(marketFixture);
+    globalSnapshotId = await evm_snapshot();
     router = fixture.core.router;
     ot = fixture.cForge.cOwnershipToken;
     xyt = fixture.cForge.cFutureYieldToken;

@@ -32,8 +32,8 @@ describe('compound-liquidityMining', async () => {
   let globalSnapshotId: string;
   let EXPIRY: BN = consts.T0_C.add(consts.SIX_MONTH);
   before(async () => {
-    globalSnapshotId = await evm_snapshot();
     const fixture = await loadFixture(liquidityMiningFixture);
+    globalSnapshotId = await evm_snapshot();
     liq = fixture.cLiquidityMining;
     market = fixture.cMarket;
     params = fixture.params;

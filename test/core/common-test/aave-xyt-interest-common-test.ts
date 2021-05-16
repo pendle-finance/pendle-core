@@ -43,8 +43,8 @@ export function runTest(isAaveV1: boolean) {
     }
 
     before(async () => {
-      globalSnapshotId = await evm_snapshot();
       await buildTestEnv();
+      globalSnapshotId = await evm_snapshot();
       for (var person of [bob, charlie, dave, eve]) {
         await mintAaveToken(tokens.USDT, person, env.INITIAL_YIELD_TOKEN_AMOUNT, isAaveV1);
         await env.yUSDT.connect(person).approve(env.router.address, consts.INF);

@@ -35,8 +35,8 @@ describe('router-negative-test', async () => {
   let data: Contract;
 
   before(async () => {
-    globalSnapshotId = await evm_snapshot();
     fixture = await loadFixture(routerFixture);
+    globalSnapshotId = await evm_snapshot();
     router = fixture.core.router;
     tokenUSDT = tokens.USDT;
     data = fixture.core.data;

@@ -18,8 +18,8 @@ describe('compound-market', async () => {
   let globalSnapshotId: string;
 
   before(async () => {
-    globalSnapshotId = await evm_snapshot();
     const fixture = await loadFixture(marketFixture);
+    globalSnapshotId = await evm_snapshot();
 
     router = fixture.core.router;
     marketReader = fixture.core.marketReader;

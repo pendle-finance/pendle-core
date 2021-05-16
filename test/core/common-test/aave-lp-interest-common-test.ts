@@ -50,8 +50,8 @@ export function runTest(isAaveV1: boolean) {
     }
 
     before(async () => {
-      globalSnapshotId = await evm_snapshot();
       await buildTestEnv();
+      globalSnapshotId = await evm_snapshot();
       for (let user of [alice, bob, charlie, dave, eve]) {
         await emptyToken(env.ot, user);
         await emptyToken(env.xyt, user);

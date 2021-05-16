@@ -24,8 +24,8 @@ describe('permission-test', async () => {
   }
 
   before(async () => {
-    globalSnapshotId = await evm_snapshot();
     await buildTestEnv();
+    globalSnapshotId = await evm_snapshot();
     snapshotId = await evm_snapshot();
   });
 

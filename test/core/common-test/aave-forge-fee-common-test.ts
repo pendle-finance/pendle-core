@@ -42,8 +42,8 @@ export function runTest(isAaveV1: boolean) {
     }
 
     before(async () => {
-      globalSnapshotId = await evm_snapshot();
       await buildTestEnv();
+      globalSnapshotId = await evm_snapshot();
       await env.data.setForgeFee(forgeFee);
       snapshotId = await evm_snapshot();
     });

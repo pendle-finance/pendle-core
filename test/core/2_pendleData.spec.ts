@@ -19,8 +19,8 @@ describe('PendleData', async () => {
   let globalSnapshotId: string;
 
   before(async () => {
-    globalSnapshotId = await evm_snapshot();
     const fixture = await loadFixture(marketFixture);
+    globalSnapshotId = await evm_snapshot();
 
     router = fixture.core.router;
     treasury = fixture.core.treasury;
