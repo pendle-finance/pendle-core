@@ -197,8 +197,11 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 tokenBalance,
         uint256 xytWeight
     ) internal {
-        require(xytBalance <= MAX_TOKEN_RESERVE_BALANCE, "EXCEED_TOKEN_BALANCE_LIMIT");
-        require(tokenBalance <= MAX_TOKEN_RESERVE_BALANCE, "EXCEED_TOKEN_BALANCE_LIMIT");
+        require(0 < xytBalance && xytBalance <= MAX_TOKEN_RESERVE_BALANCE, "XYT_BALANCE_ERROR");
+        require(
+            0 < tokenBalance && tokenBalance <= MAX_TOKEN_RESERVE_BALANCE,
+            "TOKEN_BALANCE_ERROR"
+        );
         reserveData = (xytBalance << 148) | (tokenBalance << 40) | xytWeight;
     }
 
