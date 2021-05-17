@@ -216,6 +216,14 @@ contract PendleData is IPendleData, PermissionsV2, WithdrawableV2 {
         return address(xytTokens[_forgeId][_underlyingAsset][_expiry]) != address(0);
     }
 
+    function isValidOT(
+        bytes32 _forgeId,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) external view override returns (bool) {
+        return address(otTokens[_forgeId][_underlyingAsset][_expiry]) != address(0);
+    }
+
     /***********
      *  MARKET *
      ***********/

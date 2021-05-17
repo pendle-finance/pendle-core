@@ -63,7 +63,12 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
     // as well as information needed to calculate rewards for each user (lastParamL)
     mapping(address => mapping(uint256 => RewardData)) private rewardData;
 
-    constructor(address _governanceManager, bytes32 _forgeId) PermissionsV2(_governanceManager) {
+    modifier isValidOT(address _underlyingAsset, uint256 _expiry) {
+        require(data.isValidOT(forgeId, _underlyingAsset, _expiry), "INVALID_OT");
+        _;
+    }
+
+    constructor(address _governance, bytes32 _forgeId) Permissions(_governance) {
         forgeId = _forgeId;
     }
 
@@ -98,7 +103,13 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         address _underlyingAsset,
         uint256 _expiry,
         address _user
-    ) external override nonReentrant returns (uint256 dueRewards) {
+    )
+        external
+        override
+        isValidOT(_underlyingAsset, _expiry)
+        nonReentrant
+        returns (uint256 dueRewards)
+    {
         dueRewards = _beforeTransferPendingRewards(_underlyingAsset, _expiry, _user);
 
         address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
@@ -119,7 +130,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         address _underlyingAsset,
         uint256 _expiry,
         address _user
-    ) external override nonReentrant {
+    ) external override isValidOT(_underlyingAsset, _expiry) nonReentrant {
         _updatePendingRewards(_underlyingAsset, _expiry, _user);
     }
 
