@@ -63,16 +63,6 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     // as well as information needed to calculate rewards for each user (lastParamL)
     mapping(address => mapping(uint256 => RewardData)) private rewardData;
 
-    modifier onlyForge() {
-        require(msg.sender == address(forge), "ONLY_FORGE");
-        _;
-    }
-
-    modifier onlyRouter() {
-        require(msg.sender == address(router), "ONLY_ROUTER");
-        _;
-    }
-
     constructor(address _governance, bytes32 _forgeId) Permissions(_governance) {
         forgeId = _forgeId;
     }
@@ -97,7 +87,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     /**
     Use:
         To claim the COMP/StkAAVE for any OT holder.
-        Newly acrrued rewards are equally accrued to all OT holders in the process.
+        Newly accrued rewards are equally accrued to all OT holders in the process.
     Conditions:
         * Can be called by anyone, to claim for anyone
     INVARIANTs:

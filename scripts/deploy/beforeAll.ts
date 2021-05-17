@@ -1,20 +1,15 @@
-import { Deployment, validAddress, deploy } from "../helpers/deployHelpers";
+import { Deployment, validAddress, deploy } from '../helpers/deployHelpers';
 
-export async function beforeAll(
-  deployer: any,
-  hre: any,
-  deployment: Deployment,
-  consts: any
-) {
+export async function beforeAll(deployer: any, hre: any, deployment: Deployment, consts: any) {
   const multisigNames = [
-    "GOVERNANCE_MULTISIG",
-    "TEAM_TOKENS_MULTISIG",
-    "ECOSYSTEM_FUND_MULTISIG",
-    "SALES_MULTISIG",
-    "LIQUIDITY_INCENTIVES_MULTISIG",
+    'GOVERNANCE_MULTISIG',
+    'TEAM_TOKENS_MULTISIG',
+    'ECOSYSTEM_FUND_MULTISIG',
+    'SALES_MULTISIG',
+    'LIQUIDITY_INCENTIVES_MULTISIG',
   ];
 
-  if (!["kovan", "mainnet", "goerli"].includes(hre.network.name)) {
+  if (!['kovan', 'mainnet', 'goerli'].includes(hre.network.name)) {
     console.log(
       `[NOTICE] its not mainnet or kovan, so we are using deployer account ${deployer.address} as the multisigs`
     );

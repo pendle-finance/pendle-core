@@ -645,8 +645,6 @@ abstract contract PendleLiquidityMiningBase is
     {
         ExpiryData storage exd = expiryData[expiry];
 
-        if (user == address(exd.lpHolder)) return 0;
-
         _updateDueInterests(expiry, user);
 
         amountOut = exd.dueInterests[user];
@@ -700,13 +698,7 @@ abstract contract PendleLiquidityMiningBase is
         Please refer to it for more details
     */
     function checkNeedUpdateParamL(uint256 expiry) internal returns (bool) {
-        if (expiryData[expiry].totalStakeLP == 0) {
-            return false;
-        }
-        if (_getIncomeIndexIncreaseRate(expiry) > data.interestUpdateRateDeltaForMarket()) {
-            return true;
-        }
-        return false;
+        return _getIncomeIndexIncreaseRate(expiry) > data.interestUpdateRateDeltaForMarket();
     }
 
     /**
@@ -727,8 +719,9 @@ abstract contract PendleLiquidityMiningBase is
         uint256 currentNYield = IERC20(underlyingYieldToken).balanceOf(exd.lpHolder);
         (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(expiry, currentNYield);
 
-        // exd.totalStakeLP has been checked to be != 0
-        uint256 secondTerm = paramR.mul(MULTIPLIER).div(exd.totalStakeLP);
+        uint256 secondTerm;
+
+        if (exd.totalStakeLP != 0) secondTerm = paramR.mul(MULTIPLIER).div(exd.totalStakeLP);
 
         // Update new states
         exd.paramL = firstTerm.add(secondTerm);

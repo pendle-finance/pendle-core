@@ -36,10 +36,11 @@ import "../../tokens/PendleFutureYieldToken.sol";
 import "../../tokens/PendleOwnershipToken.sol";
 import "../../periphery/Permissions.sol";
 import "../../libraries/MathLib.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @notice Common contract base for a forge implementation.
 /// @dev Each specific forge implementation will need to implement the virtual functions
-abstract contract PendleForgeBase is IPendleForge, Permissions {
+abstract contract PendleForgeBase is IPendleForge, Permissions, ReentrancyGuard {
     using ExpiryUtils for string;
     using SafeMath for uint256;
     using Math for uint256;
@@ -90,22 +91,6 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
     modifier onlyRouter() {
         require(msg.sender == address(router), "ONLY_ROUTER");
-        _;
-    }
-
-    modifier onlyXYT(address _underlyingAsset, uint256 _expiry) {
-        require(
-            msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
-            "ONLY_XYT"
-        );
-        _;
-    }
-
-    modifier onlyOT(address _underlyingAsset, uint256 _expiry) {
-        require(
-            msg.sender == address(data.otTokens(forgeId, _underlyingAsset, _expiry)),
-            "ONLY_OT"
-        );
         _;
     }
 
@@ -196,23 +181,16 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     function redeemAfterExpiry(
         address _user,
         address _underlyingAsset,
-        uint256 _expiry,
-        uint256 _transferOutRate
-    )
-        external
-        override
-        onlyRouter
-        returns (
-            uint256 redeemedAmount,
-            uint256 amountTransferOut,
-            uint256 amountToRenew
-        )
-    {
+        uint256 _expiry
+    ) external override onlyRouter returns (uint256 redeemedAmount) {
         checkNotPaused(_underlyingAsset, _expiry);
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        uint256 expiredOTamount = IERC20(address(tokens.ot)).balanceOf(_user);
+        uint256 expiredOTamount = tokens.ot.balanceOf(_user);
         require(expiredOTamount > 0, "NOTHING_TO_REDEEM");
+
+        // burn ot only, since users don't need xyt to redeem this
+        tokens.ot.burn(_user, expiredOTamount);
 
         // calc the value of the OT after since it expired (total of its underlying value + dueInterests since expiry)
         // no forge fee is charged on redeeming OT. Forge fee is only charged on redeeming XYT
@@ -223,20 +201,8 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
             _beforeTransferDueInterests(tokens, _underlyingAsset, _expiry, _user, false)
         );
 
-        /*
-        * Not all the amount redeemed will be transferred out to the user. Instead, (1-_transferOutRate) will be kept
-        inside so that the Router can forward it to a new yieldTokenHolder contract in the case of renewingYield.
-        * the _transferOutRate should be different from Math.RONE <=> the user is doing a renewYield.
-        Else, the user will lose the fund. This is guaranteed by the Router since only Router can call this function
-        */
-        amountTransferOut = redeemedAmount.rmul(_transferOutRate);
-        amountToRenew = redeemedAmount.sub(amountTransferOut);
-
-        // transfer the amountTransferOut back to the user
-        _safeTransfer(yieldToken, _underlyingAsset, _expiry, _user, amountTransferOut);
-
-        // burn ot only, since users don't need xyt to redeem this
-        tokens.ot.burn(_user, expiredOTamount);
+        // transfer back to the user
+        _safeTransfer(yieldToken, _underlyingAsset, _expiry, _user, redeemedAmount);
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, expiredOTamount, redeemedAmount);
     }
@@ -311,13 +277,14 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         * This must be called before any transfer / mint/ burn action of XYT
         (and this has been implemented in the beforeTokenTransfer of the PendleFutureYieldToken)
     Conditions:
-        * Should only be called by the XYT contract
+        * Can be called by anyone
+        * Have Reentrancy protection (although it doesn't make any external calls to untrusted source)
     */
     function updateDueInterests(
         address _underlyingAsset,
         uint256 _expiry,
         address _user
-    ) external override onlyXYT(_underlyingAsset, _expiry) {
+    ) external override nonReentrant {
         checkNotPaused(_underlyingAsset, _expiry);
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         uint256 principal = tokens.xyt.balanceOf(_user);
@@ -330,13 +297,16 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         * This must be called before any transfer / mint/ burn action of OT
         (and this has been implemented in the beforeTokenTransfer of the PendleOwnershipToken)
     Conditions:
-        * Should only be called by the OT contract
+        * Can be called by anyone
+        * Have Reentrancy protection (although it doesn't make any external calls to untrusted source)
+    Note:
+        This function is just a proxy to call to rewardManager
     */
     function updatePendingRewards(
         address _underlyingAsset,
         uint256 _expiry,
         address _user
-    ) external override onlyOT(_underlyingAsset, _expiry) {
+    ) external override nonReentrant {
         checkNotPaused(_underlyingAsset, _expiry);
         rewardManager.updatePendingRewards(_underlyingAsset, _expiry, _user);
     }
@@ -404,29 +374,6 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         address treasuryAddress = data.treasury();
         _safeTransfer(yieldToken, _underlyingAsset, _expiry, treasuryAddress, _totalFee);
-    }
-
-    /**
-    Use:
-        * To forwardYieldToken from one yieldTokenHolder to another in the case of renewYield
-    Conditions:
-        * Should only be called by router, and only in the case of renewYield
-    */
-    function forwardYieldToken(
-        address _underlyingAsset,
-        uint256 _fromExpiry,
-        uint256 _toExpiry,
-        uint256 _amount
-    ) external override onlyRouter {
-        checkNotPaused(_underlyingAsset, _fromExpiry);
-        IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
-        _safeTransfer(
-            yieldToken,
-            _underlyingAsset,
-            _fromExpiry,
-            yieldTokenHolders[_underlyingAsset][_toExpiry],
-            _amount
-        );
     }
 
     function getYieldBearingToken(address _underlyingAsset) external override returns (address) {

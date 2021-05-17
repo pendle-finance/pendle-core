@@ -78,7 +78,7 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         )
     {}
 
-    function _getReserveNormalizedIncome() internal returns (uint256) {
+    function _getReserveNormalizedIncome() internal view returns (uint256) {
         return IPendleAaveForge(forge).getReserveNormalizedIncome(underlyingAsset);
     }
 
@@ -145,6 +145,7 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
     */
     function _getIncomeIndexIncreaseRate(uint256 expiry)
         internal
+        view
         override
         returns (uint256 increaseRate)
     {

@@ -3,7 +3,9 @@
 from decimal import *
 import math
 
-getcontext().prec = 25
+getcontext().prec = 50
+PRECISION_BITS = 40
+RONE = 1 << PRECISION_BITS
 
 
 def calInAmount(Bin, Win, Bout, Wout, outAmount):
@@ -14,7 +16,6 @@ def calInAmount(Bin, Win, Bout, Wout, outAmount):
 def calOutAmount(Bin, Win, Bout, Wout, inAmount):
     res = Bout * (1 - pow((Bin / (Bin + inAmount)), Win / Wout))
     return res
-
 
 Bin = Decimal(1221374790)
 Win = Decimal(562036853)

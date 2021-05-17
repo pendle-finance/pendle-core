@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
-const {BN, expectEvent, expectRevert} = require('@openzeppelin/test-helpers');
-const {expect} = require('chai');
-const {consts, errMsg} = require('../helpers');
+const { BN, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
+const { expect } = require('chai');
+const { consts, errMsg } = require('../helpers');
 
 const {
   shouldBehaveLikeERC20,

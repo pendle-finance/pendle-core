@@ -197,8 +197,11 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         uint256 tokenBalance,
         uint256 xytWeight
     ) internal {
-        require(xytBalance <= MAX_TOKEN_RESERVE_BALANCE, "EXCEED_TOKEN_BALANCE_LIMIT");
-        require(tokenBalance <= MAX_TOKEN_RESERVE_BALANCE, "EXCEED_TOKEN_BALANCE_LIMIT");
+        require(0 < xytBalance && xytBalance <= MAX_TOKEN_RESERVE_BALANCE, "XYT_BALANCE_ERROR");
+        require(
+            0 < tokenBalance && tokenBalance <= MAX_TOKEN_RESERVE_BALANCE,
+            "TOKEN_BALANCE_ERROR"
+        );
         reserveData = (xytBalance << 148) | (tokenBalance << 40) | xytWeight;
     }
 
@@ -383,26 +386,22 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         _mintProtocolFees();
 
         uint256 totalLp = totalSupply();
-        uint256 ratio = Math.rdiv(_inLp, totalLp);
-        require(ratio != 0, "ZERO_RATIO");
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
 
         // Calc and withdraw xyt token.
-        uint256 balanceToken = xytBalance;
-        uint256 xytOut = Math.rmul(ratio, balanceToken);
-        require(xytOut != 0, "INTERNAL_ERROR");
+        uint256 xytOut = _inLp.mul(xytBalance).div(totalLp);
+        uint256 tokenOut = _inLp.mul(tokenBalance).div(totalLp);
+
+        require(tokenOut >= _minOutToken, "INSUFFICIENT_TOKEN_OUT");
         require(xytOut >= _minOutXyt, "INSUFFICIENT_XYT_OUT");
+
         xytBalance = xytBalance.sub(xytOut);
+        tokenBalance = tokenBalance.sub(tokenOut);
+
         transfers[0].amount = xytOut;
         transfers[0].isOut = true;
 
-        // Calc and withdraw pair token.
-        balanceToken = tokenBalance;
-        uint256 tokenOut = Math.rmul(ratio, balanceToken);
-        require(tokenOut != 0, "INTERNAL_ERROR");
-        require(tokenOut >= _minOutToken, "INSUFFICIENT_TOKEN_OUT");
-        tokenBalance = tokenBalance.sub(tokenOut);
         transfers[1].amount = tokenOut;
         transfers[1].isOut = true;
 
@@ -768,8 +767,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     @notice To be called before the dueInterest of any users is redeemed
     */
     function _beforeTransferDueInterests(address user) internal returns (uint256 amountOut) {
-        if (user == address(this)) return 0;
-
         _updateDueInterests(user);
 
         amountOut = dueInterests[user];

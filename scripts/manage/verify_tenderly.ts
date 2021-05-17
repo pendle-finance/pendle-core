@@ -1,29 +1,23 @@
-const hre = require("hardhat");
-import fs from "fs";
-import path from "path";
-const { execSync } = require("child_process");
+const hre = require('hardhat');
+import fs from 'fs';
+import path from 'path';
+const { execSync } = require('child_process');
 
-import { Deployment, DeployedContract } from "../helpers/deployHelpers";
+import { Deployment, DeployedContract } from '../helpers/deployHelpers';
 async function main() {
   const network = hre.network.name;
   const filePath = path.resolve(__dirname, `../../deployments/${network}.json`);
 
-  const tenderlyNetwork = network == "kovantest" ? "kovan" : network;
+  const tenderlyNetwork = network == 'kovantest' ? 'kovan' : network;
 
-  console.log(
-    `\n\tNetwork = ${network}, tenderly network = ${tenderlyNetwork}`
-  );
+  console.log(`\n\tNetwork = ${network}, tenderly network = ${tenderlyNetwork}`);
   console.log(`\tDeployment's filePath = ${filePath}`);
 
-  const existingDeploymentJson = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  const existingDeploymentJson = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   const deployment = existingDeploymentJson as Deployment;
 
   for (let contractName in deployment.contracts) {
-    verifyContract(
-      tenderlyNetwork,
-      contractName,
-      deployment.contracts[contractName].address
-    );
+    verifyContract(tenderlyNetwork, contractName, deployment.contracts[contractName].address);
   }
 
   // deployment.yieldContracts.forEach((forgeId, forgeData) => {
@@ -44,11 +38,7 @@ async function main() {
   // });
 }
 
-function verifyContract(
-  tenderlyNetwork: string,
-  contractName: string,
-  contractAddress: string
-) {
+function verifyContract(tenderlyNetwork: string, contractName: string, contractAddress: string) {
   // console.log("===== Verifying ", contractName);
   // const stdout = execSync(
   //   `yarn hardhat --network ${tenderlyNetwork} tenderly:verify ${contractName}=${contractAddress}`

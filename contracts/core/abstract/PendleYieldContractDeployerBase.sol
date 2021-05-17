@@ -64,7 +64,7 @@ abstract contract PendleYieldContractDeployerBase is
         string memory _symbol,
         uint8 _decimals,
         uint256 _expiry
-    ) external override returns (address xyt) {
+    ) external override onlyForge returns (address xyt) {
         IERC20 yieldToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
 
         xyt = Factory.createContract(
@@ -90,7 +90,7 @@ abstract contract PendleYieldContractDeployerBase is
         string memory _symbol,
         uint8 _decimals,
         uint256 _expiry
-    ) external override returns (address ot) {
+    ) external override onlyForge returns (address ot) {
         IERC20 yieldToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
 
         ot = Factory.createContract(

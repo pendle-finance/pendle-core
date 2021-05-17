@@ -85,11 +85,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         pausingManager = IPendlePausingManager(_pausingManager);
     }
 
-    modifier onlyRouter() {
-        require(msg.sender == address(router), "ONLY_ROUTER");
-        _;
-    }
-
     modifier onlyForge(bytes32 _forgeId) {
         require(getForgeAddress[_forgeId] == msg.sender, "ONLY_FORGE");
         _;
@@ -152,16 +147,27 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
      *  FORGE *
      **********/
 
+    /**
+     * @notice add forge by _forgeId & _forgeAddress
+     Conditions:
+     * Only governance can call it. Hence no Reentrancy protection is needed
+     **/
     function addForge(bytes32 _forgeId, address _forgeAddress)
         external
         override
         initialized
-        onlyRouter
+        onlyGovernance
     {
+        require(_forgeId != bytes32(0), "ZERO_BYTES");
+        require(_forgeAddress != address(0), "ZERO_ADDRESS");
+        require(_forgeId == IPendleForge(_forgeAddress).forgeId(), "INVALID_ID");
+        require(getForgeAddress[_forgeId] == address(0), "EXISTED_ID");
+
         getForgeId[_forgeAddress] = _forgeId;
         getForgeAddress[_forgeId] = _forgeAddress;
         address rewardManager = address(IPendleForge(_forgeAddress).rewardManager());
         getRewardManagerForgeId[rewardManager] = _forgeId;
+
         emit ForgeAdded(_forgeId, _forgeAddress);
     }
 
@@ -177,7 +183,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         isXyt[_xyt] = true;
     }
 
-    function setForgeFee(uint256 _forgeFee) external override onlyGovernance {
+    function setForgeFee(uint256 _forgeFee) external override initialized onlyGovernance {
         require(_forgeFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
         forgeFee = _forgeFee;
         emit ForgeFeeSet(_forgeFee);
@@ -213,14 +219,32 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     /***********
      *  MARKET *
      ***********/
+
+    /**
+     * @notice add marketFactory by _marketFactoryId & _marketFactoryAddress
+     * @dev A market factory can work with XYTs from one or more Forges,
+          to be determined by data.validForgeFactoryPair mapping
+     Conditions:
+     * Only governance can call it. Hence no Reentrancy protection is needed
+     **/
     function addMarketFactory(bytes32 _marketFactoryId, address _marketFactoryAddress)
         external
         override
         initialized
-        onlyRouter
+        onlyGovernance
     {
+        require(_marketFactoryId != bytes32(0), "ZERO_BYTES");
+        require(_marketFactoryAddress != address(0), "ZERO_ADDRESS");
+        require(
+            _marketFactoryId == IPendleMarketFactory(_marketFactoryAddress).marketFactoryId(),
+            "INVALID_FACTORY_ID"
+        );
+        require(getMarketFactoryAddress[_marketFactoryId] == address(0), "EXISTED_ID");
+
         getMarketFactoryId[_marketFactoryAddress] = _marketFactoryId;
         getMarketFactoryAddress[_marketFactoryId] = _marketFactoryAddress;
+
+        emit NewMarketFactory(_marketFactoryId, _marketFactoryAddress);
     }
 
     function addMarket(
@@ -252,6 +276,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     function setMarketFees(uint256 _swapFee, uint256 _protocolSwapFee)
         external
         override
+        initialized
         onlyGovernance
     {
         require(_swapFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
@@ -261,7 +286,12 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         emit MarketFeesSet(_swapFee, _protocolSwapFee);
     }
 
-    function setCurveShiftBlockDelta(uint256 _blockDelta) external override onlyGovernance {
+    function setCurveShiftBlockDelta(uint256 _blockDelta)
+        external
+        override
+        initialized
+        onlyGovernance
+    {
         curveShiftBlockDelta = _blockDelta;
         emit CurveShiftBlockDeltaSet(_blockDelta);
     }
