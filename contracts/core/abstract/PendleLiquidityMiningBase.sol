@@ -338,6 +338,7 @@ abstract contract PendleLiquidityMiningBase is
     function withdraw(uint256 expiry, uint256 amount) external override nonReentrant isFunded {
         uint256 curEpoch = _getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
+        require(amount != 0, "ZERO_AMOUNT");
 
         ExpiryData storage exd = expiryData[expiry];
         require(exd.balances[msg.sender] >= amount, "INSUFFICIENT_BALANCE");
@@ -362,6 +363,7 @@ abstract contract PendleLiquidityMiningBase is
     {
         uint256 curEpoch = _getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
+        require(user != address(0), "ZERO_ADDRESS");
 
         rewards = _beforeTransferPendingRewards(expiry, user);
         if (rewards != 0) {
@@ -381,6 +383,7 @@ abstract contract PendleLiquidityMiningBase is
         nonReentrant
         returns (uint256 interests)
     {
+        require(user != address(0), "ZERO_ADDRESS");
         interests = _beforeTransferDueInterests(expiry, user);
         _safeTransferYieldToken(expiry, user, interests);
     }
@@ -419,6 +422,7 @@ abstract contract PendleLiquidityMiningBase is
         uint256 curEpoch = _getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
         require(curEpoch <= numberOfEpochs, "INCENTIVES_PERIOD_OVER");
+        require(amount != 0, "ZERO_AMOUNT");
 
         address xyt = address(data.xytTokens(forgeId, underlyingAsset, expiry));
         address marketAddress = data.getMarket(marketFactoryId, xyt, baseToken);
