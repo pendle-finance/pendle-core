@@ -11,7 +11,7 @@ describe('setup', async () => {
 
   it('setup', async () => {
     const [alice, bob] = provider.getWallets();
-    await alice.sendTransaction({to: bob.address, value: 1});
+    await alice.sendTransaction({ to: bob.address, value: 1 });
     console.log(`block after setting up = ${await provider.getBlockNumber()}`);
   });
 });

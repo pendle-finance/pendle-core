@@ -66,13 +66,13 @@ describe('permission-test', async () => {
       env.market.removeMarketLiquiditySingle(alice.address, consts.RANDOM_ADDRESS, amount, amount)
     ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
-    await expect(env.market.swapExactIn(consts.RANDOM_ADDRESS, amount, consts.RANDOM_ADDRESS, amount)).to.be.revertedWith(
-      errMsg.ONLY_ROUTER
-    );
+    await expect(
+      env.market.swapExactIn(consts.RANDOM_ADDRESS, amount, consts.RANDOM_ADDRESS, amount)
+    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
-    await expect(env.market.swapExactOut(consts.RANDOM_ADDRESS, amount, consts.RANDOM_ADDRESS, amount)).to.be.revertedWith(
-      errMsg.ONLY_ROUTER
-    );
+    await expect(
+      env.market.swapExactOut(consts.RANDOM_ADDRESS, amount, consts.RANDOM_ADDRESS, amount)
+    ).to.be.revertedWith(errMsg.ONLY_ROUTER);
 
     await expect(env.market.redeemLpInterests(consts.RANDOM_ADDRESS)).to.be.revertedWith(errMsg.ONLY_ROUTER);
   });
