@@ -23,7 +23,7 @@ export interface RouterFixture {
 
 export async function routerFixture(
   _: Wallet[],
-  __: providers.Web3Provider
+  __: providers.Web3Provider,
 ): Promise<RouterFixture> {
   const wallets = waffle.provider.getWallets();
   const [alice] = wallets;

@@ -43,9 +43,9 @@ export const consts = {
   FIVE_MONTH: BN.from(2592000 * 5),
   SIX_MONTH: BN.from(2592000 * 6),
   ONE_YEAR: BN.from(31536000),
-  T0: BN.from(4000000000), // start time of all contracts
-  T0_A2: BN.from(4000000050), // the time that the first AaveV2_XYT is minted
-  T0_C: BN.from(4000000100), // the time that the first Compound_XYT is minted
+  T0: BN.from(1621505000), // start time of all contracts
+  T0_A2: BN.from(1621505050), // the time that the first AaveV2_XYT is minted
+  T0_C: BN.from(1621505100), // the time that the first Compound_XYT is minted
   HIGH_GAS_OVERRIDE: { gasLimit: 80000000 },
   INITIAL_AAVE_USDT_AMOUNT: BN.from(10 ** 5),
   INITIAL_COMPOUND_USDT_AMOUNT: BN.from(10 ** 7),
