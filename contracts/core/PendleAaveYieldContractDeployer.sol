@@ -34,6 +34,7 @@ contract PendleAaveYieldContractDeployer is PendleYieldContractDeployerBase {
     function deployYieldTokenHolder(address yieldToken, address ot)
         external
         override
+        onlyForge
         returns (address yieldTokenHolder)
     {
         yieldTokenHolder = Factory.createContract(

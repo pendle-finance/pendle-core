@@ -40,6 +40,11 @@ abstract contract PendleYieldContractDeployerBase is
     bytes32 public override forgeId;
     IPendleForge public forge;
 
+    modifier onlyForge() {
+        require(msg.sender == address(forge), "ONLY_FORGE");
+        _;
+    }
+
     constructor(address _governance, bytes32 _forgeId) Permissions(_governance) {
         forgeId = _forgeId;
     }
@@ -59,7 +64,7 @@ abstract contract PendleYieldContractDeployerBase is
         string memory _symbol,
         uint8 _decimals,
         uint256 _expiry
-    ) external override returns (address xyt) {
+    ) external override onlyForge returns (address xyt) {
         IERC20 yieldToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
 
         xyt = Factory.createContract(
@@ -85,7 +90,7 @@ abstract contract PendleYieldContractDeployerBase is
         string memory _symbol,
         uint8 _decimals,
         uint256 _expiry
-    ) external override returns (address ot) {
+    ) external override onlyForge returns (address ot) {
         IERC20 yieldToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
 
         ot = Factory.createContract(
