@@ -34,6 +34,7 @@ import "../../interfaces/IPendleData.sol";
 import "../../interfaces/IPendleLpHolder.sol";
 import "../../core/PendleLpHolder.sol";
 import "../../interfaces/IPendleLiquidityMining.sol";
+import "../../interfaces/IPendleWhitelist.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../../periphery/PermissionsV2.sol";
@@ -108,6 +109,7 @@ abstract contract PendleLiquidityMiningBase is
         uint256 firstEpochToApply;
     }
 
+    IPendleWhitelist public immutable whitelist;
     IPendleRouter public router;
     IPendleMarketFactory public marketFactory;
     IPendleData public data;
@@ -142,8 +144,17 @@ abstract contract PendleLiquidityMiningBase is
         _;
     }
 
+    modifier nonContractOrWhitelisted() {
+        require(
+            msg.sender == tx.origin || whitelist.whitelisted(msg.sender),
+            "CONTRACT_NOT_WHITELISTED"
+        );
+        _;
+    }
+
     constructor(
         address _governanceManager,
+        address _whitelist,
         address _pendleTokenAddress,
         address _router,
         bytes32 _marketFactoryId,
@@ -163,6 +174,7 @@ abstract contract PendleLiquidityMiningBase is
         pendleTokenAddress = _pendleTokenAddress;
         router = IPendleRouter(_router);
         data = router.data();
+        whitelist = IPendleWhitelist(_whitelist);
 
         require(
             data.getMarketFactoryAddress(_marketFactoryId) != address(0),
@@ -296,6 +308,7 @@ abstract contract PendleLiquidityMiningBase is
         override
         isFunded
         nonReentrant
+        nonContractOrWhitelisted
         returns (address newLpHoldingContractAddress)
     {
         newLpHoldingContractAddress = _stake(expiry, amount);
@@ -311,7 +324,14 @@ abstract contract PendleLiquidityMiningBase is
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external override isFunded nonReentrant returns (address newLpHoldingContractAddress) {
+    )
+        external
+        override
+        isFunded
+        nonReentrant
+        nonContractOrWhitelisted
+        returns (address newLpHoldingContractAddress)
+    {
         address xyt = address(data.xytTokens(forgeId, underlyingAsset, expiry));
         address marketAddress = data.getMarket(marketFactoryId, xyt, baseToken);
         // Pendle Market LP tokens are EIP-2612 compliant, hence we can approve liq-mining contract using a signature

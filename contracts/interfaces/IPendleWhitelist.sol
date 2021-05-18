@@ -22,34 +22,22 @@
  */
 pragma solidity 0.7.6;
 
-import "../core/PendleAaveLiquidityMining.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "../periphery/PermissionsV2.sol";
+import "../periphery/WithdrawableV2.sol";
+import "../interfaces/IPendleYieldTokenHolder.sol";
+import "../interfaces/IPendleRewardManager.sol";
+import "../interfaces/IPendleForge.sol";
 
-contract MockPendleAaveLiquidityMining is PendleAaveLiquidityMining {
-    constructor(
-        address _governance,
-        address _whitelist,
-        address _pendleTokenAddress,
-        address _pendleRouter,
-        bytes32 _pendleMarketFactoryId,
-        bytes32 _pendleForgeId,
-        address _underlyingAsset,
-        address _baseToken,
-        uint256 _startTime,
-        uint256 _epochDuration,
-        uint256 _vestingEpochs
-    )
-        PendleAaveLiquidityMining(
-            _governance,
-            _whitelist,
-            _pendleTokenAddress,
-            _pendleRouter,
-            _pendleMarketFactoryId,
-            _pendleForgeId,
-            _underlyingAsset,
-            _baseToken,
-            _startTime,
-            _epochDuration,
-            _vestingEpochs
-        )
-    {}
+interface IPendleWhitelist {
+    event AddedToWhiteList(address);
+    event RemovedFromWhiteList(address);
+
+    function whitelisted(address) external view returns (bool);
+
+    function addToWhitelist(address[] calldata _addresses) external;
+
+    function removeFromWhitelist(address[] calldata _addresses) external;
 }
