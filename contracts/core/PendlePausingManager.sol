@@ -254,7 +254,7 @@ contract PendlePausingManager is IPendlePausingManager, WithdrawableV2 {
         bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry
-    ) public view override returns (bool _paused, bool _locked) {
+    ) external view override returns (bool _paused, bool _locked) {
         _locked = _isYieldContractLocked(forgeId, underlyingAsset, expiry);
         if (_locked) {
             _paused = true; // if a yield contract is locked, its paused by default as well
@@ -324,7 +324,7 @@ contract PendlePausingManager is IPendlePausingManager, WithdrawableV2 {
     }
 
     function checkMarketStatus(bytes32 marketFactoryId, address market)
-        public
+        external
         view
         override
         returns (bool _paused, bool _locked)
