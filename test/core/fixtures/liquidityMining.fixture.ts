@@ -94,7 +94,7 @@ export async function liquidityMiningFixture(
     alice,
     MockPendleAaveLiquidityMining,
     [
-      alice.address,
+      core.govManager.address,
       pdl.address,
       router.address,
       consts.MARKET_FACTORY_AAVE,
@@ -111,7 +111,7 @@ export async function liquidityMiningFixture(
     alice,
     PendleCompoundLiquidityMining,
     [
-      alice.address,
+      core.govManager.address,
       pdl.address,
       router.address,
       consts.MARKET_FACTORY_COMPOUND,

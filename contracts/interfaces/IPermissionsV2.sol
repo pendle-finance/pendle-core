@@ -1,3 +1,4 @@
+/* solhint-disable ordering*/
 // SPDX-License-Identifier: MIT
 /*
  * MIT License
@@ -20,40 +21,12 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
+
 pragma solidity 0.7.6;
+pragma experimental ABIEncoderV2;
 
-import "./abstract/PendleYieldTokenHolderBase.sol";
-import "../interfaces/IAaveIncentivesController.sol";
+import "../core/PendleGovernanceManager.sol";
 
-contract PendleAaveV2YieldTokenHolder is PendleYieldTokenHolderBase {
-    IAaveIncentivesController private aaveIncentivesController;
-
-    constructor(
-        address _governanceManager,
-        address _forge,
-        address _router,
-        address _yieldToken,
-        address _rewardToken,
-        address _rewardManager,
-        address _aaveIncentivesController
-    )
-        PendleYieldTokenHolderBase(
-            _governanceManager,
-            _forge,
-            _router,
-            _yieldToken,
-            _rewardToken,
-            _rewardManager
-        )
-    {
-        require(_aaveIncentivesController != address(0), "ZERO_ADDRESS");
-        aaveIncentivesController = IAaveIncentivesController(_aaveIncentivesController);
-    }
-
-    function redeemRewards() external override {
-        address[] memory assets = new address[](1);
-        assets[0] = yieldToken;
-
-        aaveIncentivesController.claimRewards(assets, type(uint256).max, address(this));
-    }
+interface IPermissionsV2 {
+    function governanceManager() external returns (PendleGovernanceManager);
 }

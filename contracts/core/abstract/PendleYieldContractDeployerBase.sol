@@ -23,8 +23,8 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../../periphery/Permissions.sol";
-import "../../periphery/Withdrawable.sol";
+import "../../periphery/PermissionsV2.sol";
+import "../../periphery/WithdrawableV2.sol";
 import "../../interfaces/IPendleYieldContractDeployer.sol";
 import "../../interfaces/IPendleForge.sol";
 import "../../tokens/PendleFutureYieldToken.sol";
@@ -32,11 +32,7 @@ import "../../tokens/PendleOwnershipToken.sol";
 import "../../libraries/FactoryLib.sol";
 
 // Each PendleYieldContractDeployer is specific for exactly one forge
-abstract contract PendleYieldContractDeployerBase is
-    IPendleYieldContractDeployer,
-    Permissions,
-    Withdrawable
-{
+abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeployer, WithdrawableV2 {
     bytes32 public override forgeId;
     IPendleForge public forge;
 
@@ -45,7 +41,7 @@ abstract contract PendleYieldContractDeployerBase is
         _;
     }
 
-    constructor(address _governance, bytes32 _forgeId) Permissions(_governance) {
+    constructor(address _governanceManager, bytes32 _forgeId) PermissionsV2(_governanceManager) {
         forgeId = _forgeId;
     }
 
@@ -108,6 +104,12 @@ abstract contract PendleYieldContractDeployerBase is
                 _expiry
             )
         );
+    }
+
+    // This contract is used to deploy contracts, there shouldnt be any fund in here
+    // hence governance is allowed to withdraw anything from here.
+    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
+        allowed = true;
     }
 
     function deployYieldTokenHolder(address yieldToken, address ot)

@@ -26,8 +26,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../interfaces/IPendleLpHolder.sol";
 import "../interfaces/IPendleRouter.sol";
+import "../periphery/WithdrawableV2.sol";
 
-contract PendleLpHolder is IPendleLpHolder {
+contract PendleLpHolder is IPendleLpHolder, WithdrawableV2 {
     using SafeERC20 for IERC20;
 
     address private pendleLiquidityMining;
@@ -36,10 +37,11 @@ contract PendleLpHolder is IPendleLpHolder {
     address private router;
 
     constructor(
+        address _governanceManager,
         address _pendleMarket,
         address _router,
         address _underlyingYieldToken
-    ) {
+    ) PermissionsV2(_governanceManager) {
         require(
             _pendleMarket != address(0) &&
                 _router != address(0) &&
@@ -65,5 +67,11 @@ contract PendleLpHolder is IPendleLpHolder {
     function redeemLpInterests() external override {
         require(msg.sender == pendleLiquidityMining, "NOT_AUTHORIZED");
         IPendleRouter(router).redeemLpInterests(pendleMarket, address(this));
+    }
+
+    // governance address is allowed to withdraw tokens except for
+    // the yield token and the LPs staked here
+    function _allowedToWithdraw(address _token) internal view override returns (bool allowed) {
+        allowed = _token != underlyingYieldToken && _token != pendleMarket;
     }
 }

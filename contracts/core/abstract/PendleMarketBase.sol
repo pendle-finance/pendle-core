@@ -29,6 +29,7 @@ import "../../interfaces/IPendleForge.sol";
 import "../../interfaces/IPendleMarketFactory.sol";
 import "../../interfaces/IPendleYieldToken.sol";
 import "../../interfaces/IPendlePausingManager.sol";
+import "../../periphery/WithdrawableV2.sol";
 import "../../tokens/PendleBaseToken.sol";
 import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -41,7 +42,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
     and router will do them instead. (This is to reduce the number of approval users need to do)
 * mint, burn will be done directly with users
 */
-abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
+abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, WithdrawableV2 {
     using Math for uint256;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -107,15 +108,18 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
     uint256 private immutable xytStartTime;
 
     constructor(
+        address _governanceManager,
         address _router,
         address _forge,
         address _xyt,
         address _token,
         uint256 _expiry
-    ) PendleBaseToken(_router, NAME, SYMBOL, DECIMALS, block.timestamp, _expiry) {
+    )
+        PendleBaseToken(_router, NAME, SYMBOL, DECIMALS, block.timestamp, _expiry)
+        PermissionsV2(_governanceManager)
+    {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
-        IPendleYieldToken xytContract = IPendleYieldToken(_xyt);
 
         factory = msg.sender;
         forge = _forge;
@@ -123,7 +127,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
         token = _token;
 
         forgeId = IPendleForge(_forge).forgeId();
-        underlyingAsset = xytContract.underlyingAsset();
+        underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
         underlyingYieldToken = IERC20(IPendleYieldToken(_xyt).underlyingYieldToken());
         expiry = _expiry;
         require(_router == address(IPendleMarketFactory(msg.sender).router()), "ROUTER_MISMATCH");
@@ -905,6 +909,14 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken {
             .rpow(xytBalance.toFP(), xytWeight)
             .rmul(Math.rpow(tokenBalance.toFP(), tokenWeight))
             .toInt();
+    }
+
+    function _allowedToWithdraw(address _token) internal view override returns (bool allowed) {
+        allowed =
+            _token != xyt &&
+            _token != token &&
+            _token != address(this) &&
+            _token != address(underlyingYieldToken);
     }
 
     function _afterBootstrap() internal virtual;

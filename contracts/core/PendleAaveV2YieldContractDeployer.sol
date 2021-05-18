@@ -28,8 +28,8 @@ import "../libraries/FactoryLib.sol";
 import "./PendleAaveV2Forge.sol";
 
 contract PendleAaveV2YieldContractDeployer is PendleYieldContractDeployerBase {
-    constructor(address _governance, bytes32 _forgeId)
-        PendleYieldContractDeployerBase(_governance, _forgeId)
+    constructor(address _governanceManager, bytes32 _forgeId)
+        PendleYieldContractDeployerBase(_governanceManager, _forgeId)
     {}
 
     function deployYieldTokenHolder(address yieldToken, address ot)
@@ -42,6 +42,7 @@ contract PendleAaveV2YieldContractDeployer is PendleYieldContractDeployerBase {
             type(PendleAaveV2YieldTokenHolder).creationCode,
             abi.encodePacked(ot),
             abi.encode(
+                address(governanceManager),
                 address(forge),
                 address(forge.router()),
                 yieldToken,

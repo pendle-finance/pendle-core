@@ -25,8 +25,8 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "../periphery/Permissions.sol";
-import "../periphery/Withdrawable.sol";
+import "../periphery/PermissionsV2.sol";
+import "../periphery/WithdrawableV2.sol";
 import "../interfaces/IPendleYieldTokenHolder.sol";
 import "../interfaces/IPendleRewardManager.sol";
 import "../interfaces/IPendleForge.sol";
@@ -38,7 +38,7 @@ import "../interfaces/IPendleForge.sol";
 @dev the logic of distributing rewards is very similar to that of PendleCompoundMarket & PendleCompoundLiquidityMining
     Any major differences are likely to be bugs
 */
-contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable, ReentrancyGuard {
+contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, ReentrancyGuard {
     using SafeMath for uint256;
 
     bytes32 public override forgeId;
@@ -63,7 +63,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     // as well as information needed to calculate rewards for each user (lastParamL)
     mapping(address => mapping(uint256 => RewardData)) private rewardData;
 
-    constructor(address _governance, bytes32 _forgeId) Permissions(_governance) {
+    constructor(address _governanceManager, bytes32 _forgeId) PermissionsV2(_governanceManager) {
         forgeId = _forgeId;
     }
 
@@ -225,5 +225,11 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
         firstTerm = rwd.paramL;
         paramR = currentRewardBalance.sub(rwd.lastRewardBalance);
+    }
+
+    // There shouldnt be any fund in here
+    // hence governance is allowed to withdraw anything from here.
+    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
+        allowed = true;
     }
 }

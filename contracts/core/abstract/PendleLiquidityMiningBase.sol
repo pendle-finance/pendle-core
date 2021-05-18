@@ -36,7 +36,7 @@ import "../../core/PendleLpHolder.sol";
 import "../../interfaces/IPendleLiquidityMining.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "../../periphery/Permissions.sol";
+import "../../periphery/PermissionsV2.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
@@ -55,7 +55,7 @@ I.e: All the markets using the same LiqMining contract are only different from e
 */
 abstract contract PendleLiquidityMiningBase is
     IPendleLiquidityMining,
-    Permissions,
+    WithdrawableV2,
     ReentrancyGuard
 {
     using Math for uint256;
@@ -143,7 +143,7 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     constructor(
-        address _governance,
+        address _governanceManager,
         address _pendleTokenAddress,
         address _router,
         bytes32 _marketFactoryId,
@@ -153,7 +153,7 @@ abstract contract PendleLiquidityMiningBase is
         uint256 _startTime,
         uint256 _epochDuration,
         uint256 _vestingEpochs
-    ) Permissions(_governance) {
+    ) PermissionsV2(_governanceManager) {
         require(_startTime > block.timestamp, "START_TIME_OVER");
         require(IERC20(_pendleTokenAddress).totalSupply() > 0, "INVALID_ERC20");
         require(IERC20(_underlyingAsset).totalSupply() > 0, "INVALID_ERC20");
@@ -740,7 +740,12 @@ abstract contract PendleLiquidityMiningBase is
         newLpHoldingContractAddress = Factory.createContract(
             type(PendleLpHolder).creationCode,
             abi.encodePacked(marketAddress, marketFactory.router(), underlyingYieldToken),
-            abi.encode(marketAddress, marketFactory.router(), underlyingYieldToken)
+            abi.encode(
+                governanceManager,
+                marketAddress,
+                marketFactory.router(),
+                underlyingYieldToken
+            )
         );
         expiryData[expiry].lpHolder = newLpHoldingContractAddress;
         _afterAddingNewExpiry(expiry);
@@ -764,6 +769,12 @@ abstract contract PendleLiquidityMiningBase is
     function _endTimeOfEpoch(uint256 t) internal view returns (uint256) {
         // epoch id starting from 1
         return startTime + (t) * epochDuration;
+    }
+
+    // There shouldnt be any fund in here
+    // hence governance is allowed to withdraw anything from here.
+    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
+        allowed = true;
     }
 
     function _updateDueInterests(uint256 expiry, address user) internal virtual;

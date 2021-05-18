@@ -28,13 +28,11 @@ import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleYieldToken.sol";
-import "../periphery/Permissions.sol";
-import "../periphery/Withdrawable.sol";
 import "./abstract/PendleMarketFactoryBase.sol";
 
 contract PendleCompoundMarketFactory is PendleMarketFactoryBase {
-    constructor(address _governance, bytes32 _marketFactoryId)
-        PendleMarketFactoryBase(_governance, _marketFactoryId)
+    constructor(address _governanceManager, bytes32 _marketFactoryId)
+        PendleMarketFactoryBase(_governanceManager, _marketFactoryId)
     {}
 
     function _createMarket(
@@ -43,11 +41,19 @@ contract PendleCompoundMarketFactory is PendleMarketFactoryBase {
         address _token,
         uint256 _expiry
     ) internal override returns (address) {
+        address _governanceManager = address(IPermissionsV2(address(router)).governanceManager());
         return
             Factory.createContract(
                 type(PendleCompoundMarket).creationCode,
                 abi.encodePacked(_forgeAddress, _xyt, _token, _expiry),
-                abi.encode(address(router), _forgeAddress, _xyt, _token, _expiry)
+                abi.encode(
+                    _governanceManager,
+                    address(router),
+                    _forgeAddress,
+                    _xyt,
+                    _token,
+                    _expiry
+                )
             );
     }
 }

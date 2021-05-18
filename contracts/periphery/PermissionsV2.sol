@@ -22,40 +22,31 @@
  */
 pragma solidity 0.7.6;
 
-import "./abstract/PendleYieldTokenHolderBase.sol";
-import "../interfaces/IComptroller.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../core/PendleGovernanceManager.sol";
+import "../interfaces/IPermissionsV2.sol";
 
-contract PendleCompoundYieldTokenHolder is PendleYieldTokenHolderBase {
-    IComptroller private comptroller;
+abstract contract PermissionsV2 is IPermissionsV2 {
+    PendleGovernanceManager public immutable override governanceManager;
+    address internal initializer;
 
-    constructor(
-        address _governanceManager,
-        address _forge,
-        address _router,
-        address _yieldToken,
-        address _rewardToken,
-        address _rewardManager,
-        address _comptroller
-    )
-        PendleYieldTokenHolderBase(
-            _governanceManager,
-            _forge,
-            _router,
-            _yieldToken,
-            _rewardToken,
-            _rewardManager
-        )
-    {
-        require(_comptroller != address(0), "ZERO_ADDRESS");
-        comptroller = IComptroller(_comptroller);
+    constructor(address _governanceManager) {
+        require(_governanceManager != address(0), "ZERO_ADDRESS");
+        initializer = msg.sender;
+        governanceManager = PendleGovernanceManager(_governanceManager);
     }
 
-    // TODO: skip redeemRewards if the incentive programme has already ended?
-    function redeemRewards() external override {
-        address[] memory cTokens = new address[](1);
-        address[] memory holders = new address[](1);
-        cTokens[0] = yieldToken;
-        holders[0] = address(this);
-        comptroller.claimComp(holders, cTokens, false, true);
+    modifier initialized() {
+        require(initializer == address(0), "NOT_INITIALIZED");
+        _;
+    }
+
+    modifier onlyGovernance() {
+        require(msg.sender == _governance(), "ONLY_GOVERNANCE");
+        _;
+    }
+
+    function _governance() internal view returns (address) {
+        return governanceManager.governance();
     }
 }

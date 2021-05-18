@@ -35,7 +35,6 @@ import "../interfaces/IPendleLpHolder.sol";
 import "../core/PendleLpHolder.sol";
 import "../interfaces/IPendleLiquidityMining.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "../periphery/Permissions.sol";
 import "./abstract/PendleLiquidityMiningBase.sol";
 
 /**
@@ -53,7 +52,7 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
     mapping(uint256 => mapping(address => uint256)) private userLastNormalizedIncome;
 
     constructor(
-        address _governance,
+        address _governanceManager,
         address _pendleTokenAddress,
         address _pendleRouter, // The router basically identify our Pendle instance.
         bytes32 _pendleMarketFactoryId,
@@ -65,7 +64,7 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         uint256 _vestingEpochs
     )
         PendleLiquidityMiningBase(
-            _governance,
+            _governanceManager,
             _pendleTokenAddress,
             _pendleRouter,
             _pendleMarketFactoryId,
