@@ -119,7 +119,7 @@ export function runTest(isAaveV1: boolean) {
       let amountToTokenize: BN = amountToMove.mul(10);
       let period = env.EXPIRY.sub(env.T0).div(10);
 
-      async function transfer(from: Wallet, to: Wallet, amount: BN) {
+      async function transferXyt(from: Wallet, to: Wallet, amount: BN) {
         await env.xyt.connect(from).transfer(
           to.address,
           amount,
@@ -135,15 +135,15 @@ export function runTest(isAaveV1: boolean) {
         );
       }
 
-      async function toEve(user: Wallet, amountToKeep: BN) {
+      async function removeYieldToken(user: Wallet, amountToKeep: BN) {
         await transferYieldToken(user, eve,
           (await env.yUSDT.connect(user).balanceOf(user.address)).sub(amountToKeep),
         );
       }
 
-      await toEve(alice, amountToTokenize.mul(2));
+      await removeYieldToken(alice, amountToTokenize.mul(2));
       for(let person of [bob, charlie, dave]) {
-        toEve(person, BN.from(0));
+        removeYieldToken(person, BN.from(0));
       }
 
       await tokenizeYield(env, alice, amountToTokenize, alice.address);
@@ -152,12 +152,12 @@ export function runTest(isAaveV1: boolean) {
       await tokenizeYield(env, alice, amountToTokenize.div(4), dave.address);
 
       await setTimeNextBlock(env.T0.add(period.mul(1)));
-      await transfer(bob, dave, amountToMove);
-      await transfer(bob, charlie, amountToMove);
+      await transferXyt(bob, dave, amountToMove);
+      await transferXyt(bob, charlie, amountToMove);
 
       await setTimeNextBlock(env.T0.add(period.mul(2)));
-      await transfer(bob, dave, amountToMove);
-      await transfer(bob, charlie, amountToMove);
+      await transferXyt(bob, dave, amountToMove);
+      await transferXyt(bob, charlie, amountToMove);
 
       await setTimeNextBlock(env.T0.add(period.mul(3)));
       await redeemDueInterests(env, alice);
@@ -165,28 +165,28 @@ export function runTest(isAaveV1: boolean) {
       await redeemDueInterests(env, dave);
 
       await setTimeNextBlock(env.T0.add(period.mul(4)));
-      await transfer(dave, bob, amountToMove);
-      await transfer(charlie, bob, amountToMove.mul(2));
+      await transferXyt(dave, bob, amountToMove);
+      await transferXyt(charlie, bob, amountToMove.mul(2));
       await redeemDueInterests(env, alice);
       
       await setTimeNextBlock(env.T0.add(period.mul(5)));
       await redeemDueInterests(env, alice);
       await redeemDueInterests(env, charlie);
-      await transfer(dave, bob, amountToMove);
-      await transfer(charlie, bob, amountToMove);
+      await transferXyt(dave, bob, amountToMove);
+      await transferXyt(charlie, bob, amountToMove);
       
       await setTimeNextBlock(env.T0.add(period.mul(6)));
-      await transfer(bob, dave, amountToMove);
-      await transfer(bob, charlie, amountToMove);
+      await transferXyt(bob, dave, amountToMove);
+      await transferXyt(bob, charlie, amountToMove);
 
       await setTimeNextBlock(env.T0.add(period.mul(8)));
-      await transfer(dave, charlie, amountToMove);
+      await transferXyt(dave, charlie, amountToMove);
       
       await setTimeNextBlock(env.T0.add(period.mul(10).add(10)));
-      await redeemAfterExpiry(env, alice);
-      await redeemAfterExpiry(env, bob);
-      await redeemAfterExpiry(env, charlie);
-      await redeemAfterExpiry(env, dave);
+      
+      for(let person of [alice, bob, charlie, dave]) {
+        await redeemAfterExpiry(env, person);
+      }
 
 
       await setTimeNextBlock(env.T0.add(period.mul(20).add(10)));
