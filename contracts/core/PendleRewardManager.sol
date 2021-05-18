@@ -68,7 +68,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         _;
     }
 
-    constructor(address _governance, bytes32 _forgeId) Permissions(_governance) {
+    constructor(address _governance, bytes32 _forgeId) PermissionsV2(_governance) {
         forgeId = _forgeId;
     }
 
