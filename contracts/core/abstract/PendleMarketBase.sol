@@ -246,7 +246,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         uint256 liquidity =
             Math.sqrt(initialXytLiquidity.mul(initialTokenLiquidity)).sub(MINIMUM_LIQUIDITY);
 
-        _mint(address(this), MINIMUM_LIQUIDITY);
+        // No one should possibly own a specific address like this 0x1
+        // We mint to 0x1 instead of 0x0 because sending to 0x0 is not permitted
+        _mint(address(0x1), MINIMUM_LIQUIDITY);
         _mint(user, liquidity);
 
         transfers[0].amount = initialXytLiquidity;
