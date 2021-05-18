@@ -28,15 +28,15 @@ import "../../interfaces/IPendleRouter.sol";
 import "../../interfaces/IPendleData.sol";
 import "../../interfaces/IPendleMarketFactory.sol";
 import "../../interfaces/IPendleYieldToken.sol";
-import "../../periphery/PermissionsV2.sol";
 
-abstract contract PendleMarketFactoryBase is IPendleMarketFactory, PermissionsV2 {
+abstract contract PendleMarketFactoryBase is IPendleMarketFactory {
     IPendleRouter public override router;
     bytes32 public immutable override marketFactoryId;
 
-    constructor(address _governanceManager, bytes32 _marketFactoryId)
-        PermissionsV2(_governanceManager)
-    {
+    constructor(address _router, bytes32 _marketFactoryId) {
+        require(address(_router) != address(0), "ZERO_ADDRESS");
+
+        router = IPendleRouter(_router);
         marketFactoryId = _marketFactoryId;
     }
 
@@ -45,18 +45,9 @@ abstract contract PendleMarketFactoryBase is IPendleMarketFactory, PermissionsV2
         _;
     }
 
-    function initialize(IPendleRouter _router) external {
-        require(msg.sender == initializer, "FORBIDDEN");
-        require(address(_router) != address(0), "ZERO_ADDRESS");
-
-        initializer = address(0);
-        router = _router;
-    }
-
     function createMarket(address _xyt, address _token)
         external
         override
-        initialized
         onlyRouter
         returns (address market)
     {
