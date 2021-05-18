@@ -70,17 +70,19 @@ export function calcExpectedRewards(
     // console.log(`\t[calculateExpectedRewards] Epoch = ${epochId}, totalStakeSeconds = ${totalStakeSeconds}`);
 
     epochData.forEach((userData, userId) => {
-      const rewardsPerVestingEpoch = params.REWARDS_PER_EPOCH[epochId - 1]
-        .mul(userStakeSeconds[userId])
-        .div(totalStakeSeconds)
-        .div(params.VESTING_EPOCHS);
-      for (let e: number = epochId + 1; e <= epochId + params.VESTING_EPOCHS.toNumber(); e++) {
-        if (e <= currentEpoch) {
-          rewards[userId][0] = rewards[userId][0].add(rewardsPerVestingEpoch);
-          continue;
-        }
-        if (e < currentEpoch + params.VESTING_EPOCHS.toNumber()) {
-          rewards[userId][e - currentEpoch] = rewards[userId][e - currentEpoch].add(rewardsPerVestingEpoch);
+      if (!totalStakeSeconds.eq(0)) {
+        const rewardsPerVestingEpoch = params.REWARDS_PER_EPOCH[epochId - 1]
+          .mul(userStakeSeconds[userId])
+          .div(totalStakeSeconds)
+          .div(params.VESTING_EPOCHS);
+        for (let e: number = epochId + 1; e <= epochId + params.VESTING_EPOCHS.toNumber(); e++) {
+          if (e <= currentEpoch) {
+            rewards[userId][0] = rewards[userId][0].add(rewardsPerVestingEpoch);
+            continue;
+          }
+          if (e < currentEpoch + params.VESTING_EPOCHS.toNumber()) {
+            rewards[userId][e - currentEpoch] = rewards[userId][e - currentEpoch].add(rewardsPerVestingEpoch);
+          }
         }
       }
     });

@@ -142,6 +142,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         address _user
     ) external override nonReentrant returns (uint256 interests) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(_user != address(0), "ZERO_ADDRESS");
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         interests = forge.redeemDueInterests(_user, _underlyingAsset, _expiry);
     }
@@ -573,6 +574,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         returns (uint256 interests)
     {
         require(data.isMarket(market), "INVALID_MARKET");
+        require(user != address(0), "ZERO_ADDRESS");
         interests = IPendleMarket(market).redeemLpInterests(user);
     }
 

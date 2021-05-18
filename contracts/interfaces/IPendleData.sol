@@ -225,6 +225,19 @@ interface IPendleData {
         uint256 expiry
     ) external view returns (bool);
 
+    /**
+     * @notice Checks if an OT token is valid.
+     * @param forgeId The forgeId of the forge.
+     * @param underlyingAsset Token address of the underlying asset.
+     * @param expiry Yield contract expiry in epoch time.
+     * @return True if valid, false otherwise.
+     **/
+    function isValidOT(
+        bytes32 forgeId,
+        address underlyingAsset,
+        uint256 expiry
+    ) external view returns (bool);
+
     function validForgeFactoryPair(bytes32 _forgeId, bytes32 _marketFactoryId)
         external
         view
