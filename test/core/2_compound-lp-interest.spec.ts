@@ -289,7 +289,7 @@ describe('compound-lp-interest', async () => {
     // for (let user of [alice, bob, charlie, dave]) {
     //   console.log((await cUSDT.balanceOf(user.address)).toString());
     // }
-    const expectedResult: number[] = [6298426144, 6329284079, 6346687878, 6385226675];
+    const expectedResult: number[] = [6298314926, 6329172323, 6346575821, 6385113945];
     await checkCUSDTBalance(expectedResult);
   });
 
@@ -343,7 +343,7 @@ describe('compound-lp-interest', async () => {
     // for (let user of [alice, bob, charlie, dave]) {
     //   console.log((await cUSDT.balanceOf(user.address)).toString());
     // }
-    const expectedResult: number[] = [9004048190, 8170338541, 7453587736, 6971317641];
+    const expectedResult: number[] = [9003891207, 8170194797, 7453455926, 6971194256];
     await checkCUSDTBalance(expectedResult);
   });
 
@@ -417,7 +417,7 @@ describe('compound-lp-interest', async () => {
     // for (let user of [alice, bob, charlie, dave]) {
     //   console.log((await cUSDT.balanceOf(user.address)).toString());
     // }
-    const expectedResult: number[] = [14132885215, 11089436798, 11134332033, 10506380313];
+    const expectedResult: number[] = [14132640178, 11089242562, 11134137232, 10506196679];
     await checkCUSDTBalance(expectedResult);
   });
 
