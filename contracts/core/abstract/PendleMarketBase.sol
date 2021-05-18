@@ -135,7 +135,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         pausingManager = IPendleForge(_forge).data().pausingManager();
         xytStartTime = IPendleYieldToken(_xyt).start();
         factoryId = IPendleMarketFactory(msg.sender).marketFactoryId();
-        _approve(address(this), _router, type(uint256).max);
+
         IERC20(_xyt).safeApprove(_router, type(uint256).max);
         IERC20(_token).safeApprove(_router, type(uint256).max);
     }
