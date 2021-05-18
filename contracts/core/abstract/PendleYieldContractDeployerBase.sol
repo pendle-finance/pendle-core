@@ -32,11 +32,7 @@ import "../../tokens/PendleOwnershipToken.sol";
 import "../../libraries/FactoryLib.sol";
 
 // Each PendleYieldContractDeployer is specific for exactly one forge
-abstract contract PendleYieldContractDeployerBase is
-    IPendleYieldContractDeployer,
-    PermissionsV2,
-    WithdrawableV2
-{
+abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeployer, WithdrawableV2 {
     bytes32 public override forgeId;
     IPendleForge public forge;
 
@@ -108,6 +104,12 @@ abstract contract PendleYieldContractDeployerBase is
                 _expiry
             )
         );
+    }
+
+    // This contract is used to deploy contracts, there shouldnt be any fund in here
+    // hence governance is allowed to withdraw anything from here.
+    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
+        allowed = true;
     }
 
     function deployYieldTokenHolder(address yieldToken, address ot)

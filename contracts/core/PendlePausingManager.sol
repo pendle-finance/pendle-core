@@ -336,4 +336,10 @@ contract PendlePausingManager is IPendlePausingManager, WithdrawableV2 {
             _paused = _isMarketPaused(marketFactoryId, market);
         }
     }
+
+    // There shouldnt be any fund in here
+    // hence governance is allowed to withdraw anything from here.
+    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
+        allowed = true;
+    }
 }

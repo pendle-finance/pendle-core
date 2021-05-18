@@ -55,7 +55,7 @@ I.e: All the markets using the same LiqMining contract are only different from e
 */
 abstract contract PendleLiquidityMiningBase is
     IPendleLiquidityMining,
-    PermissionsV2,
+    WithdrawableV2,
     ReentrancyGuard
 {
     using Math for uint256;
@@ -769,6 +769,12 @@ abstract contract PendleLiquidityMiningBase is
     function _endTimeOfEpoch(uint256 t) internal view returns (uint256) {
         // epoch id starting from 1
         return startTime + (t) * epochDuration;
+    }
+
+    // There shouldnt be any fund in here
+    // hence governance is allowed to withdraw anything from here.
+    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
+        allowed = true;
     }
 
     function _updateDueInterests(uint256 expiry, address user) internal virtual;

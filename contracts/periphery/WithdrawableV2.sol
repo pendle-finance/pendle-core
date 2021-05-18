@@ -61,8 +61,7 @@ abstract contract WithdrawableV2 is PermissionsV2 {
         emit TokenWithdraw(token, amount, sendTo);
     }
 
-    // to be overridden by the contract if necessary
-    function _allowedToWithdraw(address) internal view virtual returns (bool allowed) {
-        allowed = true;
-    }
+    // must be overridden by the sub contracts, so we must consider explicitly
+    // in each and every contract which tokens are allowed to be withdrawn
+    function _allowedToWithdraw(address) internal virtual returns (bool allowed);
 }

@@ -336,4 +336,10 @@ contract PendleData is IPendleData, PermissionsV2, WithdrawableV2 {
             _tokenA < _tokenB ? (_tokenA, _tokenB) : (_tokenB, _tokenA);
         return keccak256(abi.encode(tokenX, tokenY, _factoryId));
     }
+
+    // There shouldnt be any fund in here
+    // hence governance is allowed to withdraw anything from here.
+    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
+        allowed = true;
+    }
 }

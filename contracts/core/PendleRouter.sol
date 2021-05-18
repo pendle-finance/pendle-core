@@ -656,4 +656,10 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         if (allowance >= REASONABLE_ALLOWANCE_AMOUNT) return;
         IPendleBaseToken(token).approveRouter(msg.sender);
     }
+
+    // There shouldnt be any fund in here
+    // hence governance is allowed to withdraw anything from here.
+    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
+        allowed = true;
+    }
 }

@@ -34,13 +34,13 @@ import "../../interfaces/IPendleYieldContractDeployer.sol";
 import "../../interfaces/IPendleYieldTokenHolder.sol";
 import "../../tokens/PendleFutureYieldToken.sol";
 import "../../tokens/PendleOwnershipToken.sol";
-import "../../periphery/PermissionsV2.sol";
+import "../../periphery/WithdrawableV2.sol";
 import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @notice Common contract base for a forge implementation.
 /// @dev Each specific forge implementation will need to implement the virtual functions
-abstract contract PendleForgeBase is IPendleForge, PermissionsV2, ReentrancyGuard {
+abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGuard {
     using ExpiryUtils for string;
     using SafeMath for uint256;
     using Math for uint256;
@@ -441,6 +441,12 @@ abstract contract PendleForgeBase is IPendleForge, PermissionsV2, ReentrancyGuar
         returns (PendleTokens memory _tokens)
     {
         (_tokens.ot, _tokens.xyt) = data.getPendleYieldTokens(forgeId, _underlyingAsset, _expiry);
+    }
+
+    // There shouldnt be any fund in here
+    // hence governance is allowed to withdraw anything from here.
+    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
+        allowed = true;
     }
 
     /// INVARIANT: after _updateDueInterests is called, dueInterests[][][] must already be
