@@ -541,10 +541,13 @@ abstract contract PendleLiquidityMiningBase is
 
             // Now this epoch has ended, users can claim rewards now
 
-            // @Long: this can never happen because:
-            // * if exd.totalStakeLP==0 => will break by conditions above
-            // * else: it can only happen if startOfEpoch == now, but in this case it means that
-            //      the epoch is not over yet, so !_isEndEpochOver == false
+            /*
+            @Long: this can never happen because:
+            * if exd.totalStakeLP==0 => will break by conditions above
+            * else: exd.totalStakeLP!=0. Since every time the LP balance changes, this function will be called.
+            => if startOfEpoch != now, the epoch must have at a positive amount of units in it.
+            else startOfEpoch == now, but in this case it means that the epoch is not over yet, so !_isEndEpochOver == false
+            */
             require(epochData[epochId].stakeUnitsForExpiry[expiry] != 0, "INTERNAL_ERROR");
 
             // calc the amount of rewards the user is eligible to receive from this epoch
@@ -618,7 +621,6 @@ abstract contract PendleLiquidityMiningBase is
         _updatePendingRewards(expiry, msg.sender);
         _updateDueInterests(expiry, msg.sender);
 
-        // transferring LP in must happens before totalStakeLPForExpiry and balances are updated
         IERC20(marketAddress).safeTransferFrom(msg.sender, expiryData[expiry].lpHolder, amount);
 
         ExpiryData storage exd = expiryData[expiry];
@@ -631,7 +633,6 @@ abstract contract PendleLiquidityMiningBase is
         _updatePendingRewards(expiry, msg.sender);
         _updateDueInterests(expiry, msg.sender);
 
-        // sendLp must happens before totalStakeLPForExpiry and balances are updated
         IPendleLpHolder(expiryData[expiry].lpHolder).sendLp(msg.sender, amount);
 
         ExpiryData storage exd = expiryData[expiry];

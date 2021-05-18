@@ -164,6 +164,12 @@ export function runTest(mode: Mode) {
       await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1, 2);
     });
 
+    it('test 5', async () => {
+      let userStakingData: UserStakeAction[][][] = scenario.scenario07(env.liqParams);
+      await doSequence(userStakingData);
+      await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1);
+    });
+
     it("this test shouldn't crash", async () => {
       const amountToStake = await env.market.balanceOf(bob.address);
 
