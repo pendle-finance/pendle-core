@@ -629,10 +629,9 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
                 weth.deposit{value: msg.value}();
                 weth.transfer(market, transfer.amount);
             } else {
-                // its a transfer in of token. If its an XYT or the LP of the related market,
+                // its a transfer in of token. If its an XYT
                 // we will auto approve the router to spend from the user account;
-                // It's to be expected that token will never be LP
-                if (data.isXyt(token) || token == market) {
+                if (data.isXyt(token)) {
                     _checkApproveRouter(token);
                 }
                 IERC20(token).safeTransferFrom(msg.sender, market, transfer.amount);
@@ -654,7 +653,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
     function _checkApproveRouter(address token) internal {
         uint256 allowance = IPendleBaseToken(token).allowance(msg.sender, address(this));
         if (allowance >= REASONABLE_ALLOWANCE_AMOUNT) return;
-        IPendleBaseToken(token).approveRouter(msg.sender);
+        IPendleYieldToken(token).approveRouter(msg.sender);
     }
 
     // There shouldnt be any fund in here

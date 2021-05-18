@@ -837,8 +837,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     function _beforeTokenTransfer(
         address from,
         address to,
-        uint256
+        uint256 amount
     ) internal override {
+        super._beforeTokenTransfer(from, to, amount);
         checkNotPaused();
         if (from != address(0)) _updateDueInterests(from);
         if (to != address(0)) _updateDueInterests(to);
