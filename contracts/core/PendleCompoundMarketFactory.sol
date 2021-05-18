@@ -46,7 +46,14 @@ contract PendleCompoundMarketFactory is PendleMarketFactoryBase {
             Factory.createContract(
                 type(PendleCompoundMarket).creationCode,
                 abi.encodePacked(_forgeAddress, _xyt, _token, _expiry),
-                abi.encode(_governanceManager, address(router), _forgeAddress, _xyt, _token, _expiry)
+                abi.encode(
+                    _governanceManager,
+                    address(router),
+                    _forgeAddress,
+                    _xyt,
+                    _token,
+                    _expiry
+                )
             );
     }
 }

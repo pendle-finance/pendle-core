@@ -26,12 +26,22 @@ import "./abstract/PendleYieldTokenHolderBase.sol";
 
 contract PendleAaveYieldTokenHolder is PendleYieldTokenHolderBase {
     constructor(
+        address _governanceManager,
         address _forge,
         address _router,
         address _yieldToken,
         address _rewardToken,
         address _rewardManager
-    ) PendleYieldTokenHolderBase(_forge, _router, _yieldToken, _rewardToken, _rewardManager) {}
+    )
+        PendleYieldTokenHolderBase(
+            _governanceManager,
+            _forge,
+            _router,
+            _yieldToken,
+            _rewardToken,
+            _rewardManager
+        )
+    {}
 
     function redeemRewards() external override {}
 }

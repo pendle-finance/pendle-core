@@ -26,7 +26,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../core/PendleGovernanceManager.sol";
 import "../interfaces/IPermissionsV2.sol";
 
-abstract contract PermissionsV2 is  IPermissionsV2 {
+abstract contract PermissionsV2 is IPermissionsV2 {
     PendleGovernanceManager public immutable override governanceManager;
     address internal initializer;
 

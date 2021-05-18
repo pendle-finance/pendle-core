@@ -42,6 +42,7 @@ contract PendleAaveV2YieldContractDeployer is PendleYieldContractDeployerBase {
             type(PendleAaveV2YieldTokenHolder).creationCode,
             abi.encodePacked(ot),
             abi.encode(
+                address(governanceManager),
                 address(forge),
                 address(forge.router()),
                 yieldToken,

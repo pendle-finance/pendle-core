@@ -27,26 +27,30 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../../interfaces/IPendleYieldTokenHolder.sol";
 import "../../interfaces/IPendleRouter.sol";
 import "../../interfaces/IPendleForge.sol";
+import "../../periphery/WithdrawableV2.sol";
 
-abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder {
+abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder, WithdrawableV2 {
     using SafeERC20 for IERC20;
 
     address internal yieldToken;
     address public forge;
+    address internal rewardToken;
 
     constructor(
+        address _governanceManager,
         address _forge,
         address _router,
         address _yieldToken,
         address _rewardToken,
         address _rewardManager
-    ) {
+    ) PermissionsV2(_governanceManager) {
         require(
             _router != address(0) && _yieldToken != address(0) && _rewardToken != address(0),
             "ZERO_ADDRESS"
         );
         yieldToken = _yieldToken;
         forge = _forge;
+        rewardToken = _rewardToken;
 
         IERC20(_yieldToken).safeApprove(_forge, type(uint256).max);
         IERC20(_rewardToken).safeApprove(_rewardManager, type(uint256).max);
@@ -62,5 +66,11 @@ abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder {
         for (uint256 i = 0; i < tokens.length; i++) {
             IERC20(tokens[i]).safeApprove(spender, type(uint256).max);
         }
+    }
+
+    // The governance address will be able to withdraw any tokens except for
+    // the yieldToken and the rewardToken
+    function _allowedToWithdraw(address _token) internal view override returns (bool allowed) {
+        allowed = _token != yieldToken && _token != rewardToken;
     }
 }
