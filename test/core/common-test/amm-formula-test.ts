@@ -1,3 +1,4 @@
+import { expect } from 'chai';
 import { BigNumber as BN, BigNumberish } from 'ethers';
 import {
   addMarketLiquidityDualXyt,
@@ -14,6 +15,8 @@ import {
   swapExactInXytToToken,
   swapExactOutTokenToXyt,
   swapExactOutXytToToken,
+  logMarketReservesData,
+  errMsg,
 } from '../../helpers';
 import { TestEnv } from '../fixtures';
 
@@ -191,6 +194,27 @@ export async function ProtocolFeeTest(env: TestEnv, useSwapIn: boolean) {
   await swapExactInXytToToken(env, alice, constSwapAmount.mul(12));
   await addMarketLiquidityDual(env, alice, constSwapAmount.mul(13));
   await checkTreasuryLP(BN.from(452271));
+}
+
+export async function ensureMarketBalance(env: TestEnv) {
+  const MINIMUM_LIQUIDITY = BN.from(1000);
+  const amount = BN.from(10000);
+  
+  await bootstrapMarket(env, alice, amount);
+
+  const lastAmount = await env.xyt.balanceOf(alice.address);
+
+  await expect(
+    env.router.connect(alice).removeMarketLiquidityDual(env.FORGE_ID, env.xyt.address, env.testToken.address, amount, 0, 0)
+  ).to.be.revertedWith(errMsg.XYT_BALANCE_ERROR);
+  await env.router.connect(alice).removeMarketLiquidityDual(env.FORGE_ID, env.xyt.address, env.testToken.address, amount.sub(MINIMUM_LIQUIDITY), 0, 0, consts.HIGH_GAS_OVERRIDE);
+  
+  approxBigNumber(
+    (await env.xyt.balanceOf(alice.address)).sub(lastAmount),
+    amount.sub(MINIMUM_LIQUIDITY),
+    BN.from(2)
+  );
+  return;
 }
 
 async function runTestTokenToXytCustom(env: TestEnv, tokenIn: BN, xytOut: BN, delta: BigNumberish, useSwapIn: boolean) {
