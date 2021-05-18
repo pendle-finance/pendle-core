@@ -41,11 +41,12 @@ contract PendleCompoundMarketFactory is PendleMarketFactoryBase {
         address _token,
         uint256 _expiry
     ) internal override returns (address) {
+        address _governanceManager = address(IPermissionsV2(address(router)).governanceManager());
         return
             Factory.createContract(
                 type(PendleCompoundMarket).creationCode,
                 abi.encodePacked(_forgeAddress, _xyt, _token, _expiry),
-                abi.encode(address(router), _forgeAddress, _xyt, _token, _expiry)
+                abi.encode(_governanceManager, address(router), _forgeAddress, _xyt, _token, _expiry)
             );
     }
 }

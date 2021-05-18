@@ -41,12 +41,13 @@ contract PendleCompoundMarket is PendleMarketBase {
     uint256 private globalLastExchangeRate;
 
     constructor(
+        address _governanceManager,
         address _router,
         address _forge,
         address _xyt,
         address _token,
         uint256 _expiry
-    ) PendleMarketBase(_router, _forge, _xyt, _token, _expiry) {}
+    ) PendleMarketBase(_governanceManager, _router, _forge, _xyt, _token, _expiry) {}
 
     function _getExchangeRate() internal returns (uint256) {
         return IPendleCompoundForge(forge).getExchangeRate(underlyingAsset);

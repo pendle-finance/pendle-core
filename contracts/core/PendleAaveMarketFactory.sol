@@ -28,6 +28,7 @@ import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleYieldToken.sol";
+import "../interfaces/IPermissionsV2.sol";
 import "./abstract/PendleMarketFactoryBase.sol";
 
 contract PendleAaveMarketFactory is PendleMarketFactoryBase {
@@ -41,11 +42,12 @@ contract PendleAaveMarketFactory is PendleMarketFactoryBase {
         address _token,
         uint256 _expiry
     ) internal override returns (address) {
+        address _governanceManager = address(IPermissionsV2(address(router)).governanceManager());
         return
             Factory.createContract(
                 type(PendleAaveMarket).creationCode,
                 abi.encodePacked(_forgeAddress, _xyt, _token, _expiry),
-                abi.encode(address(router), _forgeAddress, _xyt, _token, _expiry)
+                abi.encode(_governanceManager, address(router), _forgeAddress, _xyt, _token, _expiry)
             );
     }
 }

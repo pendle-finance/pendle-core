@@ -1,3 +1,4 @@
+/* solhint-disable ordering*/
 // SPDX-License-Identifier: MIT
 /*
  * MIT License
@@ -20,33 +21,12 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
+
 pragma solidity 0.7.6;
+pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../core/PendleGovernanceManager.sol";
-import "../interfaces/IPermissionsV2.sol";
 
-abstract contract PermissionsV2 is  IPermissionsV2 {
-    PendleGovernanceManager public immutable override governanceManager;
-    address internal initializer;
-
-    constructor(address _governanceManager) {
-        require(_governanceManager != address(0), "ZERO_ADDRESS");
-        initializer = msg.sender;
-        governanceManager = PendleGovernanceManager(_governanceManager);
-    }
-
-    modifier initialized() {
-        require(initializer == address(0), "NOT_INITIALIZED");
-        _;
-    }
-
-    modifier onlyGovernance() {
-        require(msg.sender == _governance(), "ONLY_GOVERNANCE");
-        _;
-    }
-
-    function _governance() internal view returns (address) {
-        return governanceManager.governance();
-    }
+interface IPermissionsV2 {
+    function governanceManager() external returns (PendleGovernanceManager);
 }
