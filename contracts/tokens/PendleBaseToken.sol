@@ -121,10 +121,11 @@ abstract contract PendleBaseToken is ERC20 {
     //// End of EIP-2612 related part
 
     function _beforeTokenTransfer(
-        address,
+        address from,
         address to,
         uint256
     ) internal virtual override {
         require(to != address(this), "SEND_TO_TOKEN_CONTRACT");
+        require(to != from, "SEND_TO_SELF");
     }
 }

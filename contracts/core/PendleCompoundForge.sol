@@ -183,8 +183,8 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         uint256 currentRate = getExchangeRateBeforeExpiry(_underlyingAsset, _expiry);
 
         lastRate[_underlyingAsset][_expiry][_user] = currentRate;
-        // first time getting XYT
-        if (prevRate == 0) {
+        // first time getting XYT, or there is no update in exchangeRate
+        if (prevRate == 0 || prevRate == currentRate) {
             return;
         }
         // split into 2 statements to avoid stack error
