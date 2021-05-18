@@ -38,12 +38,7 @@ import "../interfaces/IPendleForge.sol";
 @dev the logic of distributing rewards is very similar to that of PendleCompoundMarket & PendleCompoundLiquidityMining
     Any major differences are likely to be bugs
 */
-contract PendleRewardManager is
-    IPendleRewardManager,
-    PermissionsV2,
-    WithdrawableV2,
-    ReentrancyGuard
-{
+contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, ReentrancyGuard {
     using SafeMath for uint256;
 
     bytes32 public override forgeId;
