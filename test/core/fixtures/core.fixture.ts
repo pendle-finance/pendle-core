@@ -34,17 +34,14 @@ export async function coreFixture(
 
   const treasury = await deployContract(alice, PendleTreasury, [alice.address]);
   const govManager = await deployContract(alice, PendleGovernanceManager, [alice.address]);
-  const aMarketFactory = await deployContract(alice, PendleAaveMarketFactory, [govManager.address, consts.MARKET_FACTORY_AAVE]);
-  const a2MarketFactory = await deployContract(alice, PendleAaveMarketFactory, [govManager.address, consts.MARKET_FACTORY_AAVE_V2]);
-  const cMarketFactory = await deployContract(alice, PendleCompoundMarketFactory, [govManager.address, consts.MARKET_FACTORY_COMPOUND]);
   const pausingManager = await deployContract(alice, PendlePausingManager, [govManager.address, alice.address, alice.address]);
   const data = await deployContract(alice, PendleData, [govManager.address, treasury.address, pausingManager.address]);
   const router = await deployContract(alice, PendleRouter, [govManager.address, tokens.WETH.address, data.address]);
   const marketReader = await deployContract(alice, PendleMarketReader, [data.address]);
+  const aMarketFactory = await deployContract(alice, PendleAaveMarketFactory, [router.address, consts.MARKET_FACTORY_AAVE]);
+  const a2MarketFactory = await deployContract(alice, PendleAaveMarketFactory, [router.address, consts.MARKET_FACTORY_AAVE_V2]);
+  const cMarketFactory = await deployContract(alice, PendleCompoundMarketFactory, [router.address, consts.MARKET_FACTORY_COMPOUND]);
 
-  await aMarketFactory.initialize(router.address);
-  await a2MarketFactory.initialize(router.address);
-  await cMarketFactory.initialize(router.address);
   await data.initialize(router.address);
 
   await data.setExpiryDivisor(BN.from(10)); // for ease of testing
