@@ -31,10 +31,10 @@ import "../periphery/WithdrawableV2.sol";
 contract PendleLpHolder is IPendleLpHolder, WithdrawableV2 {
     using SafeERC20 for IERC20;
 
-    address private pendleLiquidityMining;
-    address private underlyingYieldToken;
-    address private pendleMarket;
-    address private router;
+    address private immutable pendleLiquidityMining;
+    address private immutable underlyingYieldToken;
+    address private immutable pendleMarket;
+    address private immutable router;
 
     constructor(
         address _governanceManager,
