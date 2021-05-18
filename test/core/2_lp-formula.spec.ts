@@ -38,8 +38,8 @@ describe('lp-formula', async () => {
   }
 
   before(async () => {
-    globalSnapshotId = await evm_snapshot();
     const fixture = await loadFixture(marketFixture);
+    globalSnapshotId = await evm_snapshot();
 
     await buildTestEnv();
     await env.data.setMarketFees(toFixedPoint('0.0035'), 0); // 0.35%

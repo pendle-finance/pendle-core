@@ -39,8 +39,8 @@ describe('compound-xyt-interest', async () => {
   let tokenUSDT: Token;
 
   before(async () => {
-    globalSnapshotId = await evm_snapshot();
     const fixture = await loadFixture(routerFixture);
+    globalSnapshotId = await evm_snapshot();
 
     router = fixture.core.router;
     cOt = fixture.cForge.cOwnershipToken;

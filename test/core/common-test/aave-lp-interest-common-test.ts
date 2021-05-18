@@ -50,8 +50,8 @@ export function runTest(isAaveV1: boolean) {
     }
 
     before(async () => {
-      globalSnapshotId = await evm_snapshot();
       await buildTestEnv();
+      globalSnapshotId = await evm_snapshot();
       for (let user of [alice, bob, charlie, dave, eve]) {
         await emptyToken(env.ot, user);
         await emptyToken(env.xyt, user);
@@ -132,8 +132,8 @@ export function runTest(isAaveV1: boolean) {
       // for (let user of [alice, bob, charlie, dave]) {
       //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
       // }
-      const aaveV1ExpectedResult: number[] = [374114313, 247254533, 263856546, 308333911];
-      const aaveV2ExpectedResult: number[] = [4036865024, 2747367514, 2908674421, 3352118785];
+      const aaveV1ExpectedResult: number[] = [374114311, 247254531, 263856564, 308333927,];
+      const aaveV2ExpectedResult: number[] = [1153260349, 767185299, 817213684, 952028819];
       if (isAaveV1) {
         await checkAUSDTBalance(aaveV1ExpectedResult);
       } else {
@@ -181,8 +181,8 @@ export function runTest(isAaveV1: boolean) {
       //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
       // }
 
-      const aaveV1ExpectedResult: number[] = [560854508, 209872642, 204051257, 218780675];
-      const aaveV2ExpectedResult: number[] = [5937256443, 2370247428, 2306560648, 2430958736];
+      const aaveV1ExpectedResult: number[] = [560854502, 209872643, 204051274, 218780693];
+      const aaveV2ExpectedResult: number[] = [1721729362, 653647650, 635600013, 678709999];
       if (isAaveV1) {
         await checkAUSDTBalance(aaveV1ExpectedResult);
       } else {
@@ -302,8 +302,8 @@ export function runTest(isAaveV1: boolean) {
       //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
       // }
 
-      const aaveV1ExpectedResult: number[] = [541848481, 209321719, 259943321, 250376127];
-      const aaveV2ExpectedResult: number[] = [5706237164, 2385168611, 2873558523, 2750487583];
+      const aaveV1ExpectedResult: number[] = [541848416, 209321674, 259943291, 250376098];
+      const aaveV2ExpectedResult: number[] = [1661277257, 653315674, 805555834, 774706193];
       if (isAaveV1) {
         await checkAUSDTBalance(aaveV1ExpectedResult);
       } else {

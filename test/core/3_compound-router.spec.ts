@@ -33,8 +33,8 @@ describe('compound-router', async () => {
   let amount: BN;
   let initialcUSDTbalance: BN;
   before(async () => {
-    globalSnapshotId = await evm_snapshot();
     const fixture = await loadFixture(routerFixture);
+    globalSnapshotId = await evm_snapshot();
 
     router = fixture.core.router;
     cOt = fixture.cForge.cOwnershipToken;

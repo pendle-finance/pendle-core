@@ -49,8 +49,8 @@ describe('forge-market-pause-test', function () {
   let yieldTokenHolder: string;
 
   async function buildCommonTestEnv() {
-    fixture = await loadFixture(marketFixture);
     globalSnapshotId = await evm_snapshot();
+    fixture = await loadFixture(marketFixture);
     router = fixture.core.router;
     tokenUSDT = tokens.USDT;
     data = fixture.core.data;

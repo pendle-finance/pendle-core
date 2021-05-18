@@ -43,8 +43,8 @@ export function runTest(isAaveV1: boolean) {
     }
 
     before(async () => {
-      globalSnapshotId = await evm_snapshot();
       await buildTestEnv();
+      globalSnapshotId = await evm_snapshot();
       refAmount = amountToWei(env.INITIAL_YIELD_TOKEN_AMOUNT, 6);
       snapshotId = await evm_snapshot();
     });
