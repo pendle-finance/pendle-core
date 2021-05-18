@@ -43,7 +43,7 @@ contract PendleGovernanceManager {
     /**
      * @dev Allows the pendingGovernance address to finalize the change governance process.
      */
-    function claimGovernance() public {
+    function claimGovernance() external {
         require(pendingGovernance == msg.sender, "WRONG_GOVERNANCE");
         emit GovernanceClaimed(pendingGovernance, governance);
         governance = pendingGovernance;
@@ -54,7 +54,7 @@ contract PendleGovernanceManager {
      * @dev Allows the current governance to set the pendingGovernance address.
      * @param _governance The address to transfer ownership to.
      */
-    function transferGovernance(address _governance) public onlyGovernance {
+    function transferGovernance(address _governance) external onlyGovernance {
         require(_governance != address(0), "ZERO_ADDRESS");
         pendingGovernance = _governance;
 
