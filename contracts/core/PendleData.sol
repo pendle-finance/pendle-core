@@ -29,10 +29,10 @@ import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendlePausingManager.sol";
-import "../periphery/Permissions.sol";
-import "../periphery/Withdrawable.sol";
+import "../periphery/PermissionsV2.sol";
+import "../periphery/WithdrawableV2.sol";
 
-contract PendleData is IPendleData, Permissions, Withdrawable {
+contract PendleData is IPendleData, PermissionsV2, WithdrawableV2 {
     using SafeMath for uint256;
 
     // It's not guaranteed that every market factory can work with
@@ -76,10 +76,10 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     uint256 public override curveShiftBlockDelta;
 
     constructor(
-        address _governance,
+        address _governanceManager,
         address _treasury,
         address _pausingManager
-    ) Permissions(_governance) {
+    ) PermissionsV2(_governanceManager) {
         require(_treasury != address(0), "ZERO_ADDRESS");
         treasury = _treasury;
         pausingManager = IPendlePausingManager(_pausingManager);

@@ -24,7 +24,6 @@ pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../periphery/Permissions.sol";
-import "../periphery/Withdrawable.sol";
 import "../interfaces/IPENDLE.sol";
 import "../interfaces/IPendleTokenDistribution.sol";
 

@@ -32,8 +32,8 @@ import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleRewardManager.sol";
-import "../periphery/Permissions.sol";
-import "../periphery/Withdrawable.sol";
+import "../periphery/PermissionsV2.sol";
+import "../periphery/WithdrawableV2.sol";
 import "../periphery/PendleRouterNonReentrant.sol";
 
 /**
@@ -48,7 +48,7 @@ import "../periphery/PendleRouterNonReentrant.sol";
 * Markets will not transfer any XYT/baseToken, but instead make requests to Router through the transfer array
     and the Router will transfer them
 */
-contract PendleRouter is IPendleRouter, Withdrawable, PendleRouterNonReentrant {
+contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using Math for uint256;
@@ -63,10 +63,10 @@ contract PendleRouter is IPendleRouter, Withdrawable, PendleRouterNonReentrant {
     uint256 private constant REASONABLE_ALLOWANCE_AMOUNT = type(uint256).max / 2;
 
     constructor(
-        address _governance,
+        address _governanceManager,
         IWETH _weth,
         IPendleData _data
-    ) Permissions(_governance) PendleRouterNonReentrant() {
+    ) PermissionsV2(_governanceManager) PendleRouterNonReentrant() {
         weth = _weth;
         data = _data;
     }

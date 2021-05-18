@@ -22,33 +22,30 @@
  */
 pragma solidity 0.7.6;
 
-import "./PendleAaveV2YieldTokenHolder.sol";
-import "./abstract/PendleYieldContractDeployerBase.sol";
-import "../libraries/FactoryLib.sol";
-import "./PendleAaveV2Forge.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../core/PendleGovernanceManager.sol";
 
-contract PendleAaveV2YieldContractDeployer is PendleYieldContractDeployerBase {
-    constructor(address _governanceManager, bytes32 _forgeId)
-        PendleYieldContractDeployerBase(_governanceManager, _forgeId)
-    {}
+abstract contract PermissionsV2 {
+    PendleGovernanceManager public immutable governanceManager;
+    address internal initializer;
 
-    function deployYieldTokenHolder(address yieldToken, address ot)
-        external
-        override
-        onlyForge
-        returns (address yieldTokenHolder)
-    {
-        yieldTokenHolder = Factory.createContract(
-            type(PendleAaveV2YieldTokenHolder).creationCode,
-            abi.encodePacked(ot),
-            abi.encode(
-                address(forge),
-                address(forge.router()),
-                yieldToken,
-                forge.rewardToken(),
-                address(forge.rewardManager()),
-                PendleAaveV2Forge(address(forge)).aaveIncentivesController()
-            )
-        );
+    constructor(address _governanceManager) {
+        require(_governanceManager != address(0), "ZERO_ADDRESS");
+        initializer = msg.sender;
+        governanceManager = PendleGovernanceManager(_governanceManager);
+    }
+
+    modifier initialized() {
+        require(initializer == address(0), "NOT_INITIALIZED");
+        _;
+    }
+
+    modifier onlyGovernance() {
+        require(msg.sender == _governance(), "ONLY_GOVERNANCE");
+        _;
+    }
+
+    function _governance() internal view returns (address) {
+        return governanceManager.governance();
     }
 }

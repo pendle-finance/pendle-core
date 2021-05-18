@@ -40,7 +40,7 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
     mapping(address => address) private reserveATokenAddress;
 
     constructor(
-        address _governance,
+        address _governanceManager,
         IPendleRouter _router,
         IAaveLendingPoolCore _aaveLendingPoolCore,
         bytes32 _forgeId,
@@ -49,7 +49,7 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         address _yieldContractDeployer
     )
         PendleForgeBase(
-            _governance,
+            _governanceManager,
             _router,
             _forgeId,
             _rewardToken,

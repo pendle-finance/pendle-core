@@ -28,14 +28,15 @@ import "../../interfaces/IPendleRouter.sol";
 import "../../interfaces/IPendleData.sol";
 import "../../interfaces/IPendleMarketFactory.sol";
 import "../../interfaces/IPendleYieldToken.sol";
-import "../../periphery/Permissions.sol";
-import "../../periphery/Withdrawable.sol";
+import "../../periphery/PermissionsV2.sol";
 
-abstract contract PendleMarketFactoryBase is IPendleMarketFactory, Permissions {
+abstract contract PendleMarketFactoryBase is IPendleMarketFactory, PermissionsV2 {
     IPendleRouter public override router;
     bytes32 public immutable override marketFactoryId;
 
-    constructor(address _governance, bytes32 _marketFactoryId) Permissions(_governance) {
+    constructor(address _governanceManager, bytes32 _marketFactoryId)
+        PermissionsV2(_governanceManager)
+    {
         marketFactoryId = _marketFactoryId;
     }
 

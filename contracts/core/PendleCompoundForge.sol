@@ -34,7 +34,6 @@ import "../interfaces/IPendleForge.sol";
 import "../interfaces/IComptroller.sol";
 import "../tokens/PendleFutureYieldToken.sol";
 import "../tokens/PendleOwnershipToken.sol";
-import "../periphery/Permissions.sol";
 import "./abstract/PendleForgeBase.sol";
 import "./PendleCompoundYieldTokenHolder.sol";
 
@@ -53,7 +52,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
     event RegisterCTokens(address[] underlyingAssets, address[] cTokens);
 
     constructor(
-        address _governance,
+        address _governanceManager,
         IPendleRouter _router,
         IComptroller _comptroller,
         bytes32 _forgeId,
@@ -62,7 +61,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         address _yieldContractDeployer
     )
         PendleForgeBase(
-            _governance,
+            _governanceManager,
             _router,
             _forgeId,
             _rewardToken,

@@ -23,8 +23,8 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../../periphery/Permissions.sol";
-import "../../periphery/Withdrawable.sol";
+import "../../periphery/PermissionsV2.sol";
+import "../../periphery/WithdrawableV2.sol";
 import "../../interfaces/IPendleYieldContractDeployer.sol";
 import "../../interfaces/IPendleForge.sol";
 import "../../tokens/PendleFutureYieldToken.sol";
@@ -34,8 +34,8 @@ import "../../libraries/FactoryLib.sol";
 // Each PendleYieldContractDeployer is specific for exactly one forge
 abstract contract PendleYieldContractDeployerBase is
     IPendleYieldContractDeployer,
-    Permissions,
-    Withdrawable
+    PermissionsV2,
+    WithdrawableV2
 {
     bytes32 public override forgeId;
     IPendleForge public forge;
@@ -45,7 +45,7 @@ abstract contract PendleYieldContractDeployerBase is
         _;
     }
 
-    constructor(address _governance, bytes32 _forgeId) Permissions(_governance) {
+    constructor(address _governanceManager, bytes32 _forgeId) PermissionsV2(_governanceManager) {
         forgeId = _forgeId;
     }
 

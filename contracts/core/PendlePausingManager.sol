@@ -22,11 +22,11 @@
  */
 pragma solidity 0.7.6;
 
-import "../periphery/Permissions.sol";
-import "../periphery/Withdrawable.sol";
+import "../periphery/PermissionsV2.sol";
+import "../periphery/WithdrawableV2.sol";
 import "../interfaces/IPendlePausingManager.sol";
 
-contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawable {
+contract PendlePausingManager is IPendlePausingManager, WithdrawableV2 {
     struct PausingData {
         uint256 timestamp;
         bool paused;
@@ -69,7 +69,7 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
         if (settingToPaused) {
             require(isPausingAdmin[msg.sender], "FORBIDDEN");
         } else {
-            require(msg.sender == governance, "ONLY_GOVERNANCE");
+            require(msg.sender == _governance(), "ONLY_GOVERNANCE");
         }
         _;
     }
@@ -80,10 +80,10 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
     }
 
     constructor(
-        address _governance,
+        address _governanceManager,
         address initialForgeHandler,
         address initialMarketHandler
-    ) Permissions(_governance) {
+    ) PermissionsV2(_governanceManager) {
         forgeEmergencyHandler.handler = initialForgeHandler;
         marketEmergencyHandler.handler = initialMarketHandler;
     }

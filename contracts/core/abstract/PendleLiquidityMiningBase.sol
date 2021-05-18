@@ -36,7 +36,7 @@ import "../../core/PendleLpHolder.sol";
 import "../../interfaces/IPendleLiquidityMining.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "../../periphery/Permissions.sol";
+import "../../periphery/PermissionsV2.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
@@ -55,7 +55,7 @@ I.e: All the markets using the same LiqMining contract are only different from e
 */
 abstract contract PendleLiquidityMiningBase is
     IPendleLiquidityMining,
-    Permissions,
+    PermissionsV2,
     ReentrancyGuard
 {
     using Math for uint256;
@@ -143,7 +143,7 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     constructor(
-        address _governance,
+        address _governanceManager,
         address _pendleTokenAddress,
         address _router,
         bytes32 _marketFactoryId,
@@ -153,7 +153,7 @@ abstract contract PendleLiquidityMiningBase is
         uint256 _startTime,
         uint256 _epochDuration,
         uint256 _vestingEpochs
-    ) Permissions(_governance) {
+    ) PermissionsV2(_governanceManager) {
         require(_startTime > block.timestamp, "START_TIME_OVER");
         require(IERC20(_pendleTokenAddress).totalSupply() > 0, "INVALID_ERC20");
         require(IERC20(_underlyingAsset).totalSupply() > 0, "INVALID_ERC20");
