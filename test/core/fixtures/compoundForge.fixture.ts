@@ -20,21 +20,21 @@ export interface CompoundFixture {
 export async function compoundForgeFixture(
   alice: Wallet,
   provider: providers.Web3Provider,
-  { router, data }: CoreFixture,
+  { router, data, govManager }: CoreFixture,
   { pendle }: GovernanceFixture
 ): Promise<CompoundFixture> {
   const cRewardManager = await deployContract(alice, MockPendleRewardManager, [
-    alice.address, //governance
+    govManager.address, //governance
     consts.FORGE_COMPOUND
   ]);
 
   const cYieldContractDeployer = await deployContract(alice, PendleCompoundYieldContractDeployer, [
-    alice.address, //governance
+    govManager.address, //governance
     consts.FORGE_COMPOUND
   ]);
 
   const compoundForge = await deployContract(alice, PendleCompoundForge, [
-    alice.address,
+    govManager.address,
     router.address,
     consts.COMPOUND_COMPTROLLER_ADDRESS,
     consts.FORGE_COMPOUND,

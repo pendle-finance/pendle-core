@@ -23,21 +23,21 @@ export interface AaveV2ForgeFixture {
 export async function aaveV2ForgeFixture(
   alice: Wallet,
   provider: providers.Web3Provider,
-  { router, data }: CoreFixture,
+  { router, data, govManager }: CoreFixture,
   { pendle }: GovernanceFixture
 ): Promise<AaveV2ForgeFixture> {
   const a2RewardManager = await deployContract(alice, MockPendleRewardManager, [
-    alice.address, //governance
+    govManager.address, //governance
     consts.FORGE_AAVE_V2
   ]);
 
   const a2YieldContractDeployer = await deployContract(alice, PendleAaveV2YieldContractDeployer, [
-    alice.address, //governance
+    govManager.address, //governance
     consts.FORGE_AAVE_V2
   ]);
 
   const aaveV2Forge = await deployContract(alice, PendleAaveV2Forge, [
-    alice.address, // alice will be the governance address
+    govManager.address, // alice will be the governance address
     router.address,
     consts.AAVE_V2_LENDING_POOL_ADDRESS,
     consts.FORGE_AAVE_V2,
