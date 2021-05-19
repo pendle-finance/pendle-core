@@ -69,6 +69,22 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
     string private constant OT = "OT";
     string private constant XYT = "XYT";
 
+    modifier onlyXYT(address _underlyingAsset, uint256 _expiry) {
+        require(
+            msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
+            "ONLY_XYT"
+        );
+        _;
+    }
+
+    modifier onlyOT(address _underlyingAsset, uint256 _expiry) {
+        require(
+            msg.sender == address(data.otTokens(forgeId, _underlyingAsset, _expiry)),
+            "ONLY_OT"
+        );
+        _;
+    }
+
     constructor(
         address _governanceManager,
         IPendleRouter _router,
@@ -285,7 +301,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         address _underlyingAsset,
         uint256 _expiry,
         address _user
-    ) external override nonReentrant {
+    ) external override onlyXYT(_underlyingAsset, _expiry) nonReentrant {
         checkNotPaused(_underlyingAsset, _expiry);
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         uint256 principal = tokens.xyt.balanceOf(_user);
@@ -307,7 +323,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         address _underlyingAsset,
         uint256 _expiry,
         address _user
-    ) external override nonReentrant {
+    ) external override onlyOT(_underlyingAsset, _expiry) nonReentrant {
         checkNotPaused(_underlyingAsset, _expiry);
         rewardManager.updatePendingRewards(_underlyingAsset, _expiry, _user);
     }
