@@ -168,7 +168,7 @@ describe('forge-market-pause-test', function () {
 
   async function checkYieldContractLocked() {
     await checkYieldContractPaused();
-    const [paused, locked] = await pausingManager.checkYieldContractStatus(...forgeArgs);
+    const [paused, locked] = await pausingManager.callStatic.checkYieldContractStatus(...forgeArgs);
     expect(paused).to.be.eq(true);
     expect(locked).to.be.eq(true);
     await aaveForge.setUpEmergencyMode(tokenUSDT.address, testEnv.EXPIRY, [aUSDT.address], charlie.address);
@@ -182,7 +182,10 @@ describe('forge-market-pause-test', function () {
 
   async function checkMarketLocked() {
     await checkMarketPaused();
-    const [paused, locked] = await pausingManager.checkMarketStatus(consts.MARKET_FACTORY_AAVE, market.address);
+    const [paused, locked] = await pausingManager.callStatic.checkMarketStatus(
+      consts.MARKET_FACTORY_AAVE,
+      market.address
+    );
     expect(paused).to.be.eq(true);
     expect(locked).to.be.eq(true);
     await market.setUpEmergencyMode([xyt.address, baseToken.address], charlie.address);

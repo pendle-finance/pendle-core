@@ -107,7 +107,7 @@ interface IPendlePausingManager {
         bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry
-    ) external view returns (bool _paused, bool _locked);
+    ) external returns (bool _paused, bool _locked);
 
     function setMarketFactoryPaused(bytes32 marketFactoryId, bool paused) external;
 
@@ -123,6 +123,9 @@ interface IPendlePausingManager {
 
     function checkMarketStatus(bytes32 marketFactoryId, address market)
         external
-        view
-        returns (bool _paused, bool _locked);
+        returns (
+            // view
+            bool _paused,
+            bool _locked
+        );
 }

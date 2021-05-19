@@ -113,7 +113,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
 
     // INVARIANT: All write functions must go through this check.
     // All XYT/OT transfers must go through this check as well. As such, XYT/OT transfers are also paused
-    function checkNotPaused(address _underlyingAsset, uint256 _expiry) internal view {
+    function checkNotPaused(address _underlyingAsset, uint256 _expiry) internal {
         (bool paused, ) =
             pausingManager.checkYieldContractStatus(forgeId, _underlyingAsset, _expiry);
         require(!paused, "YIELD_CONTRACT_PAUSED");
@@ -213,7 +213,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         // no forge fee is charged on redeeming OT. Forge fee is only charged on redeeming XYT
         redeemedAmount = _calcTotalAfterExpiry(_underlyingAsset, _expiry, expiredOTamount);
 
-        // redeem the interest of any XYT (that belongs to this forge) that the user is having
+        // redeem the interest of any XYT (of the same underlyingAsset+expiry) that the user is having
         redeemedAmount = redeemedAmount.add(
             _beforeTransferDueInterests(tokens, _underlyingAsset, _expiry, _user, false)
         );
@@ -294,8 +294,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         * This must be called before any transfer / mint/ burn action of XYT
         (and this has been implemented in the beforeTokenTransfer of the PendleFutureYieldToken)
     Conditions:
-        * Can be called by anyone
-        * Have Reentrancy protection (although it doesn't make any external calls to untrusted source)
+        * Can only be called by the respective XYT contract, before transfering XYTs
     */
     function updateDueInterests(
         address _underlyingAsset,
@@ -314,8 +313,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         * This must be called before any transfer / mint/ burn action of OT
         (and this has been implemented in the beforeTokenTransfer of the PendleOwnershipToken)
     Conditions:
-        * Can be called by anyone
-        * Have Reentrancy protection (although it doesn't make any external calls to untrusted source)
+        * Can only be called by the respective OT contract, before transfering OTs
     Note:
         This function is just a proxy to call to rewardManager
     */
@@ -371,7 +369,6 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         * To withdraw the forgeFee
     Conditions:
         * Should only be called by Governance
-        * The yield contract (OT & XYT) must not be expired yet (checked at Router)
         * This function must be the only way to withdrawForgeFee
     Consideration:
         * Although this function can be called directly, it doesn't have ReentrancyGuard since it can only be called by governance
@@ -398,7 +395,9 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
     }
 
     /**
-    @notice To be called before the dueInterest of any users is redeemed
+    @notice To be called before the dueInterest of any users is redeemed.
+    @param _skipUpdateDueInterests: this is set to true, if there was already a call to _updateDueInterests() in this transaction
+    INVARIANT: there must be a transfer of the interests (amountOut) to the user after this function is called
     */
     function _beforeTransferDueInterests(
         PendleTokens memory _tokens,
