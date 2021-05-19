@@ -52,17 +52,9 @@ abstract contract PendleMarketFactoryBase is IPendleMarketFactory {
     {
         IPendleData data = router.data();
 
-        address forgeAddress = IPendleYieldToken(_xyt).forge();
-        uint256 expiry = IPendleYieldToken(_xyt).expiry();
-
-        market = _createMarket(forgeAddress, _xyt, _token, expiry);
+        market = _createMarket(_xyt, _token);
         data.addMarket(marketFactoryId, _xyt, _token, market);
     }
 
-    function _createMarket(
-        address _forgeAddress,
-        address _xyt,
-        address _token,
-        uint256 _expiry
-    ) internal virtual returns (address);
+    function _createMarket(address _xyt, address _token) internal virtual returns (address);
 }

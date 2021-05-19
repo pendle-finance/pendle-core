@@ -108,31 +108,37 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
 
     constructor(
         address _governanceManager,
-        address _router,
-        address _forge,
         address _xyt,
-        address _token,
-        uint256 _expiry
+        address _token
     )
-        PendleBaseToken(_router, NAME, SYMBOL, DECIMALS, block.timestamp, _expiry)
+        PendleBaseToken(
+            address(IPendleYieldToken(_xyt).forge().router()),
+            NAME,
+            SYMBOL,
+            DECIMALS,
+            block.timestamp,
+            IPendleYieldToken(_xyt).expiry()
+        )
         PermissionsV2(_governanceManager)
     {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
 
-        forge = _forge;
+        IPendleForge _forge = IPendleYieldToken(_xyt).forge();
+
+        forge = address(_forge);
         xyt = _xyt;
         token = _token;
 
-        forgeId = IPendleForge(_forge).forgeId();
+        forgeId = _forge.forgeId();
         underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
         underlyingYieldToken = IERC20(IPendleYieldToken(_xyt).underlyingYieldToken());
-        require(_router == address(IPendleMarketFactory(msg.sender).router()), "ROUTER_MISMATCH");
-        data = IPendleForge(_forge).data();
-        pausingManager = IPendleForge(_forge).data().pausingManager();
+        data = _forge.data();
+        pausingManager = _forge.data().pausingManager();
         xytStartTime = IPendleYieldToken(_xyt).start();
         factoryId = IPendleMarketFactory(msg.sender).marketFactoryId();
 
+        address _router = address(_forge.router());
         IERC20(_xyt).safeApprove(_router, type(uint256).max);
         IERC20(_token).safeApprove(_router, type(uint256).max);
     }

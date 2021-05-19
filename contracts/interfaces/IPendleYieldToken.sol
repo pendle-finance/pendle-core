@@ -25,6 +25,7 @@ pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./IPendleBaseToken.sol";
+import "./IPendleForge.sol";
 
 interface IPendleYieldToken is IERC20, IPendleBaseToken {
     /**
@@ -59,7 +60,7 @@ interface IPendleYieldToken is IERC20, IPendleBaseToken {
      * @notice Gets the forge address of the PendleForge contract for this yield token.
      * @return Retuns the forge address.
      **/
-    function forge() external view returns (address);
+    function forge() external view returns (IPendleForge);
 
     /**
      * @notice Returns the address of the underlying asset.

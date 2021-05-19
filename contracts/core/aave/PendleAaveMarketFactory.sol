@@ -36,25 +36,13 @@ contract PendleAaveMarketFactory is PendleMarketFactoryBase {
         PendleMarketFactoryBase(_governanceManager, _marketFactoryId)
     {}
 
-    function _createMarket(
-        address _forgeAddress,
-        address _xyt,
-        address _token,
-        uint256 _expiry
-    ) internal override returns (address) {
+    function _createMarket(address _xyt, address _token) internal override returns (address) {
         address _governanceManager = address(IPermissionsV2(address(router)).governanceManager());
         return
             Factory.createContract(
                 type(PendleAaveMarket).creationCode,
-                abi.encodePacked(_forgeAddress, _xyt, _token, _expiry),
-                abi.encode(
-                    _governanceManager,
-                    address(router),
-                    _forgeAddress,
-                    _xyt,
-                    _token,
-                    _expiry
-                )
+                abi.encodePacked(_xyt, _token),
+                abi.encode(_governanceManager, _xyt, _token)
             );
     }
 }
