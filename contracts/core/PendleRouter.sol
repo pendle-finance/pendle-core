@@ -54,7 +54,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
     using Math for uint256;
 
     IWETH public immutable override weth;
-    IPendleData public override data;
+    IPendleData public immutable override data;
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     address private constant DUMMY_ERC20 = address(0x123);
     // if someone's allowance for the router is below this amount,

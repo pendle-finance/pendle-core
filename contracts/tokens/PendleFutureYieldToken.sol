@@ -27,9 +27,9 @@ import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleYieldTokenCommon.sol";
 
 contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldTokenCommon {
-    address public override forge;
-    address public override underlyingAsset;
-    address public override underlyingYieldToken;
+    address public immutable override forge;
+    address public immutable override underlyingAsset;
+    address public immutable override underlyingYieldToken;
 
     mapping(address => uint256) public lastNormalisedIncome;
 

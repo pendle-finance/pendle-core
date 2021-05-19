@@ -32,9 +32,9 @@ import "../../periphery/WithdrawableV2.sol";
 abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder, WithdrawableV2 {
     using SafeERC20 for IERC20;
 
-    address internal yieldToken;
-    address public forge;
-    address internal rewardToken;
+    address internal immutable yieldToken;
+    address public immutable forge;
+    address internal immutable rewardToken;
 
     constructor(
         address _governanceManager,

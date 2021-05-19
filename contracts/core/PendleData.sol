@@ -55,7 +55,7 @@ contract PendleData is IPendleData, PermissionsV2, WithdrawableV2 {
         override xytTokens; // [forgeId][underlyingAsset][expiry]
 
     IPendleRouter public override router;
-    IPendlePausingManager public override pausingManager;
+    IPendlePausingManager public immutable override pausingManager;
     address public override treasury;
     mapping(address => bool) public override isMarket;
     mapping(address => bool) public override isXyt;

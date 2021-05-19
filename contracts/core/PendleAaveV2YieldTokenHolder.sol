@@ -26,7 +26,7 @@ import "./abstract/PendleYieldTokenHolderBase.sol";
 import "../interfaces/IAaveIncentivesController.sol";
 
 contract PendleAaveV2YieldTokenHolder is PendleYieldTokenHolderBase {
-    IAaveIncentivesController private aaveIncentivesController;
+    IAaveIncentivesController private immutable aaveIncentivesController;
 
     constructor(
         address _governanceManager,
