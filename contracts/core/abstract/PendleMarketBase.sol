@@ -285,7 +285,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     ) external override returns (PendingTransfer[2] memory transfers, uint256 lpOut) {
         checkAddRemoveSwapClaimAllowed(false);
 
-        // mint protocol fees before k is changed by a non-swap event
+        // mint protocol fees before k is changed by a non-swap event (add liquidity)
         _mintProtocolFees();
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData();
@@ -339,7 +339,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     ) external override returns (PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(false);
 
-        // mint protocol fees before k is changed by a non-swap event (curveShift)
+        // mint protocol fees before k is changed by a non-swap event (add liquidity)
         _mintProtocolFees();
         _curveShift();
 
@@ -391,7 +391,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     ) external override returns (PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(true);
 
-        // mint protocol fees before k is changed by a non-swap event
+        // mint protocol fees before k is changed by a non-swap event (remove liquidity)
         _mintProtocolFees();
 
         uint256 totalLp = totalSupply();
@@ -438,7 +438,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     ) external override returns (PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(false);
 
-        // mint protocol fees before k is changed by a non-swap event
+        // mint protocol fees before k is changed by a non-swap event (remove liquidity)
         _mintProtocolFees();
         _curveShift();
 
@@ -548,7 +548,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
 
     /**
      * @notice for user to claim their interest as holder of underlyingYield token
-     * @param user user user address
+     * @param user user's address
      * @dev only can claim through router (included in checkAddRemoveSwapClaimAllowed)
      * We skip time check in checkAddRemoveSwapClaimAllowed because users can always claim interests
      * Since the Router has already had Reentrancy protection, we don't need one here
@@ -737,7 +737,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         );
 
         uint256 r = Math.rdiv(currentRelativePrice, lastRelativePrice);
-        assert(Math.RONE >= r);
+        require(Math.RONE >= r, "MATH_ERROR");
 
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
@@ -864,9 +864,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
      * @notice _initialize the lock of the market. Must only be called in bootstrap
      */
     function _initializeLock() internal {
-        uint256 duration = expiry - xytStartTime; // market expiry = xyt expiry
-        uint256 lockDuration = (duration * data.lockNumerator()) / data.lockDenominator();
-        lockStartTime = expiry - lockDuration;
+        uint256 duration = expiry.sub(xytStartTime); // market expiry = xyt expiry
+        uint256 lockDuration = duration.mul(data.lockNumerator()).div(data.lockDenominator());
+        lockStartTime = expiry.sub(lockDuration);
     }
 
     /**

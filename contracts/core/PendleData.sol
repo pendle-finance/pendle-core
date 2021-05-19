@@ -122,7 +122,8 @@ contract PendleData is IPendleData, PermissionsV2 {
         initialized
         onlyGovernance
     {
-        require(0 < _lockNumerator && _lockNumerator < _lockDenominator, "INVALID_LOCK_PARAMS");
+        // => _lockDenominator > 0 since _lockNumerator >=0
+        require(_lockNumerator < _lockDenominator, "INVALID_LOCK_PARAMS");
         lockNumerator = _lockNumerator;
         lockDenominator = _lockDenominator;
         emit LockParamsSet(_lockNumerator, _lockDenominator);

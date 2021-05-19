@@ -36,6 +36,11 @@ contract PendleLpHolder is IPendleLpHolder, WithdrawableV2 {
     address private immutable pendleMarket;
     address private immutable router;
 
+    modifier onlyLiquidityMining() {
+        require(msg.sender == pendleLiquidityMining, "ONLY_LIQUIDITY_MINING");
+        _;
+    }
+
     constructor(
         address _governanceManager,
         address _pendleMarket,
@@ -54,18 +59,15 @@ contract PendleLpHolder is IPendleLpHolder, WithdrawableV2 {
         underlyingYieldToken = _underlyingYieldToken;
     }
 
-    function sendLp(address user, uint256 amount) external override {
-        require(msg.sender == pendleLiquidityMining, "NOT_AUTHORIZED");
+    function sendLp(address user, uint256 amount) external override onlyLiquidityMining {
         IERC20(pendleMarket).safeTransfer(user, amount);
     }
 
-    function sendInterests(address user, uint256 amount) external override {
-        require(msg.sender == pendleLiquidityMining, "NOT_AUTHORIZED");
+    function sendInterests(address user, uint256 amount) external override onlyLiquidityMining {
         IERC20(underlyingYieldToken).safeTransfer(user, amount);
     }
 
-    function redeemLpInterests() external override {
-        require(msg.sender == pendleLiquidityMining, "NOT_AUTHORIZED");
+    function redeemLpInterests() external override onlyLiquidityMining {
         IPendleRouter(router).redeemLpInterests(pendleMarket, address(this));
     }
 
