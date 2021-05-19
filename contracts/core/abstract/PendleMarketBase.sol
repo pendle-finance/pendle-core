@@ -47,7 +47,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    address private immutable factory;
     bytes32 public immutable override factoryId;
     address internal immutable forge;
     address public immutable override token;
@@ -121,7 +120,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
 
-        factory = msg.sender;
         forge = _forge;
         xyt = _xyt;
         token = _token;

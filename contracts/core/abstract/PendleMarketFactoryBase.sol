@@ -29,7 +29,7 @@ import "../../interfaces/IPendleMarketFactory.sol";
 import "../../interfaces/IPendleYieldToken.sol";
 
 abstract contract PendleMarketFactoryBase is IPendleMarketFactory {
-    IPendleRouter public override router;
+    IPendleRouter public immutable override router;
     bytes32 public immutable override marketFactoryId;
 
     constructor(address _router, bytes32 _marketFactoryId) {
@@ -53,13 +53,10 @@ abstract contract PendleMarketFactoryBase is IPendleMarketFactory {
         IPendleData data = router.data();
 
         address forgeAddress = IPendleYieldToken(_xyt).forge();
-        address underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
         uint256 expiry = IPendleYieldToken(_xyt).expiry();
 
         market = _createMarket(forgeAddress, _xyt, _token, expiry);
         data.addMarket(marketFactoryId, _xyt, _token, market);
-
-        emit MarketCreated(marketFactoryId, _xyt, _token, market);
     }
 
     function _createMarket(
