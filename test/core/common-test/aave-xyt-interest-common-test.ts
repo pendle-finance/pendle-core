@@ -211,7 +211,7 @@ export function runTest(isAaveV1: boolean) {
       const amount = BN.from(1000000000);
       const period = env.EXPIRY.sub(env.T0);
 
-      async function updateCurrentYieldToken(expected?: BN) {
+      async function tryRedeemDueInterests(expected?: BN) {
         await redeemDueInterests(env, bob);
         let interestClaimed = (await env.router.connect(alice).callStatic.redeemDueInterests(
           env.FORGE_ID, 
@@ -231,16 +231,16 @@ export function runTest(isAaveV1: boolean) {
       await tokenizeYield(env, alice, amount, bob.address);
 
       await setTimeNextBlock(env.T0.add(period.div(2)));
-      await updateCurrentYieldToken();      
+      await tryRedeemDueInterests();      
       
       await setTimeNextBlock(env.T0.add(period.sub(consts.ONE_HOUR)));
       await redeemDueInterests(env, bob);
 
       await setTimeNextBlock(env.T0.add(period).add(10));
-      await updateCurrentYieldToken();
+      await tryRedeemDueInterests();
 
       for(let i = 0; i < 3; ++i) {
-        await updateCurrentYieldToken(BN.from(0));
+        await tryRedeemDueInterests(BN.from(0));
       }
     });
   });

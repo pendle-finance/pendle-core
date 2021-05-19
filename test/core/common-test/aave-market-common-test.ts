@@ -25,7 +25,8 @@ import {
   AMMTest,
   MarketFeesTest,
   ProtocolFeeTest,
-  ensureMarketBalance
+  marketBalanceNonZeroTest,
+  marketBalanceNonZeroSwapTest
 } from './amm-formula-test';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../fixtures';
 
@@ -305,7 +306,11 @@ export function runTest(isAaveV1: boolean) {
     });
 
     it("AMM balance should always be > 0", async() => {
-      await ensureMarketBalance(env);
+      await marketBalanceNonZeroTest(env);
+    });
+
+    it("AMM balance should always be > 0 after extreme swaps", async() => {
+      await marketBalanceNonZeroSwapTest(env);
     });
   });
 }

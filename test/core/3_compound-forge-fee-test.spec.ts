@@ -15,7 +15,6 @@ import {
   toFixedPoint
 } from '../helpers';
 import { routerFixture } from './fixtures';
-import testData from './fixtures/yieldTokenizeAndRedeem.scenario.json';
 
 import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
@@ -27,7 +26,7 @@ interface YieldTest {
   timeDelta: number;
 }
 
-describe('compound-xyt-interest', async () => {
+describe('compound-forge-fee', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie, dave, eve] = wallets;
 
@@ -41,8 +40,8 @@ describe('compound-xyt-interest', async () => {
   let tokenUSDT: Token;
 
   before(async () => {
-    const fixture = await loadFixture(routerFixture);
     globalSnapshotId = await evm_snapshot();
+    const fixture = await loadFixture(routerFixture);
 
     router = fixture.core.router;
     data = fixture.core.data;
@@ -79,18 +78,6 @@ describe('compound-xyt-interest', async () => {
     );
   }
 
-  async function redeemUnderlying(user: Wallet, amount: BN) {
-    await router
-      .connect(user)
-      .redeemUnderlying(
-        consts.FORGE_COMPOUND,
-        tokenUSDT.address,
-        consts.T0_C.add(consts.SIX_MONTH),
-        amount,
-        consts.HIGH_GAS_OVERRIDE
-      );
-  }
-
   async function tokenizeYield(user: Wallet, amount: BN) {
     await router
       .connect(user)
@@ -110,49 +97,46 @@ describe('compound-xyt-interest', async () => {
     USDTcontract.connect(user).transfer(cUSDT.address, amountToWei(amount, token.decimal));
   }
 
-  async function runTest(yieldTest: YieldTest[]) {
-    let curTime = consts.T0;
-    for (let id = 0; id < yieldTest.length; id++) {
-      let curTest = yieldTest[id];
-      let user = wallets[curTest.user];
-      curTime = curTime.add(BN.from(curTest.timeDelta));
-      await setTimeNextBlock(curTime);
-      if (curTest.type == 'redeemDueInterests') {
-        await redeemDueInterests(user);
-      } else if (curTest.type == 'redeemUnderlying') {
-        await redeemUnderlying(user, BN.from(curTest.amount));
-      } else if (curTest.type == 'tokenizeYield') {
-        await tokenizeYield(user, BN.from(curTest.amount));
-      } else if (curTest.type == 'redeemUnderlyingAll') {
-        let balance = await cOt.balanceOf(user.address);
-        await redeemUnderlying(user, balance);
-      }
+  it('Compound forge fee', async () => {
+    const amount = BN.from(100000000000);
+    const period = consts.SIX_MONTH;
+
+    async function getInterestRate(_forgeFee: string) {
+      let forgeFee = toFixedPoint(_forgeFee);
+      await data.setForgeFee(forgeFee);
+      await tokenizeYield(bob, amount);
+      await tokenizeYield(alice, BN.from(100));
+
+      let balanceBefore = await cUSDT.balanceOf(bob.address);
+      
+      await setTimeNextBlock(consts.T0_C.add(period.div(2)));
       await addFakeIncome(tokens.USDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+      await redeemDueInterests(alice);
+
+      await setTimeNextBlock(consts.T0_C.add(period.sub(consts.ONE_DAY)));
+      await addFakeIncome(tokens.USDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+      await redeemDueInterests(dave);
+
+
+      await setTimeNextBlock(consts.T0_C.add(period.add(100)));
+      await addFakeIncome(tokens.USDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+      await redeemDueInterests(bob);
+      
+      let balanceNow = await cUSDT.balanceOf(bob.address);
+      return balanceNow.sub(balanceBefore);
     }
-    await cUSDT.balanceOfUnderlying(cForge.address);
-    await cUSDT.balanceOfUnderlying(alice.address);
-    await cUSDT.balanceOfUnderlying(bob.address);
-    await cUSDT.balanceOfUnderlying(dave.address);
-    await cUSDT.balanceOfUnderlying(charlie.address);
 
-    const expectedBalance = await cUSDT.callStatic.balanceOfUnderlying(dave.address);
-    const allowedDelta = expectedBalance.div(10 ** 6 / 2); // 5e-5 % delta
-
-    approxBigNumber(await cUSDT.callStatic.balanceOfUnderlying(alice.address), expectedBalance, BN.from(2 * 10 ** 6));
-    approxBigNumber(await cUSDT.callStatic.balanceOfUnderlying(bob.address), expectedBalance, BN.from(2 * 10 ** 6));
-    approxBigNumber(await cUSDT.callStatic.balanceOfUnderlying(charlie.address), expectedBalance, BN.from(2 * 10 ** 6));
-  }
-  it('test 1', async () => {
-    await runTest((<any>testData).test1);
-  });
-  it('test 2', async () => {
-    await runTest((<any>testData).test2);
-  });
-
-  xit('stress 1 [only enable when necessary]', async () => {
-    await runTest((<any>testData).stress1);
-  });
-  xit('stress 2 [only enable when necessary]', async () => {
-    await runTest((<any>testData).stress2);
+    let tempSnapshot = await evm_snapshot();
+    let withoutForgeFee = await getInterestRate("0");
+    await evm_revert(tempSnapshot);
+    let withForgeFee =  await getInterestRate("0.1");
+    
+    let expectedWithForgeFee = withoutForgeFee.mul(9).div(10);
+    approxBigNumber(
+      withForgeFee,
+      expectedWithForgeFee,
+      BN.from(10),
+      true
+    );
   });
 });
