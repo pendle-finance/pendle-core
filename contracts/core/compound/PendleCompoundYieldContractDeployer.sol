@@ -22,40 +22,34 @@
  */
 pragma solidity 0.7.6;
 
-import "./abstract/PendleYieldTokenHolderBase.sol";
-import "../interfaces/IComptroller.sol";
+import "./PendleCompoundYieldTokenHolder.sol";
+import "./../abstract/PendleYieldContractDeployerBase.sol";
+import "../../libraries/FactoryLib.sol";
+import "./PendleCompoundForge.sol";
 
-contract PendleCompoundYieldTokenHolder is PendleYieldTokenHolderBase {
-    IComptroller private immutable comptroller;
+contract PendleCompoundYieldContractDeployer is PendleYieldContractDeployerBase {
+    constructor(address _governanceManager, bytes32 _forgeId)
+        PendleYieldContractDeployerBase(_governanceManager, _forgeId)
+    {}
 
-    constructor(
-        address _governanceManager,
-        address _forge,
-        address _router,
-        address _yieldToken,
-        address _rewardToken,
-        address _rewardManager,
-        address _comptroller
-    )
-        PendleYieldTokenHolderBase(
-            _governanceManager,
-            _forge,
-            _router,
-            _yieldToken,
-            _rewardToken,
-            _rewardManager
-        )
+    function deployYieldTokenHolder(address yieldToken, address ot)
+        external
+        override
+        onlyForge
+        returns (address yieldTokenHolder)
     {
-        require(_comptroller != address(0), "ZERO_ADDRESS");
-        comptroller = IComptroller(_comptroller);
-    }
-
-    // TODO: skip redeemRewards if the incentive programme has already ended?
-    function redeemRewards() external override {
-        address[] memory cTokens = new address[](1);
-        address[] memory holders = new address[](1);
-        cTokens[0] = yieldToken;
-        holders[0] = address(this);
-        comptroller.claimComp(holders, cTokens, false, true);
+        yieldTokenHolder = Factory.createContract(
+            type(PendleCompoundYieldTokenHolder).creationCode,
+            abi.encodePacked(ot),
+            abi.encode(
+                address(governanceManager),
+                address(forge),
+                address(forge.router()),
+                yieldToken,
+                forge.rewardToken(),
+                address(forge.rewardManager()),
+                address(PendleCompoundForge(address(forge)).comptroller())
+            )
+        );
     }
 }

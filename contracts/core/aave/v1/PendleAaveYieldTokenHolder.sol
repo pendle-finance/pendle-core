@@ -22,7 +22,7 @@
  */
 pragma solidity 0.7.6;
 
-import "./abstract/PendleYieldTokenHolderBase.sol";
+import "./../../abstract/PendleYieldTokenHolderBase.sol";
 
 contract PendleAaveYieldTokenHolder is PendleYieldTokenHolderBase {
     constructor(

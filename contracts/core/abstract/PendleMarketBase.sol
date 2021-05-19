@@ -129,7 +129,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         forgeId = IPendleForge(_forge).forgeId();
         underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
         underlyingYieldToken = IERC20(IPendleYieldToken(_xyt).underlyingYieldToken());
-        expiry = _expiry;
         require(_router == address(IPendleMarketFactory(msg.sender).router()), "ROUTER_MISMATCH");
         data = IPendleForge(_forge).data();
         pausingManager = IPendleForge(_forge).data().pausingManager();

@@ -22,7 +22,7 @@
  */
 pragma solidity 0.7.6;
 
-import "../core/PendleAaveForge.sol";
+import "../core/aave/v1/PendleAaveForge.sol";
 
 contract MockPendleAaveForge is PendleAaveForge {
     constructor(

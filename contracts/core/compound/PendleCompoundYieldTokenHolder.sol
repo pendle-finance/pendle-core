@@ -22,34 +22,40 @@
  */
 pragma solidity 0.7.6;
 
-import "./PendleAaveV2YieldTokenHolder.sol";
-import "./abstract/PendleYieldContractDeployerBase.sol";
-import "../libraries/FactoryLib.sol";
-import "./PendleAaveV2Forge.sol";
+import "./../abstract/PendleYieldTokenHolderBase.sol";
+import "../../interfaces/IComptroller.sol";
 
-contract PendleAaveV2YieldContractDeployer is PendleYieldContractDeployerBase {
-    constructor(address _governanceManager, bytes32 _forgeId)
-        PendleYieldContractDeployerBase(_governanceManager, _forgeId)
-    {}
+contract PendleCompoundYieldTokenHolder is PendleYieldTokenHolderBase {
+    IComptroller private immutable comptroller;
 
-    function deployYieldTokenHolder(address yieldToken, address ot)
-        external
-        override
-        onlyForge
-        returns (address yieldTokenHolder)
+    constructor(
+        address _governanceManager,
+        address _forge,
+        address _router,
+        address _yieldToken,
+        address _rewardToken,
+        address _rewardManager,
+        address _comptroller
+    )
+        PendleYieldTokenHolderBase(
+            _governanceManager,
+            _forge,
+            _router,
+            _yieldToken,
+            _rewardToken,
+            _rewardManager
+        )
     {
-        yieldTokenHolder = Factory.createContract(
-            type(PendleAaveV2YieldTokenHolder).creationCode,
-            abi.encodePacked(ot),
-            abi.encode(
-                address(governanceManager),
-                address(forge),
-                address(forge.router()),
-                yieldToken,
-                forge.rewardToken(),
-                address(forge.rewardManager()),
-                PendleAaveV2Forge(address(forge)).aaveIncentivesController()
-            )
-        );
+        require(_comptroller != address(0), "ZERO_ADDRESS");
+        comptroller = IComptroller(_comptroller);
+    }
+
+    // TODO: skip redeemRewards if the incentive programme has already ended?
+    function redeemRewards() external override {
+        address[] memory cTokens = new address[](1);
+        address[] memory holders = new address[](1);
+        cTokens[0] = yieldToken;
+        holders[0] = address(this);
+        comptroller.claimComp(holders, cTokens, false, true);
     }
 }

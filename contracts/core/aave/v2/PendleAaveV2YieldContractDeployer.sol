@@ -22,12 +22,12 @@
  */
 pragma solidity 0.7.6;
 
-import "./PendleCompoundYieldTokenHolder.sol";
-import "./abstract/PendleYieldContractDeployerBase.sol";
-import "../libraries/FactoryLib.sol";
-import "./PendleCompoundForge.sol";
+import "./../../aave/v2/PendleAaveV2YieldTokenHolder.sol";
+import "./../../abstract/PendleYieldContractDeployerBase.sol";
+import "../../../libraries/FactoryLib.sol";
+import "./../../aave/v2/PendleAaveV2Forge.sol";
 
-contract PendleCompoundYieldContractDeployer is PendleYieldContractDeployerBase {
+contract PendleAaveV2YieldContractDeployer is PendleYieldContractDeployerBase {
     constructor(address _governanceManager, bytes32 _forgeId)
         PendleYieldContractDeployerBase(_governanceManager, _forgeId)
     {}
@@ -39,7 +39,7 @@ contract PendleCompoundYieldContractDeployer is PendleYieldContractDeployerBase 
         returns (address yieldTokenHolder)
     {
         yieldTokenHolder = Factory.createContract(
-            type(PendleCompoundYieldTokenHolder).creationCode,
+            type(PendleAaveV2YieldTokenHolder).creationCode,
             abi.encodePacked(ot),
             abi.encode(
                 address(governanceManager),
@@ -48,7 +48,7 @@ contract PendleCompoundYieldContractDeployer is PendleYieldContractDeployerBase 
                 yieldToken,
                 forge.rewardToken(),
                 address(forge.rewardManager()),
-                address(PendleCompoundForge(address(forge)).comptroller())
+                PendleAaveV2Forge(address(forge)).aaveIncentivesController()
             )
         );
     }

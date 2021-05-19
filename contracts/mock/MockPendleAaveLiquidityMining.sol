@@ -22,7 +22,7 @@
  */
 pragma solidity 0.7.6;
 
-import "../core/PendleAaveLiquidityMining.sol";
+import "../core/aave/PendleAaveLiquidityMining.sol";
 
 contract MockPendleAaveLiquidityMining is PendleAaveLiquidityMining {
     constructor(
