@@ -27,9 +27,9 @@ import "../interfaces/IPendleYieldTokenCommon.sol";
 import "../interfaces/IPendleForge.sol";
 
 contract PendleOwnershipToken is PendleBaseToken, IPendleYieldTokenCommon {
-    address public override forge;
-    address public override underlyingAsset;
-    address public override underlyingYieldToken;
+    address public immutable override forge;
+    address public immutable override underlyingAsset;
+    address public immutable override underlyingYieldToken;
 
     constructor(
         address _router,

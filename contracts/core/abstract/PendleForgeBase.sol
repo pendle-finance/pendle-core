@@ -51,13 +51,13 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         IPendleYieldToken ot;
     }
 
-    IPendleRouter public override router;
-    IPendleData public override data;
+    IPendleRouter public immutable override router;
+    IPendleData public immutable override data;
     bytes32 public immutable override forgeId;
     IERC20 public immutable override rewardToken; // COMP/StkAAVE
-    IPendleRewardManager public override rewardManager;
-    IPendleYieldContractDeployer public override yieldContractDeployer;
-    IPendlePausingManager public pausingManager;
+    IPendleRewardManager public immutable override rewardManager;
+    IPendleYieldContractDeployer public immutable override yieldContractDeployer;
+    IPendlePausingManager public immutable pausingManager;
 
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         public
@@ -82,11 +82,12 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
 
         router = _router;
         forgeId = _forgeId;
-        data = _router.data();
+        IPendleData _dataTemp = IPendleRouter(_router).data();
+        data = _dataTemp;
         rewardToken = IERC20(_rewardToken);
         rewardManager = IPendleRewardManager(_rewardManager);
         yieldContractDeployer = IPendleYieldContractDeployer(_yieldContractDeployer);
-        pausingManager = data.pausingManager();
+        pausingManager = _dataTemp.pausingManager();
     }
 
     modifier onlyRouter() {

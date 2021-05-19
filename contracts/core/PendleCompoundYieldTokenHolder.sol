@@ -26,7 +26,7 @@ import "./abstract/PendleYieldTokenHolderBase.sol";
 import "../interfaces/IComptroller.sol";
 
 contract PendleCompoundYieldTokenHolder is PendleYieldTokenHolderBase {
-    IComptroller private comptroller;
+    IComptroller private immutable comptroller;
 
     constructor(
         address _governanceManager,

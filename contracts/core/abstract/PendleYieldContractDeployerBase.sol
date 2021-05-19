@@ -33,7 +33,7 @@ import "../../libraries/FactoryLib.sol";
 
 // Each PendleYieldContractDeployer is specific for exactly one forge
 abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeployer, WithdrawableV2 {
-    bytes32 public override forgeId;
+    bytes32 public immutable override forgeId;
     IPendleForge public forge;
 
     modifier onlyForge() {

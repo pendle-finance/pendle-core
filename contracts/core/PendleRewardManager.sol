@@ -41,7 +41,7 @@ import "../interfaces/IPendleForge.sol";
 contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, ReentrancyGuard {
     using SafeMath for uint256;
 
-    bytes32 public override forgeId;
+    bytes32 public immutable override forgeId;
     IPendleForge private forge;
     IERC20 private rewardToken;
     bool public override skippingRewards;
