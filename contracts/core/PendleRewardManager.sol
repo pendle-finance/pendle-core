@@ -238,7 +238,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         paramR = currentRewardBalance.sub(rwd.lastRewardBalance);
     }
 
-    // There shouldnt be any fund in here
+    // There shouldn't be any fund in here
     // hence governance is allowed to withdraw anything from here.
     function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
         allowed = true;

@@ -1,5 +1,6 @@
 import { BigNumber as BN, Contract, providers, Wallet } from 'ethers';
 import PendleCompoundLiquidityMining from "../../../build/artifacts/contracts/core/PendleCompoundLiquidityMining.sol/PendleCompoundLiquidityMining.json";
+import PendleWhitelist from "../../../build/artifacts/contracts/core/PendleWhitelist.sol/PendleWhitelist.json";
 import MockPendleAaveLiquidityMining from "../../../build/artifacts/contracts/mock/MockPendleAaveLiquidityMining.sol/MockPendleAaveLiquidityMining.json";
 import PENDLE from "../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
 import { amountToWei, consts, tokens } from '../../helpers';
@@ -23,6 +24,7 @@ export interface LiquidityMiningFixture {
   aLiquidityMining: Contract,
   cLiquidityMining: Contract,
   params: LiqParams,
+  whitelist: Contract,
 }
 
 export interface LiqParams {
@@ -89,12 +91,14 @@ export async function liquidityMiningFixture(
   );
 
   let pdl = await deployContract(alice, PENDLE, [alice.address, alice.address, alice.address, alice.address, alice.address]);
+  let whitelist = await deployContract(alice, PendleWhitelist, [core.govManager.address]);
 
   let aLiquidityMining = await deployContract(
     alice,
     MockPendleAaveLiquidityMining,
     [
       core.govManager.address,
+      whitelist.address,
       pdl.address,
       router.address,
       consts.MARKET_FACTORY_AAVE,
@@ -112,6 +116,7 @@ export async function liquidityMiningFixture(
     PendleCompoundLiquidityMining,
     [
       core.govManager.address,
+      whitelist.address,
       pdl.address,
       router.address,
       consts.MARKET_FACTORY_COMPOUND,
@@ -170,5 +175,5 @@ export async function liquidityMiningFixture(
     await cMarket.transfer(person.address, lpBalanceAlice.div(10));
   }
 
-  return { marketFix, core, aForge, cForge, testToken, pdl, aMarket, cMarket, aLiquidityMining, cLiquidityMining, params };
+  return { marketFix, core, aForge, cForge, testToken, pdl, aMarket, cMarket, aLiquidityMining, cLiquidityMining, params, whitelist };
 }
