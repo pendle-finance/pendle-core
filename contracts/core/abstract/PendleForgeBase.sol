@@ -64,7 +64,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         override dueInterests;
 
     mapping(address => mapping(uint256 => uint256)) public totalFee;
-    mapping(address => mapping(uint256 => address)) public override yieldTokenHolders; // yieldTokenHolders[yieldToken][expiry]
+    mapping(address => mapping(uint256 => address)) public override yieldTokenHolders; // yieldTokenHolders[underlyingAsset][expiry]
 
     string private constant OT = "OT";
     string private constant XYT = "XYT";
@@ -82,6 +82,11 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
             msg.sender == address(data.otTokens(forgeId, _underlyingAsset, _expiry)),
             "ONLY_OT"
         );
+        _;
+    }
+
+    modifier onlyRouter() {
+        require(msg.sender == address(router), "ONLY_ROUTER");
         _;
     }
 
@@ -104,11 +109,6 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         rewardManager = IPendleRewardManager(_rewardManager);
         yieldContractDeployer = IPendleYieldContractDeployer(_yieldContractDeployer);
         pausingManager = _dataTemp.pausingManager();
-    }
-
-    modifier onlyRouter() {
-        require(msg.sender == address(router), "ONLY_ROUTER");
-        _;
     }
 
     // INVARIANT: All write functions must go through this check.
