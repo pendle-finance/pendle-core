@@ -82,10 +82,16 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldTokenCommon {
     function _beforeTokenTransfer(
         address from,
         address to,
-        uint256
+        uint256 amount
     ) internal override {
+        super._beforeTokenTransfer(from, to, amount);
         if (from != address(0))
             IPendleForge(forge).updateDueInterests(underlyingAsset, expiry, from);
         if (to != address(0)) IPendleForge(forge).updateDueInterests(underlyingAsset, expiry, to);
+    }
+
+    function approveRouter(address user) external {
+        require(msg.sender == address(router), "NOT_ROUTER");
+        _approve(user, address(router), type(uint256).max);
     }
 }

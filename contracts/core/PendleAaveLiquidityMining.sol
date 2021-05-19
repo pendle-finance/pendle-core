@@ -130,7 +130,7 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         );
 
         uint256 ix =
-            exd.lastNYield.rmul(currentNormalizedIncome).rdiv(globalLastNormalizedIncome[expiry]);
+            exd.lastNYield.mul(currentNormalizedIncome).div(globalLastNormalizedIncome[expiry]);
         paramR = (currentNYield >= ix ? currentNYield - ix : 0);
 
         globalLastNormalizedIncome[expiry] = currentNormalizedIncome;

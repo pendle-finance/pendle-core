@@ -443,7 +443,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         (_tokens.ot, _tokens.xyt) = data.getPendleYieldTokens(forgeId, _underlyingAsset, _expiry);
     }
 
-    // There shouldnt be any fund in here
+    // There shouldn't be any fund in here
     // hence governance is allowed to withdraw anything from here.
     function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
         allowed = true;
@@ -453,7 +453,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
     /// updated with all the due interest for the user, until exactly the current timestamp (no caching whatsoever)
     /// Refer to updateDueInterests function for more info
     function _updateDueInterests(
-        uint256 principal,
+        uint256 _principal,
         address _underlyingAsset,
         uint256 _expiry,
         address _user

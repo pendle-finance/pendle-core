@@ -135,7 +135,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         pausingManager = IPendleForge(_forge).data().pausingManager();
         xytStartTime = IPendleYieldToken(_xyt).start();
         factoryId = IPendleMarketFactory(msg.sender).marketFactoryId();
-        _approve(address(this), _router, type(uint256).max);
+
         IERC20(_xyt).safeApprove(_router, type(uint256).max);
         IERC20(_token).safeApprove(_router, type(uint256).max);
     }
@@ -246,7 +246,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         uint256 liquidity =
             Math.sqrt(initialXytLiquidity.mul(initialTokenLiquidity)).sub(MINIMUM_LIQUIDITY);
 
-        _mint(address(this), MINIMUM_LIQUIDITY);
+        // No one should possibly own a specific address like this 0x1
+        // We mint to 0x1 instead of 0x0 because sending to 0x0 is not permitted
+        _mint(address(0x1), MINIMUM_LIQUIDITY);
         _mint(user, liquidity);
 
         transfers[0].amount = initialXytLiquidity;
@@ -837,8 +839,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     function _beforeTokenTransfer(
         address from,
         address to,
-        uint256
+        uint256 amount
     ) internal override {
+        super._beforeTokenTransfer(from, to, amount);
         checkNotPaused();
         if (from != address(0)) _updateDueInterests(from);
         if (to != address(0)) _updateDueInterests(to);

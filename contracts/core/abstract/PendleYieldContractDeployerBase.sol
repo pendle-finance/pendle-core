@@ -106,7 +106,7 @@ abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeploye
         );
     }
 
-    // This contract is used to deploy contracts, there shouldnt be any fund in here
+    // This contract is used to deploy contracts, there shouldn't be any fund in here
     // hence governance is allowed to withdraw anything from here.
     function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
         allowed = true;

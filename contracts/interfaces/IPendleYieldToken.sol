@@ -72,4 +72,10 @@ interface IPendleYieldToken is IERC20, IPendleBaseToken {
      * @return Returns the underlying yield token address.
      **/
     function underlyingYieldToken() external view returns (address);
+
+    /**
+     * @notice let the router approve itself to spend OT/XYT/LP from any wallet
+     * @param user user to approve
+     **/
+    function approveRouter(address user) external;
 }

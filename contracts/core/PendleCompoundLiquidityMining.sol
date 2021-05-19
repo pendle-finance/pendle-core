@@ -106,7 +106,7 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
     }
 
     /**
-    * Very similar to the function in PendleAaveMarket. Any major differences are likely to be bugs
+    * Very similar to the function in PendleCompoundMarket. Any major differences are likely to be bugs
         Please refer to it for more details
     */
     function _getFirstTermAndParamR(uint256 expiry, uint256 currentNYield)

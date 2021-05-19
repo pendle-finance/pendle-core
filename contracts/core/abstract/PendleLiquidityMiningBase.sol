@@ -110,21 +110,21 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     IPendleWhitelist public immutable whitelist;
-    IPendleRouter public router;
-    IPendleMarketFactory public marketFactory;
-    IPendleData public data;
-    address public override pendleTokenAddress;
-    bytes32 public override forgeId;
-    address internal forge;
-    bytes32 public override marketFactoryId;
+    IPendleRouter public immutable router;
+    IPendleMarketFactory public immutable marketFactory;
+    IPendleData public immutable data;
+    address public immutable override pendleTokenAddress;
+    bytes32 public immutable override forgeId;
+    address internal immutable forge;
+    bytes32 public immutable override marketFactoryId;
 
-    address public override underlyingAsset;
-    address public override underlyingYieldToken;
-    address public override baseToken;
-    uint256 public override startTime;
-    uint256 public override epochDuration;
+    address public immutable override underlyingAsset;
+    address public immutable override underlyingYieldToken;
+    address public immutable override baseToken;
+    uint256 public immutable override startTime;
+    uint256 public immutable override epochDuration;
     uint256 public override numberOfEpochs;
-    uint256 public override vestingEpochs;
+    uint256 public immutable override vestingEpochs;
     bool public funded;
 
     uint256[] public allExpiries;
@@ -173,18 +173,20 @@ abstract contract PendleLiquidityMiningBase is
 
         pendleTokenAddress = _pendleTokenAddress;
         router = IPendleRouter(_router);
-        data = router.data();
         whitelist = IPendleWhitelist(_whitelist);
-
+        IPendleData _dataTemp = IPendleRouter(_router).data();
+        data = _dataTemp;
         require(
-            data.getMarketFactoryAddress(_marketFactoryId) != address(0),
+            _dataTemp.getMarketFactoryAddress(_marketFactoryId) != address(0),
             "INVALID_MARKET_FACTORY_ID"
         );
-        require(data.getForgeAddress(_forgeId) != address(0), "INVALID_FORGE_ID");
+        require(_dataTemp.getForgeAddress(_forgeId) != address(0), "INVALID_FORGE_ID");
 
-        marketFactory = IPendleMarketFactory(data.getMarketFactoryAddress(_marketFactoryId));
-        forge = data.getForgeAddress(_forgeId);
-        underlyingYieldToken = IPendleForge(forge).getYieldBearingToken(_underlyingAsset);
+        marketFactory = IPendleMarketFactory(_dataTemp.getMarketFactoryAddress(_marketFactoryId));
+
+        address _forgeTemp = _dataTemp.getForgeAddress(_forgeId);
+        forge = _forgeTemp;
+        underlyingYieldToken = IPendleForge(_forgeTemp).getYieldBearingToken(_underlyingAsset);
         marketFactoryId = _marketFactoryId;
         forgeId = _forgeId;
         underlyingAsset = _underlyingAsset;
@@ -796,7 +798,7 @@ abstract contract PendleLiquidityMiningBase is
         return startTime + (t) * epochDuration;
     }
 
-    // There shouldnt be any fund in here
+    // There shouldn't be any fund in here
     // hence governance is allowed to withdraw anything from here.
     function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
         allowed = true;
