@@ -22,10 +22,10 @@
  */
 pragma solidity 0.7.6;
 
-import "../periphery/WithdrawableV2.sol";
+import "../periphery/PermissionsV2.sol";
 import "../interfaces/IPendleWhitelist.sol";
 
-contract PendleWhitelist is WithdrawableV2, IPendleWhitelist {
+contract PendleWhitelist is PermissionsV2, IPendleWhitelist {
     mapping(address => bool) public override whitelisted;
 
     constructor(address _governanceManager) PermissionsV2(_governanceManager) {}
@@ -48,11 +48,5 @@ contract PendleWhitelist is WithdrawableV2, IPendleWhitelist {
             whitelisted[currentAddress] = false;
             emit RemovedFromWhiteList(currentAddress);
         }
-    }
-
-    // There shouldn't be any fund in here
-    // hence governance is allowed to withdraw anything from here.
-    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
-        allowed = true;
     }
 }

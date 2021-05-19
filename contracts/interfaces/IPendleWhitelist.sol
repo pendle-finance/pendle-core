@@ -26,7 +26,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../periphery/PermissionsV2.sol";
-import "../periphery/WithdrawableV2.sol";
 import "../interfaces/IPendleYieldTokenHolder.sol";
 import "../interfaces/IPendleRewardManager.sol";
 import "../interfaces/IPendleForge.sol";

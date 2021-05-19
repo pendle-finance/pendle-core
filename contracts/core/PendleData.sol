@@ -30,9 +30,8 @@ import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendlePausingManager.sol";
 import "../periphery/PermissionsV2.sol";
-import "../periphery/WithdrawableV2.sol";
 
-contract PendleData is IPendleData, PermissionsV2, WithdrawableV2 {
+contract PendleData is IPendleData, PermissionsV2 {
     using SafeMath for uint256;
 
     // It's not guaranteed that every market factory can work with
@@ -344,11 +343,5 @@ contract PendleData is IPendleData, PermissionsV2, WithdrawableV2 {
         (address tokenX, address tokenY) =
             _tokenA < _tokenB ? (_tokenA, _tokenB) : (_tokenB, _tokenA);
         return keccak256(abi.encode(tokenX, tokenY, _factoryId));
-    }
-
-    // There shouldn't be any fund in here
-    // hence governance is allowed to withdraw anything from here.
-    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
-        allowed = true;
     }
 }
