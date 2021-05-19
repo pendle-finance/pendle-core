@@ -1,6 +1,6 @@
 import { Contract, providers, Wallet } from 'ethers';
-import PendleCompoundForge from '../../../build/artifacts/contracts/core/PendleCompoundForge.sol/PendleCompoundForge.json';
-import PendleCompoundYieldContractDeployer from "../../../build/artifacts/contracts/core/PendleCompoundYieldContractDeployer.sol/PendleCompoundYieldContractDeployer.json";
+import PendleCompoundForge from '../../../build/artifacts/contracts/core/compound/PendleCompoundForge.sol/PendleCompoundForge.json';
+import PendleCompoundYieldContractDeployer from "../../../build/artifacts/contracts/core/compound/PendleCompoundYieldContractDeployer.sol/PendleCompoundYieldContractDeployer.json";
 import MockPendleRewardManager from "../../../build/artifacts/contracts/mock/MockPendleRewardManager.sol/MockPendleRewardManager.json";
 import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
 import PendleOwnershipToken from '../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json';
