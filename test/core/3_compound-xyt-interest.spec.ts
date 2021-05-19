@@ -12,11 +12,12 @@ import {
   setTimeNextBlock,
   Token,
   tokens,
+  toFixedPoint
 } from '../helpers';
 import { routerFixture } from './fixtures';
 import testData from './fixtures/yieldTokenizeAndRedeem.scenario.json';
 
-import { waffle } from 'hardhat';
+import env, { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
 interface YieldTest {
@@ -31,6 +32,7 @@ describe('compound-xyt-interest', async () => {
   const [alice, bob, charlie, dave, eve] = wallets;
 
   let router: Contract;
+  let data: Contract;
   let cOt: Contract;
   let cUSDT: Contract;
   let cForge: Contract;
@@ -43,6 +45,7 @@ describe('compound-xyt-interest', async () => {
     globalSnapshotId = await evm_snapshot();
 
     router = fixture.core.router;
+    data = fixture.core.data;
     cOt = fixture.cForge.cOwnershipToken;
     tokenUSDT = tokens.USDT;
     cForge = fixture.cForge.compoundForge;
@@ -151,5 +154,48 @@ describe('compound-xyt-interest', async () => {
   });
   xit('stress 2 [only enable when necessary]', async () => {
     await runTest((<any>testData).stress2);
+  });
+
+  it('Compound forge fee', async () => {
+    const amount = BN.from(100000000000);
+    const period = consts.SIX_MONTH;
+
+    async function getInterestRate(_forgeFee: string) {
+      let forgeFee = toFixedPoint(_forgeFee);
+      await data.setForgeFee(forgeFee);
+      await tokenizeYield(bob, amount);
+      await tokenizeYield(alice, BN.from(100));
+
+      let balanceBefore = await cUSDT.balanceOf(bob.address);
+      
+      await setTimeNextBlock(consts.T0_C.add(period.div(2)));
+      await addFakeIncome(tokens.USDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+      await redeemDueInterests(alice);
+
+      await setTimeNextBlock(consts.T0_C.add(period.sub(consts.ONE_DAY)));
+      await addFakeIncome(tokens.USDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+      await redeemDueInterests(dave);
+
+
+      await setTimeNextBlock(consts.T0_C.add(period.add(100)));
+      await addFakeIncome(tokens.USDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+      await redeemDueInterests(bob);
+      
+      let balanceNow = await cUSDT.balanceOf(bob.address);
+      return balanceNow.sub(balanceBefore);
+    }
+
+    let tempSnapshot = await evm_snapshot();
+    let withoutForgeFee = await getInterestRate("0");
+    await evm_revert(tempSnapshot);
+    let withForgeFee =  await getInterestRate("0.1");
+    
+    let expectedWithForgeFee = withoutForgeFee.mul(9).div(10);
+    approxBigNumber(
+      withForgeFee,
+      expectedWithForgeFee,
+      BN.from(10),
+      true
+    );
   });
 });
