@@ -39,15 +39,11 @@ abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder, Withdra
     constructor(
         address _governanceManager,
         address _forge,
-        address _router,
         address _yieldToken,
         address _rewardToken,
         address _rewardManager
     ) PermissionsV2(_governanceManager) {
-        require(
-            _router != address(0) && _yieldToken != address(0) && _rewardToken != address(0),
-            "ZERO_ADDRESS"
-        );
+        require(_yieldToken != address(0) && _rewardToken != address(0), "ZERO_ADDRESS");
         yieldToken = _yieldToken;
         forge = _forge;
         rewardToken = _rewardToken;

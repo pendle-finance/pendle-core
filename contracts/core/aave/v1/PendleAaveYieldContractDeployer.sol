@@ -43,7 +43,6 @@ contract PendleAaveYieldContractDeployer is PendleYieldContractDeployerBase {
             abi.encode(
                 address(governanceManager),
                 address(forge),
-                address(forge.router()),
                 yieldToken,
                 forge.rewardToken(),
                 address(forge.rewardManager())

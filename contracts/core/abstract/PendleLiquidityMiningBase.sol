@@ -111,7 +111,6 @@ abstract contract PendleLiquidityMiningBase is
 
     IPendleWhitelist public immutable whitelist;
     IPendleRouter public immutable router;
-    IPendleMarketFactory public immutable marketFactory;
     IPendleData public immutable data;
     address public immutable override pendleTokenAddress;
     bytes32 public immutable override forgeId;
@@ -181,8 +180,6 @@ abstract contract PendleLiquidityMiningBase is
             "INVALID_MARKET_FACTORY_ID"
         );
         require(_dataTemp.getForgeAddress(_forgeId) != address(0), "INVALID_FORGE_ID");
-
-        marketFactory = IPendleMarketFactory(_dataTemp.getMarketFactoryAddress(_marketFactoryId));
 
         address _forgeTemp = _dataTemp.getForgeAddress(_forgeId);
         forge = _forgeTemp;
@@ -766,13 +763,8 @@ abstract contract PendleLiquidityMiningBase is
         allExpiries.push(expiry);
         newLpHoldingContractAddress = Factory.createContract(
             type(PendleLpHolder).creationCode,
-            abi.encodePacked(marketAddress, marketFactory.router(), underlyingYieldToken),
-            abi.encode(
-                governanceManager,
-                marketAddress,
-                marketFactory.router(),
-                underlyingYieldToken
-            )
+            abi.encodePacked(marketAddress, router, underlyingYieldToken),
+            abi.encode(governanceManager, marketAddress, router, underlyingYieldToken)
         );
         expiryData[expiry].lpHolder = newLpHoldingContractAddress;
         _afterAddingNewExpiry(expiry);
