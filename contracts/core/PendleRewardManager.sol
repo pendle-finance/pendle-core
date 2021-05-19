@@ -68,6 +68,11 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         _;
     }
 
+    modifier onlyForge() {
+        require(msg.sender == address(forge), "ONLY_FORGE");
+        _;
+    }
+
     constructor(address _governance, bytes32 _forgeId) PermissionsV2(_governance) {
         forgeId = _forgeId;
     }
@@ -124,13 +129,13 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
     @dev This must be called before any transfer / mint/ burn action of OT
         (and this has been implemented in the beforeTokenTransfer of the PendleOwnershipToken)
     Conditions:
-        * Can be called by anyone, to update for anyone
+        * Can only be called by forge
     */
     function updatePendingRewards(
         address _underlyingAsset,
         uint256 _expiry,
         address _user
-    ) external override isValidOT(_underlyingAsset, _expiry) nonReentrant {
+    ) external override onlyForge nonReentrant {
         _updatePendingRewards(_underlyingAsset, _expiry, _user);
     }
 

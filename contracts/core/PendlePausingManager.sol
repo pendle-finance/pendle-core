@@ -23,10 +23,9 @@
 pragma solidity 0.7.6;
 
 import "../periphery/PermissionsV2.sol";
-import "../periphery/WithdrawableV2.sol";
 import "../interfaces/IPendlePausingManager.sol";
 
-contract PendlePausingManager is IPendlePausingManager, WithdrawableV2 {
+contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
     struct PausingData {
         uint256 timestamp;
         bool paused;
@@ -335,11 +334,5 @@ contract PendlePausingManager is IPendlePausingManager, WithdrawableV2 {
         } else {
             _paused = _isMarketPaused(marketFactoryId, market);
         }
-    }
-
-    // There shouldn't be any fund in here
-    // hence governance is allowed to withdraw anything from here.
-    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
-        allowed = true;
     }
 }
