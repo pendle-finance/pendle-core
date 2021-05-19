@@ -120,8 +120,12 @@ abstract contract PendleBaseToken is ERC20 {
 
     //// End of EIP-2612 related part
 
-    function approveRouter(address user) external {
-        require(msg.sender == address(router), "NOT_ROUTER");
-        _approve(user, address(router), type(uint256).max);
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256
+    ) internal virtual override {
+        require(to != address(this), "SEND_TO_TOKEN_CONTRACT");
+        require(to != from, "SEND_TO_SELF");
     }
 }

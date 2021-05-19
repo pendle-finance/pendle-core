@@ -143,7 +143,7 @@ contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
         uint256 interestFromXyt;
 
         // if this if is true, means that there are still unclaimed interests from XYT
-        if (normIncomeBeforeExpiry >= lastIncome) {
+        if (normIncomeBeforeExpiry > lastIncome) {
             interestFromXyt = _principal.mul(normIncomeBeforeExpiry).div(lastIncome).sub(
                 _principal
             );

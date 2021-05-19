@@ -264,6 +264,7 @@ contract PendleData is IPendleData, PermissionsV2, WithdrawableV2 {
         allMarkets.push(_market);
 
         bytes32 key = _createKey(_xyt, _token, _marketFactoryId);
+        require(markets[key] == address(0), "MARKET_KEY_EXISTED");
         markets[key] = _market;
 
         getMarket[_marketFactoryId][_xyt][_token] = _market;

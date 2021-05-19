@@ -453,7 +453,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
     /// updated with all the due interest for the user, until exactly the current timestamp (no caching whatsoever)
     /// Refer to updateDueInterests function for more info
     function _updateDueInterests(
-        uint256 principal,
+        uint256 _principal,
         address _underlyingAsset,
         uint256 _expiry,
         address _user

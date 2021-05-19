@@ -80,8 +80,9 @@ contract PendleOwnershipToken is PendleBaseToken, IPendleYieldTokenCommon {
     function _beforeTokenTransfer(
         address from,
         address to,
-        uint256
+        uint256 amount
     ) internal virtual override {
+        super._beforeTokenTransfer(from, to, amount);
         if (from != address(0))
             IPendleForge(forge).updatePendingRewards(underlyingAsset, expiry, from);
         if (to != address(0))
