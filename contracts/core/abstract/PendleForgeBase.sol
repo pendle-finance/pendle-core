@@ -155,7 +155,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         address yieldToken = _getYieldBearingToken(_underlyingAsset);
         uint8 yieldTokenDecimals = IPendleYieldToken(yieldToken).decimals();
 
-        require(yieldToken != address(0), "INVALID_ASSET");
+        // require(yieldToken != address(0), "INVALID_ASSET"); Guaranteed by _getYieldBearingToken
 
         // Deploy the OT contract -> XYT contract -> yieldTokenHolder
         ot = yieldContractDeployer.forgeOwnershipToken(
@@ -295,7 +295,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         * This must be called before any transfer / mint/ burn action of XYT
         (and this has been implemented in the beforeTokenTransfer of the PendleFutureYieldToken)
     Conditions:
-        * Can only be called by the respective XYT contract, before transfering XYTs
+        * Can only be called by the respective XYT contract, before transferring XYTs
     */
     function updateDueInterests(
         address _underlyingAsset,
@@ -314,7 +314,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         * This must be called before any transfer / mint/ burn action of OT
         (and this has been implemented in the beforeTokenTransfer of the PendleOwnershipToken)
     Conditions:
-        * Can only be called by the respective OT contract, before transfering OTs
+        * Can only be called by the respective OT contract, before transferring OTs
     Note:
         This function is just a proxy to call to rewardManager
     */

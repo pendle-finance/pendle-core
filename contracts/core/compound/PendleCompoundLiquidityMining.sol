@@ -87,9 +87,10 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
         Please refer to it for more details
     */
     function _updateDueInterests(uint256 expiry, address user) internal override {
-        _updateParamL(expiry);
-
         ExpiryData storage exd = expiryData[expiry];
+        require(exd.lpHolder != address(0), "INVALID_EXPIRY");
+
+        _updateParamL(expiry);
 
         if (exd.lastParamL[user] == 0) {
             exd.lastParamL[user] = exd.paramL;

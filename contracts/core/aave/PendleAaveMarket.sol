@@ -113,7 +113,7 @@ contract PendleAaveMarket is PendleMarketBase {
 
         uint256 ix = lastNYield.mul(currentNormalizedIncome).div(globalLastNormalizedIncome);
         // paramR's meaning has been explained in the updateParamL function
-        paramR = (currentNYield >= ix ? currentNYield - ix : 0);
+        paramR = currentNYield.subMax0(ix);
 
         globalLastNormalizedIncome = currentNormalizedIncome;
     }
