@@ -44,17 +44,20 @@ abstract contract PendleMarketFactoryBase is IPendleMarketFactory {
         _;
     }
 
-    function createMarket(address _xyt, address _token)
-        external
-        override
-        onlyRouter
-        returns (address market)
-    {
+    function createMarket(
+        address _xyt,
+        address _token,
+        address _creator
+    ) external override onlyRouter returns (address market) {
         IPendleData data = router.data();
 
-        market = _createMarket(_xyt, _token);
+        market = _createMarket(_xyt, _token, _creator);
         data.addMarket(marketFactoryId, _xyt, _token, market);
     }
 
-    function _createMarket(address _xyt, address _token) internal virtual returns (address);
+    function _createMarket(
+        address _xyt,
+        address _token,
+        address _creator
+    ) internal virtual returns (address);
 }

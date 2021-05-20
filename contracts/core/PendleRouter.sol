@@ -457,7 +457,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         bytes32 forgeId = IPendleForge(IPendleYieldToken(_xyt).forge()).forgeId();
         require(data.validForgeFactoryPair(forgeId, _marketFactoryId), "INVALID_FORGE_FACTORY");
 
-        market = factory.createMarket(_xyt, _token);
+        market = factory.createMarket(_xyt, _token, msg.sender);
 
         emit MarketCreated(_marketFactoryId, _xyt, _token, market);
     }
