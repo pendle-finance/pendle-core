@@ -22,7 +22,6 @@
  */
 pragma solidity 0.7.6;
 
-import "../../libraries/FactoryLib.sol";
 import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../../interfaces/IPendleCompoundForge.sol";

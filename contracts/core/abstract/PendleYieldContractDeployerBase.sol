@@ -28,7 +28,6 @@ import "../../interfaces/IPendleYieldContractDeployer.sol";
 import "../../interfaces/IPendleForge.sol";
 import "../../tokens/PendleFutureYieldToken.sol";
 import "../../tokens/PendleOwnershipToken.sol";
-import "../../libraries/FactoryLib.sol";
 
 // Each PendleYieldContractDeployer is specific for exactly one forge
 abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeployer, PermissionsV2 {
@@ -60,16 +59,12 @@ abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeploye
         uint8 _decimals,
         uint256 _expiry
     ) external override onlyForge returns (address xyt) {
-        IERC20 yieldToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
-
-        xyt = Factory.createContract(
-            type(PendleFutureYieldToken).creationCode,
-            abi.encodePacked(yieldToken, _underlyingAsset),
-            abi.encode(
+        xyt = address(
+            new PendleFutureYieldToken(
                 address(forge.router()),
                 address(forge),
                 _underlyingAsset,
-                yieldToken,
+                forge.getYieldBearingToken(_underlyingAsset),
                 _name,
                 _symbol,
                 _decimals,
@@ -86,16 +81,12 @@ abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeploye
         uint8 _decimals,
         uint256 _expiry
     ) external override onlyForge returns (address ot) {
-        IERC20 yieldToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
-
-        ot = Factory.createContract(
-            type(PendleOwnershipToken).creationCode,
-            abi.encodePacked(yieldToken, _underlyingAsset),
-            abi.encode(
+        ot = address(
+            new PendleOwnershipToken(
                 address(forge.router()),
                 address(forge),
                 _underlyingAsset,
-                yieldToken,
+                forge.getYieldBearingToken(_underlyingAsset),
                 _name,
                 _symbol,
                 _decimals,
@@ -105,7 +96,7 @@ abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeploye
         );
     }
 
-    function deployYieldTokenHolder(address yieldToken, address ot)
+    function deployYieldTokenHolder(address yieldToken)
         external
         virtual
         override

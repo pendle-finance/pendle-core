@@ -24,7 +24,6 @@ pragma solidity 0.7.6;
 
 import "./PendleCompoundYieldTokenHolder.sol";
 import "./../abstract/PendleYieldContractDeployerBase.sol";
-import "../../libraries/FactoryLib.sol";
 import "./PendleCompoundForge.sol";
 
 contract PendleCompoundYieldContractDeployer is PendleYieldContractDeployerBase {
@@ -32,20 +31,18 @@ contract PendleCompoundYieldContractDeployer is PendleYieldContractDeployerBase 
         PendleYieldContractDeployerBase(_governanceManager, _forgeId)
     {}
 
-    function deployYieldTokenHolder(address yieldToken, address ot)
+    function deployYieldTokenHolder(address yieldToken)
         external
         override
         onlyForge
         returns (address yieldTokenHolder)
     {
-        yieldTokenHolder = Factory.createContract(
-            type(PendleCompoundYieldTokenHolder).creationCode,
-            abi.encodePacked(ot),
-            abi.encode(
+        yieldTokenHolder = address(
+            new PendleCompoundYieldTokenHolder(
                 address(governanceManager),
                 address(forge),
                 yieldToken,
-                forge.rewardToken(),
+                address(forge.rewardToken()),
                 address(forge.rewardManager()),
                 address(PendleCompoundForge(address(forge)).comptroller())
             )

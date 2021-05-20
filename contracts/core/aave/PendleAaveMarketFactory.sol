@@ -22,7 +22,6 @@
  */
 pragma solidity 0.7.6;
 
-import "../../libraries/FactoryLib.sol";
 import "./PendleAaveMarket.sol";
 import "../../interfaces/IPendleRouter.sol";
 import "../../interfaces/IPendleData.sol";
@@ -38,11 +37,6 @@ contract PendleAaveMarketFactory is PendleMarketFactoryBase {
 
     function _createMarket(address _xyt, address _token) internal override returns (address) {
         address _governanceManager = address(IPermissionsV2(address(router)).governanceManager());
-        return
-            Factory.createContract(
-                type(PendleAaveMarket).creationCode,
-                abi.encodePacked(_xyt, _token),
-                abi.encode(_governanceManager, _xyt, _token)
-            );
+        return address(new PendleAaveMarket(_governanceManager, _xyt, _token));
     }
 }

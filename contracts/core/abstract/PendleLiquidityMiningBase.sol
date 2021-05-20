@@ -22,7 +22,6 @@
  */
 pragma solidity 0.7.6;
 
-import "../../libraries/FactoryLib.sol";
 import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../../interfaces/IPendleRouter.sol";
@@ -759,10 +758,13 @@ abstract contract PendleLiquidityMiningBase is
         returns (address newLpHoldingContractAddress)
     {
         allExpiries.push(expiry);
-        newLpHoldingContractAddress = Factory.createContract(
-            type(PendleLpHolder).creationCode,
-            abi.encodePacked(marketAddress, router, underlyingYieldToken),
-            abi.encode(governanceManager, marketAddress, router, underlyingYieldToken)
+        newLpHoldingContractAddress = address(
+            new PendleLpHolder(
+                address(governanceManager),
+                marketAddress,
+                address(router),
+                underlyingYieldToken
+            )
         );
         expiryData[expiry].lpHolder = newLpHoldingContractAddress;
         _afterAddingNewExpiry(expiry);

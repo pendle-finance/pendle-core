@@ -25,7 +25,6 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../../libraries/ExpiryUtilsLib.sol";
-import "../../libraries/FactoryLib.sol";
 import "../../interfaces/ICToken.sol";
 import "../../interfaces/IPendleBaseToken.sol";
 import "../../interfaces/IPendleCompoundForge.sol";
