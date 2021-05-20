@@ -35,22 +35,21 @@ abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder, Withdra
     address internal immutable yieldToken;
     address public immutable forge;
     address internal immutable rewardToken;
+    uint256 public immutable expiry;
 
     constructor(
         address _governanceManager,
         address _forge,
-        address _router,
         address _yieldToken,
         address _rewardToken,
-        address _rewardManager
+        address _rewardManager,
+        uint256 _expiry
     ) PermissionsV2(_governanceManager) {
-        require(
-            _router != address(0) && _yieldToken != address(0) && _rewardToken != address(0),
-            "ZERO_ADDRESS"
-        );
+        require(_yieldToken != address(0) && _rewardToken != address(0), "ZERO_ADDRESS");
         yieldToken = _yieldToken;
         forge = _forge;
         rewardToken = _rewardToken;
+        expiry = _expiry;
 
         IERC20(_yieldToken).safeApprove(_forge, type(uint256).max);
         IERC20(_rewardToken).safeApprove(_rewardManager, type(uint256).max);

@@ -28,12 +28,9 @@ import "../core/aave/PendleAaveMarket.sol";
 contract MockPendleAaveMarket is PendleAaveMarket {
     constructor(
         address _governanceManager,
-        address _router,
-        address _forge,
         address _xyt,
-        address _token,
-        uint256 _expiry
-    ) PendleAaveMarket(_governanceManager, _router, _forge, _xyt, _token, _expiry) {}
+        address _token
+    ) PendleAaveMarket(_governanceManager, _xyt, _token) {}
 
     function calcExactIn(
         TokenReserve memory inTokenReserve,

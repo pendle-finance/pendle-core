@@ -47,7 +47,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    address private immutable factory;
     bytes32 public immutable override factoryId;
     address internal immutable forge;
     address public immutable override token;
@@ -109,32 +108,37 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
 
     constructor(
         address _governanceManager,
-        address _router,
-        address _forge,
         address _xyt,
-        address _token,
-        uint256 _expiry
+        address _token
     )
-        PendleBaseToken(_router, NAME, SYMBOL, DECIMALS, block.timestamp, _expiry)
+        PendleBaseToken(
+            address(IPendleYieldToken(_xyt).forge().router()),
+            NAME,
+            SYMBOL,
+            DECIMALS,
+            block.timestamp,
+            IPendleYieldToken(_xyt).expiry()
+        )
         PermissionsV2(_governanceManager)
     {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
 
-        factory = msg.sender;
-        forge = _forge;
+        IPendleForge _forge = IPendleYieldToken(_xyt).forge();
+
+        forge = address(_forge);
         xyt = _xyt;
         token = _token;
 
-        forgeId = IPendleForge(_forge).forgeId();
+        forgeId = _forge.forgeId();
         underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
         underlyingYieldToken = IERC20(IPendleYieldToken(_xyt).underlyingYieldToken());
-        require(_router == address(IPendleMarketFactory(msg.sender).router()), "ROUTER_MISMATCH");
-        data = IPendleForge(_forge).data();
-        pausingManager = IPendleForge(_forge).data().pausingManager();
+        data = _forge.data();
+        pausingManager = _forge.data().pausingManager();
         xytStartTime = IPendleYieldToken(_xyt).start();
         factoryId = IPendleMarketFactory(msg.sender).marketFactoryId();
 
+        address _router = address(_forge.router());
         IERC20(_xyt).safeApprove(_router, type(uint256).max);
         IERC20(_token).safeApprove(_router, type(uint256).max);
     }
@@ -181,7 +185,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
 
     /// pass in a tokenReserve & the type of token (through _asset), update the reserveData
     function updateReserveData(TokenReserve memory tokenReserve, address _asset) internal {
-        require(tokenReserve.balance <= MAX_TOKEN_RESERVE_BALANCE, "EXCEED_TOKEN_BALANCE_LIMIT");
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
             readReserveData();
         // Basically just update the weight & bal of the corresponding token & write the reserveData again
@@ -281,7 +284,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     ) external override returns (PendingTransfer[2] memory transfers, uint256 lpOut) {
         checkAddRemoveSwapClaimAllowed(false);
 
-        // mint protocol fees before k is changed by a non-swap event
+        // mint protocol fees before k is changed by a non-swap event (add liquidity)
         _mintProtocolFees();
 
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData();
@@ -335,7 +338,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     ) external override returns (PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(false);
 
-        // mint protocol fees before k is changed by a non-swap event (curveShift)
+        // mint protocol fees before k is changed by a non-swap event (add liquidity)
         _mintProtocolFees();
         _curveShift();
 
@@ -387,7 +390,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     ) external override returns (PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(true);
 
-        // mint protocol fees before k is changed by a non-swap event
+        // mint protocol fees before k is changed by a non-swap event (remove liquidity)
         _mintProtocolFees();
 
         uint256 totalLp = totalSupply();
@@ -434,7 +437,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     ) external override returns (PendingTransfer[2] memory transfers) {
         checkAddRemoveSwapClaimAllowed(false);
 
-        // mint protocol fees before k is changed by a non-swap event
+        // mint protocol fees before k is changed by a non-swap event (remove liquidity)
         _mintProtocolFees();
         _curveShift();
 
@@ -544,7 +547,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
 
     /**
      * @notice for user to claim their interest as holder of underlyingYield token
-     * @param user user user address
+     * @param user user's address
      * @dev only can claim through router (included in checkAddRemoveSwapClaimAllowed)
      * We skip time check in checkAddRemoveSwapClaimAllowed because users can always claim interests
      * Since the Router has already had Reentrancy protection, we don't need one here
@@ -733,7 +736,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         );
 
         uint256 r = Math.rdiv(currentRelativePrice, lastRelativePrice);
-        assert(Math.RONE >= r);
+        require(Math.RONE >= r, "MATH_ERROR");
 
         uint256 thetaNumerator = Math.rmul(Math.rmul(xytWeight, tokenWeight), Math.RONE.sub(r));
         uint256 thetaDenominator = Math.rmul(r, xytWeight).add(tokenWeight);
@@ -860,9 +863,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
      * @notice _initialize the lock of the market. Must only be called in bootstrap
      */
     function _initializeLock() internal {
-        uint256 duration = expiry - xytStartTime; // market expiry = xyt expiry
-        uint256 lockDuration = (duration * data.lockNumerator()) / data.lockDenominator();
-        lockStartTime = expiry - lockDuration;
+        uint256 duration = expiry.sub(xytStartTime); // market expiry = xyt expiry
+        uint256 lockDuration = duration.mul(data.lockNumerator()).div(data.lockDenominator());
+        lockStartTime = expiry.sub(lockDuration);
     }
 
     /**

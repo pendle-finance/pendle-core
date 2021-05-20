@@ -44,12 +44,9 @@ contract PendleAaveMarket is PendleMarketBase {
 
     constructor(
         address _governanceManager,
-        address _router,
-        address _forge,
         address _xyt,
-        address _token,
-        uint256 _expiry
-    ) PendleMarketBase(_governanceManager, _router, _forge, _xyt, _token, _expiry) {}
+        address _token
+    ) PendleMarketBase(_governanceManager, _xyt, _token) {}
 
     function _getReserveNormalizedIncome() internal view returns (uint256) {
         return IPendleAaveForge(forge).getReserveNormalizedIncome(underlyingAsset);
@@ -116,7 +113,7 @@ contract PendleAaveMarket is PendleMarketBase {
 
         uint256 ix = lastNYield.mul(currentNormalizedIncome).div(globalLastNormalizedIncome);
         // paramR's meaning has been explained in the updateParamL function
-        paramR = (currentNYield >= ix ? currentNYield - ix : 0);
+        paramR = currentNYield.subMax0(ix);
 
         globalLastNormalizedIncome = currentNormalizedIncome;
     }

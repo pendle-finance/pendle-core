@@ -122,7 +122,8 @@ contract PendleData is IPendleData, PermissionsV2 {
         initialized
         onlyGovernance
     {
-        require(0 < _lockNumerator && _lockNumerator < _lockDenominator, "INVALID_LOCK_PARAMS");
+        // => _lockDenominator > 0 since _lockNumerator >=0
+        require(_lockNumerator < _lockDenominator, "INVALID_LOCK_PARAMS");
         lockNumerator = _lockNumerator;
         lockDenominator = _lockDenominator;
         emit LockParamsSet(_lockNumerator, _lockDenominator);
@@ -271,7 +272,7 @@ contract PendleData is IPendleData, PermissionsV2 {
         onlyGovernance
     {
         require(_swapFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
-        require(_protocolSwapFee < Math.RONE, "PROTOCOL_FEE_EXCEED_LIMIT");
+        require(_protocolSwapFee <= Math.RONE, "PROTOCOL_FEE_EXCEED_LIMIT");
         swapFee = _swapFee;
         protocolSwapFee = _protocolSwapFee;
         emit MarketFeesSet(_swapFee, _protocolSwapFee);

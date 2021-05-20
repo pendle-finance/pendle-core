@@ -28,18 +28,18 @@ contract PendleAaveYieldTokenHolder is PendleYieldTokenHolderBase {
     constructor(
         address _governanceManager,
         address _forge,
-        address _router,
         address _yieldToken,
         address _rewardToken,
-        address _rewardManager
+        address _rewardManager,
+        uint256 _expiry
     )
         PendleYieldTokenHolderBase(
             _governanceManager,
             _forge,
-            _router,
             _yieldToken,
             _rewardToken,
-            _rewardManager
+            _rewardManager,
+            _expiry
         )
     {}
 

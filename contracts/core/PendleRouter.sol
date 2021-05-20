@@ -254,7 +254,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         );
 
         // mint OT&XYT for users
-        (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
+        (ot, xyt, amountTokenMinted) = forge.mintOtAndXyt(
             _underlyingAsset,
             _expiry,
             _amountToTokenize,
@@ -458,6 +458,8 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         require(data.validForgeFactoryPair(forgeId, _marketFactoryId), "INVALID_FORGE_FACTORY");
 
         market = factory.createMarket(_xyt, _token);
+
+        emit MarketCreated(_marketFactoryId, _xyt, _token, market);
     }
 
     /**

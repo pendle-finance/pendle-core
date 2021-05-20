@@ -22,14 +22,13 @@
  */
 pragma solidity 0.7.6;
 
-import "../../libraries/FactoryLib.sol";
 import "../../interfaces/IPendleRouter.sol";
 import "../../interfaces/IPendleData.sol";
 import "../../interfaces/IPendleMarketFactory.sol";
 import "../../interfaces/IPendleYieldToken.sol";
 
 abstract contract PendleMarketFactoryBase is IPendleMarketFactory {
-    IPendleRouter public override router;
+    IPendleRouter public immutable override router;
     bytes32 public immutable override marketFactoryId;
 
     constructor(address _router, bytes32 _marketFactoryId) {
@@ -52,20 +51,9 @@ abstract contract PendleMarketFactoryBase is IPendleMarketFactory {
     {
         IPendleData data = router.data();
 
-        address forgeAddress = IPendleYieldToken(_xyt).forge();
-        address underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
-        uint256 expiry = IPendleYieldToken(_xyt).expiry();
-
-        market = _createMarket(forgeAddress, _xyt, _token, expiry);
+        market = _createMarket(_xyt, _token);
         data.addMarket(marketFactoryId, _xyt, _token, market);
-
-        emit MarketCreated(marketFactoryId, _xyt, _token, market);
     }
 
-    function _createMarket(
-        address _forgeAddress,
-        address _xyt,
-        address _token,
-        uint256 _expiry
-    ) internal virtual returns (address);
+    function _createMarket(address _xyt, address _token) internal virtual returns (address);
 }

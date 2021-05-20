@@ -22,7 +22,6 @@
  */
 pragma solidity 0.7.6;
 
-import "../../libraries/FactoryLib.sol";
 import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../../interfaces/IPendleRouter.sol";
@@ -88,8 +87,10 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         Please refer to it for more details
     */
     function _updateDueInterests(uint256 expiry, address user) internal override {
-        _updateParamL(expiry);
         ExpiryData storage exd = expiryData[expiry];
+        require(exd.lpHolder != address(0), "INVALID_EXPIRY");
+
+        _updateParamL(expiry);
 
         uint256 lastIncome = userLastNormalizedIncome[expiry][user];
         uint256 normIncomeNow = globalLastNormalizedIncome[expiry];
@@ -131,7 +132,7 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
 
         uint256 ix =
             exd.lastNYield.mul(currentNormalizedIncome).div(globalLastNormalizedIncome[expiry]);
-        paramR = (currentNYield >= ix ? currentNYield - ix : 0);
+        paramR = currentNYield.subMax0(ix);
 
         globalLastNormalizedIncome[expiry] = currentNormalizedIncome;
     }
