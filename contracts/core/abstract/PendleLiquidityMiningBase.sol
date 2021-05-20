@@ -420,12 +420,80 @@ abstract contract PendleLiquidityMiningBase is
         _expiries = userExpiries[_user].expiries;
     }
 
-    function balances(uint256 expiry, address user) external view override returns (uint256) {
+    function getBalances(uint256 expiry, address user) external view override returns (uint256) {
         return expiryData[expiry].balances[user];
     }
 
     function lpHolderForExpiry(uint256 expiry) external view override returns (address) {
         return expiryData[expiry].lpHolder;
+    }
+
+    function readExpiryData(uint256 expiry)
+        external
+        view
+        returns (
+            uint256 totalStakeLP,
+            uint256 lastNYield,
+            uint256 paramL,
+            address lpHolder
+        )
+    {
+        totalStakeLP = expiryData[expiry].totalStakeLP;
+        lastNYield = expiryData[expiry].lastNYield;
+        paramL = expiryData[expiry].paramL;
+        lpHolder = expiryData[expiry].lpHolder;
+    }
+
+    function readUserSpecificExpiryData(uint256 expiry, address user)
+        external
+        view
+        returns (
+            uint256 lastTimeUserStakeUpdated,
+            uint256 lastEpochClaimed,
+            uint256 balances,
+            uint256 lastParamL,
+            uint256 dueInterests
+        )
+    {
+        lastTimeUserStakeUpdated = expiryData[expiry].lastTimeUserStakeUpdated[user];
+        lastEpochClaimed = expiryData[expiry].lastEpochClaimed[user];
+        balances = expiryData[expiry].balances[user];
+        lastParamL = expiryData[expiry].lastParamL[user];
+        dueInterests = expiryData[expiry].dueInterests[user];
+    }
+
+    function readEpochData(uint256 epochId)
+        external
+        view
+        returns (uint256 settingId, uint256 totalRewards)
+    {
+        settingId = epochData[epochId].settingId;
+        totalRewards = epochData[epochId].totalRewards;
+    }
+
+    function readExpirySpecificEpochData(uint256 epochId, uint256 expiry)
+        external
+        view
+        returns (uint256 stakeUnits, uint256 lastUpdatedForExpiry)
+    {
+        stakeUnits = epochData[epochId].stakeUnitsForExpiry[expiry];
+        lastUpdatedForExpiry = epochData[epochId].lastUpdatedForExpiry[expiry];
+    }
+
+    function readAvailableRewardsForUser(uint256 epochId, address user)
+        external
+        view
+        returns (uint256 availableRewardsForUser)
+    {
+        availableRewardsForUser = epochData[epochId].availableRewardsForUser[user];
+    }
+
+    function readStakeUnitsForUser(
+        uint256 epochId,
+        address user,
+        uint256 expiry
+    ) external view returns (uint256 stakeUnitsForUser) {
+        stakeUnitsForUser = epochData[epochId].stakeUnitsForUser[user][expiry];
     }
 
     function _stake(uint256 expiry, uint256 amount)
