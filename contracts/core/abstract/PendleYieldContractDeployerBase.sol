@@ -22,7 +22,6 @@
  */
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../periphery/PermissionsV2.sol";
 import "../../interfaces/IPendleYieldContractDeployer.sol";
 import "../../interfaces/IPendleForge.sol";

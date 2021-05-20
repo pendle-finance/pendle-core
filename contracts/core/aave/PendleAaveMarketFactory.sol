@@ -23,10 +23,6 @@
 pragma solidity 0.7.6;
 
 import "./PendleAaveMarket.sol";
-import "../../interfaces/IPendleRouter.sol";
-import "../../interfaces/IPendleData.sol";
-import "../../interfaces/IPendleMarketFactory.sol";
-import "../../interfaces/IPendleYieldToken.sol";
 import "../../interfaces/IPermissionsV2.sol";
 import "./../abstract/PendleMarketFactoryBase.sol";
 

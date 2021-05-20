@@ -25,7 +25,6 @@ pragma solidity 0.7.6;
 import "../../interfaces/IPendleRouter.sol";
 import "../../interfaces/IPendleData.sol";
 import "../../interfaces/IPendleMarketFactory.sol";
-import "../../interfaces/IPendleYieldToken.sol";
 
 abstract contract PendleMarketFactoryBase is IPendleMarketFactory {
     IPendleRouter public immutable override router;

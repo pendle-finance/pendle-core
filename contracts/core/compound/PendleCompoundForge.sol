@@ -24,17 +24,10 @@ pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../../libraries/ExpiryUtilsLib.sol";
 import "../../interfaces/ICToken.sol";
-import "../../interfaces/IPendleBaseToken.sol";
 import "../../interfaces/IPendleCompoundForge.sol";
-import "../../interfaces/IPendleData.sol";
-import "../../interfaces/IPendleForge.sol";
 import "../../interfaces/IComptroller.sol";
-import "../../tokens/PendleFutureYieldToken.sol";
-import "../../tokens/PendleOwnershipToken.sol";
 import "./../abstract/PendleForgeBase.sol";
-import "./PendleCompoundYieldTokenHolder.sol";
 
 contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
     using ExpiryUtils for string;

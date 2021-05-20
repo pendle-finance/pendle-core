@@ -25,8 +25,8 @@ pragma experimental ABIEncoderV2;
 
 import "../../../interfaces/IAaveV2LendingPool.sol";
 import "../../../interfaces/IPendleAaveForge.sol";
+import "../../../interfaces/IAaveIncentivesController.sol";
 import "./../../abstract/PendleForgeBase.sol";
-import "./../../aave/v2/PendleAaveV2YieldTokenHolder.sol";
 
 /**
 * @dev This contract will be very similar to AaveForge. Any major differences between the two

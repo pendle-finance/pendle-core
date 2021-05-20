@@ -25,8 +25,6 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../../interfaces/IPendleYieldTokenHolder.sol";
-import "../../interfaces/IPendleRouter.sol";
-import "../../interfaces/IPendleForge.sol";
 import "../../periphery/WithdrawableV2.sol";
 
 abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder, WithdrawableV2 {

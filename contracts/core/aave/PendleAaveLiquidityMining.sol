@@ -24,15 +24,7 @@ pragma solidity 0.7.6;
 
 import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../../interfaces/IPendleRouter.sol";
-import "../../interfaces/IPendleForge.sol";
 import "../../interfaces/IPendleAaveForge.sol";
-import "../../interfaces/IPendleMarketFactory.sol";
-import "../../interfaces/IPendleMarket.sol";
-import "../../interfaces/IPendleData.sol";
-import "../../interfaces/IPendleLpHolder.sol";
-import "../../core/PendleLpHolder.sol";
-import "../../interfaces/IPendleLiquidityMining.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "./../abstract/PendleLiquidityMiningBase.sol";
 
