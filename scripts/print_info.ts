@@ -4,7 +4,7 @@
  * 2. Replace the private key below with a wallet containing ETH
  * 3. Run yarn deploy:dev
  */
-const hre = requrie("hardhat");
+const hre = require("hardhat");
 
 
 const Web3 = require("web3");

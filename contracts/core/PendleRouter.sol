@@ -32,8 +32,8 @@ import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleRewardManager.sol";
-import "../periphery/Permissions.sol";
-import "../periphery/Withdrawable.sol";
+import "../periphery/PermissionsV2.sol";
+import "../periphery/WithdrawableV2.sol";
 import "../periphery/PendleRouterNonReentrant.sol";
 
 /**
@@ -48,12 +48,13 @@ import "../periphery/PendleRouterNonReentrant.sol";
 * Markets will not transfer any XYT/baseToken, but instead make requests to Router through the transfer array
     and the Router will transfer them
 */
-contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterNonReentrant {
+contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
+    using Math for uint256;
 
     IWETH public immutable override weth;
-    IPendleData public override data;
+    IPendleData public immutable override data;
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
     address private constant DUMMY_ERC20 = address(0x123);
     // if someone's allowance for the router is below this amount,
@@ -62,10 +63,10 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     uint256 private constant REASONABLE_ALLOWANCE_AMOUNT = type(uint256).max / 2;
 
     constructor(
-        address _governance,
+        address _governanceManager,
         IWETH _weth,
         IPendleData _data
-    ) Permissions(_governance) PendleRouterNonReentrant() {
+    ) PermissionsV2(_governanceManager) PendleRouterNonReentrant() {
         weth = _weth;
         data = _data;
     }
@@ -75,22 +76,6 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
      **/
     receive() external payable {
         assert(msg.sender == address(weth));
-    }
-
-    /**
-     * @notice add forge by _forgeId & _forgeAddress
-     Conditions:
-     * Only governance can call it. Hence no Reentrancy protection is needed
-     **/
-    function addForge(bytes32 _forgeId, address _forgeAddress) external override onlyGovernance {
-        require(_forgeId != bytes32(0), "ZERO_BYTES");
-        require(_forgeAddress != address(0), "ZERO_ADDRESS");
-        require(_forgeId == IPendleForge(_forgeAddress).forgeId(), "INVALID_ID");
-        require(data.getForgeAddress(_forgeId) == address(0), "EXISTED_ID");
-
-        data.addForge(_forgeId, _forgeAddress);
-
-        emit NewForge(_forgeId, _forgeAddress);
     }
 
     /**
@@ -134,19 +119,14 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
-    ) external override nonReentrant returns (uint256 redeemedAmount) {
+    ) public override nonReentrant returns (uint256 redeemedAmount) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
         require(_expiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
 
         // guaranteed to be a valid forge by the isValidXYT check
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
 
-        (redeemedAmount, , ) = forge.redeemAfterExpiry(
-            msg.sender,
-            _underlyingAsset,
-            _expiry,
-            Math.RONE
-        );
+        redeemedAmount = forge.redeemAfterExpiry(msg.sender, _underlyingAsset, _expiry);
     }
 
     /**
@@ -162,6 +142,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         address _user
     ) external override nonReentrant returns (uint256 interests) {
         require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(_user != address(0), "ZERO_ADDRESS");
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         interests = forge.redeemDueInterests(_user, _underlyingAsset, _expiry);
     }
@@ -194,10 +175,11 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     }
 
     /**
-     * @notice Use to renewYield with a lower gas cost efficiency compared to calling redeemAfterExpiry & tokenizeYield
-     * @param _renewalRate a Fixed Point number, shows how much of the total redeemedAmount is renewed
+     * @notice Use to renewYield. Basically a proxy to call redeemAfterExpiry & tokenizeYield
+     * @param _renewalRate a Fixed Point number, shows how much of the total redeemedAmount is renewed.
+        We allowed _renewalRate > RONE in case the user wants to increase his position
      Conditions:
-     * Have Reentrancy protection
+     * No Reentrancy protection because it will just act as a proxy for 2 calls
      **/
     function renewYield(
         bytes32 _forgeId,
@@ -208,40 +190,22 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     )
         external
         override
-        nonReentrant
         returns (
             uint256 redeemedAmount,
-            uint256 amountTransferOut,
+            uint256 amountRenewed,
             address ot,
             address xyt,
             uint256 amountTokenMinted
         )
     {
-        require(_oldExpiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
-        require(_newExpiry > _oldExpiry, "INVALID_NEW_EXPIRY");
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _oldExpiry), "INVALID_XYT");
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _newExpiry), "INVALID_XYT");
-        require(0 < _renewalRate && _renewalRate <= Math.RONE, "INVALID_RENEWAL_RATE");
-
-        // guaranteed to be a valid forge by the isValidXYT check
-        IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
-        uint256 amountToRenew;
-        (redeemedAmount, amountTransferOut, amountToRenew) = forge.redeemAfterExpiry(
-            msg.sender,
-            _underlyingAsset,
-            _oldExpiry,
-            Math.RONE - _renewalRate // only transfer out 1 - renewalRate
-        );
-
-        // after redeeming, we know that an amountToRenew is still in the old expiry
-        // So we will help users to forward it to the new expiry
-        forge.forwardYieldToken(_underlyingAsset, _oldExpiry, _newExpiry, amountToRenew);
-
-        // mint OT, XYT for them
-        (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
+        require(0 < _renewalRate, "INVALID_RENEWAL_RATE");
+        redeemedAmount = redeemAfterExpiry(_forgeId, _underlyingAsset, _oldExpiry);
+        amountRenewed = redeemedAmount.rmul(_renewalRate);
+        (ot, xyt, amountTokenMinted) = tokenizeYield(
+            _forgeId,
             _underlyingAsset,
             _newExpiry,
-            amountToRenew,
+            amountRenewed,
             msg.sender
         );
     }
@@ -260,7 +224,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         uint256 _amountToTokenize,
         address _to
     )
-        external
+        public
         override
         nonReentrant
         returns (
@@ -290,35 +254,12 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         );
 
         // mint OT&XYT for users
-        (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
+        (ot, xyt, amountTokenMinted) = forge.mintOtAndXyt(
             _underlyingAsset,
             _expiry,
             _amountToTokenize,
             _to
         );
-    }
-
-    /**
-     * @notice add marketFactory by _marketFactoryId & _marketFactoryAddress
-     * @dev A market factory can work with XYTs from one or more Forges,
-          to be determined by data.validForgeFactoryPair mapping
-     Conditions:
-     * Only governance can call it. Hence no Reentrancy protection is needed
-     **/
-    function addMarketFactory(bytes32 _marketFactoryId, address _marketFactoryAddress)
-        external
-        override
-        onlyGovernance
-    {
-        require(_marketFactoryId != bytes32(0), "ZERO_BYTES");
-        require(_marketFactoryAddress != address(0), "ZERO_ADDRESS");
-        require(
-            _marketFactoryId == IPendleMarketFactory(_marketFactoryAddress).marketFactoryId(),
-            "INVALID_FACTORY_ID"
-        );
-        require(data.getMarketFactoryAddress(_marketFactoryId) == address(0), "EXISTED_ID");
-        data.addMarketFactory(_marketFactoryId, _marketFactoryAddress);
-        emit NewMarketFactory(_marketFactoryId, _marketFactoryAddress);
     }
 
     /**
@@ -517,9 +458,8 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         require(data.validForgeFactoryPair(forgeId, _marketFactoryId), "INVALID_FORGE_FACTORY");
 
         market = factory.createMarket(_xyt, _token);
-        IERC20(_xyt).safeApprove(market, type(uint256).max);
-        IERC20(_token).safeApprove(market, type(uint256).max);
-        IERC20(market).safeApprove(market, type(uint256).max);
+
+        emit MarketCreated(_marketFactoryId, _xyt, _token, market);
     }
 
     /**
@@ -636,6 +576,7 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
         returns (uint256 interests)
     {
         require(data.isMarket(market), "INVALID_MARKET");
+        require(user != address(0), "ZERO_ADDRESS");
         interests = IPendleMarket(market).redeemLpInterests(user);
     }
 
@@ -692,10 +633,9 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
                 weth.deposit{value: msg.value}();
                 weth.transfer(market, transfer.amount);
             } else {
-                // its a transfer in of token. If its an XYT or the LP of the related market,
+                // its a transfer in of token. If its an XYT
                 // we will auto approve the router to spend from the user account;
-                // It's to be expected that token will never be LP
-                if (data.isXyt(token) || token == market) {
+                if (data.isXyt(token)) {
                     _checkApproveRouter(token);
                 }
                 IERC20(token).safeTransferFrom(msg.sender, market, transfer.amount);
@@ -717,6 +657,12 @@ contract PendleRouter is IPendleRouter, Permissions, Withdrawable, PendleRouterN
     function _checkApproveRouter(address token) internal {
         uint256 allowance = IPendleBaseToken(token).allowance(msg.sender, address(this));
         if (allowance >= REASONABLE_ALLOWANCE_AMOUNT) return;
-        IPendleBaseToken(token).approveRouter(msg.sender);
+        IPendleYieldToken(token).approveRouter(msg.sender);
+    }
+
+    // There shouldn't be any fund in here
+    // hence governance is allowed to withdraw anything from here.
+    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
+        allowed = true;
     }
 }

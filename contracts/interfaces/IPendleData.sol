@@ -79,6 +79,13 @@ interface IPendleData {
     event CurveShiftBlockDeltaSet(uint256 _blockDelta);
 
     /**
+     * @dev Emitted when new forge is added
+     * @param marketFactoryId Human Readable Market Factory ID in Bytes
+     * @param marketFactoryAddress The Market Factory Address
+     */
+    event NewMarketFactory(bytes32 indexed marketFactoryId, address indexed marketFactoryAddress);
+
+    /**
      * @notice Set/update validity of a forge-factory pair
      * @param _forgeId the forge id
      * @param _marketFactoryId the market factory id
@@ -169,41 +176,11 @@ interface IPendleData {
     ) external view returns (IPendleYieldToken ot, IPendleYieldToken xyt);
 
     /**
-     * @notice Gets the identifier of the forge.
-     * @param forgeAddress The forge's address.
-     * @return forgeId Returns the forge identifier.
-     **/
-    function getForgeId(address forgeAddress) external view returns (bytes32 forgeId);
-
-    /**
      * @notice Gets a forge given the identifier.
      * @param forgeId Forge and protocol identifier.
      * @return forgeAddress Returns the forge address.
      **/
     function getForgeAddress(bytes32 forgeId) external view returns (address forgeAddress);
-
-    /**
-     * @notice Gets a forge id of a reward manager
-     * @param rewardManager address of the reward manager
-     * @return forgeId Returns the forge id.
-     **/
-    function getRewardManagerForgeId(address rewardManager)
-        external
-        view
-        returns (bytes32 forgeId);
-
-    /**
-     * @notice Checks if an XYT token is valid.
-     * @param forgeAddress The address of the added forge.
-     * @param underlyingAsset Token address of the underlying asset.
-     * @param expiry Yield contract expiry in epoch time.
-     * @return True if valid, false otherwise.
-     **/
-    function isValidXYT(
-        address forgeAddress,
-        address underlyingAsset,
-        uint256 expiry
-    ) external view returns (bool);
 
     /**
      * @notice Checks if an XYT token is valid.
@@ -213,6 +190,19 @@ interface IPendleData {
      * @return True if valid, false otherwise.
      **/
     function isValidXYT(
+        bytes32 forgeId,
+        address underlyingAsset,
+        uint256 expiry
+    ) external view returns (bool);
+
+    /**
+     * @notice Checks if an OT token is valid.
+     * @param forgeId The forgeId of the forge.
+     * @param underlyingAsset Token address of the underlying asset.
+     * @param expiry Yield contract expiry in epoch time.
+     * @return True if valid, false otherwise.
+     **/
+    function isValidOT(
         bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry
@@ -316,16 +306,6 @@ interface IPendleData {
     ) external view returns (address market);
 
     /**
-     * @notice Gets the identifier of the market factory.
-     * @param marketFactoryAddress The factory's address.
-     * @return marketFactoryId Returns the factory identifier.
-     **/
-    function getMarketFactoryId(address marketFactoryAddress)
-        external
-        view
-        returns (bytes32 marketFactoryId);
-
-    /**
      * @notice Gets a market factory given the identifier.
      * @param marketFactoryId MarketFactory identifier.
      * @return marketFactoryAddress Returns the factory address.
@@ -340,11 +320,4 @@ interface IPendleData {
         address token,
         bytes32 marketFactoryId
     ) external view returns (address market);
-
-    /// Check if the market's underlying tokens are token1 & token2
-    function checkMarketTokens(
-        address token1,
-        address token2,
-        IPendleMarket market
-    ) external view;
 }

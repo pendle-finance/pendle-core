@@ -1,7 +1,7 @@
 import { Contract, providers, Wallet } from "ethers";
-import PendleAaveV2Forge from "../../../build/artifacts/contracts/core/PendleAaveV2Forge.sol/PendleAaveV2Forge.json";
-import PendleRewardManager from "../../../build/artifacts/contracts/core/PendleRewardManager.sol/PendleRewardManager.json";
-import PendleAaveV2YieldContractDeployer from "../../../build/artifacts/contracts/core/PendleAaveV2YieldContractDeployer.sol/PendleAaveV2YieldContractDeployer.json";
+import PendleAaveV2Forge from "../../../build/artifacts/contracts/core/aave/v2/PendleAaveV2Forge.sol/PendleAaveV2Forge.json";
+import PendleAaveV2YieldContractDeployer from "../../../build/artifacts/contracts/core/aave/v2/PendleAaveV2YieldContractDeployer.sol/PendleAaveV2YieldContractDeployer.json";
+import MockPendleRewardManager from "../../../build/artifacts/contracts/mock/MockPendleRewardManager.sol/MockPendleRewardManager.json";
 import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
 import PendleOwnershipToken from "../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json";
 import { consts, setTimeNextBlock, tokens } from "../../helpers";
@@ -23,21 +23,21 @@ export interface AaveV2ForgeFixture {
 export async function aaveV2ForgeFixture(
   alice: Wallet,
   provider: providers.Web3Provider,
-  { router, data }: CoreFixture,
+  { router, data, govManager }: CoreFixture,
   { pendle }: GovernanceFixture
 ): Promise<AaveV2ForgeFixture> {
-  const a2RewardManager = await deployContract(alice, PendleRewardManager, [
-    alice.address, //governance
+  const a2RewardManager = await deployContract(alice, MockPendleRewardManager, [
+    govManager.address, //governance
     consts.FORGE_AAVE_V2
   ]);
 
   const a2YieldContractDeployer = await deployContract(alice, PendleAaveV2YieldContractDeployer, [
-    alice.address, //governance
+    govManager.address, //governance
     consts.FORGE_AAVE_V2
   ]);
 
   const aaveV2Forge = await deployContract(alice, PendleAaveV2Forge, [
-    alice.address, // alice will be the governance address
+    govManager.address, // alice will be the governance address
     router.address,
     consts.AAVE_V2_LENDING_POOL_ADDRESS,
     consts.FORGE_AAVE_V2,
@@ -51,9 +51,9 @@ export async function aaveV2ForgeFixture(
 
   await a2YieldContractDeployer.initialize(aaveV2Forge.address);
 
-  await router.addForge(consts.FORGE_AAVE_V2, aaveV2Forge.address);
+  await data.addForge(consts.FORGE_AAVE_V2, aaveV2Forge.address);
 
-  await setTimeNextBlock(provider, consts.T0_A2); // set the minting time for the first OT and XYT
+  await setTimeNextBlock(consts.T0_A2); // set the minting time for the first OT and XYT
 
   // USDT
   await router.newYieldContracts(

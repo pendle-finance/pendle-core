@@ -27,11 +27,9 @@ import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleYieldTokenCommon.sol";
 
 contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldTokenCommon {
-    address public override forge;
-    address public override underlyingAsset;
-    address public override underlyingYieldToken;
-
-    mapping(address => uint256) public lastNormalisedIncome;
+    address public immutable override forge;
+    address public immutable override underlyingAsset;
+    address public immutable override underlyingYieldToken;
 
     constructor(
         address _router,
@@ -48,6 +46,7 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldTokenCommon {
             _underlyingAsset != address(0) && _underlyingYieldToken != address(0),
             "ZERO_ADDRESS"
         );
+        require(_forge != address(0), "ZERO_ADDRESS");
         forge = _forge;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;
@@ -81,10 +80,16 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldTokenCommon {
     function _beforeTokenTransfer(
         address from,
         address to,
-        uint256
+        uint256 amount
     ) internal override {
+        super._beforeTokenTransfer(from, to, amount);
         if (from != address(0))
             IPendleForge(forge).updateDueInterests(underlyingAsset, expiry, from);
         if (to != address(0)) IPendleForge(forge).updateDueInterests(underlyingAsset, expiry, to);
+    }
+
+    function approveRouter(address user) external {
+        require(msg.sender == address(router), "NOT_ROUTER");
+        _approve(user, address(router), type(uint256).max);
     }
 }

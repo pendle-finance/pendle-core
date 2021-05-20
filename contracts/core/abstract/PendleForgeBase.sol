@@ -25,21 +25,19 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../../libraries/ExpiryUtilsLib.sol";
-import "../../interfaces/IAaveLendingPoolCore.sol";
 import "../../interfaces/IPendleBaseToken.sol";
 import "../../interfaces/IPendleData.sol";
 import "../../interfaces/IPendleForge.sol";
 import "../../interfaces/IPendleRewardManager.sol";
 import "../../interfaces/IPendleYieldContractDeployer.sol";
 import "../../interfaces/IPendleYieldTokenHolder.sol";
-import "../../tokens/PendleFutureYieldToken.sol";
-import "../../tokens/PendleOwnershipToken.sol";
-import "../../periphery/Permissions.sol";
+import "../../periphery/WithdrawableV2.sol";
 import "../../libraries/MathLib.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @notice Common contract base for a forge implementation.
 /// @dev Each specific forge implementation will need to implement the virtual functions
-abstract contract PendleForgeBase is IPendleForge, Permissions {
+abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGuard {
     using ExpiryUtils for string;
     using SafeMath for uint256;
     using Math for uint256;
@@ -50,48 +48,23 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         IPendleYieldToken ot;
     }
 
-    IPendleRouter public override router;
-    IPendleData public override data;
+    IPendleRouter public immutable override router;
+    IPendleData public immutable override data;
     bytes32 public immutable override forgeId;
     IERC20 public immutable override rewardToken; // COMP/StkAAVE
-    IPendleRewardManager public override rewardManager;
-    IPendleYieldContractDeployer public override yieldContractDeployer;
-    IPendlePausingManager public pausingManager;
+    IPendleRewardManager public immutable override rewardManager;
+    IPendleYieldContractDeployer public immutable override yieldContractDeployer;
+    IPendlePausingManager public immutable pausingManager;
 
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         public
         override dueInterests;
 
     mapping(address => mapping(uint256 => uint256)) public totalFee;
-    mapping(address => mapping(uint256 => address)) public override yieldTokenHolders; // yieldTokenHolders[yieldToken][expiry]
+    mapping(address => mapping(uint256 => address)) public override yieldTokenHolders; // yieldTokenHolders[underlyingAsset][expiry]
 
     string private constant OT = "OT";
     string private constant XYT = "XYT";
-
-    constructor(
-        address _governance,
-        IPendleRouter _router,
-        bytes32 _forgeId,
-        address _rewardToken,
-        address _rewardManager,
-        address _yieldContractDeployer
-    ) Permissions(_governance) {
-        require(address(_router) != address(0), "ZERO_ADDRESS");
-        require(_forgeId != 0x0, "ZERO_BYTES");
-
-        router = _router;
-        forgeId = _forgeId;
-        data = _router.data();
-        rewardToken = IERC20(_rewardToken);
-        rewardManager = IPendleRewardManager(_rewardManager);
-        yieldContractDeployer = IPendleYieldContractDeployer(_yieldContractDeployer);
-        pausingManager = data.pausingManager();
-    }
-
-    modifier onlyRouter() {
-        require(msg.sender == address(router), "ONLY_ROUTER");
-        _;
-    }
 
     modifier onlyXYT(address _underlyingAsset, uint256 _expiry) {
         require(
@@ -109,9 +82,35 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         _;
     }
 
+    modifier onlyRouter() {
+        require(msg.sender == address(router), "ONLY_ROUTER");
+        _;
+    }
+
+    constructor(
+        address _governanceManager,
+        IPendleRouter _router,
+        bytes32 _forgeId,
+        address _rewardToken,
+        address _rewardManager,
+        address _yieldContractDeployer
+    ) PermissionsV2(_governanceManager) {
+        require(address(_router) != address(0), "ZERO_ADDRESS");
+        require(_forgeId != 0x0, "ZERO_BYTES");
+
+        router = _router;
+        forgeId = _forgeId;
+        IPendleData _dataTemp = IPendleRouter(_router).data();
+        data = _dataTemp;
+        rewardToken = IERC20(_rewardToken);
+        rewardManager = IPendleRewardManager(_rewardManager);
+        yieldContractDeployer = IPendleYieldContractDeployer(_yieldContractDeployer);
+        pausingManager = _dataTemp.pausingManager();
+    }
+
     // INVARIANT: All write functions must go through this check.
     // All XYT/OT transfers must go through this check as well. As such, XYT/OT transfers are also paused
-    function checkNotPaused(address _underlyingAsset, uint256 _expiry) internal view {
+    function checkNotPaused(address _underlyingAsset, uint256 _expiry) internal {
         (bool paused, ) =
             pausingManager.checkYieldContractStatus(forgeId, _underlyingAsset, _expiry);
         require(!paused, "YIELD_CONTRACT_PAUSED");
@@ -154,7 +153,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         address yieldToken = _getYieldBearingToken(_underlyingAsset);
         uint8 yieldTokenDecimals = IPendleYieldToken(yieldToken).decimals();
 
-        require(yieldToken != address(0), "INVALID_ASSET");
+        // require(yieldToken != address(0), "INVALID_ASSET"); Guaranteed by _getYieldBearingToken
 
         // Deploy the OT contract -> XYT contract -> yieldTokenHolder
         ot = yieldContractDeployer.forgeOwnershipToken(
@@ -175,7 +174,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
 
         // ot address is passed in to be used in the salt of CREATE2
         yieldTokenHolders[_underlyingAsset][_expiry] = yieldContractDeployer
-            .deployYieldTokenHolder(yieldToken, ot);
+            .deployYieldTokenHolder(yieldToken, _expiry);
 
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
@@ -196,47 +195,28 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
     function redeemAfterExpiry(
         address _user,
         address _underlyingAsset,
-        uint256 _expiry,
-        uint256 _transferOutRate
-    )
-        external
-        override
-        onlyRouter
-        returns (
-            uint256 redeemedAmount,
-            uint256 amountTransferOut,
-            uint256 amountToRenew
-        )
-    {
+        uint256 _expiry
+    ) external override onlyRouter returns (uint256 redeemedAmount) {
         checkNotPaused(_underlyingAsset, _expiry);
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        uint256 expiredOTamount = IERC20(address(tokens.ot)).balanceOf(_user);
+        uint256 expiredOTamount = tokens.ot.balanceOf(_user);
         require(expiredOTamount > 0, "NOTHING_TO_REDEEM");
+
+        // burn ot only, since users don't need xyt to redeem this
+        tokens.ot.burn(_user, expiredOTamount);
 
         // calc the value of the OT after since it expired (total of its underlying value + dueInterests since expiry)
         // no forge fee is charged on redeeming OT. Forge fee is only charged on redeeming XYT
         redeemedAmount = _calcTotalAfterExpiry(_underlyingAsset, _expiry, expiredOTamount);
 
-        // redeem the interest of any XYT (that belongs to this forge) that the user is having
+        // redeem the interest of any XYT (of the same underlyingAsset+expiry) that the user is having
         redeemedAmount = redeemedAmount.add(
             _beforeTransferDueInterests(tokens, _underlyingAsset, _expiry, _user, false)
         );
 
-        /*
-        * Not all the amount redeemed will be transferred out to the user. Instead, (1-_transferOutRate) will be kept
-        inside so that the Router can forward it to a new yieldTokenHolder contract in the case of renewingYield.
-        * the _transferOutRate should be different from Math.RONE <=> the user is doing a renewYield.
-        Else, the user will lose the fund. This is guaranteed by the Router since only Router can call this function
-        */
-        amountTransferOut = redeemedAmount.rmul(_transferOutRate);
-        amountToRenew = redeemedAmount.sub(amountTransferOut);
-
-        // transfer the amountTransferOut back to the user
-        _safeTransfer(yieldToken, _underlyingAsset, _expiry, _user, amountTransferOut);
-
-        // burn ot only, since users don't need xyt to redeem this
-        tokens.ot.burn(_user, expiredOTamount);
+        // transfer back to the user
+        _safeTransfer(yieldToken, _underlyingAsset, _expiry, _user, redeemedAmount);
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, expiredOTamount, redeemedAmount);
     }
@@ -311,13 +291,13 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         * This must be called before any transfer / mint/ burn action of XYT
         (and this has been implemented in the beforeTokenTransfer of the PendleFutureYieldToken)
     Conditions:
-        * Should only be called by the XYT contract
+        * Can only be called by the respective XYT contract, before transferring XYTs
     */
     function updateDueInterests(
         address _underlyingAsset,
         uint256 _expiry,
         address _user
-    ) external override onlyXYT(_underlyingAsset, _expiry) {
+    ) external override onlyXYT(_underlyingAsset, _expiry) nonReentrant {
         checkNotPaused(_underlyingAsset, _expiry);
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         uint256 principal = tokens.xyt.balanceOf(_user);
@@ -330,13 +310,15 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         * This must be called before any transfer / mint/ burn action of OT
         (and this has been implemented in the beforeTokenTransfer of the PendleOwnershipToken)
     Conditions:
-        * Should only be called by the OT contract
+        * Can only be called by the respective OT contract, before transferring OTs
+    Note:
+        This function is just a proxy to call to rewardManager
     */
     function updatePendingRewards(
         address _underlyingAsset,
         uint256 _expiry,
         address _user
-    ) external override onlyOT(_underlyingAsset, _expiry) {
+    ) external override onlyOT(_underlyingAsset, _expiry) nonReentrant {
         checkNotPaused(_underlyingAsset, _expiry);
         rewardManager.updatePendingRewards(_underlyingAsset, _expiry, _user);
     }
@@ -349,7 +331,7 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         * Should only be called by Router
         * The yield contract (OT & XYT) must not be expired yet (checked at Router)
     */
-    function tokenizeYield(
+    function mintOtAndXyt(
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToTokenize,
@@ -384,7 +366,6 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         * To withdraw the forgeFee
     Conditions:
         * Should only be called by Governance
-        * The yield contract (OT & XYT) must not be expired yet (checked at Router)
         * This function must be the only way to withdrawForgeFee
     Consideration:
         * Although this function can be called directly, it doesn't have ReentrancyGuard since it can only be called by governance
@@ -406,35 +387,14 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         _safeTransfer(yieldToken, _underlyingAsset, _expiry, treasuryAddress, _totalFee);
     }
 
-    /**
-    Use:
-        * To forwardYieldToken from one yieldTokenHolder to another in the case of renewYield
-    Conditions:
-        * Should only be called by router, and only in the case of renewYield
-    */
-    function forwardYieldToken(
-        address _underlyingAsset,
-        uint256 _fromExpiry,
-        uint256 _toExpiry,
-        uint256 _amount
-    ) external override onlyRouter {
-        checkNotPaused(_underlyingAsset, _fromExpiry);
-        IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
-        _safeTransfer(
-            yieldToken,
-            _underlyingAsset,
-            _fromExpiry,
-            yieldTokenHolders[_underlyingAsset][_toExpiry],
-            _amount
-        );
-    }
-
     function getYieldBearingToken(address _underlyingAsset) external override returns (address) {
         return _getYieldBearingToken(_underlyingAsset);
     }
 
     /**
-    @notice To be called before the dueInterest of any users is redeemed
+    @notice To be called before the dueInterest of any users is redeemed.
+    @param _skipUpdateDueInterests: this is set to true, if there was already a call to _updateDueInterests() in this transaction
+    INVARIANT: there must be a transfer of the interests (amountOut) to the user after this function is called
     */
     function _beforeTransferDueInterests(
         PendleTokens memory _tokens,
@@ -496,11 +456,17 @@ abstract contract PendleForgeBase is IPendleForge, Permissions {
         (_tokens.ot, _tokens.xyt) = data.getPendleYieldTokens(forgeId, _underlyingAsset, _expiry);
     }
 
+    // There shouldn't be any fund in here
+    // hence governance is allowed to withdraw anything from here.
+    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
+        allowed = true;
+    }
+
     /// INVARIANT: after _updateDueInterests is called, dueInterests[][][] must already be
     /// updated with all the due interest for the user, until exactly the current timestamp (no caching whatsoever)
     /// Refer to updateDueInterests function for more info
     function _updateDueInterests(
-        uint256 principal,
+        uint256 _principal,
         address _underlyingAsset,
         uint256 _expiry,
         address _user

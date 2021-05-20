@@ -27,9 +27,9 @@ import "../interfaces/IPendleYieldTokenCommon.sol";
 import "../interfaces/IPendleForge.sol";
 
 contract PendleOwnershipToken is PendleBaseToken, IPendleYieldTokenCommon {
-    address public override forge;
-    address public override underlyingAsset;
-    address public override underlyingYieldToken;
+    address public immutable override forge;
+    address public immutable override underlyingAsset;
+    address public immutable override underlyingYieldToken;
 
     constructor(
         address _router,
@@ -46,6 +46,7 @@ contract PendleOwnershipToken is PendleBaseToken, IPendleYieldTokenCommon {
             _underlyingAsset != address(0) && _underlyingYieldToken != address(0),
             "ZERO_ADDRESS"
         );
+        require(_forge != address(0), "ZERO_ADDRESS");
         forge = _forge;
         underlyingAsset = _underlyingAsset;
         underlyingYieldToken = _underlyingYieldToken;
@@ -79,8 +80,9 @@ contract PendleOwnershipToken is PendleBaseToken, IPendleYieldTokenCommon {
     function _beforeTokenTransfer(
         address from,
         address to,
-        uint256
+        uint256 amount
     ) internal virtual override {
+        super._beforeTokenTransfer(from, to, amount);
         if (from != address(0))
             IPendleForge(forge).updatePendingRewards(underlyingAsset, expiry, from);
         if (to != address(0))

@@ -1,6 +1,6 @@
-const hre = require("hardhat");
-import fs from "fs";
-import path from "path";
+const hre = require('hardhat');
+import fs from 'fs';
+import path from 'path';
 
 import {
   devConstants,
@@ -11,18 +11,18 @@ import {
   DeployedContract,
   createNewYieldContractAndMarket,
   getContractFromDeployment,
-} from "../helpers/deployHelpers";
-import { beforeAll } from "./beforeAll";
-import { step0 } from "./step0";
-import { step1 } from "./step1";
-import { step2 } from "./step2";
-import { step3 } from "./step3";
-import { step4 } from "./step4";
-import { step5 } from "./step5";
-import { step6 } from "./step6";
-import { step7 } from "./step7";
-import { step8 } from "./step8";
-import { step9 } from "./step9";
+} from '../helpers/deployHelpers';
+import { beforeAll } from './beforeAll';
+import { step0 } from './step0';
+import { step1 } from './step1';
+import { step2 } from './step2';
+import { step3 } from './step3';
+import { step4 } from './step4';
+import { step5 } from './step5';
+import { step6 } from './step6';
+import { step7 } from './step7';
+import { step8 } from './step8';
+import { step9 } from './step9';
 const NUMBER_OF_STEPS = 9;
 
 async function main() {
@@ -35,11 +35,11 @@ async function main() {
   console.log(`\n\tNetwork = ${network}, deployer = ${deployer.address}`);
   console.log(`\tDeployment's filePath = ${filePath}`);
 
-  if (network == "kovan" || network == "kovantest") {
+  if (network == 'kovan' || network == 'kovantest') {
     consts = kovanConstants;
-  } else if (network == "goerli") {
+  } else if (network == 'goerli') {
     consts = goerliConstants;
-  } else if (network == "mainnet") {
+  } else if (network == 'mainnet') {
     consts = mainnetConstants;
   } else {
     consts = devConstants;
@@ -47,9 +47,7 @@ async function main() {
 
   if (fs.existsSync(filePath)) {
     // const
-    const existingDeploymentJson = JSON.parse(
-      fs.readFileSync(filePath, "utf8")
-    );
+    const existingDeploymentJson = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     deployment = existingDeploymentJson as Deployment;
 
     console.log(`\tThere is an existing deployment`);
@@ -62,27 +60,20 @@ async function main() {
       yieldContracts: {},
     };
   }
-  if (process.env.RESET == "true") {
+  if (process.env.RESET == 'true') {
     console.log(`\tRESETing, deploying a brand new instance of contracts`);
     deployment.step = -1;
   }
 
-  const lastStep =
-    process.env.LAST_STEP != null
-      ? parseInt!(process.env.LAST_STEP)
-      : NUMBER_OF_STEPS;
-  console.log(
-    `======= Deploying from step ${deployment.step} to step ${lastStep}`
-  );
+  const lastStep = process.env.LAST_STEP != null ? parseInt!(process.env.LAST_STEP) : NUMBER_OF_STEPS;
+  console.log(`======= Deploying from step ${deployment.step} to step ${lastStep}`);
 
   console.log(`\nSetting Environment Variables`);
   await beforeAll(deployer, hre, deployment, consts);
   for (let step = deployment.step + 1; step <= lastStep; step++) {
     switch (step) {
       case 0: {
-        console.log(
-          `\n[Step ${step}]: Deploying PendleTeamTokens & PendleEcosystemFund's contracts`
-        );
+        console.log(`\n[Step ${step}]: Deploying PendleTeamTokens & PendleEcosystemFund's contracts`);
         await step0(deployer, hre, deployment, consts);
         break;
       }
@@ -117,16 +108,12 @@ async function main() {
         break;
       }
       case 7: {
-        console.log(
-          `\n[Step ${step}]: Deploying PendleAaveForge & PendleAaveMarketFactory`
-        );
+        console.log(`\n[Step ${step}]: Deploying PendleAaveForge & PendleAaveMarketFactory`);
         await step7(deployer, hre, deployment, consts);
         break;
       }
       case 8: {
-        console.log(
-          `\n[Step ${step}]: Deploying PendleCompoundForge & PendleCompoundMarketFactory`
-        );
+        console.log(`\n[Step ${step}]: Deploying PendleCompoundForge & PendleCompoundMarketFactory`);
         await step8(deployer, hre, deployment, consts);
         break;
       }
@@ -141,10 +128,8 @@ async function main() {
     }
     deployment.step = step;
     console.log(`\tsaving updated deployment data`);
-    fs.writeFileSync(filePath, JSON.stringify(deployment, null, "  "), "utf8");
-    console.log(
-      `[Step ${step} - Done]: saved updated deployment data for step ${step}`
-    );
+    fs.writeFileSync(filePath, JSON.stringify(deployment, null, '  '), 'utf8');
+    console.log(`[Step ${step} - Done]: saved updated deployment data for step ${step}`);
   }
 }
 

@@ -32,6 +32,20 @@ import "./IPendleMarketFactory.sol";
 
 interface IPendleRouter is IPendleStructs {
     /**
+     * @notice Emitted when a market for a future yield token and an ERC20 token is created.
+     * @param marketFactoryId Forge identifier.
+     * @param xyt The address of the tokenized future yield token as the base asset.
+     * @param token The address of an ERC20 token as the quote asset.
+     * @param market The address of the newly created market.
+     **/
+    event MarketCreated(
+        bytes32 marketFactoryId,
+        address indexed xyt,
+        address indexed token,
+        address indexed market
+    );
+
+    /**
      * @notice Emitted when a swap happens on the market.
      * @param trader The address of msg.sender.
      * @param inToken The input token.
@@ -67,20 +81,6 @@ interface IPendleRouter is IPendleStructs {
      */
     event Exit(address indexed sender, uint256 token0Amount, uint256 token1Amount, address market);
 
-    /**
-     * @dev Emitted when new forge is added
-     * @param forgeId Human Readable Forge ID in Bytes
-     * @param forgeAddress The Forge Address
-     */
-    event NewForge(bytes32 indexed forgeId, address indexed forgeAddress);
-
-    /**
-     * @dev Emitted when new forge is added
-     * @param marketFactoryId Human Readable Market Factory ID in Bytes
-     * @param marketFactoryAddress The Market Factory Address
-     */
-    event NewMarketFactory(bytes32 indexed marketFactoryId, address indexed marketFactoryAddress);
-
     struct Swap {
         uint256 swapAmount;
         uint256 limitReturnAmount;
@@ -104,13 +104,6 @@ interface IPendleRouter is IPendleStructs {
     /***********
      *  FORGE  *
      ***********/
-
-    /**
-     * @notice Adds a new forge for a protocol.
-     * @param forgeId Forge and protocol identifier.
-     * @param forge The address of the added forge.
-     **/
-    function addForge(bytes32 forgeId, address forge) external;
 
     function newYieldContracts(
         bytes32 forgeId,
@@ -148,7 +141,7 @@ interface IPendleRouter is IPendleStructs {
         external
         returns (
             uint256 redeemedAmount,
-            uint256 amountTransferOut,
+            uint256 amountRenewed,
             address ot,
             address xyt,
             uint256 amountTokenMinted
@@ -171,7 +164,6 @@ interface IPendleRouter is IPendleStructs {
     /***********
      *  MARKET *
      ***********/
-    function addMarketFactory(bytes32 marketFactoryId, address marketFactoryAddress) external;
 
     function addMarketLiquidityDual(
         bytes32 _marketFactoryId,

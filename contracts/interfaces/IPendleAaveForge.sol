@@ -29,5 +29,5 @@ interface IPendleAaveForge is IPendleForge {
     /**
     @dev directly get the normalizedIncome from Aave
     */
-    function getReserveNormalizedIncome(address _underlyingAsset) external returns (uint256);
+    function getReserveNormalizedIncome(address _underlyingAsset) external view returns (uint256);
 }

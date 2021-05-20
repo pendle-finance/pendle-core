@@ -25,11 +25,11 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "../periphery/Permissions.sol";
-import "../periphery/Withdrawable.sol";
+import "../periphery/WithdrawableV2.sol";
 import "../interfaces/IPendleYieldTokenHolder.sol";
 import "../interfaces/IPendleRewardManager.sol";
 import "../interfaces/IPendleForge.sol";
+import "../interfaces/IPendleYieldToken.sol";
 
 /**
 @notice for each Forge deployed, there will be a corresponding PendleRewardManager contract,
@@ -38,10 +38,10 @@ import "../interfaces/IPendleForge.sol";
 @dev the logic of distributing rewards is very similar to that of PendleCompoundMarket & PendleCompoundLiquidityMining
     Any major differences are likely to be bugs
 */
-contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable, ReentrancyGuard {
+contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, ReentrancyGuard {
     using SafeMath for uint256;
 
-    bytes32 public override forgeId;
+    bytes32 public immutable override forgeId;
     IPendleForge private forge;
     IERC20 private rewardToken;
     bool public override skippingRewards;
@@ -63,17 +63,17 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     // as well as information needed to calculate rewards for each user (lastParamL)
     mapping(address => mapping(uint256 => RewardData)) private rewardData;
 
+    modifier isValidOT(address _underlyingAsset, uint256 _expiry) {
+        require(data.isValidOT(forgeId, _underlyingAsset, _expiry), "INVALID_OT");
+        _;
+    }
+
     modifier onlyForge() {
         require(msg.sender == address(forge), "ONLY_FORGE");
         _;
     }
 
-    modifier onlyRouter() {
-        require(msg.sender == address(router), "ONLY_ROUTER");
-        _;
-    }
-
-    constructor(address _governance, bytes32 _forgeId) Permissions(_governance) {
+    constructor(address _governanceManager, bytes32 _forgeId) PermissionsV2(_governanceManager) {
         forgeId = _forgeId;
     }
 
@@ -97,7 +97,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     /**
     Use:
         To claim the COMP/StkAAVE for any OT holder.
-        Newly acrrued rewards are equally accrued to all OT holders in the process.
+        Newly accrued rewards are equally accrued to all OT holders in the process.
     Conditions:
         * Can be called by anyone, to claim for anyone
     INVARIANTs:
@@ -108,7 +108,13 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         address _underlyingAsset,
         uint256 _expiry,
         address _user
-    ) external override nonReentrant returns (uint256 dueRewards) {
+    )
+        external
+        override
+        isValidOT(_underlyingAsset, _expiry)
+        nonReentrant
+        returns (uint256 dueRewards)
+    {
         dueRewards = _beforeTransferPendingRewards(_underlyingAsset, _expiry, _user);
 
         address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
@@ -123,13 +129,13 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     @dev This must be called before any transfer / mint/ burn action of OT
         (and this has been implemented in the beforeTokenTransfer of the PendleOwnershipToken)
     Conditions:
-        * Can be called by anyone, to update for anyone
+        * Can only be called by forge
     */
     function updatePendingRewards(
         address _underlyingAsset,
         uint256 _expiry,
         address _user
-    ) external override nonReentrant {
+    ) external override onlyForge nonReentrant {
         _updatePendingRewards(_underlyingAsset, _expiry, _user);
     }
 
@@ -196,7 +202,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
     ) internal {
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
         if (rwd.paramL == 0) {
-            // paramL always from 1, to make sure that if a user's lastParamL is 0,
+            // paramL always starts from 1, to make sure that if a user's lastParamL is 0,
             // they must be getting OT for the very first time, and we will know it in _updatePendingRewards()
             rwd.paramL = 1;
         }
@@ -210,7 +216,7 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
 
         // * firstTerm is always paramL. But we are still doing this way to make it consistent
         // in the way that we calculate interests/rewards, across Market, LiquidityMining and RewardManager
-        // * paramR is basically the new amount of rewards that came in since the last time we call _updateParamL
+        // * paramR is basically the new amount of rewards that came in since the last time we called _updateParamL
         (uint256 firstTerm, uint256 paramR) =
             _getFirstTermAndParamR(_underlyingAsset, _expiry, currentRewardBalance);
 
@@ -235,5 +241,11 @@ contract PendleRewardManager is IPendleRewardManager, Permissions, Withdrawable,
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
         firstTerm = rwd.paramL;
         paramR = currentRewardBalance.sub(rwd.lastRewardBalance);
+    }
+
+    // There shouldn't be any fund in here
+    // hence governance is allowed to withdraw anything from here.
+    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
+        allowed = true;
     }
 }

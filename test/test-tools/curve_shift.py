@@ -41,8 +41,7 @@ def R(i):
 
 cal_dp()
 ### DO NOT TOUCH THIS PART ###
-
-DAY = CNT_SEG // 2
-
-res = alpha[DAY]
-print("%11f %11f" % (RONE - (res * RONE), (res * RONE)))
+if __name__ == "__main__":
+    DAY = CNT_SEG // 2
+    res = alpha[DAY]
+    print("%11f %11f" % (RONE - (res * RONE), (res * RONE)))
