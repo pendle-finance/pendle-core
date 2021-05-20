@@ -177,7 +177,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
 
         // ot address is passed in to be used in the salt of CREATE2
         yieldTokenHolders[_underlyingAsset][_expiry] = yieldContractDeployer
-            .deployYieldTokenHolder(yieldToken);
+            .deployYieldTokenHolder(yieldToken, _expiry);
 
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 

@@ -30,7 +30,7 @@ contract PendleAaveYieldContractDeployer is PendleYieldContractDeployerBase {
         PendleYieldContractDeployerBase(_governanceManager, _forgeId)
     {}
 
-    function deployYieldTokenHolder(address yieldToken)
+    function deployYieldTokenHolder(address yieldToken, uint256 expiry)
         external
         override
         onlyForge
@@ -42,7 +42,8 @@ contract PendleAaveYieldContractDeployer is PendleYieldContractDeployerBase {
                 address(forge),
                 yieldToken,
                 address(forge.rewardToken()),
-                address(forge.rewardManager())
+                address(forge.rewardManager()),
+                expiry
             )
         );
     }

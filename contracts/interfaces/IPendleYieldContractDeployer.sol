@@ -41,7 +41,7 @@ interface IPendleYieldContractDeployer {
         uint256 _expiry
     ) external returns (address xyt);
 
-    function deployYieldTokenHolder(address yieldToken)
+    function deployYieldTokenHolder(address yieldToken, uint256 expiry)
         external
         returns (address yieldTokenHolder);
 }

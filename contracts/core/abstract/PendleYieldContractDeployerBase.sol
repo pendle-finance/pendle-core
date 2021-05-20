@@ -96,7 +96,7 @@ abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeploye
         );
     }
 
-    function deployYieldTokenHolder(address yieldToken)
+    function deployYieldTokenHolder(address yieldToken, uint256 expiry)
         external
         virtual
         override

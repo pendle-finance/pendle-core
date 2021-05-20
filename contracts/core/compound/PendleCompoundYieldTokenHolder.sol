@@ -34,14 +34,16 @@ contract PendleCompoundYieldTokenHolder is PendleYieldTokenHolderBase {
         address _yieldToken,
         address _rewardToken,
         address _rewardManager,
-        address _comptroller
+        address _comptroller,
+        uint256 _expiry
     )
         PendleYieldTokenHolderBase(
             _governanceManager,
             _forge,
             _yieldToken,
             _rewardToken,
-            _rewardManager
+            _rewardManager,
+            _expiry
         )
     {
         require(_comptroller != address(0), "ZERO_ADDRESS");
