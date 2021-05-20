@@ -39,7 +39,7 @@ export const devConstants = {
     LOCK_NUMERATOR: BN.from(1),
     LOCK_DENOMINATOR: BN.from(180),
 
-    TEST_EXPIRY_3: 1621087200,
+    TEST_EXPIRY_3: 1624147200,
 
     // Pendle token distribution
     INVESTOR_AMOUNT: BN.from(36959981).mul(ONE_E_18),
@@ -60,9 +60,9 @@ export const devConstants = {
     INTEREST_UPDATE_RATE_DELTA_FOR_MARKET: BN.from(2).pow(40).div(10000), // 0.01% delta
 
     // OT rewards
-    STKAAVE_ADDRESS: "0x4da27a545c0c5b758a6ba100e3a049001de870f5",
-    COMP_ADDRESS: "0xc00e94cb662c3520282e6f5717214004a7f26888",
-    AAVE_INCENTIVES_CONTROLLER: "0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5",
+    STKAAVE_ADDRESS: '0x4da27a545c0c5b758a6ba100e3a049001de870f5',
+    COMP_ADDRESS: '0xc00e94cb662c3520282e6f5717214004a7f26888',
+    AAVE_INCENTIVES_CONTROLLER: '0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5',
 
     // Fee
     FORGE_FEE: RONE.div(100).mul(1), // 1% forge fee
@@ -120,7 +120,7 @@ export const kovanConstants = {
     ONE_MONTH: BN.from(2592000),
     TEST_EXPIRY: 1623500719,
     TEST_EXPIRY_2: 1618230319,
-    TEST_EXPIRY_3: 1621087200,
+    TEST_EXPIRY_3: 1624147200,
     ONE_YEAR: BN.from(31536000),
     LOCK_NUMERATOR: BN.from(1),
     LOCK_DENOMINATOR: BN.from(180),
@@ -144,9 +144,9 @@ export const kovanConstants = {
     INTEREST_UPDATE_RATE_DELTA_FOR_MARKET: BN.from(2).pow(40).div(10000),
 
     // OT rewards
-    STKAAVE_ADDRESS: "0xa1c74a9a3e59ffe9bee7b85cd6e91c0751289ebd", //WETH for kovan
-    COMP_ADDRESS: "0xa1c74a9a3e59ffe9bee7b85cd6e91c0751289ebd", //WETH for kovan
-    AAVE_INCENTIVES_CONTROLLER: "0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5",
+    STKAAVE_ADDRESS: '0xa1c74a9a3e59ffe9bee7b85cd6e91c0751289ebd', //WETH for kovan
+    COMP_ADDRESS: '0xa1c74a9a3e59ffe9bee7b85cd6e91c0751289ebd', //WETH for kovan
+    AAVE_INCENTIVES_CONTROLLER: '0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5',
 
     // Fee
     FORGE_FEE: RONE.div(100).mul(1), // 1% forge fee
@@ -438,7 +438,8 @@ export async function setupLiquidityMining(
 ) {
   const [deployer] = await hre.ethers.getSigners();
   const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
-  // const pendleData = await getContractFromDeployment(hre, deployment, "PendleData");
+  const governanceManager = await getContractFromDeployment(hre, deployment, 'PendleGovernanceManager');
+  const whitelist = await getContractFromDeployment(hre, deployment, 'PendleWhitelist');
 
   const underlyingAssetSymbol = await underlyingAssetContract.symbol();
   const baseTokenSymbol = await baseTokenContract.symbol();
@@ -450,7 +451,8 @@ export async function setupLiquidityMining(
   const pendle = await getContractFromDeployment(hre, deployment, 'PENDLE');
 
   const liqMiningContract = await deploy(hre, deployment, liqMiningContractName, [
-    deployer.address,
+    governanceManager.address,
+    whitelist.address,
     pendle.address,
     pendleRouter.address,
     marketFactoryId,

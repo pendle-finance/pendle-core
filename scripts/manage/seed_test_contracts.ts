@@ -49,39 +49,16 @@ async function main() {
   console.log(`\n\tNetwork = ${network}, deployer = ${deployer.address}`);
   console.log(`\tDeployment's filePath = ${filePath}`);
 
-  if (
-    network !== "kovan" &&
-    network !== "kovantest" &&
-    network !== "development"
-  ) {
-    console.log(
-      "[ERROR] Must be for kovan or kovantest network or development"
-    );
+  if (network !== 'kovan' && network !== 'kovantest' && network !== 'development') {
+    console.log('[ERROR] Must be for kovan or kovantest network or development');
     process.exit(1);
   }
   if (network == 'development' || network == 'hardhat') {
     // seed USDTs, aUSDTs, cUSDTs
-    await mintAaveToken(
-      hre.ethers,
-      consts.tokens.USDT_AAVE,
-      deployer,
-      UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6),
-      true
-    );
-    await mintAaveToken(
-      hre.ethers,
-      consts.tokens.USDT_AAVE,
-      deployer,
-      UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6),
-      false
-    );
-    await mintCompoundToken(
-      hre.ethers,
-      consts.tokens.USDT_COMPOUND,
-      deployer,
-      UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6)
-    );
-    await mint(hre.ethers, consts.tokens.USDT_COMPOUND, deployer, BASE_TOKEN_TO_SEED.mul(2).div(10 ** 6));
+    await mintAaveToken(consts.tokens.USDT_AAVE, deployer, UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6), true);
+    await mintAaveToken(consts.tokens.USDT_AAVE, deployer, UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6), false);
+    await mintCompoundToken(consts.tokens.USDT_COMPOUND, deployer, UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6));
+    await mint(consts.tokens.USDT_COMPOUND, deployer, BASE_TOKEN_TO_SEED.mul(2).div(10 ** 6));
   }
 
   const existingDeploymentJson = JSON.parse(fs.readFileSync(filePath, 'utf8'));

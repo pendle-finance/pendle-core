@@ -1,32 +1,30 @@
 import { Deployment, validAddress, deploy, getContractFromDeployment } from '../helpers/deployHelpers';
 
 export async function step9(deployer: any, hre: any, deployment: Deployment, consts: any) {
-  const governanceMultisig = deployment.variables.GOVERNANCE_MULTISIG;
+  const governanceManager = deployment.contracts.PendleGovernanceManager.address;
   const pendleRouterAddress = deployment.contracts.PendleRouter.address;
 
-  if (!validAddress('GOVERNANCE_MULTISIG', governanceMultisig)) process.exit(1);
+  if (!validAddress('Governance Manager', governanceManager)) process.exit(1);
   if (!validAddress('PendleRouter address', pendleRouterAddress)) process.exit(1);
 
   console.log(`\tPendleRouter address used = ${pendleRouterAddress}`);
-  console.log(`\tGOVERNANCE_MULTISIG used = ${governanceMultisig}`);
+  console.log(`\tGovernance Manager used = ${governanceManager}`);
   console.log(`\tAAVE_V2_LENDING_POOL_ADDRESS used = ${consts.misc.AAVE_V2_LENDING_POOL_ADDRESS}`);
   console.log(`\tForge Id used = ${consts.misc.FORGE_AAVE_V2}`);
 
-  const a2RewardManager = await deploy(hre, deployment, "PendleRewardManager", [
-    governanceMultisig,
+  const a2RewardManager = await deploy(hre, deployment, 'PendleRewardManager', [
+    governanceManager,
     consts.misc.FORGE_AAVE_V2,
   ]);
 
   //TODO: use proper V2 reward manager
-  const a2YieldContractDeployer = await deploy(
-    hre,
-    deployment,
-    "PendleAaveYieldContractDeployer",
-    [governanceMultisig, consts.misc.FORGE_AAVE_V2]
-  );
+  const a2YieldContractDeployer = await deploy(hre, deployment, 'PendleAaveYieldContractDeployer', [
+    governanceManager,
+    consts.misc.FORGE_AAVE_V2,
+  ]);
 
-  const pendleAaveV2Forge = await deploy(hre, deployment, "PendleAaveV2Forge", [
-    governanceMultisig,
+  const pendleAaveV2Forge = await deploy(hre, deployment, 'PendleAaveV2Forge', [
+    governanceManager,
     pendleRouterAddress,
     consts.misc.AAVE_V2_LENDING_POOL_ADDRESS,
     consts.misc.FORGE_AAVE_V2,
@@ -36,26 +34,13 @@ export async function step9(deployer: any, hre: any, deployment: Deployment, con
     consts.misc.AAVE_INCENTIVES_CONTROLLER,
   ]);
 
-<<<<<<< HEAD
-  const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
-  await pendleRouter.addForge(consts.misc.FORGE_AAVE_V2, pendleAaveV2Forge.address);
-=======
   await a2RewardManager.initialize(pendleAaveV2Forge.address);
 
   await a2YieldContractDeployer.initialize(pendleAaveV2Forge.address);
 
-  const pendleRouter = await getContractFromDeployment(
-    hre,
-    deployment,
-    "PendleRouter"
-  );
-  await pendleRouter.addForge(
-    consts.misc.FORGE_AAVE_V2,
-    pendleAaveV2Forge.address
-  );
->>>>>>> aa77253 (Update deploy scripts for latest contract changes)
-
   const pendleData = await getContractFromDeployment(hre, deployment, 'PendleData');
+
+  await pendleData.addForge(consts.misc.FORGE_AAVE_V2, pendleAaveV2Forge.address);
 
   deployment.yieldContracts = {}; //reset yield contracts
 

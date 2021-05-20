@@ -8,19 +8,16 @@ export async function step5(deployer: any, hre: any, deployment: Deployment, con
   if (!validAddress('PendleData address', pendleDataAddress)) process.exit(1);
 
   const pendleData = await getContractFromDeployment(hre, deployment, 'PendleData');
+  console.log(`PendleData = ${pendleData.address}`);
   await pendleData.initialize(pendleRouterAddress);
+  console.log(`13`);
 
   await pendleData.setLockParams(consts.misc.LOCK_NUMERATOR, consts.misc.LOCK_DENOMINATOR);
   console.log(`\t\tSet lock parameters for markets`);
 
-  await pendleData.setInterestUpdateRateDeltaForMarket(
-    consts.misc.INTEREST_UPDATE_RATE_DELTA_FOR_MARKET
-  );
+  await pendleData.setInterestUpdateRateDeltaForMarket(consts.misc.INTEREST_UPDATE_RATE_DELTA_FOR_MARKET);
   await pendleData.setForgeFee(consts.misc.FORGE_FEE);
-  await pendleData.setMarketFees(
-    consts.misc.SWAP_FEE,
-    consts.misc.PROTOCOL_SWAP_FEE
-  );
+  await pendleData.setMarketFees(consts.misc.SWAP_FEE, consts.misc.PROTOCOL_SWAP_FEE);
 
   console.log(`\tPendleRouter address used = ${pendleRouterAddress}`);
   console.log(`\tPendleData address used = ${pendleDataAddress}`);
