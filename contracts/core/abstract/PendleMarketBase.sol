@@ -185,7 +185,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
 
     /// pass in a tokenReserve & the type of token (through _asset), update the reserveData
     function updateReserveData(TokenReserve memory tokenReserve, address _asset) internal {
-        require(tokenReserve.balance <= MAX_TOKEN_RESERVE_BALANCE, "EXCEED_TOKEN_BALANCE_LIMIT");
         (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, uint256 tokenWeight) =
             readReserveData();
         // Basically just update the weight & bal of the corresponding token & write the reserveData again

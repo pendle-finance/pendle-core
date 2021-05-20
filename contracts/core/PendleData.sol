@@ -272,7 +272,7 @@ contract PendleData is IPendleData, PermissionsV2 {
         onlyGovernance
     {
         require(_swapFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
-        require(_protocolSwapFee < Math.RONE, "PROTOCOL_FEE_EXCEED_LIMIT");
+        require(_protocolSwapFee <= Math.RONE, "PROTOCOL_FEE_EXCEED_LIMIT");
         swapFee = _swapFee;
         protocolSwapFee = _protocolSwapFee;
         emit MarketFeesSet(_swapFee, _protocolSwapFee);

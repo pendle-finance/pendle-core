@@ -254,7 +254,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         );
 
         // mint OT&XYT for users
-        (ot, xyt, amountTokenMinted) = forge.tokenizeYield(
+        (ot, xyt, amountTokenMinted) = forge.mintOtAndXyt(
             _underlyingAsset,
             _expiry,
             _amountToTokenize,
