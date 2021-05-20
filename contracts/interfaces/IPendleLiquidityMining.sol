@@ -79,7 +79,7 @@ interface IPendleLiquidityMining {
     /**
      * @notice Read the amount of LP_expiry staked for a user
      */
-    function balances(uint256 expiry, address user) external view returns (uint256);
+    function getBalances(uint256 expiry, address user) external view returns (uint256);
 
     function lpHolderForExpiry(uint256 expiry) external view returns (address);
 
