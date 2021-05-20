@@ -32,7 +32,7 @@ contract PendleCompoundYieldContractDeployer is PendleYieldContractDeployerBase 
         PendleYieldContractDeployerBase(_governanceManager, _forgeId)
     {}
 
-    function deployYieldTokenHolder(address yieldToken, address ot)
+    function deployYieldTokenHolder(address yieldToken, address creator)
         external
         override
         onlyForge
@@ -40,7 +40,7 @@ contract PendleCompoundYieldContractDeployer is PendleYieldContractDeployerBase 
     {
         yieldTokenHolder = Factory.createContract(
             type(PendleCompoundYieldTokenHolder).creationCode,
-            abi.encodePacked(ot),
+            abi.encodePacked(creator),
             abi.encode(
                 address(governanceManager),
                 address(forge),

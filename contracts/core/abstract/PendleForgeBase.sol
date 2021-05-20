@@ -146,12 +146,11 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         * only call by Router
         * the yield contract for this pair of _underlyingAsset & _expiry must not exist yet (checked on Router)
     */
-    function newYieldContracts(address _underlyingAsset, uint256 _expiry)
-        external
-        override
-        onlyRouter
-        returns (address ot, address xyt)
-    {
+    function newYieldContracts(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address _user
+    ) external override onlyRouter returns (address ot, address xyt) {
         checkNotPaused(_underlyingAsset, _expiry);
         address yieldToken = _getYieldBearingToken(_underlyingAsset);
         uint8 yieldTokenDecimals = IPendleYieldToken(yieldToken).decimals();
@@ -164,7 +163,8 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
             OT.concat(IPendleBaseToken(yieldToken).name(), _expiry, " "),
             OT.concat(IPendleBaseToken(yieldToken).symbol(), _expiry, "-"),
             yieldTokenDecimals,
-            _expiry
+            _expiry,
+            _user
         );
 
         xyt = yieldContractDeployer.forgeFutureYieldToken(
@@ -172,12 +172,13 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
             XYT.concat(IPendleBaseToken(yieldToken).name(), _expiry, " "),
             XYT.concat(IPendleBaseToken(yieldToken).symbol(), _expiry, "-"),
             yieldTokenDecimals,
-            _expiry
+            _expiry,
+            _user
         );
 
         // ot address is passed in to be used in the salt of CREATE2
         yieldTokenHolders[_underlyingAsset][_expiry] = yieldContractDeployer
-            .deployYieldTokenHolder(yieldToken, ot);
+            .deployYieldTokenHolder(yieldToken, _user);
 
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 

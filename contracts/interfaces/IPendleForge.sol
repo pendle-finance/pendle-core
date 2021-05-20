@@ -97,9 +97,11 @@ interface IPendleForge {
         address spender
     ) external;
 
-    function newYieldContracts(address underlyingAsset, uint256 expiry)
-        external
-        returns (address ot, address xyt);
+    function newYieldContracts(
+        address underlyingAsset,
+        uint256 expiry,
+        address user
+    ) external returns (address ot, address xyt);
 
     function redeemAfterExpiry(
         address user,

@@ -101,7 +101,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         xyt = address(data.xytTokens(_forgeId, _underlyingAsset, _expiry));
         require(ot == address(0) && xyt == address(0), "DUPLICATE_YIELD_CONTRACT");
 
-        (ot, xyt) = forge.newYieldContracts(_underlyingAsset, _expiry);
+        (ot, xyt) = forge.newYieldContracts(_underlyingAsset, _expiry, msg.sender);
     }
 
     /**

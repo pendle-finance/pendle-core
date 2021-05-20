@@ -58,13 +58,14 @@ abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeploye
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
-        uint256 _expiry
+        uint256 _expiry,
+        address _creator
     ) external override onlyForge returns (address xyt) {
         IERC20 yieldToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
 
         xyt = Factory.createContract(
             type(PendleFutureYieldToken).creationCode,
-            abi.encodePacked(yieldToken, _underlyingAsset),
+            abi.encodePacked(_creator),
             abi.encode(
                 address(forge.router()),
                 address(forge),
@@ -84,13 +85,14 @@ abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeploye
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
-        uint256 _expiry
+        uint256 _expiry,
+        address _creator
     ) external override onlyForge returns (address ot) {
         IERC20 yieldToken = IERC20(forge.getYieldBearingToken(_underlyingAsset));
 
         ot = Factory.createContract(
             type(PendleOwnershipToken).creationCode,
-            abi.encodePacked(yieldToken, _underlyingAsset),
+            abi.encodePacked(_creator),
             abi.encode(
                 address(forge.router()),
                 address(forge),
@@ -105,7 +107,7 @@ abstract contract PendleYieldContractDeployerBase is IPendleYieldContractDeploye
         );
     }
 
-    function deployYieldTokenHolder(address yieldToken, address ot)
+    function deployYieldTokenHolder(address yieldToken, address creator)
         external
         virtual
         override

@@ -30,7 +30,8 @@ interface IPendleYieldContractDeployer {
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
-        uint256 _expiry
+        uint256 _expiry,
+        address _creator
     ) external returns (address ot);
 
     function forgeFutureYieldToken(
@@ -38,10 +39,11 @@ interface IPendleYieldContractDeployer {
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
-        uint256 _expiry
+        uint256 _expiry,
+        address _creator
     ) external returns (address xyt);
 
-    function deployYieldTokenHolder(address yieldToken, address ot)
+    function deployYieldTokenHolder(address yieldToken, address creator)
         external
         returns (address yieldTokenHolder);
 }
