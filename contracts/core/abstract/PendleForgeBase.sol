@@ -334,7 +334,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         * Should only be called by Router
         * The yield contract (OT & XYT) must not be expired yet (checked at Router)
     */
-    function tokenizeYield(
+    function mintOtAndXyt(
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _amountToTokenize,

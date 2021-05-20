@@ -132,7 +132,7 @@ interface IPendleForge {
         uint256 amountToRedeem
     ) external returns (uint256 redeemedAmount);
 
-    function tokenizeYield(
+    function mintOtAndXyt(
         address underlyingAsset,
         uint256 expiry,
         uint256 amountToTokenize,

@@ -641,11 +641,11 @@ abstract contract PendleLiquidityMiningBase is
         _updatePendingRewards(expiry, msg.sender);
         _updateDueInterests(expiry, msg.sender);
 
-        IERC20(marketAddress).safeTransferFrom(msg.sender, expiryData[expiry].lpHolder, amount);
-
         ExpiryData storage exd = expiryData[expiry];
         exd.balances[msg.sender] = exd.balances[msg.sender].add(amount);
         exd.totalStakeLP = exd.totalStakeLP.add(amount);
+
+        IERC20(marketAddress).safeTransferFrom(msg.sender, expiryData[expiry].lpHolder, amount);
     }
 
     /// @notice push the lp token to users. This must be the only way to send LP out
@@ -653,11 +653,11 @@ abstract contract PendleLiquidityMiningBase is
         _updatePendingRewards(expiry, msg.sender);
         _updateDueInterests(expiry, msg.sender);
 
-        IPendleLpHolder(expiryData[expiry].lpHolder).sendLp(msg.sender, amount);
-
         ExpiryData storage exd = expiryData[expiry];
         exd.balances[msg.sender] = exd.balances[msg.sender].sub(amount);
         exd.totalStakeLP = exd.totalStakeLP.sub(amount);
+
+        IPendleLpHolder(expiryData[expiry].lpHolder).sendLp(msg.sender, amount);
     }
 
     /**
