@@ -1,6 +1,6 @@
 import { BigNumber as BN, Contract, providers, Wallet } from 'ethers'
-import PendleAaveMarketFactory from "../../../build/artifacts/contracts/core/PendleAaveMarketFactory.sol/PendleAaveMarketFactory.json"
-import PendleCompoundMarketFactory from "../../../build/artifacts/contracts/core/PendleCompoundMarketFactory.sol/PendleCompoundMarketFactory.json"
+import PendleAaveMarketFactory from "../../../build/artifacts/contracts/core/aave/PendleAaveMarketFactory.sol/PendleAaveMarketFactory.json"
+import PendleCompoundMarketFactory from "../../../build/artifacts/contracts/core/compound/PendleCompoundMarketFactory.sol/PendleCompoundMarketFactory.json"
 import PendleData from "../../../build/artifacts/contracts/core/PendleData.sol/PendleData.json"
 import PendleMarketReader from '../../../build/artifacts/contracts/core/PendleMarketReader.sol/PendleMarketReader.json'
 import PendlePausingManager from '../../../build/artifacts/contracts/core/PendlePausingManager.sol/PendlePausingManager.json'

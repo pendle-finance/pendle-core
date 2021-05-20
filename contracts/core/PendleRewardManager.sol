@@ -30,6 +30,7 @@ import "../periphery/WithdrawableV2.sol";
 import "../interfaces/IPendleYieldTokenHolder.sol";
 import "../interfaces/IPendleRewardManager.sol";
 import "../interfaces/IPendleForge.sol";
+import "../interfaces/IPendleYieldToken.sol";
 
 /**
 @notice for each Forge deployed, there will be a corresponding PendleRewardManager contract,

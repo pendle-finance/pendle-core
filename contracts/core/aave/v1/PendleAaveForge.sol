@@ -22,9 +22,9 @@
  */
 pragma solidity 0.7.6;
 
-import "../interfaces/IPendleAaveForge.sol";
-import "./abstract/PendleForgeBase.sol";
-import "./PendleAaveYieldTokenHolder.sol";
+import "../../../interfaces/IPendleAaveForge.sol";
+import "./../../abstract/PendleForgeBase.sol";
+import "./../../aave/v1/PendleAaveYieldTokenHolder.sol";
 
 contract PendleAaveForge is PendleForgeBase, IPendleAaveForge {
     using ExpiryUtils for string;

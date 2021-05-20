@@ -22,15 +22,16 @@
  */
 pragma solidity 0.7.6;
 
-import "../libraries/FactoryLib.sol";
-import "./PendleCompoundMarket.sol";
-import "../interfaces/IPendleRouter.sol";
-import "../interfaces/IPendleData.sol";
-import "../interfaces/IPendleMarketFactory.sol";
-import "../interfaces/IPendleYieldToken.sol";
-import "./abstract/PendleMarketFactoryBase.sol";
+import "../../libraries/FactoryLib.sol";
+import "./PendleAaveMarket.sol";
+import "../../interfaces/IPendleRouter.sol";
+import "../../interfaces/IPendleData.sol";
+import "../../interfaces/IPendleMarketFactory.sol";
+import "../../interfaces/IPendleYieldToken.sol";
+import "../../interfaces/IPermissionsV2.sol";
+import "./../abstract/PendleMarketFactoryBase.sol";
 
-contract PendleCompoundMarketFactory is PendleMarketFactoryBase {
+contract PendleAaveMarketFactory is PendleMarketFactoryBase {
     constructor(address _governanceManager, bytes32 _marketFactoryId)
         PendleMarketFactoryBase(_governanceManager, _marketFactoryId)
     {}
@@ -44,7 +45,7 @@ contract PendleCompoundMarketFactory is PendleMarketFactoryBase {
         address _governanceManager = address(IPermissionsV2(address(router)).governanceManager());
         return
             Factory.createContract(
-                type(PendleCompoundMarket).creationCode,
+                type(PendleAaveMarket).creationCode,
                 abi.encodePacked(_forgeAddress, _xyt, _token, _expiry),
                 abi.encode(
                     _governanceManager,

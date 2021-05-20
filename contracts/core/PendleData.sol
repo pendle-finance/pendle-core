@@ -38,11 +38,8 @@ contract PendleData is IPendleData, PermissionsV2 {
     // every forge, so we need to check against this mapping
     mapping(bytes32 => mapping(bytes32 => bool)) public override validForgeFactoryPair;
 
-    mapping(address => bytes32) public override getForgeId;
     mapping(bytes32 => address) public override getForgeAddress;
-    mapping(address => bytes32) public override getMarketFactoryId;
     mapping(bytes32 => address) public override getMarketFactoryAddress;
-    mapping(address => bytes32) public override getRewardManagerForgeId;
 
     // getMarket[marketFactoryId][xyt][token]
     mapping(bytes32 => mapping(address => mapping(address => address))) public override getMarket;
@@ -162,10 +159,7 @@ contract PendleData is IPendleData, PermissionsV2 {
         require(_forgeId == IPendleForge(_forgeAddress).forgeId(), "INVALID_ID");
         require(getForgeAddress[_forgeId] == address(0), "EXISTED_ID");
 
-        getForgeId[_forgeAddress] = _forgeId;
         getForgeAddress[_forgeId] = _forgeAddress;
-        address rewardManager = address(IPendleForge(_forgeAddress).rewardManager());
-        getRewardManagerForgeId[rewardManager] = _forgeId;
 
         emit ForgeAdded(_forgeId, _forgeAddress);
     }
@@ -195,16 +189,6 @@ contract PendleData is IPendleData, PermissionsV2 {
     ) external view override returns (IPendleYieldToken ot, IPendleYieldToken xyt) {
         ot = otTokens[_forgeId][_underlyingAsset][_expiry];
         xyt = xytTokens[_forgeId][_underlyingAsset][_expiry];
-    }
-
-    function isValidXYT(
-        address _forge,
-        address _underlyingAsset,
-        uint256 _expiry
-    ) external view override returns (bool) {
-        bytes32 forgeId = getForgeId[_forge];
-        return (forgeId != bytes32(0) &&
-            address(xytTokens[forgeId][_underlyingAsset][_expiry]) != address(0));
     }
 
     function isValidXYT(
@@ -248,7 +232,6 @@ contract PendleData is IPendleData, PermissionsV2 {
         );
         require(getMarketFactoryAddress[_marketFactoryId] == address(0), "EXISTED_ID");
 
-        getMarketFactoryId[_marketFactoryAddress] = _marketFactoryId;
         getMarketFactoryAddress[_marketFactoryId] = _marketFactoryAddress;
 
         emit NewMarketFactory(_marketFactoryId, _marketFactoryAddress);
@@ -320,19 +303,6 @@ contract PendleData is IPendleData, PermissionsV2 {
     ) public view override returns (address market) {
         bytes32 key = _createKey(_tokenIn, _tokenOut, _marketFactoryId);
         market = markets[key];
-    }
-
-    /// Check if the market's underlying tokens are token1 & token2
-    function checkMarketTokens(
-        address token1,
-        address token2,
-        IPendleMarket market
-    ) external view override {
-        require(isMarket[address(market)], "INVALID_MARKET");
-        require(
-            getMarketFromKey(token1, token2, market.factoryId()) == address(market),
-            "INVALID_MARKET"
-        );
     }
 
     function _createKey(

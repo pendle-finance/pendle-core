@@ -23,7 +23,7 @@
 pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
-import "../core/PendleAaveMarket.sol";
+import "../core/aave/PendleAaveMarket.sol";
 
 contract MockPendleAaveMarket is PendleAaveMarket {
     constructor(

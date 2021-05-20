@@ -22,32 +22,38 @@
  */
 pragma solidity 0.7.6;
 
-import "./PendleAaveYieldTokenHolder.sol";
-import "./abstract/PendleYieldContractDeployerBase.sol";
-import "../libraries/FactoryLib.sol";
+import "./../../abstract/PendleYieldTokenHolderBase.sol";
+import "../../../interfaces/IAaveIncentivesController.sol";
 
-contract PendleAaveYieldContractDeployer is PendleYieldContractDeployerBase {
-    constructor(address _governanceManager, bytes32 _forgeId)
-        PendleYieldContractDeployerBase(_governanceManager, _forgeId)
-    {}
+contract PendleAaveV2YieldTokenHolder is PendleYieldTokenHolderBase {
+    IAaveIncentivesController private immutable aaveIncentivesController;
 
-    function deployYieldTokenHolder(address yieldToken, address ot)
-        external
-        override
-        onlyForge
-        returns (address yieldTokenHolder)
+    constructor(
+        address _governanceManager,
+        address _forge,
+        address _router,
+        address _yieldToken,
+        address _rewardToken,
+        address _rewardManager,
+        address _aaveIncentivesController
+    )
+        PendleYieldTokenHolderBase(
+            _governanceManager,
+            _forge,
+            _router,
+            _yieldToken,
+            _rewardToken,
+            _rewardManager
+        )
     {
-        yieldTokenHolder = Factory.createContract(
-            type(PendleAaveYieldTokenHolder).creationCode,
-            abi.encodePacked(ot),
-            abi.encode(
-                address(governanceManager),
-                address(forge),
-                address(forge.router()),
-                yieldToken,
-                forge.rewardToken(),
-                address(forge.rewardManager())
-            )
-        );
+        require(_aaveIncentivesController != address(0), "ZERO_ADDRESS");
+        aaveIncentivesController = IAaveIncentivesController(_aaveIncentivesController);
+    }
+
+    function redeemRewards() external override {
+        address[] memory assets = new address[](1);
+        assets[0] = yieldToken;
+
+        aaveIncentivesController.claimRewards(assets, type(uint256).max, address(this));
     }
 }

@@ -1,5 +1,5 @@
 import { Contract, providers, Wallet } from "ethers";
-import PendleCompoundMarket from "../../../build/artifacts/contracts/core/PendleCompoundMarket.sol/PendleCompoundMarket.json";
+import PendleCompoundMarket from "../../../build/artifacts/contracts/core/compound/PendleCompoundMarket.sol/PendleCompoundMarket.json";
 import MockPendleAaveMarket from "../../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json";
 import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
 import { consts, emptyToken, getA2Contract, getAContract, getCContract, mintOtAndXyt, tokens } from "../../helpers";

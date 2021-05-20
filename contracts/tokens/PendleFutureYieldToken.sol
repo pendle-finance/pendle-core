@@ -31,8 +31,6 @@ contract PendleFutureYieldToken is PendleBaseToken, IPendleYieldTokenCommon {
     address public immutable override underlyingAsset;
     address public immutable override underlyingYieldToken;
 
-    mapping(address => uint256) public lastNormalisedIncome;
-
     constructor(
         address _router,
         address _forge,

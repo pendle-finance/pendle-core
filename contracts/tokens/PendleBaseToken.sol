@@ -39,7 +39,7 @@ import "../interfaces/IPendleRouter.sol";
 abstract contract PendleBaseToken is ERC20 {
     using SafeMath for uint256;
 
-    uint256 public start;
+    uint256 public immutable start;
     uint256 public expiry;
     IPendleRouter public immutable router;
 

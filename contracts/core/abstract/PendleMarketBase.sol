@@ -129,7 +129,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         forgeId = IPendleForge(_forge).forgeId();
         underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
         underlyingYieldToken = IERC20(IPendleYieldToken(_xyt).underlyingYieldToken());
-        expiry = _expiry;
         require(_router == address(IPendleMarketFactory(msg.sender).router()), "ROUTER_MISMATCH");
         data = IPendleForge(_forge).data();
         pausingManager = IPendleForge(_forge).data().pausingManager();
@@ -142,7 +141,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
 
     // INVARIANT: All write functions, except for ERC20's approve(), increaseAllowance(), decreaseAllowance()
     // must go through this check. This means that minting/burning/transferring of LP tokens is paused too.
-    function checkNotPaused() internal view {
+    function checkNotPaused() internal {
         (bool paused, ) = pausingManager.checkMarketStatus(factoryId, address(this));
         require(!paused, "MARKET_PAUSED");
     }
@@ -752,7 +751,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
      * only Router can call it
      * if the function is not removeMarketLiquidityDual, then must check the market hasn't been locked yet
      */
-    function checkAddRemoveSwapClaimAllowed(bool skipOpenCheck) internal view {
+    function checkAddRemoveSwapClaimAllowed(bool skipOpenCheck) internal {
         checkNotPaused();
         require(bootstrapped, "NOT_BOOTSTRAPPED");
         require(msg.sender == address(router), "ONLY_ROUTER");

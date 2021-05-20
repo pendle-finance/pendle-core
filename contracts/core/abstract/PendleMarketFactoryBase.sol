@@ -23,7 +23,6 @@
 pragma solidity 0.7.6;
 
 import "../../libraries/FactoryLib.sol";
-import "../PendleAaveMarket.sol";
 import "../../interfaces/IPendleRouter.sol";
 import "../../interfaces/IPendleData.sol";
 import "../../interfaces/IPendleMarketFactory.sol";
@@ -56,7 +55,6 @@ abstract contract PendleMarketFactoryBase is IPendleMarketFactory {
         address forgeAddress = IPendleYieldToken(_xyt).forge();
         address underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
         uint256 expiry = IPendleYieldToken(_xyt).expiry();
-        require(data.isValidXYT(forgeAddress, underlyingAsset, expiry), "INVALID_XYT");
 
         market = _createMarket(forgeAddress, _xyt, _token, expiry);
         data.addMarket(marketFactoryId, _xyt, _token, market);
