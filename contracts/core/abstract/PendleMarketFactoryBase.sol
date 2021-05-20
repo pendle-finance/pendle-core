@@ -55,7 +55,7 @@ abstract contract PendleMarketFactoryBase is IPendleMarketFactory {
         address forgeAddress = IPendleYieldToken(_xyt).forge();
         address underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
         uint256 expiry = IPendleYieldToken(_xyt).expiry();
-        
+
         market = _createMarket(forgeAddress, _xyt, _token, expiry);
         data.addMarket(marketFactoryId, _xyt, _token, market);
 
