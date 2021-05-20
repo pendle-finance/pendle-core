@@ -23,10 +23,6 @@
 pragma solidity 0.7.6;
 
 import "./PendleCompoundMarket.sol";
-import "../../interfaces/IPendleRouter.sol";
-import "../../interfaces/IPendleData.sol";
-import "../../interfaces/IPendleMarketFactory.sol";
-import "../../interfaces/IPendleYieldToken.sol";
 import "./../abstract/PendleMarketFactoryBase.sol";
 
 contract PendleCompoundMarketFactory is PendleMarketFactoryBase {

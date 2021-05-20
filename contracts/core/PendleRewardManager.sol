@@ -25,7 +25,6 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "../periphery/PermissionsV2.sol";
 import "../periphery/WithdrawableV2.sol";
 import "../interfaces/IPendleYieldTokenHolder.sol";
 import "../interfaces/IPendleRewardManager.sol";
@@ -74,7 +73,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         _;
     }
 
-    constructor(address _governance, bytes32 _forgeId) PermissionsV2(_governance) {
+    constructor(address _governanceManager, bytes32 _forgeId) PermissionsV2(_governanceManager) {
         forgeId = _forgeId;
     }
 
@@ -203,7 +202,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
     ) internal {
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
         if (rwd.paramL == 0) {
-            // paramL always from 1, to make sure that if a user's lastParamL is 0,
+            // paramL always starts from 1, to make sure that if a user's lastParamL is 0,
             // they must be getting OT for the very first time, and we will know it in _updatePendingRewards()
             rwd.paramL = 1;
         }
@@ -217,7 +216,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
 
         // * firstTerm is always paramL. But we are still doing this way to make it consistent
         // in the way that we calculate interests/rewards, across Market, LiquidityMining and RewardManager
-        // * paramR is basically the new amount of rewards that came in since the last time we call _updateParamL
+        // * paramR is basically the new amount of rewards that came in since the last time we called _updateParamL
         (uint256 firstTerm, uint256 paramR) =
             _getFirstTermAndParamR(_underlyingAsset, _expiry, currentRewardBalance);
 

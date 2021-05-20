@@ -23,13 +23,7 @@
 pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
-import "../../interfaces/IPendleData.sol";
-import "../../interfaces/IPendleMarket.sol";
-import "../../interfaces/IPendleForge.sol";
 import "../../interfaces/IPendleCompoundForge.sol";
-import "../../interfaces/IPendleMarketFactory.sol";
-import "../../interfaces/IPendleYieldToken.sol";
-import "../../tokens/PendleBaseToken.sol";
 import "./../abstract/PendleMarketBase.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
