@@ -763,7 +763,7 @@ abstract contract PendleLiquidityMiningBase is
         allExpiries.push(expiry);
         newLpHoldingContractAddress = Factory.createContract(
             type(PendleLpHolder).creationCode,
-            abi.encodePacked(marketAddress, router, underlyingYieldToken),
+            abi.encodePacked(msg.sender),
             abi.encode(governanceManager, marketAddress, router, underlyingYieldToken)
         );
         expiryData[expiry].lpHolder = newLpHoldingContractAddress;
