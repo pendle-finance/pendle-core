@@ -27,20 +27,6 @@ import "./IPendleRouter.sol";
 
 interface IPendleMarketFactory {
     /**
-     * @notice Emitted when a market for a future yield token and an ERC20 token is created.
-     * @param marketFactoryId Forge identifier.
-     * @param xyt The address of the tokenized future yield token as the base asset.
-     * @param token The address of an ERC20 token as the quote asset.
-     * @param market The address of the newly created market.
-     **/
-    event MarketCreated(
-        bytes32 marketFactoryId,
-        address indexed xyt,
-        address indexed token,
-        address indexed market
-    );
-
-    /**
      * @notice Creates a market given a protocol ID, future yield token, and an ERC20 token.
      * @param xyt Token address of the futuonlyCorere yield token as base asset.
      * @param token Token address of an ERC20 token as quote asset.

@@ -1,19 +1,19 @@
 import { BigNumber as BN, Contract, providers, Wallet } from 'ethers';
-import PendleAaveLiquidityMining from "../../../build/artifacts/contracts/core/PendleAaveLiquidityMining.sol/PendleAaveLiquidityMining.json";
-import PendleCompoundLiquidityMining from "../../../build/artifacts/contracts/core/PendleCompoundLiquidityMining.sol/PendleCompoundLiquidityMining.json";
+import PendleCompoundLiquidityMining from "../../../build/artifacts/contracts/core/compound/PendleCompoundLiquidityMining.sol/PendleCompoundLiquidityMining.json";
+import PendleWhitelist from "../../../build/artifacts/contracts/core/PendleWhitelist.sol/PendleWhitelist.json";
+import MockPendleAaveLiquidityMining from "../../../build/artifacts/contracts/mock/MockPendleAaveLiquidityMining.sol/MockPendleAaveLiquidityMining.json";
 import PENDLE from "../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
 import { amountToWei, consts, tokens } from '../../helpers';
-import { AaveFixture } from './aave.fixture';
 import { AaveForgeFixture } from './aaveForge.fixture';
 import { CompoundFixture } from './compoundForge.fixture';
 import { CoreFixture } from './core.fixture';
-import { marketFixture } from './market.fixture';
+import { marketFixture, MarketFixture } from './market.fixture';
+import hre from 'hardhat';
+const { waffle } = hre;
+const { deployContract, loadFixture } = waffle;
 
-const { waffle } = require("hardhat");
-const hre = require("hardhat");
-const { deployContract } = waffle;
-
-interface LiquidityMiningFixture {
+export interface LiquidityMiningFixture {
+  marketFix: MarketFixture,
   core: CoreFixture,
   aForge: AaveForgeFixture,
   cForge: CompoundFixture,
@@ -23,11 +23,11 @@ interface LiquidityMiningFixture {
   cMarket: Contract,
   aLiquidityMining: Contract,
   cLiquidityMining: Contract,
-  aLiquidityMiningWeb3: any
-  params: liqParams,
+  params: LiqParams,
+  whitelist: Contract,
 }
 
-export interface liqParams {
+export interface LiqParams {
   START_TIME: BN,
   EPOCH_DURATION: BN,
   REWARDS_PER_EPOCH: BN[],
@@ -39,7 +39,7 @@ export class UserStakeAction {
   time: BN;
   isStaking: boolean;
   amount: BN;
-  id: number; // will not be used in calExpectedRewards
+  id: number; // will not be used in calcExpectedRewards
   constructor(time: BN, amount: BN, isStaking: boolean, id: number) {
     this.time = time;
     this.amount = amount;
@@ -49,23 +49,25 @@ export class UserStakeAction {
 }
 
 // TOTAL_DURATION = 10 days * 20 = 200 days
-const params: liqParams = {
+const params: LiqParams = {
   START_TIME: consts.T0_C.add(1000), // starts in 1000s
   EPOCH_DURATION: BN.from(3600 * 24 * 10), //10 days
-  REWARDS_PER_EPOCH: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map((a) => BN.from("10000000000").mul(a)), // = [10000000000, 20000000000, ..]
-  NUMBER_OF_EPOCHS: BN.from(20),
+  REWARDS_PER_EPOCH: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29].map((a) => BN.from("10000000000").mul(a)), // = [10000000000, 20000000000, ..]
+  NUMBER_OF_EPOCHS: BN.from(30),
   VESTING_EPOCHS: BN.from(4),
   TOTAL_NUMERATOR: BN.from(10 ** 9),
 };
 
 export async function liquidityMiningFixture(
-  wallets: Wallet[],
+  _: Wallet[],
   provider: providers.Web3Provider,
 ): Promise<LiquidityMiningFixture> {
-  let [alice, bob, charlie, dave, eve] = wallets;
-  let { core, aForge, cForge, testToken, aMarket, cMarket } = await marketFixture(wallets, provider);
+  const wallets = waffle.provider.getWallets();
+  let [alice, bob, charlie, dave] = wallets;
+
+  let marketFix: MarketFixture = await loadFixture(marketFixture);
+  let { core, aForge, cForge, testToken, aMarket, cMarket } = marketFix;
   let router = core.router;
-  let data = core.data;
   let aXyt = aForge.aFutureYieldToken;
   let cXyt = cForge.cFutureYieldToken;
   const amount = amountToWei(BN.from(100), 6);
@@ -78,6 +80,7 @@ export async function liquidityMiningFixture(
     amount,
     consts.HIGH_GAS_OVERRIDE
   );
+
   await router.bootstrapMarket(
     consts.MARKET_FACTORY_COMPOUND,
     cXyt.address,
@@ -88,12 +91,14 @@ export async function liquidityMiningFixture(
   );
 
   let pdl = await deployContract(alice, PENDLE, [alice.address, alice.address, alice.address, alice.address, alice.address]);
+  let whitelist = await deployContract(alice, PendleWhitelist, [core.govManager.address]);
 
   let aLiquidityMining = await deployContract(
     alice,
-    PendleAaveLiquidityMining,
+    MockPendleAaveLiquidityMining,
     [
-      alice.address,
+      core.govManager.address,
+      whitelist.address,
       pdl.address,
       router.address,
       consts.MARKET_FACTORY_AAVE,
@@ -110,7 +115,8 @@ export async function liquidityMiningFixture(
     alice,
     PendleCompoundLiquidityMining,
     [
-      alice.address,
+      core.govManager.address,
+      whitelist.address,
       pdl.address,
       router.address,
       consts.MARKET_FACTORY_COMPOUND,
@@ -134,11 +140,13 @@ export async function liquidityMiningFixture(
     cLiquidityMining.address,
     consts.INF
   );
+
   await aLiquidityMining.setAllocationSetting(
     [consts.T0.add(consts.SIX_MONTH)],
     [params.TOTAL_NUMERATOR],
     consts.HIGH_GAS_OVERRIDE
   );
+
   await cLiquidityMining.setAllocationSetting(
     [consts.T0_C.add(consts.SIX_MONTH)],
     [params.TOTAL_NUMERATOR],
@@ -167,10 +175,5 @@ export async function liquidityMiningFixture(
     await cMarket.transfer(person.address, lpBalanceAlice.div(10));
   }
 
-  let aLiquidityMiningWeb3 = new hre.web3.eth.Contract(
-    PendleAaveLiquidityMining.abi,
-    aLiquidityMining.address
-  );
-
-  return { core, aForge, cForge, testToken, pdl, aMarket, cMarket, aLiquidityMining, cLiquidityMining, aLiquidityMiningWeb3, params };
+  return { marketFix, core, aForge, cForge, testToken, pdl, aMarket, cMarket, aLiquidityMining, cLiquidityMining, params, whitelist };
 }

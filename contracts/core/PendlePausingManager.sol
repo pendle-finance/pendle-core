@@ -22,11 +22,10 @@
  */
 pragma solidity 0.7.6;
 
-import "../periphery/Permissions.sol";
-import "../periphery/Withdrawable.sol";
+import "../periphery/PermissionsV2.sol";
 import "../interfaces/IPendlePausingManager.sol";
 
-contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawable {
+contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
     struct PausingData {
         uint256 timestamp;
         bool paused;
@@ -36,6 +35,12 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
         address handler;
         address pendingHandler;
         uint256 timelockDeadline;
+    }
+
+    struct CachedStatus {
+        uint128 timestamp;
+        bool paused;
+        bool locked;
     }
 
     uint256 private constant EMERGENCY_HANDLER_CHANGE_TIMELOCK = 7 days;
@@ -62,6 +67,11 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
     bool public override permForgeHandlerLocked;
     bool public override permMarketHandlerLocked;
 
+    uint256 internal lastUpdated;
+    mapping(bytes32 => mapping(address => mapping(uint256 => CachedStatus)))
+        public forgeAssetExpiryCachedStatus;
+    mapping(bytes32 => mapping(address => CachedStatus)) public marketCachedStatus;
+
     mapping(address => bool) public override isPausingAdmin;
 
     // only governance can unpause; pausing admins can pause
@@ -69,7 +79,7 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
         if (settingToPaused) {
             require(isPausingAdmin[msg.sender], "FORBIDDEN");
         } else {
-            require(msg.sender == governance, "ONLY_GOVERNANCE");
+            require(msg.sender == _governance(), "ONLY_GOVERNANCE");
         }
         _;
     }
@@ -79,13 +89,20 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
         _;
     }
 
+    // This must be used in every function that changes any of the pausing/locked status
+    modifier updateSomeStatus {
+        _;
+        lastUpdated = block.timestamp;
+    }
+
     constructor(
-        address _governance,
+        address _governanceManager,
         address initialForgeHandler,
         address initialMarketHandler
-    ) Permissions(_governance) {
+    ) PermissionsV2(_governanceManager) {
         forgeEmergencyHandler.handler = initialForgeHandler;
         marketEmergencyHandler.handler = initialMarketHandler;
+        lastUpdated = block.timestamp;
     }
 
     /////////////////////////
@@ -178,6 +195,7 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
     function setForgePaused(bytes32 forgeId, bool settingToPaused)
         external
         override
+        updateSomeStatus
         isAllowedToSetPaused(settingToPaused)
         notPermLocked
     {
@@ -189,7 +207,7 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
         bytes32 forgeId,
         address underlyingAsset,
         bool settingToPaused
-    ) external override isAllowedToSetPaused(settingToPaused) notPermLocked {
+    ) external override updateSomeStatus isAllowedToSetPaused(settingToPaused) notPermLocked {
         forgeAssetPaused[forgeId][underlyingAsset].timestamp = block.timestamp;
         forgeAssetPaused[forgeId][underlyingAsset].paused = settingToPaused;
     }
@@ -199,18 +217,25 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
         address underlyingAsset,
         uint256 expiry,
         bool settingToPaused
-    ) external override isAllowedToSetPaused(settingToPaused) notPermLocked {
+    ) external override updateSomeStatus isAllowedToSetPaused(settingToPaused) notPermLocked {
         forgeAssetExpiryPaused[forgeId][underlyingAsset][expiry].timestamp = block.timestamp;
         forgeAssetExpiryPaused[forgeId][underlyingAsset][expiry].paused = settingToPaused;
     }
 
-    function setForgeLocked(bytes32 forgeId) external override onlyGovernance notPermLocked {
+    function setForgeLocked(bytes32 forgeId)
+        external
+        override
+        updateSomeStatus
+        onlyGovernance
+        notPermLocked
+    {
         forgeLocked[forgeId] = true;
     }
 
     function setForgeAssetLocked(bytes32 forgeId, address underlyingAsset)
         external
         override
+        updateSomeStatus
         onlyGovernance
         notPermLocked
     {
@@ -221,7 +246,7 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
         bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry
-    ) external override onlyGovernance notPermLocked {
+    ) external override updateSomeStatus onlyGovernance notPermLocked {
         forgeAssetExpiryLocked[forgeId][underlyingAsset][expiry] = true;
     }
 
@@ -254,13 +279,26 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
         bytes32 forgeId,
         address underlyingAsset,
         uint256 expiry
-    ) public view override returns (bool _paused, bool _locked) {
+    ) external override returns (bool _paused, bool _locked) {
+        CachedStatus memory status =
+            forgeAssetExpiryCachedStatus[forgeId][underlyingAsset][expiry];
+        if (status.timestamp > lastUpdated) {
+            return (status.paused, status.locked);
+        }
+
         _locked = _isYieldContractLocked(forgeId, underlyingAsset, expiry);
         if (_locked) {
             _paused = true; // if a yield contract is locked, its paused by default as well
         } else {
             _paused = _isYieldContractPaused(forgeId, underlyingAsset, expiry);
         }
+
+        // update the cache
+        CachedStatus storage statusInStorage =
+            forgeAssetExpiryCachedStatus[forgeId][underlyingAsset][expiry];
+        statusInStorage.timestamp = uint128(block.timestamp);
+        statusInStorage.locked = _locked;
+        statusInStorage.paused = _paused;
     }
 
     /////////////////////////
@@ -269,6 +307,7 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
     function setMarketFactoryPaused(bytes32 marketFactoryId, bool settingToPaused)
         external
         override
+        updateSomeStatus
         isAllowedToSetPaused(settingToPaused)
         notPermLocked
     {
@@ -280,7 +319,7 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
         bytes32 marketFactoryId,
         address market,
         bool settingToPaused
-    ) external override isAllowedToSetPaused(settingToPaused) notPermLocked {
+    ) external override updateSomeStatus isAllowedToSetPaused(settingToPaused) notPermLocked {
         marketPaused[marketFactoryId][market].timestamp = block.timestamp;
         marketPaused[marketFactoryId][market].paused = settingToPaused;
     }
@@ -288,6 +327,7 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
     function setMarketFactoryLocked(bytes32 marketFactoryId)
         external
         override
+        updateSomeStatus
         onlyGovernance
         notPermLocked
     {
@@ -297,6 +337,7 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
     function setMarketLocked(bytes32 marketFactoryId, address market)
         external
         override
+        updateSomeStatus
         onlyGovernance
         notPermLocked
     {
@@ -324,16 +365,26 @@ contract PendlePausingManager is IPendlePausingManager, Permissions, Withdrawabl
     }
 
     function checkMarketStatus(bytes32 marketFactoryId, address market)
-        public
-        view
+        external
         override
         returns (bool _paused, bool _locked)
     {
+        CachedStatus memory status = marketCachedStatus[marketFactoryId][market];
+        if (status.timestamp > lastUpdated) {
+            return (status.paused, status.locked);
+        }
+
         _locked = _isMarketLocked(marketFactoryId, market);
         if (_locked) {
             _paused = true; // if a yield contract is locked, its paused by default as well
         } else {
             _paused = _isMarketPaused(marketFactoryId, market);
         }
+
+        // update the cache
+        CachedStatus storage statusInStorage = marketCachedStatus[marketFactoryId][market];
+        statusInStorage.timestamp = uint128(block.timestamp);
+        statusInStorage.locked = _locked;
+        statusInStorage.paused = _paused;
     }
 }

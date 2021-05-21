@@ -1,9 +1,9 @@
 import { BigNumber as BN } from "ethers";
 import { startOfEpoch } from "../../helpers";
-import { liqParams, UserStakeAction } from "./liquidityMining.fixture";
+import { LiqParams, UserStakeAction } from "./liquidityMining.fixture";
 const SAME_AMOUNT: BN = BN.from(10000);
 
-export function scenario01(params: liqParams): UserStakeAction[][][] {
+export function scenario01(params: LiqParams): UserStakeAction[][][] {
   let LENGTH = params.EPOCH_DURATION;
   return [
     [
@@ -69,7 +69,7 @@ export function scenario01(params: liqParams): UserStakeAction[][][] {
   ];
 }
 
-export function scenario04(params: liqParams): UserStakeAction[][][] {
+export function scenario04(params: LiqParams): UserStakeAction[][][] {
   return [
     [
       [
@@ -135,7 +135,7 @@ export function scenario04(params: liqParams): UserStakeAction[][][] {
       [
         new UserStakeAction(startOfEpoch(params, 3).add(182573), BN.from(849), true, 3),
         new UserStakeAction(startOfEpoch(params, 3).add(493521), BN.from(315), false, 3),
-        new UserStakeAction(startOfEpoch(params, 3).add(543419), BN.from(0), false, 3),
+        new UserStakeAction(startOfEpoch(params, 3).add(543419), BN.from(1), false, 3),
       ]
     ],
     [
@@ -183,7 +183,7 @@ export function scenario04(params: liqParams): UserStakeAction[][][] {
   ]
 }
 
-export function scenario06(params: liqParams): UserStakeAction[][][] {
+export function scenario06(params: LiqParams): UserStakeAction[][][] {
   return [
     [
       [
@@ -246,6 +246,71 @@ export function scenario06(params: liqParams): UserStakeAction[][][] {
         new UserStakeAction(startOfEpoch(params, 5).add(4240), BN.from(928), true, 1),
         new UserStakeAction(startOfEpoch(params, 5).add(23888), BN.from(521), true, 1),
         new UserStakeAction(startOfEpoch(params, 5).add(699612), BN.from(1950), false, 1),
+      ],
+      [
+        new UserStakeAction(startOfEpoch(params, 5).add(268619), BN.from(284), true, 2),
+      ],
+      [
+        new UserStakeAction(startOfEpoch(params, 5).add(77091), BN.from(465), true, 3),
+        new UserStakeAction(startOfEpoch(params, 5).add(374716), BN.from(200), true, 3),
+        new UserStakeAction(startOfEpoch(params, 5).add(458030), BN.from(144), true, 3),
+      ]
+    ]
+  ]
+}
+
+export function scenario07(params: LiqParams): UserStakeAction[][][] {
+  return [
+    [
+      [
+      ],
+      [
+      ],
+      [
+      ],
+      [
+      ]
+    ],
+    [
+      [
+      ],
+      [
+      ],
+      [
+      ],
+      [
+      ]
+    ],
+    [
+      [
+      ],
+      [
+      ],
+      [
+      ],
+      [
+      ]
+    ],
+    [
+      [
+      ],
+      [],
+      [
+      ],
+      [
+      ]
+    ],
+    [
+      [
+        new UserStakeAction(startOfEpoch(params, 5).add(168997), BN.from(745), true, 0),
+        new UserStakeAction(startOfEpoch(params, 5).add(272394), BN.from(539), true, 0),
+        new UserStakeAction(startOfEpoch(params, 5).add(644768), BN.from(267), true, 0),
+        new UserStakeAction(startOfEpoch(params, 5).add(784413), BN.from(377), true, 0),
+      ],
+      [
+        new UserStakeAction(startOfEpoch(params, 5).add(4240), BN.from(928), true, 1),
+        new UserStakeAction(startOfEpoch(params, 5).add(23888), BN.from(521), true, 1),
+        new UserStakeAction(startOfEpoch(params, 5).add(699612), BN.from(1950), true, 1),
       ],
       [
         new UserStakeAction(startOfEpoch(params, 5).add(268619), BN.from(284), true, 2),

@@ -73,8 +73,15 @@ interface IPendleBaseToken is IERC20 {
     function symbol() external view returns (string memory);
 
     /**
-     * @notice let the router approve itself to spend OT/XYT/LP from any wallet
-     * @param user user to approve
+     * @notice approve using the owner's signature
      **/
-    function approveRouter(address user) external;
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external;
 }

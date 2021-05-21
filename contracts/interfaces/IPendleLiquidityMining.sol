@@ -40,6 +40,18 @@ interface IPendleLiquidityMining {
     function stake(uint256 expiry, uint256 amount) external returns (address);
 
     /**
+     * @notice Stake an exact amount of LP_expiry, using a permit
+     */
+    function stakeWithPermit(
+        uint256 expiry,
+        uint256 amount,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (address);
+
+    /**
      * @notice Withdraw an exact amount of LP_expiry
      */
     function withdraw(uint256 expiry, uint256 amount) external;
@@ -67,7 +79,7 @@ interface IPendleLiquidityMining {
     /**
      * @notice Read the amount of LP_expiry staked for a user
      */
-    function balances(uint256 expiry, address user) external view returns (uint256);
+    function getBalances(uint256 expiry, address user) external view returns (uint256);
 
     function lpHolderForExpiry(uint256 expiry) external view returns (address);
 
@@ -84,6 +96,8 @@ interface IPendleLiquidityMining {
     function baseToken() external view returns (address);
 
     function underlyingAsset() external view returns (address);
+
+    function underlyingYieldToken() external view returns (address);
 
     function pendleTokenAddress() external view returns (address);
 

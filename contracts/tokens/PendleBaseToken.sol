@@ -39,12 +39,12 @@ import "../interfaces/IPendleRouter.sol";
 abstract contract PendleBaseToken is ERC20 {
     using SafeMath for uint256;
 
-    uint256 public start;
-    uint256 public expiry;
-    IPendleRouter public router;
+    uint256 public immutable start;
+    uint256 public immutable expiry;
+    IPendleRouter public immutable router;
 
     //// Start of EIP-2612 related part, exactly the same as UniswapV2ERC20.sol
-    bytes32 public DOMAIN_SEPARATOR;
+    bytes32 public immutable DOMAIN_SEPARATOR;
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     bytes32 public constant PERMIT_TYPEHASH =
         0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
@@ -120,8 +120,12 @@ abstract contract PendleBaseToken is ERC20 {
 
     //// End of EIP-2612 related part
 
-    function approveRouter(address user) external {
-        require(msg.sender == address(router), "NOT_ROUTER");
-        _approve(user, address(router), type(uint256).max);
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256
+    ) internal virtual override {
+        require(to != address(this), "SEND_TO_TOKEN_CONTRACT");
+        require(to != from, "SEND_TO_SELF");
     }
 }

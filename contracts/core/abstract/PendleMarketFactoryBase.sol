@@ -22,20 +22,18 @@
  */
 pragma solidity 0.7.6;
 
-import "../../libraries/FactoryLib.sol";
-import "../PendleAaveMarket.sol";
 import "../../interfaces/IPendleRouter.sol";
 import "../../interfaces/IPendleData.sol";
 import "../../interfaces/IPendleMarketFactory.sol";
-import "../../interfaces/IPendleYieldToken.sol";
-import "../../periphery/Permissions.sol";
-import "../../periphery/Withdrawable.sol";
 
-abstract contract PendleMarketFactoryBase is IPendleMarketFactory, Permissions {
-    IPendleRouter public override router;
+abstract contract PendleMarketFactoryBase is IPendleMarketFactory {
+    IPendleRouter public immutable override router;
     bytes32 public immutable override marketFactoryId;
 
-    constructor(address _governance, bytes32 _marketFactoryId) Permissions(_governance) {
+    constructor(address _router, bytes32 _marketFactoryId) {
+        require(address(_router) != address(0), "ZERO_ADDRESS");
+
+        router = IPendleRouter(_router);
         marketFactoryId = _marketFactoryId;
     }
 
@@ -44,38 +42,17 @@ abstract contract PendleMarketFactoryBase is IPendleMarketFactory, Permissions {
         _;
     }
 
-    function initialize(IPendleRouter _router) external {
-        require(msg.sender == initializer, "FORBIDDEN");
-        require(address(_router) != address(0), "ZERO_ADDRESS");
-
-        initializer = address(0);
-        router = _router;
-    }
-
     function createMarket(address _xyt, address _token)
         external
         override
-        initialized
         onlyRouter
         returns (address market)
     {
         IPendleData data = router.data();
 
-        address forgeAddress = IPendleYieldToken(_xyt).forge();
-        address underlyingAsset = IPendleYieldToken(_xyt).underlyingAsset();
-        uint256 expiry = IPendleYieldToken(_xyt).expiry();
-        require(data.isValidXYT(forgeAddress, underlyingAsset, expiry), "INVALID_XYT");
-
-        market = _createMarket(forgeAddress, _xyt, _token, expiry);
+        market = _createMarket(_xyt, _token);
         data.addMarket(marketFactoryId, _xyt, _token, market);
-
-        emit MarketCreated(marketFactoryId, _xyt, _token, market);
     }
 
-    function _createMarket(
-        address _forgeAddress,
-        address _xyt,
-        address _token,
-        uint256 _expiry
-    ) internal virtual returns (address);
+    function _createMarket(address _xyt, address _token) internal virtual returns (address);
 }

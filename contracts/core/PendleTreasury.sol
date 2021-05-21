@@ -25,9 +25,9 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IPendleTreasury.sol";
-import "../periphery/Permissions.sol";
+import "../periphery/PermissionsV2.sol";
 
-contract PendleTreasury is IPendleTreasury, Permissions {
+contract PendleTreasury is IPendleTreasury, PermissionsV2 {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -36,7 +36,7 @@ contract PendleTreasury is IPendleTreasury, Permissions {
     uint256 public constant PERCENTAGE_PRECISION = 10000; // 100%
     uint256 public fundPercentage = 500; // 5%
 
-    constructor(address _governance) Permissions(_governance) {
+    constructor(address _governanceManager) PermissionsV2(_governanceManager) {
         initializer = msg.sender;
     }
 

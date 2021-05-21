@@ -29,21 +29,17 @@ import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarket.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendlePausingManager.sol";
-import "../periphery/Permissions.sol";
-import "../periphery/Withdrawable.sol";
+import "../periphery/PermissionsV2.sol";
 
-contract PendleData is IPendleData, Permissions, Withdrawable {
+contract PendleData is IPendleData, PermissionsV2 {
     using SafeMath for uint256;
 
     // It's not guaranteed that every market factory can work with
     // every forge, so we need to check against this mapping
     mapping(bytes32 => mapping(bytes32 => bool)) public override validForgeFactoryPair;
 
-    mapping(address => bytes32) public override getForgeId;
     mapping(bytes32 => address) public override getForgeAddress;
-    mapping(address => bytes32) public override getMarketFactoryId;
     mapping(bytes32 => address) public override getMarketFactoryAddress;
-    mapping(address => bytes32) public override getRewardManagerForgeId;
 
     // getMarket[marketFactoryId][xyt][token]
     mapping(bytes32 => mapping(address => mapping(address => address))) public override getMarket;
@@ -55,7 +51,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         override xytTokens; // [forgeId][underlyingAsset][expiry]
 
     IPendleRouter public override router;
-    IPendlePausingManager public override pausingManager;
+    IPendlePausingManager public immutable override pausingManager;
     address public override treasury;
     mapping(address => bool) public override isMarket;
     mapping(address => bool) public override isXyt;
@@ -76,18 +72,13 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     uint256 public override curveShiftBlockDelta;
 
     constructor(
-        address _governance,
+        address _governanceManager,
         address _treasury,
         address _pausingManager
-    ) Permissions(_governance) {
+    ) PermissionsV2(_governanceManager) {
         require(_treasury != address(0), "ZERO_ADDRESS");
         treasury = _treasury;
         pausingManager = IPendlePausingManager(_pausingManager);
-    }
-
-    modifier onlyRouter() {
-        require(msg.sender == address(router), "ONLY_ROUTER");
-        _;
     }
 
     modifier onlyForge(bytes32 _forgeId) {
@@ -131,7 +122,8 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         initialized
         onlyGovernance
     {
-        require(0 < _lockNumerator && _lockNumerator < _lockDenominator, "INVALID_LOCK_PARAMS");
+        // => _lockDenominator > 0 since _lockNumerator >=0
+        require(_lockNumerator < _lockDenominator, "INVALID_LOCK_PARAMS");
         lockNumerator = _lockNumerator;
         lockDenominator = _lockDenominator;
         emit LockParamsSet(_lockNumerator, _lockDenominator);
@@ -152,16 +144,24 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
      *  FORGE *
      **********/
 
+    /**
+     * @notice add forge by _forgeId & _forgeAddress
+     Conditions:
+     * Only governance can call it. Hence no Reentrancy protection is needed
+     **/
     function addForge(bytes32 _forgeId, address _forgeAddress)
         external
         override
         initialized
-        onlyRouter
+        onlyGovernance
     {
-        getForgeId[_forgeAddress] = _forgeId;
+        require(_forgeId != bytes32(0), "ZERO_BYTES");
+        require(_forgeAddress != address(0), "ZERO_ADDRESS");
+        require(_forgeId == IPendleForge(_forgeAddress).forgeId(), "INVALID_ID");
+        require(getForgeAddress[_forgeId] == address(0), "EXISTED_ID");
+
         getForgeAddress[_forgeId] = _forgeAddress;
-        address rewardManager = address(IPendleForge(_forgeAddress).rewardManager());
-        getRewardManagerForgeId[rewardManager] = _forgeId;
+
         emit ForgeAdded(_forgeId, _forgeAddress);
     }
 
@@ -177,7 +177,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         isXyt[_xyt] = true;
     }
 
-    function setForgeFee(uint256 _forgeFee) external override onlyGovernance {
+    function setForgeFee(uint256 _forgeFee) external override initialized onlyGovernance {
         require(_forgeFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
         forgeFee = _forgeFee;
         emit ForgeFeeSet(_forgeFee);
@@ -193,16 +193,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     }
 
     function isValidXYT(
-        address _forge,
-        address _underlyingAsset,
-        uint256 _expiry
-    ) external view override returns (bool) {
-        bytes32 forgeId = getForgeId[_forge];
-        return (forgeId != bytes32(0) &&
-            address(xytTokens[forgeId][_underlyingAsset][_expiry]) != address(0));
-    }
-
-    function isValidXYT(
         bytes32 _forgeId,
         address _underlyingAsset,
         uint256 _expiry
@@ -210,17 +200,42 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         return address(xytTokens[_forgeId][_underlyingAsset][_expiry]) != address(0);
     }
 
+    function isValidOT(
+        bytes32 _forgeId,
+        address _underlyingAsset,
+        uint256 _expiry
+    ) external view override returns (bool) {
+        return address(otTokens[_forgeId][_underlyingAsset][_expiry]) != address(0);
+    }
+
     /***********
      *  MARKET *
      ***********/
+
+    /**
+     * @notice add marketFactory by _marketFactoryId & _marketFactoryAddress
+     * @dev A market factory can work with XYTs from one or more Forges,
+          to be determined by data.validForgeFactoryPair mapping
+     Conditions:
+     * Only governance can call it. Hence no Reentrancy protection is needed
+     **/
     function addMarketFactory(bytes32 _marketFactoryId, address _marketFactoryAddress)
         external
         override
         initialized
-        onlyRouter
+        onlyGovernance
     {
-        getMarketFactoryId[_marketFactoryAddress] = _marketFactoryId;
+        require(_marketFactoryId != bytes32(0), "ZERO_BYTES");
+        require(_marketFactoryAddress != address(0), "ZERO_ADDRESS");
+        require(
+            _marketFactoryId == IPendleMarketFactory(_marketFactoryAddress).marketFactoryId(),
+            "INVALID_FACTORY_ID"
+        );
+        require(getMarketFactoryAddress[_marketFactoryId] == address(0), "EXISTED_ID");
+
         getMarketFactoryAddress[_marketFactoryId] = _marketFactoryAddress;
+
+        emit NewMarketFactory(_marketFactoryId, _marketFactoryAddress);
     }
 
     function addMarket(
@@ -232,6 +247,7 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
         allMarkets.push(_market);
 
         bytes32 key = _createKey(_xyt, _token, _marketFactoryId);
+        require(markets[key] == address(0), "MARKET_KEY_EXISTED");
         markets[key] = _market;
 
         getMarket[_marketFactoryId][_xyt][_token] = _market;
@@ -252,16 +268,22 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     function setMarketFees(uint256 _swapFee, uint256 _protocolSwapFee)
         external
         override
+        initialized
         onlyGovernance
     {
         require(_swapFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
-        require(_protocolSwapFee < Math.RONE, "PROTOCOL_FEE_EXCEED_LIMIT");
+        require(_protocolSwapFee <= Math.RONE, "PROTOCOL_FEE_EXCEED_LIMIT");
         swapFee = _swapFee;
         protocolSwapFee = _protocolSwapFee;
         emit MarketFeesSet(_swapFee, _protocolSwapFee);
     }
 
-    function setCurveShiftBlockDelta(uint256 _blockDelta) external override onlyGovernance {
+    function setCurveShiftBlockDelta(uint256 _blockDelta)
+        external
+        override
+        initialized
+        onlyGovernance
+    {
         curveShiftBlockDelta = _blockDelta;
         emit CurveShiftBlockDeltaSet(_blockDelta);
     }
@@ -282,19 +304,6 @@ contract PendleData is IPendleData, Permissions, Withdrawable {
     ) public view override returns (address market) {
         bytes32 key = _createKey(_tokenIn, _tokenOut, _marketFactoryId);
         market = markets[key];
-    }
-
-    /// Check if the market's underlying tokens are token1 & token2
-    function checkMarketTokens(
-        address token1,
-        address token2,
-        IPendleMarket market
-    ) external view override {
-        require(isMarket[address(market)], "INVALID_MARKET");
-        require(
-            getMarketFromKey(token1, token2, market.factoryId()) == address(market),
-            "INVALID_MARKET"
-        );
     }
 
     function _createKey(
