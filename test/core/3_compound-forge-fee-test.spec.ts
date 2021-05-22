@@ -12,7 +12,7 @@ import {
   setTimeNextBlock,
   Token,
   tokens,
-  toFixedPoint
+  toFixedPoint,
 } from '../helpers';
 import { routerFixture } from './fixtures';
 
@@ -108,7 +108,7 @@ describe('compound-forge-fee', async () => {
       await tokenizeYield(alice, BN.from(100));
 
       let balanceBefore = await cUSDT.balanceOf(bob.address);
-      
+
       await setTimeNextBlock(consts.T0_C.add(period.div(2)));
       await addFakeIncome(tokens.USDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
       await redeemDueInterests(alice);
@@ -117,26 +117,20 @@ describe('compound-forge-fee', async () => {
       await addFakeIncome(tokens.USDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
       await redeemDueInterests(dave);
 
-
       await setTimeNextBlock(consts.T0_C.add(period.add(100)));
       await addFakeIncome(tokens.USDT, eve, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
       await redeemDueInterests(bob);
-      
+
       let balanceNow = await cUSDT.balanceOf(bob.address);
       return balanceNow.sub(balanceBefore);
     }
 
     let tempSnapshot = await evm_snapshot();
-    let withoutForgeFee = await getInterestRate("0");
+    let withoutForgeFee = await getInterestRate('0');
     await evm_revert(tempSnapshot);
-    let withForgeFee =  await getInterestRate("0.1");
-    
+    let withForgeFee = await getInterestRate('0.1');
+
     let expectedWithForgeFee = withoutForgeFee.mul(9).div(10);
-    approxBigNumber(
-      withForgeFee,
-      expectedWithForgeFee,
-      BN.from(10),
-      true
-    );
+    approxBigNumber(withForgeFee, expectedWithForgeFee, BN.from(10), true);
   });
 });
