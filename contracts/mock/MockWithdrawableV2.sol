@@ -33,10 +33,10 @@ contract MockWithdrawableV2 is PermissionsV2, WithdrawableV2 {
     receive() external payable {}
 
     function setAllowed(bool _allowed) public {
-      allowed = _allowed;
+        allowed = _allowed;
     }
 
     function _allowedToWithdraw(address) internal override returns (bool) {
-      allowed = true;
+        allowed = true;
     }
 }
