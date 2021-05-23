@@ -60,6 +60,7 @@ export function runTest(mode: Mode) {
     beforeEach(async () => {
       await evm_revert(snapshotId);
       snapshotId = await evm_snapshot();
+      currentEpoch = 1;
     });
 
     async function getLpBalanceOfAllUsers(): Promise<BN[]> {
@@ -88,7 +89,6 @@ export function runTest(mode: Mode) {
       let flatData: UserStakeAction[] = [];
       let flatEpochId: any[] = [];
       let expectedLpBalance: BN[] = await getLpBalanceOfAllUsers();
-      currentEpoch = 1;
 
       userStakingData.forEach((epochData, epochId) => {
         epochData.forEach((userData) => {
