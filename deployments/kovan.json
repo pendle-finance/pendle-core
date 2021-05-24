@@ -38,8 +38,8 @@
       "tx": "0xd959f68a7e6d32d24e8b02e120633e67f4e2b0eec6661c840aa6a5bf8446a731"
     },
     "PendleAaveLiquidityMining": {
-      "address": "0x17df9906314f968193a0eD042D94898637a34Ea8",
-      "tx": "0x608f05f59993237aab10293aa5f29ab6d2e7e474a762cf8b4b8caf3984536794"
+      "address": "0xc1905e91127f2342CB1221b079ae1d212e1b0F12",
+      "tx": "0x746747eea1125bdf1ee92c2492c65921b6377308b67761e10a7ee3f681082ffe"
     },
     "PendleTeamTokens": {
       "address": "0x3a7d502EE15CD8023658928df8D6136e506817D5",
@@ -50,8 +50,8 @@
       "tx": "0x1ebbd1fccec5a9e9a673d6bbd3f0d41c89d20ae0f56ccbd9ce6292b912eb3c72"
     },
     "PendleCompoundLiquidityMining": {
-      "address": "0x46D5c98C0f38866Ec6ab288917d17d7e31aeb2c5",
-      "tx": "0xf4826e2daa489e52c6ec4055ee4c63930004d5a785905931f6869af91b926f4f"
+      "address": "0xDA4287310e07763D454c256EEacE64dB8Ac2ACf1",
+      "tx": "0x3cf671b910278a9020096accde9c0083571b72dd5dd8121b1cbaa9073d907992"
     },
     "PendlePausingManager": {
       "address": "0xd55ACbb0B434F3581444a798b667132F2c31612b",
@@ -97,10 +97,17 @@
             "markets": {
               "USDT": "0x40b41322b5Caaf0E84aefE1A096992217AbAE75c"
             }
+          },
+          "1627430400": {
+            "XYT": "0xeC789Ef1969876546355d12412b7176cd8cB56AF",
+            "OT": "0xCB96DB5c57Df9FcB66C08398Cd138cA12E8c5455",
+            "markets": {
+              "USDT": "0x95124A99B8359c15e2fFfc2743b10C46F87dd21d"
+            }
           }
         },
         "PendleLiquidityMining": {
-          "USDT": "0x17df9906314f968193a0eD042D94898637a34Ea8"
+          "USDT": "0xc1905e91127f2342CB1221b079ae1d212e1b0F12"
         }
       }
     },
@@ -113,10 +120,17 @@
             "markets": {
               "USDT": "0x063BbfE765067d1840B845598506A4cd83902D75"
             }
+          },
+          "1627430400": {
+            "XYT": "0x55c9bcd1327477541c31d80366369505F8E24bDE",
+            "OT": "0x28B1728393F0A0b0417948E5f805011c5E831821",
+            "markets": {
+              "USDT": "0xD992e0F45BE5C403bc0FDF7EFBA29C9014fF3807"
+            }
           }
         },
         "PendleLiquidityMining": {
-          "USDT": "0x46D5c98C0f38866Ec6ab288917d17d7e31aeb2c5"
+          "USDT": "0xDA4287310e07763D454c256EEacE64dB8Ac2ACf1"
         }
       }
     }
