@@ -261,3 +261,9 @@ export async function addFakeIncomeCompound(env: TestEnv, user: Wallet) {
   );
   await env.yUSDT.balanceOfUnderlying(user.address); // interact with compound so that it updates all info
 }
+
+export async function logTokenBalance(token: Contract, people: Wallet[]) {
+  for(let person of people) {
+    console.log((await token.balanceOf(person.address)).toString());
+  }
+}

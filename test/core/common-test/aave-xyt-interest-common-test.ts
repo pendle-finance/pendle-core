@@ -15,7 +15,9 @@ import {
   tokenizeYield,
   tokens,
   Token,
-  transferToken
+  transferToken,
+  logTokenBalance,
+  advanceTime
 } from '../../helpers';
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 import testData from '../fixtures/yieldTokenizeAndRedeem.scenario.json';
@@ -242,6 +244,72 @@ export function runTest(isAaveV1: boolean) {
       for (let i = 0; i < 3; ++i) {
         await tryRedeemDueInterests(BN.from(0));
       }
+    });
+
+    it("Transfering xyt after expiry", async () => {
+      const amount = BN.from(1000000000);
+      const transferAmount = amount.div(10);
+
+      async function removeYieldToken(person: Wallet) {
+        await env.yUSDT.connect(person).transfer(
+          alice.address,
+          await env.yUSDT.balanceOf(person.address),
+          consts.HIGH_GAS_OVERRIDE
+        );
+      }
+
+
+      await removeYieldToken(bob);
+      await removeYieldToken(charlie);
+      await removeYieldToken(dave);
+
+      await tokenizeYield(env, alice, amount, alice.address);
+      await tokenizeYield(env, alice, amount, bob.address);
+      await tokenizeYield(env, alice, amount, charlie.address);
+      await tokenizeYield(env, alice, amount.mul(2), dave.address);
+
+
+      /// before expiry
+      await advanceTime(consts.THREE_MONTH);
+
+      await env.xyt.connect(bob).transfer(
+        charlie.address,
+        transferAmount,
+        consts.HIGH_GAS_OVERRIDE
+      );
+      
+      /// Fake activity
+      await advanceTime(consts.THREE_MONTH.sub(consts.ONE_HOUR));
+      await redeemDueInterests(env, alice);
+
+      /// after expiry
+      await advanceTime(consts.SIX_MONTH);
+      await env.xyt.connect(bob).transfer(
+        charlie.address,
+        transferAmount,
+        consts.HIGH_GAS_OVERRIDE
+      );
+      
+      await env.xyt.connect(charlie).transfer(
+        bob.address,
+        transferAmount.mul(5),
+        consts.HIGH_GAS_OVERRIDE
+      );
+
+      await redeemAfterExpiry(env, bob);
+      await redeemAfterExpiry(env, charlie);
+      await redeemAfterExpiry(env, dave);
+      
+      const bobBalance: BN = await env.yUSDT.balanceOf(bob.address);
+      const charlieBalance: BN = await env.yUSDT.balanceOf(charlie.address);
+      const daveBalance: BN = await env.yUSDT.balanceOf(dave.address);
+
+      approxBigNumber(
+        bobBalance.add(charlieBalance),
+        daveBalance,
+        300,
+        true
+      );
     });
   });
 }
