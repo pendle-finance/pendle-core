@@ -62,20 +62,15 @@ async function main() {
   const aYieldBalance = ATokenAddress.balanceOf(yieldTokenHolder);  //to print
   const cYieldBalance = CTokenAddress.balanceOf(yieldTokenHolder);  //to print
 
-  const rewardToken = await pendleRouter.callStatic.redeemDueInterests(
-    forgeAddress,
-    underlyingAssetContractAddress,
-    expiry,
-    yieldTokenHolder
-  );  //TODO: confirm this rewards  //to print
+  const rewardTokenAddress = await forgeAddress.rewardToken();
+  const rewardTokenBalance = await rewardTokenAddress.balanceOf(yieldTokenHolder); //to print
   
   const forgeFee = await forgeAddress.totalFee(underlyingAssetContractAddress, expiry); //to print
-
 
   console.log(`total amount of OTs/XYTs = ${otTotal} , ${xytTotal}`);
   console.log(`total amount of yield tokens (aToken) in the yieldTokenHolder = ${aYieldBalance}`);
   console.log(`total amount of yield tokens (cToken) in the yieldTokenHolder = ${cYieldBalance}`);
-  console.log(`total amount of reward token (stkAAVE/COMP) in the yieldTokenHolder = ${rewardToken}`);
+  console.log(`total amount of reward token (stkAAVE/COMP) in the yieldTokenHolder = ${rewardTokenBalance}`);
   console.log(`forge fees earned so far = ${JSON.stringify(forgeFee)}`);
 }
 
