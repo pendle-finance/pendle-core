@@ -103,7 +103,7 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
 
 export async function parseTestEnvMarketFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: MarketFixture) {
   env.mode = mode;
-  parseTestEnvRouterFixture(alice, mode, env, fixture.routerFix);
+  await parseTestEnvRouterFixture(alice, mode, env, fixture.routerFix);
 
   env.testToken = fixture.testToken;
   env.marketFixture = fixture;
