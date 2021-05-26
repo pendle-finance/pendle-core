@@ -178,7 +178,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
 
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
-        emit NewYieldContracts(forgeId, _underlyingAsset, _expiry, ot, xyt);
+        emit NewYieldContracts(forgeId, _underlyingAsset, _expiry, ot, xyt, yieldToken);
     }
 
     /**

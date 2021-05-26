@@ -55,7 +55,8 @@ interface IPendleForge {
         address indexed underlyingAsset,
         uint256 indexed expiry,
         address ot,
-        address xyt
+        address xyt,
+        address yieldBearingAsset
     );
 
     /**
