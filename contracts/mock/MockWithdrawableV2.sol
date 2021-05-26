@@ -28,7 +28,7 @@ import "../periphery/WithdrawableV2.sol";
 contract MockWithdrawableV2 is PermissionsV2, WithdrawableV2 {
     bool private allowed = true;
 
-    constructor() PermissionsV2(msg.sender) {}
+    constructor(address _governanceManager) PermissionsV2(_governanceManager) {}
 
     receive() external payable {}
 
@@ -36,7 +36,7 @@ contract MockWithdrawableV2 is PermissionsV2, WithdrawableV2 {
         allowed = _allowed;
     }
 
-    function _allowedToWithdraw(address) internal override returns (bool) {
-        allowed = true;
+    function _allowedToWithdraw(address) internal view override returns (bool) {
+        return allowed;
     }
 }
