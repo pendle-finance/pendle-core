@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { BigNumber as BN, BigNumberish } from 'ethers';
+import { BigNumber as BN, BigNumberish, Wallet } from 'ethers';
 import {
   addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
@@ -17,6 +17,7 @@ import {
   swapExactOutXytToToken,
   logMarketReservesData,
   errMsg,
+  randomNumber
 } from '../../helpers';
 import { TestEnv } from '../fixtures';
 
@@ -220,6 +221,142 @@ export async function marketBalanceNonZeroSwapTest(env: TestEnv) {
   await bootstrapMarket(env, alice, amount, BN.from(1));
   await setTimeNextBlock(env.EXPIRY.sub(consts.ONE_DAY.add(consts.ONE_HOUR)));
   await expect(swapExactInTokenToXyt(env, alice, BN.from(1000000000))).to.be.revertedWith(errMsg.XYT_BALANCE_ERROR);  
+}
+
+export async function MultiExpiryMarketTest(env: TestEnv, markets: any, wallets: any) {
+  const [alice, bob, charlie, dave] = wallets;
+  let nMarket = markets.length;
+
+
+  async function bootstrapMarket(marketData: any, amountXyt: BN, amountToken: BN, user: Wallet) {
+    await env.router.connect(user).bootstrapMarket(
+      env.MARKET_FACTORY_ID,
+      marketData.xyt.address,
+      marketData.token.address,
+      amountXyt,
+      amountToken,
+      consts.HIGH_GAS_OVERRIDE
+    );
+  }
+
+  async function swapXytToToken(marketData: any, user: Wallet, amount: BN) {
+    let balanceBefore: BN = (await marketData.token.balanceOf(user.address));
+    await env.router
+      .connect(user)
+      .swapExactIn(
+        marketData.xyt.address,
+        marketData.token.address,
+        amount,
+        BN.from(0),
+        env.MARKET_FACTORY_ID,
+        consts.HIGH_GAS_OVERRIDE
+      );
+    let balanceNow: BN = (await marketData.token.balanceOf(user.address));
+    return balanceNow.sub(balanceBefore);
+  }
+
+  async function swapTokenToXyt(marketData: any, user: Wallet, amount: BN) {
+    let balanceBefore: BN = (await marketData.xyt.balanceOf(user.address));
+    await env.router
+      .connect(user)
+      .swapExactIn(
+        marketData.token.address,
+        marketData.xyt.address,
+        amount,
+        BN.from(0),
+        env.MARKET_FACTORY_ID,
+        consts.HIGH_GAS_OVERRIDE
+      );
+    let balanceNow: BN = (await marketData.xyt.balanceOf(user.address));
+    return balanceNow.sub(balanceBefore);
+  }
+
+  async function addLiquidityDual(marketData: any, user: Wallet, amount: BN) {
+    let lpBefore: BN = (await marketData.market.balanceOf(user.address));
+    await env.router
+      .connect(user)
+      .addMarketLiquidityDual(
+        env.MARKET_FACTORY_ID,
+        marketData.xyt.address,
+        marketData.token.address,
+        amount,
+        consts.INF,
+        amount,
+        BN.from(0),
+        consts.HIGH_GAS_OVERRIDE
+      );
+    let lpNow: BN = (await marketData.market.balanceOf(user.address));
+    return lpNow.sub(lpBefore);
+  }
+
+  async function checkOutcome(outcomes: any) {
+    for(let i = 0; i + 1 < nMarket; ++i) {
+      for(let j = 0; j < outcomes[i].length; ++j){
+          approxBigNumber(
+          outcomes[i][j],
+          outcomes[i + 1][j],
+          BN.from(10),
+          false
+        );
+      }
+    }
+    console.log("Checked", outcomes[0].length, "actions!");
+  }
+
+  async function marketAction(marketData: any, scenario: number[][]) {
+    const amount = BN.from(10**6);
+    let actors = [alice, bob];
+    let actions = [swapXytToToken, swapTokenToXyt, addLiquidityDual];
+    
+    let outcome = [];
+    for(let i = 0; i < scenario.length; ++i) {
+      let [x, y] = scenario[i];
+      outcome.push(await actions[y](marketData, actors[x], amount));
+      outcome.push(await actions[y](marketData, charlie, amount));
+    }
+    return outcome;
+  }
+
+
+  async function randomScenario(nActions: number) {
+    let scenario: number[][] = [];
+    for(let i = 0; i < nActions; ++i) {
+      /// 2 person alice and bob
+      /// 3 actions swapxyt, swaptoken and add_dual
+      scenario.push([randomNumber(2), randomNumber(3)]);
+    }
+    return scenario;
+  }
+
+  const amount = BN.from(10**9);
+  for(let m = 0; m < nMarket; ++m) {
+    await bootstrapMarket(markets[m], amount, amount, dave);
+  }
+
+  let currentTime = (await env.testToken.getTime(consts.HIGH_GAS_OVERRIDE)).sub(consts.T0);
+
+  while(consts.SIX_MONTH.gt(currentTime.add(60).mul(2))) {
+    let scenario = await randomScenario(randomNumber(6) + 5);
+    let outcomes = []
+    
+    for(let j = 0; j < nMarket; ++j) {
+      if (j == 0) currentTime = currentTime.add(60);
+      else currentTime = currentTime.mul(2);
+      await setTimeNextBlock(env.T0.add(currentTime));
+      outcomes.push(await marketAction(markets[j], scenario));
+    }
+    await checkOutcome(outcomes);
+  }
+
+  // for(let person of [alice, bob, charlie]) {
+  //   let lastYieldToken = (await env.yUSDT.balanceOf(person.address));
+  //   for(let i = 0; i < 2; ++i){
+  //     await env.liq.redeemLpInterests(markets[i].expiry, person.address, consts.HIGH_GAS_OVERRIDE);
+  //   }
+  //   let curYieldToken = (await env.yUSDT.balanceOf(person.address));
+
+  // }
+  
 }
 
 async function runTestTokenToXyt(

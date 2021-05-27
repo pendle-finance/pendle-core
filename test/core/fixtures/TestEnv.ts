@@ -127,7 +127,7 @@ export async function parseTestEnvMarketFixture(alice: Wallet, mode: Mode, env: 
 
 export async function parseTestEnvLiquidityMiningFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: LiquidityMiningFixture) {
   env.mode = mode;
-  parseTestEnvMarketFixture(alice, mode, env, fixture.marketFix);
+  await parseTestEnvMarketFixture(alice, mode, env, fixture.marketFix);
 
   env.pdl = fixture.pdl;
   env.liqMiningFixture = fixture;
@@ -137,6 +137,7 @@ export async function parseTestEnvLiquidityMiningFixture(alice: Wallet, mode: Mo
     env.liq = fixture.aLiquidityMining;
   }
   else if (env.mode == Mode.AAVE_V2) {
+    env.liq = fixture.a2LiquidityMining;
   }
   else if (env.mode == Mode.COMPOUND) {
     env.liq = fixture.cLiquidityMining;
