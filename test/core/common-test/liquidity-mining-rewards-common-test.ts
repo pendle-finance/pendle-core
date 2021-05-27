@@ -38,6 +38,8 @@ export function runTest(mode: Mode) {
     let snapshotId: string;
     let globalSnapshotId: string;
     let env: TestEnv = {} as TestEnv;
+    let currentEpoch: number;
+    let alloc_setting: BN[];
 
     async function buildTestEnv() {
       let fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);
@@ -48,6 +50,7 @@ export function runTest(mode: Mode) {
       await buildTestEnv();
       globalSnapshotId = await evm_snapshot();
       snapshotId = await evm_snapshot();
+      alloc_setting = env.liqParams.ALLOCATION_SETTING;
     });
 
     after(async () => {
@@ -57,6 +60,7 @@ export function runTest(mode: Mode) {
     beforeEach(async () => {
       await evm_revert(snapshotId);
       snapshotId = await evm_snapshot();
+      currentEpoch = 1;
     });
 
     async function getLpBalanceOfAllUsers(): Promise<BN[]> {
@@ -69,19 +73,34 @@ export function runTest(mode: Mode) {
 
     // [epochs][user][transaction]
 
-    async function doSequence(userStakingData: UserStakeAction[][][]) {
+    async function allocSettingForEpoch() {
+      currentEpoch += 1;
+      if (alloc_setting[currentEpoch].toString() != alloc_setting[currentEpoch - 1].toString()) {
+        await setTimeNextBlock(startOfEpoch(env.liqParams, currentEpoch).sub(consts.ONE_HOUR.div(4)));
+        await env.liq.setAllocationSetting(
+          [env.EXPIRY, consts.T0.add(consts.THREE_MONTH)],
+          [alloc_setting[currentEpoch], env.liqParams.TOTAL_NUMERATOR.sub(alloc_setting[currentEpoch])],
+          consts.HIGH_GAS_OVERRIDE
+        );
+      }
+    }
+
+    async function doSequence(userStakingData: UserStakeAction[][][], usingAllocationSetting?: Boolean) {
       let flatData: UserStakeAction[] = [];
+      let flatEpochId: any[] = [];
       let expectedLpBalance: BN[] = await getLpBalanceOfAllUsers();
 
-      userStakingData.forEach((epochData) => {
+      userStakingData.forEach((epochData, epochId) => {
         epochData.forEach((userData) => {
           userData.forEach((userAction) => {
             if (userAction.id != -1) {
+              flatEpochId.push(epochId + 1);
               flatData.push(userAction);
             }
           });
         });
       });
+
 
       flatData = flatData.sort((a, b) => {
         return a.time.sub(b.time).toNumber();
@@ -91,7 +110,12 @@ export function runTest(mode: Mode) {
         let action: UserStakeAction = flatData[i];
         if (i != 0) assert(flatData[i - 1].time < flatData[i].time);
 
+        while(usingAllocationSetting && currentEpoch < flatEpochId[i]) {
+          await allocSettingForEpoch();
+        }
+
         await setTimeNextBlock(action.time);
+
         if (action.isStaking) {
           await stake(env, wallets[action.id], action.amount);
           expectedLpBalance[action.id] = expectedLpBalance[action.id].sub(action.amount);
@@ -109,12 +133,12 @@ export function runTest(mode: Mode) {
     async function checkEqualRewards(
       userStakingData: UserStakeAction[][][],
       epochToCheck: number,
-      _allocationRateDiv?: number
+      usingAllocationSetting: Boolean
     ) {
-      let expectedRewards: BN[][] = calcExpectedRewards(userStakingData, env.liqParams, epochToCheck);
+      let expectedRewards: BN[][] = calcExpectedRewards(userStakingData, env.liqParams, epochToCheck, usingAllocationSetting);
       await setTime(startOfEpoch(env.liqParams, epochToCheck));
       let numUser = expectedRewards.length;
-      let allocationRateDiv = _allocationRateDiv !== undefined ? _allocationRateDiv : 1;
+      let allocationRateDiv = 1;
       for (let userId = 0; userId < numUser; userId++) {
         await redeemRewards(env, wallets[userId]);
         approxBigNumber(
@@ -129,45 +153,39 @@ export function runTest(mode: Mode) {
     async function checkEqualRewardsForEpochs(
       userStakingData: UserStakeAction[][][],
       epochToCheck: number,
-      _allocationRateDiv?: number
+      usingAllocationSetting: Boolean
     ) {
       for (let i = 0; i < 4; i++) {
-        await checkEqualRewards(userStakingData, epochToCheck + i, _allocationRateDiv);
+        let epoch = epochToCheck + i;
+        while(usingAllocationSetting && currentEpoch < epoch) {
+          await allocSettingForEpoch();
+        }
+        await checkEqualRewards(userStakingData, epochToCheck + i, usingAllocationSetting);
       }
     }
 
     it('test 2', async () => {
       let userStakingData: UserStakeAction[][][] = scenario.scenario04(env.liqParams);
       await doSequence(userStakingData);
-      await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1);
+      await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1, false);
     });
 
     it('test 3', async () => {
-      await env.liq.setAllocationSetting(
-        [env.EXPIRY, consts.T0.add(consts.THREE_MONTH)],
-        [env.liqParams.TOTAL_NUMERATOR.div(2), env.liqParams.TOTAL_NUMERATOR.div(2)],
-        consts.HIGH_GAS_OVERRIDE
-      );
       let userStakingData: UserStakeAction[][][] = scenario.scenario04(env.liqParams);
-      await doSequence(userStakingData);
-      await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1, 2);
+      await doSequence(userStakingData, true);
+      await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1, true);
     });
 
-    it('test 4', async () => {
-      await env.liq.setAllocationSetting(
-        [env.EXPIRY, consts.T0.add(consts.THREE_MONTH)],
-        [env.liqParams.TOTAL_NUMERATOR.div(2), env.liqParams.TOTAL_NUMERATOR.div(2)],
-        consts.HIGH_GAS_OVERRIDE
-      );
+    it('test 4', async() => {
       let userStakingData: UserStakeAction[][][] = scenario.scenario06(env.liqParams);
-      await doSequence(userStakingData);
-      await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1, 2);
-    });
+      await doSequence(userStakingData, true);
+      await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1, true);
+    }); 
 
     it('test 5', async () => {
       let userStakingData: UserStakeAction[][][] = scenario.scenario07(env.liqParams);
       await doSequence(userStakingData);
-      await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1);
+      await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1, false);
     });
 
     it("this test shouldn't crash", async () => {
