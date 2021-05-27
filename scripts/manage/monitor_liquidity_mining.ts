@@ -18,13 +18,12 @@ async function main() {
   let consts: any;
 
   //check and load arguments
-  if (process.argv.length != 3) { //liquidity mining contract address, liquidity mining contract name, expiry
+  if (process.argv.length != 2) { //liquidity mining contract address, liquidity mining contract name
     console.error('Expected three argument!');
     process.exit(1);
   }
   const liqMiningAddress = process.argv[0];
   const liqMiningContractName = process.argv[1];
-  const expiry = process.argv[2];
   const liqMining = await (await hre.ethers.getContractFactory(liqMiningContractName)).attach(liqMiningAddress);
   
   //check network and load constant
