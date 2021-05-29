@@ -83,7 +83,7 @@ export async function mintOtAndXyt(
   };
 }
 
-export async function mintOtAndXytWithExpiry(token: Token,
+export async function mintOtAndXytWithExpiryAave2(token: Token,
   user: Wallet,
   amount: BN,
   env: RouterFixture,
@@ -337,7 +337,7 @@ export async function createMarketWithExpiry(env: TestEnv, expiry: BN, wallets: 
   );
 
   for (var person of [alice, bob, charlie, dave]) {
-    await mintOtAndXytWithExpiry(tokens.USDT, person, consts.INITIAL_OT_XYT_AMOUNT, env.routerFixture, expiry);
+    await mintOtAndXytWithExpiryAave2(tokens.USDT, person, consts.INITIAL_OT_XYT_AMOUNT, env.routerFixture, expiry);
   }
 
   const totalSupply = await env.testToken.totalSupply();
