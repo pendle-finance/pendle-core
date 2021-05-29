@@ -66,6 +66,7 @@ export async function liquidityMiningFixture(
   let [alice, bob, charlie, dave] = wallets;
 
   let marketFix: MarketFixture = await loadFixture(marketFixture);
+
   let { core, aForge, cForge, testToken, aMarket, cMarket } = marketFix;
   let router = core.router;
   let aXyt = aForge.aFutureYieldToken;
@@ -92,12 +93,12 @@ export async function liquidityMiningFixture(
 
   let pdl = await deployContract(alice, PENDLE, [alice.address, alice.address, alice.address, alice.address, alice.address]);
   let whitelist = await deployContract(alice, PendleWhitelist, [core.govManager.address]);
-
   let aLiquidityMining = await deployContract(
     alice,
     MockPendleAaveLiquidityMining,
     [
       core.govManager.address,
+      core.pausingManager.address,
       whitelist.address,
       pdl.address,
       router.address,
@@ -116,6 +117,7 @@ export async function liquidityMiningFixture(
     PendleCompoundLiquidityMining,
     [
       core.govManager.address,
+      core.pausingManager.address,
       whitelist.address,
       pdl.address,
       router.address,
