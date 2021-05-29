@@ -14,14 +14,14 @@ import {
   redeemRewards,
   setTimeNextBlock,
   stake,
-  withdraw
+  withdraw,
 } from '../helpers';
 import {
   liquidityMiningFixture,
   LiquidityMiningFixture,
   Mode,
   parseTestEnvLiquidityMiningFixture,
-  TestEnv
+  TestEnv,
 } from './fixtures';
 
 const { loadFixture, provider } = waffle;
