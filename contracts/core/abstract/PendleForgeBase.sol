@@ -216,7 +216,13 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         );
 
         // transfer back to the user
-        redeemedAmount = _safeTransfer(yieldToken, _underlyingAsset, _expiry, _user, redeemedAmount);
+        redeemedAmount = _safeTransfer(
+            yieldToken,
+            _underlyingAsset,
+            _expiry,
+            _user,
+            redeemedAmount
+        );
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, expiredOTamount, redeemedAmount);
     }
@@ -257,7 +263,13 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         );
 
         // transfer the amountTransferOut back to the user
-        redeemedAmount = _safeTransfer(yieldToken, _underlyingAsset, _expiry, _user, redeemedAmount);
+        redeemedAmount = _safeTransfer(
+            yieldToken,
+            _underlyingAsset,
+            _expiry,
+            _user,
+            redeemedAmount
+        );
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem, redeemedAmount);
 
