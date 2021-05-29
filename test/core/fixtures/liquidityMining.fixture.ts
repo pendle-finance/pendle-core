@@ -98,6 +98,7 @@ export async function liquidityMiningFixture(
     MockPendleAaveLiquidityMining,
     [
       core.govManager.address,
+      core.pausingManager.address,
       whitelist.address,
       pdl.address,
       router.address,
@@ -116,6 +117,7 @@ export async function liquidityMiningFixture(
     PendleCompoundLiquidityMining,
     [
       core.govManager.address,
+      core.pausingManager.address,
       whitelist.address,
       pdl.address,
       router.address,

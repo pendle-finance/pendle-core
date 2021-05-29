@@ -44,6 +44,7 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
 
     constructor(
         address _governanceManager,
+        address _pausingManager,
         address _whitelist,
         address _pendleTokenAddress,
         address _pendleRouter, // The router basically identify our Pendle instance.
@@ -57,6 +58,7 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
     )
         PendleLiquidityMiningBase(
             _governanceManager,
+            _pausingManager,
             _whitelist,
             _pendleTokenAddress,
             _pendleRouter,

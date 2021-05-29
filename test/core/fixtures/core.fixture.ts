@@ -33,7 +33,7 @@ export async function coreFixture(
 
   const treasury = await deployContract(alice, PendleTreasury, [alice.address]);
   const govManager = await deployContract(alice, PendleGovernanceManager, [alice.address]);
-  const pausingManager = await deployContract(alice, PendlePausingManager, [govManager.address, alice.address, alice.address]);
+  const pausingManager = await deployContract(alice, PendlePausingManager, [govManager.address, alice.address, alice.address, alice.address]);
   const data = await deployContract(alice, PendleData, [govManager.address, treasury.address, pausingManager.address]);
   const router = await deployContract(alice, PendleRouter, [govManager.address, tokens.WETH.address, data.address]);
   const marketReader = await deployContract(alice, PendleMarketReader, [data.address]);
