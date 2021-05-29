@@ -24,6 +24,7 @@ pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/cryptography/ECDSA.sol";
 import "../interfaces/IPendleBaseToken.sol";
 import "../interfaces/IPendleRouter.sol";
 
@@ -113,7 +114,7 @@ abstract contract PendleBaseToken is ERC20 {
                     )
                 )
             );
-        address recoveredAddress = ecrecover(digest, v, r, s);
+        address recoveredAddress = ECDSA.recover(digest, v, r, s);
         require(recoveredAddress != address(0) && recoveredAddress == owner, "INVALID_SIGNATURE");
         _approve(owner, spender, value);
     }

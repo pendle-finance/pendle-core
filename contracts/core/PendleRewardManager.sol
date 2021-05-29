@@ -23,6 +23,7 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../periphery/WithdrawableV2.sol";
@@ -39,12 +40,17 @@ import "../interfaces/IPendleYieldToken.sol";
     Any major differences are likely to be bugs
 */
 contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
     bytes32 public immutable override forgeId;
     IPendleForge private forge;
     IERC20 private rewardToken;
-    bool public override skippingRewards;
+
+    // we only update the rewards for a yieldTokenHolder if it has been >= updateFrequency[underlyingAsset] blocks
+    // since the last time rewards was updated for the yieldTokenHolder (lastUpdatedForYieldTokenHolder[underlyingAsset][expiry])
+    mapping(address => uint256) updateFrequency;
+    mapping(address => mapping(uint256 => uint256)) lastUpdatedForYieldTokenHolder;
 
     // This MULTIPLIER is to scale the real paramL value up, to preserve precision
     uint256 private constant MULTIPLIER = 1e20;
@@ -89,9 +95,25 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         router = forge.router();
     }
 
-    function setSkippingRewards(bool _skippingRewards) external override onlyGovernance {
-        skippingRewards = _skippingRewards;
-        emit SkippingRewardsSet(_skippingRewards);
+    /**
+    Use:
+        To set how often rewards should be updated for yieldTokenHolders of an underlyingAsset
+    Conditions:
+        * The underlyingAsset must already exist in the forge
+        * Must be called by governance
+    */
+    function setUpdateFrequency(
+        address[] calldata underlyingAssets,
+        uint256[] calldata frequencies
+    ) external override onlyGovernance {
+        require(underlyingAssets.length == frequencies.length, "ARRAY_LENGTH_MISMATCH");
+        for (uint256 i = 0; i < underlyingAssets.length; i++) {
+            // make sure the underlyingAsset exists in the forge
+            // since this call will revert otherwise
+            forge.getYieldBearingToken(underlyingAssets[i]);
+            updateFrequency[underlyingAssets[i]] = frequencies[i];
+        }
+        emit UpdateFrequencySet(underlyingAssets, frequencies);
     }
 
     /**
@@ -120,7 +142,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
         if (dueRewards != 0) {
             // The yieldTokenHolder already approved this reward manager contract to spend max uint256
-            rewardToken.transferFrom(_yieldTokenHolder, _user, dueRewards);
+            rewardToken.safeTransferFrom(_yieldTokenHolder, _user, dueRewards);
         }
     }
 
@@ -166,9 +188,10 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         uint256 _expiry,
         address _user
     ) internal {
-        if (skippingRewards) return;
+        if (!_checkNeedUpdateRewards(_underlyingAsset, _expiry)) return;
         address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
         _updateParamL(_underlyingAsset, _expiry, _yieldTokenHolder);
+        lastUpdatedForYieldTokenHolder[_underlyingAsset][_expiry] = block.number;
 
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
 
@@ -188,6 +211,16 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
 
         rwd.dueRewards[_user] = rwd.dueRewards[_user].add(rewardsFromOT);
         rwd.lastParamL[_user] = rwd.paramL;
+    }
+
+    function _checkNeedUpdateRewards(address _underlyingAsset, uint256 _expiry)
+        internal
+        view
+        returns (bool needUpdate)
+    {
+        needUpdate =
+            block.number - lastUpdatedForYieldTokenHolder[_underlyingAsset][_expiry] >=
+            updateFrequency[_underlyingAsset];
     }
 
     /**
