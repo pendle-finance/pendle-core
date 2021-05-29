@@ -23,6 +23,7 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../periphery/WithdrawableV2.sol";
@@ -39,6 +40,7 @@ import "../interfaces/IPendleYieldToken.sol";
     Any major differences are likely to be bugs
 */
 contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
     bytes32 public immutable override forgeId;
@@ -153,7 +155,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
         if (dueRewards != 0) {
             // The yieldTokenHolder already approved this reward manager contract to spend max uint256
-            rewardToken.transferFrom(_yieldTokenHolder, _user, dueRewards);
+            rewardToken.safeTransferFrom(_yieldTokenHolder, _user, dueRewards);
         }
     }
 
