@@ -555,7 +555,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
      */
     function redeemLpInterests(address user) external override returns (uint256 interests) {
         checkAddRemoveSwapClaimAllowed(true);
-        checkNotPaused();
         interests = _beforeTransferDueInterests(user);
         _safeTransferYieldToken(user, interests);
     }
