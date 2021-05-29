@@ -1,4 +1,5 @@
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
+import { waffle } from 'hardhat';
 import {
   amountToWei,
   approxBigNumber,
@@ -11,13 +12,11 @@ import {
   mintCompoundToken,
   setTimeNextBlock,
   Token,
-  tokens,
-  toFixedPoint,
+  tokens
 } from '../helpers';
 import { routerFixture } from './fixtures';
 import testData from './fixtures/yieldTokenizeAndRedeem.scenario.json';
 
-import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
 interface YieldTest {
@@ -111,7 +110,7 @@ describe('compound-xyt-interest', async () => {
   }
 
   async function runTest(yieldTest: YieldTest[]) {
-    let curTime = consts.T0;
+    let curTime = consts.T0_C;
     for (let id = 0; id < yieldTest.length; id++) {
       let curTest = yieldTest[id];
       let user = wallets[curTest.user];

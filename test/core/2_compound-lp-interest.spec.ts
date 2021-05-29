@@ -49,7 +49,6 @@ describe('compound-lp-interest', async () => {
     testToken = fixture.testToken;
     market = fixture.cMarket;
     tokenUSDT = tokens.USDT;
-    aaveForge = fixture.aForge.aaveForge;
     aaveV2Forge = fixture.a2Forge.aaveV2Forge;
     cUSDT = await getCContract(alice, tokenUSDT);
 
@@ -189,10 +188,7 @@ describe('compound-lp-interest', async () => {
       );
   }
 
-  async function mintOtAndXytUSDT(
-    user: Wallet,
-    amount: BN
-  ): Promise<{ ATokenMinted: BN; A2TokenMinted: BN; CTokenMinted: BN }> {
+  async function mintOtAndXytUSDT(user: Wallet, amount: BN): Promise<{ A2TokenMinted: BN; CTokenMinted: BN }> {
     return await mintOtAndXyt(tokenUSDT, user, amount, fixture.routerFix);
   }
 

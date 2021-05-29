@@ -1,22 +1,22 @@
 import { assert, expect } from 'chai';
 import { BigNumber as BN } from 'ethers';
+import { waffle } from 'hardhat';
 import {
-  advanceTime,
   approxBigNumber,
   calcExpectedRewards,
   consts,
-  emptyToken,
-  errMsg,
+
+
   evm_revert,
   evm_snapshot,
-  redeemDueInterests,
-  redeemLpInterests,
+
+
   redeemRewards,
   setTime,
   setTimeNextBlock,
   stake,
   startOfEpoch,
-  withdraw,
+  withdraw
 } from '../../helpers';
 import {
   liquidityMiningFixture,
@@ -24,11 +24,10 @@ import {
   Mode,
   parseTestEnvLiquidityMiningFixture,
   TestEnv,
-  UserStakeAction,
+  UserStakeAction
 } from '../fixtures';
 import * as scenario from '../fixtures/liquidityMiningScenario.fixture';
 
-import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
 export function runTest(mode: Mode) {
@@ -78,7 +77,7 @@ export function runTest(mode: Mode) {
       if (alloc_setting[currentEpoch].toString() != alloc_setting[currentEpoch - 1].toString()) {
         await setTimeNextBlock(startOfEpoch(env.liqParams, currentEpoch).sub(consts.ONE_HOUR.div(4)));
         await env.liq.setAllocationSetting(
-          [env.EXPIRY, consts.T0.add(consts.THREE_MONTH)],
+          [env.EXPIRY, consts.T0_A2.add(consts.THREE_MONTH)],
           [alloc_setting[currentEpoch], env.liqParams.TOTAL_NUMERATOR.sub(alloc_setting[currentEpoch])],
           consts.HIGH_GAS_OVERRIDE
         );
@@ -110,7 +109,7 @@ export function runTest(mode: Mode) {
         let action: UserStakeAction = flatData[i];
         if (i != 0) assert(flatData[i - 1].time < flatData[i].time);
 
-        while(usingAllocationSetting && currentEpoch < flatEpochId[i]) {
+        while (usingAllocationSetting && currentEpoch < flatEpochId[i]) {
           await allocSettingForEpoch();
         }
 
@@ -157,7 +156,7 @@ export function runTest(mode: Mode) {
     ) {
       for (let i = 0; i < 4; i++) {
         let epoch = epochToCheck + i;
-        while(usingAllocationSetting && currentEpoch < epoch) {
+        while (usingAllocationSetting && currentEpoch < epoch) {
           await allocSettingForEpoch();
         }
         await checkEqualRewards(userStakingData, epochToCheck + i, usingAllocationSetting);
@@ -176,11 +175,11 @@ export function runTest(mode: Mode) {
       await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1, true);
     });
 
-    it('test 4', async() => {
+    it('test 4', async () => {
       let userStakingData: UserStakeAction[][][] = scenario.scenario06(env.liqParams);
       await doSequence(userStakingData, true);
       await checkEqualRewardsForEpochs(userStakingData, userStakingData.length + 1, true);
-    }); 
+    });
 
     it('test 5', async () => {
       let userStakingData: UserStakeAction[][][] = scenario.scenario07(env.liqParams);
