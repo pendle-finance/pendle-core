@@ -323,17 +323,17 @@ export function runTest(isAaveV1: boolean) {
         
         await setTimeNextBlock(env.T0.add(currentTime));
         markets.push(
-          await createMarketWithExpiry(env, 12, wallets)
+          await createMarketWithExpiry(env, env.T0.add(consts.ONE_MONTH.mul(12)), wallets)
         );
         
         await setTimeNextBlock(env.T0.add(currentTime.mul(2)));
         markets.push(
-          await createMarketWithExpiry(env, 24, wallets)
+          await createMarketWithExpiry(env, env.T0.add(consts.ONE_MONTH.mul(24)), wallets)
         );
         
         await setTimeNextBlock(env.T0.add(currentTime.mul(4)));
         markets.push(
-          await createMarketWithExpiry(env, 48, wallets)
+          await createMarketWithExpiry(env, env.T0.add(consts.ONE_MONTH.mul(48)), wallets)
         );
         await MultiExpiryMarketTest(env, markets, wallets);
       }

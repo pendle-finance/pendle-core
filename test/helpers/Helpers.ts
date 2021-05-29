@@ -83,7 +83,7 @@ export async function mintOtAndXyt(
   };
 }
 
-export async function mintOtAndXytOptional(token: Token,
+export async function mintOtAndXytWithExpiry(token: Token,
   user: Wallet,
   amount: BN,
   env: RouterFixture,
@@ -300,10 +300,9 @@ export async function logTokenBalance(token: Contract, people: Wallet[]) {
   }
 }
 
-export async function createMarketWithExpiry(env: TestEnv, month: number, wallets: any) {
+export async function createMarketWithExpiry(env: TestEnv, expiry: BN, wallets: any) {
   const [alice, bob, charlie, dave, eve] = wallets
   
-  const expiry = env.T0.add(consts.ONE_MONTH.mul(month));
   await env.router.newYieldContracts(
     env.FORGE_ID,
     tokens.USDT.address,
@@ -338,7 +337,7 @@ export async function createMarketWithExpiry(env: TestEnv, month: number, wallet
   );
 
   for (var person of [alice, bob, charlie, dave]) {
-    await mintOtAndXytOptional(tokens.USDT, person, consts.INITIAL_OT_XYT_AMOUNT, env.routerFixture, expiry);
+    await mintOtAndXytWithExpiry(tokens.USDT, person, consts.INITIAL_OT_XYT_AMOUNT, env.routerFixture, expiry);
   }
 
   const totalSupply = await env.testToken.totalSupply();
