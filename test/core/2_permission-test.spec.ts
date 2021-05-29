@@ -72,7 +72,6 @@ describe('permission-test', async () => {
     await expect(
       env.market.swapExactOut(consts.RANDOM_ADDRESS, amount, consts.RANDOM_ADDRESS, amount)
     ).to.be.revertedWith(errMsg.ONLY_ROUTER);
-
   });
 
   it('PendleRouter', async () => {

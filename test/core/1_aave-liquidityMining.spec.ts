@@ -14,14 +14,14 @@ import {
   redeemRewards,
   setTimeNextBlock,
   stake,
-  withdraw,
+  withdraw
 } from '../helpers';
 import {
   liquidityMiningFixture,
   LiquidityMiningFixture,
   Mode,
   parseTestEnvLiquidityMiningFixture,
-  TestEnv,
+  TestEnv
 } from './fixtures';
 
 const { loadFixture, provider } = waffle;
@@ -90,9 +90,9 @@ describe('aave-liquidityMining', async () => {
     await stake(env, bob, INITIAL_LP_AMOUNT.div(2));
 
     await setTimeNextBlock(env.liqParams.START_TIME.add(consts.ONE_MONTH.mul(2)));
-    await env.liq.redeemLpInterests(env.EXPIRY, bob.address);
+    await env.liq.redeemLpInterests(env.EXPIRY, bob.address, consts.HIGH_GAS_OVERRIDE);
     await redeemLpInterests(env, bob);
-    await env.liq.redeemLpInterests(env.EXPIRY, bob.address);
+    await env.liq.redeemLpInterests(env.EXPIRY, bob.address, consts.HIGH_GAS_OVERRIDE);
     let actualGainBob = (await env.yUSDT.balanceOf(bob.address)).sub(preBalanceBob);
 
     await redeemDueInterests(env, charlie);
