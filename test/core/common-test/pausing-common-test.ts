@@ -255,8 +255,9 @@ export async function runTest(mode: Mode) {
     });
     it('Pausing globally & unpausing specific yield contracts should work', async () => {
       await env.pausingManager.connect(bob).setForgePaused(env.FORGE_ID, true);
-      await env.pausingManager.setForgeAssetExpiryPaused(env.FORGE_ID, env.USDTContract.address, env.EXPIRY, false);
-      await checkYieldContractUnpaused();
+      await env.pausingManager.connect(bob).setForgeAssetExpiryPaused(env.FORGE_ID, env.USDTContract.address, env.EXPIRY, true);
+      await env.pausingManager.connect(alice).setForgePaused(env.FORGE_ID, false);
+      await checkYieldContractPaused();
     });
   });
   describe('Market pausing', async () => {
@@ -283,8 +284,9 @@ export async function runTest(mode: Mode) {
     });
     it('Pausing globally & unpausing specific markets should work', async () => {
       await env.pausingManager.connect(bob).setMarketFactoryPaused(env.MARKET_FACTORY_ID, true);
-      await env.pausingManager.setMarketPaused(env.MARKET_FACTORY_ID, env.market.address, false);
-      await checkMarketUnpaused();
+      await env.pausingManager.connect(bob).setMarketPaused(env.MARKET_FACTORY_ID, env.market.address, true);
+      await env.pausingManager.connect(alice).setMarketFactoryPaused(env.MARKET_FACTORY_ID, false);
+      await checkMarketPaused();
     });
   });
   describe('Forge emergency', async () => {
