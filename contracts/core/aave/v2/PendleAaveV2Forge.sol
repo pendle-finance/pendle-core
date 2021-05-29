@@ -180,16 +180,17 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         uint256 _feeAmount
     ) internal override {
         uint256 normIncomeNow = getReserveNormalizedIncome(_underlyingAsset);
+        uint256 _lastNormalisedIncome = lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry];
         // first time receiving fee
-        if (lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] == 0) {
-            lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] = normIncomeNow;
+        if (_lastNormalisedIncome == 0) {
+            _lastNormalisedIncome = normIncomeNow;
         }
 
         // update the totalFee (because it can generate compound interest on its own)
         // then add the newly received fee
         totalFee[_underlyingAsset][_expiry] = totalFee[_underlyingAsset][_expiry]
             .mul(normIncomeNow)
-            .div(lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry])
+            .div(_lastNormalisedIncome)
             .add(_feeAmount);
         lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] = normIncomeNow;
     }

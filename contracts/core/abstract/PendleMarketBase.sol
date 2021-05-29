@@ -123,6 +123,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
+        require(_token != IPendleYieldToken(_xyt).underlyingYieldToken(), "INVALID_TOKEN_PAIR");
 
         IPendleForge _forge = IPendleYieldToken(_xyt).forge();
 
@@ -566,7 +567,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
      */
     function redeemLpInterests(address user) external override returns (uint256 interests) {
         checkAddRemoveSwapClaimAllowed(true);
-        checkNotPaused();
         interests = _beforeTransferDueInterests(user);
         _safeTransferYieldToken(user, interests);
     }
@@ -586,8 +586,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
             uint256 currentBlock
         )
     {
-        (xytWeight, tokenWeight, ) = _updateWeightDry();
-        (xytBalance, tokenBalance, , ) = readReserveData();
+        (xytBalance, tokenBalance, xytWeight, tokenWeight) = readReserveData();
+        if (checkNeedCurveShift()) {
+            (xytWeight, tokenWeight, ) = _updateWeightDry();
+        }
         currentBlock = block.number;
     }
 
