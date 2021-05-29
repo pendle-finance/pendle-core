@@ -17,7 +17,8 @@ import {
   Token,
   transferToken,
   logTokenBalance,
-  advanceTime
+  advanceTime,
+  emptyToken
 } from '../../helpers';
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 import testData from '../fixtures/yieldTokenizeAndRedeem.scenario.json';
@@ -137,16 +138,15 @@ export function runTest(isAaveV1: boolean) {
         );
       }
 
-      async function removeYieldToken(user: Wallet, amountToKeep: BN) {
-        await transferYieldToken(user, eve,
-          (await env.yUSDT.connect(user).balanceOf(user.address)).sub(amountToKeep),
-        );
-      }
 
-      await removeYieldToken(alice, amountToTokenize.mul(2));
-      for (let person of [bob, charlie, dave]) {
-        removeYieldToken(person, BN.from(0));
+      for (let person of [alice, bob, charlie, dave]) {
+        await emptyToken(env.yUSDT, person);
       }
+      await env.yUSDT.connect(eve).transfer(
+        alice.address,
+        amountToTokenize.mul(2),
+        consts.HIGH_GAS_OVERRIDE
+      );
 
       await tokenizeYield(env, alice, amountToTokenize, alice.address);
       await tokenizeYield(env, alice, amountToTokenize.div(2), bob.address);

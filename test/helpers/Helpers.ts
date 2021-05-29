@@ -364,10 +364,10 @@ export async function createMarketWithExpiry(env: TestEnv, expiry: BN, wallets: 
     alice
   );
 
-  return {
-    market: market, 
-    xyt: futureYieldToken,
-    token: env.testToken,
-    expiry: expiry
-  };
+  let newEnv: TestEnv = {...env};
+  newEnv.market = market;
+  newEnv.xyt = futureYieldToken;
+  newEnv.EXPIRY = expiry;
+
+  return newEnv;
 }

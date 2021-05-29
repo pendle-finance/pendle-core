@@ -19,7 +19,7 @@ import {
   swapExactOutXytToToken,
   toFixedPoint,
   createMarketWithExpiry,
-  setTimeNextBlock
+  setTimeNextBlock,
 } from '../../helpers';
 import {
   AMMCheckLPNearCloseTest,
@@ -29,8 +29,12 @@ import {
   ProtocolFeeTest,
   marketBalanceNonZeroTest,
   marketBalanceNonZeroSwapTest,
-  MultiExpiryMarketTest
 } from './amm-formula-test';
+
+import {
+  MultiExpiryMarketTest
+} from './multi-market-common-test';
+
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, parseTestEnvLiquidityMiningFixture, TestEnv } from '../fixtures';
 
 import { waffle } from 'hardhat';
@@ -318,24 +322,24 @@ export function runTest(isAaveV1: boolean) {
 
     it("Multimarket test", async () => {
       if (!isAaveV1) {
-        const markets = [];
+        const environments = [];
         let currentTime = BN.from(300);
-        
+
         await setTimeNextBlock(env.T0.add(currentTime));
-        markets.push(
+        environments.push(
           await createMarketWithExpiry(env, env.T0.add(consts.ONE_MONTH.mul(12)), wallets)
         );
         
         await setTimeNextBlock(env.T0.add(currentTime.mul(2)));
-        markets.push(
+        environments.push(
           await createMarketWithExpiry(env, env.T0.add(consts.ONE_MONTH.mul(24)), wallets)
         );
         
         await setTimeNextBlock(env.T0.add(currentTime.mul(4)));
-        markets.push(
+        environments.push(
           await createMarketWithExpiry(env, env.T0.add(consts.ONE_MONTH.mul(48)), wallets)
         );
-        await MultiExpiryMarketTest(env, markets, wallets);
+        await MultiExpiryMarketTest(environments, wallets);
       }
     });
   });
