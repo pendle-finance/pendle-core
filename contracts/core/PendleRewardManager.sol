@@ -46,6 +46,11 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
     IERC20 private rewardToken;
     bool public override skippingRewards;
 
+    // we only update the rewards for a yieldTokenHolder if it has been >= updateFrequency[underlyingAsset] blocks
+    // since the last time rewards was updated for the yieldTokenHolder (lastUpdatedForYieldHolder[underlyingAsset][expiry])
+    mapping(address => uint256) updateFrequency;
+    mapping(address => mapping(uint256 => uint256)) lastUpdatedForYieldHolder;
+
     // This MULTIPLIER is to scale the real paramL value up, to preserve precision
     uint256 private constant MULTIPLIER = 1e20;
     IPendleData private data;
@@ -89,6 +94,34 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         router = forge.router();
     }
 
+    /**
+    Use:
+        To set how often rewards should be updated for yieldTokenHolders of an underlyingAsset
+    Conditions:
+        * The underlyingAsset must already exist in the forge
+        * Must be called by governance
+    */
+    function setUpdateFrequency(
+        address[] calldata underlyingAssets,
+        uint256[] calldata frequencies
+    ) external override onlyGovernance {
+        require(underlyingAssets.length == frequencies.length, "ARRAY_LENGTH_MISMATCH");
+        for (uint256 i = 0; i < underlyingAssets.length; i++) {
+            require(
+                forge.getYieldBearingToken(underlyingAssets[i]) != address(0),
+                "INVALID_UNDERLYING_ASSET"
+            );
+            updateFrequency[underlyingAssets[i]] = frequencies[i];
+        }
+        emit UpdateFrequencySet(underlyingAssets, frequencies);
+    }
+
+    /**
+    Use:
+        To skip accounting for rewards altogether, to be set when the incentive programs stop
+    Conditions:
+        * Must be called by governance
+    */
     function setSkippingRewards(bool _skippingRewards) external override onlyGovernance {
         skippingRewards = _skippingRewards;
         emit SkippingRewardsSet(_skippingRewards);
@@ -166,9 +199,10 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         uint256 _expiry,
         address _user
     ) internal {
-        if (skippingRewards) return;
+        if (!_checkNeedUpdateRewards(_underlyingAsset, _expiry)) return;
         address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
         _updateParamL(_underlyingAsset, _expiry, _yieldTokenHolder);
+        lastUpdatedForYieldHolder[_underlyingAsset][_expiry] = block.number;
 
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
 
@@ -188,6 +222,17 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
 
         rwd.dueRewards[_user] = rwd.dueRewards[_user].add(rewardsFromOT);
         rwd.lastParamL[_user] = rwd.paramL;
+    }
+
+    function _checkNeedUpdateRewards(address _underlyingAsset, uint256 _expiry)
+        internal
+        view
+        returns (bool needUpdate)
+    {
+        if (skippingRewards) return false;
+        needUpdate =
+            block.number - lastUpdatedForYieldHolder[_underlyingAsset][_expiry] >=
+            updateFrequency[_underlyingAsset];
     }
 
     /**

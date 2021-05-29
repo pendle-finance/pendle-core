@@ -24,6 +24,7 @@ pragma solidity 0.7.6;
 
 interface IPendleRewardManager {
     event SkippingRewardsSet(bool);
+    event UpdateFrequencySet(address[], uint256[]);
 
     function redeemRewards(
         address _underlyingAsset,
@@ -38,6 +39,11 @@ interface IPendleRewardManager {
     ) external;
 
     function setSkippingRewards(bool) external;
+
+    function setUpdateFrequency(
+        address[] calldata underlyingAssets,
+        uint256[] calldata frequencies
+    ) external;
 
     function skippingRewards() external returns (bool);
 
