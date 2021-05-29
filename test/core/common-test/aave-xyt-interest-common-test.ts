@@ -250,18 +250,9 @@ export function runTest(isAaveV1: boolean) {
       const amount = BN.from(1000000000);
       const transferAmount = amount.div(10);
 
-      async function removeYieldToken(person: Wallet) {
-        await env.yUSDT.connect(person).transfer(
-          alice.address,
-          await env.yUSDT.balanceOf(person.address),
-          consts.HIGH_GAS_OVERRIDE
-        );
-      }
-
-
-      await removeYieldToken(bob);
-      await removeYieldToken(charlie);
-      await removeYieldToken(dave);
+      await emptyToken(env.yUSDT, bob);
+      await emptyToken(env.yUSDT, charlie);
+      await emptyToken(env.yUSDT, dave);
 
       await tokenizeYield(env, alice, amount, alice.address);
       await tokenizeYield(env, alice, amount, bob.address);
