@@ -310,14 +310,14 @@ export async function createMarketWithExpiry(env: TestEnv, expiry: BN, wallets: 
     consts.HIGH_GAS_OVERRIDE
   );
   
-  const ot = await env.data.otTokens(
+  const otAddress = await env.data.otTokens(
     env.FORGE_ID,
     tokens.USDT.address,
     expiry,
     consts.HIGH_GAS_OVERRIDE
   );
 
-  const xyt = await env.data.xytTokens(
+  const xytAddress = await env.data.xytTokens(
     env.FORGE_ID,
     tokens.USDT.address,
     expiry,
@@ -325,13 +325,13 @@ export async function createMarketWithExpiry(env: TestEnv, expiry: BN, wallets: 
   );
 
   const ownershipToken = new Contract(
-    ot,
+    otAddress,
     MockPendleOwnershipToken.abi,
     alice
   );
 
   const futureYieldToken = new Contract(
-    xyt,
+    xytAddress,
     PendleFutureYieldToken.abi,
     alice
   );

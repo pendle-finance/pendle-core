@@ -49,7 +49,7 @@ export async function MultiExpiryMarketTest(environments: TestEnv[], wallets: an
       console.log("Checked", outcomes[0].length, "actions!");
     }
   
-    async function marketAction(env: TestEnv, scenario: number[][]) {
+    async function doMarketActions(env: TestEnv, scenario: number[][]) {
       const amount = BN.from(10**6);
       let actors = [alice, bob];
       let actions = [swapExactInXytToToken, swapExactInTokenToXyt, addMarketLiquidityDual];
@@ -63,7 +63,7 @@ export async function MultiExpiryMarketTest(environments: TestEnv[], wallets: an
       return outcome;
     }
   
-    async function randomScenario(nActions: number) {
+    async function generateRandomScenario(nActions: number) {
       let scenario: number[][] = [];
       for(let i = 0; i < nActions; ++i) {
         /// 2 person alice and bob
@@ -74,14 +74,14 @@ export async function MultiExpiryMarketTest(environments: TestEnv[], wallets: an
     }
   
     while(consts.SIX_MONTH.gt(currentTime.add(60).mul(2))) {
-      let scenario = await randomScenario(randomNumber(6) + 5);
+      let scenario = await generateRandomScenario(randomNumber(6) + 5);
       let outcomes = []
       
       for(let j = 0; j < nMarket; ++j) {
         if (j == 0) currentTime = currentTime.add(60);
         else currentTime = currentTime.mul(2);
         await setTimeNextBlock(env0.T0.add(currentTime));
-        outcomes.push(await marketAction(environments[j], scenario));
+        outcomes.push(await doMarketActions(environments[j], scenario));
       }
       await checkOutcome(outcomes);
     }
