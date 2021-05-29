@@ -18,7 +18,7 @@ import {
   swapExactInXytToToken,
   swapExactOutXytToToken,
   toFixedPoint,
-  createMarketWithExpiry,
+  createMarketWithExpiryAave2,
   setTimeNextBlock,
 } from '../../helpers';
 import {
@@ -327,17 +327,17 @@ export function runTest(isAaveV1: boolean) {
 
         await setTimeNextBlock(env.T0.add(currentTime));
         environments.push(
-          await createMarketWithExpiry(env, env.T0.add(consts.ONE_MONTH.mul(12)), wallets)
+          await createMarketWithExpiryAave2(env, env.T0.add(consts.ONE_MONTH.mul(12)), wallets)
         );
         
         await setTimeNextBlock(env.T0.add(currentTime.mul(2)));
         environments.push(
-          await createMarketWithExpiry(env, env.T0.add(consts.ONE_MONTH.mul(24)), wallets)
+          await createMarketWithExpiryAave2(env, env.T0.add(consts.ONE_MONTH.mul(24)), wallets)
         );
         
         await setTimeNextBlock(env.T0.add(currentTime.mul(4)));
         environments.push(
-          await createMarketWithExpiry(env, env.T0.add(consts.ONE_MONTH.mul(48)), wallets)
+          await createMarketWithExpiryAave2(env, env.T0.add(consts.ONE_MONTH.mul(48)), wallets)
         );
         await MultiExpiryMarketTest(environments, wallets);
       }

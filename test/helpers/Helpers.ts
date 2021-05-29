@@ -300,7 +300,7 @@ export async function logTokenBalance(token: Contract, people: Wallet[]) {
   }
 }
 
-export async function createMarketWithExpiry(env: TestEnv, expiry: BN, wallets: any) {
+export async function createMarketWithExpiryAave2(env: TestEnv, expiry: BN, wallets: any) {
   const [alice, bob, charlie, dave, eve] = wallets
   
   await env.router.newYieldContracts(
