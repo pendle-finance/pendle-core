@@ -123,7 +123,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
-        require(_token != IPendleYieldToken(_xyt).underlyingYieldToken(), "MATCHED_XYT_AND_YIELD_TOKEN");
+        require(_token != IPendleYieldToken(_xyt).underlyingYieldToken(), "INVALID_TOKEN_PAIR");
 
         IPendleForge _forge = IPendleYieldToken(_xyt).forge();
 

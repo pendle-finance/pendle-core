@@ -147,8 +147,6 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
             return;
         }
 
-        if (lastIncome == normIncomeNow) return;
-
         uint256 interestFromXyt;
 
         // if this if is true, means that there are still unclaimed interests from XYT
@@ -194,7 +192,6 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
             .mul(normIncomeNow)
             .div(_lastNormalisedIncome)
             .add(_feeAmount);
-        _lastNormalisedIncome = normIncomeNow;
-        lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] = _lastNormalisedIncome;
+        lastNormalisedIncomeForForgeFee[_underlyingAsset][_expiry] = normIncomeNow;
     }
 }

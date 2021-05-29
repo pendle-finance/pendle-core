@@ -111,7 +111,7 @@ export function runTest(isAaveV1: boolean) {
       let xytBalance = await env.xyt.balanceOf(env.market.address);
       let testTokenBalance = await env.testToken.balanceOf(env.market.address);
 
-      approxBigNumber(xytBalance, REF_AMOUNT.add(REF_AMOUNT.div(10)), 30);
+      approxBigNumber(xytBalance, REF_AMOUNT.add(REF_AMOUNT.div(10)), 300);
       approxBigNumber(testTokenBalance, REF_AMOUNT.sub(REF_AMOUNT.div(10)), REF_AMOUNT.div(100));
     });
 
@@ -304,9 +304,5 @@ export function runTest(isAaveV1: boolean) {
     it("AMM's LP outcome is correct near the market's freeze time", async () => {
       await AMMCheckLPNearCloseTest(env);
     });
-
-    // it.only("", async () => {
-
-    // });
   });
 }

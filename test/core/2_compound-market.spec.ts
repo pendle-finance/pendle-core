@@ -137,7 +137,7 @@ describe('compound-market', async () => {
     let xytBalance = await xyt.balanceOf(market.address);
     let testTokenBalance = await testToken.balanceOf(market.address);
 
-    expect(xytBalance.toNumber()).to.be.approximately(xytBalanceBefore.add(BN.from(result[1])).toNumber(), 20);
+    expect(xytBalance.toNumber()).to.be.approximately(xytBalanceBefore.add(BN.from(result[1])).toNumber(), 200);
     expect(testTokenBalance).to.be.equal(amount.sub(amount.div(10)));
   });
 
@@ -160,7 +160,7 @@ describe('compound-market', async () => {
     let xytBalance = await xyt.balanceOf(market.address);
     let testTokenBalance = await testToken.balanceOf(market.address);
 
-    expect(xytBalance.toNumber()).to.be.approximately(amount.add(amount.div(10)).toNumber(), 30);
+    expect(xytBalance.toNumber()).to.be.approximately(amount.add(amount.div(10)).toNumber(), 300);
 
     expect(testTokenBalance.toNumber()).to.be.approximately(
       amount.sub(amount.div(10)).toNumber(),

@@ -442,9 +442,9 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         address _user,
         uint256 _amount
     ) internal returns (uint256) {
-        if (_amount == 0) return 0;
         address yieldTokenHolder = yieldTokenHolders[_underlyingAsset][_expiry];
         _amount = Math.min(_amount, _yieldToken.balanceOf(yieldTokenHolder));
+        if (_amount == 0) return 0;
         _yieldToken.safeTransferFrom(yieldTokenHolder, _user, _amount);
         return _amount;
     }
