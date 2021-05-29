@@ -88,6 +88,6 @@ contract PendleCompoundMarket is PendleMarketBase {
 
     /// @inheritdoc PendleMarketBase
     function _getIncomeIndexIncreaseRate() internal override returns (uint256 increaseRate) {
-        return _getExchangeRate().rdiv(globalLastExchangeRate) - Math.RONE;
+        return _getExchangeRate().rdiv(globalLastExchangeRate).sub(Math.RONE);
     }
 }

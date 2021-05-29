@@ -40,7 +40,9 @@ export async function compoundForgeFixture(
     consts.FORGE_COMPOUND,
     consts.COMP_ADDRESS,
     cRewardManager.address,
-    cYieldContractDeployer.address
+    cYieldContractDeployer.address,
+    consts.COMP_ETH,
+    consts.HIGH_GAS_OVERRIDE
   ]);
   await cRewardManager.initialize(compoundForge.address);
 

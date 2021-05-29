@@ -123,6 +123,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
+        require(_token != IPendleYieldToken(_xyt).underlyingYieldToken(), "MATCHED_XYT_AND_YIELD_TOKEN");
 
         IPendleForge _forge = IPendleYieldToken(_xyt).forge();
 
@@ -574,8 +575,10 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
             uint256 currentBlock
         )
     {
-        (xytWeight, tokenWeight, ) = _updateWeightDry();
-        (xytBalance, tokenBalance, , ) = readReserveData();
+        (xytBalance, tokenBalance, xytWeight, tokenWeight) = readReserveData();
+        if (checkNeedCurveShift()) {
+            (xytWeight, tokenWeight, ) = _updateWeightDry();
+        }
         currentBlock = block.number;
     }
 
