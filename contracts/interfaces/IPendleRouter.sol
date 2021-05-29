@@ -23,7 +23,7 @@
  */
 
 pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
+pragma abicoder v2;
 
 import "../interfaces/IWETH.sol";
 import "./IPendleData.sol";
