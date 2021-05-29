@@ -4,9 +4,9 @@ import ERC20 from '../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC
 import AToken from '../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json';
 import CToken from '../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json';
 import TetherToken from '../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json';
-import MockPendleOwnershipToken from "../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json";
-import PendleFutureYieldToken from "../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
-import MockPendleAaveMarket from "../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json";
+import MockPendleOwnershipToken from '../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json';
+import PendleFutureYieldToken from '../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json';
+import MockPendleAaveMarket from '../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json';
 
 import { RouterFixture, TestEnv } from '../core/fixtures/';
 import { aaveFixture } from '../core/fixtures/aave.fixture';
@@ -24,7 +24,7 @@ export async function mintOtAndXyt(
   token: Token,
   user: Wallet,
   amount: BN,
-  env: RouterFixture,
+  env: RouterFixture
 ): Promise<{ ATokenMinted: BN; A2TokenMinted: BN; CTokenMinted: BN }> {
   let router = env.core.router;
   const aContract = await getAContract(user, env.aForge.aaveForge, token);
@@ -83,7 +83,8 @@ export async function mintOtAndXyt(
   };
 }
 
-export async function mintOtAndXytWithExpiryAave2(token: Token,
+export async function mintOtAndXytWithExpiryAave2(
+  token: Token,
   user: Wallet,
   amount: BN,
   env: RouterFixture,
@@ -295,46 +296,23 @@ export async function addFakeIncomeCompound(env: TestEnv, user: Wallet) {
 }
 
 export async function logTokenBalance(token: Contract, people: Wallet[]) {
-  for(let person of people) {
+  for (let person of people) {
     console.log((await token.balanceOf(person.address)).toString());
   }
 }
 
 export async function createMarketWithExpiryAave2(env: TestEnv, expiry: BN, wallets: any) {
-  const [alice, bob, charlie, dave, eve] = wallets
-  
-  await env.router.newYieldContracts(
-    env.FORGE_ID,
-    tokens.USDT.address,
-    expiry,
-    consts.HIGH_GAS_OVERRIDE
-  );
-  
-  const otAddress = await env.data.otTokens(
-    env.FORGE_ID,
-    tokens.USDT.address,
-    expiry,
-    consts.HIGH_GAS_OVERRIDE
-  );
+  const [alice, bob, charlie, dave, eve] = wallets;
 
-  const xytAddress = await env.data.xytTokens(
-    env.FORGE_ID,
-    tokens.USDT.address,
-    expiry,
-    consts.HIGH_GAS_OVERRIDE
-  );
+  await env.router.newYieldContracts(env.FORGE_ID, tokens.USDT.address, expiry, consts.HIGH_GAS_OVERRIDE);
 
-  const ownershipToken = new Contract(
-    otAddress,
-    MockPendleOwnershipToken.abi,
-    alice
-  );
+  const otAddress = await env.data.otTokens(env.FORGE_ID, tokens.USDT.address, expiry, consts.HIGH_GAS_OVERRIDE);
 
-  const futureYieldToken = new Contract(
-    xytAddress,
-    PendleFutureYieldToken.abi,
-    alice
-  );
+  const xytAddress = await env.data.xytTokens(env.FORGE_ID, tokens.USDT.address, expiry, consts.HIGH_GAS_OVERRIDE);
+
+  const ownershipToken = new Contract(otAddress, MockPendleOwnershipToken.abi, alice);
+
+  const futureYieldToken = new Contract(xytAddress, PendleFutureYieldToken.abi, alice);
 
   for (var person of [alice, bob, charlie, dave]) {
     await mintOtAndXytWithExpiryAave2(tokens.USDT, person, consts.INITIAL_OT_XYT_AMOUNT, env.routerFixture, expiry);
@@ -358,13 +336,9 @@ export async function createMarketWithExpiryAave2(env: TestEnv, expiry: BN, wall
     env.testToken.address
   );
 
-  const market = new Contract(
-    marketAddress,
-    MockPendleAaveMarket.abi,
-    alice
-  );
+  const market = new Contract(marketAddress, MockPendleAaveMarket.abi, alice);
 
-  let newEnv: TestEnv = {...env};
+  let newEnv: TestEnv = { ...env };
   newEnv.market = market;
   newEnv.xyt = futureYieldToken;
   newEnv.EXPIRY = expiry;

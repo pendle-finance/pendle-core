@@ -45,21 +45,11 @@ export async function bootstrapMarket(env: TestEnv, user: Wallet, amountXyt: BN,
   }
   await env.router
     .connect(user)
-    .bootstrapMarket(
-      env.MARKET_FACTORY_ID,
-      env.xyt.address,
-      env.testToken.address,
-      amountXyt,
-      amountToken,
-    );
+    .bootstrapMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.testToken.address, amountXyt, amountToken);
 }
 
-export async function swapExactInTokenToXyt(
-  env: TestEnv, 
-  user: Wallet, 
-  inAmount: BN
-):Promise<BN> {
-  let initialXytBalance = (await env.xyt.balanceOf(user.address));
+export async function swapExactInTokenToXyt(env: TestEnv, user: Wallet, inAmount: BN): Promise<BN> {
+  let initialXytBalance = await env.xyt.balanceOf(user.address);
   await env.router
     .connect(user)
     .swapExactIn(
@@ -70,16 +60,12 @@ export async function swapExactInTokenToXyt(
       env.MARKET_FACTORY_ID,
       consts.HIGH_GAS_OVERRIDE
     );
-  let postXytBalance = (await env.xyt.balanceOf(user.address));
+  let postXytBalance = await env.xyt.balanceOf(user.address);
   return postXytBalance.sub(initialXytBalance);
 }
 
-export async function swapExactInXytToToken(
-  env: TestEnv, 
-  user: Wallet, 
-  inAmount: BN
-):Promise<BN> {
-  let initialTokenBalance = (await env.testToken.balanceOf(user.address));
+export async function swapExactInXytToToken(env: TestEnv, user: Wallet, inAmount: BN): Promise<BN> {
+  let initialTokenBalance = await env.testToken.balanceOf(user.address);
   await env.router
     .connect(user)
     .swapExactIn(
@@ -90,16 +76,12 @@ export async function swapExactInXytToToken(
       env.MARKET_FACTORY_ID,
       consts.HIGH_GAS_OVERRIDE
     );
-    let postTokenBalance = (await env.testToken.balanceOf(user.address));
-    return postTokenBalance.sub(initialTokenBalance);
+  let postTokenBalance = await env.testToken.balanceOf(user.address);
+  return postTokenBalance.sub(initialTokenBalance);
 }
 
-export async function swapExactOutTokenToXyt(
-  env: TestEnv, 
-  user: Wallet, 
-  outAmount: BN
-):Promise<BN> {
-  let initialXytBalance = (await env.xyt.balanceOf(user.address));
+export async function swapExactOutTokenToXyt(env: TestEnv, user: Wallet, outAmount: BN): Promise<BN> {
+  let initialXytBalance = await env.xyt.balanceOf(user.address);
   await env.router.swapExactOut(
     env.testToken.address,
     env.xyt.address,
@@ -108,16 +90,12 @@ export async function swapExactOutTokenToXyt(
     env.MARKET_FACTORY_ID,
     consts.HIGH_GAS_OVERRIDE
   );
-  let postXytBalance = (await env.xyt.balanceOf(user.address));
+  let postXytBalance = await env.xyt.balanceOf(user.address);
   return postXytBalance.sub(initialXytBalance);
 }
 
-export async function swapExactOutXytToToken(
-  env: TestEnv, 
-  user: Wallet, 
-  outAmount: BN
-):Promise<BN> {
-  let initialTokenBalance = (await env.testToken.balanceOf(user.address));
+export async function swapExactOutXytToToken(env: TestEnv, user: Wallet, outAmount: BN): Promise<BN> {
+  let initialTokenBalance = await env.testToken.balanceOf(user.address);
   await env.router.swapExactOut(
     env.xyt.address,
     env.testToken.address,
@@ -126,7 +104,7 @@ export async function swapExactOutXytToToken(
     env.MARKET_FACTORY_ID,
     consts.HIGH_GAS_OVERRIDE
   );
-  let postTokenBalance = (await env.testToken.balanceOf(user.address));
+  let postTokenBalance = await env.testToken.balanceOf(user.address);
   return postTokenBalance.sub(initialTokenBalance);
 }
 
@@ -144,12 +122,8 @@ export async function addMarketLiquiditySingle(env: TestEnv, user: Wallet, amoun
     );
 }
 
-export async function addMarketLiquidityDualXyt(
-  env: TestEnv, 
-  user: Wallet, 
-  amountXyt: BN
-):Promise<BN> {
-  let initialLpBalance = (await env.market.balanceOf(user.address));
+export async function addMarketLiquidityDualXyt(env: TestEnv, user: Wallet, amountXyt: BN): Promise<BN> {
+  let initialLpBalance = await env.market.balanceOf(user.address);
   await env.router
     .connect(user)
     .addMarketLiquidityDual(
@@ -162,18 +136,13 @@ export async function addMarketLiquidityDualXyt(
       BN.from(0),
       consts.HIGH_GAS_OVERRIDE
     );
-    let postLpBalance = (await env.market.balanceOf(user.address));
-    return postLpBalance.sub(initialLpBalance);
+  let postLpBalance = await env.market.balanceOf(user.address);
+  return postLpBalance.sub(initialLpBalance);
 }
 
-export async function addMarketLiquidityDual(
-  env: TestEnv, 
-  user: Wallet, 
-  amountXyt: BN, 
-  amountToken?: BN
-) :Promise<BN> {
+export async function addMarketLiquidityDual(env: TestEnv, user: Wallet, amountXyt: BN, amountToken?: BN): Promise<BN> {
   if (amountToken == null) amountToken = amountXyt;
-  let initialLpBalance = (await env.market.balanceOf(user.address));
+  let initialLpBalance = await env.market.balanceOf(user.address);
   await env.router
     .connect(user)
     .addMarketLiquidityDual(
@@ -186,7 +155,7 @@ export async function addMarketLiquidityDual(
       BN.from(1),
       consts.HIGH_GAS_OVERRIDE
     );
-  let postLpBalance = (await env.market.balanceOf(user.address));
+  let postLpBalance = await env.market.balanceOf(user.address);
   return postLpBalance.sub(initialLpBalance);
 }
 
