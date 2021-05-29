@@ -4,6 +4,7 @@ import PendleAaveV2YieldContractDeployer from "../../../build/artifacts/contract
 import MockPendleRewardManager from "../../../build/artifacts/contracts/mock/MockPendleRewardManager.sol/MockPendleRewardManager.json";
 import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
 import PendleOwnershipToken from "../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json";
+import MockPendleOwnershipToken from "../../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json";
 import { consts, setTimeNextBlock, tokens } from "../../helpers";
 import { CoreFixture } from "./core.fixture";
 import { GovernanceFixture } from "./governance.fixture";
@@ -75,7 +76,7 @@ export async function aaveV2ForgeFixture(
 
   const a2OwnershipToken = new Contract(
     otTokenAddress,
-    PendleOwnershipToken.abi,
+    MockPendleOwnershipToken.abi,
     alice
   );
   const a2FutureYieldToken = new Contract(
@@ -105,7 +106,7 @@ export async function aaveV2ForgeFixture(
 
   const a2OwnershipToken2 = new Contract(
     otTokenAddress2,
-    PendleOwnershipToken.abi,
+    MockPendleOwnershipToken.abi,
     alice
   );
   const a2FutureYieldToken2 = new Contract(

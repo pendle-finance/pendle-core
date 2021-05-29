@@ -15,7 +15,10 @@ import {
   tokenizeYield,
   tokens,
   Token,
-  transferToken
+  transferToken,
+  logTokenBalance,
+  advanceTime,
+  emptyToken
 } from '../../helpers';
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 import testData from '../fixtures/yieldTokenizeAndRedeem.scenario.json';
@@ -135,16 +138,15 @@ export function runTest(isAaveV1: boolean) {
         );
       }
 
-      async function removeYieldToken(user: Wallet, amountToKeep: BN) {
-        await transferYieldToken(user, eve,
-          (await env.yUSDT.connect(user).balanceOf(user.address)).sub(amountToKeep),
-        );
-      }
 
-      await removeYieldToken(alice, amountToTokenize.mul(2));
-      for (let person of [bob, charlie, dave]) {
-        removeYieldToken(person, BN.from(0));
+      for (let person of [alice, bob, charlie, dave]) {
+        await emptyToken(env.yUSDT, person);
       }
+      await env.yUSDT.connect(eve).transfer(
+        alice.address,
+        amountToTokenize.mul(2),
+        consts.HIGH_GAS_OVERRIDE
+      );
 
       await tokenizeYield(env, alice, amountToTokenize, alice.address);
       await tokenizeYield(env, alice, amountToTokenize.div(2), bob.address);
@@ -242,6 +244,63 @@ export function runTest(isAaveV1: boolean) {
       for (let i = 0; i < 3; ++i) {
         await tryRedeemDueInterests(BN.from(0));
       }
+    });
+
+    it("Transfering xyt after expiry", async () => {
+      const amount = BN.from(1000000000);
+      const transferAmount = amount.div(10);
+
+      await emptyToken(env.yUSDT, bob);
+      await emptyToken(env.yUSDT, charlie);
+      await emptyToken(env.yUSDT, dave);
+
+      await tokenizeYield(env, alice, amount, alice.address);
+      await tokenizeYield(env, alice, amount, bob.address);
+      await tokenizeYield(env, alice, amount, charlie.address);
+      await tokenizeYield(env, alice, amount.mul(2), dave.address);
+
+
+      /// before expiry
+      await advanceTime(consts.THREE_MONTH);
+
+      await env.xyt.connect(bob).transfer(
+        charlie.address,
+        transferAmount,
+        consts.HIGH_GAS_OVERRIDE
+      );
+      
+      /// Fake activity
+      await advanceTime(consts.THREE_MONTH.sub(consts.ONE_HOUR));
+      await redeemDueInterests(env, alice);
+
+      /// after expiry
+      await advanceTime(consts.SIX_MONTH);
+      await env.xyt.connect(bob).transfer(
+        charlie.address,
+        transferAmount,
+        consts.HIGH_GAS_OVERRIDE
+      );
+      
+      await env.xyt.connect(charlie).transfer(
+        bob.address,
+        transferAmount.mul(5),
+        consts.HIGH_GAS_OVERRIDE
+      );
+
+      await redeemAfterExpiry(env, bob);
+      await redeemAfterExpiry(env, charlie);
+      await redeemAfterExpiry(env, dave);
+      
+      const bobBalance: BN = await env.yUSDT.balanceOf(bob.address);
+      const charlieBalance: BN = await env.yUSDT.balanceOf(charlie.address);
+      const daveBalance: BN = await env.yUSDT.balanceOf(dave.address);
+
+      approxBigNumber(
+        bobBalance.add(charlieBalance),
+        daveBalance,
+        300,
+        true
+      );
     });
   });
 }

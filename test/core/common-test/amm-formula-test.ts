@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { BigNumber as BN, BigNumberish } from 'ethers';
+import { BigNumber as BN, BigNumberish, Wallet } from 'ethers';
 import {
   addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
@@ -17,6 +17,7 @@ import {
   swapExactOutXytToToken,
   logMarketReservesData,
   errMsg,
+  randomNumber
 } from '../../helpers';
 import { TestEnv } from '../fixtures';
 

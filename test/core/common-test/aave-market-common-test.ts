@@ -18,6 +18,8 @@ import {
   swapExactInXytToToken,
   swapExactOutXytToToken,
   toFixedPoint,
+  createMarketWithExpiryAave2,
+  setTimeNextBlock,
 } from '../../helpers';
 import {
   AMMCheckLPNearCloseTest,
@@ -26,9 +28,14 @@ import {
   MarketFeesTest,
   ProtocolFeeTest,
   marketBalanceNonZeroTest,
-  marketBalanceNonZeroSwapTest
+  marketBalanceNonZeroSwapTest,
 } from './amm-formula-test';
-import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../fixtures';
+
+import {
+  MultiExpiryMarketTest
+} from './multi-market-common-test';
+
+import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, parseTestEnvLiquidityMiningFixture, TestEnv } from '../fixtures';
 
 import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
@@ -311,6 +318,29 @@ export function runTest(isAaveV1: boolean) {
 
     it("AMM balance should always be > 0 after extreme swaps", async() => {
       await marketBalanceNonZeroSwapTest(env);
+    });
+
+    it("Multimarket test", async () => {
+      if (!isAaveV1) {
+        const environments = [];
+        let currentTime = BN.from(300);
+
+        await setTimeNextBlock(env.T0.add(currentTime));
+        environments.push(
+          await createMarketWithExpiryAave2(env, env.T0.add(consts.ONE_MONTH.mul(12)), wallets)
+        );
+        
+        await setTimeNextBlock(env.T0.add(currentTime.mul(2)));
+        environments.push(
+          await createMarketWithExpiryAave2(env, env.T0.add(consts.ONE_MONTH.mul(24)), wallets)
+        );
+        
+        await setTimeNextBlock(env.T0.add(currentTime.mul(4)));
+        environments.push(
+          await createMarketWithExpiryAave2(env, env.T0.add(consts.ONE_MONTH.mul(48)), wallets)
+        );
+        await MultiExpiryMarketTest(environments, wallets);
+      }
     });
   });
 }

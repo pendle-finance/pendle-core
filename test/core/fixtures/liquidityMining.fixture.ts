@@ -22,6 +22,7 @@ export interface LiquidityMiningFixture {
   aMarket: Contract,
   cMarket: Contract,
   aLiquidityMining: Contract,
+  a2LiquidityMining: Contract,
   cLiquidityMining: Contract,
   params: LiqParams,
   whitelist: Contract,
@@ -113,6 +114,24 @@ export async function liquidityMiningFixture(
     ]
   );
 
+  let a2LiquidityMining = await deployContract(
+    alice,
+    MockPendleAaveLiquidityMining,
+    [
+      core.govManager.address,
+      whitelist.address,
+      pdl.address,
+      router.address,
+      consts.MARKET_FACTORY_AAVE_V2,
+      consts.FORGE_AAVE_V2,
+      tokens.USDT.address,
+      testToken.address,
+      params.START_TIME,
+      params.EPOCH_DURATION,
+      params.VESTING_EPOCHS,
+    ]
+  );
+
   let cLiquidityMining = await deployContract(
     alice,
     PendleCompoundLiquidityMining,
@@ -177,5 +196,5 @@ export async function liquidityMiningFixture(
     await cMarket.transfer(person.address, lpBalanceAlice.div(10));
   }
 
-  return { marketFix, core, aForge, cForge, testToken, pdl, aMarket, cMarket, aLiquidityMining, cLiquidityMining, params, whitelist };
+  return { marketFix, core, aForge, cForge, testToken, pdl, aMarket, cMarket, a2LiquidityMining, aLiquidityMining, cLiquidityMining, params, whitelist };
 }

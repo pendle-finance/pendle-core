@@ -4,6 +4,8 @@ import MockPendleAaveForge from "../../../build/artifacts/contracts/mock/MockPen
 import MockPendleRewardManager from "../../../build/artifacts/contracts/mock/MockPendleRewardManager.sol/MockPendleRewardManager.json";
 import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
 import PendleOwnershipToken from "../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json";
+import MockPendleOwnershipToken from "../../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json";
+
 import { consts, setTimeNextBlock, tokens } from "../../helpers";
 import { CoreFixture } from "./core.fixture";
 import { GovernanceFixture } from "./governance.fixture";
@@ -59,23 +61,27 @@ export async function aaveForgeFixture(
   await router.newYieldContracts(
     consts.FORGE_AAVE,
     tokens.USDT.address,
-    consts.T0.add(consts.SIX_MONTH)
+    consts.T0.add(consts.SIX_MONTH),
+    consts.HIGH_GAS_OVERRIDE
   );
   const otTokenAddress = await data.otTokens(
     consts.FORGE_AAVE,
     tokens.USDT.address,
-    consts.T0.add(consts.SIX_MONTH)
+    consts.T0.add(consts.SIX_MONTH),
+    consts.HIGH_GAS_OVERRIDE
   );
 
   const xytTokenAddress = await data.xytTokens(
     consts.FORGE_AAVE,
     tokens.USDT.address,
-    consts.T0.add(consts.SIX_MONTH)
+    consts.T0.add(consts.SIX_MONTH),
+    consts.HIGH_GAS_OVERRIDE
   );
+
 
   const aOwnershipToken = new Contract(
     otTokenAddress,
-    PendleOwnershipToken.abi,
+    MockPendleOwnershipToken.abi,
     alice
   );
   const aFutureYieldToken = new Contract(
@@ -84,12 +90,14 @@ export async function aaveForgeFixture(
     alice
   );
 
+
   // USDC
 
   await router.newYieldContracts(
     consts.FORGE_AAVE,
     tokens.USDC.address,
-    consts.T0.add(consts.SIX_MONTH)
+    consts.T0.add(consts.SIX_MONTH),
+    consts.HIGH_GAS_OVERRIDE
   );
   const otTokenAddress2 = await data.otTokens(
     consts.FORGE_AAVE,
@@ -105,7 +113,7 @@ export async function aaveForgeFixture(
 
   const aOwnershipToken2 = new Contract(
     otTokenAddress2,
-    PendleOwnershipToken.abi,
+    MockPendleOwnershipToken.abi,
     alice
   );
   const aFutureYieldToken2 = new Contract(
