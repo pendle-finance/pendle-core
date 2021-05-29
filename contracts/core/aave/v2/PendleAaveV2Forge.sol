@@ -72,7 +72,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         aaveLendingPool = _aaveLendingPool;
     }
 
-    /// Refer to PendleAaveForge
+    /// @inheritdoc PendleForgeBase
     function _calcTotalAfterExpiry(
         address _underlyingAsset,
         uint256 _expiry,
@@ -84,7 +84,10 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         );
     }
 
-    /// Refer to PendleAaveForge
+    /**
+    @dev this function serves functions that take into account the lastNormalisedIncomeBeforeExpiry
+    Else, call getReserveNormalizedIncome instead
+    */
     function getReserveNormalizedIncomeBeforeExpiry(address _underlyingAsset, uint256 _expiry)
         internal
         returns (uint256)
@@ -99,7 +102,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         return normalizedIncome;
     }
 
-    /// Refer to PendleAaveForge
+    /// @inheritdoc IPendleAaveForge
     function getReserveNormalizedIncome(address _underlyingAsset)
         public
         view
@@ -109,7 +112,7 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
         return aaveLendingPool.getReserveNormalizedIncome(_underlyingAsset);
     }
 
-    /// Refer to PendleAaveForge
+    /// @inheritdoc PendleForgeBase
     function _getYieldBearingToken(address _underlyingAsset) internal override returns (address) {
         if (reserveATokenAddress[_underlyingAsset] == address(0)) {
             reserveATokenAddress[_underlyingAsset] = aaveLendingPool
@@ -124,7 +127,6 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
     }
 
     /// @inheritdoc PendleForgeBase
-    // Copy pasted from PendleAaveForge
     function _updateDueInterests(
         uint256 _principal,
         address _underlyingAsset,
@@ -173,7 +175,6 @@ contract PendleAaveV2Forge is PendleForgeBase, IPendleAaveForge {
     }
 
     /// @inheritdoc PendleForgeBase
-    // Copy pasted from PendleAaveForge
     function _updateForgeFee(
         address _underlyingAsset,
         uint256 _expiry,

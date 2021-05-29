@@ -2,8 +2,7 @@ import { Contract, providers, Wallet } from "ethers";
 import PendleCompoundMarket from "../../../build/artifacts/contracts/core/compound/PendleCompoundMarket.sol/PendleCompoundMarket.json";
 import MockPendleAaveMarket from "../../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json";
 import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
-import { consts, emptyToken, getA2Contract, getAContract, getCContract, mintOtAndXyt, tokens } from "../../helpers";
-import { AaveForgeFixture } from "./aaveForge.fixture";
+import { consts, emptyToken, getA2Contract, getCContract, mintOtAndXyt, tokens } from "../../helpers";
 import { AaveV2ForgeFixture } from "./aaveV2Forge.fixture";
 import {
   CompoundFixture
@@ -17,11 +16,9 @@ const { deployContract, loadFixture } = waffle;
 export interface MarketFixture {
   routerFix: RouterFixture
   core: CoreFixture,
-  aForge: AaveForgeFixture,
   a2Forge: AaveV2ForgeFixture,
   cForge: CompoundFixture,
   testToken: Contract,
-  aMarket: Contract,
   a2Market: Contract,
   cMarket: Contract,
   marketEth: Contract,
@@ -34,12 +31,8 @@ export async function marketFixture(
   const wallets = waffle.provider.getWallets();
   const [alice, bob, charlie, dave, eve] = wallets
   const routerFix = await loadFixture(routerFixtureNoMint);
-  const { core, aForge, a2Forge, cForge } = routerFix;
-  const { router, aMarketFactory, a2MarketFactory, cMarketFactory, data } = core;
-  const {
-    aFutureYieldToken,
-    aaveForge
-  } = aForge;
+  const { core, a2Forge, cForge } = routerFix;
+  const { router, a2MarketFactory, cMarketFactory, data } = core;
   const {
     a2FutureYieldToken,
     aaveV2Forge
@@ -55,8 +48,6 @@ export async function marketFixture(
     6,
   ]);
 
-  const aContract = await getAContract(alice, aForge.aaveForge, tokens.USDT);
-  await emptyToken(aContract, alice);
   const a2Contract = await getA2Contract(alice, a2Forge.aaveV2Forge, tokens.USDT);
   await emptyToken(a2Contract, alice);
   const cContract = await getCContract(alice, tokens.USDT);
@@ -72,10 +63,6 @@ export async function marketFixture(
   }
 
   await data.addMarketFactory(
-    consts.MARKET_FACTORY_AAVE,
-    aMarketFactory.address
-  );
-  await data.addMarketFactory(
     consts.MARKET_FACTORY_AAVE_V2,
     a2MarketFactory.address
   );
@@ -84,17 +71,8 @@ export async function marketFixture(
     cMarketFactory.address
   );
 
-  await data.setForgeFactoryValidity(consts.FORGE_AAVE, consts.MARKET_FACTORY_AAVE, true);
   await data.setForgeFactoryValidity(consts.FORGE_AAVE_V2, consts.MARKET_FACTORY_AAVE_V2, true);
   await data.setForgeFactoryValidity(consts.FORGE_COMPOUND, consts.MARKET_FACTORY_COMPOUND, true);
-
-  // aXYT - testToken
-  await router.createMarket(
-    consts.MARKET_FACTORY_AAVE,
-    aFutureYieldToken.address,
-    testToken.address,
-    consts.HIGH_GAS_OVERRIDE
-  );
 
   // a2XYT - testToken
   await router.createMarket(
@@ -112,18 +90,12 @@ export async function marketFixture(
     consts.HIGH_GAS_OVERRIDE
   );
 
-  // aXYT - WETH
+  // a2XYT - WETH
   await router.createMarket(
-    consts.MARKET_FACTORY_AAVE,
-    aFutureYieldToken.address,
+    consts.MARKET_FACTORY_AAVE_V2,
+    a2FutureYieldToken.address,
     tokens.WETH.address,
     consts.HIGH_GAS_OVERRIDE
-  );
-
-  const aMarketAddress = await data.getMarket(
-    consts.MARKET_FACTORY_AAVE,
-    aFutureYieldToken.address,
-    testToken.address
   );
 
   const a2MarketAddress = await data.getMarket(
@@ -139,16 +111,11 @@ export async function marketFixture(
   );
 
   const marketEthAddress = await data.getMarket(
-    consts.MARKET_FACTORY_AAVE,
-    aFutureYieldToken.address,
+    consts.MARKET_FACTORY_AAVE_V2,
+    a2FutureYieldToken.address,
     tokens.WETH.address,
   );
 
-  const aMarket = new Contract(
-    aMarketAddress,
-    MockPendleAaveMarket.abi,
-    alice
-  );
   const a2Market = new Contract(
     a2MarketAddress,
     MockPendleAaveMarket.abi,
@@ -169,5 +136,5 @@ export async function marketFixture(
     await testToken.connect(person).approve(router.address, totalSupply);
   }
 
-  return { routerFix, core, aForge, a2Forge, cForge, testToken, aMarket, a2Market, cMarket, marketEth }
+  return { routerFix, core, a2Forge, cForge, testToken, a2Market, cMarket, marketEth }
 }

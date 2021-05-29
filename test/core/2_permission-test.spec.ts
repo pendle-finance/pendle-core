@@ -1,10 +1,9 @@
 import { expect } from 'chai';
-import { BigNumber as BN, Contract } from 'ethers';
-import ERC20 from '../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
+import { BigNumber as BN } from 'ethers';
+import { waffle } from 'hardhat';
 import { consts, errMsg, evm_revert, evm_snapshot, Token, tokens } from '../helpers';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
 
-import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
 describe('permission-test', async () => {
@@ -18,7 +17,7 @@ describe('permission-test', async () => {
 
   async function buildTestEnv() {
     let fixture: MarketFixture = await loadFixture(marketFixture);
-    parseTestEnvMarketFixture(alice, Mode.AAVE_V1, env, fixture);
+    parseTestEnvMarketFixture(alice, Mode.AAVE_V2, env, fixture);
     USDT = tokens.USDT;
     env.TEST_DELTA = BN.from(60000);
   }
@@ -40,7 +39,7 @@ describe('permission-test', async () => {
 
   it('PendleMarketBase', async () => {
     await env.router.bootstrapMarket(
-      consts.MARKET_FACTORY_AAVE,
+      consts.MARKET_FACTORY_AAVE_V2,
       env.xyt.address,
       env.testToken.address,
       amount,
@@ -73,16 +72,14 @@ describe('permission-test', async () => {
     await expect(
       env.market.swapExactOut(consts.RANDOM_ADDRESS, amount, consts.RANDOM_ADDRESS, amount)
     ).to.be.revertedWith(errMsg.ONLY_ROUTER);
-
-    await expect(env.market.redeemLpInterests(consts.RANDOM_ADDRESS)).to.be.revertedWith(errMsg.ONLY_ROUTER);
   });
 
   it('PendleRouter', async () => {
     await expect(
-      env.data.connect(bob).addMarketFactory(consts.MARKET_FACTORY_AAVE, consts.RANDOM_ADDRESS)
+      env.data.connect(bob).addMarketFactory(consts.MARKET_FACTORY_AAVE_V2, consts.RANDOM_ADDRESS)
     ).to.be.revertedWith(errMsg.ONLY_GOVERNANCE);
 
-    await expect(env.data.connect(bob).addForge(consts.FORGE_AAVE, consts.RANDOM_ADDRESS)).to.be.revertedWith(
+    await expect(env.data.connect(bob).addForge(consts.FORGE_AAVE_V2, consts.RANDOM_ADDRESS)).to.be.revertedWith(
       errMsg.ONLY_GOVERNANCE
     );
   });
