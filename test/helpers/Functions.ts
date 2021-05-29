@@ -54,7 +54,11 @@ export async function bootstrapMarket(env: TestEnv, user: Wallet, amountXyt: BN,
     );
 }
 
-export async function swapExactInTokenToXyt(env: TestEnv, user: Wallet, inAmount: BN) {
+export async function swapExactInTokenToXyt(
+  env: TestEnv, 
+  user: Wallet, 
+  inAmount: BN
+):Promise<BN> {
   let initialXytBalance = (await env.xyt.balanceOf(user.address));
   await env.router
     .connect(user)
@@ -70,7 +74,11 @@ export async function swapExactInTokenToXyt(env: TestEnv, user: Wallet, inAmount
   return postXytBalance.sub(initialXytBalance);
 }
 
-export async function swapExactInXytToToken(env: TestEnv, user: Wallet, inAmount: BN) {
+export async function swapExactInXytToToken(
+  env: TestEnv, 
+  user: Wallet, 
+  inAmount: BN
+):Promise<BN> {
   let initialTokenBalance = (await env.testToken.balanceOf(user.address));
   await env.router
     .connect(user)
@@ -86,7 +94,11 @@ export async function swapExactInXytToToken(env: TestEnv, user: Wallet, inAmount
     return postTokenBalance.sub(initialTokenBalance);
 }
 
-export async function swapExactOutTokenToXyt(env: TestEnv, user: Wallet, outAmount: BN) {
+export async function swapExactOutTokenToXyt(
+  env: TestEnv, 
+  user: Wallet, 
+  outAmount: BN
+):Promise<BN> {
   let initialXytBalance = (await env.xyt.balanceOf(user.address));
   await env.router.swapExactOut(
     env.testToken.address,
@@ -100,7 +112,11 @@ export async function swapExactOutTokenToXyt(env: TestEnv, user: Wallet, outAmou
   return postXytBalance.sub(initialXytBalance);
 }
 
-export async function swapExactOutXytToToken(env: TestEnv, user: Wallet, outAmount: BN) {
+export async function swapExactOutXytToToken(
+  env: TestEnv, 
+  user: Wallet, 
+  outAmount: BN
+):Promise<BN> {
   let initialTokenBalance = (await env.testToken.balanceOf(user.address));
   await env.router.swapExactOut(
     env.xyt.address,
@@ -128,7 +144,11 @@ export async function addMarketLiquiditySingle(env: TestEnv, user: Wallet, amoun
     );
 }
 
-export async function addMarketLiquidityDualXyt(env: TestEnv, user: Wallet, amountXyt: BN) {
+export async function addMarketLiquidityDualXyt(
+  env: TestEnv, 
+  user: Wallet, 
+  amountXyt: BN
+):Promise<BN> {
   let initialLpBalance = (await env.market.balanceOf(user.address));
   await env.router
     .connect(user)
@@ -146,7 +166,12 @@ export async function addMarketLiquidityDualXyt(env: TestEnv, user: Wallet, amou
     return postLpBalance.sub(initialLpBalance);
 }
 
-export async function addMarketLiquidityDual(env: TestEnv, user: Wallet, amountXyt: BN, amountToken?: BN) {
+export async function addMarketLiquidityDual(
+  env: TestEnv, 
+  user: Wallet, 
+  amountXyt: BN, 
+  amountToken?: BN
+) :Promise<BN> {
   if (amountToken == null) amountToken = amountXyt;
   let initialLpBalance = (await env.market.balanceOf(user.address));
   await env.router
