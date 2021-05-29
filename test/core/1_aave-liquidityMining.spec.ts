@@ -1,5 +1,6 @@
-import { assert, expect } from 'chai';
+import { expect } from 'chai';
 import { BigNumber as BN } from 'ethers';
+import { waffle } from 'hardhat';
 import {
   advanceTime,
   approxBigNumber,
@@ -23,10 +24,9 @@ import {
   TestEnv,
 } from './fixtures';
 
-import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
-describe('aaveV1-liquidityMining', async () => {
+describe('aave-liquidityMining', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie, dave, eve] = wallets;
   let snapshotId: string;
@@ -35,7 +35,7 @@ describe('aaveV1-liquidityMining', async () => {
 
   async function buildTestEnv() {
     let fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);
-    await parseTestEnvLiquidityMiningFixture(alice, Mode.AAVE_V1, env, fixture);
+    await parseTestEnvLiquidityMiningFixture(alice, Mode.AAVE_V2, env, fixture);
     env.TEST_DELTA = BN.from(60000);
   }
 
@@ -110,7 +110,7 @@ describe('aaveV1-liquidityMining', async () => {
   it('test invalid setAllocationSetting', async () => {
     await expect(
       env.liq.setAllocationSetting(
-        [env.EXPIRY, consts.T0.add(consts.THREE_MONTH), consts.T0.add(consts.ONE_MONTH)],
+        [env.EXPIRY, consts.T0_A2.add(consts.THREE_MONTH), consts.T0_A2.add(consts.ONE_MONTH)],
         [
           env.liqParams.TOTAL_NUMERATOR.div(3),
           env.liqParams.TOTAL_NUMERATOR.div(3),
@@ -134,7 +134,7 @@ describe('aaveV1-liquidityMining', async () => {
     console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
     console.log(`\tLP balance of user before: ${lpBalanceOfUser}`);
 
-    await advanceTime(env.liqParams.START_TIME.sub(consts.T0));
+    await advanceTime(env.liqParams.START_TIME.sub(consts.T0_A2));
     await stake(env, bob, amountToStake);
     console.log('\tStaked');
     const lpHolderContract = await env.liq.lpHolderForExpiry(env.EXPIRY);

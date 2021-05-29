@@ -1,27 +1,24 @@
 import { BigNumber as BN, Contract, providers, Wallet } from 'ethers';
+import hre from 'hardhat';
 import PendleCompoundLiquidityMining from "../../../build/artifacts/contracts/core/compound/PendleCompoundLiquidityMining.sol/PendleCompoundLiquidityMining.json";
 import PendleWhitelist from "../../../build/artifacts/contracts/core/PendleWhitelist.sol/PendleWhitelist.json";
 import MockPendleAaveLiquidityMining from "../../../build/artifacts/contracts/mock/MockPendleAaveLiquidityMining.sol/MockPendleAaveLiquidityMining.json";
 import PENDLE from "../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
 import { amountToWei, consts, tokens } from '../../helpers';
-import { AaveForgeFixture } from './aaveForge.fixture';
 import { CompoundFixture } from './compoundForge.fixture';
 import { CoreFixture } from './core.fixture';
 import { marketFixture, MarketFixture } from './market.fixture';
-import hre from 'hardhat';
 const { waffle } = hre;
 const { deployContract, loadFixture } = waffle;
 
 export interface LiquidityMiningFixture {
   marketFix: MarketFixture,
   core: CoreFixture,
-  aForge: AaveForgeFixture,
   cForge: CompoundFixture,
   testToken: Contract,
   pdl: Contract,
-  aMarket: Contract,
+  a2Market: Contract,
   cMarket: Contract,
-  aLiquidityMining: Contract,
   a2LiquidityMining: Contract,
   cLiquidityMining: Contract,
   params: LiqParams,
@@ -69,15 +66,15 @@ export async function liquidityMiningFixture(
   let [alice, bob, charlie, dave] = wallets;
 
   let marketFix: MarketFixture = await loadFixture(marketFixture);
-  let { core, aForge, cForge, testToken, aMarket, cMarket } = marketFix;
+  let { core, a2Forge, cForge, testToken, a2Market, cMarket } = marketFix;
   let router = core.router;
-  let aXyt = aForge.aFutureYieldToken;
+  let a2Xyt = a2Forge.a2FutureYieldToken;
   let cXyt = cForge.cFutureYieldToken;
   const amount = amountToWei(BN.from(100), 6);
 
   await router.bootstrapMarket(
-    consts.MARKET_FACTORY_AAVE,
-    aXyt.address,
+    consts.MARKET_FACTORY_AAVE_V2,
+    a2Xyt.address,
     testToken.address,
     amount,
     amount,
@@ -95,24 +92,6 @@ export async function liquidityMiningFixture(
 
   let pdl = await deployContract(alice, PENDLE, [alice.address, alice.address, alice.address, alice.address, alice.address]);
   let whitelist = await deployContract(alice, PendleWhitelist, [core.govManager.address]);
-
-  let aLiquidityMining = await deployContract(
-    alice,
-    MockPendleAaveLiquidityMining,
-    [
-      core.govManager.address,
-      whitelist.address,
-      pdl.address,
-      router.address,
-      consts.MARKET_FACTORY_AAVE,
-      consts.FORGE_AAVE,
-      tokens.USDT.address,
-      testToken.address,
-      params.START_TIME,
-      params.EPOCH_DURATION,
-      params.VESTING_EPOCHS,
-    ]
-  );
 
   let a2LiquidityMining = await deployContract(
     alice,
@@ -150,11 +129,11 @@ export async function liquidityMiningFixture(
     ]
   );
 
-  await pdl.approve(aLiquidityMining.address, consts.INF);
+  await pdl.approve(a2LiquidityMining.address, consts.INF);
   await pdl.approve(cLiquidityMining.address, consts.INF);
 
-  await aMarket.approve(
-    aLiquidityMining.address,
+  await a2Market.approve(
+    a2LiquidityMining.address,
     consts.INF
   );
   await cMarket.approve(
@@ -162,8 +141,8 @@ export async function liquidityMiningFixture(
     consts.INF
   );
 
-  await aLiquidityMining.setAllocationSetting(
-    [consts.T0.add(consts.SIX_MONTH)],
+  await a2LiquidityMining.setAllocationSetting(
+    [consts.T0_A2.add(consts.SIX_MONTH)],
     [params.TOTAL_NUMERATOR],
     consts.HIGH_GAS_OVERRIDE
   );
@@ -175,26 +154,26 @@ export async function liquidityMiningFixture(
   );
 
   for (var person of [bob, charlie, dave]) {
-    await aMarket
+    await a2Market
       .connect(person)
-      .approve(aLiquidityMining.address, consts.INF);
+      .approve(a2LiquidityMining.address, consts.INF);
     await cMarket
       .connect(person)
       .approve(cLiquidityMining.address, consts.INF);
   }
 
-  await aLiquidityMining.fund(params.REWARDS_PER_EPOCH);
+  await a2LiquidityMining.fund(params.REWARDS_PER_EPOCH);
   await cLiquidityMining.fund(params.REWARDS_PER_EPOCH);
-  await pdl.transfer(aLiquidityMining.address, await pdl.balanceOf(alice.address));
+  await pdl.transfer(a2LiquidityMining.address, await pdl.balanceOf(alice.address));
   await pdl.transfer(cLiquidityMining.address, await pdl.balanceOf(alice.address));
 
 
-  let lpBalanceAlice = await aMarket.balanceOf(alice.address);
+  let lpBalanceAlice = await a2Market.balanceOf(alice.address);
 
   for (var person of [bob, charlie, dave]) { // transfer some LP to each user
-    await aMarket.transfer(person.address, lpBalanceAlice.div(10));
+    await a2Market.transfer(person.address, lpBalanceAlice.div(10));
     await cMarket.transfer(person.address, lpBalanceAlice.div(10));
   }
 
-  return { marketFix, core, aForge, cForge, testToken, pdl, aMarket, cMarket, a2LiquidityMining, aLiquidityMining, cLiquidityMining, params, whitelist };
+  return { marketFix, core, cForge, testToken, pdl, a2Market, cMarket, a2LiquidityMining, cLiquidityMining, params, whitelist };
 }
