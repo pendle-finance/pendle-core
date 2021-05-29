@@ -1,4 +1,5 @@
-import { BigNumber as BN } from 'ethers';
+import { expect } from 'chai';
+import { BigNumber as BN, Wallet } from 'ethers';
 import {
   amountToWei,
   approxBigNumber,
@@ -9,9 +10,12 @@ import {
   randomNumber,
   redeemDueInterests,
   redeemUnderlying,
+  redeemAfterExpiry,
   setTimeNextBlock,
   tokenizeYield,
   tokens,
+  Token,
+  transferToken
 } from '../../helpers';
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 import testData from '../fixtures/yieldTokenizeAndRedeem.scenario.json';
@@ -108,6 +112,136 @@ export function runTest(isAaveV1: boolean) {
     });
     xit('stress 2 [only enable when necessary]', async () => {
       await runTest((<any>testData).stress2);
+    });
+
+    it("xyt interests should be the same regardless actions users took", async () => {
+      let amountToMove: BN = BN.from(100000000);
+      let amountToTokenize: BN = amountToMove.mul(10);
+      let period = env.EXPIRY.sub(env.T0).div(10);
+
+      async function transferXyt(from: Wallet, to: Wallet, amount: BN) {
+        await env.xyt.connect(from).transfer(
+          to.address,
+          amount,
+          consts.HIGH_GAS_OVERRIDE
+        );
+      }
+
+      async function transferYieldToken(from: Wallet, to: Wallet, amount: BN) {
+        await env.yUSDT.connect(from).transfer(
+          to.address,
+          amount,
+          consts.HIGH_GAS_OVERRIDE
+        );
+      }
+
+      async function removeYieldToken(user: Wallet, amountToKeep: BN) {
+        await transferYieldToken(user, eve,
+          (await env.yUSDT.connect(user).balanceOf(user.address)).sub(amountToKeep),
+        );
+      }
+
+      await removeYieldToken(alice, amountToTokenize.mul(2));
+      for (let person of [bob, charlie, dave]) {
+        removeYieldToken(person, BN.from(0));
+      }
+
+      await tokenizeYield(env, alice, amountToTokenize, alice.address);
+      await tokenizeYield(env, alice, amountToTokenize.div(2), bob.address);
+      await tokenizeYield(env, alice, amountToTokenize.div(4), charlie.address);
+      await tokenizeYield(env, alice, amountToTokenize.div(4), dave.address);
+
+      await setTimeNextBlock(env.T0.add(period.mul(1)));
+      await transferXyt(bob, dave, amountToMove);
+      await transferXyt(bob, charlie, amountToMove);
+
+      await setTimeNextBlock(env.T0.add(period.mul(2)));
+      await transferXyt(bob, dave, amountToMove);
+      await transferXyt(bob, charlie, amountToMove);
+
+      await setTimeNextBlock(env.T0.add(period.mul(3)));
+      await redeemDueInterests(env, alice);
+      await redeemDueInterests(env, charlie);
+      await redeemDueInterests(env, dave);
+
+      await setTimeNextBlock(env.T0.add(period.mul(4)));
+      await transferXyt(dave, bob, amountToMove);
+      await transferXyt(charlie, bob, amountToMove.mul(2));
+      await redeemDueInterests(env, alice);
+
+      await setTimeNextBlock(env.T0.add(period.mul(5)));
+      await redeemDueInterests(env, alice);
+      await redeemDueInterests(env, charlie);
+      await transferXyt(dave, bob, amountToMove);
+      await transferXyt(charlie, bob, amountToMove);
+
+      await setTimeNextBlock(env.T0.add(period.mul(6)));
+      await transferXyt(bob, dave, amountToMove);
+      await transferXyt(bob, charlie, amountToMove);
+
+      await setTimeNextBlock(env.T0.add(period.mul(8)));
+      await transferXyt(dave, charlie, amountToMove);
+
+      await setTimeNextBlock(env.T0.add(period.mul(10).add(10)));
+
+      for (let person of [alice, bob, charlie, dave]) {
+        await redeemAfterExpiry(env, person);
+      }
+
+
+      await setTimeNextBlock(env.T0.add(period.mul(20).add(10)));
+      await transferYieldToken(bob, charlie, BN.from(1));
+
+      let alice_yieldToken = (await env.yUSDT.balanceOf(alice.address));
+      let bcd_yieldToken = ((await env.yUSDT.balanceOf(bob.address))).add(
+        (await env.yUSDT.balanceOf(charlie.address))
+      ).add(
+        (await env.yUSDT.balanceOf(dave.address))
+      );
+
+      approxBigNumber(
+        alice_yieldToken,
+        bcd_yieldToken,
+        BN.from(1000),
+        true
+      );
+    });
+
+    it("Should get 0 interests for the 2th or later time using redeemAfterExpiry", async () => {
+      const amount = BN.from(1000000000);
+      const period = env.EXPIRY.sub(env.T0);
+
+      async function tryRedeemDueInterests(expected?: BN) {
+        await redeemDueInterests(env, bob);
+        let interestClaimed = (await env.router.connect(alice).callStatic.redeemDueInterests(
+          env.FORGE_ID,
+          tokens.USDT.address,
+          env.EXPIRY,
+          alice.address,
+          consts.HIGH_GAS_OVERRIDE
+        ));
+        if (expected != null)
+          approxBigNumber(interestClaimed, expected, 0, true);
+        else
+          expect(interestClaimed.toNumber()).to.be.greaterThan(1);
+        await redeemDueInterests(env, alice);
+      }
+
+      await tokenizeYield(env, alice, amount, alice.address);
+      await tokenizeYield(env, alice, amount, bob.address);
+
+      await setTimeNextBlock(env.T0.add(period.div(2)));
+      await tryRedeemDueInterests();
+
+      await setTimeNextBlock(env.T0.add(period.sub(consts.ONE_HOUR)));
+      await redeemDueInterests(env, bob);
+
+      await setTimeNextBlock(env.T0.add(period).add(10));
+      await tryRedeemDueInterests();
+
+      for (let i = 0; i < 3; ++i) {
+        await tryRedeemDueInterests(BN.from(0));
+      }
     });
   });
 }

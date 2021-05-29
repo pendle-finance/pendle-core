@@ -34,6 +34,7 @@ export interface LiqParams {
   NUMBER_OF_EPOCHS: BN,
   VESTING_EPOCHS: BN,
   TOTAL_NUMERATOR: BN,
+  ALLOCATION_SETTING: BN[],
 }
 export class UserStakeAction {
   time: BN;
@@ -56,6 +57,7 @@ const params: LiqParams = {
   NUMBER_OF_EPOCHS: BN.from(30),
   VESTING_EPOCHS: BN.from(4),
   TOTAL_NUMERATOR: BN.from(10 ** 9),
+  ALLOCATION_SETTING: [1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 3, 4, 4, 4, 4, 4, 4, 4, 4, 1, 1, 2, 3, 1, 2, 3, 4, 10, 11, 1, 2, 3, 1, 1, 1, 1].map((a) => BN.from(10 ** 9).div(a)),
 };
 
 export async function liquidityMiningFixture(

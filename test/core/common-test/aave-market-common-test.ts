@@ -25,6 +25,8 @@ import {
   AMMTest,
   MarketFeesTest,
   ProtocolFeeTest,
+  marketBalanceNonZeroTest,
+  marketBalanceNonZeroSwapTest
 } from './amm-formula-test';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../fixtures';
 
@@ -301,6 +303,14 @@ export function runTest(isAaveV1: boolean) {
 
     it("AMM's LP outcome is correct near the market's freeze time", async () => {
       await AMMCheckLPNearCloseTest(env);
+    });
+
+    it("AMM balance should always be > 0", async() => {
+      await marketBalanceNonZeroTest(env);
+    });
+
+    it("AMM balance should always be > 0 after extreme swaps", async() => {
+      await marketBalanceNonZeroSwapTest(env);
     });
   });
 }

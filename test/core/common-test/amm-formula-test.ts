@@ -1,3 +1,4 @@
+import { expect } from 'chai';
 import { BigNumber as BN, BigNumberish } from 'ethers';
 import {
   addMarketLiquidityDualXyt,
@@ -14,6 +15,8 @@ import {
   swapExactInXytToToken,
   swapExactOutTokenToXyt,
   swapExactOutXytToToken,
+  logMarketReservesData,
+  errMsg,
 } from '../../helpers';
 import { TestEnv } from '../fixtures';
 
@@ -193,38 +196,30 @@ export async function ProtocolFeeTest(env: TestEnv, useSwapIn: boolean) {
   await checkTreasuryLP(BN.from(452271));
 }
 
-async function runTestTokenToXytCustom(env: TestEnv, tokenIn: BN, xytOut: BN, delta: BigNumberish, useSwapIn: boolean) {
-  var { xytBalance: initialXytBalance, tokenBalance: initialTokenBalance } = await env.market.getReserves();
-
-  if (useSwapIn) {
-    await swapExactInTokenToXyt(env, alice, tokenIn);
-  } else {
-    await swapExactOutTokenToXyt(env, alice, xytOut);
-  }
-  var { xytBalance, tokenBalance } = await env.market.getReserves();
-
-  var actualXytOut = initialXytBalance.sub(xytBalance);
-  var actualTokenIn = tokenBalance.sub(initialTokenBalance);
-
-  approxBigNumber(actualTokenIn, tokenIn, delta);
-  approxBigNumber(actualXytOut, xytOut, delta);
+export async function marketBalanceNonZeroTest(env: TestEnv) {
+  const MINIMUM_LIQUIDITY = BN.from(1000);
+  const amount = BN.from(10000);
+  
+  await bootstrapMarket(env, alice, amount);
+  const lastAmount = await env.xyt.balanceOf(alice.address);
+  await expect(
+    env.router.connect(alice).removeMarketLiquidityDual(env.FORGE_ID, env.xyt.address, env.testToken.address, amount, 0, 0)
+  ).to.be.revertedWith(errMsg.XYT_BALANCE_ERROR);
+  await env.router.connect(alice).removeMarketLiquidityDual(env.FORGE_ID, env.xyt.address, env.testToken.address, amount.sub(MINIMUM_LIQUIDITY), 0, 0, consts.HIGH_GAS_OVERRIDE);
+  
+  approxBigNumber(
+    (await env.xyt.balanceOf(alice.address)).sub(lastAmount),
+    amount.sub(MINIMUM_LIQUIDITY),
+    BN.from(2)
+  );
+  return;
 }
 
-async function runTestXytToTokenCustom(env: TestEnv, xytIn: BN, tokenOut: BN, delta: BigNumberish, useSwapIn: boolean) {
-  var { xytBalance: initialXytBalance, tokenBalance: initialTokenBalance } = await env.market.getReserves();
-
-  if (useSwapIn) {
-    await swapExactInXytToToken(env, alice, xytIn);
-  } else {
-    await swapExactOutXytToToken(env, alice, tokenOut);
-  }
-  var { xytBalance, tokenBalance } = await env.market.getReserves();
-
-  var actualXytIn: BN = xytBalance.sub(initialXytBalance);
-  var actualTokenOut: BN = initialTokenBalance.sub(tokenBalance);
-
-  approxBigNumber(actualTokenOut, tokenOut, delta);
-  approxBigNumber(actualXytIn, xytIn, delta);
+export async function marketBalanceNonZeroSwapTest(env: TestEnv) {
+  const amount = BN.from(1000000000);
+  await bootstrapMarket(env, alice, amount, BN.from(1));
+  await setTimeNextBlock(env.EXPIRY.sub(consts.ONE_DAY.add(consts.ONE_HOUR)));
+  await expect(swapExactInTokenToXyt(env, alice, BN.from(1000000000))).to.be.revertedWith(errMsg.XYT_BALANCE_ERROR);  
 }
 
 async function runTestTokenToXyt(
