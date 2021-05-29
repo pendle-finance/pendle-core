@@ -28,4 +28,6 @@ interface IPendleLpHolder {
     function sendInterests(address user, uint256 amount) external;
 
     function redeemLpInterests() external;
+
+    function setUpEmergencyMode(address token, address spender) external;
 }
