@@ -23,14 +23,14 @@
  */
 
 pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
+pragma abicoder v2;
 
 import "../interfaces/IWETH.sol";
 import "./IPendleData.sol";
-import "./IPendleStructs.sol";
+import "../libraries/PendleStructs.sol";
 import "./IPendleMarketFactory.sol";
 
-interface IPendleRouter is IPendleStructs {
+interface IPendleRouter {
     /**
      * @notice Emitted when a market for a future yield token and an ERC20 token is created.
      * @param marketFactoryId Forge identifier.

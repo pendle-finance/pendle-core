@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
+pragma abicoder v2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../../interfaces/ICToken.sol";
@@ -50,7 +50,8 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         bytes32 _forgeId,
         address _rewardToken,
         address _rewardManager,
-        address _yieldContractDeployer
+        address _yieldContractDeployer,
+        address _coumpoundEth
     )
         PendleForgeBase(
             _governanceManager,
@@ -64,6 +65,11 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         require(address(_comptroller) != address(0), "ZERO_ADDRESS");
 
         comptroller = _comptroller;
+
+        // Pre-register for cEther
+        address weth = address(_router.weth());
+        underlyingToCToken[weth] = _coumpoundEth;
+        initialRate[weth] = ICToken(_coumpoundEth).exchangeRateCurrent();
     }
 
     /// For Compound we can't get the address of cToken directly, so we need to register it manually
