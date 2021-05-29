@@ -274,9 +274,12 @@ describe('forge-market-pause-test', function () {
       await checkYieldContractUnpaused();
     });
     it('Pausing globally & unpausing specific yield contracts should work', async () => {
-      await pausingManager.connect(bob).setForgePaused(testEnv.FORGE_ID, true);
-      await pausingManager.setForgeAssetExpiryPaused(testEnv.FORGE_ID, tokenUSDT.address, testEnv.EXPIRY, false);
-      await checkYieldContractUnpaused();
+      await pausingManager.connect(bob).setForgePaused(testEnv.FORGE_ID, true); // initial global pause
+      await pausingManager
+        .connect(bob)
+        .setForgeAssetExpiryPaused(testEnv.FORGE_ID, tokenUSDT.address, testEnv.EXPIRY, true); // pause specific
+      await pausingManager.connect(alice).setForgePaused(testEnv.FORGE_ID, false); // unpause globally
+      await checkYieldContractPaused();
     });
   });
   describe('Market pausing', async () => {
@@ -303,8 +306,9 @@ describe('forge-market-pause-test', function () {
     });
     it('Pausing globally & unpausing specific markets should work', async () => {
       await pausingManager.connect(bob).setMarketFactoryPaused(consts.MARKET_FACTORY_AAVE, true);
-      await pausingManager.setMarketPaused(consts.MARKET_FACTORY_AAVE, market.address, false);
-      await checkMarketUnpaused();
+      await pausingManager.connect(bob).setMarketPaused(consts.MARKET_FACTORY_AAVE, market.address, true);
+      await pausingManager.connect(alice).setMarketFactoryPaused(consts.MARKET_FACTORY_AAVE, false);
+      await checkMarketPaused();
     });
   });
   describe('Forge emergency', async () => {

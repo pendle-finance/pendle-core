@@ -72,6 +72,17 @@ interface IPendleLiquidityMining {
         returns (uint256 dueInterests);
 
     /**
+     * @notice Let the liqMiningEmergencyHandler call to approve spender to spend tokens from liqMiningContract
+     *          and to spend tokensForLpHolder from the respective lp holders for expiries specified
+     */
+    function setUpEmergencyMode(
+        address[] calldata tokens,
+        uint256[] calldata expiries,
+        address[] calldata tokensForLpHolder,
+        address spender
+    ) external;
+
+    /**
      * @notice Read the all the expiries that user has staked LP for
      */
     function readUserExpiries(address user) external view returns (uint256[] memory expiries);

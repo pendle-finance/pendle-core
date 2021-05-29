@@ -33,8 +33,10 @@ interface IPendlePausingManager {
     event RemovePausingAdmin(address);
     event PendingForgeEmergencyHandler(address);
     event PendingMarketEmergencyHandler(address);
+    event PendingLiqMiningEmergencyHandler(address);
     event ForgeEmergencyHandlerSet(address);
     event MarketEmergencyHandlerSet(address);
+    event LiqMiningEmergencyHandlerSet(address);
 
     function forgeEmergencyHandler()
         external
@@ -54,11 +56,22 @@ interface IPendlePausingManager {
             uint256 timelockDeadline
         );
 
+    function liqMiningEmergencyHandler()
+        external
+        view
+        returns (
+            address handler,
+            address pendingHandler,
+            uint256 timelockDeadline
+        );
+
     function permLocked() external view returns (bool);
 
     function permForgeHandlerLocked() external view returns (bool);
 
     function permMarketHandlerLocked() external view returns (bool);
+
+    function permLiqMiningHandlerLocked() external view returns (bool);
 
     function isPausingAdmin(address) external view returns (bool);
 
@@ -68,15 +81,21 @@ interface IPendlePausingManager {
 
     function requestMarketHandlerChange(address _pendingMarketHandler) external;
 
+    function requestLiqMiningHandlerChange(address _pendingLiqMiningHandler) external;
+
     function applyForgeHandlerChange() external;
 
     function applyMarketHandlerChange() external;
+
+    function applyLiqMiningHandlerChange() external;
 
     function lockPausingManagerPermanently() external;
 
     function lockForgeHandlerPermanently() external;
 
     function lockMarketHandlerPermanently() external;
+
+    function lockLiqMiningHandlerPermanently() external;
 
     function setForgePaused(bytes32 forgeId, bool paused) external;
 
@@ -123,9 +142,13 @@ interface IPendlePausingManager {
 
     function checkMarketStatus(bytes32 marketFactoryId, address market)
         external
-        returns (
-            // view
-            bool _paused,
-            bool _locked
-        );
+        returns (bool _paused, bool _locked);
+
+    function setLiqMiningPaused(address liqMiningContract, bool settingToPaused) external;
+
+    function setLiqMiningLocked(address liqMiningContract) external;
+
+    function checkLiqMiningStatus(address liqMiningContract)
+        external
+        returns (bool _paused, bool _locked);
 }

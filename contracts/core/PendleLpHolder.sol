@@ -76,4 +76,15 @@ contract PendleLpHolder is IPendleLpHolder, WithdrawableV2 {
     function _allowedToWithdraw(address _token) internal view override returns (bool allowed) {
         allowed = _token != underlyingYieldToken && _token != pendleMarket;
     }
+
+    // Only liquidityMining contract can call this function
+    // this will allow a spender to spend the whole balance of the specified token
+    // the spender should ideally be a contract with logic for users to withdraw out their funds.
+    function setUpEmergencyMode(address token, address spender)
+        external
+        override
+        onlyLiquidityMining
+    {
+        IERC20(token).safeApprove(spender, type(uint256).max);
+    }
 }
