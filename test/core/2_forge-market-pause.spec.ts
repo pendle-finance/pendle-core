@@ -275,7 +275,9 @@ describe('forge-market-pause-test', function () {
     });
     it('Pausing globally & unpausing specific yield contracts should work', async () => {
       await pausingManager.connect(bob).setForgePaused(testEnv.FORGE_ID, true); // initial global pause
-      await pausingManager.connect(bob).setForgeAssetExpiryPaused(testEnv.FORGE_ID, tokenUSDT.address, testEnv.EXPIRY, true); // pause specific
+      await pausingManager
+        .connect(bob)
+        .setForgeAssetExpiryPaused(testEnv.FORGE_ID, tokenUSDT.address, testEnv.EXPIRY, true); // pause specific
       await pausingManager.connect(alice).setForgePaused(testEnv.FORGE_ID, false); // unpause globally
       await checkYieldContractPaused();
     });
