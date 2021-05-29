@@ -25,6 +25,7 @@ pragma abicoder v2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../libraries/MathLib.sol";
+import "../libraries/PendleStructs.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleMarket.sol";
@@ -184,8 +185,8 @@ contract PendleMarketReader {
         view
         returns (uint256 totalInput)
     {
-        IPendleMarket.TokenReserve memory inTokenReserve;
-        IPendleMarket.TokenReserve memory outTokenReserve;
+        TokenReserve memory inTokenReserve;
+        TokenReserve memory outTokenReserve;
 
         inTokenReserve.balance = market.tokenBalanceIn;
         inTokenReserve.weight = market.tokenWeightIn;
@@ -200,8 +201,8 @@ contract PendleMarketReader {
         view
         returns (uint256 totalOutput)
     {
-        IPendleMarket.TokenReserve memory inTokenReserve;
-        IPendleMarket.TokenReserve memory outTokenReserve;
+        TokenReserve memory inTokenReserve;
+        TokenReserve memory outTokenReserve;
 
         inTokenReserve.balance = market.tokenBalanceIn;
         inTokenReserve.weight = market.tokenWeightIn;
@@ -227,8 +228,8 @@ contract PendleMarketReader {
 
     // copied from market
     function _calcExactOutFunc(
-        IPendleMarket.TokenReserve memory inTokenReserve,
-        IPendleMarket.TokenReserve memory outTokenReserve,
+        TokenReserve memory inTokenReserve,
+        TokenReserve memory outTokenReserve,
         uint256 exactIn,
         uint256 swapFee
     ) internal pure returns (uint256 exactOut) {
@@ -243,8 +244,8 @@ contract PendleMarketReader {
     }
 
     function _calcExactInFunc(
-        IPendleMarket.TokenReserve memory inTokenReserve,
-        IPendleMarket.TokenReserve memory outTokenReserve,
+        TokenReserve memory inTokenReserve,
+        TokenReserve memory outTokenReserve,
         uint256 exactOut,
         uint256 swapFee
     ) internal pure returns (uint256 exactIn) {

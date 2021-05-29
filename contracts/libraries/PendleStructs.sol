@@ -17,11 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 pragma solidity 0.7.6;
-pragma abicoder v2;
 
-interface IPendleStructs {
-    struct PendingTransfer {
-        uint256 amount;
-        bool isOut;
-    }
+struct TokenReserve {
+    uint256 weight;
+    uint256 balance;
+}
+
+struct PendingTransfer {
+    uint256 amount;
+    bool isOut;
 }
