@@ -67,7 +67,7 @@ contract PendleCompoundForge is PendleForgeBase, IPendleCompoundForge {
         comptroller = _comptroller;
 
         // Pre-register for cEther
-        address weth = _router.weth();
+        address weth = address(_router.weth());
         underlyingToCToken[weth] = _coumpoundEth;
         initialRate[weth] = ICToken(_coumpoundEth).exchangeRateCurrent();
     }

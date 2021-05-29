@@ -33,6 +33,7 @@ export async function compoundForgeFixture(
     consts.FORGE_COMPOUND
   ]);
 
+  console.log("YES");
   const compoundForge = await deployContract(alice, PendleCompoundForge, [
     govManager.address,
     router.address,
@@ -41,9 +42,9 @@ export async function compoundForgeFixture(
     consts.COMP_ADDRESS,
     cRewardManager.address,
     cYieldContractDeployer.address,
-    consts.COMP_ETH,
-    consts.HIGH_GAS_OVERRIDE
+    consts.COMP_ETH
   ]);
+  console.log("NO");
   await cRewardManager.initialize(compoundForge.address);
 
   await cYieldContractDeployer.initialize(compoundForge.address);

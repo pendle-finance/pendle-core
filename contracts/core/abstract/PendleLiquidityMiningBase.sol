@@ -766,7 +766,7 @@ abstract contract PendleLiquidityMiningBase is
     {
         _updatePendingRewards(expiry, user);
 
-        uint256 _lastEpoch = Math.min(_getCurrentEpochId(), numberOfEpochs + vestingEpoch);
+        uint256 _lastEpoch = Math.min(_getCurrentEpochId(), numberOfEpochs + vestingEpochs);
         for (uint256 i = expiryData[expiry].lastEpochClaimed[user]; i <= _lastEpoch; i++) {
             if (epochData[i].availableRewardsForUser[user] > 0) {
                 amountOut = amountOut.add(epochData[i].availableRewardsForUser[user]);
