@@ -26,11 +26,6 @@ import "../periphery/PermissionsV2.sol";
 import "../interfaces/IPendlePausingManager.sol";
 
 contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
-    struct PausingData {
-        uint256 timestamp;
-        bool paused;
-    }
-
     struct EmergencyHandlerSetting {
         address handler;
         address pendingHandler;
@@ -45,32 +40,37 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
 
     uint256 private constant EMERGENCY_HANDLER_CHANGE_TIMELOCK = 7 days;
 
-    mapping(bytes32 => mapping(address => mapping(uint256 => PausingData)))
-        public forgeAssetExpiryPaused; // reversible
-    mapping(bytes32 => mapping(address => PausingData)) public forgeAssetPaused; // reversible
-    mapping(bytes32 => PausingData) public forgePaused; // reversible
+    mapping(bytes32 => mapping(address => mapping(uint256 => bool))) public forgeAssetExpiryPaused; // reversible
+    mapping(bytes32 => mapping(address => bool)) public forgeAssetPaused; // reversible
+    mapping(bytes32 => bool) public forgePaused; // reversible
 
     mapping(bytes32 => mapping(address => mapping(uint256 => bool))) public forgeAssetExpiryLocked; // non-reversible
     mapping(bytes32 => mapping(address => bool)) public forgeAssetLocked; // non-reversible
     mapping(bytes32 => bool) public forgeLocked; // non-reversible
 
-    mapping(bytes32 => mapping(address => PausingData)) public marketPaused; // reversible
-    mapping(bytes32 => PausingData) public marketFactoryPaused; // reversible
+    mapping(bytes32 => mapping(address => bool)) public marketPaused; // reversible
+    mapping(bytes32 => bool) public marketFactoryPaused; // reversible
 
     mapping(bytes32 => mapping(address => bool)) public marketLocked; // non-reversible
     mapping(bytes32 => bool) public marketFactoryLocked; // non-reversible
 
+    mapping(address => bool) public liqMiningPaused; // reversible
+    mapping(address => bool) public liqMiningLocked;
+
     EmergencyHandlerSetting public override forgeEmergencyHandler;
     EmergencyHandlerSetting public override marketEmergencyHandler;
+    EmergencyHandlerSetting public override liqMiningEmergencyHandler;
 
     bool public override permLocked;
     bool public override permForgeHandlerLocked;
     bool public override permMarketHandlerLocked;
+    bool public override permLiqMiningHandlerLocked;
 
     uint256 internal lastUpdated;
     mapping(bytes32 => mapping(address => mapping(uint256 => CachedStatus)))
         public forgeAssetExpiryCachedStatus;
     mapping(bytes32 => mapping(address => CachedStatus)) public marketCachedStatus;
+    mapping(address => CachedStatus) public liqMiningCachedStatus;
 
     mapping(address => bool) public override isPausingAdmin;
 
@@ -98,10 +98,12 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
     constructor(
         address _governanceManager,
         address initialForgeHandler,
-        address initialMarketHandler
+        address initialMarketHandler,
+        address initialLiqMiningHandler
     ) PermissionsV2(_governanceManager) {
         forgeEmergencyHandler.handler = initialForgeHandler;
         marketEmergencyHandler.handler = initialMarketHandler;
+        liqMiningEmergencyHandler.handler = initialLiqMiningHandler;
         lastUpdated = block.timestamp;
     }
 
@@ -156,6 +158,22 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         emit PendingMarketEmergencyHandler(_pendingMarketHandler);
     }
 
+    function requestLiqMiningHandlerChange(address _pendingLiqMiningHandler)
+        external
+        override
+        onlyGovernance
+        notPermLocked
+    {
+        require(!permLiqMiningHandlerLocked, "MARKET_HANDLER_LOCKED");
+        require(_pendingLiqMiningHandler != address(0), "ZERO_ADDRESS");
+        liqMiningEmergencyHandler.pendingHandler = _pendingLiqMiningHandler;
+        liqMiningEmergencyHandler.timelockDeadline =
+            block.timestamp +
+            EMERGENCY_HANDLER_CHANGE_TIMELOCK;
+
+        emit PendingLiqMiningEmergencyHandler(_pendingLiqMiningHandler);
+    }
+
     function applyForgeHandlerChange() external override notPermLocked {
         require(forgeEmergencyHandler.pendingHandler != address(0), "INVALID_HANDLER");
         require(block.timestamp > forgeEmergencyHandler.timelockDeadline, "TIMELOCK_NOT_OVER");
@@ -176,6 +194,16 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         emit MarketEmergencyHandlerSet(marketEmergencyHandler.handler);
     }
 
+    function applyLiqMiningHandlerChange() external override notPermLocked {
+        require(liqMiningEmergencyHandler.pendingHandler != address(0), "INVALID_HANDLER");
+        require(block.timestamp > liqMiningEmergencyHandler.timelockDeadline, "TIMELOCK_NOT_OVER");
+        liqMiningEmergencyHandler.handler = liqMiningEmergencyHandler.pendingHandler;
+        liqMiningEmergencyHandler.pendingHandler = address(0);
+        liqMiningEmergencyHandler.timelockDeadline = uint256(-1);
+
+        emit LiqMiningEmergencyHandlerSet(liqMiningEmergencyHandler.handler);
+    }
+
     //// Lock permanently parts of the features
     function lockPausingManagerPermanently() external override onlyGovernance notPermLocked {
         permLocked = true;
@@ -189,6 +217,10 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         permMarketHandlerLocked = true;
     }
 
+    function lockLiqMiningHandlerPermanently() external override onlyGovernance notPermLocked {
+        permLiqMiningHandlerLocked = true;
+    }
+
     /////////////////////////
     //////// FORGE
     ////////
@@ -199,8 +231,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         isAllowedToSetPaused(settingToPaused)
         notPermLocked
     {
-        forgePaused[forgeId].timestamp = block.timestamp;
-        forgePaused[forgeId].paused = settingToPaused;
+        forgePaused[forgeId] = settingToPaused;
     }
 
     function setForgeAssetPaused(
@@ -208,8 +239,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         address underlyingAsset,
         bool settingToPaused
     ) external override updateSomeStatus isAllowedToSetPaused(settingToPaused) notPermLocked {
-        forgeAssetPaused[forgeId][underlyingAsset].timestamp = block.timestamp;
-        forgeAssetPaused[forgeId][underlyingAsset].paused = settingToPaused;
+        forgeAssetPaused[forgeId][underlyingAsset] = settingToPaused;
     }
 
     function setForgeAssetExpiryPaused(
@@ -218,8 +248,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         uint256 expiry,
         bool settingToPaused
     ) external override updateSomeStatus isAllowedToSetPaused(settingToPaused) notPermLocked {
-        forgeAssetExpiryPaused[forgeId][underlyingAsset][expiry].timestamp = block.timestamp;
-        forgeAssetExpiryPaused[forgeId][underlyingAsset][expiry].paused = settingToPaused;
+        forgeAssetExpiryPaused[forgeId][underlyingAsset][expiry] = settingToPaused;
     }
 
     function setForgeLocked(bytes32 forgeId)
@@ -255,13 +284,10 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         address underlyingAsset,
         uint256 expiry
     ) internal view returns (bool _paused) {
-        PausingData storage p1 = forgePaused[forgeId];
-        PausingData storage p2 = forgeAssetPaused[forgeId][underlyingAsset];
-        PausingData storage p3 = forgeAssetExpiryPaused[forgeId][underlyingAsset][expiry];
-
-        // Take the most recent pausing data among p1, p2 and p3
-        PausingData storage p = p1.timestamp > p2.timestamp ? p1 : p2;
-        _paused = p.timestamp > p3.timestamp ? p.paused : p3.paused;
+        _paused =
+            forgePaused[forgeId] ||
+            forgeAssetPaused[forgeId][underlyingAsset] ||
+            forgeAssetExpiryPaused[forgeId][underlyingAsset][expiry];
     }
 
     function _isYieldContractLocked(
@@ -311,8 +337,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         isAllowedToSetPaused(settingToPaused)
         notPermLocked
     {
-        marketFactoryPaused[marketFactoryId].timestamp = block.timestamp;
-        marketFactoryPaused[marketFactoryId].paused = settingToPaused;
+        marketFactoryPaused[marketFactoryId] = settingToPaused;
     }
 
     function setMarketPaused(
@@ -320,8 +345,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         address market,
         bool settingToPaused
     ) external override updateSomeStatus isAllowedToSetPaused(settingToPaused) notPermLocked {
-        marketPaused[marketFactoryId][market].timestamp = block.timestamp;
-        marketPaused[marketFactoryId][market].paused = settingToPaused;
+        marketPaused[marketFactoryId][market] = settingToPaused;
     }
 
     function setMarketFactoryLocked(bytes32 marketFactoryId)
@@ -349,11 +373,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         view
         returns (bool _paused)
     {
-        PausingData storage p1 = marketFactoryPaused[marketFactoryId];
-        PausingData storage p2 = marketPaused[marketFactoryId][market];
-
-        // Take the most recent pausing data among p1, p2
-        _paused = p1.timestamp > p2.timestamp ? p1.paused : p2.paused;
+        _paused = marketFactoryPaused[marketFactoryId] || marketPaused[marketFactoryId][market];
     }
 
     function _isMarketLocked(bytes32 marketFactoryId, address market)
@@ -383,6 +403,53 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
 
         // update the cache
         CachedStatus storage statusInStorage = marketCachedStatus[marketFactoryId][market];
+        statusInStorage.timestamp = uint128(block.timestamp);
+        statusInStorage.locked = _locked;
+        statusInStorage.paused = _paused;
+    }
+
+    /////////////////////////
+    //////// Liquidity Mining
+    ////////
+    function setLiqMiningPaused(address liqMiningContract, bool settingToPaused)
+        external
+        override
+        updateSomeStatus
+        isAllowedToSetPaused(settingToPaused)
+        notPermLocked
+    {
+        liqMiningPaused[liqMiningContract] = settingToPaused;
+    }
+
+    function setLiqMiningLocked(address liqMiningContract)
+        external
+        override
+        updateSomeStatus
+        onlyGovernance
+        notPermLocked
+    {
+        liqMiningLocked[liqMiningContract] = true;
+    }
+
+    function checkLiqMiningStatus(address liqMiningContract)
+        external
+        override
+        returns (bool _paused, bool _locked)
+    {
+        CachedStatus memory status = liqMiningCachedStatus[liqMiningContract];
+        if (status.timestamp > lastUpdated) {
+            return (status.paused, status.locked);
+        }
+
+        _locked = liqMiningLocked[liqMiningContract];
+        if (_locked) {
+            _paused = true; // if a yield contract is locked, its paused by default as well
+        } else {
+            _paused = liqMiningPaused[liqMiningContract];
+        }
+
+        // update the cache
+        CachedStatus storage statusInStorage = liqMiningCachedStatus[liqMiningContract];
         statusInStorage.timestamp = uint128(block.timestamp);
         statusInStorage.locked = _locked;
         statusInStorage.paused = _paused;
