@@ -9,51 +9,29 @@ import {
   approxBigNumber,
   bootstrapMarket,
   consts,
-
-
-
-
-
-
-
-
-
-
-  createAaveMarketWithExpiry, errMsg,
+  createAaveMarketWithExpiry,
+  errMsg,
   evm_revert,
   evm_snapshot,
   getMarketRateExactIn,
   getMarketRateExactOut,
   removeMarketLiquidityDual,
   removeMarketLiquiditySingle,
-
-
-
-
-  setTimeNextBlock, swapExactInXytToToken,
-  swapExactOutXytToToken
+  setTimeNextBlock,
+  swapExactInXytToToken,
+  swapExactOutXytToToken,
 } from '../helpers';
 import {
   AMMCheckLPNearCloseTest,
   AMMNearCloseTest,
   AMMTest,
-
-
-
-  marketBalanceNonZeroSwapTest, marketBalanceNonZeroTest, MarketFeesTest,
-  ProtocolFeeTest
+  marketBalanceNonZeroSwapTest,
+  marketBalanceNonZeroTest,
+  MarketFeesTest,
+  ProtocolFeeTest,
 } from './common-test/amm-formula-test';
 import { MultiExpiryMarketTest } from './common-test/multi-market-common-test';
-import {
-  marketFixture,
-  MarketFixture,
-  Mode,
-  parseTestEnvMarketFixture,
-
-  TestEnv
-} from './fixtures';
-
-
+import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
 
 const { loadFixture, provider } = waffle;
 
