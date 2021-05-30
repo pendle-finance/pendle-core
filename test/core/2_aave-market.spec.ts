@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { BigNumber as BN } from 'ethers';
+import { waffle } from 'hardhat';
 import {
   addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
@@ -8,41 +9,52 @@ import {
   approxBigNumber,
   bootstrapMarket,
   consts,
-  errMsg,
+
+
+
+
+
+
+
+
+
+
+  createAaveMarketWithExpiry, errMsg,
   evm_revert,
   evm_snapshot,
   getMarketRateExactIn,
   getMarketRateExactOut,
   removeMarketLiquidityDual,
   removeMarketLiquiditySingle,
-  swapExactInXytToToken,
-  swapExactOutXytToToken,
-  toFixedPoint,
-  createAaveMarketWithExpiry,
-  setTimeNextBlock,
+
+
+
+
+  setTimeNextBlock, swapExactInXytToToken,
+  swapExactOutXytToToken
 } from '../helpers';
 import {
   AMMCheckLPNearCloseTest,
   AMMNearCloseTest,
   AMMTest,
-  MarketFeesTest,
-  ProtocolFeeTest,
-  marketBalanceNonZeroTest,
-  marketBalanceNonZeroSwapTest,
+
+
+
+  marketBalanceNonZeroSwapTest, marketBalanceNonZeroTest, MarketFeesTest,
+  ProtocolFeeTest
 } from './common-test/amm-formula-test';
-
 import { MultiExpiryMarketTest } from './common-test/multi-market-common-test';
-
 import {
   marketFixture,
   MarketFixture,
   Mode,
   parseTestEnvMarketFixture,
-  parseTestEnvLiquidityMiningFixture,
-  TestEnv,
+
+  TestEnv
 } from './fixtures';
 
-import { waffle } from 'hardhat';
+
+
 const { loadFixture, provider } = waffle;
 
 describe('AaveV2-market', async () => {
@@ -109,7 +121,7 @@ describe('AaveV2-market', async () => {
     let xytBalance = await env.xyt.balanceOf(env.market.address);
     let testTokenBalance = await env.testToken.balanceOf(env.market.address);
 
-    approxBigNumber(xytBalance, xytBalanceBefore.add(BN.from(result[1])), 20);
+    approxBigNumber(xytBalance, xytBalanceBefore.add(BN.from(result[1])), 200);
     approxBigNumber(testTokenBalance, REF_AMOUNT.sub(REF_AMOUNT.div(10)), 0);
   });
 
@@ -121,7 +133,7 @@ describe('AaveV2-market', async () => {
     let xytBalance = await env.xyt.balanceOf(env.market.address);
     let testTokenBalance = await env.testToken.balanceOf(env.market.address);
 
-    approxBigNumber(xytBalance, REF_AMOUNT.add(REF_AMOUNT.div(10)), 30);
+    approxBigNumber(xytBalance, REF_AMOUNT.add(REF_AMOUNT.div(10)), 200);
     approxBigNumber(testTokenBalance, REF_AMOUNT.sub(REF_AMOUNT.div(10)), REF_AMOUNT.div(100));
   });
 
