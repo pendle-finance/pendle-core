@@ -51,6 +51,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
     // since the last time rewards was updated for the yieldTokenHolder (lastUpdatedForYieldTokenHolder[underlyingAsset][expiry])
     mapping(address => uint256) updateFrequency;
     mapping(address => mapping(uint256 => uint256)) lastUpdatedForYieldTokenHolder;
+    bool public skippingRewards;
 
     // This MULTIPLIER is to scale the real paramL value up, to preserve precision
     uint256 private constant MULTIPLIER = 1e20;
@@ -118,6 +119,18 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
 
     /**
     Use:
+        To set how often rewards should be updated for yieldTokenHolders of an underlyingAsset
+    Conditions:
+        * The underlyingAsset must already exist in the forge
+        * Must be called by governance
+    */
+    function setSkippingRewards(bool _skippingRewards) external override onlyGovernance {
+        skippingRewards = _skippingRewards;
+        emit SkippingRewardsSet(_skippingRewards);
+    }
+
+    /**
+    Use:
         To claim the COMP/StkAAVE for any OT holder.
         Newly accrued rewards are equally accrued to all OT holders in the process.
     Conditions:
@@ -162,6 +175,20 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
     }
 
     /**
+    @notice Manually updateParamL, which is to update the rewards accounting for a particular (underlyingAsset, expiry)
+          This transaction can be called by anyone who wants to spend the gas to make sure the rewards from Aave/Compound is claimed and distributed
+          to the current timestamp, by-passing the caching mechanism
+    */
+    function updateParamLManual(address _underlyingAsset, uint256 _expiry)
+        external
+        override
+        nonReentrant
+    {
+        address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
+        _updateParamL(_underlyingAsset, _expiry, _yieldTokenHolder, true);
+    }
+
+    /**
     @notice To be called before the pending rewards of any users is redeemed
     */
     function _beforeTransferPendingRewards(
@@ -188,10 +215,9 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         uint256 _expiry,
         address _user
     ) internal {
-        if (!_checkNeedUpdateRewards(_underlyingAsset, _expiry)) return;
+        if (skippingRewards) return;
         address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
-        _updateParamL(_underlyingAsset, _expiry, _yieldTokenHolder);
-        lastUpdatedForYieldTokenHolder[_underlyingAsset][_expiry] = block.number;
+        _updateParamL(_underlyingAsset, _expiry, _yieldTokenHolder, false);
 
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
 
@@ -213,7 +239,8 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         rwd.lastParamL[_user] = rwd.paramL;
     }
 
-    function _checkNeedUpdateRewards(address _underlyingAsset, uint256 _expiry)
+    // we only need to update param L, if it has been more than updateFrequency[_underlyingAsset] blocks
+    function _checkNeedUpdateParamL(address _underlyingAsset, uint256 _expiry)
         internal
         view
         returns (bool needUpdate)
@@ -231,8 +258,10 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
     function _updateParamL(
         address _underlyingAsset,
         uint256 _expiry,
-        address yieldTokenHolder
+        address yieldTokenHolder,
+        bool _manualUpdate // if its a manual update called by updateParamLManual(), always update
     ) internal {
+        if (!_checkNeedUpdateParamL(_underlyingAsset, _expiry) && !_manualUpdate) return;
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
         if (rwd.paramL == 0) {
             // paramL always starts from 1, to make sure that if a user's lastParamL is 0,
@@ -264,6 +293,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         // Update new states
         rwd.paramL = firstTerm.add(secondTerm);
         rwd.lastRewardBalance = currentRewardBalance;
+        lastUpdatedForYieldTokenHolder[_underlyingAsset][_expiry] = block.number;
     }
 
     function _getFirstTermAndParamR(
