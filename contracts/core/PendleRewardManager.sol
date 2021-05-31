@@ -184,8 +184,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         override
         nonReentrant
     {
-        address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
-        _updateParamL(_underlyingAsset, _expiry, _yieldTokenHolder, true);
+        _updateParamL(_underlyingAsset, _expiry, true);
     }
 
     /**
@@ -216,8 +215,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         address _user
     ) internal {
         if (skippingRewards) return;
-        address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
-        _updateParamL(_underlyingAsset, _expiry, _yieldTokenHolder, false);
+        _updateParamL(_underlyingAsset, _expiry, false);
 
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
 
@@ -240,11 +238,12 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
     }
 
     // we only need to update param L, if it has been more than updateFrequency[_underlyingAsset] blocks
-    function _checkNeedUpdateParamL(address _underlyingAsset, uint256 _expiry)
-        internal
-        view
-        returns (bool needUpdate)
-    {
+    function _checkNeedUpdateParamL(
+        address _underlyingAsset,
+        uint256 _expiry,
+        bool _manualUpdate
+    ) internal view returns (bool needUpdate) {
+        if (_manualUpdate) return true; // always update if its a manual update
         needUpdate =
             block.number - lastUpdatedForYieldTokenHolder[_underlyingAsset][_expiry] >=
             updateFrequency[_underlyingAsset];
@@ -258,10 +257,12 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
     function _updateParamL(
         address _underlyingAsset,
         uint256 _expiry,
-        address yieldTokenHolder,
         bool _manualUpdate // if its a manual update called by updateParamLManual(), always update
     ) internal {
-        if (!_checkNeedUpdateParamL(_underlyingAsset, _expiry) && !_manualUpdate) return;
+        if (!_checkNeedUpdateParamL(_underlyingAsset, _expiry, _manualUpdate)) return;
+        address yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
+        require(yieldTokenHolder != address(0), "INVALID_YIELD_TOKEN_HOLDER");
+
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
         if (rwd.paramL == 0) {
             // paramL always starts from 1, to make sure that if a user's lastParamL is 0,
