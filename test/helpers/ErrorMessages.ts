@@ -35,4 +35,5 @@ export const errMsg = {
   FORGE_HANDLER_LOCKED: prefix + ' ' + 'FORGE_HANDLER_LOCKED',
   MARKET_HANDLER_LOCKED: prefix + ' ' + 'MARKET_HANDLER_LOCKED',
   REDUNDANT_SET: prefix + ' ' + 'REDUNDANT_SET',
+  LIQ_MINING_PAUSED: prefix + ' ' + 'LIQ_MINING_PAUSED',
 };
