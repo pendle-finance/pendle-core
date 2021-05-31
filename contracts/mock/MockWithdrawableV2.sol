@@ -22,8 +22,21 @@
  */
 pragma solidity 0.7.6;
 
-interface IAaveLendingPoolCore {
-    function getReserveATokenAddress(address underlyingAsset) external view returns (address);
+import "../periphery/PermissionsV2.sol";
+import "../periphery/WithdrawableV2.sol";
 
-    function getReserveNormalizedIncome(address underlyingAsset) external view returns (uint256);
+contract MockWithdrawableV2 is PermissionsV2, WithdrawableV2 {
+    bool private allowed = true;
+
+    constructor(address _governanceManager) PermissionsV2(_governanceManager) {}
+
+    receive() external payable {}
+
+    function setAllowed(bool _allowed) public {
+        allowed = _allowed;
+    }
+
+    function _allowedToWithdraw(address) internal view override returns (bool) {
+        return allowed;
+    }
 }

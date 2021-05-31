@@ -1,4 +1,5 @@
 import { BigNumber as BN, Wallet } from 'ethers';
+import { waffle } from 'hardhat';
 import {
   addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
@@ -19,7 +20,6 @@ import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv 
 import * as scenario from './fixtures/lpFormulaScenario.fixture';
 import { TestAddLiq, TestRemoveLiq } from './fixtures/lpFormulaScenario.fixture';
 
-import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
 describe('lp-formula', async () => {
@@ -33,7 +33,7 @@ describe('lp-formula', async () => {
 
   async function buildTestEnv() {
     let fixture: MarketFixture = await loadFixture(marketFixture);
-    await parseTestEnvMarketFixture(alice, Mode.AAVE_V1, env, fixture);
+    await parseTestEnvMarketFixture(alice, Mode.AAVE_V2, env, fixture);
     env.TEST_DELTA = BN.from(10000);
   }
 
@@ -63,7 +63,7 @@ describe('lp-formula', async () => {
   }
 
   async function runTestAddLiqSingleToken(test: TestAddLiq) {
-    const T1 = consts.T0.add(test.timeOffset);
+    const T1 = consts.T0_A2.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
     await bootstrapMarket(env, alice, amountToWei(test.initXytAmount, 6), amountToWei(test.initTokenAmount, 6));
     await setTimeNextBlock(T1);
@@ -87,7 +87,7 @@ describe('lp-formula', async () => {
   }
 
   async function runTestRemoveLiqSingleToken(test: TestRemoveLiq) {
-    const T1 = consts.T0.add(test.timeOffset);
+    const T1 = consts.T0_A2.add(test.timeOffset);
     const T2 = T1.add(consts.ONE_DAY);
     await bootstrapMarket(env, alice, amountToWei(test.initXytAmount, 6), amountToWei(test.initTokenAmount, 6));
 

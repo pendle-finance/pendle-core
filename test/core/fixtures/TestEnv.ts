@@ -1,6 +1,6 @@
 import { BigNumber as BN, Contract, Wallet } from "ethers";
 import {
-  consts, getA2Contract, getAContract, getCContract, tokens, getERC20Contract
+  consts, getA2Contract, getCContract, getERC20Contract, tokens
 } from "../../helpers";
 import { CoreFixture } from "./core.fixture";
 import { LiqParams, LiquidityMiningFixture } from "./liquidityMining.fixture";
@@ -8,8 +8,7 @@ import { MarketFixture } from "./market.fixture";
 import { RouterFixture } from "./router.fixture";
 
 export enum Mode {
-  AAVE_V1 = 1,
-  AAVE_V2,
+  AAVE_V2 = 1,
   COMPOUND
 }
 
@@ -66,18 +65,7 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
   await parseTestEnvCoreFixture(env, alice, fixture.core);
 
   env.routerFixture = fixture;
-  if (env.mode == Mode.AAVE_V1) {
-    env.T0 = consts.T0; env.EXPIRY = env.T0.add(consts.SIX_MONTH);
-    env.forge = fixture.aForge.aaveForge;
-    env.ot = fixture.aForge.aOwnershipToken;
-    env.xyt = fixture.aForge.aFutureYieldToken;
-    env.xyt2 = fixture.aForge.aFutureYieldToken2;
-    env.rewardManager = fixture.aForge.aRewardManager;
-    env.yUSDT = await getAContract(alice, env.forge, tokens.USDT);
-    env.FORGE_ID = consts.FORGE_AAVE;
-    env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
-  }
-  else if (env.mode == Mode.AAVE_V2) {
+  if (env.mode == Mode.AAVE_V2) {
     env.T0 = consts.T0_A2; env.EXPIRY = env.T0.add(consts.SIX_MONTH);
     env.forge = fixture.a2Forge.aaveV2Forge;
     env.ot = fixture.a2Forge.a2OwnershipToken;
@@ -103,20 +91,15 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
 
 export async function parseTestEnvMarketFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: MarketFixture) {
   env.mode = mode;
-  parseTestEnvRouterFixture(alice, mode, env, fixture.routerFix);
+  await parseTestEnvRouterFixture(alice, mode, env, fixture.routerFix);
 
   env.testToken = fixture.testToken;
   env.marketFixture = fixture;
 
-  if (env.mode == Mode.AAVE_V1) {
-    env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE;
-    env.market = fixture.aMarket;
-    env.marketEth = fixture.marketEth;
-  }
-  else if (env.mode == Mode.AAVE_V2) {
+  if (env.mode == Mode.AAVE_V2) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE_V2;
     env.market = fixture.a2Market;
-    // no marketEth for AaveV2
+    env.marketEth = fixture.marketEth;
   }
   else if (env.mode == Mode.COMPOUND) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_COMPOUND;
@@ -127,16 +110,14 @@ export async function parseTestEnvMarketFixture(alice: Wallet, mode: Mode, env: 
 
 export async function parseTestEnvLiquidityMiningFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: LiquidityMiningFixture) {
   env.mode = mode;
-  parseTestEnvMarketFixture(alice, mode, env, fixture.marketFix);
+  await parseTestEnvMarketFixture(alice, mode, env, fixture.marketFix);
 
   env.pdl = fixture.pdl;
   env.liqMiningFixture = fixture;
   env.liqParams = fixture.params;
 
-  if (env.mode == Mode.AAVE_V1) {
-    env.liq = fixture.aLiquidityMining;
-  }
-  else if (env.mode == Mode.AAVE_V2) {
+  if (env.mode == Mode.AAVE_V2) {
+    env.liq = fixture.a2LiquidityMining;
   }
   else if (env.mode == Mode.COMPOUND) {
     env.liq = fixture.cLiquidityMining;

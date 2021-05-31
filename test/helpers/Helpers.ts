@@ -4,10 +4,14 @@ import ERC20 from '../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC
 import AToken from '../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json';
 import CToken from '../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json';
 import TetherToken from '../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json';
+import MockPendleOwnershipToken from '../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json';
+import PendleFutureYieldToken from '../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json';
+import MockPendleAaveMarket from '../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json';
+
 import { RouterFixture, TestEnv } from '../core/fixtures/';
-import { aaveFixture } from '../core/fixtures/aave.fixture';
 import { aaveV2Fixture } from '../core/fixtures/aaveV2.fixture';
 import { consts, Token, tokens } from './Constants';
+
 import { impersonateAccount } from './Evm';
 
 const hre = require('hardhat');
@@ -20,36 +24,22 @@ export async function mintOtAndXyt(
   user: Wallet,
   amount: BN,
   env: RouterFixture
-): Promise<{ ATokenMinted: BN; A2TokenMinted: BN; CTokenMinted: BN }> {
+): Promise<{ A2TokenMinted: BN; CTokenMinted: BN }> {
   let router = env.core.router;
-  const aContract = await getAContract(user, env.aForge.aaveForge, token);
   const a2Contract = await getA2Contract(user, env.a2Forge.aaveV2Forge, token);
   const cContract = await getCContract(user, token);
 
-  let preATokenBal = await aContract.balanceOf(user.address);
   let preA2TokenBal = await a2Contract.balanceOf(user.address);
   let preCTokenBal = await cContract.balanceOf(user.address);
 
-  await mintAaveToken(token, user, amount, true);
-  await mintAaveToken(token, user, amount, false);
+  await mintAaveV2Token(token, user, amount);
   await mintCompoundToken(token, user, amount);
-  await aContract.approve(router.address, consts.INF);
   await a2Contract.approve(router.address, consts.INF);
   await cContract.approve(router.address, consts.INF);
 
-  let postATokenBal = await aContract.balanceOf(user.address);
   let postA2TokenBal = await a2Contract.balanceOf(user.address);
   let postCTokenBal = await cContract.balanceOf(user.address);
 
-  await router
-    .connect(user)
-    .tokenizeYield(
-      consts.FORGE_AAVE,
-      token.address,
-      consts.T0.add(consts.SIX_MONTH),
-      postATokenBal.sub(preATokenBal),
-      user.address
-    );
   await router
     .connect(user)
     .tokenizeYield(
@@ -57,7 +47,8 @@ export async function mintOtAndXyt(
       token.address,
       consts.T0_A2.add(consts.SIX_MONTH),
       postA2TokenBal.sub(preA2TokenBal),
-      user.address
+      user.address,
+      consts.HIGH_GAS_OVERRIDE
     );
   await router
     .connect(user)
@@ -66,13 +57,32 @@ export async function mintOtAndXyt(
       token.address,
       consts.T0_C.add(consts.SIX_MONTH),
       postCTokenBal.sub(preCTokenBal),
-      user.address
+      user.address,
+      consts.HIGH_GAS_OVERRIDE
     );
   return {
-    ATokenMinted: postATokenBal.sub(preATokenBal),
     A2TokenMinted: postA2TokenBal.sub(preA2TokenBal),
     CTokenMinted: postCTokenBal.sub(preCTokenBal),
   };
+}
+
+export async function mintAaveXytWithExpiry(token: Token, user: Wallet, amount: BN, env: RouterFixture, expiry: BN) {
+  let router = env.core.router;
+  const a2Contract = await getA2Contract(user, env.a2Forge.aaveV2Forge, token);
+  let preA2TokenBal = await a2Contract.balanceOf(user.address);
+  await mintAaveV2Token(token, user, amount);
+  await a2Contract.approve(router.address, consts.INF);
+  let postA2TokenBal = await a2Contract.balanceOf(user.address);
+  await router
+    .connect(user)
+    .tokenizeYield(
+      consts.FORGE_AAVE_V2,
+      token.address,
+      expiry,
+      postA2TokenBal.sub(preA2TokenBal),
+      user.address,
+      consts.HIGH_GAS_OVERRIDE
+    );
 }
 
 export async function mint(token: Token, alice: Wallet, amount: BN) {
@@ -83,16 +93,6 @@ export async function mint(token: Token, alice: Wallet, amount: BN) {
   const tokenAmount = amountToWei(amount, token.decimal);
   await contractToken.issue(tokenAmount);
   await contractToken.transfer(alice.address, tokenAmount);
-}
-
-export async function convertToAaveToken(token: Token, alice: Wallet, amount: BN) {
-  const { lendingPool, lendingPoolCore } = await aaveFixture(alice);
-  const tokenAmount = amountToWei(amount, token.decimal);
-
-  const erc20 = new Contract(token.address, ERC20.abi, alice);
-  await erc20.approve(lendingPoolCore.address, tokenAmount);
-
-  await lendingPool.deposit(token.address, tokenAmount, 0, consts.HIGH_GAS_OVERRIDE);
 }
 
 export async function convertToAaveV2Token(token: Token, alice: Wallet, amount: BN) {
@@ -115,13 +115,9 @@ export async function convertToCompoundToken(token: Token, alice: Wallet, amount
   await cToken.mint(tokenAmount);
 }
 
-export async function mintAaveToken(token: Token, alice: Wallet, amount: BN, isAaveV1: boolean) {
+export async function mintAaveV2Token(token: Token, alice: Wallet, amount: BN) {
   await mint(token, alice, amount);
-  if (isAaveV1) {
-    await convertToAaveToken(token, alice, amount);
-  } else {
-    await convertToAaveV2Token(token, alice, amount);
-  }
+  await convertToAaveV2Token(token, alice, amount);
 }
 
 export async function mintCompoundToken(token: Token, alice: Wallet, amount: BN) {
@@ -132,11 +128,6 @@ export async function mintCompoundToken(token: Token, alice: Wallet, amount: BN)
 export async function transferToken(token: Token, from: Wallet, to: string, amount: BN) {
   const erc20 = new Contract(token.address, ERC20.abi, from);
   await erc20.transfer(to, amount);
-}
-
-export async function getAContract(alice: Wallet, aaveForge: Contract, token: Token): Promise<Contract> {
-  const aContractAddress = await aaveForge.callStatic.getYieldBearingToken(token.address);
-  return new Contract(aContractAddress, ERC20.abi, alice);
 }
 
 export async function getA2Contract(alice: Wallet, aaveV2Forge: Contract, token: Token): Promise<Contract> {
@@ -159,12 +150,6 @@ export async function getERC20Contract(alice: Wallet, token: Token): Promise<Con
  */
 export function amountToWei(amount: BN, decimal: number) {
   return BN.from(10).pow(decimal).mul(amount);
-}
-
-export async function getLiquidityRate(alice: Wallet, token: Token): Promise<BN> {
-  const { lendingPool } = await aaveFixture(alice);
-  const { liquidityRate } = await lendingPool.getReserveData(token.address);
-  return liquidityRate;
 }
 
 export async function emptyToken(tokenContract: Contract, person: Wallet) {
@@ -260,4 +245,55 @@ export async function addFakeIncomeCompound(env: TestEnv, user: Wallet) {
     amountToWei(consts.INITIAL_COMPOUND_TOKEN_AMOUNT, 6)
   );
   await env.yUSDT.balanceOfUnderlying(user.address); // interact with compound so that it updates all info
+}
+
+export async function logTokenBalance(token: Contract, people: Wallet[]) {
+  for (let person of people) {
+    console.log((await token.balanceOf(person.address)).toString());
+  }
+}
+
+export async function createAaveMarketWithExpiry(env: TestEnv, expiry: BN, wallets: any) {
+  const [alice, bob, charlie, dave, eve] = wallets;
+
+  await env.router.newYieldContracts(env.FORGE_ID, tokens.USDT.address, expiry, consts.HIGH_GAS_OVERRIDE);
+
+  const otAddress = await env.data.otTokens(env.FORGE_ID, tokens.USDT.address, expiry, consts.HIGH_GAS_OVERRIDE);
+
+  const xytAddress = await env.data.xytTokens(env.FORGE_ID, tokens.USDT.address, expiry, consts.HIGH_GAS_OVERRIDE);
+
+  const ownershipToken = new Contract(otAddress, MockPendleOwnershipToken.abi, alice);
+
+  const futureYieldToken = new Contract(xytAddress, PendleFutureYieldToken.abi, alice);
+
+  for (var person of [alice, bob, charlie, dave]) {
+    await mintAaveXytWithExpiry(tokens.USDT, person, consts.INITIAL_OT_XYT_AMOUNT, env.routerFixture, expiry);
+  }
+
+  const totalSupply = await env.testToken.totalSupply();
+  // for (var person of [bob, charlie, dave, eve]) {
+  //   await env.testToken.transfer(person.address, totalSupply.div(5), consts.HIGH_GAS_OVERRIDE);
+  // }
+
+  await env.router.createMarket(
+    env.MARKET_FACTORY_ID,
+    futureYieldToken.address,
+    env.testToken.address,
+    consts.HIGH_GAS_OVERRIDE
+  );
+
+  const marketAddress = await env.data.getMarket(
+    env.MARKET_FACTORY_ID,
+    futureYieldToken.address,
+    env.testToken.address
+  );
+
+  const market = new Contract(marketAddress, MockPendleAaveMarket.abi, alice);
+
+  let newEnv: TestEnv = { ...env };
+  newEnv.market = market;
+  newEnv.xyt = futureYieldToken;
+  newEnv.EXPIRY = expiry;
+
+  return newEnv;
 }

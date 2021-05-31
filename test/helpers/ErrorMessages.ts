@@ -36,4 +36,7 @@ export const errMsg = {
   MARKET_HANDLER_LOCKED: prefix + ' ' + 'MARKET_HANDLER_LOCKED',
   REDUNDANT_SET: prefix + ' ' + 'REDUNDANT_SET',
   LIQ_MINING_PAUSED: prefix + ' ' + 'LIQ_MINING_PAUSED',
+  TOKEN_NOT_ALLOWED: prefix + ' ' + 'TOKEN_NOT_ALLOWED',
+  XYT_BALANCE_ERROR: prefix + ' ' + 'XYT_BALANCE_ERROR',
+  TOKEN_BALANCE_ERROR: prefix + ' ' + 'TOKEN_BALANCE_ERROR',
 };
