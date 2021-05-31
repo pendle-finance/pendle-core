@@ -38,4 +38,5 @@ export const errMsg = {
   TOKEN_NOT_ALLOWED: prefix + ' ' + 'TOKEN_NOT_ALLOWED',
   XYT_BALANCE_ERROR: prefix + ' ' + 'XYT_BALANCE_ERROR',
   TOKEN_BALANCE_ERROR: prefix + ' ' + 'TOKEN_BALANCE_ERROR',
+  LIQ_MINING_PAUSED: prefix + ' ' + 'LIQ_MINING_PAUSED',
 };
