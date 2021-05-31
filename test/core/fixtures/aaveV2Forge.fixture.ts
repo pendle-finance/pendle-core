@@ -1,10 +1,9 @@
 import { Contract, providers, Wallet } from "ethers";
 import PendleAaveV2Forge from "../../../build/artifacts/contracts/core/aave/v2/PendleAaveV2Forge.sol/PendleAaveV2Forge.json";
 import PendleAaveV2YieldContractDeployer from "../../../build/artifacts/contracts/core/aave/v2/PendleAaveV2YieldContractDeployer.sol/PendleAaveV2YieldContractDeployer.json";
+import MockPendleOwnershipToken from "../../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json";
 import MockPendleRewardManager from "../../../build/artifacts/contracts/mock/MockPendleRewardManager.sol/MockPendleRewardManager.json";
 import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
-import PendleOwnershipToken from "../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json";
-import MockPendleOwnershipToken from "../../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json";
 import { consts, setTimeNextBlock, tokens } from "../../helpers";
 import { CoreFixture } from "./core.fixture";
 import { GovernanceFixture } from "./governance.fixture";
@@ -85,22 +84,22 @@ export async function aaveV2ForgeFixture(
     alice
   );
 
-  // USDC
+  // UNI
 
   await router.newYieldContracts(
     consts.FORGE_AAVE_V2,
-    tokens.USDC.address,
+    tokens.UNI.address,
     consts.T0_A2.add(consts.SIX_MONTH)
   );
   const otTokenAddress2 = await data.otTokens(
     consts.FORGE_AAVE_V2,
-    tokens.USDC.address,
+    tokens.UNI.address,
     consts.T0_A2.add(consts.SIX_MONTH)
   );
 
   const xytTokenAddress2 = await data.xytTokens(
     consts.FORGE_AAVE_V2,
-    tokens.USDC.address,
+    tokens.UNI.address,
     consts.T0_A2.add(consts.SIX_MONTH)
   );
 

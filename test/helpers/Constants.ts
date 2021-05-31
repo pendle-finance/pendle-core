@@ -4,6 +4,7 @@ export type Token = {
   decimal: number;
   compound: string;
   owner?: string;
+  source?: string;
 };
 
 type TokenMap = Record<string, Token>;
@@ -95,4 +96,10 @@ export const tokens: TokenMap = {
     decimal: 6,
     compound: '0x39aa39c021dfbae8fac545936693ac917d5e7563',
   },
+  UNI: {
+    address: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
+    decimal: 18,
+    compound: '0x35a18000230da775cac24873d00ff85bccded550',
+    source: '0x47173b170c64d16393a52e6c480b3ad8c302ba1e',
+  }
 };

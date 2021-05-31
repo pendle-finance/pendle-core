@@ -1,18 +1,18 @@
-import { expect } from 'chai';
+import { assert, expect } from 'chai';
 import { BigNumber as BN, BigNumberish, Contract, Wallet } from 'ethers';
 import ERC20 from '../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 import AToken from '../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json';
 import CToken from '../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json';
 import TetherToken from '../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json';
+import MockPendleAaveMarket from '../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json';
 import MockPendleOwnershipToken from '../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json';
 import PendleFutureYieldToken from '../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json';
-import MockPendleAaveMarket from '../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json';
-
 import { RouterFixture, TestEnv } from '../core/fixtures/';
 import { aaveV2Fixture } from '../core/fixtures/aaveV2.fixture';
 import { consts, Token, tokens } from './Constants';
+import { impersonateAccount, impersonateAccountStop } from './Evm';
 
-import { impersonateAccount } from './Evm';
+
 
 const hre = require('hardhat');
 const { waffle } = require('hardhat');
@@ -85,12 +85,60 @@ export async function mintAaveXytWithExpiry(token: Token, user: Wallet, amount: 
     );
 }
 
-export async function mint(token: Token, alice: Wallet, amount: BN) {
-  await impersonateAccount(token.owner!);
-  const signer = await provider.getSigner(token.owner!);
+async function mintUNI(alice: Wallet, amount: BN) {
+  let source: string = tokens.UNI.source!;
+  await impersonateAccount(source);
+  const signer = await provider.getSigner(source);
+  const contractToken = new Contract(tokens.UNI.address, ERC20.abi, signer);
+  let balanceOfSource: BN = await contractToken.balanceOf(source);
+  assert(amount <= balanceOfSource, "Total amount of UNI minted exceeds limit");
+  await contractToken.transfer(alice.address, amount);
+  await impersonateAccountStop(source);
+}
 
-  const contractToken = new Contract(token.address, TetherToken.abi, signer);
-  const tokenAmount = amountToWei(amount, token.decimal);
+export async function mintOtAndXytWithExpiryAave2(
+  token: Token,
+  user: Wallet,
+  amount: BN,
+  env: RouterFixture,
+  expiry: BN
+) {
+  let router = env.core.router;
+  const a2Contract = await getA2Contract(user, env.a2Forge.aaveV2Forge, token);
+  let preA2TokenBal = await a2Contract.balanceOf(user.address);
+  await mintAaveV2Token(token, user, amount);
+  await a2Contract.approve(router.address, consts.INF);
+  let postA2TokenBal = await a2Contract.balanceOf(user.address);
+  await router
+    .connect(user)
+    .tokenizeYield(
+      consts.FORGE_AAVE_V2,
+      token.address,
+      expiry,
+      postA2TokenBal.sub(preA2TokenBal),
+      user.address,
+      consts.HIGH_GAS_OVERRIDE
+    );
+}
+
+export async function mint(token: Token, alice: Wallet, amount: BN) {
+  if (token == tokens.USDT) {
+    await mintUSDT(alice, amount);
+  }
+  else if (token == tokens.UNI) {
+    await mintUNI(alice, amount);
+  }
+  else {
+    assert(false, "Token not supported");
+  }
+}
+
+async function mintUSDT(alice: Wallet, amount: BN) {
+  let USDT: Token = tokens.USDT;
+  await impersonateAccount(USDT.owner!);
+  const signer = await provider.getSigner(USDT.owner!);
+  const contractToken = new Contract(USDT.address, TetherToken.abi, signer);
+  const tokenAmount = amountToWei(amount, USDT.decimal);
   await contractToken.issue(tokenAmount);
   await contractToken.transfer(alice.address, tokenAmount);
 }
@@ -238,7 +286,7 @@ export async function logMarketReservesData(market: Contract) {
   console.log('=========================================');
 }
 
-export async function addFakeIncomeCompound(env: TestEnv, user: Wallet) {
+export async function addFakeIncomeCompoundUSDT(env: TestEnv, user: Wallet) {
   await mint(tokens.USDT, user, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
   await env.USDTContract.connect(user).transfer(
     env.yUSDT.address,

@@ -1,28 +1,38 @@
 import { BigNumber as BN } from 'ethers';
+import { waffle } from 'hardhat';
 import {
-  emptyToken,
-  setTimeNextBlock,
+  addFakeIncomeCompoundUSDT, approxBigNumber, consts, emptyToken,
+
   evm_revert,
   evm_snapshot,
-  redeemDueInterests,
-  stake,
-  withdraw,
-  consts,
-  approxBigNumber,
+
+
+
+
+
   randomBN,
-  randomNumber,
-  redeemLpInterests,
-  addFakeIncomeCompound
+  randomNumber, redeemDueInterests,
+
+
+
+
+
+
+  redeemLpInterests, setTimeNextBlock,
+
+
+
+  stake,
+  withdraw
 } from '../../helpers';
 import {
   liquidityMiningFixture,
   LiquidityMiningFixture,
   Mode,
   parseTestEnvLiquidityMiningFixture,
-  TestEnv,
+  TestEnv
 } from '../fixtures';
 
-import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
 export function runTest(mode: Mode) {
@@ -94,7 +104,7 @@ export function runTest(mode: Mode) {
         } else if (actionType == 2) {
           await env.liq.redeemLpInterests(env.EXPIRY, wallets[userID].address);
         }
-        if (mode == Mode.COMPOUND) await addFakeIncomeCompound(env, eve);
+        if (mode == Mode.COMPOUND) await addFakeIncomeCompoundUSDT(env, eve);
       }
 
       await redeemDueInterests(env, eve);
