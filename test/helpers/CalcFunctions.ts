@@ -8,9 +8,12 @@ import { LiqParams, TestEnv, UserStakeAction } from '../core/fixtures';
 export function calcExpectedRewards(
   userStakingData: UserStakeAction[][][],
   params: LiqParams,
-  currentEpoch: number
+  currentEpoch: number,
+  usingAllocationSetting: Boolean
 ): BN[][] {
   let nUsers = userStakingData[0].length;
+  let numerator: BN = params.TOTAL_NUMERATOR;
+  let denominator: BN = params.TOTAL_NUMERATOR;
   /*
   pushing params.NUMBER_OF_EPOCHS empty epochs to mimic the real-life situation where users
   will continue to receive rewards even if they don't do any action
@@ -41,6 +44,10 @@ export function calcExpectedRewards(
   }
 
   userStakingData.forEach((epochData, i) => {
+    if (usingAllocationSetting) {
+      numerator = params.ALLOCATION_SETTING[i + 1];
+    }
+
     let epochId = i + 1;
     if (epochId >= currentEpoch) return; // only count for epochs before currentEpoch
     let userStakeSeconds: BN[] = [];
@@ -74,7 +81,9 @@ export function calcExpectedRewards(
         const rewardsPerVestingEpoch = params.REWARDS_PER_EPOCH[epochId - 1]
           .mul(userStakeSeconds[userId])
           .div(totalStakeSeconds)
-          .div(params.VESTING_EPOCHS);
+          .div(params.VESTING_EPOCHS)
+          .mul(numerator)
+          .div(denominator);
         for (let e: number = epochId + 1; e <= epochId + params.VESTING_EPOCHS.toNumber(); e++) {
           if (e <= currentEpoch) {
             rewards[userId][0] = rewards[userId][0].add(rewardsPerVestingEpoch);

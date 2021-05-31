@@ -16,13 +16,9 @@ export const consts = {
   DUMMY_GOVERNANCE_ADDRESS: '0xdac17f958d2ee523a2206206994597c13d831ec7',
   RONE: BN.from(2).pow(40),
 
-  AAVE_LENDING_POOL_CORE_ADDRESS: '0x3dfd23A6c5E8BbcFc9581d2E864a68feb6a076d3',
-  AAVE_LENDING_POOL_ADDRESS: '0x398ec7346dcd622edc5ae82352f02be94c62d119',
   COMPOUND_COMPTROLLER_ADDRESS: '0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b',
   AAVE_V2_LENDING_POOL_ADDRESS: '0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9',
   AAVE_DUMMY_REFERRAL_CODE: 0,
-  FORGE_AAVE: utils.formatBytes32String('Aave'),
-  MARKET_FACTORY_AAVE: utils.formatBytes32String('Aave'),
   FORGE_AAVE_V2: utils.formatBytes32String('AaveV2'),
   MARKET_FACTORY_AAVE_V2: utils.formatBytes32String('AaveV2'),
   FORGE_COMPOUND: utils.formatBytes32String('Compound'),
@@ -43,7 +39,6 @@ export const consts = {
   FIVE_MONTH: BN.from(2592000 * 5),
   SIX_MONTH: BN.from(2592000 * 6),
   ONE_YEAR: BN.from(31536000),
-  T0: BN.from(1623715000), // start time of all contracts
   T0_A2: BN.from(1623715050), // the time that the first AaveV2_XYT is minted
   T0_C: BN.from(1623715100), // the time that the first Compound_XYT is minted
   HIGH_GAS_OVERRIDE: { gasLimit: 80000000 },
