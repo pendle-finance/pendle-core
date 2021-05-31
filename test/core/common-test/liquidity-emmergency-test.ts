@@ -106,12 +106,9 @@ export function runTest(mode: Mode) {
       const amount = BN.from(10 ** 5);
 
       await advanceTime(env.liqParams.EPOCH_DURATION);
-      
       await stake(env, alice, amount);
-      let lpHolder = await env.liq.lpHolderForExpiry(env.EXPIRY);
 
       await advanceTime(env.liqParams.EPOCH_DURATION);
-      
       await stake(env, bob, amount);
       await withdraw(env, alice, amount.div(2));
 
@@ -146,6 +143,7 @@ export function runTest(mode: Mode) {
       await emptyToken(env.market, eve);
       await emptyToken(env.pdl, eve);
 
+      let lpHolder = await env.liq.lpHolderForExpiry(env.EXPIRY);
       await env.market.connect(dave).transferFrom(
         lpHolder,
         eve.address,
