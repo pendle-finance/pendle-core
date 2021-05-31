@@ -51,7 +51,6 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
     // since the last time rewards was updated for the yieldTokenHolder (lastUpdatedForYieldTokenHolder[underlyingAsset][expiry])
     mapping(address => uint256) updateFrequency;
     mapping(address => mapping(uint256 => uint256)) lastUpdatedForYieldTokenHolder;
-    bool public skippingRewards;
 
     // This MULTIPLIER is to scale the real paramL value up, to preserve precision
     uint256 private constant MULTIPLIER = 1e20;
@@ -115,18 +114,6 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
             updateFrequency[underlyingAssets[i]] = frequencies[i];
         }
         emit UpdateFrequencySet(underlyingAssets, frequencies);
-    }
-
-    /**
-    Use:
-        To set how often rewards should be updated for yieldTokenHolders of an underlyingAsset
-    Conditions:
-        * The underlyingAsset must already exist in the forge
-        * Must be called by governance
-    */
-    function setSkippingRewards(bool _skippingRewards) external override onlyGovernance {
-        skippingRewards = _skippingRewards;
-        emit SkippingRewardsSet(_skippingRewards);
     }
 
     /**
@@ -214,22 +201,25 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         uint256 _expiry,
         address _user
     ) internal {
-        if (skippingRewards) return;
         _updateParamL(_underlyingAsset, _expiry, false);
 
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
-
-        if (rwd.lastParamL[_user] == 0) {
+        uint256 userLastParamL = rwd.lastParamL[_user];
+        if (userLastParamL == 0) {
             // ParamL is always >=1, so this user must have gotten OT for the first time,
             // and shouldn't get any rewards
             rwd.lastParamL[_user] = rwd.paramL;
             return;
         }
 
+        if (userLastParamL == rwd.paramL) {
+            return; // user's lastParamL is the latest param L, dont need to update anything
+        }
+
         IPendleYieldToken ot = data.otTokens(forgeId, _underlyingAsset, _expiry);
 
         uint256 principal = ot.balanceOf(_user);
-        uint256 rewardsAmountPerOT = rwd.paramL.sub(rwd.lastParamL[_user]);
+        uint256 rewardsAmountPerOT = rwd.paramL.sub(userLastParamL);
 
         uint256 rewardsFromOT = principal.mul(rewardsAmountPerOT).div(MULTIPLIER);
 
