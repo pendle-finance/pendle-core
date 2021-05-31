@@ -51,6 +51,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
     // since the last time rewards was updated for the yieldTokenHolder (lastUpdatedForYieldTokenHolder[underlyingAsset][expiry])
     mapping(address => uint256) updateFrequency;
     mapping(address => mapping(uint256 => uint256)) lastUpdatedForYieldTokenHolder;
+    bool public skippingRewards;
 
     // This MULTIPLIER is to scale the real paramL value up, to preserve precision
     uint256 private constant MULTIPLIER = 1e20;
@@ -114,6 +115,18 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
             updateFrequency[underlyingAssets[i]] = frequencies[i];
         }
         emit UpdateFrequencySet(underlyingAssets, frequencies);
+    }
+
+    /**
+    Use:
+        To set how often rewards should be updated for yieldTokenHolders of an underlyingAsset
+    Conditions:
+        * The underlyingAsset must already exist in the forge
+        * Must be called by governance
+    */
+    function setSkippingRewards(bool _skippingRewards) external override onlyGovernance {
+        skippingRewards = _skippingRewards;
+        emit SkippingRewardsSet(_skippingRewards);
     }
 
     /**
@@ -233,6 +246,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         uint256 _expiry,
         bool _manualUpdate
     ) internal view returns (bool needUpdate) {
+        if (skippingRewards) return false;
         if (_manualUpdate) return true; // always update if its a manual update
         needUpdate =
             block.number - lastUpdatedForYieldTokenHolder[_underlyingAsset][_expiry] >=
