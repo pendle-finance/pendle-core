@@ -214,6 +214,9 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         uint256 _expiry,
         address _user
     ) internal {
+        // - When skippingRewards is set, _updateParamL() will not update anything (implemented in _checkNeedUpdateParamL)
+        // - We will still need to update the rewards for the user no matter what, because their last transaction might be
+        //    before skippingRewards is turned on
         _updateParamL(_underlyingAsset, _expiry, false);
 
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
@@ -226,7 +229,11 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         }
 
         if (userLastParamL == rwd.paramL) {
-            return; // user's lastParamL is the latest param L, dont need to update anything
+            // - User's lastParamL is the latest param L, dont need to update anything
+            // - When skippingRewards is turned on and paramL always stays the same,
+            //     this function will terminate here for most users
+            //     (except for the ones who have not updated rewards until the current paramL)
+            return;
         }
 
         IPendleYieldToken ot = data.otTokens(forgeId, _underlyingAsset, _expiry);
