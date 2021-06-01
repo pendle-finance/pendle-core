@@ -51,6 +51,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
     // since the last time rewards was updated for the yieldTokenHolder (lastUpdatedForYieldTokenHolder[underlyingAsset][expiry])
     mapping(address => uint256) updateFrequency;
     mapping(address => mapping(uint256 => uint256)) lastUpdatedForYieldTokenHolder;
+    bool public skippingRewards;
 
     // This MULTIPLIER is to scale the real paramL value up, to preserve precision
     uint256 private constant MULTIPLIER = 1e20;
@@ -118,6 +119,18 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
 
     /**
     Use:
+        To set how often rewards should be updated for yieldTokenHolders of an underlyingAsset
+    Conditions:
+        * The underlyingAsset must already exist in the forge
+        * Must be called by governance
+    */
+    function setSkippingRewards(bool _skippingRewards) external override onlyGovernance {
+        skippingRewards = _skippingRewards;
+        emit SkippingRewardsSet(_skippingRewards);
+    }
+
+    /**
+    Use:
         To claim the COMP/StkAAVE for any OT holder.
         Newly accrued rewards are equally accrued to all OT holders in the process.
     Conditions:
@@ -162,6 +175,19 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
     }
 
     /**
+    @notice Manually updateParamL, which is to update the rewards accounting for a particular (underlyingAsset, expiry)
+          This transaction can be called by anyone who wants to spend the gas to make sure the rewards from Aave/Compound is claimed and distributed
+          to the current timestamp, by-passing the caching mechanism
+    */
+    function updateParamLManual(address _underlyingAsset, uint256 _expiry)
+        external
+        override
+        nonReentrant
+    {
+        _updateParamL(_underlyingAsset, _expiry, true);
+    }
+
+    /**
     @notice To be called before the pending rewards of any users is redeemed
     */
     function _beforeTransferPendingRewards(
@@ -188,24 +214,32 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         uint256 _expiry,
         address _user
     ) internal {
-        if (!_checkNeedUpdateRewards(_underlyingAsset, _expiry)) return;
-        address _yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
-        _updateParamL(_underlyingAsset, _expiry, _yieldTokenHolder);
-        lastUpdatedForYieldTokenHolder[_underlyingAsset][_expiry] = block.number;
+        // - When skippingRewards is set, _updateParamL() will not update anything (implemented in _checkNeedUpdateParamL)
+        // - We will still need to update the rewards for the user no matter what, because their last transaction might be
+        //    before skippingRewards is turned on
+        _updateParamL(_underlyingAsset, _expiry, false);
 
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
-
-        if (rwd.lastParamL[_user] == 0) {
+        uint256 userLastParamL = rwd.lastParamL[_user];
+        if (userLastParamL == 0) {
             // ParamL is always >=1, so this user must have gotten OT for the first time,
             // and shouldn't get any rewards
             rwd.lastParamL[_user] = rwd.paramL;
             return;
         }
 
+        if (userLastParamL == rwd.paramL) {
+            // - User's lastParamL is the latest param L, dont need to update anything
+            // - When skippingRewards is turned on and paramL always stays the same,
+            //     this function will terminate here for most users
+            //     (except for the ones who have not updated rewards until the current paramL)
+            return;
+        }
+
         IPendleYieldToken ot = data.otTokens(forgeId, _underlyingAsset, _expiry);
 
         uint256 principal = ot.balanceOf(_user);
-        uint256 rewardsAmountPerOT = rwd.paramL.sub(rwd.lastParamL[_user]);
+        uint256 rewardsAmountPerOT = rwd.paramL.sub(userLastParamL);
 
         uint256 rewardsFromOT = principal.mul(rewardsAmountPerOT).div(MULTIPLIER);
 
@@ -213,11 +247,14 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         rwd.lastParamL[_user] = rwd.paramL;
     }
 
-    function _checkNeedUpdateRewards(address _underlyingAsset, uint256 _expiry)
-        internal
-        view
-        returns (bool needUpdate)
-    {
+    // we only need to update param L, if it has been more than updateFrequency[_underlyingAsset] blocks
+    function _checkNeedUpdateParamL(
+        address _underlyingAsset,
+        uint256 _expiry,
+        bool _manualUpdate
+    ) internal view returns (bool needUpdate) {
+        if (skippingRewards) return false;
+        if (_manualUpdate) return true; // always update if its a manual update
         needUpdate =
             block.number - lastUpdatedForYieldTokenHolder[_underlyingAsset][_expiry] >=
             updateFrequency[_underlyingAsset];
@@ -231,8 +268,12 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
     function _updateParamL(
         address _underlyingAsset,
         uint256 _expiry,
-        address yieldTokenHolder
+        bool _manualUpdate // if its a manual update called by updateParamLManual(), always update
     ) internal {
+        if (!_checkNeedUpdateParamL(_underlyingAsset, _expiry, _manualUpdate)) return;
+        address yieldTokenHolder = forge.yieldTokenHolders(_underlyingAsset, _expiry);
+        require(yieldTokenHolder != address(0), "INVALID_YIELD_TOKEN_HOLDER");
+
         RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
         if (rwd.paramL == 0) {
             // paramL always starts from 1, to make sure that if a user's lastParamL is 0,
@@ -264,6 +305,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         // Update new states
         rwd.paramL = firstTerm.add(secondTerm);
         rwd.lastRewardBalance = currentRewardBalance;
+        lastUpdatedForYieldTokenHolder[_underlyingAsset][_expiry] = block.number;
     }
 
     function _getFirstTermAndParamR(
