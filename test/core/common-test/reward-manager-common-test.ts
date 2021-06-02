@@ -21,6 +21,7 @@ import {
 } from '../fixtures';
 
 import hre from 'hardhat';
+import { expect } from 'chai';
 const { waffle } = hre;
 const { loadFixture, provider } = waffle;
 
@@ -277,6 +278,112 @@ export function runTest(mode: Mode) {
       await checkGasCost(charlie, eve);
 
       console.log("=============================================");
+    });
+
+    it("Reward manager should work normally after updating updateFrequency to INF", async () => {
+      let amount = userInitialYieldToken.div(10);
+      for(let person of [bob, charlie, dave, eve]) {
+        await tokenizeYield(env, alice, amount, person.address);
+      }
+    
+      await advanceTime(consts.ONE_MONTH);
+      await env.rewardManager.setUpdateFrequency(
+        [env.USDTContract.address],
+        [BN.from(10 ** 9)],
+        consts.HIGH_GAS_OVERRIDE
+      );
+
+      for(let person of [bob, charlie, dave, eve]) {
+        await env.ot.connect(person).transfer(
+          alice.address,
+          amount.div(2),
+          consts.LOW_GAS_OVERRIDE
+        );
+
+        await advanceTime(consts.ONE_MONTH);
+        await env.rewardManager.redeemRewards(
+          env.USDTContract.address,
+          env.EXPIRY,
+          person.address,
+          consts.HIGH_GAS_OVERRIDE
+        );
+      }
+
+      // Try updateParamLManual
+      for(let person of [bob, charlie, dave, eve]) {
+        await env.ot.connect(person).transfer(
+          alice.address,
+          amount.div(2),
+          consts.LOW_GAS_OVERRIDE
+        );
+
+        await advanceTime(consts.ONE_MONTH);
+        await env.rewardManager.redeemRewards(
+          env.USDTContract.address,
+          env.EXPIRY,
+          person.address,
+          consts.HIGH_GAS_OVERRIDE
+        );
+
+        await env.rewardManager.connect(person).updateParamLManual(
+          env.USDTContract.address,
+          env.EXPIRY,
+          consts.HIGH_GAS_OVERRIDE
+        );
+      }
+    });
+    
+    it.only("updateFrequency should work correctly", async () => {
+      /*
+        Scenario: Set updateFrequency to 4
+        Flow:
+          bob transfer ot (low gas) -> success
+          charlie transfer ot(low gas) -> success
+          dave transfer ot (low gas) -> success
+          eve transfer ot (low gas) -> failed
+          eve transfer ot again (high gas) -> success
+      */
+      const amount = userInitialYieldToken.div(10);
+      const amountToTransfer = amount.div(10);
+      for(let person of [bob, charlie, dave, eve]) {
+        await tokenizeYield(env, alice, amount, person.address);
+      }
+
+      await advanceTime(consts.ONE_MONTH);
+      await env.rewardManager.setUpdateFrequency(
+        [env.USDTContract.address],
+        [4],
+        consts.HIGH_GAS_OVERRIDE
+      );
+      await env.rewardManager.connect(alice).updateParamLManual(
+        env.USDTContract.address,
+        env.EXPIRY,
+        consts.HIGH_GAS_OVERRIDE
+      );
+
+      for(let t = 0; t < 5; ++t) {
+        for(let person of [bob, charlie, dave]) {
+          await env.ot.connect(person).transfer(
+            alice.address,
+            amountToTransfer,
+            consts.LOW_GAS_OVERRIDE
+          );
+        }
+        
+        await expect(
+          env.ot.connect(eve).transfer(
+            alice.address,
+            amountToTransfer,
+            consts.LOW_GAS_OVERRIDE
+          )
+        ).to.be.reverted;
+
+        await env.ot.connect(eve).transfer(
+          alice.address,
+          amountToTransfer,
+          consts.HIGH_GAS_OVERRIDE
+        );
+      }
     });
   });
 }
