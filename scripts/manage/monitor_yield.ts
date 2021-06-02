@@ -18,13 +18,13 @@ async function main() {
   let consts: any;
 
   //check and load arguments
-  if (process.argv.length != 3) { // forge, underlyingAsset, expiry
+  if (process.argv.length != 5) { // forge, underlyingAsset, expiry
     console.error('Expected three argument!');
     process.exit(1);
   }
-  const forgeId = process.argv[0];
-  const underlyingAssetContractAddress = process.argv[1];
-  const expiry = process.argv[2];
+  const forgeId = process.argv[2];
+  const underlyingAssetContractAddress = process.argv[3];
+  const expiry = process.argv[4];
   
   //check network and load constant
   if (network == "kovan" || network == "kovantest") {

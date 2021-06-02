@@ -18,13 +18,13 @@ async function main() {
   let consts: any;
 
   //check and load arguments
-  if (process.argv.length != 3) { //marketFactoryId, xyt, token
+  if (process.argv.length != 5) { //marketFactoryId, xyt, token
     console.error('Expected three argument!');
     process.exit(1);
   }
-  const marketFactoryId = process.argv[0];
-  const xytAddress = process.argv[1];
-  const baseTokenAddress = process.argv[2];
+  const marketFactoryId = process.argv[2];
+  const xytAddress = process.argv[3];
+  const baseTokenAddress = process.argv[4];
 
   const xytContract = await (await hre.ethers.getContractFactory("PendleFutureYieldToken")).attach(xytAddress);
   
