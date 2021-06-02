@@ -19,13 +19,16 @@ async function main() {
   let consts: any;
 
   //check and load arguments
-  if (process.argv.length != 5) { //forge, underlying asset, expiry
+  if (process.argv.length != 8) { //xyt, base token, xyt amount, base token amount, forgeId, market factory id, forgeid
     console.error('Expected three argument!');
     process.exit(1);
   }
-  const forgeId = process.argv[2];
-  const underlyingAssetContractAddress = process.argv[3];
-  const expiry = process.argv[4];
+  const xytAddress = process.argv[2];
+  const baseTokenAddress = process.argv[3];
+  const xytAmount = process.argv[4];
+  const baseTokenAmount = process.argv[5];
+  const marketFactoryId = process.argv[6];
+  const forgeId = process.argv[7];
   
   //check network and load constant
   if (network == "kovan" || network == "kovantest") {
@@ -48,48 +51,40 @@ async function main() {
   const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
   const pendleData = await getContractFromDeployment(hre, deployment, 'PendleData');
 
-  // create new yield contracts
-  if (!['kovan', 'mainnet'].includes(hre.network.name)) {
-    await pendleRouter.newYieldContracts(forgeId, underlyingAssetContractAddress, expiry);
-  } else {
-    console.log('[NOTICE - TODO] We will need to use the governance multisig to deploy new yields');
-    const txDetails = await pendleRouter.populateTransaction.newYieldContracts(
-      forgeId,
-      underlyingAssetContractAddress,
-      expiry
-    );
-    console.log(`[NOTICE - TODO] Transaction details: \n${JSON.stringify(txDetails, null, '  ')}`);
-  }
+  // create new market
+  await pendleRouter.createMarket(marketFactoryId, xytAddress, baseTokenAddress);
+  const marketAddress = await pendleData.getMarket(marketFactoryId, xytAddress, baseTokenAddress);
 
   //save deployment
+  const xytContract = await (await hre.ethers.getContractFactory("PendleFutureYieldToken")).attach(xytAddress);
+  const baseTokenContract = await (await hre.ethers.getContractFactory('TestToken')).attach(baseTokenAddress);
+  const expiry = await xytContract.expiry();
+  const baseTokenSymbol = await baseTokenContract.symbol();
+  //const forgeAddress = await xytContract.forge();
+  
+  const underlyingAssetAddress = await xytContract.underlyingAsset();
   const underlyingAssetContract = await (await hre.ethers.getContractFactory('TestToken')).attach(
-    underlyingAssetContractAddress
+    underlyingAssetAddress
   );
-  const xytAddress = await pendleData.xytTokens(forgeId, underlyingAssetContractAddress, expiry);
-  const otAddress = await pendleData.otTokens(forgeId, underlyingAssetContractAddress, expiry);
   const underlyingAssetSymbol = await underlyingAssetContract.symbol();
   const forgeIdString = utils.parseBytes32String(forgeId);
 
-  if (deployment.yieldContracts[forgeIdString] == null) {
-    deployment.yieldContracts[forgeIdString] = {};
-  }
-
-  if (deployment.yieldContracts[forgeIdString][underlyingAssetSymbol] == null) {
-    deployment.yieldContracts[forgeIdString][underlyingAssetSymbol] = {
-      expiries: {},
-      PendleLiquidityMining: {},
-    };
-  }
-
-  if (deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[expiry] == null) {
-    deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[expiry] = {
-      XYT: xytAddress,
-      OT: otAddress,
-      markets: {},
-    };
-  }
-
+  deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[expiry].markets[
+    baseTokenSymbol
+  ] = marketAddress;
   saveDeployment(filePath, deployment);
+
+  //bootstrap the market
+  await xytContract.approve(pendleRouter.address, xytAmount);
+  await baseTokenContract.approve(pendleRouter.address, baseTokenAmount);
+  await pendleRouter.bootstrapMarket(
+    marketFactoryId,
+    xytAddress,
+    baseTokenAddress,
+    xytAmount,
+    baseTokenAmount,
+  );
+  console.log(`\t\tBootstrapped market with ${xytAmount}xyts and ${baseTokenAmount} ${baseTokenSymbol}`);
 
 }
 
