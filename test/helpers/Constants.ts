@@ -9,9 +9,11 @@ export type Token = {
 
 type TokenMap = Record<string, Token>;
 
+const ONE_E_12 = BN.from(10).pow(12);
 const ONE_E_18 = BN.from(10).pow(18);
 
 export const consts = {
+  ONE_E_12,
   ONE_E_18,
   DUMMY_ADDRESS: '0xDEADbeEfEEeEEEeEEEeEEeeeeeEeEEeeeeEEEEeE',
   DUMMY_GOVERNANCE_ADDRESS: '0xdac17f958d2ee523a2206206994597c13d831ec7',
@@ -101,5 +103,5 @@ export const tokens: TokenMap = {
     decimal: 18,
     compound: '0x35a18000230da775cac24873d00ff85bccded550',
     source: '0x47173b170c64d16393a52e6c480b3ad8c302ba1e',
-  }
+  },
 };

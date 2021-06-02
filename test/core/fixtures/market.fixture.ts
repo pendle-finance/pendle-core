@@ -1,4 +1,5 @@
 import { Contract, providers, Wallet } from "ethers";
+import hre from 'hardhat';
 import PendleCompoundMarket from "../../../build/artifacts/contracts/core/compound/PendleCompoundMarket.sol/PendleCompoundMarket.json";
 import MockPendleAaveMarket from "../../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json";
 import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
@@ -9,7 +10,6 @@ import {
 } from './compoundForge.fixture';
 import { CoreFixture } from "./core.fixture";
 import { RouterFixture, routerFixtureNoMint } from "./router.fixture";
-import hre from 'hardhat';
 const { waffle } = hre;
 const { deployContract, loadFixture } = waffle;
 
@@ -20,6 +20,7 @@ export interface MarketFixture {
   cForge: CompoundFixture,
   testToken: Contract,
   a2Market: Contract,
+  a2Market18: Contract,
   cMarket: Contract,
   marketEth: Contract,
 }
@@ -35,7 +36,8 @@ export async function marketFixture(
   const { router, a2MarketFactory, cMarketFactory, data } = core;
   const {
     a2FutureYieldToken,
-    aaveV2Forge
+    aaveV2Forge,
+    a2FutureYieldToken18
   } = a2Forge;
   const {
     cFutureYieldToken,
@@ -82,6 +84,14 @@ export async function marketFixture(
     consts.HIGH_GAS_OVERRIDE
   );
 
+  // a2XYT18 - testToken
+  await router.createMarket(
+    consts.MARKET_FACTORY_AAVE_V2,
+    a2FutureYieldToken18.address,
+    testToken.address,
+    consts.HIGH_GAS_OVERRIDE
+  );
+
   // cXYT - testToken
   await router.createMarket(
     consts.MARKET_FACTORY_COMPOUND,
@@ -104,6 +114,12 @@ export async function marketFixture(
     testToken.address
   );
 
+  const a2Market18Address = await data.getMarket(
+    consts.MARKET_FACTORY_AAVE_V2,
+    a2FutureYieldToken18.address,
+    testToken.address
+  );
+
   const cMarketAddress = await data.getMarket(
     consts.MARKET_FACTORY_COMPOUND,
     cFutureYieldToken.address,
@@ -117,6 +133,11 @@ export async function marketFixture(
   );
 
   const a2Market = new Contract(
+    a2MarketAddress,
+    MockPendleAaveMarket.abi,
+    alice
+  );
+  const a2Market18 = new Contract(
     a2MarketAddress,
     MockPendleAaveMarket.abi,
     alice
@@ -136,5 +157,5 @@ export async function marketFixture(
     await testToken.connect(person).approve(router.address, totalSupply);
   }
 
-  return { routerFix, core, a2Forge, cForge, testToken, a2Market, cMarket, marketEth }
+  return { routerFix, core, a2Forge, cForge, testToken, a2Market, a2Market18, cMarket, marketEth }
 }

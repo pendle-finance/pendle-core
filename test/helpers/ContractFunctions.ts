@@ -1,6 +1,6 @@
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
+import { consts, Token, tokens } from '.';
 import { TestEnv } from '../core/fixtures';
-import { consts, Token, tokens } from '../helpers';
 
 let USDT: Token = tokens.USDT;
 

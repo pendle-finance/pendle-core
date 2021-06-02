@@ -28,11 +28,14 @@ export interface TestEnv {
   xyt: Contract;
   xyt18: Contract;
   yUSDT: Contract;
+  yUNI: Contract;
   testToken: Contract;
   market: Contract;
+  market18: Contract;
   marketEth: Contract;
   pdl: Contract;
   liq: Contract;
+  liq18: Contract;
   USDTContract: Contract;
 
   // test params
@@ -73,6 +76,7 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
     env.xyt18 = fixture.a2Forge.a2FutureYieldToken18;
     env.rewardManager = fixture.a2Forge.a2RewardManager;
     env.yUSDT = await getA2Contract(alice, env.forge, tokens.USDT);
+    env.yUNI = await getA2Contract(alice, env.forge, tokens.UNI);
     env.FORGE_ID = consts.FORGE_AAVE_V2;
     env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
   }
@@ -84,6 +88,7 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
     // no xyt18
     env.rewardManager = fixture.cForge.cRewardManager;
     env.yUSDT = await getCContract(alice, tokens.USDT);
+    // no yUNI
     env.FORGE_ID = consts.FORGE_COMPOUND;
     env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_COMPOUND_TOKEN_AMOUNT;
   }
@@ -99,11 +104,13 @@ export async function parseTestEnvMarketFixture(alice: Wallet, mode: Mode, env: 
   if (env.mode == Mode.AAVE_V2) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE_V2;
     env.market = fixture.a2Market;
+    env.market18 = fixture.a2Market18;
     env.marketEth = fixture.marketEth;
   }
   else if (env.mode == Mode.COMPOUND) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_COMPOUND;
     env.market = fixture.cMarket;
+    // no market18
     // no marketEth for Compound
   }
 }
@@ -118,9 +125,11 @@ export async function parseTestEnvLiquidityMiningFixture(alice: Wallet, mode: Mo
 
   if (env.mode == Mode.AAVE_V2) {
     env.liq = fixture.a2LiquidityMining;
+    env.liq18 = fixture.a2LiquidityMining18;
   }
   else if (env.mode == Mode.COMPOUND) {
     env.liq = fixture.cLiquidityMining;
+    // no liq18
   }
 
 }
