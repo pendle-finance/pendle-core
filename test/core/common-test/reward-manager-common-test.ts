@@ -333,7 +333,7 @@ export function runTest(mode: Mode) {
       }
     });
     
-    it.only("updateFrequency should work correctly", async () => {
+    it("updateFrequency should work correctly", async () => {
       /*
         Scenario: Set updateFrequency to 4
         Flow:
