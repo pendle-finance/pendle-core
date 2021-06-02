@@ -42,6 +42,7 @@ export const consts = {
   T0_A2: BN.from(1623715050), // the time that the first AaveV2_XYT is minted
   T0_C: BN.from(1623715100), // the time that the first Compound_XYT is minted
   HIGH_GAS_OVERRIDE: { gasLimit: 80000000 },
+  LOW_GAS_OVERRIDE: { gasLimit: 200000 },
   INITIAL_AAVE_USDT_AMOUNT: BN.from(10 ** 5),
   INITIAL_COMPOUND_USDT_AMOUNT: BN.from(10 ** 7),
   INITIAL_AAVE_TOKEN_AMOUNT: BN.from(10 ** 4),
