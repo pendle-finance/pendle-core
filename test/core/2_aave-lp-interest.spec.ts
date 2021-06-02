@@ -9,7 +9,6 @@ import {
   emptyToken,
   evm_revert,
   evm_snapshot,
-  mintOtAndXyt,
   redeemDueInterests,
   redeemLpInterests,
   removeMarketLiquidityDual,
@@ -17,6 +16,7 @@ import {
   swapExactInXytToToken,
   Token,
   tokens,
+  mintXytAave
 } from '../helpers';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
 
@@ -55,7 +55,7 @@ describe('Aave-lp-interest', async () => {
       await emptyToken(env.xyt, user);
     }
 
-    await mintOtAndXytUSDT(alice, amountXytRef.div(10 ** 6).mul(4));
+    await mintXytUSDT(alice, amountXytRef.div(10 ** 6).mul(4));
     amountXytRef = (await env.xyt.balanceOf(alice.address)).div(4);
     for (let user of [bob, charlie, dave]) {
       await env.ot.transfer(user.address, amountXytRef);
@@ -77,8 +77,8 @@ describe('Aave-lp-interest', async () => {
     snapshotId = await evm_snapshot();
   });
 
-  async function mintOtAndXytUSDT(user: Wallet, amount: BN) {
-    await mintOtAndXyt(USDT, user, amount, env.routerFixture);
+  async function mintXytUSDT(user: Wallet, amount: BN) {
+    await mintXytAave(USDT, user, amount, env.routerFixture, consts.T0_A2.add(consts.SIX_MONTH));
   }
 
   async function getLPBalance(user: Wallet) {
@@ -92,7 +92,7 @@ describe('Aave-lp-interest', async () => {
   }
 
   it('Users should still receive correct amount of LP interest if markets have many addMarketLiquidityDual & swapExactInXytToToken actions', async () => {
-    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+    await mintXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapMarket(env, alice, BN.from(10).pow(10));
 
@@ -135,7 +135,7 @@ describe('Aave-lp-interest', async () => {
   });
 
   it('Users should still receive correct amount of LP interest if markets have many addMarketLiquiditySingle & swapExactInXytToToken actions', async () => {
-    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+    await mintXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapMarket(env, alice, BN.from(10).pow(10));
 
@@ -180,7 +180,7 @@ describe('Aave-lp-interest', async () => {
   });
 
   // xit("test 3", async () => {
-  //   await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+  //   await mintXytUSDT(eve, BN.from(10).pow(5));
 
   //   await bootstrapMarket(env,alice,BN.from(10).pow(10));
 
@@ -246,7 +246,7 @@ describe('Aave-lp-interest', async () => {
   // });
 
   it('Users should still receive correct amount of LP interest if markets have many addMarketLiquiditySingle, removeMarketLiquidityDual, removeMarketLiquiditySingle, swapExactInXytToToken actions', async () => {
-    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+    await mintXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapMarket(env, alice, BN.from(10).pow(10));
     await advanceTime(consts.ONE_DAY.mul(5));

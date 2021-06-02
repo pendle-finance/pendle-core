@@ -10,9 +10,9 @@ import {
   getCContract,
   getERC20Contract,
   mint,
-  mintOtAndXyt,
   Token,
   tokens,
+  mintXytCompound
 } from '../helpers';
 import { marketFixture, MarketFixture } from './fixtures';
 import hre from 'hardhat';
@@ -58,15 +58,15 @@ describe('compound-lp-interest', async () => {
         tokenUSDT.address,
         consts.T0_C.add(consts.SIX_MONTH),
         user.address,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
       await emptyToken(ot, user);
       await emptyToken(xyt, user);
       await emptyToken(cUSDT, user);
     }
 
-    let res = await mintOtAndXytUSDT(alice, amountUSDTRef.div(10 ** 6).mul(4));
-    amountCTokenRef = res.CTokenMinted.div(4);
+    let res = await mintXytUSDT(alice, amountUSDTRef.div(10 ** 6).mul(4));
+    amountCTokenRef = res.div(4);
 
     amountXytRef = (await xyt.balanceOf(alice.address)).div(4);
     for (let user of [bob, charlie, dave]) {
@@ -99,7 +99,7 @@ describe('compound-lp-interest', async () => {
       testToken.address,
       amount,
       (await testToken.balanceOf(alice.address)).div(1000),
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
   }
 
@@ -114,7 +114,7 @@ describe('compound-lp-interest', async () => {
         consts.INF,
         amountXyt,
         BN.from(0),
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
   }
 
@@ -128,7 +128,7 @@ describe('compound-lp-interest', async () => {
         false,
         amount,
         BN.from(0),
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
   }
 
@@ -142,7 +142,7 @@ describe('compound-lp-interest', async () => {
         true,
         amount,
         BN.from(0),
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
   }
 
@@ -156,7 +156,7 @@ describe('compound-lp-interest', async () => {
         amount,
         BN.from(0),
         BN.from(0),
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
   }
 
@@ -170,7 +170,7 @@ describe('compound-lp-interest', async () => {
         true,
         amount,
         BN.from(0),
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
   }
 
@@ -184,12 +184,12 @@ describe('compound-lp-interest', async () => {
         false,
         amount,
         BN.from(0),
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
   }
 
-  async function mintOtAndXytUSDT(user: Wallet, amount: BN): Promise<{ A2TokenMinted: BN; CTokenMinted: BN }> {
-    return await mintOtAndXyt(tokenUSDT, user, amount, fixture.routerFix);
+  async function mintXytUSDT(user: Wallet, amount: BN): Promise<BN> {
+    return await mintXytCompound(tokenUSDT, user, amount, fixture.routerFix, consts.T0_C.add(consts.SIX_MONTH));
   }
 
   async function swapExactInXytToToken(user: Wallet, inAmount: BN) {
@@ -201,7 +201,7 @@ describe('compound-lp-interest', async () => {
         inAmount,
         BN.from(0),
         consts.MARKET_FACTORY_COMPOUND,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
   }
 
@@ -216,13 +216,13 @@ describe('compound-lp-interest', async () => {
 
   async function claimAll() {
     for (let user of [alice, bob, charlie, dave]) {
-      await router.redeemLpInterests(market.address, user.address, consts.HIGH_GAS_OVERRIDE);
+      await router.redeemLpInterests(market.address, user.address, consts.HG);
       await router.redeemDueInterests(
         consts.FORGE_COMPOUND,
         tokenUSDT.address,
         consts.T0_C.add(consts.SIX_MONTH),
         user.address,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
     }
   }
@@ -238,7 +238,7 @@ describe('compound-lp-interest', async () => {
   }
 
   it('test 1', async () => {
-    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+    await mintXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
@@ -290,7 +290,7 @@ describe('compound-lp-interest', async () => {
   });
 
   it('test 2', async () => {
-    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+    await mintXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
@@ -344,7 +344,7 @@ describe('compound-lp-interest', async () => {
   });
 
   it('test 3', async () => {
-    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+    await mintXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
     await addFakeIncome(tokenUSDT, eve, FAKE_INCOME_AMOUNT);
@@ -400,13 +400,13 @@ describe('compound-lp-interest', async () => {
 
     await advanceTime(consts.ONE_DAY);
     for (let user of [dave, charlie, bob, alice]) {
-      await router.redeemLpInterests(market.address, user.address, consts.HIGH_GAS_OVERRIDE);
+      await router.redeemLpInterests(market.address, user.address, consts.HG);
       await router.redeemDueInterests(
         consts.FORGE_COMPOUND,
         tokenUSDT.address,
         consts.T0_C.add(consts.SIX_MONTH),
         user.address,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
     }
 
@@ -418,7 +418,7 @@ describe('compound-lp-interest', async () => {
   });
 
   it('test 4', async () => {
-    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+    await mintXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
 
@@ -463,7 +463,7 @@ describe('compound-lp-interest', async () => {
   });
 
   it('test 5', async () => {
-    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+    await mintXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
 
@@ -507,7 +507,7 @@ describe('compound-lp-interest', async () => {
   });
 
   it('test 6', async () => {
-    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+    await mintXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapSampleMarket(BN.from(10).pow(10));
 

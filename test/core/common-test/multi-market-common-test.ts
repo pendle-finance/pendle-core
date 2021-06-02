@@ -31,7 +31,7 @@ export async function MultiExpiryMarketTest(environments: TestEnv[], wallets: an
   }
 
 
-  let currentTime = (await env0.testToken.getTime(consts.HIGH_GAS_OVERRIDE)).sub(env0.T0);
+  let currentTime = (await env0.testToken.getTime(consts.HG)).sub(env0.T0);
 
   async function checkOutcome(outcomes: any) {
     for (let i = 0; i + 1 < nMarket; ++i) {

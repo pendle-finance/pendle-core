@@ -53,11 +53,11 @@ export function runTest(mode: Mode) {
 
     async function checkLiquidityMiningEmergency() {
       await expect(
-        env.liq.fund([BN.from(10 ** 9), BN.from(10 ** 9)], consts.HIGH_GAS_OVERRIDE)
+        env.liq.fund([BN.from(10 ** 9), BN.from(10 ** 9)], consts.HG)
       ).to.be.revertedWith(errMsg.LIQ_MINING_PAUSED);
 
       await expect(
-        env.liq.topUpRewards([BN.from(100), BN.from(101)], [BN.from(1000), BN.from(1000)], consts.HIGH_GAS_OVERRIDE)
+        env.liq.topUpRewards([BN.from(100), BN.from(101)], [BN.from(1000), BN.from(1000)], consts.HG)
       ).to.be.revertedWith(errMsg.LIQ_MINING_PAUSED);
 
       await expect(
@@ -85,20 +85,20 @@ export function runTest(mode: Mode) {
     }
 
     it("Should not be able to take liqMining actions while paused", async () => {
-      await env.pausingManager.setPausingAdmin(bob.address, true, consts.HIGH_GAS_OVERRIDE);
-      await env.pausingManager.connect(bob).setLiqMiningPaused(env.liq.address, true, consts.HIGH_GAS_OVERRIDE);
+      await env.pausingManager.setPausingAdmin(bob.address, true, consts.HG);
+      await env.pausingManager.connect(bob).setLiqMiningPaused(env.liq.address, true, consts.HG);
       await checkLiquidityMiningEmergency();
     });
 
     it("Should not be able to take liqMining actions after locked", async () => {
-      await env.pausingManager.setPausingAdmin(bob.address, true, consts.HIGH_GAS_OVERRIDE);
-      await env.pausingManager.setLiqMiningLocked(env.liq.address, consts.HIGH_GAS_OVERRIDE);
+      await env.pausingManager.setPausingAdmin(bob.address, true, consts.HG);
+      await env.pausingManager.setLiqMiningLocked(env.liq.address, consts.HG);
       await checkLiquidityMiningEmergency();
     });
 
     it("Should be able to withdraw Lp and PENDLE during emergency", async () => {
-      let rewardLeft:BN = BN.from(0);
-      for(let reward of env.liqParams.REWARDS_PER_EPOCH) {
+      let rewardLeft: BN = BN.from(0);
+      for (let reward of env.liqParams.REWARDS_PER_EPOCH) {
         rewardLeft = rewardLeft.add(reward);
       }
       let balanceWithoutReward: BN = (await env.pdl.balanceOf(env.liq.address)).sub(rewardLeft);
@@ -106,12 +106,12 @@ export function runTest(mode: Mode) {
       const amount = BN.from(10 ** 5);
 
       await advanceTime(env.liqParams.EPOCH_DURATION);
-      
+
       await stake(env, alice, amount);
       let lpHolder = await env.liq.lpHolderForExpiry(env.EXPIRY);
 
       await advanceTime(env.liqParams.EPOCH_DURATION);
-      
+
       await stake(env, bob, amount);
       await withdraw(env, alice, amount.div(2));
 
@@ -124,21 +124,21 @@ export function runTest(mode: Mode) {
       await redeemRewards(env, bob);
       await redeemRewards(env, charlie);
 
-      for(let person of [alice, bob, charlie]) {
+      for (let person of [alice, bob, charlie]) {
         rewardLeft = rewardLeft.sub((await env.pdl.balanceOf(person.address)));
       }
 
 
 
-      await env.pausingManager.setPausingAdmin(bob.address, true, consts.HIGH_GAS_OVERRIDE);
-      await env.pausingManager.setLiqMiningLocked(env.liq.address, consts.HIGH_GAS_OVERRIDE);
+      await env.pausingManager.setPausingAdmin(bob.address, true, consts.HG);
+      await env.pausingManager.setLiqMiningLocked(env.liq.address, consts.HG);
 
       await env.liq.setUpEmergencyMode(
         [env.pdl.address],
         [env.EXPIRY],
         [env.market.address],
         dave.address,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
 
 
@@ -150,7 +150,7 @@ export function runTest(mode: Mode) {
         lpHolder,
         eve.address,
         await env.market.balanceOf(lpHolder),
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
 
 
@@ -159,7 +159,7 @@ export function runTest(mode: Mode) {
           env.liq.address,
           eve.address,
           balanceWithoutReward.add(rewardLeft).add(1),
-          consts.HIGH_GAS_OVERRIDE
+          consts.HG
         )
       ).to.be.reverted;
 
@@ -167,7 +167,7 @@ export function runTest(mode: Mode) {
         env.liq.address,
         eve.address,
         await balanceWithoutReward.add(rewardLeft),
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
 
       approxBigNumber(

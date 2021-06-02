@@ -4,7 +4,7 @@ import PendleCompoundLiquidityMining from "../../../build/artifacts/contracts/co
 import PendleWhitelist from "../../../build/artifacts/contracts/core/PendleWhitelist.sol/PendleWhitelist.json";
 import MockPendleAaveLiquidityMining from "../../../build/artifacts/contracts/mock/MockPendleAaveLiquidityMining.sol/MockPendleAaveLiquidityMining.json";
 import PENDLE from "../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
-import { amountToWei, consts, mintAaveXytWithExpiry, tokens } from '../../helpers';
+import { amountToWei, consts, mintXytAave, tokens } from '../../helpers';
 import { CompoundFixture } from './compoundForge.fixture';
 import { CoreFixture } from './core.fixture';
 import { marketFixture, MarketFixture } from './market.fixture';
@@ -81,10 +81,10 @@ export async function liquidityMiningFixture(
     testToken.address,
     amount,
     amount,
-    consts.HIGH_GAS_OVERRIDE
+    consts.HG
   );
 
-  await mintAaveXytWithExpiry(tokens.UNI, alice, amount.div(10 ** 6), marketFix.routerFix, consts.T0_A2.add(consts.SIX_MONTH));
+  await mintXytAave(tokens.UNI, alice, amount.div(10 ** 6), marketFix.routerFix, consts.T0_A2.add(consts.SIX_MONTH));
 
   await router.bootstrapMarket(
     consts.MARKET_FACTORY_AAVE_V2,
@@ -92,7 +92,7 @@ export async function liquidityMiningFixture(
     testToken.address,
     amount.mul(consts.ONE_E_12),
     amount.mul(consts.ONE_E_12),
-    consts.HIGH_GAS_OVERRIDE
+    consts.HG
   );
 
   await router.bootstrapMarket(
@@ -101,7 +101,7 @@ export async function liquidityMiningFixture(
     testToken.address,
     amount,
     amount,
-    consts.HIGH_GAS_OVERRIDE
+    consts.HG
   );
 
   let pdl = await deployContract(alice, PENDLE, [alice.address, alice.address, alice.address, alice.address, alice.address]);
@@ -184,17 +184,17 @@ export async function liquidityMiningFixture(
   await a2LiquidityMining.setAllocationSetting(
     [consts.T0_A2.add(consts.SIX_MONTH)],
     [params.TOTAL_NUMERATOR],
-    consts.HIGH_GAS_OVERRIDE
+    consts.HG
   );
   await a2LiquidityMining18.setAllocationSetting(
     [consts.T0_A2.add(consts.SIX_MONTH)],
     [params.TOTAL_NUMERATOR],
-    consts.HIGH_GAS_OVERRIDE
+    consts.HG
   );
   await cLiquidityMining.setAllocationSetting(
     [consts.T0_C.add(consts.SIX_MONTH)],
     [params.TOTAL_NUMERATOR],
-    consts.HIGH_GAS_OVERRIDE
+    consts.HG
   );
 
   for (var person of [bob, charlie, dave]) {

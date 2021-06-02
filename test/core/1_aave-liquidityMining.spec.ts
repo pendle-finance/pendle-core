@@ -90,9 +90,9 @@ describe('aave-liquidityMining', async () => {
     await stake(env, bob, INITIAL_LP_AMOUNT.div(2));
 
     await setTimeNextBlock(env.liqParams.START_TIME.add(consts.ONE_MONTH.mul(2)));
-    await env.liq.redeemLpInterests(env.EXPIRY, bob.address, consts.HIGH_GAS_OVERRIDE);
+    await env.liq.redeemLpInterests(env.EXPIRY, bob.address, consts.HG);
     await redeemLpInterests(env, bob);
-    await env.liq.redeemLpInterests(env.EXPIRY, bob.address, consts.HIGH_GAS_OVERRIDE);
+    await env.liq.redeemLpInterests(env.EXPIRY, bob.address, consts.HG);
     let actualGainBob = (await env.yUSDT.balanceOf(bob.address)).sub(preBalanceBob);
 
     await redeemDueInterests(env, charlie);
@@ -116,7 +116,7 @@ describe('aave-liquidityMining', async () => {
           env.liqParams.TOTAL_NUMERATOR.div(3),
           env.liqParams.TOTAL_NUMERATOR.div(3),
         ],
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       )
     ).to.be.revertedWith(errMsg.INVALID_ALLOCATION);
   });

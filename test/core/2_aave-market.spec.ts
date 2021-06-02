@@ -263,13 +263,13 @@ describe('AaveV2-market', async () => {
 
   it('createMarket with a duplicated pair of XYT/token is not possible', async () => {
     await expect(
-      env.router.createMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.testToken.address, consts.HIGH_GAS_OVERRIDE)
+      env.router.createMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.testToken.address, consts.HG)
     ).to.be.revertedWith('EXISTED_MARKET');
   });
 
   it('createMarket using XYT as the quote pair is not possible', async () => {
     await expect(
-      env.router.createMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.xyt18.address, consts.HIGH_GAS_OVERRIDE)
+      env.router.createMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.xyt18.address, consts.HG)
     ).to.be.revertedWith('XYT_QUOTE_PAIR_FORBIDDEN');
   });
 

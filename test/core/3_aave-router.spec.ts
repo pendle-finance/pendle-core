@@ -234,7 +234,7 @@ describe('aaveV2-router', async () => {
       USDT.address,
       env.T0.add(consts.ONE_YEAR),
       consts.RONE.div(2), // 50%
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
 
     await env.router.renewYield(
@@ -243,7 +243,7 @@ describe('aaveV2-router', async () => {
       USDT.address,
       env.T0.add(consts.ONE_YEAR),
       consts.RONE.div(2),
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
 
     await setTimeNextBlock(env.T0.add(consts.ONE_MONTH.mul(11)));

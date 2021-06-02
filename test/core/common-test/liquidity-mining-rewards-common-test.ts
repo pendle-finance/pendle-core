@@ -79,7 +79,7 @@ export function runTest(mode: Mode) {
         await env.liq.setAllocationSetting(
           [env.EXPIRY, consts.T0_A2.add(consts.THREE_MONTH)],
           [alloc_setting[currentEpoch], env.liqParams.TOTAL_NUMERATOR.sub(alloc_setting[currentEpoch])],
-          consts.HIGH_GAS_OVERRIDE
+          consts.HG
         );
       }
     }

@@ -64,7 +64,7 @@ describe('router-negative-test', async () => {
       consts.T0_A2.add(consts.SIX_MONTH),
       amount,
       user.address,
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
     amountTokenMinted = (await ot.balanceOf(user.address)).sub(amountTokenMinted);
     return amountTokenMinted;
@@ -102,7 +102,7 @@ describe('router-negative-test', async () => {
         tokenUSDT.address,
         consts.T0_A2.add(consts.SIX_MONTH),
         refAmount,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       )
     ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
   });
@@ -185,7 +185,7 @@ describe('router-negative-test', async () => {
         consts.T0_A2.add(consts.SIX_MONTH),
         BN.from(1000000),
         alice.address,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       )
     ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
   });

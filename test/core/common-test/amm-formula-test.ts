@@ -130,7 +130,7 @@ export async function AMMCheckLPNearCloseTest(env: TestEnv) {
 }
 
 export async function MarketFeesTest(env: TestEnv, useSwapIn: boolean) {
-  await env.data.setMarketFees(toFixedPoint('0.0035'), toFixedPoint('0.2'), consts.HIGH_GAS_OVERRIDE);
+  await env.data.setMarketFees(toFixedPoint('0.0035'), toFixedPoint('0.2'), consts.HG);
 
   const amount = amountToWei(BN.from(1000), 6);
   await bootstrapMarket(env, alice, amount);
@@ -150,7 +150,7 @@ export async function MarketFeesTest(env: TestEnv, useSwapIn: boolean) {
 }
 
 export async function ProtocolFeeTest(env: TestEnv, useSwapIn: boolean) {
-  await env.data.setMarketFees(toFixedPoint('0.0035'), toFixedPoint('0.2'), consts.HIGH_GAS_OVERRIDE);
+  await env.data.setMarketFees(toFixedPoint('0.0035'), toFixedPoint('0.2'), consts.HG);
 
   const amount = BN.from(10 ** 10);
   const constSwapAmount = BN.from(1500500 * 15);
@@ -200,14 +200,14 @@ export async function ProtocolFeeTest(env: TestEnv, useSwapIn: boolean) {
 export async function marketBalanceNonZeroTest(env: TestEnv) {
   const MINIMUM_LIQUIDITY = BN.from(1000);
   const amount = BN.from(10000);
-  
+
   await bootstrapMarket(env, alice, amount);
   const lastAmount = await env.xyt.balanceOf(alice.address);
   await expect(
     env.router.connect(alice).removeMarketLiquidityDual(env.FORGE_ID, env.xyt.address, env.testToken.address, amount, 0, 0)
   ).to.be.revertedWith(errMsg.XYT_BALANCE_ERROR);
-  await env.router.connect(alice).removeMarketLiquidityDual(env.FORGE_ID, env.xyt.address, env.testToken.address, amount.sub(MINIMUM_LIQUIDITY), 0, 0, consts.HIGH_GAS_OVERRIDE);
-  
+  await env.router.connect(alice).removeMarketLiquidityDual(env.FORGE_ID, env.xyt.address, env.testToken.address, amount.sub(MINIMUM_LIQUIDITY), 0, 0, consts.HG);
+
   approxBigNumber(
     (await env.xyt.balanceOf(alice.address)).sub(lastAmount),
     amount.sub(MINIMUM_LIQUIDITY),
@@ -220,7 +220,7 @@ export async function marketBalanceNonZeroSwapTest(env: TestEnv) {
   const amount = BN.from(1000000000);
   await bootstrapMarket(env, alice, amount, BN.from(1));
   await setTimeNextBlock(env.EXPIRY.sub(consts.ONE_DAY.add(consts.ONE_HOUR)));
-  await expect(swapExactInTokenToXyt(env, alice, BN.from(1000000000))).to.be.revertedWith(errMsg.XYT_BALANCE_ERROR);  
+  await expect(swapExactInTokenToXyt(env, alice, BN.from(1000000000))).to.be.revertedWith(errMsg.XYT_BALANCE_ERROR);
 }
 
 async function runTestTokenToXyt(

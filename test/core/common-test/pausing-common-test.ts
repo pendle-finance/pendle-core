@@ -46,18 +46,18 @@ export async function runTest(mode: Mode) {
   }
 
   async function checkYieldContractPaused() {
-    await expect(env.router.tokenizeYield(...forgeArgs, 1, alice.address, consts.HIGH_GAS_OVERRIDE)).to.be.revertedWith(
+    await expect(env.router.tokenizeYield(...forgeArgs, 1, alice.address, consts.HG)).to.be.revertedWith(
       errMsg.YIELD_CONTRACT_PAUSED
     );
-    await expect(env.router.redeemUnderlying(...forgeArgs, 1, consts.HIGH_GAS_OVERRIDE)).to.be.revertedWith(
-      errMsg.YIELD_CONTRACT_PAUSED
-    );
-
-    await expect(env.xyt.transfer(charlie.address, 1, consts.HIGH_GAS_OVERRIDE)).to.be.revertedWith(
+    await expect(env.router.redeemUnderlying(...forgeArgs, 1, consts.HG)).to.be.revertedWith(
       errMsg.YIELD_CONTRACT_PAUSED
     );
 
-    await expect(env.ot.transfer(charlie.address, 1, consts.HIGH_GAS_OVERRIDE)).to.be.revertedWith(
+    await expect(env.xyt.transfer(charlie.address, 1, consts.HG)).to.be.revertedWith(
+      errMsg.YIELD_CONTRACT_PAUSED
+    );
+
+    await expect(env.ot.transfer(charlie.address, 1, consts.HG)).to.be.revertedWith(
       errMsg.YIELD_CONTRACT_PAUSED
     );
     //TODO: the functions with expired yield contract are remained untested
@@ -67,44 +67,44 @@ export async function runTest(mode: Mode) {
         env.USDTContract.address,
         env.EXPIRY,
         bob.address,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       )
     ).to.be.revertedWith(errMsg.YIELD_CONTRACT_PAUSED);
 
     await expect(
-      env.forge.withdrawForgeFee(env.USDTContract.address, env.EXPIRY, consts.HIGH_GAS_OVERRIDE)
+      env.forge.withdrawForgeFee(env.USDTContract.address, env.EXPIRY, consts.HG)
     ).to.be.revertedWith(errMsg.YIELD_CONTRACT_PAUSED);
   }
 
   async function checkYieldContractUnpaused() {
-    await env.router.tokenizeYield(...forgeArgs, 1, alice.address, consts.HIGH_GAS_OVERRIDE);
-    await env.router.redeemUnderlying(...forgeArgs, 1, consts.HIGH_GAS_OVERRIDE);
-    await env.xyt.transfer(charlie.address, 1, consts.HIGH_GAS_OVERRIDE);
-    await env.ot.transfer(charlie.address, 1, consts.HIGH_GAS_OVERRIDE);
+    await env.router.tokenizeYield(...forgeArgs, 1, alice.address, consts.HG);
+    await env.router.redeemUnderlying(...forgeArgs, 1, consts.HG);
+    await env.xyt.transfer(charlie.address, 1, consts.HG);
+    await env.ot.transfer(charlie.address, 1, consts.HG);
     //TODO: refactor checkYieldContractPaused and checkYieldContractUnpaused
     await env.router.redeemDueInterests(
       env.FORGE_ID,
       env.USDTContract.address,
       env.EXPIRY,
       bob.address,
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
 
-    await env.forge.withdrawForgeFee(env.USDTContract.address, env.EXPIRY, consts.HIGH_GAS_OVERRIDE);
+    await env.forge.withdrawForgeFee(env.USDTContract.address, env.EXPIRY, consts.HG);
   }
 
   async function checkMarketPaused() {
-    await expect(env.router.bootstrapMarket(...marketArgs, 1000, 1000, consts.HIGH_GAS_OVERRIDE)).to.be.revertedWith(
+    await expect(env.router.bootstrapMarket(...marketArgs, 1000, 1000, consts.HG)).to.be.revertedWith(
       errMsg.MARKET_PAUSED
     );
     await expect(
-      env.router.addMarketLiquidityDual(...marketArgs, 1000, 1000, 0, 0, consts.HIGH_GAS_OVERRIDE)
+      env.router.addMarketLiquidityDual(...marketArgs, 1000, 1000, 0, 0, consts.HG)
     ).to.be.revertedWith(errMsg.MARKET_PAUSED);
     await expect(
-      env.router.removeMarketLiquidityDual(...marketArgs, 1000, 0, 0, consts.HIGH_GAS_OVERRIDE)
+      env.router.removeMarketLiquidityDual(...marketArgs, 1000, 0, 0, consts.HG)
     ).to.be.revertedWith(errMsg.MARKET_PAUSED);
     await expect(
-      env.router.swapExactIn(env.xyt.address, env.testToken.address, 1000, 0, env.MARKET_FACTORY_ID, consts.HIGH_GAS_OVERRIDE)
+      env.router.swapExactIn(env.xyt.address, env.testToken.address, 1000, 0, env.MARKET_FACTORY_ID, consts.HG)
     ).to.be.revertedWith(errMsg.MARKET_PAUSED);
     await expect(
       env.router.swapExactOut(
@@ -113,24 +113,24 @@ export async function runTest(mode: Mode) {
         1000,
         1000000,
         env.MARKET_FACTORY_ID,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       )
     ).to.be.revertedWith(errMsg.MARKET_PAUSED);
-    await expect(env.router.redeemLpInterests(env.market.address, bob.address, consts.HIGH_GAS_OVERRIDE)).to.be.revertedWith(
+    await expect(env.router.redeemLpInterests(env.market.address, bob.address, consts.HG)).to.be.revertedWith(
       errMsg.MARKET_PAUSED
     );
   }
 
   async function checkMarketUnpaused() {
-    await env.router.addMarketLiquidityDual(...marketArgs, 1000, 1000, 0, 0, consts.HIGH_GAS_OVERRIDE);
-    await env.router.removeMarketLiquidityDual(...marketArgs, 1000, 0, 0, consts.HIGH_GAS_OVERRIDE);
+    await env.router.addMarketLiquidityDual(...marketArgs, 1000, 1000, 0, 0, consts.HG);
+    await env.router.removeMarketLiquidityDual(...marketArgs, 1000, 0, 0, consts.HG);
     await env.router.swapExactIn(
       env.xyt.address,
       env.testToken.address,
       1000,
       0,
       env.MARKET_FACTORY_ID,
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
     await env.router.swapExactOut(
       env.xyt.address,
@@ -138,10 +138,10 @@ export async function runTest(mode: Mode) {
       1000,
       1000000,
       env.MARKET_FACTORY_ID,
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
 
-    await env.router.redeemLpInterests(env.market.address, bob.address, consts.HIGH_GAS_OVERRIDE);
+    await env.router.redeemLpInterests(env.market.address, bob.address, consts.HG);
   }
 
   async function checkYieldContractLocked() {
@@ -193,8 +193,8 @@ export async function runTest(mode: Mode) {
     forgeArgs = [env.FORGE_ID, env.USDTContract.address, env.EXPIRY];
     marketArgs = [env.MARKET_FACTORY_ID, env.xyt.address, env.testToken.address];
     // mint some XYTs to alice
-    if (aTokenBalance.toNumber() > 0) await env.router.tokenizeYield(...forgeArgs, aTokenBalance.div(10), alice.address, consts.HIGH_GAS_OVERRIDE);
-    await env.router.bootstrapMarket(...marketArgs, 1000000, 1000000, consts.HIGH_GAS_OVERRIDE);
+    if (aTokenBalance.toNumber() > 0) await env.router.tokenizeYield(...forgeArgs, aTokenBalance.div(10), alice.address, consts.HG);
+    await env.router.bootstrapMarket(...marketArgs, 1000000, 1000000, consts.HG);
     yieldTokenHolder = env.forge.yieldTokenHolders(env.USDTContract.address, env.EXPIRY);
     snapshotId = await evm_snapshot();
   });
@@ -227,7 +227,7 @@ export async function runTest(mode: Mode) {
   });
   describe('Forge pausing', async () => {
     beforeEach(async () => {
-      await env.pausingManager.setPausingAdmin(bob.address, true, consts.HIGH_GAS_OVERRIDE);
+      await env.pausingManager.setPausingAdmin(bob.address, true, consts.HG);
     });
     it('Should be able to pause a particular yield contract', async () => {
       await env.pausingManager

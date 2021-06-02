@@ -3,7 +3,7 @@ import hre from 'hardhat';
 import PendleCompoundMarket from "../../../build/artifacts/contracts/core/compound/PendleCompoundMarket.sol/PendleCompoundMarket.json";
 import MockPendleAaveMarket from "../../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json";
 import TestToken from "../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json";
-import { consts, emptyToken, getA2Contract, getCContract, mintOtAndXyt, tokens } from "../../helpers";
+import { consts, emptyToken, getA2Contract, getCContract, tokens, mintXytAave, mintXytCompound } from "../../helpers";
 import { AaveV2ForgeFixture } from "./aaveV2Forge.fixture";
 import {
   CompoundFixture
@@ -50,13 +50,9 @@ export async function marketFixture(
     6,
   ]);
 
-  const a2Contract = await getA2Contract(alice, a2Forge.aaveV2Forge, tokens.USDT);
-  await emptyToken(a2Contract, alice);
-  const cContract = await getCContract(alice, tokens.USDT);
-  await emptyToken(cContract, alice);
-
   for (var person of [alice, bob, charlie, dave]) {
-    await mintOtAndXyt(token, person, consts.INITIAL_OT_XYT_AMOUNT, routerFix);
+    await mintXytAave(token, person, consts.INITIAL_OT_XYT_AMOUNT, routerFix, consts.T0_A2.add(consts.SIX_MONTH));
+    await mintXytCompound(token, person, consts.INITIAL_OT_XYT_AMOUNT, routerFix, consts.T0_C.add(consts.SIX_MONTH));
   }
 
   const totalSupply = await testToken.totalSupply();
@@ -81,7 +77,7 @@ export async function marketFixture(
     consts.MARKET_FACTORY_AAVE_V2,
     a2FutureYieldToken.address,
     testToken.address,
-    consts.HIGH_GAS_OVERRIDE
+    consts.HG
   );
 
   // a2XYT18 - testToken
@@ -89,7 +85,7 @@ export async function marketFixture(
     consts.MARKET_FACTORY_AAVE_V2,
     a2FutureYieldToken18.address,
     testToken.address,
-    consts.HIGH_GAS_OVERRIDE
+    consts.HG
   );
 
   // cXYT - testToken
@@ -97,7 +93,7 @@ export async function marketFixture(
     consts.MARKET_FACTORY_COMPOUND,
     cFutureYieldToken.address,
     testToken.address,
-    consts.HIGH_GAS_OVERRIDE
+    consts.HG
   );
 
   // a2XYT - WETH
@@ -105,7 +101,7 @@ export async function marketFixture(
     consts.MARKET_FACTORY_AAVE_V2,
     a2FutureYieldToken.address,
     tokens.WETH.address,
-    consts.HIGH_GAS_OVERRIDE
+    consts.HG
   );
 
   const a2MarketAddress = await data.getMarket(

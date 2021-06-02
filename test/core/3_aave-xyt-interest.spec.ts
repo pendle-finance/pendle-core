@@ -122,17 +122,17 @@ describe('aaveV2-xyt-interest', async () => {
     let period = env.EXPIRY.sub(env.T0).div(10);
 
     async function transferXyt(from: Wallet, to: Wallet, amount: BN) {
-      await env.xyt.connect(from).transfer(to.address, amount, consts.HIGH_GAS_OVERRIDE);
+      await env.xyt.connect(from).transfer(to.address, amount, consts.HG);
     }
 
     async function transferYieldToken(from: Wallet, to: Wallet, amount: BN) {
-      await env.yUSDT.connect(from).transfer(to.address, amount, consts.HIGH_GAS_OVERRIDE);
+      await env.yUSDT.connect(from).transfer(to.address, amount, consts.HG);
     }
 
     for (let person of [alice, bob, charlie, dave]) {
       await emptyToken(env.yUSDT, person);
     }
-    await env.yUSDT.connect(eve).transfer(alice.address, amountToTokenize.mul(2), consts.HIGH_GAS_OVERRIDE);
+    await env.yUSDT.connect(eve).transfer(alice.address, amountToTokenize.mul(2), consts.HG);
 
     await tokenizeYield(env, alice, amountToTokenize, alice.address);
     await tokenizeYield(env, alice, amountToTokenize.div(2), bob.address);
@@ -200,7 +200,7 @@ describe('aaveV2-xyt-interest', async () => {
           tokens.USDT.address,
           env.EXPIRY,
           alice.address,
-          consts.HIGH_GAS_OVERRIDE
+          consts.HG
         );
       if (expected != null) approxBigNumber(interestClaimed, expected, 0, true);
       else expect(interestClaimed.toNumber()).to.be.greaterThan(1);
@@ -240,7 +240,7 @@ describe('aaveV2-xyt-interest', async () => {
     /// before expiry
     await advanceTime(consts.THREE_MONTH);
 
-    await env.xyt.connect(bob).transfer(charlie.address, transferAmount, consts.HIGH_GAS_OVERRIDE);
+    await env.xyt.connect(bob).transfer(charlie.address, transferAmount, consts.HG);
 
     /// Fake activity
     await advanceTime(consts.THREE_MONTH.sub(consts.ONE_HOUR));
@@ -248,9 +248,9 @@ describe('aaveV2-xyt-interest', async () => {
 
     /// after expiry
     await advanceTime(consts.SIX_MONTH);
-    await env.xyt.connect(bob).transfer(charlie.address, transferAmount, consts.HIGH_GAS_OVERRIDE);
+    await env.xyt.connect(bob).transfer(charlie.address, transferAmount, consts.HG);
 
-    await env.xyt.connect(charlie).transfer(bob.address, transferAmount.mul(5), consts.HIGH_GAS_OVERRIDE);
+    await env.xyt.connect(charlie).transfer(bob.address, transferAmount.mul(5), consts.HG);
 
     await redeemAfterExpiry(env, bob);
     await redeemAfterExpiry(env, charlie);

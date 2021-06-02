@@ -211,12 +211,12 @@ describe('pendleTokenDistribution [@skip-on-coverage]', async () => {
   });
   it('should be able to delegate and transfer PENDLE', async () => {
     const testAmount = BN.from(13).mul(consts.ONE_E_18);
-    await pendle.connect(salesMultisig).transfer(consts.DUMMY_ADDRESS, testAmount, consts.HIGH_GAS_OVERRIDE);
+    await pendle.connect(salesMultisig).transfer(consts.DUMMY_ADDRESS, testAmount, consts.HG);
 
-    await pendle.delegate(governance.address, consts.HIGH_GAS_OVERRIDE);
+    await pendle.delegate(governance.address, consts.HG);
     const balanceBefore = await pendle.balanceOf(salesMultisig.address);
 
-    await pendle.connect(salesMultisig).transfer(consts.DUMMY_ADDRESS, testAmount, consts.HIGH_GAS_OVERRIDE);
+    await pendle.connect(salesMultisig).transfer(consts.DUMMY_ADDRESS, testAmount, consts.HG);
     const balanceAfter = await pendle.balanceOf(salesMultisig.address);
     expect(balanceAfter).to.be.eq(balanceBefore.sub(testAmount));
   });

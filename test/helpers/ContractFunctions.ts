@@ -11,7 +11,7 @@ export async function tokenizeYield(env: TestEnv, user: Wallet, amount: BN, to?:
   let amountTokenMinted = await env.ot.balanceOf(to);
   await env.router
     .connect(user)
-    .tokenizeYield(env.FORGE_ID, USDT.address, env.EXPIRY, amount, to, consts.HIGH_GAS_OVERRIDE);
+    .tokenizeYield(env.FORGE_ID, USDT.address, env.EXPIRY, amount, to, consts.HG);
   amountTokenMinted = (await env.ot.balanceOf(to)).sub(amountTokenMinted);
   return amountTokenMinted;
 }
@@ -22,7 +22,7 @@ export async function redeemDueInterests(env: TestEnv, user: Wallet, expiry?: BN
   }
   await env.router
     .connect(user)
-    .redeemDueInterests(env.FORGE_ID, USDT.address, expiry, user.address, consts.HIGH_GAS_OVERRIDE);
+    .redeemDueInterests(env.FORGE_ID, USDT.address, expiry, user.address, consts.HG);
 }
 
 export async function redeemAfterExpiry(env: TestEnv, user: Wallet, expiry?: BN) {
@@ -36,7 +36,7 @@ export async function redeemUnderlying(env: TestEnv, user: Wallet, amount: BN, e
   if (expiry == null) {
     expiry = env.EXPIRY;
   }
-  await env.router.connect(user).redeemUnderlying(env.FORGE_ID, USDT.address, expiry, amount, consts.HIGH_GAS_OVERRIDE);
+  await env.router.connect(user).redeemUnderlying(env.FORGE_ID, USDT.address, expiry, amount, consts.HG);
 }
 
 export async function bootstrapMarket(env: TestEnv, user: Wallet, amountXyt: BN, amountToken?: BN) {
@@ -58,7 +58,7 @@ export async function swapExactInTokenToXyt(env: TestEnv, user: Wallet, inAmount
       inAmount,
       BN.from(0),
       env.MARKET_FACTORY_ID,
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
   let postXytBalance = await env.xyt.balanceOf(user.address);
   return postXytBalance.sub(initialXytBalance);
@@ -74,7 +74,7 @@ export async function swapExactInXytToToken(env: TestEnv, user: Wallet, inAmount
       inAmount,
       BN.from(0),
       env.MARKET_FACTORY_ID,
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
   let postTokenBalance = await env.testToken.balanceOf(user.address);
   return postTokenBalance.sub(initialTokenBalance);
@@ -88,7 +88,7 @@ export async function swapExactOutTokenToXyt(env: TestEnv, user: Wallet, outAmou
     outAmount,
     consts.INF,
     env.MARKET_FACTORY_ID,
-    consts.HIGH_GAS_OVERRIDE
+    consts.HG
   );
   let postXytBalance = await env.xyt.balanceOf(user.address);
   return postXytBalance.sub(initialXytBalance);
@@ -102,7 +102,7 @@ export async function swapExactOutXytToToken(env: TestEnv, user: Wallet, outAmou
     outAmount,
     consts.INF,
     env.MARKET_FACTORY_ID,
-    consts.HIGH_GAS_OVERRIDE
+    consts.HG
   );
   let postTokenBalance = await env.testToken.balanceOf(user.address);
   return postTokenBalance.sub(initialTokenBalance);
@@ -118,7 +118,7 @@ export async function addMarketLiquiditySingle(env: TestEnv, user: Wallet, amoun
       useXyt,
       amount,
       BN.from(0),
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
 }
 
@@ -134,7 +134,7 @@ export async function addMarketLiquidityDualXyt(env: TestEnv, user: Wallet, amou
       consts.INF,
       amountXyt,
       BN.from(0),
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
   let postLpBalance = await env.market.balanceOf(user.address);
   return postLpBalance.sub(initialLpBalance);
@@ -153,7 +153,7 @@ export async function addMarketLiquidityDual(env: TestEnv, user: Wallet, amountX
       amountToken,
       BN.from(1),
       BN.from(1),
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
   let postLpBalance = await env.market.balanceOf(user.address);
   return postLpBalance.sub(initialLpBalance);
@@ -169,7 +169,7 @@ export async function removeMarketLiquidityDual(env: TestEnv, user: Wallet, amou
       amount,
       BN.from(0),
       BN.from(0),
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
 }
 
@@ -190,7 +190,7 @@ export async function removeMarketLiquiditySingle(
       forXyt,
       amount,
       BN.from(0),
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
   let postBalance: BN = forXyt ? await env.xyt.balanceOf(user.address) : await env.testToken.balanceOf(user.address);
   return postBalance.sub(initialBalance);
@@ -200,7 +200,7 @@ export async function redeemLpInterests(env: TestEnv, user: Wallet, market?: Con
   if (market == null) {
     market = env.market;
   }
-  await env.router.connect(user).redeemLpInterests(market.address, user.address, consts.HIGH_GAS_OVERRIDE);
+  await env.router.connect(user).redeemLpInterests(market.address, user.address, consts.HG);
 }
 
 export async function getMarketRateExactIn(env: TestEnv, amount: BN): Promise<any[]> {
@@ -223,15 +223,15 @@ export async function getMarketRateExactOut(env: TestEnv, amount: BN): Promise<a
 
 export async function stake(env: TestEnv, user: Wallet, amount: BN, expiry?: BN) {
   if (expiry == null) expiry = env.EXPIRY;
-  await env.liq.connect(user).stake(expiry, amount, consts.HIGH_GAS_OVERRIDE);
+  await env.liq.connect(user).stake(expiry, amount, consts.HG);
 }
 
 export async function withdraw(env: TestEnv, user: Wallet, amount: BN, expiry?: BN) {
   if (expiry == null) expiry = env.EXPIRY;
-  await env.liq.connect(user).withdraw(expiry, amount, consts.HIGH_GAS_OVERRIDE);
+  await env.liq.connect(user).withdraw(expiry, amount, consts.HG);
 }
 
 export async function redeemRewards(env: TestEnv, user: Wallet, expiry?: BN) {
   if (expiry == null) expiry = env.EXPIRY;
-  await env.liq.redeemRewards(expiry, user.address, consts.HIGH_GAS_OVERRIDE);
+  await env.liq.redeemRewards(expiry, user.address, consts.HG);
 }

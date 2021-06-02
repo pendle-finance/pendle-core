@@ -14,54 +14,7 @@ const hre = require('hardhat');
 const { waffle } = require('hardhat');
 const { provider } = waffle;
 
-export async function mintOtAndXyt(
-  token: Token,
-  user: Wallet,
-  amount: BN,
-  env: RouterFixture
-): Promise<{ A2TokenMinted: BN; CTokenMinted: BN }> {
-  let router = env.core.router;
-  const a2Contract = await getA2Contract(user, env.a2Forge.aaveV2Forge, token);
-  const cContract = await getCContract(user, token);
-
-  let preA2TokenBal = await a2Contract.balanceOf(user.address);
-  let preCTokenBal = await cContract.balanceOf(user.address);
-
-  await mintAaveV2Token(token, user, amount);
-  await mintCompoundToken(token, user, amount);
-  await a2Contract.approve(router.address, consts.INF);
-  await cContract.approve(router.address, consts.INF);
-
-  let postA2TokenBal = await a2Contract.balanceOf(user.address);
-  let postCTokenBal = await cContract.balanceOf(user.address);
-
-  await router
-    .connect(user)
-    .tokenizeYield(
-      consts.FORGE_AAVE_V2,
-      token.address,
-      consts.T0_A2.add(consts.SIX_MONTH),
-      postA2TokenBal.sub(preA2TokenBal),
-      user.address,
-      consts.HIGH_GAS_OVERRIDE
-    );
-  await router
-    .connect(user)
-    .tokenizeYield(
-      consts.FORGE_COMPOUND,
-      token.address,
-      consts.T0_C.add(consts.SIX_MONTH),
-      postCTokenBal.sub(preCTokenBal),
-      user.address,
-      consts.HIGH_GAS_OVERRIDE
-    );
-  return {
-    A2TokenMinted: postA2TokenBal.sub(preA2TokenBal),
-    CTokenMinted: postCTokenBal.sub(preCTokenBal),
-  };
-}
-
-export async function mintAaveXytWithExpiry(token: Token, user: Wallet, amount: BN, env: RouterFixture, expiry: BN) {
+export async function mintXytAave(token: Token, user: Wallet, amount: BN, env: RouterFixture, expiry: BN): Promise<BN> {
   let router = env.core.router;
   const a2Contract = await getA2Contract(user, env.a2Forge.aaveV2Forge, token);
   let preA2TokenBal = await a2Contract.balanceOf(user.address);
@@ -76,8 +29,29 @@ export async function mintAaveXytWithExpiry(token: Token, user: Wallet, amount: 
       expiry,
       postA2TokenBal.sub(preA2TokenBal),
       user.address,
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
+  return postA2TokenBal.sub(preA2TokenBal);
+}
+
+export async function mintXytCompound(token: Token, user: Wallet, amount: BN, env: RouterFixture, expiry: BN): Promise<BN> {
+  let router = env.core.router;
+  const cContract = await getCContract(user, token);
+  let preCTokenBal = await cContract.balanceOf(user.address);
+  await mintCompoundToken(token, user, amount);
+  await cContract.approve(router.address, consts.INF);
+  let postCTokenBal = await cContract.balanceOf(user.address);
+  await router
+    .connect(user)
+    .tokenizeYield(
+      consts.FORGE_COMPOUND,
+      token.address,
+      consts.T0_C.add(consts.SIX_MONTH),
+      postCTokenBal.sub(preCTokenBal),
+      user.address,
+      consts.HG
+    );
+  return postCTokenBal.sub(preCTokenBal);
 }
 
 export async function mint(token: Token, alice: Wallet, amount: BN) {

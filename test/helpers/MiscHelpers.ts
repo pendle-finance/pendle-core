@@ -5,7 +5,7 @@ import PendleFutureYieldToken from '../../build/artifacts/contracts/tokens/Pendl
 import { TestEnv } from '../core/fixtures/';
 import { consts, tokens } from './Constants';
 import { amountToWei } from './Numeric';
-import { mint, mintAaveXytWithExpiry } from './TokenHelpers';
+import { mint, mintXytAave } from './TokenHelpers';
 
 const hre = require('hardhat');
 const { waffle } = require('hardhat');
@@ -40,30 +40,30 @@ export async function logTokenBalance(token: Contract, people: Wallet[]) {
 export async function createAaveMarketWithExpiry(env: TestEnv, expiry: BN, wallets: any) {
   const [alice, bob, charlie, dave, eve] = wallets;
 
-  await env.router.newYieldContracts(env.FORGE_ID, tokens.USDT.address, expiry, consts.HIGH_GAS_OVERRIDE);
+  await env.router.newYieldContracts(env.FORGE_ID, tokens.USDT.address, expiry, consts.HG);
 
-  const otAddress = await env.data.otTokens(env.FORGE_ID, tokens.USDT.address, expiry, consts.HIGH_GAS_OVERRIDE);
+  const otAddress = await env.data.otTokens(env.FORGE_ID, tokens.USDT.address, expiry, consts.HG);
 
-  const xytAddress = await env.data.xytTokens(env.FORGE_ID, tokens.USDT.address, expiry, consts.HIGH_GAS_OVERRIDE);
+  const xytAddress = await env.data.xytTokens(env.FORGE_ID, tokens.USDT.address, expiry, consts.HG);
 
   const ownershipToken = new Contract(otAddress, MockPendleOwnershipToken.abi, alice);
 
   const futureYieldToken = new Contract(xytAddress, PendleFutureYieldToken.abi, alice);
 
   for (var person of [alice, bob, charlie, dave]) {
-    await mintAaveXytWithExpiry(tokens.USDT, person, consts.INITIAL_OT_XYT_AMOUNT, env.routerFixture, expiry);
+    await mintXytAave(tokens.USDT, person, consts.INITIAL_OT_XYT_AMOUNT, env.routerFixture, expiry);
   }
 
   const totalSupply = await env.testToken.totalSupply();
   // for (var person of [bob, charlie, dave, eve]) {
-  //   await env.testToken.transfer(person.address, totalSupply.div(5), consts.HIGH_GAS_OVERRIDE);
+  //   await env.testToken.transfer(person.address, totalSupply.div(5), consts.HG);
   // }
 
   await env.router.createMarket(
     env.MARKET_FACTORY_ID,
     futureYieldToken.address,
     env.testToken.address,
-    consts.HIGH_GAS_OVERRIDE
+    consts.HG
   );
 
   const marketAddress = await env.data.getMarket(
