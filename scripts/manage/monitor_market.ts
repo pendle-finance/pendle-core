@@ -54,6 +54,9 @@ async function main() {
   const marketAddress = await pendleData.getMarket(marketFactoryId, xytAddress, baseTokenAddress)
   const market = await hre.ethers.getContractAt("IPendleMarket", marketAddress);
 
+  console.log(`marketId = ${marketFactoryId}`);
+  console.log(`marketAddress = ${market.address}`);
+
 
   //const xyt = await pendleData.xytTokens(forgeId, underlyingAssetContractAddress, expiry);
   //const ot = await pendleData.otTokens(forgeId, underlyingAssetContractAddress, expiry);
@@ -66,26 +69,28 @@ async function main() {
   const lpTotal = await market.totalSupply(); //to print
 
   const underlyingAssetContractAddress = await xytContract.underlyingAsset();
+  console.log(`underlyingAssetContractAddress = ${underlyingAssetContractAddress}`);
+
   const forgeAddress = await xytContract.forge();
   const forge = await hre.ethers.getContractAt("IPendleForge", forgeAddress);
 
+  console.log(`forgeAddress = ${forgeAddress}`);
+  console.log(`forge.address = ${forge.address}`);
 
- // const ATokenAddress = await forgeAddress.reserveATokenAddress(underlyingAssetContractAddress);  //TODO: not sure how to determine it's a aave forge or compound forge
- // const CTokenAddress = await forgeAddress.underlyingToCToken(underlyingAssetContractAddress);  //TODO: not sure how to determine it's a aave forge or compound forge
   const bearingTokenAddress = await forge.getYieldBearingToken(underlyingAssetContractAddress);
   //const bearToken = await hre.ethers.getContractAt("TestToken", bearingTokenAddress);
   const bearToken = await (await hre.ethers.getContractFactory('TestToken')).attach(bearingTokenAddress);
-
   
-  //const aYieldBalance = ATokenAddress.balanceOf(market);  //to print
-  //const cYieldBalance = CTokenAddress.balanceOf(market);  //to print
+  console.log(`bearingTokenaddress = ${bearingTokenAddress}`);
+  console.log(`bearingToken.address = ${bearToken.address}`);
+ /* TODO: @@XM debug to put back
   const yieldBalance = await bearToken.balanceOf(marketAddress);
-
+ 
   //const rewardTokenAddress = await forgeAddress.rewardToken();
   const rewardTokenAddress = await forge.rewardToken();
   const rewardToken = await hre.ethers.getContractAt("TestToken", rewardTokenAddress);
   const rewardTokenBalance = await rewardToken.balanceOf(marketAddress); //to print
-  
+ 
   const timeTillExpiry = await xytContract.expiry() - Math.floor(Date.now() / 1000); //to print
 
   const [,islocked] = await pendlePausingManager.checkMarketStatus(marketFactoryId, marketAddress);  //to print
@@ -94,11 +99,11 @@ async function main() {
   console.log(`weight of XYTs & baseToken = ${xytWeight} , ${tokenWeight}`);
   console.log(`current price (xyt to base) = ${price}`);
   console.log(`total LPs minted = ${lpTotal}`);
-  //console.log(`amount of yieldTokens (aToken/ctoken) in the market = ${aYieldBalance}, ${cYieldBalance}`);
   console.log(`amount of yieldTokens (aToken/ctoken) in the market = ${yieldBalance}`);
   console.log(`amount of reward tokens (stkAAVE/COMP) in the market = ${rewardTokenBalance}`);
   console.log(`time until expiry = ${timeTillExpiry}`);
   console.log(`is locked or not = ${islocked}`);
+  *//*TODO: @@XM debug to put back*/
 }
 
 main()
