@@ -23,7 +23,7 @@ const { loadFixture, provider } = waffle;
 describe('aave-forge-fee', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie, dave] = wallets;
-  const forgeFee = randomBN(consts.RONE.toNumber() / 10);
+  const forgeFee = randomBN(consts.RONE.div(10));
 
   let fixture: RouterFixture;
   let snapshotId: string;
