@@ -40,6 +40,7 @@ interface IPendleMarket is IERC20, IPendleStructs {
      * @param reserve0 The XYT reserves.
      * @param weight0  The XYT weight
      * @param reserve1 The generic token reserves.
+     * For the generic Token weight it can be inferred by (2^40) - weight0
      **/
     event Sync(uint256 reserve0, uint256 weight0, uint256 reserve1);
 
