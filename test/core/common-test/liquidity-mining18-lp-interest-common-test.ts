@@ -68,8 +68,8 @@ export function runTest(mode: Mode) {
       await env.xyt.transfer(eve.address, (await env.xyt.balanceOf(env.market.address)).div(10));
 
       let totalTime = consts.SIX_MONTH;
-      let numTurnsBeforeExpiry = 10;
-      let numTurnsAfterExpiry = 0;
+      let numTurnsBeforeExpiry = 40;
+      let numTurnsAfterExpiry = 10;
       let numTurns = numTurnsBeforeExpiry + numTurnsAfterExpiry;
 
       let liqBalance: BN[] = [BN.from(0), BN.from(0), BN.from(0), BN.from(0)];
@@ -94,7 +94,7 @@ export function runTest(mode: Mode) {
           liqBalance[userID] = liqBalance[userID].sub(amount);
           lpBalance[userID] = lpBalance[userID].add(amount);
         } else if (actionType == 2) {
-          await env.liq.redeemLpInterests(env.EXPIRY, wallets[userID].address);
+          await env.liq.redeemLpInterests(env.EXPIRY, wallets[userID].address, consts.HG);
         }
         // if (mode == Mode.COMPOUND) await addFakeIncomeCompoundUSDT(env, eve);
       }
@@ -102,7 +102,7 @@ export function runTest(mode: Mode) {
       await redeemDueInterests(env, eve);
       let expectedGain: BN = await env.yToken.balanceOf(eve.address);
       for (let i = 1; i < 4; i++) {
-        await env.liq.redeemLpInterests(env.EXPIRY, wallets[i].address);
+        await env.liq.redeemLpInterests(env.EXPIRY, wallets[i].address, consts.HG);
         await redeemLpInterests(env, wallets[i]);
       }
       for (let i = 1; i < 4; i++) {

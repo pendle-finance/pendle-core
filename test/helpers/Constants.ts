@@ -51,7 +51,7 @@ export const consts = {
   INITIAL_AAVE_TOKEN_AMOUNT: BN.from(10 ** 4),
   INITIAL_COMPOUND_TOKEN_AMOUNT: BN.from(10 ** 6),
   INITIAL_OT_XYT_AMOUNT: BN.from(10 ** 4),
-  TEST_TOKEN_DELTA: BN.from(10).pow(2),
+  TEST_TOKEN_DELTA: BN.from(200),
   LOCK_NUMERATOR: BN.from(1),
   LOCK_DENOMINATOR: BN.from(180),
   INTEREST_UPDATE_RATE_DELTA_FOR_MARKET: BN.from(2).pow(40).div(10000), // 0.01% delta
