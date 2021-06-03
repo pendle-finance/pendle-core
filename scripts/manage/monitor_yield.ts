@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 import fs from "fs";
 import path from "path";
-import { BigNumber as BN } from "ethers";
+import {utils, BigNumber as BN } from "ethers";
 
 import {
   devConstants,
@@ -22,7 +22,7 @@ async function main() {
     console.error('Expected three argument!');
     process.exit(1);
   }
-  const forgeId = process.argv[2];
+  const forgeId = utils.formatBytes32String(process.argv[2]);
   const underlyingAssetContractAddress = process.argv[3];
   const expiry = process.argv[4];
   
@@ -47,29 +47,37 @@ async function main() {
   const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
   const pendleData = await getContractFromDeployment(hre, deployment, 'PendleData');
 
-  const xyt = await pendleData.xytTokens(forgeId, underlyingAssetContractAddress, expiry);
-  const ot = await pendleData.otTokens(forgeId, underlyingAssetContractAddress, expiry);
+  const xytAddress = await pendleData.xytTokens(forgeId, underlyingAssetContractAddress, expiry);
+  const otAddress = await pendleData.otTokens(forgeId, underlyingAssetContractAddress, expiry);
+
+  const xyt = await (await hre.ethers.getContractFactory("PendleFutureYieldToken")).attach(xytAddress);
+  const ot = await (await hre.ethers.getContractFactory("PendleOwnershipToken")).attach(otAddress);
 
   //query amount details
   const xytTotal = await xyt.totalSupply(); //to print
   const otTotal = await ot.totalSupply(); // to print 
 
   const forgeAddress = await pendleData.getForgeAddress(forgeId);
-  const yieldTokenHolder = forgeAddress.yieldTokenHolders(underlyingAssetContractAddress, expiry);
-  const ATokenAddress = await forgeAddress.reserveATokenAddress(underlyingAssetContractAddress);  //TODO: not sure how to determine it's a aave forge or compound forge
-  const CTokenAddress = await forgeAddress.underlyingToCToken(underlyingAssetContractAddress);  //TODO: not sure how to determine it's a aave forge or compound forge
+  const forge = await hre.ethers.getContractAt("IPendleForge", forgeAddress);
+  const yieldTokenHolder = forge.yieldTokenHolders(underlyingAssetContractAddress, expiry);
+  //const ATokenAddress = await forgeAddress.reserveATokenAddress(underlyingAssetContractAddress);  //TODO: not sure how to determine it's a aave forge or compound forge
+  //const CTokenAddress = await forgeAddress.underlyingToCToken(underlyingAssetContractAddress);  //TODO: not sure how to determine it's a aave forge or compound forge
+  const bearingTokenAddress = await forge.getYieldBearingToken(underlyingAssetContractAddress);
+  const bearToken = await hre.ethers.getContractAt("TestToken", bearingTokenAddress);
 
-  const aYieldBalance = ATokenAddress.balanceOf(yieldTokenHolder);  //to print
-  const cYieldBalance = CTokenAddress.balanceOf(yieldTokenHolder);  //to print
+  //const aYieldBalance = ATokenAddress.balanceOf(yieldTokenHolder);  //to print
+  //const cYieldBalance = CTokenAddress.balanceOf(yieldTokenHolder);  //to print
 
-  const rewardTokenAddress = await forgeAddress.rewardToken();
-  const rewardTokenBalance = await rewardTokenAddress.balanceOf(yieldTokenHolder); //to print
+  const yieldBalance = bearToken.balanceOf(yieldTokenHolder);
+
+  const rewardTokenAddress = await forge.rewardToken();
+  const rewardToken = await hre.ethers.getContractAt("TestToken", rewardTokenAddress);
+  const rewardTokenBalance = await rewardToken.balanceOf(yieldTokenHolder); //to print
   
-  const forgeFee = await forgeAddress.totalFee(underlyingAssetContractAddress, expiry); //to print
+  const forgeFee = await forge.totalFee(underlyingAssetContractAddress, expiry); //to print
 
   console.log(`total amount of OTs/XYTs = ${otTotal} , ${xytTotal}`);
-  console.log(`total amount of yield tokens (aToken) in the yieldTokenHolder = ${aYieldBalance}`);
-  console.log(`total amount of yield tokens (cToken) in the yieldTokenHolder = ${cYieldBalance}`);
+  console.log(`total amount of yield tokens in the yieldTokenHolder = ${yieldBalance}`);
   console.log(`total amount of reward token (stkAAVE/COMP) in the yieldTokenHolder = ${rewardTokenBalance}`);
   console.log(`forge fees earned so far = ${JSON.stringify(forgeFee)}`);
 }

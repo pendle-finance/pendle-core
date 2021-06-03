@@ -26,8 +26,8 @@ async function main() {
     console.error('Expected three argument!');
     process.exit(1);
   }
-  const forgeId = process.argv[2];
-  const marketFactoryId = process.argv[3];
+  const forgeId = utils.formatBytes32String(process.argv[2]);
+  const marketFactoryId = utils.formatBytes32String(process.argv[3]);
   const liqMiningContractName = process.argv[4];
   const underlyingAssetAddress = process.argv[5];
   const baseTokenAddress = process.argv[6];

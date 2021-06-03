@@ -23,7 +23,7 @@ async function main() {
     console.error('Expected three argument!');
     process.exit(1);
   }
-  const forgeId = process.argv[2];
+  const forgeId = utils.parseBytes32String(process.argv[2]);
   const underlyingAssetContractAddress = process.argv[3];
   const expiry = process.argv[4];
   
@@ -68,21 +68,20 @@ async function main() {
   const xytAddress = await pendleData.xytTokens(forgeId, underlyingAssetContractAddress, expiry);
   const otAddress = await pendleData.otTokens(forgeId, underlyingAssetContractAddress, expiry);
   const underlyingAssetSymbol = await underlyingAssetContract.symbol();
-  const forgeIdString = utils.parseBytes32String(forgeId);
 
-  if (deployment.yieldContracts[forgeIdString] == null) {
-    deployment.yieldContracts[forgeIdString] = {};
+  if (deployment.yieldContracts[forgeId] == null) {
+    deployment.yieldContracts[forgeId] = {};
   }
 
-  if (deployment.yieldContracts[forgeIdString][underlyingAssetSymbol] == null) {
-    deployment.yieldContracts[forgeIdString][underlyingAssetSymbol] = {
+  if (deployment.yieldContracts[forgeId][underlyingAssetSymbol] == null) {
+    deployment.yieldContracts[forgeId][underlyingAssetSymbol] = {
       expiries: {},
       PendleLiquidityMining: {},
     };
   }
 
-  if (deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[expiry] == null) {
-    deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[expiry] = {
+  if (deployment.yieldContracts[forgeId][underlyingAssetSymbol].expiries[expiry] == null) {
+    deployment.yieldContracts[forgeId][underlyingAssetSymbol].expiries[expiry] = {
       XYT: xytAddress,
       OT: otAddress,
       markets: {},

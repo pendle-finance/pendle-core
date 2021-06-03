@@ -27,8 +27,8 @@ async function main() {
   const baseTokenAddress = process.argv[3];
   const xytAmount = process.argv[4];
   const baseTokenAmount = process.argv[5];
-  const marketFactoryId = process.argv[6];
-  const forgeId = process.argv[7];
+  const marketFactoryId = utils.parseBytes32String(process.argv[6]);
+  const forgeId = utils.parseBytes32String(process.argv[7]);
   
   //check network and load constant
   if (network == "kovan" || network == "kovantest") {
@@ -67,9 +67,8 @@ async function main() {
     underlyingAssetAddress
   );
   const underlyingAssetSymbol = await underlyingAssetContract.symbol();
-  const forgeIdString = utils.parseBytes32String(forgeId);
 
-  deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[expiry].markets[
+  deployment.yieldContracts[forgeId][underlyingAssetSymbol].expiries[expiry].markets[
     baseTokenSymbol
   ] = marketAddress;
   saveDeployment(filePath, deployment);

@@ -12,7 +12,8 @@ dotenv.config();
 const dummyPrivateKey = '1111111111111111111111111111111111111111111111111111111111111111';
 
 const config: HardhatUserConfig = {
-  defaultNetwork: 'hardhat',
+  //defaultNetwork: 'hardhat',
+  defaultNetwork: 'kovantest',
   // gasReporter: {
   //   currency: 'USD',
   //   gasPrice: 100

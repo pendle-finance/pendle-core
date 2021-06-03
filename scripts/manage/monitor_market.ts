@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 import fs from "fs";
 import path from "path";
-import { BigNumber as BN } from "ethers";
+import { utils, BigNumber as BN } from "ethers";
 
 import {
   devConstants,
@@ -22,7 +22,7 @@ async function main() {
     console.error('Expected three argument!');
     process.exit(1);
   }
-  const marketFactoryId = process.argv[2];
+  const marketFactoryId = utils.formatBytes32String(process.argv[2]);
   const xytAddress = process.argv[3];
   const baseTokenAddress = process.argv[4];
 
@@ -72,7 +72,7 @@ async function main() {
  // const ATokenAddress = await forgeAddress.reserveATokenAddress(underlyingAssetContractAddress);  //TODO: not sure how to determine it's a aave forge or compound forge
  // const CTokenAddress = await forgeAddress.underlyingToCToken(underlyingAssetContractAddress);  //TODO: not sure how to determine it's a aave forge or compound forge
   const bearingTokenAddress = await forge.getYieldBearingToken(underlyingAssetContractAddress);
-  const bearToken = await hre.ethers.getContractAt("TestToken", forgeAddress);
+  const bearToken = await hre.ethers.getContractAt("TestToken", bearingTokenAddress);
 
   
   //const aYieldBalance = ATokenAddress.balanceOf(market);  //to print
