@@ -78,7 +78,7 @@ describe('Aave-lp-interest', async () => {
   });
 
   async function mintXytUSDT(user: Wallet, amount: BN) {
-    await mintXytAave(USDT, user, amount, env.routerFixture, consts.T0_A2.add(consts.SIX_MONTH));
+    await mintXytAave(USDT, user, amount, env.routerFixture, env.T0.add(consts.SIX_MONTH));
   }
 
   async function getLPBalance(user: Wallet) {

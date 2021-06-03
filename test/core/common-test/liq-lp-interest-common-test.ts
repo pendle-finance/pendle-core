@@ -38,7 +38,7 @@ export function runTest(mode: Mode) {
       await buildTestEnv();
       globalSnapshotId = await evm_snapshot();
 
-      await env.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
+      // await env.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
       for (let user of [bob, charlie, dave]) {
         await redeemDueInterests(env, user);
         await emptyToken(env.yToken, user);

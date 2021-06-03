@@ -77,7 +77,7 @@ export function runTest(mode: Mode) {
       if (alloc_setting[currentEpoch].toString() != alloc_setting[currentEpoch - 1].toString()) {
         await setTimeNextBlock(startOfEpoch(env.liqParams, currentEpoch).sub(consts.ONE_HOUR.div(4)));
         await env.liq.setAllocationSetting(
-          [env.EXPIRY, consts.T0_A2.add(consts.THREE_MONTH)],
+          [env.EXPIRY, env.T0.add(consts.THREE_MONTH)],
           [alloc_setting[currentEpoch], env.liqParams.TOTAL_NUMERATOR.sub(alloc_setting[currentEpoch])],
           consts.HG
         );

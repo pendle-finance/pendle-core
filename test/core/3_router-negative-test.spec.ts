@@ -13,7 +13,7 @@ import {
   Token,
   tokens,
 } from '../helpers';
-import { routerFixture, RouterFixture } from './fixtures';
+import { routerFixture, RouterFixture, Mode, parseTestEnvRouterFixture, TestEnv } from './fixtures';
 
 const { loadFixture, provider } = waffle;
 
@@ -22,27 +22,20 @@ describe('router-negative-test', async () => {
   const [alice, bob, charlie, dave] = wallets;
 
   let fixture: RouterFixture;
-  let router: Contract;
-  let ot: Contract;
-  let xyt: Contract;
-  let aaveForge: Contract;
-  let aUSDT: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
-  let tokenUSDT: Token;
+  let env: TestEnv = {} as TestEnv;
   let refAmount: BN;
-  let data: Contract;
+
+  async function buildTestEnv() {
+    let fixture: RouterFixture = await loadFixture(routerFixture);
+    await parseTestEnvRouterFixture(alice, Mode.AAVE_V2, env, fixture);
+    env.TEST_DELTA = BN.from(6000);
+  }
 
   before(async () => {
-    fixture = await loadFixture(routerFixture);
+    await buildTestEnv();
     globalSnapshotId = await evm_snapshot();
-    router = fixture.core.router;
-    tokenUSDT = tokens.USDT;
-    data = fixture.core.data;
-    ot = fixture.a2Forge.a2OwnershipToken;
-    xyt = fixture.a2Forge.a2FutureYieldToken;
-    aaveForge = fixture.a2Forge.aaveV2Forge;
-    aUSDT = await getA2Contract(alice, aaveForge, tokenUSDT);
     snapshotId = await evm_snapshot();
   });
 
@@ -57,36 +50,32 @@ describe('router-negative-test', async () => {
   });
 
   async function tokenizeYield(user: Wallet, amount: BN): Promise<BN> {
-    let amountTokenMinted = await ot.balanceOf(user.address);
-    await router.tokenizeYield(
+    let amountTokenMinted = await env.ot.balanceOf(user.address);
+    await env.router.tokenizeYield(
       consts.FORGE_AAVE_V2,
-      tokenUSDT.address,
-      consts.T0_A2.add(consts.SIX_MONTH),
+      env.underlyingAsset.address,
+      env.T0.add(consts.SIX_MONTH),
       amount,
       user.address,
       consts.HG
     );
-    amountTokenMinted = (await ot.balanceOf(user.address)).sub(amountTokenMinted);
+    amountTokenMinted = (await env.ot.balanceOf(user.address)).sub(amountTokenMinted);
     return amountTokenMinted;
   }
 
-  async function redeemDueInterests(user: Wallet, expiry: BN) {
-    await router.connect(user).redeemDueInterests(consts.FORGE_AAVE_V2, tokenUSDT.address, expiry);
-  }
-
   it("shouldn't be able to newYieldContracts with an expiry in the past", async () => {
-    let futureTime = consts.T0_A2.sub(consts.ONE_MONTH);
-    await expect(router.newYieldContracts(consts.FORGE_AAVE_V2, tokenUSDT.address, futureTime)).to.be.revertedWith(
+    let futureTime = env.T0.sub(consts.ONE_MONTH);
+    await expect(env.router.newYieldContracts(consts.FORGE_AAVE_V2, env.underlyingAsset.address, futureTime)).to.be.revertedWith(
       errMsg.INVALID_EXPIRY
     );
   });
 
   it("shouldn't be able to newYieldContracts with an expiry not divisible for expiryDivisor", async () => {
-    let futureTime = consts.T0_A2.add(consts.ONE_YEAR);
-    if (futureTime.mod(await data.expiryDivisor()).eq(0)) {
+    let futureTime = env.T0.add(consts.ONE_YEAR);
+    if (futureTime.mod(await env.data.expiryDivisor()).eq(0)) {
       futureTime = futureTime.add(1);
     }
-    await expect(router.newYieldContracts(consts.FORGE_AAVE_V2, tokenUSDT.address, futureTime)).to.be.revertedWith(
+    await expect(env.router.newYieldContracts(consts.FORGE_AAVE_V2, env.underlyingAsset.address, futureTime)).to.be.revertedWith(
       errMsg.INVALID_EXPIRY
     );
   });
@@ -94,13 +83,13 @@ describe('router-negative-test', async () => {
   it("shouldn't be able to redeemUnderlying if the yield contract has expired", async () => {
     let amount = await tokenizeYield(alice, refAmount);
 
-    await setTimeNextBlock(consts.T0_A2.add(consts.ONE_YEAR));
+    await setTimeNextBlock(env.T0.add(consts.ONE_YEAR));
 
     await expect(
-      router.redeemUnderlying(
+      env.router.redeemUnderlying(
         consts.FORGE_AAVE_V2,
-        tokenUSDT.address,
-        consts.T0_A2.add(consts.SIX_MONTH),
+        env.underlyingAsset.address,
+        env.T0.add(consts.SIX_MONTH),
         refAmount,
         consts.HG
       )
@@ -108,53 +97,53 @@ describe('router-negative-test', async () => {
   });
 
   it("shouldn't be able to addForge if the forge is invalid", async () => {
-    await expect(data.addForge(consts.FORGE_AAVE_V2, consts.RANDOM_ADDRESS)).to.be.reverted;
+    await expect(env.data.addForge(consts.FORGE_AAVE_V2, consts.RANDOM_ADDRESS)).to.be.reverted;
   });
 
   it("shouldn't be able to newYieldContracts with an invalid forgeId", async () => {
     await expect(
-      router.newYieldContracts(
+      env.router.newYieldContracts(
         utils.formatBytes32String('INVALID'),
         consts.RANDOM_ADDRESS,
-        consts.T0_A2.add(consts.ONE_YEAR)
+        env.T0.add(consts.ONE_YEAR)
       )
     ).to.be.revertedWith(errMsg.FORGE_NOT_EXISTS);
   });
 
   it("shouldn't be able to create duplicated yield contracts", async () => {
     await expect(
-      router.newYieldContracts(consts.FORGE_AAVE_V2, tokenUSDT.address, consts.T0_A2.add(consts.SIX_MONTH))
+      env.router.newYieldContracts(consts.FORGE_AAVE_V2, env.underlyingAsset.address, env.T0.add(consts.SIX_MONTH))
     ).to.be.revertedWith(errMsg.DUPLICATE_YIELD_CONTRACT);
   });
 
   it("shouldn't be able to redeemUnderlying with zero amount", async () => {
     await expect(
-      router.redeemUnderlying(consts.FORGE_AAVE_V2, tokenUSDT.address, consts.T0_A2.add(consts.SIX_MONTH), BN.from(0))
+      env.router.redeemUnderlying(consts.FORGE_AAVE_V2, env.underlyingAsset.address, env.T0.add(consts.SIX_MONTH), BN.from(0))
     ).to.be.revertedWith(errMsg.ZERO_AMOUNT);
   });
 
   // it("shouldn't be able to renewYield to invalid expiry", async () => {
   //   await advanceTime(consts.SIX_MONTH);
   //   await expect(
-  //     router.renewYield(
+  //     env.router.renewYield(
   //       consts.FORGE_AAVE_V2,
-  //       consts.T0_A2.add(consts.SIX_MONTH),
-  //       tokenUSDT.address,
-  //       consts.T0_A2.add(consts.ONE_YEAR.add(100)),
+  //       env.T0.add(consts.SIX_MONTH),
+  //       env.underlyingAsset.address,
+  //       env.T0.add(consts.ONE_YEAR.add(100)),
   //       consts.RONE
   //     )
   //   ).to.be.revertedWith(errMsg.INVALID_XYT);
   // });
 
   it("shouldn't be able to renewYield if the current yield has not expired yet", async () => {
-    let futureTime = consts.T0_A2.add(consts.ONE_YEAR.add(500));
-    await router.newYieldContracts(consts.FORGE_AAVE_V2, tokenUSDT.address, futureTime);
+    let futureTime = env.T0.add(consts.ONE_YEAR.add(500));
+    await env.router.newYieldContracts(consts.FORGE_AAVE_V2, env.underlyingAsset.address, futureTime);
     await advanceTime(consts.FIVE_MONTH);
     await expect(
-      router.renewYield(
+      env.router.renewYield(
         consts.FORGE_AAVE_V2,
-        consts.T0_A2.add(consts.SIX_MONTH),
-        tokenUSDT.address,
+        env.T0.add(consts.SIX_MONTH),
+        env.underlyingAsset.address,
         futureTime,
         consts.RONE
       )
@@ -162,14 +151,14 @@ describe('router-negative-test', async () => {
   });
 
   it("shouldn't be able to renewYield to with a zero renewal rate", async () => {
-    let futureTime = consts.T0_A2.add(consts.ONE_YEAR.add(500));
-    await router.newYieldContracts(consts.FORGE_AAVE_V2, tokenUSDT.address, futureTime);
+    let futureTime = env.T0.add(consts.ONE_YEAR.add(500));
+    await env.router.newYieldContracts(consts.FORGE_AAVE_V2, env.underlyingAsset.address, futureTime);
     await advanceTime(consts.SIX_MONTH);
     await expect(
-      router.renewYield(
+      env.router.renewYield(
         consts.FORGE_AAVE_V2,
-        consts.T0_A2.add(consts.SIX_MONTH),
-        tokenUSDT.address,
+        env.T0.add(consts.SIX_MONTH),
+        env.underlyingAsset.address,
         futureTime,
         BN.from(0)
       )
@@ -179,10 +168,10 @@ describe('router-negative-test', async () => {
   it("shouldn't be able to tokenizeYield to an expired contract", async () => {
     await advanceTime(consts.SIX_MONTH);
     await expect(
-      router.tokenizeYield(
+      env.router.tokenizeYield(
         consts.FORGE_AAVE_V2,
-        tokenUSDT.address,
-        consts.T0_A2.add(consts.SIX_MONTH),
+        env.underlyingAsset.address,
+        env.T0.add(consts.SIX_MONTH),
         BN.from(1000000),
         alice.address,
         consts.HG
@@ -192,7 +181,7 @@ describe('router-negative-test', async () => {
 
   it("shouldn't be able to add invalid market factories", async () => {
     await expect(
-      data.addMarketFactory(consts.MARKET_FACTORY_COMPOUND, fixture.core.a2MarketFactory.address)
+      env.data.addMarketFactory(consts.MARKET_FACTORY_COMPOUND, fixture.core.a2MarketFactory.address)
     ).to.be.revertedWith(errMsg.INVALID_FACTORY_ID);
   });
 });

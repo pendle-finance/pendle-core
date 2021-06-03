@@ -78,7 +78,7 @@ describe('compound-lp-interest', async () => {
       await emptyToken(cUSDT, user);
     }
 
-    await fixture.core.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
+    // await fixture.core.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
 
     snapshotId = await evm_snapshot();
   });

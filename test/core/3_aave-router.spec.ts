@@ -272,7 +272,7 @@ describe('aaveV2-router', async () => {
   it('newYieldContracts is not possible [if underlyingAsset is invalid]', async () => {
     // random underlyingAsset
     await expect(
-      env.router.newYieldContracts(env.FORGE_ID, consts.RANDOM_ADDRESS, consts.T0_A2.add(consts.ONE_YEAR))
+      env.router.newYieldContracts(env.FORGE_ID, consts.RANDOM_ADDRESS, env.T0.add(consts.ONE_YEAR))
     ).to.be.revertedWith(errMsg.INVALID_UNDERLYING_ASSET);
   });
 });

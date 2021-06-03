@@ -43,7 +43,7 @@ describe('aave-liquidityMining', async () => {
     await buildTestEnv();
     globalSnapshotId = await evm_snapshot();
 
-    await env.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
+    // await env.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
     for (let user of [bob, charlie, dave]) {
       await redeemDueInterests(env, user);
       await emptyToken(env.yToken, user);
@@ -110,7 +110,7 @@ describe('aave-liquidityMining', async () => {
   it('test invalid setAllocationSetting', async () => {
     await expect(
       env.liq.setAllocationSetting(
-        [env.EXPIRY, consts.T0_A2.add(consts.THREE_MONTH), consts.T0_A2.add(consts.ONE_MONTH)],
+        [env.EXPIRY, env.T0.add(consts.THREE_MONTH), env.T0.add(consts.ONE_MONTH)],
         [
           env.liqParams.TOTAL_NUMERATOR.div(3),
           env.liqParams.TOTAL_NUMERATOR.div(3),
@@ -134,7 +134,7 @@ describe('aave-liquidityMining', async () => {
     console.log(`\tPDL balance of user before: ${pdlBalanceOfUser}`);
     console.log(`\tLP balance of user before: ${lpBalanceOfUser}`);
 
-    await advanceTime(env.liqParams.START_TIME.sub(consts.T0_A2));
+    await advanceTime(env.liqParams.START_TIME.sub(env.T0));
     await stake(env, bob, amountToStake);
     console.log('\tStaked');
     const lpHolderContract = await env.liq.lpHolderForExpiry(env.EXPIRY);
