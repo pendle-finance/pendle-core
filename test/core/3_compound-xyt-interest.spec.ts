@@ -81,13 +81,7 @@ describe('compound-xyt-interest', async () => {
   async function redeemUnderlying(user: Wallet, amount: BN) {
     await router
       .connect(user)
-      .redeemUnderlying(
-        consts.FORGE_COMPOUND,
-        tokenUSDT.address,
-        consts.T0_C.add(consts.SIX_MONTH),
-        amount,
-        consts.HG
-      );
+      .redeemUnderlying(consts.FORGE_COMPOUND, tokenUSDT.address, consts.T0_C.add(consts.SIX_MONTH), amount, consts.HG);
   }
 
   async function tokenizeYield(user: Wallet, amount: BN) {

@@ -34,7 +34,13 @@ export async function mintXytAave(token: Token, user: Wallet, amount: BN, env: R
   return postA2TokenBal.sub(preA2TokenBal);
 }
 
-export async function mintXytCompound(token: Token, user: Wallet, amount: BN, env: RouterFixture, expiry: BN): Promise<BN> {
+export async function mintXytCompound(
+  token: Token,
+  user: Wallet,
+  amount: BN,
+  env: RouterFixture,
+  expiry: BN
+): Promise<BN> {
   let router = env.core.router;
   const cContract = await getCContract(user, token);
   let preCTokenBal = await cContract.balanceOf(user.address);

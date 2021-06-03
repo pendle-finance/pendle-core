@@ -16,7 +16,7 @@ import {
   swapExactInXytToToken,
   Token,
   tokens,
-  mintXytAave
+  mintXytAave,
 } from '../helpers';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
 
@@ -63,7 +63,7 @@ describe('Aave-lp-interest', async () => {
     }
 
     for (let user of [alice, bob, charlie, dave, eve]) {
-      await emptyToken(env.yUSDT, user);
+      await emptyToken(env.yToken, user);
     }
     snapshotId = await evm_snapshot();
   });
@@ -87,7 +87,7 @@ describe('Aave-lp-interest', async () => {
 
   async function checkAUSDTBalance(expectedResult: number[]) {
     for (let id = 0; id < 4; id++) {
-      approxBigNumber(await env.yUSDT.balanceOf(wallets[id].address), BN.from(expectedResult[id]), env.TEST_DELTA);
+      approxBigNumber(await env.yToken.balanceOf(wallets[id].address), BN.from(expectedResult[id]), env.TEST_DELTA);
     }
   }
 
@@ -128,7 +128,7 @@ describe('Aave-lp-interest', async () => {
     await redeemAll();
 
     // for (let user of [alice, bob, charlie, dave]) {
-    //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
+    //   console.log((await env.yToken.balanceOf(user.address)).toString());
     // }
     const aaveV2ExpectedResult: number[] = [1153260349, 767185299, 817213684, 952028819];
     await checkAUSDTBalance(aaveV2ExpectedResult);
@@ -171,7 +171,7 @@ describe('Aave-lp-interest', async () => {
     await redeemAll();
 
     // for (let user of [alice, bob, charlie, dave]) {
-    //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
+    //   console.log((await env.yToken.balanceOf(user.address)).toString());
     // }
 
     const aaveV1ExpectedResult: number[] = [560854502, 209872643, 204051274, 218780693];
@@ -216,30 +216,30 @@ describe('Aave-lp-interest', async () => {
   //   await redeemAll();
 
   // for (let user of [alice, bob, charlie, dave]) {
-  //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
+  //   console.log((await env.yToken.balanceOf(user.address)).toString());
   // }
 
   //   console.log(1);
   //   approxBigNumber(
-  //     await env.yUSDT.balanceOf(alice.address),
+  //     await env.yToken.balanceOf(alice.address),
   //     BN.from(803722622),
   //     acceptedDelta
   //   );
   //   console.log(1);
   //   approxBigNumber(
-  //     await env.yUSDT.balanceOf(bob.address),
+  //     await env.yToken.balanceOf(bob.address),
   //     BN.from(803722622),
   //     acceptedDelta
   //   );
   //   console.log(1);
   //   approxBigNumber(
-  //     await env.yUSDT.balanceOf(charlie.address),
+  //     await env.yToken.balanceOf(charlie.address),
   //     BN.from(803722622),
   //     acceptedDelta
   //   );
   //   console.log(1);
   //   approxBigNumber(
-  //     await env.yUSDT.balanceOf(dave.address),
+  //     await env.yToken.balanceOf(dave.address),
   //     BN.from(803722622),
   //     acceptedDelta
   //   );
@@ -288,7 +288,7 @@ describe('Aave-lp-interest', async () => {
     await redeemAll();
 
     // for (let user of [alice, bob, charlie, dave]) {
-    //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
+    //   console.log((await env.yToken.balanceOf(user.address)).toString());
     // }
 
     const aaveV1ExpectedResult: number[] = [541848416, 209321674, 259943291, 250376098];
@@ -335,9 +335,9 @@ describe('Aave-lp-interest', async () => {
       }
     }
 
-    let expectedResult = await env.yUSDT.balanceOf(dave.address);
+    let expectedResult = await env.yToken.balanceOf(dave.address);
     for (let user of [alice, bob, charlie]) {
-      approxBigNumber(await env.yUSDT.balanceOf(user.address), expectedResult, env.TEST_DELTA);
+      approxBigNumber(await env.yToken.balanceOf(user.address), expectedResult, env.TEST_DELTA);
     }
   });
 });

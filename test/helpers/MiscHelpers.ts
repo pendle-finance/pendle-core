@@ -25,10 +25,10 @@ export async function logMarketReservesData(market: Contract) {
 export async function addFakeIncomeCompoundUSDT(env: TestEnv, user: Wallet) {
   await mint(tokens.USDT, user, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
   await env.USDTContract.connect(user).transfer(
-    env.yUSDT.address,
+    env.yToken.address,
     amountToWei(consts.INITIAL_COMPOUND_TOKEN_AMOUNT, 6)
   );
-  await env.yUSDT.balanceOfUnderlying(user.address); // interact with compound so that it updates all info
+  await env.yToken.balanceOfUnderlying(user.address); // interact with compound so that it updates all info
 }
 
 export async function logTokenBalance(token: Contract, people: Wallet[]) {
@@ -59,12 +59,7 @@ export async function createAaveMarketWithExpiry(env: TestEnv, expiry: BN, walle
   //   await env.testToken.transfer(person.address, totalSupply.div(5), consts.HG);
   // }
 
-  await env.router.createMarket(
-    env.MARKET_FACTORY_ID,
-    futureYieldToken.address,
-    env.testToken.address,
-    consts.HG
-  );
+  await env.router.createMarket(env.MARKET_FACTORY_ID, futureYieldToken.address, env.testToken.address, consts.HG);
 
   const marketAddress = await env.data.getMarket(
     env.MARKET_FACTORY_ID,

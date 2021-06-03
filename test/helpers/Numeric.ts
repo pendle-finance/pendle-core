@@ -154,14 +154,11 @@ export function toFixedPoint(val: string | number): BN {
   return BN.from(val).mul(PRECISION).div(BN.from(10).pow(lenFrac));
 }
 
-export function randomBN(_range?: number | BN): BN {
-  let range: number;
-  if (_range == undefined) range = 1e15;
-  else if (typeof _range === 'number') {
-    range = _range;
-  } else range = _range.toNumber();
-
-  return BN.from(Math.floor(Math.random() * range));
+export function randomBN(range?: number | BN): BN {
+  let lim = 10 ** 15;
+  return BN.from(Math.floor(Math.random() * lim))
+    .mul(BN.from(range))
+    .div(lim);
 }
 
 export function randomNumber(range?: number): number {

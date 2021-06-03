@@ -12,7 +12,7 @@ import {
   mint,
   Token,
   tokens,
-  mintXytCompound
+  mintXytCompound,
 } from '../helpers';
 import { marketFixture, MarketFixture } from './fixtures';
 import hre from 'hardhat';
@@ -195,14 +195,7 @@ describe('compound-lp-interest', async () => {
   async function swapExactInXytToToken(user: Wallet, inAmount: BN) {
     await router
       .connect(user)
-      .swapExactIn(
-        xyt.address,
-        testToken.address,
-        inAmount,
-        BN.from(0),
-        consts.MARKET_FACTORY_COMPOUND,
-        consts.HG
-      );
+      .swapExactIn(xyt.address, testToken.address, inAmount, BN.from(0), consts.MARKET_FACTORY_COMPOUND, consts.HG);
   }
 
   async function addFakeIncome(token: Token, user: Wallet, amount: BN) {

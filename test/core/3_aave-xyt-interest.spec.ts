@@ -52,7 +52,7 @@ describe('aaveV2-xyt-interest', async () => {
     globalSnapshotId = await evm_snapshot();
     for (var person of [bob, charlie, dave, eve]) {
       await mintAaveV2Token(tokens.USDT, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
-      await env.yUSDT.connect(person).approve(env.router.address, consts.INF);
+      await env.yToken.connect(person).approve(env.router.address, consts.INF);
     }
     snapshotId = await evm_snapshot();
   });
@@ -98,9 +98,9 @@ describe('aaveV2-xyt-interest', async () => {
         await redeemUnderlying(env, user, balance);
       }
     }
-    const expectedBalance = await env.yUSDT.balanceOf(dave.address);
+    const expectedBalance = await env.yToken.balanceOf(dave.address);
     for (var person of [alice, bob, charlie]) {
-      approxBigNumber(await env.yUSDT.balanceOf(person.address), expectedBalance, env.TEST_DELTA);
+      approxBigNumber(await env.yToken.balanceOf(person.address), expectedBalance, env.TEST_DELTA);
     }
   }
   it('test 1', async () => {
@@ -126,13 +126,13 @@ describe('aaveV2-xyt-interest', async () => {
     }
 
     async function transferYieldToken(from: Wallet, to: Wallet, amount: BN) {
-      await env.yUSDT.connect(from).transfer(to.address, amount, consts.HG);
+      await env.yToken.connect(from).transfer(to.address, amount, consts.HG);
     }
 
     for (let person of [alice, bob, charlie, dave]) {
-      await emptyToken(env.yUSDT, person);
+      await emptyToken(env.yToken, person);
     }
-    await env.yUSDT.connect(eve).transfer(alice.address, amountToTokenize.mul(2), consts.HG);
+    await env.yToken.connect(eve).transfer(alice.address, amountToTokenize.mul(2), consts.HG);
 
     await tokenizeYield(env, alice, amountToTokenize, alice.address);
     await tokenizeYield(env, alice, amountToTokenize.div(2), bob.address);
@@ -179,10 +179,10 @@ describe('aaveV2-xyt-interest', async () => {
     await setTimeNextBlock(env.T0.add(period.mul(20).add(10)));
     await transferYieldToken(bob, charlie, BN.from(1));
 
-    let alice_yieldToken = await env.yUSDT.balanceOf(alice.address);
-    let bcd_yieldToken = (await env.yUSDT.balanceOf(bob.address))
-      .add(await env.yUSDT.balanceOf(charlie.address))
-      .add(await env.yUSDT.balanceOf(dave.address));
+    let alice_yieldToken = await env.yToken.balanceOf(alice.address);
+    let bcd_yieldToken = (await env.yToken.balanceOf(bob.address))
+      .add(await env.yToken.balanceOf(charlie.address))
+      .add(await env.yToken.balanceOf(dave.address));
 
     approxBigNumber(alice_yieldToken, bcd_yieldToken, BN.from(1000), true);
   });
@@ -195,13 +195,7 @@ describe('aaveV2-xyt-interest', async () => {
       await redeemDueInterests(env, bob);
       let interestClaimed = await env.router
         .connect(alice)
-        .callStatic.redeemDueInterests(
-          env.FORGE_ID,
-          tokens.USDT.address,
-          env.EXPIRY,
-          alice.address,
-          consts.HG
-        );
+        .callStatic.redeemDueInterests(env.FORGE_ID, tokens.USDT.address, env.EXPIRY, alice.address, consts.HG);
       if (expected != null) approxBigNumber(interestClaimed, expected, 0, true);
       else expect(interestClaimed.toNumber()).to.be.greaterThan(1);
       await redeemDueInterests(env, alice);
@@ -228,9 +222,9 @@ describe('aaveV2-xyt-interest', async () => {
     const amount = BN.from(1000000000);
     const transferAmount = amount.div(10);
 
-    await emptyToken(env.yUSDT, bob);
-    await emptyToken(env.yUSDT, charlie);
-    await emptyToken(env.yUSDT, dave);
+    await emptyToken(env.yToken, bob);
+    await emptyToken(env.yToken, charlie);
+    await emptyToken(env.yToken, dave);
 
     await tokenizeYield(env, alice, amount, alice.address);
     await tokenizeYield(env, alice, amount, bob.address);
@@ -256,9 +250,9 @@ describe('aaveV2-xyt-interest', async () => {
     await redeemAfterExpiry(env, charlie);
     await redeemAfterExpiry(env, dave);
 
-    const bobBalance: BN = await env.yUSDT.balanceOf(bob.address);
-    const charlieBalance: BN = await env.yUSDT.balanceOf(charlie.address);
-    const daveBalance: BN = await env.yUSDT.balanceOf(dave.address);
+    const bobBalance: BN = await env.yToken.balanceOf(bob.address);
+    const charlieBalance: BN = await env.yToken.balanceOf(charlie.address);
+    const daveBalance: BN = await env.yToken.balanceOf(dave.address);
 
     approxBigNumber(bobBalance.add(charlieBalance), daveBalance, 300, true);
   });

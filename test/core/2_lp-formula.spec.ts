@@ -14,7 +14,7 @@ import {
   setTimeNextBlock,
   toFixedPoint,
   tokens,
-  mintXytAave
+  mintXytAave,
 } from '../helpers';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
 import * as scenario from './fixtures/lpFormulaScenario.fixture';
@@ -44,7 +44,13 @@ describe('lp-formula', async () => {
     await buildTestEnv();
     await env.data.setMarketFees(toFixedPoint('0.0035'), 0); // 0.35%
     for (var person of [alice, bob, charlie]) {
-      await mintXytAave(tokens.USDT, person, BN.from(10).pow(10), fixture.routerFix, consts.T0_A2.add(consts.SIX_MONTH));
+      await mintXytAave(
+        tokens.USDT,
+        person,
+        BN.from(10).pow(10),
+        fixture.routerFix,
+        consts.T0_A2.add(consts.SIX_MONTH)
+      );
     }
     snapshotId = await evm_snapshot();
   });

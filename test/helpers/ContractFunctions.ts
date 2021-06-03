@@ -2,8 +2,6 @@ import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import { consts, Token, tokens } from '.';
 import { TestEnv } from '../core/fixtures';
 
-let USDT: Token = tokens.USDT;
-
 export async function tokenizeYield(env: TestEnv, user: Wallet, amount: BN, to?: string): Promise<BN> {
   if (to == null) {
     to = user.address;
@@ -11,7 +9,7 @@ export async function tokenizeYield(env: TestEnv, user: Wallet, amount: BN, to?:
   let amountTokenMinted = await env.ot.balanceOf(to);
   await env.router
     .connect(user)
-    .tokenizeYield(env.FORGE_ID, USDT.address, env.EXPIRY, amount, to, consts.HG);
+    .tokenizeYield(env.FORGE_ID, env.underlyingAsset.address, env.EXPIRY, amount, to, consts.HG);
   amountTokenMinted = (await env.ot.balanceOf(to)).sub(amountTokenMinted);
   return amountTokenMinted;
 }
@@ -22,21 +20,21 @@ export async function redeemDueInterests(env: TestEnv, user: Wallet, expiry?: BN
   }
   await env.router
     .connect(user)
-    .redeemDueInterests(env.FORGE_ID, USDT.address, expiry, user.address, consts.HG);
+    .redeemDueInterests(env.FORGE_ID, env.underlyingAsset.address, expiry, user.address, consts.HG);
 }
 
 export async function redeemAfterExpiry(env: TestEnv, user: Wallet, expiry?: BN) {
   if (expiry == null) {
     expiry = env.EXPIRY;
   }
-  await env.router.connect(user).redeemAfterExpiry(env.FORGE_ID, USDT.address, expiry);
+  await env.router.connect(user).redeemAfterExpiry(env.FORGE_ID, env.underlyingAsset.address, expiry);
 }
 
 export async function redeemUnderlying(env: TestEnv, user: Wallet, amount: BN, expiry?: BN) {
   if (expiry == null) {
     expiry = env.EXPIRY;
   }
-  await env.router.connect(user).redeemUnderlying(env.FORGE_ID, USDT.address, expiry, amount, consts.HG);
+  await env.router.connect(user).redeemUnderlying(env.FORGE_ID, env.underlyingAsset.address, expiry, amount, consts.HG);
 }
 
 export async function bootstrapMarket(env: TestEnv, user: Wallet, amountXyt: BN, amountToken?: BN) {
@@ -52,14 +50,7 @@ export async function swapExactInTokenToXyt(env: TestEnv, user: Wallet, inAmount
   let initialXytBalance = await env.xyt.balanceOf(user.address);
   await env.router
     .connect(user)
-    .swapExactIn(
-      env.testToken.address,
-      env.xyt.address,
-      inAmount,
-      BN.from(0),
-      env.MARKET_FACTORY_ID,
-      consts.HG
-    );
+    .swapExactIn(env.testToken.address, env.xyt.address, inAmount, BN.from(0), env.MARKET_FACTORY_ID, consts.HG);
   let postXytBalance = await env.xyt.balanceOf(user.address);
   return postXytBalance.sub(initialXytBalance);
 }
@@ -68,14 +59,7 @@ export async function swapExactInXytToToken(env: TestEnv, user: Wallet, inAmount
   let initialTokenBalance = await env.testToken.balanceOf(user.address);
   await env.router
     .connect(user)
-    .swapExactIn(
-      env.xyt.address,
-      env.testToken.address,
-      inAmount,
-      BN.from(0),
-      env.MARKET_FACTORY_ID,
-      consts.HG
-    );
+    .swapExactIn(env.xyt.address, env.testToken.address, inAmount, BN.from(0), env.MARKET_FACTORY_ID, consts.HG);
   let postTokenBalance = await env.testToken.balanceOf(user.address);
   return postTokenBalance.sub(initialTokenBalance);
 }

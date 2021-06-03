@@ -149,11 +149,11 @@ export async function runTest(mode: Mode) {
     const [paused, locked] = await env.pausingManager.callStatic.checkYieldContractStatus(...forgeArgs);
     expect(paused).to.be.eq(true);
     expect(locked).to.be.eq(true);
-    await env.forge.setUpEmergencyMode(env.USDTContract.address, env.EXPIRY, [env.yUSDT.address], charlie.address);
-    const yieldTokenHolderBalanceBefore = await env.yUSDT.balanceOf(yieldTokenHolder);
+    await env.forge.setUpEmergencyMode(env.USDTContract.address, env.EXPIRY, [env.yToken.address], charlie.address);
+    const yieldTokenHolderBalanceBefore = await env.yToken.balanceOf(yieldTokenHolder);
     console.log(`\t\tyieldTokenHolderBalanceBefore = ${yieldTokenHolderBalanceBefore}`);
-    await env.yUSDT.connect(charlie).transferFrom(yieldTokenHolder, charlie.address, yieldTokenHolderBalanceBefore);
-    const yieldTokenHolderBalanceAfter = await env.yUSDT.balanceOf(yieldTokenHolder);
+    await env.yToken.connect(charlie).transferFrom(yieldTokenHolder, charlie.address, yieldTokenHolderBalanceBefore);
+    const yieldTokenHolderBalanceAfter = await env.yToken.balanceOf(yieldTokenHolder);
     expect(yieldTokenHolderBalanceAfter).to.be.lt(BN.from(300));
     console.log(`\t\tyieldTokenHolderBalanceAfter = ${yieldTokenHolderBalanceAfter}`);
   }
@@ -188,7 +188,7 @@ export async function runTest(mode: Mode) {
     globalSnapshotId = await evm_snapshot();
 
     if (mode == Mode.COMPOUND) await mintCompoundToken(tokens.USDT, alice, BN.from(10000));
-    const aTokenBalance = await env.yUSDT.balanceOf(alice.address);
+    const aTokenBalance = await env.yToken.balanceOf(alice.address);
 
     forgeArgs = [env.FORGE_ID, env.USDTContract.address, env.EXPIRY];
     marketArgs = [env.MARKET_FACTORY_ID, env.xyt.address, env.testToken.address];
