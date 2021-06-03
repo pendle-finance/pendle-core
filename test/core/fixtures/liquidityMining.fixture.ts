@@ -4,7 +4,7 @@ import PendleCompoundLiquidityMining from "../../../build/artifacts/contracts/co
 import PendleWhitelist from "../../../build/artifacts/contracts/core/PendleWhitelist.sol/PendleWhitelist.json";
 import MockPendleAaveLiquidityMining from "../../../build/artifacts/contracts/mock/MockPendleAaveLiquidityMining.sol/MockPendleAaveLiquidityMining.json";
 import PENDLE from "../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json";
-import { amountToWei, consts, mintXytAave, tokens } from '../../helpers';
+import { amountToWei, consts, tokens } from '../../helpers';
 import { CompoundFixture } from './compoundForge.fixture';
 import { CoreFixture } from './core.fixture';
 import { marketFixture, MarketFixture } from './market.fixture';
@@ -83,8 +83,6 @@ export async function liquidityMiningFixture(
     amount,
     consts.HG
   );
-
-  await mintXytAave(tokens.UNI, alice, amount.div(10 ** 6), marketFix.routerFix, consts.T0_A2.add(consts.SIX_MONTH));
 
   await router.bootstrapMarket(
     consts.MARKET_FACTORY_AAVE_V2,

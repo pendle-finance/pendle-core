@@ -42,7 +42,6 @@ export async function marketFixture(
   const {
     cFutureYieldToken,
   } = cForge;
-  const token = tokens.USDT;
 
   const testToken = await deployContract(alice, TestToken, [
     "Test Token",
@@ -51,8 +50,9 @@ export async function marketFixture(
   ]);
 
   for (var person of [alice, bob, charlie, dave]) {
-    await mintXytAave(token, person, consts.INITIAL_OT_XYT_AMOUNT, routerFix, consts.T0_A2.add(consts.SIX_MONTH));
-    await mintXytCompound(token, person, consts.INITIAL_OT_XYT_AMOUNT, routerFix, consts.T0_C.add(consts.SIX_MONTH));
+    await mintXytAave(tokens.USDT, person, consts.INITIAL_OT_XYT_AMOUNT, routerFix, consts.T0_A2.add(consts.SIX_MONTH));
+    await mintXytAave(tokens.UNI, person, consts.INITIAL_OT_XYT_AMOUNT, routerFix, consts.T0_A2.add(consts.SIX_MONTH));
+    await mintXytCompound(tokens.USDT, person, consts.INITIAL_OT_XYT_AMOUNT, routerFix, consts.T0_C.add(consts.SIX_MONTH));
   }
 
   const totalSupply = await testToken.totalSupply();
@@ -134,7 +134,7 @@ export async function marketFixture(
     alice
   );
   const a2Market18 = new Contract(
-    a2MarketAddress,
+    a2Market18Address,
     MockPendleAaveMarket.abi,
     alice
   );
