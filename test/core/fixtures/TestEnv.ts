@@ -26,7 +26,7 @@ export interface TestEnv {
 
   ot: Contract;
   xyt: Contract;
-  xyt2: Contract;
+  xyt18: Contract;
   yUSDT: Contract;
   testToken: Contract;
   market: Contract;
@@ -70,7 +70,7 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
     env.forge = fixture.a2Forge.aaveV2Forge;
     env.ot = fixture.a2Forge.a2OwnershipToken;
     env.xyt = fixture.a2Forge.a2FutureYieldToken;
-    env.xyt2 = fixture.a2Forge.a2FutureYieldToken2;
+    env.xyt18 = fixture.a2Forge.a2FutureYieldToken18;
     env.rewardManager = fixture.a2Forge.a2RewardManager;
     env.yUSDT = await getA2Contract(alice, env.forge, tokens.USDT);
     env.FORGE_ID = consts.FORGE_AAVE_V2;
@@ -81,7 +81,7 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
     env.forge = fixture.cForge.compoundForge;
     env.ot = fixture.cForge.cOwnershipToken;
     env.xyt = fixture.cForge.cFutureYieldToken;
-    // no xyt2
+    // no xyt18
     env.rewardManager = fixture.cForge.cRewardManager;
     env.yUSDT = await getCContract(alice, tokens.USDT);
     env.FORGE_ID = consts.FORGE_COMPOUND;

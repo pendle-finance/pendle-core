@@ -19,7 +19,7 @@ import {
   removeMarketLiquiditySingle,
   setTimeNextBlock,
   swapExactInXytToToken,
-  swapExactOutXytToToken,
+  swapExactOutXytToToken
 } from '../helpers';
 import {
   AMMCheckLPNearCloseTest,
@@ -28,7 +28,7 @@ import {
   marketBalanceNonZeroSwapTest,
   marketBalanceNonZeroTest,
   MarketFeesTest,
-  ProtocolFeeTest,
+  ProtocolFeeTest
 } from './common-test/amm-formula-test';
 import { MultiExpiryMarketTest } from './common-test/multi-market-common-test';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
@@ -269,7 +269,7 @@ describe('AaveV2-market', async () => {
 
   it('createMarket using XYT as the quote pair is not possible', async () => {
     await expect(
-      env.router.createMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.xyt2.address, consts.HIGH_GAS_OVERRIDE)
+      env.router.createMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.xyt18.address, consts.HIGH_GAS_OVERRIDE)
     ).to.be.revertedWith('XYT_QUOTE_PAIR_FORBIDDEN');
   });
 

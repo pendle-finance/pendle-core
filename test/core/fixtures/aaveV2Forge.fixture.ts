@@ -15,8 +15,8 @@ export interface AaveV2ForgeFixture {
   aaveV2Forge: Contract;
   a2OwnershipToken: Contract;
   a2FutureYieldToken: Contract;
-  a2OwnershipToken2: Contract;
-  a2FutureYieldToken2: Contract;
+  a2OwnershipToken18: Contract;
+  a2FutureYieldToken18: Contract;
   a2RewardManager: Contract;
 }
 
@@ -91,25 +91,25 @@ export async function aaveV2ForgeFixture(
     tokens.UNI.address,
     consts.T0_A2.add(consts.SIX_MONTH)
   );
-  const otTokenAddress2 = await data.otTokens(
+  const otTokenAddress18 = await data.otTokens(
     consts.FORGE_AAVE_V2,
     tokens.UNI.address,
     consts.T0_A2.add(consts.SIX_MONTH)
   );
 
-  const xytTokenAddress2 = await data.xytTokens(
+  const xytTokenAddress18 = await data.xytTokens(
     consts.FORGE_AAVE_V2,
     tokens.UNI.address,
     consts.T0_A2.add(consts.SIX_MONTH)
   );
 
-  const a2OwnershipToken2 = new Contract(
-    otTokenAddress2,
+  const a2OwnershipToken18 = new Contract(
+    otTokenAddress18,
     MockPendleOwnershipToken.abi,
     alice
   );
-  const a2FutureYieldToken2 = new Contract(
-    xytTokenAddress2,
+  const a2FutureYieldToken18 = new Contract(
+    xytTokenAddress18,
     PendleFutureYieldToken.abi,
     alice
   );
@@ -118,8 +118,8 @@ export async function aaveV2ForgeFixture(
     aaveV2Forge,
     a2OwnershipToken,
     a2FutureYieldToken,
-    a2OwnershipToken2,
-    a2FutureYieldToken2,
+    a2OwnershipToken18,
+    a2FutureYieldToken18,
     a2RewardManager
   };
 }
