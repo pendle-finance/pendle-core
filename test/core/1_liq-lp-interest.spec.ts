@@ -1,4 +1,4 @@
-import { runTest } from './common-test/liquidity-mining-lp-interest-common-test';
+import { runTest } from './common-test/liq-lp-interest-common-test';
 import { Mode } from './fixtures/TestEnv';
 describe('aaveV2-liquidityMining-lp-interest', function () {
   runTest(Mode.AAVE_V2);
