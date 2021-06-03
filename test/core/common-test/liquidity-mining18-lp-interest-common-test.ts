@@ -8,7 +8,8 @@ import {
   randomNumber, redeemDueInterests,
   redeemLpInterests, setTimeNextBlock,
   stake,
-  withdraw
+  tokens,
+  withdraw, getA2Contract
 } from '../../helpers';
 import {
   liquidityMiningFixture,
@@ -31,7 +32,12 @@ export function runTest(mode: Mode) {
     async function buildTestEnv() {
       let fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);
       await parseTestEnvLiquidityMiningFixture(alice, mode, env, fixture);
-      env.TEST_DELTA = BN.from(200);
+      env.xyt = env.xyt18;
+      env.market = env.market18;
+      env.liq = env.liq18;
+      env.underlyingAsset = tokens.UNI;
+      env.yToken = await getA2Contract(alice, env.routerFixture.a2Forge.aaveV2Forge, tokens.UNI);
+      env.TEST_DELTA = consts.ONE_E_12;
     }
 
     before(async () => {
@@ -61,8 +67,8 @@ export function runTest(mode: Mode) {
       await env.xyt.transfer(eve.address, (await env.xyt.balanceOf(env.market.address)).div(10));
 
       let totalTime = consts.SIX_MONTH;
-      let numTurnsBeforeExpiry = 40;
-      let numTurnsAfterExpiry = 10;
+      let numTurnsBeforeExpiry = 10;
+      let numTurnsAfterExpiry = 0;
       let numTurns = numTurnsBeforeExpiry + numTurnsAfterExpiry;
 
       let liqBalance: BN[] = [BN.from(0), BN.from(0), BN.from(0), BN.from(0)];
@@ -78,18 +84,22 @@ export function runTest(mode: Mode) {
         }
         if (actionType == 0) {
           let amount = randomBN(lpBalance[userID]);
+          console.log(lpBalance[userID], amount);
           await stake(env, wallets[userID], amount);
+          console.log("done");
           liqBalance[userID] = liqBalance[userID].add(amount);
           lpBalance[userID] = lpBalance[userID].sub(amount);
         } else if (actionType == 1) {
           let amount = randomBN(liqBalance[userID]);
+          console.log(lpBalance[userID], amount);
           await withdraw(env, wallets[userID], amount);
+          console.log("done");
           liqBalance[userID] = liqBalance[userID].sub(amount);
           lpBalance[userID] = lpBalance[userID].add(amount);
         } else if (actionType == 2) {
           await env.liq.redeemLpInterests(env.EXPIRY, wallets[userID].address);
         }
-        if (mode == Mode.COMPOUND) await addFakeIncomeCompoundUSDT(env, eve);
+        // if (mode == Mode.COMPOUND) await addFakeIncomeCompoundUSDT(env, eve);
       }
 
       await redeemDueInterests(env, eve);
@@ -105,3 +115,7 @@ export function runTest(mode: Mode) {
     });
   });
 }
+
+describe('aaveV2-liquidityMining-lp-interest', function () {
+  runTest(Mode.AAVE_V2);
+});

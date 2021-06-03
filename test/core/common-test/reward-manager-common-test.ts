@@ -48,14 +48,14 @@ export function runTest(mode: Mode) {
       await buildTestEnv();
       globalSnapshotId = await evm_snapshot();
 
-      userInitialYieldToken = (await env.yUSDT.balanceOf(alice.address)).div(4);
+      userInitialYieldToken = (await env.yToken.balanceOf(alice.address)).div(4);
       rewardToken = await hre.ethers.getContractAt("TestToken", await env.forge.rewardToken());
       yieldTokenHolder = await env.forge.yieldTokenHolders(env.USDTContract.address, env.EXPIRY);
 
       await minerStop();
       for (const person of [bob, charlie, dave]) {
-        await env.yUSDT.transfer(person.address, userInitialYieldToken);
-        await env.yUSDT.connect(person).approve(env.router.address, consts.INF);
+        await env.yToken.transfer(person.address, userInitialYieldToken);
+        await env.yToken.connect(person).approve(env.router.address, consts.INF);
       };
       await redeemRewardsFromProtocol([bob, charlie, dave]);
       await mineBlock();
@@ -78,7 +78,7 @@ export function runTest(mode: Mode) {
         const incentiveController = await hre.ethers.getContractAt("IAaveIncentivesController", consts.AAVE_INCENTIVES_CONTROLLER);
         for (const person of users) {
           await incentiveController.connect(person).claimRewards(
-            [env.yUSDT.address],
+            [env.yToken.address],
             consts.INF,
             person.address
           );
@@ -87,7 +87,7 @@ export function runTest(mode: Mode) {
         const comptroller = await hre.ethers.getContractAt("IComptroller", consts.COMPOUND_COMPTROLLER_ADDRESS);
         await comptroller.claimComp(
           users.map((u) => u.address),
-          [env.yUSDT.address],
+          [env.yToken.address],
           false,
           true
         );
@@ -144,15 +144,15 @@ export function runTest(mode: Mode) {
     // }
 
     // Bob:
-    //    - holds the yUSDT throughout from t0
+    //    - holds the yToken throughout from t0
     //    - redeem incentives directly from protocol at t5
     // Charlie:
-    //    - tokenize half of yUSDT at t0
+    //    - tokenize half of yToken at t0
     //    - redeemUnderlying half of his OTs at t2
     //    - redeemAfterExpiry at t4 (after expiry)
     //    - redeemRewards() at t5
     // Dave:
-    //    - tokenize 2/3 of yUSDT & empty XYTs at t1
+    //    - tokenize 2/3 of yToken & empty XYTs at t1
     //    - send 2/3 of his OT to Eve at t3
     //    - redeemRewards() at t5
     // Eve:
@@ -160,7 +160,7 @@ export function runTest(mode: Mode) {
     //    - redeemRewards() at t5
     // => At t5, this must hold:
     //       reward(Bob) = reward(Charlie) = reward(Dave) + reward(Eve)
-    it('[Only Compound] OT users should receive same rewards as yUSDT holders', async () => {
+    it('[Only Compound] OT users should receive same rewards as yToken holders', async () => {
       if (mode !== Mode.COMPOUND) return;
 
       //t0
@@ -168,7 +168,7 @@ export function runTest(mode: Mode) {
 
       //t1
       await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 3);
-      await tokenizeYield(env, dave, userInitialYieldToken.mul(2).div(3)); // tokenize 2/3 of yUSDT & empty XYTs at t1
+      await tokenizeYield(env, dave, userInitialYieldToken.mul(2).div(3)); // tokenize 2/3 of yToken & empty XYTs at t1
       const otMintedDave = await env.ot.balanceOf(dave.address);
 
       //t2
