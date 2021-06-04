@@ -328,7 +328,7 @@ export async function runTest(mode: Mode) {
         errMsg.MARKET_HANDLER_LOCKED
       );
 
-      await env.pausingManager.lock
+      await env.pausingManager.lock;
 
       await env.pausingManager.lockPausingManagerPermanently();
       await permaLockTests();
@@ -339,9 +339,9 @@ export async function runTest(mode: Mode) {
         const emergencyHandlers = [
           await env.pausingManager.forgeEmergencyHandler(), // forge
           await env.pausingManager.marketEmergencyHandler(), // market
-          await env.pausingManager.liqMiningEmergencyHandler() // liquidity mining
-        ]
-        for(let i = 0; i < 3; ++i) {
+          await env.pausingManager.liqMiningEmergencyHandler(), // liquidity mining
+        ];
+        for (let i = 0; i < 3; ++i) {
           expect(emergencyHandlers[i].handler).to.be.equal(handlers[i].address);
           if (pendingHandlers) {
             expect(emergencyHandlers[i].pendingHandler).to.be.equal(pendingHandlers[i].address);
@@ -353,17 +353,11 @@ export async function runTest(mode: Mode) {
       await env.pausingManager.requestMarketHandlerChange(charlie.address, consts.HG);
       await env.pausingManager.requestLiqMiningHandlerChange(dave.address, consts.HG);
       await checkHandler([alice, alice, alice], [bob, charlie, dave]);
-      
+
       await advanceTime(consts.ONE_DAY);
-      await expect(
-        env.pausingManager.applyForgeHandlerChange()
-      ).to.be.revertedWith(errMsg.TIMELOCK_NOT_OVER);
-      await expect(
-        env.pausingManager.applyMarketHandlerChange()
-      ).to.be.revertedWith(errMsg.TIMELOCK_NOT_OVER);
-      await expect(
-        env.pausingManager.applyLiqMiningHandlerChange()
-      ).to.be.revertedWith(errMsg.TIMELOCK_NOT_OVER);
+      await expect(env.pausingManager.applyForgeHandlerChange()).to.be.revertedWith(errMsg.TIMELOCK_NOT_OVER);
+      await expect(env.pausingManager.applyMarketHandlerChange()).to.be.revertedWith(errMsg.TIMELOCK_NOT_OVER);
+      await expect(env.pausingManager.applyLiqMiningHandlerChange()).to.be.revertedWith(errMsg.TIMELOCK_NOT_OVER);
 
       await advanceTime(consts.ONE_WEEK.sub(consts.ONE_DAY).add(consts.ONE_HOUR));
       await env.pausingManager.applyForgeHandlerChange(consts.HG);
@@ -376,17 +370,17 @@ export async function runTest(mode: Mode) {
       await env.pausingManager.lockMarketHandlerPermanently();
       await env.pausingManager.lockLiqMiningHandlerPermanently();
 
-      await expect(
-        env.pausingManager.requestForgeHandlerChange(bob.address, consts.HG)
-      ).to.be.revertedWith(errMsg.FORGE_HANDLER_LOCKED);
-      
-      await expect(
-        env.pausingManager.requestMarketHandlerChange(charlie.address, consts.HG)
-      ).to.be.revertedWith(errMsg.MARKET_HANDLER_LOCKED);
+      await expect(env.pausingManager.requestForgeHandlerChange(bob.address, consts.HG)).to.be.revertedWith(
+        errMsg.FORGE_HANDLER_LOCKED
+      );
 
-      await expect(
-        env.pausingManager.requestLiqMiningHandlerChange(dave.address, consts.HG)
-      ).to.be.revertedWith(errMsg.LIQUIDITY_MINING_HANDLER_LOCKED);
+      await expect(env.pausingManager.requestMarketHandlerChange(charlie.address, consts.HG)).to.be.revertedWith(
+        errMsg.MARKET_HANDLER_LOCKED
+      );
+
+      await expect(env.pausingManager.requestLiqMiningHandlerChange(dave.address, consts.HG)).to.be.revertedWith(
+        errMsg.LIQUIDITY_MINING_HANDLER_LOCKED
+      );
     });
   });
 }
