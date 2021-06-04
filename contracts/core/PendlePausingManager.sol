@@ -164,7 +164,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         onlyGovernance
         notPermLocked
     {
-        require(!permLiqMiningHandlerLocked, "MARKET_HANDLER_LOCKED");
+        require(!permLiqMiningHandlerLocked, "LIQUIDITY_MINING_HANDLER_LOCKED");
         require(_pendingLiqMiningHandler != address(0), "ZERO_ADDRESS");
         liqMiningEmergencyHandler.pendingHandler = _pendingLiqMiningHandler;
         liqMiningEmergencyHandler.timelockDeadline =

@@ -1,7 +1,7 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
-import { consts, errMsg, evm_revert, evm_snapshot, mintCompoundToken, tokens } from '../../helpers';
+import { advanceTime, consts, errMsg, evm_revert, evm_snapshot, mintCompoundToken, tokens } from '../../helpers';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../fixtures';
 const { waffle } = require('hardhat');
 chai.use(solidity);
@@ -328,8 +328,37 @@ export async function runTest(mode: Mode) {
         errMsg.MARKET_HANDLER_LOCKED
       );
 
+      await env.pausingManager.lock
+
       await env.pausingManager.lockPausingManagerPermanently();
       await permaLockTests();
+    });
+
+    it('Hanlder changes should work correctly', async () => {
+      await env.pausingManager.requestForgeHandlerChange(bob.address, consts.HG);
+      await env.pausingManager.requestMarketHandlerChange(charlie.address, consts.HG);
+      await env.pausingManager.requestLiqMiningHandlerChange(dave.address, consts.HG);
+
+      await advanceTime(consts.ONE_WEEK.add(consts.ONE_HOUR));
+      await env.pausingManager.applyForgeHandlerChange(consts.HG);
+      await env.pausingManager.applyMarketHandlerChange(consts.HG);
+      await env.pausingManager.applyLiqMiningHandlerChange(consts.HG);
+
+      await env.pausingManager.lockForgeHandlerPermanently();
+      await env.pausingManager.lockMarketHandlerPermanently();
+      await env.pausingManager.lockLiqMiningHandlerPermanently();
+
+      await expect(
+        env.pausingManager.requestForgeHandlerChange(bob.address, consts.HG)
+      ).to.be.revertedWith(errMsg.FORGE_HANDLER_LOCKED);
+      
+      await expect(
+        env.pausingManager.requestMarketHandlerChange(charlie.address, consts.HG)
+      ).to.be.revertedWith(errMsg.MARKET_HANDLER_LOCKED);
+
+      await expect(
+        env.pausingManager.requestLiqMiningHandlerChange(dave.address, consts.HG)
+      ).to.be.revertedWith(errMsg.LIQUIDITY_MINING_HANDLER_LOCKED);
     });
   });
 }
