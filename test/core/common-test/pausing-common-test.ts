@@ -1,6 +1,6 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
-import { BigNumber as BN } from 'ethers';
+import { BigNumber as BN, Wallet } from 'ethers';
 import { advanceTime, consts, errMsg, evm_revert, evm_snapshot, mintCompoundToken, tokens } from '../../helpers';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../fixtures';
 const { waffle } = require('hardhat');
@@ -335,14 +335,42 @@ export async function runTest(mode: Mode) {
     });
 
     it('Hanlder changes should work correctly', async () => {
+      async function checkHandler(handlers: Wallet[], pendingHandlers?: Wallet[]) {
+        const emergencyHandlers = [
+          await env.pausingManager.forgeEmergencyHandler(), // forge
+          await env.pausingManager.marketEmergencyHandler(), // market
+          await env.pausingManager.liqMiningEmergencyHandler() // liquidity mining
+        ]
+        for(let i = 0; i < 3; ++i) {
+          expect(emergencyHandlers[i].handler).to.be.equal(handlers[i].address);
+          if (pendingHandlers) {
+            expect(emergencyHandlers[i].pendingHandler).to.be.equal(pendingHandlers[i].address);
+          }
+        }
+      }
+
       await env.pausingManager.requestForgeHandlerChange(bob.address, consts.HG);
       await env.pausingManager.requestMarketHandlerChange(charlie.address, consts.HG);
       await env.pausingManager.requestLiqMiningHandlerChange(dave.address, consts.HG);
+      await checkHandler([alice, alice, alice], [bob, charlie, dave]);
+      
+      await advanceTime(consts.ONE_DAY);
+      await expect(
+        env.pausingManager.applyForgeHandlerChange()
+      ).to.be.revertedWith(errMsg.TIMELOCK_NOT_OVER);
+      await expect(
+        env.pausingManager.applyMarketHandlerChange()
+      ).to.be.revertedWith(errMsg.TIMELOCK_NOT_OVER);
+      await expect(
+        env.pausingManager.applyLiqMiningHandlerChange()
+      ).to.be.revertedWith(errMsg.TIMELOCK_NOT_OVER);
 
-      await advanceTime(consts.ONE_WEEK.add(consts.ONE_HOUR));
+      await advanceTime(consts.ONE_WEEK.sub(consts.ONE_DAY).add(consts.ONE_HOUR));
       await env.pausingManager.applyForgeHandlerChange(consts.HG);
       await env.pausingManager.applyMarketHandlerChange(consts.HG);
       await env.pausingManager.applyLiqMiningHandlerChange(consts.HG);
+
+      await checkHandler([bob, charlie, dave]);
 
       await env.pausingManager.lockForgeHandlerPermanently();
       await env.pausingManager.lockMarketHandlerPermanently();

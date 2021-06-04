@@ -40,4 +40,5 @@ export const errMsg = {
   XYT_BALANCE_ERROR: prefix + ' ' + 'XYT_BALANCE_ERROR',
   TOKEN_BALANCE_ERROR: prefix + ' ' + 'TOKEN_BALANCE_ERROR',
   LIQ_MINING_PAUSED: prefix + ' ' + 'LIQ_MINING_PAUSED',
+  TIMELOCK_NOT_OVER: prefix + ' ' + 'TIMELOCK_NOT_OVER',
 };
