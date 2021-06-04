@@ -18,7 +18,7 @@ export async function step8(deployer: any, hre: any, deployment: Deployment, con
   ]);
 
   //TODO: change it to a Compound one
-  const cYieldContractDeployer = await deploy(hre, deployment, 'PendleAaveYieldContractDeployer', [
+  const cYieldContractDeployer = await deploy(hre, deployment, 'PendleCompoundYieldContractDeployer', [
     governanceManager,
     consts.misc.FORGE_COMPOUND,
   ]);
@@ -31,6 +31,7 @@ export async function step8(deployer: any, hre: any, deployment: Deployment, con
     consts.misc.COMP_ADDRESS,
     cRewardManager.address,
     cYieldContractDeployer.address,
+    consts.tokens.WETH.compound,
   ]);
 
   await cRewardManager.initialize(pendleCompoundForge.address);
@@ -46,7 +47,7 @@ export async function step8(deployer: any, hre: any, deployment: Deployment, con
   await pendleData.addMarketFactory(consts.misc.MARKET_FACTORY_COMPOUND, pendleCompoundMarketFactory.address);
   await pendleData.addForge(consts.misc.FORGE_COMPOUND, pendleCompoundForge.address);
 
-  if (!['kovan', 'mainnet'].includes(hre.network.name)) {
+  if (!['mainnet'].includes(hre.network.name)) {
     await pendleData.setForgeFactoryValidity(consts.misc.FORGE_COMPOUND, consts.misc.MARKET_FACTORY_COMPOUND, true);
   } else {
     console.log('[NOTICE - TODO] We will need to use the governance multisig to setForgeFactoryValidity for Compound');

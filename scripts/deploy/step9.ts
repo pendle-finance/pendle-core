@@ -18,7 +18,7 @@ export async function step9(deployer: any, hre: any, deployment: Deployment, con
   ]);
 
   //TODO: use proper V2 reward manager
-  const a2YieldContractDeployer = await deploy(hre, deployment, 'PendleAaveYieldContractDeployer', [
+  const a2YieldContractDeployer = await deploy(hre, deployment, 'PendleAaveV2YieldContractDeployer', [
     governanceManager,
     consts.misc.FORGE_AAVE_V2,
   ]);
@@ -38,13 +38,19 @@ export async function step9(deployer: any, hre: any, deployment: Deployment, con
 
   await a2YieldContractDeployer.initialize(pendleAaveV2Forge.address);
 
+  const pendleAaveMarketFactory = await deploy(hre, deployment, 'PendleAaveMarketFactory', [
+    pendleRouterAddress,
+    consts.misc.MARKET_FACTORY_AAVE,
+  ]);
+
   const pendleData = await getContractFromDeployment(hre, deployment, 'PendleData');
 
   await pendleData.addForge(consts.misc.FORGE_AAVE_V2, pendleAaveV2Forge.address);
+  await pendleData.addMarketFactory(consts.misc.MARKET_FACTORY_AAVE, pendleAaveMarketFactory.address);
 
   deployment.yieldContracts = {}; //reset yield contracts
 
-  if (!['kovan', 'mainnet'].includes(hre.network.name)) {
+  if (!['mainnet'].includes(hre.network.name)) {
     await pendleData.setForgeFactoryValidity(consts.misc.FORGE_AAVE_V2, consts.misc.MARKET_FACTORY_AAVE, true);
   } else {
     console.log('[NOTICE - TODO] We will need to use the governance multisig to setForgeFactoryValidity for AaveV2');

@@ -72,12 +72,12 @@ const config: HardhatUserConfig = {
       timeout: 1000000,
       gasPrice: 1
     },
-    // kovan: {
-    //   url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY || "dummyKey"}`,
-    //   gas: 8000000,
-    //   timeout: 100000,
-    //   accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
-    // },
+    kovan: {
+      url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY || "dummyKey"}`,
+      gas: 8000000,
+      timeout: 100000,
+      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
+    },
     // kovantest: {
     //   // url: `https://eth-kovan.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
     //   url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY || "dummyKey"}`,

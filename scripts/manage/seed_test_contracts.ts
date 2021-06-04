@@ -2,7 +2,7 @@ const hre = require('hardhat');
 import fs from 'fs';
 import path from 'path';
 import { utils, BigNumber as BN } from 'ethers';
-import { mintAaveToken, mintCompoundToken, mint } from '../../test/helpers';
+import { mintAaveV2Token, mintCompoundToken, mint } from '../../test/helpers';
 const { execSync } = require('child_process');
 
 const UNDERLYING_YIELD_TOKEN_TO_SEED = BN.from(1000000);
@@ -55,8 +55,7 @@ async function main() {
   }
   if (network == 'development' || network == 'hardhat') {
     // seed USDTs, aUSDTs, cUSDTs
-    await mintAaveToken(consts.tokens.USDT_AAVE, deployer, UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6), true);
-    await mintAaveToken(consts.tokens.USDT_AAVE, deployer, UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6), false);
+    await mintAaveV2Token(consts.tokens.USDT_AAVE, deployer, UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6));
     await mintCompoundToken(consts.tokens.USDT_COMPOUND, deployer, UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6));
     await mint(consts.tokens.USDT_COMPOUND, deployer, BASE_TOKEN_TO_SEED.mul(2).div(10 ** 6));
   }
@@ -77,7 +76,7 @@ async function main() {
   await createNewYieldContractAndMarket(
     hre,
     deployment,
-    consts.misc.FORGE_AAVE,
+    consts.misc.FORGE_AAVE_V2,
     consts.misc.MARKET_FACTORY_AAVE,
     usdtAaveContract,
     expiry,
@@ -109,7 +108,7 @@ async function main() {
     hre,
     deployment,
     consts,
-    consts.misc.FORGE_AAVE,
+    consts.misc.FORGE_AAVE_V2,
     consts.misc.MARKET_FACTORY_AAVE,
     usdtAaveContract,
     expiry,
@@ -144,7 +143,7 @@ async function main() {
     hre,
     deployment,
     consts,
-    consts.misc.FORGE_AAVE,
+    consts.misc.FORGE_AAVE_V2,
     consts.misc.MARKET_FACTORY_AAVE,
     'PendleAaveLiquidityMining',
     usdtAaveContract,

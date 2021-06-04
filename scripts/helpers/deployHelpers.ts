@@ -27,7 +27,6 @@ export const devConstants = {
     FORGE_AAVE: utils.formatBytes32String('Aave'),
     MARKET_FACTORY_AAVE: utils.formatBytes32String('Aave'),
     FORGE_AAVE_V2: utils.formatBytes32String('AaveV2'),
-    MARKET_FACTORY_AAVE_V2: utils.formatBytes32String('AaveV2'),
     FORGE_COMPOUND: utils.formatBytes32String('Compound'),
     MARKET_FACTORY_COMPOUND: utils.formatBytes32String('Compound'),
     ZERO_BYTES: utils.formatBytes32String(''),
@@ -169,6 +168,7 @@ export const kovanConstants = {
     WETH: {
       address: '0xa1c74a9a3e59ffe9bee7b85cd6e91c0751289ebd',
       decimal: 18,
+      compound: '0x41B5844f4680a8C38fBb695b7F9CFd1F64474a72',
     },
     USDC: {
       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
@@ -439,6 +439,7 @@ export async function setupLiquidityMining(
   const [deployer] = await hre.ethers.getSigners();
   const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
   const governanceManager = await getContractFromDeployment(hre, deployment, 'PendleGovernanceManager');
+  const pausingManager = await getContractFromDeployment(hre, deployment, 'PendlePausingManager');
   const whitelist = await getContractFromDeployment(hre, deployment, 'PendleWhitelist');
 
   const underlyingAssetSymbol = await underlyingAssetContract.symbol();
@@ -452,6 +453,7 @@ export async function setupLiquidityMining(
 
   const liqMiningContract = await deploy(hre, deployment, liqMiningContractName, [
     governanceManager.address,
+    pausingManager.address,
     whitelist.address,
     pendle.address,
     pendleRouter.address,

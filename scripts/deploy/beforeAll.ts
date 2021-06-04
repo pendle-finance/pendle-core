@@ -9,11 +9,12 @@ export async function beforeAll(deployer: any, hre: any, deployment: Deployment,
     'LIQUIDITY_INCENTIVES_MULTISIG',
     'FORGE_EMERGENCY_HANDLER',
     'MARKET_EMERGENCY_HANDLER',
+    'LIQ_MINING_EMERGENCY_HANDLER',
   ];
 
-  if (!['kovan', 'mainnet', 'goerli'].includes(hre.network.name)) {
+  if (!['mainnet', 'goerli'].includes(hre.network.name)) {
     console.log(
-      `[NOTICE] its not mainnet or kovan, so we are using deployer account ${deployer.address} as the multisigs, and the emergency handlers`
+      `[NOTICE] its not mainnet, so we are using deployer account ${deployer.address} as the multisigs, and the emergency handlers`
     );
     for (const multisig of multisigNames) {
       process.env[multisig] = deployer.address;
