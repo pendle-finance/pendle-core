@@ -2,80 +2,88 @@
   "step": 9,
   "contracts": {
     "PENDLE": {
-      "address": "0x9f7a4af55F74bc2275eD058a4E247B4Eb1d84003",
-      "tx": "0xf7f45bf79625d8a9a1256f1e013716f7082e2494181abc783235bf2782b2432c"
+      "address": "0xDf84f43015372B9c6023CC0F14fa1Ff8B7c4bb04",
+      "tx": "0xfa9a16784caf8ed31a55934c79f2facd9fe660be72f684d3d4105c7154318a5f"
     },
     "PendleData": {
-      "address": "0x9AB7D0298D39B6220B1C8B36E76F842530719B89",
-      "tx": "0x4e51a082a20c3df2dc83f6e15d30ed569303348f36358b01bc14fc0e21fcbccf"
+      "address": "0x58ecd45fACCa9503A6Df8E1Db5faaf12122da82b",
+      "tx": "0x88bcdda2368389fd917531b422e3480f7cff833cab5a04ef9a74986a59a5c167"
     },
     "PendleMarketReader": {
-      "address": "0x71Bc6fC9119900F30FB06e49f2D9B633FD827b89",
-      "tx": "0x5a8fe2f32dbffdc27a9b3b73e4a372bdbb2377876d4c48cb83c833c7621f6243"
+      "address": "0xE131801B7E8c62F01405907f4cab6908aB13E691",
+      "tx": "0x98664d485bde7ba165525dc88c5dc46118b53042d2e7a18b4c6a70cd209826d7"
     },
     "PendleRouter": {
-      "address": "0x2015aC1e1A70C20B1130683A596311aE0EdCe686",
-      "tx": "0x0304dd676d207bf018b82b9703348ec59ec79b80573eb7fcd2aea7bc4b3de4d2"
+      "address": "0xe8906375aF47C6452ed5A19f811D258CA0d10023",
+      "tx": "0xd171a00798fd7007804ff2916d346fdcfbbd57b0ff03b67066af5ea6da6d2b39"
     },
     "PendleAaveForge": {
       "address": "0xd36ebdB39BC811034E7DB86C425bBeAA14b3FC31",
       "tx": "0x2dbb4366e61d1e91e332754942b84173b91488d43b8317819f4d51c5d8e17acc"
     },
     "PendleAaveMarketFactory": {
-      "address": "0xA420f77da58EcEf14b75432DB0493A1a24f23C47",
-      "tx": "0x033f7511671f039243c4e5076af5f91c6cfb599510e1550265ebb3e70de39f39"
+      "address": "0xfa3E13518B7c91c8F950247e2e02ac3FcfE76C1e",
+      "tx": "0x1e5d9770e8e147628b69cceaa7ae8bc63bd66e82b10e6836e6c77a67b5aaa42f"
     },
     "PendleCompoundForge": {
-      "address": "0x5621bAd41f185CeC8890Bc34f2002D1f2434255c",
-      "tx": "0x45c42c403ac9eba6c85ea83052c2e5d6f6ceed00d1fdf2fa74cff88e29e744f8"
+      "address": "0x642BE6ee6b288223F202fF3DCb573De7496AB18a",
+      "tx": "0x56237458549da1a1982f83714087b371546950cd73555bf1bece768d66293025"
     },
     "PendleCompoundMarketFactory": {
-      "address": "0x5Fc597Be2B0aB852524F9805ef445DBa6ab8Bf29",
-      "tx": "0x46dab99ffd5cf9377922fffc8d713accd58b47aed560919971a413a5cb812de0"
+      "address": "0x4098Ec7fD4143454C50D8D8976C6728bceea9a9A",
+      "tx": "0x5b0e2b23c8445b44678f9a03a7db611d5a57331a65220fa98657b4f94c3c60a0"
     },
     "PendleAaveV2Forge": {
-      "address": "0x7Df8Fec63a434E6EefC761Bc4c6BAd494Df34baA",
-      "tx": "0xd959f68a7e6d32d24e8b02e120633e67f4e2b0eec6661c840aa6a5bf8446a731"
+      "address": "0x069322eFa9057971D227b8fc711E5E15183b1D23",
+      "tx": "0x87d2fa7042392478bb5b8004caf38b480e9d222280523efd3e60aa098d92117c"
     },
     "PendleAaveLiquidityMining": {
-      "address": "0xc1905e91127f2342CB1221b079ae1d212e1b0F12",
-      "tx": "0x746747eea1125bdf1ee92c2492c65921b6377308b67761e10a7ee3f681082ffe"
+      "address": "0xc95710EbD862f6DDBaB79e417B49925070d27643",
+      "tx": "0x4669bd2cd6f0e0ea505817732eab1c8db9fbb43fa2c8a0e6e858b67b2fc034c4"
     },
     "PendleTeamTokens": {
-      "address": "0x3a7d502EE15CD8023658928df8D6136e506817D5",
-      "tx": "0xe97369396573f9f8cc63f782d24613b701d59d8ab3226b461c2582b345da942c"
+      "address": "0xA775B8217387Bfb83DC9dC91Df588dBbb16206C3",
+      "tx": "0x7d3b284cc045cc644edb58dcc0def47307c7536778611fa15739a36c1f46b57a"
     },
     "PendleEcosystemFund": {
-      "address": "0xE7F3A4F38caaD2dB053D41Cfd429F3D4f6DccDeF",
-      "tx": "0x1ebbd1fccec5a9e9a673d6bbd3f0d41c89d20ae0f56ccbd9ce6292b912eb3c72"
+      "address": "0xfb41622a1c85c68E152522503E99597C48b22342",
+      "tx": "0x541b11d22562b8dbee346b3c529183f2e4b2adad6aee99a646dde85bae779fde"
     },
     "PendleCompoundLiquidityMining": {
-      "address": "0xDA4287310e07763D454c256EEacE64dB8Ac2ACf1",
-      "tx": "0x3cf671b910278a9020096accde9c0083571b72dd5dd8121b1cbaa9073d907992"
+      "address": "0x2a559915fe5b9754E24194a20994F4AB0916F6e4",
+      "tx": "0xa9b945987b8ec52cd9279d2c70000352e46f63d1ccf596553a855e48c4f7e787"
     },
     "PendlePausingManager": {
-      "address": "0xd55ACbb0B434F3581444a798b667132F2c31612b",
-      "tx": "0x59bac5456b0760a9c19686f37973427750975d6483b65ff67d30cad41c9e6d0e"
+      "address": "0xE9526eD4d199Dca60430f44f75E939a4a094ab9D",
+      "tx": "0xe9de62dfb80ea8aa4e9183d063ca9cd5d7ad41338ece2fa1e3838aff43cf7eae"
     },
     "PendleRewardManager": {
-      "address": "0x94ad4431150739ce09ae021D00804AEE74df6963",
-      "tx": "0x84565eb1b57f4e0e4f8387d9a385ab66b25ac2631d9c75f13f4d35fdc7d2b3dc"
+      "address": "0x96905Fd11C817c0Dc61f50d432367D0Bb37432d3",
+      "tx": "0x5220c5a164665b86f31420c0f23ada0169692f57a25f628626f34a40c1d57a0b"
     },
     "PendleAaveYieldContractDeployer": {
       "address": "0x28FC366420E9b850369CC2D1aBf2d85FfB1BD2c8",
       "tx": "0x12757b539762b9f841963f6d0b08f6d5db9caf5f7763e05753726289c7b0ba8f"
     },
     "PendleRedeemProxy": {
-      "address": "0x44f54387A81f647b203B3CE959FEd28e1f9055f1",
-      "tx": "0xac250a5c1bacf900ee07129b979b3267b8282f7ab4857eb18f1f5e79dce7f707"
+      "address": "0xE54F302047a0B830c5D465e84C4dB95951E65856",
+      "tx": "0xa80eef02551752a65b4c15612fbd87e327e7e940aaf98e19af10b598babbcb9e"
     },
     "PendleGovernanceManager": {
-      "address": "0x6806126a655194837Bf0c340599f0f0cacB74042",
-      "tx": "0x29fda63c66ec7411adb2f5352b1156225ceeb2790cc2d8f97dc2508e677bd7bc"
+      "address": "0x195D747D0bF40cD5Fe53f9Bde0F872FCF2CF7512",
+      "tx": "0x586bd7e7d13ad24df42a95eaeab2994c9c08cbf6e4420a711344ae14400bebdc"
     },
     "PendleWhitelist": {
-      "address": "0x040E51c39D887fAA43D1a1f2B6905820a5B05064",
-      "tx": "0x59066527a605dea128172d5e62cc2eae47208e544da27309ea50ab7c20c624c5"
+      "address": "0x78C626E99C61Ecca33c7a263B020F5b0535BE383",
+      "tx": "0x4fd89c4d74fc876356f579abbc8ed5226c9144190afdc256f15ef35c7bd245b5"
+    },
+    "PendleCompoundYieldContractDeployer": {
+      "address": "0x6EDF9571114f3FF33f91E2eA11e9Cc3c9852b4bf",
+      "tx": "0xb014ab1c4630ad848f85504cedbed897caac5a0a5aa6fd6b6a85b660464c9e1f"
+    },
+    "PendleAaveV2YieldContractDeployer": {
+      "address": "0xC790701742208849441cc8BD907F046b6e42B07B",
+      "tx": "0x369aa06476ba84916411c10e5889620cc1362e69dd5f31d37fff9a475d0b0750"
     }
   },
   "variables": {
@@ -85,52 +93,39 @@
     "SALES_MULTISIG": "0xB2d532986437bC93C7d2915b9F60E62cbd7F824A",
     "LIQUIDITY_INCENTIVES_MULTISIG": "0xB2d532986437bC93C7d2915b9F60E62cbd7F824A",
     "FORGE_EMERGENCY_HANDLER": "0xB2d532986437bC93C7d2915b9F60E62cbd7F824A",
-    "MARKET_EMERGENCY_HANDLER": "0xB2d532986437bC93C7d2915b9F60E62cbd7F824A"
+    "MARKET_EMERGENCY_HANDLER": "0xB2d532986437bC93C7d2915b9F60E62cbd7F824A",
+    "LIQ_MINING_EMERGENCY_HANDLER": "0xB2d532986437bC93C7d2915b9F60E62cbd7F824A"
   },
   "yieldContracts": {
-    "Aave": {
+    "AaveV2": {
       "USDT": {
         "expiries": {
-          "1624147200": {
-            "XYT": "0x018CC7503295A6d2eB247B34f44795B5c7cbECd4",
-            "OT": "0xd30a22388eF5a4c3E110981CAd68d33b0af93E08",
+          "1626652800": {
+            "XYT": "0xfECaAAdB0707009E1f1cC4d64E57E577c368306A",
+            "OT": "0xC20555e78458233529e961400784BfF7eEf3A4b2",
             "markets": {
-              "USDT": "0x40b41322b5Caaf0E84aefE1A096992217AbAE75c"
-            }
-          },
-          "1627430400": {
-            "XYT": "0xeC789Ef1969876546355d12412b7176cd8cB56AF",
-            "OT": "0xCB96DB5c57Df9FcB66C08398Cd138cA12E8c5455",
-            "markets": {
-              "USDT": "0x95124A99B8359c15e2fFfc2743b10C46F87dd21d"
+              "USDT": "0x8702b8bAD3eF33d159d1139ED0617b779c81E086"
             }
           }
         },
         "PendleLiquidityMining": {
-          "USDT": "0xc1905e91127f2342CB1221b079ae1d212e1b0F12"
+          "USDT": "0xc95710EbD862f6DDBaB79e417B49925070d27643"
         }
       }
     },
     "Compound": {
       "USDT": {
         "expiries": {
-          "1624147200": {
-            "XYT": "0xa92382A0948b9eF2531203521f1D3f9F6F98B758",
-            "OT": "0xBbFBd5FC3183c8d0B62bEd919a6821f8edD59822",
+          "1626652800": {
+            "XYT": "0x3F74AE5BD9E1945BFe36F41eB1cAe1eECDd62758",
+            "OT": "0xE74e9Aa18191c4255DE2ce25DECCf48450CdA874",
             "markets": {
-              "USDT": "0x063BbfE765067d1840B845598506A4cd83902D75"
-            }
-          },
-          "1627430400": {
-            "XYT": "0x55c9bcd1327477541c31d80366369505F8E24bDE",
-            "OT": "0x28B1728393F0A0b0417948E5f805011c5E831821",
-            "markets": {
-              "USDT": "0xD992e0F45BE5C403bc0FDF7EFBA29C9014fF3807"
+              "USDT": "0x776f0D16D26b942228724f1265DDFf2A63806292"
             }
           }
         },
         "PendleLiquidityMining": {
-          "USDT": "0xDA4287310e07763D454c256EEacE64dB8Ac2ACf1"
+          "USDT": "0x2a559915fe5b9754E24194a20994F4AB0916F6e4"
         }
       }
     }
