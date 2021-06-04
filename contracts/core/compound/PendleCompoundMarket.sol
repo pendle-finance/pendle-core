@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
+pragma abicoder v2;
 
 import "../../interfaces/IPendleCompoundForge.sol";
 import "./../abstract/PendleMarketBase.sol";
@@ -88,6 +88,6 @@ contract PendleCompoundMarket is PendleMarketBase {
 
     /// @inheritdoc PendleMarketBase
     function _getIncomeIndexIncreaseRate() internal override returns (uint256 increaseRate) {
-        return _getExchangeRate().rdiv(globalLastExchangeRate) - Math.RONE;
+        return _getExchangeRate().rdiv(globalLastExchangeRate).sub(Math.RONE);
     }
 }

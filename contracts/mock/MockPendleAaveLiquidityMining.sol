@@ -27,6 +27,7 @@ import "../core/aave/PendleAaveLiquidityMining.sol";
 contract MockPendleAaveLiquidityMining is PendleAaveLiquidityMining {
     constructor(
         address _governance,
+        address _pausingManager,
         address _whitelist,
         address _pendleTokenAddress,
         address _pendleRouter,
@@ -40,6 +41,7 @@ contract MockPendleAaveLiquidityMining is PendleAaveLiquidityMining {
     )
         PendleAaveLiquidityMining(
             _governance,
+            _pausingManager,
             _whitelist,
             _pendleTokenAddress,
             _pendleRouter,

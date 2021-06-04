@@ -30,6 +30,7 @@ import "../../interfaces/IPendleLpHolder.sol";
 import "../../core/PendleLpHolder.sol";
 import "../../interfaces/IPendleLiquidityMining.sol";
 import "../../interfaces/IPendleWhitelist.sol";
+import "../../interfaces/IPendlePausingManager.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
@@ -109,6 +110,7 @@ abstract contract PendleLiquidityMiningBase is
     bytes32 public immutable override forgeId;
     address internal immutable forge;
     bytes32 public immutable override marketFactoryId;
+    IPendlePausingManager private immutable pausingManager;
 
     address public immutable override underlyingAsset;
     address public immutable override underlyingYieldToken;
@@ -146,6 +148,7 @@ abstract contract PendleLiquidityMiningBase is
 
     constructor(
         address _governanceManager,
+        address _pausingManager,
         address _whitelist,
         address _pendleTokenAddress,
         address _router,
@@ -177,6 +180,7 @@ abstract contract PendleLiquidityMiningBase is
         address _forgeTemp = _dataTemp.getForgeAddress(_forgeId);
         forge = _forgeTemp;
         underlyingYieldToken = IPendleForge(_forgeTemp).getYieldBearingToken(_underlyingAsset);
+        pausingManager = IPendlePausingManager(_pausingManager);
         marketFactoryId = _marketFactoryId;
         forgeId = _forgeId;
         underlyingAsset = _underlyingAsset;
@@ -184,6 +188,34 @@ abstract contract PendleLiquidityMiningBase is
         startTime = _startTime;
         epochDuration = _epochDuration;
         vestingEpochs = _vestingEpochs;
+    }
+
+    // Only the liqMiningEmergencyHandler can call this function, when its in emergencyMode
+    // this will allow a spender to spend the whole balance of the specified tokens from this contract
+    // as well as to spend tokensForLpHolder from the respective lp holders for expiries specified
+    // the spender should ideally be a contract with logic for users to withdraw out their funds.
+    function setUpEmergencyMode(
+        address[] calldata tokens,
+        uint256[] calldata expiries,
+        address[] calldata tokensForLpHolder,
+        address spender
+    ) external override {
+        (, bool emergencyMode) = pausingManager.checkLiqMiningStatus(address(this));
+        require(emergencyMode, "NOT_EMERGENCY");
+        require(expiries.length == tokensForLpHolder.length, "ARRAY_LENGTH_MISMATCH");
+
+        (address liqMiningEmergencyHandler, , ) = pausingManager.liqMiningEmergencyHandler();
+        require(msg.sender == liqMiningEmergencyHandler, "NOT_EMERGENCY_HANDLER");
+        for (uint256 i = 0; i < tokens.length; i++) {
+            IERC20(tokens[i]).safeApprove(spender, type(uint256).max);
+        }
+
+        for (uint256 i = 0; i < expiries.length; i++) {
+            IPendleLpHolder(expiryData[expiries[i]].lpHolder).setUpEmergencyMode(
+                tokensForLpHolder[i],
+                spender
+            );
+        }
     }
 
     /**
@@ -195,6 +227,7 @@ abstract contract PendleLiquidityMiningBase is
         * Must only be called by governance
      */
     function fund(uint256[] memory _rewards) external override onlyGovernance {
+        checkNotPaused();
         // Can only be fund if there is already a setting
         require(latestSetting.id > 0, "NO_ALLOC_SETTING");
         // Once the program is over, cannot fund
@@ -226,6 +259,7 @@ abstract contract PendleLiquidityMiningBase is
         onlyGovernance
         isFunded
     {
+        checkNotPaused();
         require(latestSetting.id > 0, "NO_ALLOC_SETTING");
         require(_epochIds.length == _rewards.length, "INVALID_ARRAYS");
 
@@ -261,6 +295,7 @@ abstract contract PendleLiquidityMiningBase is
         uint256[] calldata _expiries,
         uint256[] calldata _allocationNumerators
     ) external onlyGovernance {
+        checkNotPaused();
         require(_expiries.length == _allocationNumerators.length, "INVALID_ALLOCATION");
         if (latestSetting.id == 0) {
             require(block.timestamp < startTime, "LATE_FIRST_ALLOCATION");
@@ -303,6 +338,7 @@ abstract contract PendleLiquidityMiningBase is
         nonContractOrWhitelisted
         returns (address newLpHoldingContractAddress)
     {
+        checkNotPaused();
         newLpHoldingContractAddress = _stake(expiry, amount);
     }
 
@@ -324,6 +360,7 @@ abstract contract PendleLiquidityMiningBase is
         nonContractOrWhitelisted
         returns (address newLpHoldingContractAddress)
     {
+        checkNotPaused();
         address xyt = address(data.xytTokens(forgeId, underlyingAsset, expiry));
         address marketAddress = data.getMarket(marketFactoryId, xyt, baseToken);
         // Pendle Market LP tokens are EIP-2612 compliant, hence we can approve liq-mining contract using a signature
@@ -348,6 +385,7 @@ abstract contract PendleLiquidityMiningBase is
         * only be called if 0 < current epoch (always can withdraw)
      */
     function withdraw(uint256 expiry, uint256 amount) external override nonReentrant isFunded {
+        checkNotPaused();
         uint256 curEpoch = _getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
         require(amount != 0, "ZERO_AMOUNT");
@@ -373,6 +411,7 @@ abstract contract PendleLiquidityMiningBase is
         nonReentrant
         returns (uint256 rewards)
     {
+        checkNotPaused();
         uint256 curEpoch = _getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
         require(user != address(0), "ZERO_ADDRESS");
@@ -396,6 +435,7 @@ abstract contract PendleLiquidityMiningBase is
         nonReentrant
         returns (uint256 interests)
     {
+        checkNotPaused();
         require(user != address(0), "ZERO_ADDRESS");
         require(userExpiries[user].hasExpiry[expiry], "INVALID_EXPIRY");
         interests = _beforeTransferDueInterests(expiry, user);
@@ -494,6 +534,11 @@ abstract contract PendleLiquidityMiningBase is
         uint256 expiry
     ) external view returns (uint256 stakeUnitsForUser) {
         stakeUnitsForUser = epochData[epochId].stakeUnitsForUser[user][expiry];
+    }
+
+    function checkNotPaused() internal {
+        (bool paused, ) = pausingManager.checkLiqMiningStatus(address(this));
+        require(!paused, "LIQ_MINING_PAUSED");
     }
 
     function _stake(uint256 expiry, uint256 amount)
@@ -766,7 +811,7 @@ abstract contract PendleLiquidityMiningBase is
     {
         _updatePendingRewards(expiry, user);
 
-        uint256 _lastEpoch = Math.min(_getCurrentEpochId(), numberOfEpochs);
+        uint256 _lastEpoch = Math.min(_getCurrentEpochId(), numberOfEpochs + vestingEpochs);
         for (uint256 i = expiryData[expiry].lastEpochClaimed[user]; i <= _lastEpoch; i++) {
             if (epochData[i].availableRewardsForUser[user] > 0) {
                 amountOut = amountOut.add(epochData[i].availableRewardsForUser[user]);

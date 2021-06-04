@@ -16,7 +16,6 @@ const { deployContract } = waffle;
 export interface CoreFixture {
   router: Contract
   treasury: Contract
-  aMarketFactory: Contract
   a2MarketFactory: Contract
   cMarketFactory: Contract
   data: Contract,
@@ -34,11 +33,10 @@ export async function coreFixture(
 
   const treasury = await deployContract(alice, PendleTreasury, [alice.address]);
   const govManager = await deployContract(alice, PendleGovernanceManager, [alice.address]);
-  const pausingManager = await deployContract(alice, PendlePausingManager, [govManager.address, alice.address, alice.address]);
+  const pausingManager = await deployContract(alice, PendlePausingManager, [govManager.address, alice.address, alice.address, alice.address]);
   const data = await deployContract(alice, PendleData, [govManager.address, treasury.address, pausingManager.address]);
   const router = await deployContract(alice, PendleRouter, [govManager.address, tokens.WETH.address, data.address]);
   const marketReader = await deployContract(alice, PendleMarketReader, [data.address]);
-  const aMarketFactory = await deployContract(alice, PendleAaveMarketFactory, [router.address, consts.MARKET_FACTORY_AAVE]);
   const a2MarketFactory = await deployContract(alice, PendleAaveMarketFactory, [router.address, consts.MARKET_FACTORY_AAVE_V2]);
   const cMarketFactory = await deployContract(alice, PendleCompoundMarketFactory, [router.address, consts.MARKET_FACTORY_COMPOUND]);
 
@@ -48,5 +46,5 @@ export async function coreFixture(
   await data.setLockParams(BN.from(consts.LOCK_NUMERATOR), BN.from(consts.LOCK_DENOMINATOR)); // lock market
   await data.setInterestUpdateRateDeltaForMarket(consts.INTEREST_UPDATE_RATE_DELTA_FOR_MARKET);
 
-  return { router, treasury, aMarketFactory, a2MarketFactory, cMarketFactory, data, marketReader, pausingManager, govManager }
+  return { router, treasury, a2MarketFactory, cMarketFactory, data, marketReader, pausingManager, govManager }
 }

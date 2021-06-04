@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
+pragma abicoder v2;
 
 import "../core/aave/PendleAaveMarket.sol";
 
@@ -38,7 +38,7 @@ contract MockPendleAaveMarket is PendleAaveMarket {
         uint256 exactOut,
         uint256 swapFee
     ) public pure returns (uint256 exactIn) {
-        return _calcExactIn(inTokenReserve, outTokenReserve, exactOut, swapFee);
+        return MarketMath._calcExactIn(inTokenReserve, outTokenReserve, exactOut, swapFee);
     }
 
     function calcExactOut(
@@ -47,7 +47,7 @@ contract MockPendleAaveMarket is PendleAaveMarket {
         uint256 exactIn,
         uint256 swapFee
     ) public pure returns (uint256 exactOut) {
-        return _calcExactOut(inTokenReserve, outTokenReserve, exactIn, swapFee);
+        return MarketMath._calcExactOut(inTokenReserve, outTokenReserve, exactIn, swapFee);
     }
 
     function calcOutAmountLp(
@@ -56,7 +56,7 @@ contract MockPendleAaveMarket is PendleAaveMarket {
         uint256 swapFee,
         uint256 totalSupplyLp
     ) public pure returns (uint256 exactOutLp) {
-        return _calcOutAmountLp(inAmount, inTokenReserve, swapFee, totalSupplyLp);
+        return MarketMath._calcOutAmountLp(inAmount, inTokenReserve, swapFee, totalSupplyLp);
     }
 
     function calcOutAmountToken(
@@ -65,6 +65,6 @@ contract MockPendleAaveMarket is PendleAaveMarket {
         uint256 inLp,
         uint256 swapFee
     ) public pure returns (uint256 exactOutToken) {
-        return _calcOutAmountToken(outTokenReserve, totalSupplyLp, inLp, swapFee);
+        return MarketMath._calcOutAmountToken(outTokenReserve, totalSupplyLp, inLp, swapFee);
     }
 }

@@ -33,4 +33,8 @@ contract TestToken is ERC20 {
         _setupDecimals(_decimals);
         _mint(msg.sender, 10**(18 + 10 + 3));
     }
+
+    function getTime() public view returns (uint256) {
+        return block.timestamp;
+    }
 }

@@ -4,6 +4,8 @@ import PendleCompoundYieldContractDeployer from "../../../build/artifacts/contra
 import MockPendleRewardManager from "../../../build/artifacts/contracts/mock/MockPendleRewardManager.sol/MockPendleRewardManager.json";
 import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
 import PendleOwnershipToken from '../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json';
+import MockPendleOwnershipToken from "../../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json";
+
 import { consts, setTimeNextBlock, tokens } from "../../helpers";
 import { CoreFixture } from "./core.fixture";
 import { GovernanceFixture } from "./governance.fixture";
@@ -40,7 +42,8 @@ export async function compoundForgeFixture(
     consts.FORGE_COMPOUND,
     consts.COMP_ADDRESS,
     cRewardManager.address,
-    cYieldContractDeployer.address
+    cYieldContractDeployer.address,
+    consts.COMP_ETH
   ]);
   await cRewardManager.initialize(compoundForge.address);
 
@@ -65,7 +68,7 @@ export async function compoundForgeFixture(
     consts.T0_C.add(consts.SIX_MONTH)
   );
 
-  const cOwnershipToken = new Contract(otTokenAddress, PendleOwnershipToken.abi, alice);
+  const cOwnershipToken = new Contract(otTokenAddress, MockPendleOwnershipToken.abi, alice);
   const cFutureYieldToken = new Contract(xytTokenAddress, PendleFutureYieldToken.abi, alice);
 
   return {

@@ -1,35 +1,23 @@
 import { expect } from 'chai';
 import { Contract } from 'ethers';
-import { evm_revert, evm_snapshot, Token, tokens } from '../helpers';
-import { marketFixture } from './fixtures';
-
 import { waffle } from 'hardhat';
+import { evm_revert, evm_snapshot } from '../helpers';
+import { marketFixture, MarketFixture } from './fixtures';
+
 const { loadFixture } = waffle;
 
 describe('PendleData', async () => {
-  let router: Contract;
-  let aMarketFactory: Contract;
-  let a2MarketFactory: Contract;
-  let cMarketFactory: Contract;
   let data: Contract;
   let treasury: Contract;
-  let xyt: Contract;
-  let tokenUSDT: Token;
   let snapshotId: string;
   let globalSnapshotId: string;
 
   before(async () => {
-    const fixture = await loadFixture(marketFixture);
+    const fixture: MarketFixture = await loadFixture(marketFixture);
     globalSnapshotId = await evm_snapshot();
 
-    router = fixture.core.router;
     treasury = fixture.core.treasury;
     data = fixture.core.data;
-    aMarketFactory = fixture.core.aMarketFactory;
-    a2MarketFactory = fixture.core.a2MarketFactory;
-    cMarketFactory = fixture.core.cMarketFactory;
-    xyt = fixture.aForge.aFutureYieldToken;
-    tokenUSDT = tokens.USDT;
     snapshotId = await evm_snapshot();
   });
 
@@ -52,7 +40,7 @@ describe('PendleData', async () => {
 
   it('should be able to get allMarketsLength', async () => {
     let allMarketsLength = await data.allMarketsLength();
-    expect(allMarketsLength).to.be.eq(4); // numbers of markets that have been created in marketFixture
+    expect(allMarketsLength).to.be.eq(3); // numbers of markets that have been created in marketFixture
   });
 
   it('Should be able to setTreasury', async () => {
