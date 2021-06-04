@@ -228,7 +228,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         address user,
         uint256 initialXytLiquidity,
         uint256 initialTokenLiquidity
-    ) external override returns (PendingTransfer[2] memory transfers) {
+    ) external override returns (PendingTransfer[2] memory transfers, uint256 exactOutLp) {
         require(msg.sender == address(router), "ONLY_ROUTER");
         checkNotPaused();
         require(!bootstrapped, "ALREADY_BOOTSTRAPPED");
@@ -245,13 +245,13 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
 
         _afterBootstrap();
         // Taking inspiration from Uniswap, we will keep MINIMUM_LIQUIDITY in the market to make sure the market is always non-empty
-        uint256 liquidity =
+        uint256 exactOutLp =
             Math.sqrt(initialXytLiquidity.mul(initialTokenLiquidity)).sub(MINIMUM_LIQUIDITY);
 
         // No one should possibly own a specific address like this 0x1
         // We mint to 0x1 instead of 0x0 because sending to 0x0 is not permitted
         _mint(address(0x1), MINIMUM_LIQUIDITY);
-        _mint(user, liquidity);
+        _mint(user, exactOutLp);
 
         transfers[0].amount = initialXytLiquidity;
         transfers[0].isOut = false;
@@ -335,7 +335,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         address _inToken,
         uint256 _exactIn,
         uint256 _minOutLp
-    ) external override returns (PendingTransfer[2] memory transfers) {
+    ) external override returns (PendingTransfer[2] memory transfers, uint256 exactOutLp) {
         checkAddRemoveSwapClaimAllowed(false);
 
         // mint protocol fees before k is changed by a non-swap event (add liquidity)

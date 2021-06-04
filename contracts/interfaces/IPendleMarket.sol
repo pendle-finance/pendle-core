@@ -52,14 +52,14 @@ interface IPendleMarket is IERC20, IPendleStructs {
         address user,
         uint256 initialXytLiquidity,
         uint256 initialTokenLiquidity
-    ) external returns (PendingTransfer[2] memory transfers);
+    ) external returns (PendingTransfer[2] memory transfers, uint256 exactOutLp);
 
     function addMarketLiquiditySingle(
         address user,
         address inToken,
         uint256 inAmount,
         uint256 minOutLp
-    ) external returns (PendingTransfer[2] memory transfers);
+    ) external returns (PendingTransfer[2] memory transfers, uint256 exactOutLp);
 
     function addMarketLiquidityDual(
         address user,

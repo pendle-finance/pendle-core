@@ -69,8 +69,9 @@ interface IPendleRouter is IPendleStructs {
      * @param token0Amount the amount of token0 (xyt) provided by user
      * @param token1Amount the amount of token1 provided by user
      * @param market The market address.
+     * @param exactOutLp The exact LP minted
      */
-    event Join(address indexed sender, uint256 token0Amount, uint256 token1Amount, address market);
+    event Join(address indexed sender, uint256 token0Amount, uint256 token1Amount, address market, uint256 exactOutLp);
 
     /**
      * @dev Emitted when user removes liquidity
@@ -78,8 +79,9 @@ interface IPendleRouter is IPendleStructs {
      * @param token0Amount the amount of token0 (xyt) given to user
      * @param token1Amount the amount of token1 given to user
      * @param market The market address.
+     * @param exactInLp The exact Lp to remove
      */
-    event Exit(address indexed sender, uint256 token0Amount, uint256 token1Amount, address market);
+    event Exit(address indexed sender, uint256 token0Amount, uint256 token1Amount, address market, uint256 exactInLp);
 
     struct Swap {
         uint256 swapAmount;
