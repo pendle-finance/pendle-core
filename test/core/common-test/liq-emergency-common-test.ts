@@ -1,5 +1,7 @@
-import { assert, expect } from 'chai';
+import chai, { expect } from "chai";
+import { solidity } from "ethereum-waffle";
 import { BigNumber as BN } from 'ethers';
+import { waffle } from 'hardhat';
 import {
   advanceTime,
   approxBigNumber,
@@ -10,17 +12,17 @@ import {
   evm_snapshot,
   redeemRewards,
   stake,
-  withdraw,
+  withdraw
 } from '../../helpers';
 import {
   liquidityMiningFixture,
   LiquidityMiningFixture,
   Mode,
   parseTestEnvLiquidityMiningFixture,
-  TestEnv,
+  TestEnv
 } from '../fixtures';
+chai.use(solidity);
 
-import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
 export function runTest(mode: Mode) {

@@ -1,8 +1,10 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
 import PendleTokenDistribution from '../../build/artifacts/contracts/core/PendleTokenDistribution.sol/PendleTokenDistribution.json';
 import PENDLE from '../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json';
 import { consts, evm_revert, evm_snapshot, setTimeNextBlock } from '../helpers';
+chai.use(solidity);
 
 const { waffle } = require('hardhat');
 const { provider, deployContract } = waffle;

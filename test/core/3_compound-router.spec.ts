@@ -1,5 +1,7 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
+import { waffle } from 'hardhat';
 import {
   amountToWei,
   approxBigNumber,
@@ -14,8 +16,8 @@ import {
   tokens,
 } from '../helpers';
 import { routerFixture } from './fixtures';
+chai.use(solidity);
 
-import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
 describe('compound-router', async () => {

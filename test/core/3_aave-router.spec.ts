@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Wallet } from 'ethers';
 import { waffle } from 'hardhat';
 import {
@@ -19,6 +20,7 @@ import {
   tokens,
 } from '../helpers';
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from './fixtures';
+chai.use(solidity);
 
 const { loadFixture, provider } = waffle;
 

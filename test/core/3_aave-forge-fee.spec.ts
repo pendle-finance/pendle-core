@@ -1,5 +1,7 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
+import { waffle } from 'hardhat';
 import {
   amountToWei,
   approxBigNumber,
@@ -16,8 +18,8 @@ import {
   tokens,
 } from '../helpers';
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from './fixtures';
+chai.use(solidity);
 
-import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
 describe('aave-forge-fee', async () => {

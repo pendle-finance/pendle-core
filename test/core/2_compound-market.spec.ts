@@ -1,9 +1,11 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
+import { waffle } from 'hardhat';
 import { advanceTime, amountToWei, consts, evm_revert, evm_snapshot } from '../helpers';
 import { marketFixture } from './fixtures';
+chai.use(solidity);
 
-import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
 describe('compound-market', async () => {

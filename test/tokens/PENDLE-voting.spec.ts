@@ -1,7 +1,9 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
+import { BigNumber as BN, Contract, utils, Wallet } from 'ethers';
 import MockPENDLE from '../../build/artifacts/contracts/mock/MockPENDLE.sol/MockPENDLE.json';
-import { Contract, providers, Wallet, BigNumber as BN, utils } from 'ethers';
-import { errMsg, consts, minerStop, minerStart, mineBlock, evm_snapshot, evm_revert } from '../helpers';
+import { consts, errMsg, evm_revert, evm_snapshot } from '../helpers';
+chai.use(solidity);
 
 const { waffle } = require('hardhat');
 const { provider, deployContract } = waffle;

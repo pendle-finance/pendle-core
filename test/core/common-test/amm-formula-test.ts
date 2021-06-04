@@ -1,25 +1,31 @@
-import { expect } from 'chai';
-import { BigNumber as BN, BigNumberish, Wallet } from 'ethers';
+import chai, { expect } from "chai";
+import { solidity } from "ethereum-waffle";
+import { BigNumber as BN, BigNumberish } from 'ethers';
 import {
-  addMarketLiquidityDualXyt,
+  addMarketLiquidityDual, addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
   amountToWei,
-  addMarketLiquidityDual,
+
   approxBigNumber,
   bootstrapMarket,
   consts,
-  toFixedPoint,
-  removeMarketLiquiditySingle,
+
+
+
+
+
+
+
+
+  errMsg, removeMarketLiquiditySingle,
   setTimeNextBlock,
   swapExactInTokenToXyt,
   swapExactInXytToToken,
   swapExactOutTokenToXyt,
-  swapExactOutXytToToken,
-  logMarketReservesData,
-  errMsg,
-  randomNumber
+  swapExactOutXytToToken, toFixedPoint
 } from '../../helpers';
 import { TestEnv } from '../fixtures';
+chai.use(solidity);
 
 const { waffle } = require('hardhat');
 const { provider } = waffle;
