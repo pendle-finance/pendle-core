@@ -10,15 +10,9 @@ import {
   advanceTime,
   mineBlock,
   minerStop,
-  minerStart
+  minerStart,
 } from '../../helpers';
-import {
-  routerFixture,
-  RouterFixture,
-  Mode,
-  parseTestEnvRouterFixture,
-  TestEnv,
-} from '../fixtures';
+import { routerFixture, RouterFixture, Mode, parseTestEnvRouterFixture, TestEnv } from '../fixtures';
 
 import hre from 'hardhat';
 import { expect } from 'chai';
@@ -49,14 +43,14 @@ export function runTest(mode: Mode) {
       globalSnapshotId = await evm_snapshot();
 
       userInitialYieldToken = (await env.yToken.balanceOf(alice.address)).div(4);
-      rewardToken = await hre.ethers.getContractAt("TestToken", await env.forge.rewardToken());
+      rewardToken = await hre.ethers.getContractAt('TestToken', await env.forge.rewardToken());
       yieldTokenHolder = await env.forge.yieldTokenHolders(env.USDTContract.address, env.EXPIRY);
 
       await minerStop();
       for (const person of [bob, charlie, dave]) {
         await env.yToken.transfer(person.address, userInitialYieldToken);
         await env.yToken.connect(person).approve(env.router.address, consts.INF);
-      };
+      }
       await redeemRewardsFromProtocol([bob, charlie, dave]);
       await mineBlock();
       await minerStart();
@@ -75,16 +69,15 @@ export function runTest(mode: Mode) {
 
     async function redeemRewardsFromProtocol(users: Wallet[]) {
       if (mode == Mode.AAVE_V2) {
-        const incentiveController = await hre.ethers.getContractAt("IAaveIncentivesController", consts.AAVE_INCENTIVES_CONTROLLER);
+        const incentiveController = await hre.ethers.getContractAt(
+          'IAaveIncentivesController',
+          consts.AAVE_INCENTIVES_CONTROLLER
+        );
         for (const person of users) {
-          await incentiveController.connect(person).claimRewards(
-            [env.yToken.address],
-            consts.INF,
-            person.address
-          );
+          await incentiveController.connect(person).claimRewards([env.yToken.address], consts.INF, person.address);
         }
       } else if (mode == Mode.COMPOUND) {
-        const comptroller = await hre.ethers.getContractAt("IComptroller", consts.COMPOUND_COMPTROLLER_ADDRESS);
+        const comptroller = await hre.ethers.getContractAt('IComptroller', consts.COMPOUND_COMPTROLLER_ADDRESS);
         await comptroller.claimComp(
           users.map((u) => u.address),
           [env.yToken.address],
@@ -116,7 +109,7 @@ export function runTest(mode: Mode) {
         otBalance[index] = await env.ot.balanceOf(users[index].address);
         rewardBalanceBefore[index] = await rewardToken.balanceOf(users[index].address);
         await env.rewardManager.redeemRewards(env.USDTContract.address, env.EXPIRY, users[index].address);
-      };
+      }
 
       await mineBlock();
       await minerStart();
@@ -125,12 +118,12 @@ export function runTest(mode: Mode) {
         const rewardBalanceAfter = await rewardToken.balanceOf(users[index].address);
         rewardEarned[index] = rewardBalanceAfter.sub(rewardBalanceBefore[index]);
         totalRewardEarned = totalRewardEarned.add(rewardEarned[index]);
-      };
+      }
 
       for (const index of [0, 1, 2]) {
         const expectedReward = totalRewardEarned.mul(otBalance[index]).div(otTotalSupply);
         approxBigNumber(rewardEarned[index], expectedReward, BN.from(10));
-      };
+      }
 
       const rewardLeftInYieldTokenHolder = await rewardToken.balanceOf(yieldTokenHolder);
       approxBigNumber(rewardLeftInYieldTokenHolder, BN.from(0), BN.from(10));
@@ -200,17 +193,9 @@ export function runTest(mode: Mode) {
       const daveRewardBalance = await rewardToken.balanceOf(dave.address);
       const eveRewardBalance = await rewardToken.balanceOf(eve.address);
 
-      approxBigNumber(
-        bobRewardBalance,
-        charlieRewardBalance,
-        env.TEST_DELTA
-      );
+      approxBigNumber(bobRewardBalance, charlieRewardBalance, env.TEST_DELTA);
 
-      approxBigNumber(
-        bobRewardBalance,
-        daveRewardBalance.add(eveRewardBalance),
-        env.TEST_DELTA
-      );
+      approxBigNumber(bobRewardBalance, daveRewardBalance.add(eveRewardBalance), env.TEST_DELTA);
     });
 
     it('OT users should receive proportionally to their OT balance', async () => {
@@ -224,13 +209,15 @@ export function runTest(mode: Mode) {
       await redeemAndCheckRewardAndSendTnx(async () => redeemUnderlying(env, charlie, otMinted.div(3)));
 
       await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 20);
-      await redeemAndCheckRewardAndSendTnx(async () => await env.ot.connect(dave).transfer(eve.address, otMinted.div(4)));
+      await redeemAndCheckRewardAndSendTnx(
+        async () => await env.ot.connect(dave).transfer(eve.address, otMinted.div(4))
+      );
 
       await advanceTimeAndBlock(consts.SIX_MONTH, 20);
       await redeemAndCheckRewardAndSendTnx(async () => await redeemAfterExpiry(env, charlie));
 
       await advanceTimeAndBlock(consts.ONE_MONTH, 4);
-      await redeemAndCheckRewardAndSendTnx(async () => { });
+      await redeemAndCheckRewardAndSendTnx(async () => {});
     });
 
     xit('OT transferring gas should not be too large', async () => {
@@ -247,8 +234,7 @@ export function runTest(mode: Mode) {
         return;
       }
 
-
-      console.log("GAS USED:");
+      console.log('GAS USED:');
       await checkGasCost(bob, charlie);
 
       await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 20);
@@ -261,7 +247,7 @@ export function runTest(mode: Mode) {
       await checkGasCost(charlie, eve);
 
       console.log();
-      console.log("Reward skipped!")
+      console.log('Reward skipped!');
 
       await env.rewardManager.setSkippingRewards(true, consts.HG);
 
@@ -277,63 +263,37 @@ export function runTest(mode: Mode) {
       await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 20);
       await checkGasCost(charlie, eve);
 
-      console.log("=============================================");
+      console.log('=============================================');
     });
 
-    it("Reward manager should work normally after updating updateFrequency to INF", async () => {
+    it('Reward manager should work normally after updating updateFrequency to INF', async () => {
       let amount = userInitialYieldToken.div(10);
       for (let person of [bob, charlie, dave, eve]) {
         await tokenizeYield(env, alice, amount, person.address);
       }
 
       await advanceTime(consts.ONE_MONTH);
-      await env.rewardManager.setUpdateFrequency(
-        [env.USDTContract.address],
-        [BN.from(10 ** 9)],
-        consts.HG
-      );
+      await env.rewardManager.setUpdateFrequency([env.USDTContract.address], [BN.from(10 ** 9)], consts.HG);
 
       for (let person of [bob, charlie, dave, eve]) {
-        await env.ot.connect(person).transfer(
-          alice.address,
-          amount.div(2),
-          consts.LG
-        );
+        await env.ot.connect(person).transfer(alice.address, amount.div(2), consts.LG);
 
         await advanceTime(consts.ONE_MONTH);
-        await env.rewardManager.redeemRewards(
-          env.USDTContract.address,
-          env.EXPIRY,
-          person.address,
-          consts.HG
-        );
+        await env.rewardManager.redeemRewards(env.USDTContract.address, env.EXPIRY, person.address, consts.HG);
       }
 
       // Try updateParamLManual
       for (let person of [bob, charlie, dave, eve]) {
-        await env.ot.connect(person).transfer(
-          alice.address,
-          amount.div(2),
-          consts.LG
-        );
+        await env.ot.connect(person).transfer(alice.address, amount.div(2), consts.LG);
 
         await advanceTime(consts.ONE_MONTH);
-        await env.rewardManager.redeemRewards(
-          env.USDTContract.address,
-          env.EXPIRY,
-          person.address,
-          consts.HG
-        );
+        await env.rewardManager.redeemRewards(env.USDTContract.address, env.EXPIRY, person.address, consts.HG);
 
-        await env.rewardManager.connect(person).updateParamLManual(
-          env.USDTContract.address,
-          env.EXPIRY,
-          consts.HG
-        );
+        await env.rewardManager.connect(person).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG);
       }
     });
 
-    it("updateFrequency should work correctly", async () => {
+    it('updateFrequency should work correctly', async () => {
       /*
         Scenario: Set updateFrequency to 4
         Flow:
@@ -350,39 +310,17 @@ export function runTest(mode: Mode) {
       }
 
       await advanceTime(consts.ONE_MONTH);
-      await env.rewardManager.setUpdateFrequency(
-        [env.USDTContract.address],
-        [4],
-        consts.HG
-      );
-      await env.rewardManager.connect(alice).updateParamLManual(
-        env.USDTContract.address,
-        env.EXPIRY,
-        consts.HG
-      );
+      await env.rewardManager.setUpdateFrequency([env.USDTContract.address], [4], consts.HG);
+      await env.rewardManager.connect(alice).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG);
 
       for (let t = 0; t < 5; ++t) {
         for (let person of [bob, charlie, dave]) {
-          await env.ot.connect(person).transfer(
-            alice.address,
-            amountToTransfer,
-            consts.LG
-          );
+          await env.ot.connect(person).transfer(alice.address, amountToTransfer, consts.LG);
         }
 
-        await expect(
-          env.ot.connect(eve).transfer(
-            alice.address,
-            amountToTransfer,
-            consts.LG
-          )
-        ).to.be.reverted;
+        await expect(env.ot.connect(eve).transfer(alice.address, amountToTransfer, consts.LG)).to.be.reverted;
 
-        await env.ot.connect(eve).transfer(
-          alice.address,
-          amountToTransfer,
-          consts.HG
-        );
+        await env.ot.connect(eve).transfer(alice.address, amountToTransfer, consts.HG);
       }
     });
   });

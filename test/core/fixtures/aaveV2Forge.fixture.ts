@@ -1,14 +1,14 @@
-import { Contract, providers, Wallet } from "ethers";
-import PendleAaveV2Forge from "../../../build/artifacts/contracts/core/aave/v2/PendleAaveV2Forge.sol/PendleAaveV2Forge.json";
-import PendleAaveV2YieldContractDeployer from "../../../build/artifacts/contracts/core/aave/v2/PendleAaveV2YieldContractDeployer.sol/PendleAaveV2YieldContractDeployer.json";
-import MockPendleOwnershipToken from "../../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json";
-import MockPendleRewardManager from "../../../build/artifacts/contracts/mock/MockPendleRewardManager.sol/MockPendleRewardManager.json";
-import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
-import { consts, setTimeNextBlock, tokens } from "../../helpers";
-import { CoreFixture } from "./core.fixture";
-import { GovernanceFixture } from "./governance.fixture";
+import { Contract, providers, Wallet } from 'ethers';
+import PendleAaveV2Forge from '../../../build/artifacts/contracts/core/aave/v2/PendleAaveV2Forge.sol/PendleAaveV2Forge.json';
+import PendleAaveV2YieldContractDeployer from '../../../build/artifacts/contracts/core/aave/v2/PendleAaveV2YieldContractDeployer.sol/PendleAaveV2YieldContractDeployer.json';
+import MockPendleOwnershipToken from '../../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json';
+import MockPendleRewardManager from '../../../build/artifacts/contracts/mock/MockPendleRewardManager.sol/MockPendleRewardManager.json';
+import PendleFutureYieldToken from '../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json';
+import { consts, setTimeNextBlock, tokens } from '../../helpers';
+import { CoreFixture } from './core.fixture';
+import { GovernanceFixture } from './governance.fixture';
 
-const { waffle } = require("hardhat");
+const { waffle } = require('hardhat');
 const { deployContract } = waffle;
 
 export interface AaveV2ForgeFixture {
@@ -28,12 +28,12 @@ export async function aaveV2ForgeFixture(
 ): Promise<AaveV2ForgeFixture> {
   const a2RewardManager = await deployContract(alice, MockPendleRewardManager, [
     govManager.address, //governance
-    consts.FORGE_AAVE_V2
+    consts.FORGE_AAVE_V2,
   ]);
 
   const a2YieldContractDeployer = await deployContract(alice, PendleAaveV2YieldContractDeployer, [
     govManager.address, //governance
-    consts.FORGE_AAVE_V2
+    consts.FORGE_AAVE_V2,
   ]);
 
   const aaveV2Forge = await deployContract(alice, PendleAaveV2Forge, [
@@ -44,7 +44,7 @@ export async function aaveV2ForgeFixture(
     consts.STKAAVE_ADDRESS,
     a2RewardManager.address,
     a2YieldContractDeployer.address,
-    consts.AAVE_INCENTIVES_CONTROLLER
+    consts.AAVE_INCENTIVES_CONTROLLER,
   ]);
 
   await a2RewardManager.initialize(aaveV2Forge.address);
@@ -56,11 +56,7 @@ export async function aaveV2ForgeFixture(
   await setTimeNextBlock(consts.T0_A2); // set the minting time for the first OT and XYT
 
   // USDT
-  await router.newYieldContracts(
-    consts.FORGE_AAVE_V2,
-    tokens.USDT.address,
-    consts.T0_A2.add(consts.SIX_MONTH)
-  );
+  await router.newYieldContracts(consts.FORGE_AAVE_V2, tokens.USDT.address, consts.T0_A2.add(consts.SIX_MONTH));
   const otTokenAddress = await data.otTokens(
     consts.FORGE_AAVE_V2,
     tokens.USDT.address,
@@ -73,24 +69,12 @@ export async function aaveV2ForgeFixture(
     consts.T0_A2.add(consts.SIX_MONTH)
   );
 
-  const a2OwnershipToken = new Contract(
-    otTokenAddress,
-    MockPendleOwnershipToken.abi,
-    alice
-  );
-  const a2FutureYieldToken = new Contract(
-    xytTokenAddress,
-    PendleFutureYieldToken.abi,
-    alice
-  );
+  const a2OwnershipToken = new Contract(otTokenAddress, MockPendleOwnershipToken.abi, alice);
+  const a2FutureYieldToken = new Contract(xytTokenAddress, PendleFutureYieldToken.abi, alice);
 
   // UNI
 
-  await router.newYieldContracts(
-    consts.FORGE_AAVE_V2,
-    tokens.UNI.address,
-    consts.T0_A2.add(consts.SIX_MONTH)
-  );
+  await router.newYieldContracts(consts.FORGE_AAVE_V2, tokens.UNI.address, consts.T0_A2.add(consts.SIX_MONTH));
   const otTokenAddress18 = await data.otTokens(
     consts.FORGE_AAVE_V2,
     tokens.UNI.address,
@@ -103,16 +87,8 @@ export async function aaveV2ForgeFixture(
     consts.T0_A2.add(consts.SIX_MONTH)
   );
 
-  const a2OwnershipToken18 = new Contract(
-    otTokenAddress18,
-    MockPendleOwnershipToken.abi,
-    alice
-  );
-  const a2FutureYieldToken18 = new Contract(
-    xytTokenAddress18,
-    PendleFutureYieldToken.abi,
-    alice
-  );
+  const a2OwnershipToken18 = new Contract(otTokenAddress18, MockPendleOwnershipToken.abi, alice);
+  const a2FutureYieldToken18 = new Contract(xytTokenAddress18, PendleFutureYieldToken.abi, alice);
 
   return {
     aaveV2Forge,
@@ -120,6 +96,6 @@ export async function aaveV2ForgeFixture(
     a2FutureYieldToken,
     a2OwnershipToken18,
     a2FutureYieldToken18,
-    a2RewardManager
+    a2RewardManager,
   };
 }

@@ -1,21 +1,26 @@
 import { BigNumber as BN } from 'ethers';
 import { waffle } from 'hardhat';
 import {
-  addFakeIncomeCompoundUSDT, approxBigNumber, consts, emptyToken,
+  addFakeIncomeCompoundUSDT,
+  approxBigNumber,
+  consts,
+  emptyToken,
   evm_revert,
   evm_snapshot,
   randomBN,
-  randomNumber, redeemDueInterests,
-  redeemLpInterests, setTimeNextBlock,
+  randomNumber,
+  redeemDueInterests,
+  redeemLpInterests,
+  setTimeNextBlock,
   stake,
-  withdraw
+  withdraw,
 } from '../../helpers';
 import {
   liquidityMiningFixture,
   LiquidityMiningFixture,
   Mode,
   parseTestEnvLiquidityMiningFixture,
-  TestEnv
+  TestEnv,
 } from '../fixtures';
 
 const { loadFixture, provider } = waffle;

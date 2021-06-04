@@ -5,18 +5,14 @@ import {
   approxBigNumber,
   calcExpectedRewards,
   consts,
-
-
   evm_revert,
   evm_snapshot,
-
-
   redeemRewards,
   setTime,
   setTimeNextBlock,
   stake,
   startOfEpoch,
-  withdraw
+  withdraw,
 } from '../../helpers';
 import {
   liquidityMiningFixture,
@@ -24,7 +20,7 @@ import {
   Mode,
   parseTestEnvLiquidityMiningFixture,
   TestEnv,
-  UserStakeAction
+  UserStakeAction,
 } from '../fixtures';
 import * as scenario from '../fixtures/liquidityMiningScenario.fixture';
 
@@ -100,7 +96,6 @@ export function runTest(mode: Mode) {
         });
       });
 
-
       flatData = flatData.sort((a, b) => {
         return a.time.sub(b.time).toNumber();
       });
@@ -134,7 +129,12 @@ export function runTest(mode: Mode) {
       epochToCheck: number,
       usingAllocationSetting: Boolean
     ) {
-      let expectedRewards: BN[][] = calcExpectedRewards(userStakingData, env.liqParams, epochToCheck, usingAllocationSetting);
+      let expectedRewards: BN[][] = calcExpectedRewards(
+        userStakingData,
+        env.liqParams,
+        epochToCheck,
+        usingAllocationSetting
+      );
       await setTime(startOfEpoch(env.liqParams, epochToCheck));
       let numUser = expectedRewards.length;
       let allocationRateDiv = 1;

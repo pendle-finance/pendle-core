@@ -1,28 +1,22 @@
-import chai, { expect } from "chai";
-import { solidity } from "ethereum-waffle";
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, BigNumberish } from 'ethers';
 import {
-  addMarketLiquidityDual, addMarketLiquidityDualXyt,
+  addMarketLiquidityDual,
+  addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
   amountToWei,
-
   approxBigNumber,
   bootstrapMarket,
   consts,
-
-
-
-
-
-
-
-
-  errMsg, removeMarketLiquiditySingle,
+  errMsg,
+  removeMarketLiquiditySingle,
   setTimeNextBlock,
   swapExactInTokenToXyt,
   swapExactInXytToToken,
   swapExactOutTokenToXyt,
-  swapExactOutXytToToken, toFixedPoint
+  swapExactOutXytToToken,
+  toFixedPoint,
 } from '../../helpers';
 import { TestEnv } from '../fixtures';
 chai.use(solidity);
@@ -210,15 +204,23 @@ export async function marketBalanceNonZeroTest(env: TestEnv) {
   await bootstrapMarket(env, alice, amount);
   const lastAmount = await env.xyt.balanceOf(alice.address);
   await expect(
-    env.router.connect(alice).removeMarketLiquidityDual(env.FORGE_ID, env.xyt.address, env.testToken.address, amount, 0, 0)
+    env.router
+      .connect(alice)
+      .removeMarketLiquidityDual(env.FORGE_ID, env.xyt.address, env.testToken.address, amount, 0, 0)
   ).to.be.revertedWith(errMsg.XYT_BALANCE_ERROR);
-  await env.router.connect(alice).removeMarketLiquidityDual(env.FORGE_ID, env.xyt.address, env.testToken.address, amount.sub(MINIMUM_LIQUIDITY), 0, 0, consts.HG);
+  await env.router
+    .connect(alice)
+    .removeMarketLiquidityDual(
+      env.FORGE_ID,
+      env.xyt.address,
+      env.testToken.address,
+      amount.sub(MINIMUM_LIQUIDITY),
+      0,
+      0,
+      consts.HG
+    );
 
-  approxBigNumber(
-    (await env.xyt.balanceOf(alice.address)).sub(lastAmount),
-    amount.sub(MINIMUM_LIQUIDITY),
-    BN.from(2)
-  );
+  approxBigNumber((await env.xyt.balanceOf(alice.address)).sub(lastAmount), amount.sub(MINIMUM_LIQUIDITY), BN.from(2));
   return;
 }
 

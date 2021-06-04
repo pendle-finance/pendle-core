@@ -1,32 +1,12 @@
-import chai, { expect } from "chai";
-import { solidity } from "ethereum-waffle";
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
 import { waffle } from 'hardhat';
-import {
-  consts,
-  errMsg,
-  evm_revert,
-  evm_snapshot,
-
-
-
-
-
-  mintCompoundToken, tokens
-} from '../../helpers';
-import {
-  marketFixture,
-  MarketFixture, Mode,
-
-
-
-  parseTestEnvMarketFixture, TestEnv
-} from '../fixtures';
+import { consts, errMsg, evm_revert, evm_snapshot, mintCompoundToken, tokens } from '../../helpers';
+import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../fixtures';
 chai.use(solidity);
 
-
 const { loadFixture, provider } = waffle;
-
 
 /// TODO: Modify this test to new format
 export async function runTest(mode: Mode) {
@@ -55,27 +35,17 @@ export async function runTest(mode: Mode) {
       errMsg.YIELD_CONTRACT_PAUSED
     );
 
-    await expect(env.xyt.transfer(charlie.address, 1, consts.HG)).to.be.revertedWith(
-      errMsg.YIELD_CONTRACT_PAUSED
-    );
+    await expect(env.xyt.transfer(charlie.address, 1, consts.HG)).to.be.revertedWith(errMsg.YIELD_CONTRACT_PAUSED);
 
-    await expect(env.ot.transfer(charlie.address, 1, consts.HG)).to.be.revertedWith(
-      errMsg.YIELD_CONTRACT_PAUSED
-    );
+    await expect(env.ot.transfer(charlie.address, 1, consts.HG)).to.be.revertedWith(errMsg.YIELD_CONTRACT_PAUSED);
     //TODO: the functions with expired yield contract are remained untested
     await expect(
-      env.router.redeemDueInterests(
-        env.FORGE_ID,
-        env.USDTContract.address,
-        env.EXPIRY,
-        bob.address,
-        consts.HG
-      )
+      env.router.redeemDueInterests(env.FORGE_ID, env.USDTContract.address, env.EXPIRY, bob.address, consts.HG)
     ).to.be.revertedWith(errMsg.YIELD_CONTRACT_PAUSED);
 
-    await expect(
-      env.forge.withdrawForgeFee(env.USDTContract.address, env.EXPIRY, consts.HG)
-    ).to.be.revertedWith(errMsg.YIELD_CONTRACT_PAUSED);
+    await expect(env.forge.withdrawForgeFee(env.USDTContract.address, env.EXPIRY, consts.HG)).to.be.revertedWith(
+      errMsg.YIELD_CONTRACT_PAUSED
+    );
   }
 
   async function checkYieldContractUnpaused() {
@@ -84,13 +54,7 @@ export async function runTest(mode: Mode) {
     await env.xyt.transfer(charlie.address, 1, consts.HG);
     await env.ot.transfer(charlie.address, 1, consts.HG);
     //TODO: refactor checkYieldContractPaused and checkYieldContractUnpaused
-    await env.router.redeemDueInterests(
-      env.FORGE_ID,
-      env.USDTContract.address,
-      env.EXPIRY,
-      bob.address,
-      consts.HG
-    );
+    await env.router.redeemDueInterests(env.FORGE_ID, env.USDTContract.address, env.EXPIRY, bob.address, consts.HG);
 
     await env.forge.withdrawForgeFee(env.USDTContract.address, env.EXPIRY, consts.HG);
   }
@@ -99,24 +63,17 @@ export async function runTest(mode: Mode) {
     await expect(env.router.bootstrapMarket(...marketArgs, 1000, 1000, consts.HG)).to.be.revertedWith(
       errMsg.MARKET_PAUSED
     );
-    await expect(
-      env.router.addMarketLiquidityDual(...marketArgs, 1000, 1000, 0, 0, consts.HG)
-    ).to.be.revertedWith(errMsg.MARKET_PAUSED);
-    await expect(
-      env.router.removeMarketLiquidityDual(...marketArgs, 1000, 0, 0, consts.HG)
-    ).to.be.revertedWith(errMsg.MARKET_PAUSED);
+    await expect(env.router.addMarketLiquidityDual(...marketArgs, 1000, 1000, 0, 0, consts.HG)).to.be.revertedWith(
+      errMsg.MARKET_PAUSED
+    );
+    await expect(env.router.removeMarketLiquidityDual(...marketArgs, 1000, 0, 0, consts.HG)).to.be.revertedWith(
+      errMsg.MARKET_PAUSED
+    );
     await expect(
       env.router.swapExactIn(env.xyt.address, env.testToken.address, 1000, 0, env.MARKET_FACTORY_ID, consts.HG)
     ).to.be.revertedWith(errMsg.MARKET_PAUSED);
     await expect(
-      env.router.swapExactOut(
-        env.xyt.address,
-        env.testToken.address,
-        1000,
-        1000000,
-        env.MARKET_FACTORY_ID,
-        consts.HG
-      )
+      env.router.swapExactOut(env.xyt.address, env.testToken.address, 1000, 1000000, env.MARKET_FACTORY_ID, consts.HG)
     ).to.be.revertedWith(errMsg.MARKET_PAUSED);
     await expect(env.router.redeemLpInterests(env.market.address, bob.address, consts.HG)).to.be.revertedWith(
       errMsg.MARKET_PAUSED
@@ -126,14 +83,7 @@ export async function runTest(mode: Mode) {
   async function checkMarketUnpaused() {
     await env.router.addMarketLiquidityDual(...marketArgs, 1000, 1000, 0, 0, consts.HG);
     await env.router.removeMarketLiquidityDual(...marketArgs, 1000, 0, 0, consts.HG);
-    await env.router.swapExactIn(
-      env.xyt.address,
-      env.testToken.address,
-      1000,
-      0,
-      env.MARKET_FACTORY_ID,
-      consts.HG
-    );
+    await env.router.swapExactIn(env.xyt.address, env.testToken.address, 1000, 0, env.MARKET_FACTORY_ID, consts.HG);
     await env.router.swapExactOut(
       env.xyt.address,
       env.testToken.address,
@@ -195,7 +145,8 @@ export async function runTest(mode: Mode) {
     forgeArgs = [env.FORGE_ID, env.USDTContract.address, env.EXPIRY];
     marketArgs = [env.MARKET_FACTORY_ID, env.xyt.address, env.testToken.address];
     // mint some XYTs to alice
-    if (aTokenBalance.toNumber() > 0) await env.router.tokenizeYield(...forgeArgs, aTokenBalance.div(10), alice.address, consts.HG);
+    if (aTokenBalance.toNumber() > 0)
+      await env.router.tokenizeYield(...forgeArgs, aTokenBalance.div(10), alice.address, consts.HG);
     await env.router.bootstrapMarket(...marketArgs, 1000000, 1000000, consts.HG);
     yieldTokenHolder = env.forge.yieldTokenHolders(env.USDTContract.address, env.EXPIRY);
     snapshotId = await evm_snapshot();
@@ -257,7 +208,9 @@ export async function runTest(mode: Mode) {
     });
     it('Pausing globally & unpausing specific yield contracts should work', async () => {
       await env.pausingManager.connect(bob).setForgePaused(env.FORGE_ID, true);
-      await env.pausingManager.connect(bob).setForgeAssetExpiryPaused(env.FORGE_ID, env.USDTContract.address, env.EXPIRY, true);
+      await env.pausingManager
+        .connect(bob)
+        .setForgeAssetExpiryPaused(env.FORGE_ID, env.USDTContract.address, env.EXPIRY, true);
       await env.pausingManager.connect(alice).setForgePaused(env.FORGE_ID, false);
       await checkYieldContractPaused();
     });
@@ -324,7 +277,9 @@ export async function runTest(mode: Mode) {
     });
 
     async function permaLockTests() {
-      await expect(env.pausingManager.setPausingAdmin(dave.address, true)).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
+      await expect(env.pausingManager.setPausingAdmin(dave.address, true)).to.be.revertedWith(
+        errMsg.PERMANENTLY_LOCKED
+      );
       await expect(env.pausingManager.applyForgeHandlerChange()).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
       await expect(env.pausingManager.lockPausingManagerPermanently()).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
       await expect(env.pausingManager.connect(bob).setForgePaused(env.FORGE_ID, true)).to.be.revertedWith(
@@ -334,7 +289,9 @@ export async function runTest(mode: Mode) {
         env.pausingManager.connect(bob).setForgeAssetPaused(env.FORGE_ID, env.USDTContract.address, true)
       ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
       await expect(
-        env.pausingManager.connect(bob).setForgeAssetExpiryPaused(env.FORGE_ID, env.USDTContract.address, env.EXPIRY, true)
+        env.pausingManager
+          .connect(bob)
+          .setForgeAssetExpiryPaused(env.FORGE_ID, env.USDTContract.address, env.EXPIRY, true)
       ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
       await expect(env.pausingManager.setForgeLocked(env.FORGE_ID)).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
       await expect(env.pausingManager.setForgeAssetLocked(env.FORGE_ID, env.USDTContract.address)).to.be.revertedWith(
@@ -343,7 +300,9 @@ export async function runTest(mode: Mode) {
       await expect(
         env.pausingManager.setForgeAssetExpiryLocked(env.FORGE_ID, env.USDTContract.address, env.EXPIRY)
       ).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
-      await expect(env.pausingManager.requestForgeHandlerChange(bob.address)).to.be.revertedWith(errMsg.PERMANENTLY_LOCKED);
+      await expect(env.pausingManager.requestForgeHandlerChange(bob.address)).to.be.revertedWith(
+        errMsg.PERMANENTLY_LOCKED
+      );
       await expect(env.pausingManager.requestMarketHandlerChange(bob.address)).to.be.revertedWith(
         errMsg.PERMANENTLY_LOCKED
       );

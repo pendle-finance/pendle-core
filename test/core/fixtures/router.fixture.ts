@@ -1,6 +1,14 @@
 import { providers, Wallet } from 'ethers';
 import { waffle } from 'hardhat';
-import { consts, convertToAaveV2Token, convertToCompoundToken, getA2Contract, getCContract, mint, tokens } from "../../helpers";
+import {
+  consts,
+  convertToAaveV2Token,
+  convertToCompoundToken,
+  getA2Contract,
+  getCContract,
+  mint,
+  tokens,
+} from '../../helpers';
 import { aaveV2Fixture, AaveV2Fixture } from './aaveV2.fixture';
 import { aaveV2ForgeFixture, AaveV2ForgeFixture } from './aaveV2Forge.fixture';
 import { CompoundFixture, compoundForgeFixture } from './compoundForge.fixture';
@@ -9,18 +17,15 @@ import { GovernanceFixture, governanceFixture } from './governance.fixture';
 const { loadFixture } = waffle;
 
 export interface RouterFixture {
-  core: CoreFixture,
-  governance: GovernanceFixture,
-  aaveV2: AaveV2Fixture,
-  a2Forge: AaveV2ForgeFixture,
-  cForge: CompoundFixture,
-  minted: boolean
+  core: CoreFixture;
+  governance: GovernanceFixture;
+  aaveV2: AaveV2Fixture;
+  a2Forge: AaveV2ForgeFixture;
+  cForge: CompoundFixture;
+  minted: boolean;
 }
 
-export async function routerFixture(
-  _: Wallet[],
-  __: providers.Web3Provider,
-): Promise<RouterFixture> {
+export async function routerFixture(_: Wallet[], __: providers.Web3Provider): Promise<RouterFixture> {
   const wallets = waffle.provider.getWallets();
   const [alice] = wallets;
 
@@ -37,14 +42,11 @@ export async function routerFixture(
     aaveV2: noMintFixture.aaveV2,
     a2Forge: noMintFixture.a2Forge,
     cForge: noMintFixture.cForge,
-    minted: true
+    minted: true,
   };
 }
 
-export async function routerFixtureNoMint(
-  _: Wallet[],
-  provider: providers.Web3Provider
-): Promise<RouterFixture> {
+export async function routerFixtureNoMint(_: Wallet[], provider: providers.Web3Provider): Promise<RouterFixture> {
   const wallets = waffle.provider.getWallets();
   const [alice] = wallets;
   const core = await loadFixture(coreFixture);
@@ -59,5 +61,5 @@ export async function routerFixtureNoMint(
   const cContract = await getCContract(alice, tokens.USDT);
   await cContract.approve(core.router.address, consts.INF);
 
-  return { core, governance, aaveV2, a2Forge, cForge, minted: false }
+  return { core, governance, aaveV2, a2Forge, cForge, minted: false };
 }
