@@ -10,13 +10,12 @@ import {
   getCContract,
   getERC20Contract,
   mint,
+  mintXytCompound,
   Token,
   tokens,
-  mintXytCompound,
 } from '../helpers';
 import { marketFixture, MarketFixture } from './fixtures';
-import hre from 'hardhat';
-const { waffle } = hre;
+const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
 describe('compound-lp-interest', async () => {

@@ -1,12 +1,11 @@
 import { BigNumber as BN } from 'ethers';
-import { waffle } from 'hardhat';
 import {
-  addFakeIncomeCompoundUSDT,
   approxBigNumber,
   consts,
   emptyToken,
   evm_revert,
   evm_snapshot,
+  getA2Contract,
   randomBN,
   randomNumber,
   redeemDueInterests,
@@ -15,7 +14,6 @@ import {
   stake,
   tokens,
   withdraw,
-  getA2Contract,
 } from '../../helpers';
 import {
   liquidityMiningFixture,
@@ -24,6 +22,7 @@ import {
   parseTestEnvLiquidityMiningFixture,
   TestEnv,
 } from '../fixtures';
+const { waffle } = require('hardhat');
 
 const { loadFixture, provider } = waffle;
 

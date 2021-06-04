@@ -1,22 +1,22 @@
-import { BigNumber as BN, Wallet, Contract } from 'ethers';
+import { expect } from 'chai';
+import { BigNumber as BN, Contract, Wallet } from 'ethers';
+import hre from 'hardhat';
 import {
+  advanceTime,
+  approxBigNumber,
+  consts,
   evm_revert,
   evm_snapshot,
-  consts,
-  approxBigNumber,
-  tokenizeYield,
-  redeemUnderlying,
-  redeemAfterExpiry,
-  advanceTime,
   mineBlock,
-  minerStop,
   minerStart,
+  minerStop,
+  redeemAfterExpiry,
+  redeemUnderlying,
+  tokenizeYield,
 } from '../../helpers';
-import { routerFixture, RouterFixture, Mode, parseTestEnvRouterFixture, TestEnv } from '../fixtures';
+import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 
-import hre from 'hardhat';
-import { expect } from 'chai';
-const { waffle } = hre;
+const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
 export function runTest(mode: Mode) {

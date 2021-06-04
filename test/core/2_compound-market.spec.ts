@@ -1,9 +1,9 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
-import { waffle } from 'hardhat';
 import { advanceTime, amountToWei, consts, evm_revert, evm_snapshot } from '../helpers';
 import { marketFixture } from './fixtures';
+const { waffle } = require('hardhat');
 chai.use(solidity);
 
 const { loadFixture, provider } = waffle;

@@ -1,5 +1,5 @@
 import { providers, Wallet } from 'ethers';
-import { waffle } from 'hardhat';
+const { waffle } = require('hardhat');
 import {
   consts,
   convertToAaveV2Token,

@@ -1,7 +1,6 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
-import { waffle } from 'hardhat';
 import {
   advanceTime,
   approxBigNumber,
@@ -24,6 +23,7 @@ import {
   parseTestEnvLiquidityMiningFixture,
   TestEnv,
 } from './fixtures';
+const { waffle } = require('hardhat');
 chai.use(solidity);
 
 const { loadFixture, provider } = waffle;

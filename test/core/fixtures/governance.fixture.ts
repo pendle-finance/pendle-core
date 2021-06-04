@@ -3,7 +3,7 @@ import PendleGovernance from '../../../build/artifacts/contracts/core/PendleGove
 import Timelock from '../../../build/artifacts/contracts/periphery/Timelock.sol/Timelock.json';
 import PENDLE from '../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json';
 
-import { waffle } from 'hardhat';
+const { waffle } = require('hardhat');
 const { deployContract } = waffle;
 
 export interface GovernanceFixture {

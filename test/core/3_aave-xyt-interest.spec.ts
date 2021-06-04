@@ -1,29 +1,25 @@
 import { expect } from 'chai';
 import { BigNumber as BN, Wallet } from 'ethers';
 import {
-  amountToWei,
-  mintAaveV2Token,
+  advanceTime,
   approxBigNumber,
   consts,
+  emptyToken,
   evm_revert,
   evm_snapshot,
+  mintAaveV2Token,
   randomNumber,
+  redeemAfterExpiry,
   redeemDueInterests,
   redeemUnderlying,
-  redeemAfterExpiry,
   setTimeNextBlock,
   tokenizeYield,
   tokens,
-  Token,
-  transferToken,
-  logTokenBalance,
-  advanceTime,
-  emptyToken,
 } from '../helpers';
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from './fixtures';
 import testData from './fixtures/yieldTokenizeAndRedeem.scenario.json';
 
-import { waffle } from 'hardhat';
+const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
 interface YieldTest {

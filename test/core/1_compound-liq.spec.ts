@@ -1,10 +1,9 @@
 import { expect } from 'chai';
 import { BigNumber as BN, Contract } from 'ethers';
-import hre from 'hardhat';
 import { advanceTime, consts, evm_revert, evm_snapshot, getCContract, tokens } from '../helpers';
 import { LiqParams, liquidityMiningFixture } from './fixtures';
 
-const { waffle } = hre;
+const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
 describe('compound-liquidityMining', async () => {

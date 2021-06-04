@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { Contract } from 'ethers';
-import { waffle } from 'hardhat';
 import { evm_revert, evm_snapshot } from '../helpers';
 import { marketFixture, MarketFixture } from './fixtures';
+const { waffle } = require('hardhat');
 
 const { loadFixture } = waffle;
 

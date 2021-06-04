@@ -1,5 +1,4 @@
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
-import { waffle } from 'hardhat';
 import {
   amountToWei,
   approxBigNumber,
@@ -16,6 +15,7 @@ import {
 } from '../helpers';
 import { routerFixture } from './fixtures';
 import testData from './fixtures/yieldTokenizeAndRedeem.scenario.json';
+const { waffle } = require('hardhat');
 
 const { loadFixture, provider } = waffle;
 

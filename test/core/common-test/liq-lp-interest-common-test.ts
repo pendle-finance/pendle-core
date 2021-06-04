@@ -1,5 +1,4 @@
 import { BigNumber as BN } from 'ethers';
-import { waffle } from 'hardhat';
 import {
   addFakeIncomeCompoundUSDT,
   approxBigNumber,
@@ -22,6 +21,7 @@ import {
   parseTestEnvLiquidityMiningFixture,
   TestEnv,
 } from '../fixtures';
+const { waffle } = require('hardhat');
 
 const { loadFixture, provider } = waffle;
 

@@ -1,5 +1,4 @@
 import { BigNumber as BN, Wallet } from 'ethers';
-import { waffle } from 'hardhat';
 import {
   addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
@@ -9,16 +8,17 @@ import {
   consts,
   evm_revert,
   evm_snapshot,
+  mintXytAave,
   removeMarketLiquidityDual,
   removeMarketLiquiditySingle,
   setTimeNextBlock,
   toFixedPoint,
   tokens,
-  mintXytAave,
 } from '../helpers';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
 import * as scenario from './fixtures/lpFormulaScenario.fixture';
 import { TestAddLiq, TestRemoveLiq } from './fixtures/lpFormulaScenario.fixture';
+const { waffle } = require('hardhat');
 
 const { loadFixture, provider } = waffle;
 

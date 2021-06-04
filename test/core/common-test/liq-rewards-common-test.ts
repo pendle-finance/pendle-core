@@ -1,6 +1,5 @@
 import { assert, expect } from 'chai';
 import { BigNumber as BN } from 'ethers';
-import { waffle } from 'hardhat';
 import {
   approxBigNumber,
   calcExpectedRewards,
@@ -23,6 +22,7 @@ import {
   UserStakeAction,
 } from '../fixtures';
 import * as scenario from '../fixtures/liquidityMiningScenario.fixture';
+const { waffle } = require('hardhat');
 
 const { loadFixture, provider } = waffle;
 

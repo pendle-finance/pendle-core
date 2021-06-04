@@ -9,6 +9,7 @@ import {
   emptyToken,
   evm_revert,
   evm_snapshot,
+  mintXytAave,
   redeemDueInterests,
   redeemLpInterests,
   removeMarketLiquidityDual,
@@ -16,11 +17,10 @@ import {
   swapExactInXytToToken,
   Token,
   tokens,
-  mintXytAave,
 } from '../helpers';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
 
-import { waffle } from 'hardhat';
+const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
 describe('Aave-lp-interest', async () => {

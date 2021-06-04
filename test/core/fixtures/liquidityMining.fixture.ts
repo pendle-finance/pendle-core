@@ -1,5 +1,4 @@
 import { BigNumber as BN, Contract, providers, Wallet } from 'ethers';
-import hre from 'hardhat';
 import PendleCompoundLiquidityMining from '../../../build/artifacts/contracts/core/compound/PendleCompoundLiquidityMining.sol/PendleCompoundLiquidityMining.json';
 import PendleWhitelist from '../../../build/artifacts/contracts/core/PendleWhitelist.sol/PendleWhitelist.json';
 import MockPendleAaveLiquidityMining from '../../../build/artifacts/contracts/mock/MockPendleAaveLiquidityMining.sol/MockPendleAaveLiquidityMining.json';
@@ -8,7 +7,7 @@ import { amountToWei, consts, tokens } from '../../helpers';
 import { CompoundFixture } from './compoundForge.fixture';
 import { CoreFixture } from './core.fixture';
 import { marketFixture, MarketFixture } from './market.fixture';
-const { waffle } = hre;
+const { waffle } = require('hardhat');
 const { deployContract, loadFixture } = waffle;
 
 export interface LiquidityMiningFixture {

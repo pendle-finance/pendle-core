@@ -10,13 +10,13 @@ import {
   mint,
   mintCompoundToken,
   setTimeNextBlock,
+  toFixedPoint,
   Token,
   tokens,
-  toFixedPoint,
 } from '../helpers';
 import { routerFixture } from './fixtures';
 
-import { waffle } from 'hardhat';
+const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
 interface YieldTest {
