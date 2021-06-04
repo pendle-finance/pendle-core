@@ -57,10 +57,6 @@ async function main() {
   console.log(`marketId = ${marketFactoryId}`);
   console.log(`marketAddress = ${market.address}`);
 
-
-  //const xyt = await pendleData.xytTokens(forgeId, underlyingAssetContractAddress, expiry);
-  //const ot = await pendleData.otTokens(forgeId, underlyingAssetContractAddress, expiry);
-
   //query amount details
   const reserveBalanceResult = await pendleMarketReader.getMarketReserves(marketFactoryId, xytAddress, baseTokenAddress); //to print
   const [xytBalance, xytWeight, tokenBalance, tokenWeight] = await market.getReserves(); //to print
@@ -73,27 +69,21 @@ async function main() {
 
   const forgeAddress = await xytContract.forge();
   const forge = await hre.ethers.getContractAt("IPendleForge", forgeAddress);
-
   console.log(`forgeAddress = ${forgeAddress}`);
-  console.log(`forge.address = ${forge.address}`);
 
-  const bearingTokenAddress = await forge.getYieldBearingToken(underlyingAssetContractAddress);
-  //const bearToken = await hre.ethers.getContractAt("TestToken", bearingTokenAddress);
+  const bearingTokenAddress = await forge.callStatic.getYieldBearingToken(underlyingAssetContractAddress);
   const bearToken = await (await hre.ethers.getContractFactory('TestToken')).attach(bearingTokenAddress);
-  
   console.log(`bearingTokenaddress = ${bearingTokenAddress}`);
-  console.log(`bearingToken.address = ${bearToken.address}`);
- /* TODO: @@XM debug to put back
+
   const yieldBalance = await bearToken.balanceOf(marketAddress);
  
-  //const rewardTokenAddress = await forgeAddress.rewardToken();
   const rewardTokenAddress = await forge.rewardToken();
   const rewardToken = await hre.ethers.getContractAt("TestToken", rewardTokenAddress);
   const rewardTokenBalance = await rewardToken.balanceOf(marketAddress); //to print
  
   const timeTillExpiry = await xytContract.expiry() - Math.floor(Date.now() / 1000); //to print
 
-  const [,islocked] = await pendlePausingManager.checkMarketStatus(marketFactoryId, marketAddress);  //to print
+  const [,islocked] = await pendlePausingManager.callStatic.checkMarketStatus(marketFactoryId, marketAddress);  //to print
 
   console.log(`amount of XYTs & baseToken = ${xytBalance} , ${tokenBalance}`);
   console.log(`weight of XYTs & baseToken = ${xytWeight} , ${tokenWeight}`);
@@ -103,7 +93,6 @@ async function main() {
   console.log(`amount of reward tokens (stkAAVE/COMP) in the market = ${rewardTokenBalance}`);
   console.log(`time until expiry = ${timeTillExpiry}`);
   console.log(`is locked or not = ${islocked}`);
-  *//*TODO: @@XM debug to put back*/
 }
 
 main()
