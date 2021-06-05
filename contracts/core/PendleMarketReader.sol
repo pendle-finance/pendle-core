@@ -25,6 +25,7 @@ pragma abicoder v2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../libraries/MathLib.sol";
+import "../libraries/MarketMath.sol";
 import "../libraries/PendleStructs.sol";
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleData.sol";
@@ -193,7 +194,12 @@ contract PendleMarketReader {
         outTokenReserve.balance = market.tokenBalanceOut;
         outTokenReserve.weight = market.tokenWeightOut;
 
-        totalInput = _calcExactInFunc(inTokenReserve, outTokenReserve, outAmount, data.swapFee());
+        totalInput = MarketMath._calcExactIn(
+            inTokenReserve,
+            outTokenReserve,
+            outAmount,
+            data.swapFee()
+        );
     }
 
     function _calcExactOut(uint256 inAmount, Market memory market)
@@ -209,7 +215,12 @@ contract PendleMarketReader {
         outTokenReserve.balance = market.tokenBalanceOut;
         outTokenReserve.weight = market.tokenWeightOut;
 
-        totalOutput = _calcExactOutFunc(inTokenReserve, outTokenReserve, inAmount, data.swapFee());
+        totalOutput = MarketMath._calcExactOut(
+            inTokenReserve,
+            outTokenReserve,
+            inAmount,
+            data.swapFee()
+        );
     }
 
     function _calcEffectiveLiquidity(
@@ -224,38 +235,5 @@ contract PendleMarketReader {
             .div(Math.RONE);
 
         return effectiveLiquidity;
-    }
-
-    // copied from market
-    function _calcExactOutFunc(
-        TokenReserve memory inTokenReserve,
-        TokenReserve memory outTokenReserve,
-        uint256 exactIn,
-        uint256 swapFee
-    ) internal pure returns (uint256 exactOut) {
-        uint256 weightRatio = Math.rdiv(inTokenReserve.weight, outTokenReserve.weight);
-        uint256 adjustedIn = Math.RONE.sub(swapFee);
-        adjustedIn = Math.rmul(exactIn, adjustedIn);
-        uint256 y = Math.rdiv(inTokenReserve.balance, inTokenReserve.balance.add(adjustedIn));
-        uint256 foo = Math.rpow(y, weightRatio);
-        uint256 bar = Math.RONE.sub(foo);
-
-        exactOut = Math.rmul(outTokenReserve.balance, bar);
-    }
-
-    function _calcExactInFunc(
-        TokenReserve memory inTokenReserve,
-        TokenReserve memory outTokenReserve,
-        uint256 exactOut,
-        uint256 swapFee
-    ) internal pure returns (uint256 exactIn) {
-        uint256 weightRatio = Math.rdiv(outTokenReserve.weight, inTokenReserve.weight);
-        uint256 diff = outTokenReserve.balance.sub(exactOut);
-        uint256 y = Math.rdiv(outTokenReserve.balance, diff);
-        uint256 foo = Math.rpow(y, weightRatio);
-
-        foo = foo.sub(Math.RONE);
-        exactIn = Math.RONE.sub(swapFee);
-        exactIn = Math.rdiv(Math.rmul(inTokenReserve.balance, foo), exactIn);
     }
 }
