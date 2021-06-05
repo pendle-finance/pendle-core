@@ -13,7 +13,7 @@ import {
   removeMarketLiquiditySingle,
   setTimeNextBlock,
   toFixedPoint,
-  tokens
+  tokens,
 } from '../helpers';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
 import * as scenario from './fixtures/lpFormulaScenario.fixture';
