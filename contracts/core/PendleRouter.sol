@@ -647,15 +647,6 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         }
     }
 
-    /**
-     * @notice This function turns ETH_ADDRESS into WETH address if applicable
-     *    it is called "marketToken" because its the token address used in the markets
-     */
-    function _getMarketToken(address token) internal view returns (address) {
-        if (_isETH(token)) return address(weth);
-        return token;
-    }
-
     // Check if an user has approved the router to spend the amount
     // if not, approve the router to spend the token from the user account
     function _checkApproveRouter(address token) internal {
