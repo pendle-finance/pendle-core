@@ -37,6 +37,7 @@ export interface TestEnv {
   USDTContract: Contract;
 
   // test params
+  ETH_TEST: boolean;
   T0: BN;
   FORGE_ID: string;
   INITIAL_YIELD_TOKEN_AMOUNT: BN;
@@ -61,6 +62,7 @@ export async function parseTestEnvCoreFixture(env: TestEnv, alice: Wallet, fixtu
   env.marketReader = fixture.marketReader;
   env.USDTContract = await getERC20Contract(alice, tokens.USDT);
   env.underlyingAsset = tokens.USDT;
+  env.ETH_TEST = false;
 }
 
 export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: RouterFixture) {

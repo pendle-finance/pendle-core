@@ -76,3 +76,9 @@ export async function createAaveMarketWithExpiry(env: TestEnv, expiry: BN, walle
 
   return newEnv;
 }
+
+export function wrapEth(object: any, ethAmount: BN): any {
+  const cloneObj = JSON.parse(JSON.stringify(object));
+  cloneObj.value = ethAmount;
+  return cloneObj;
+}

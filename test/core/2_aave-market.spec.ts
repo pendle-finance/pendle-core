@@ -94,7 +94,12 @@ describe('AaveV2-market', async () => {
 
     let xytBalanceBefore = await env.xyt.balanceOf(env.market.address);
 
-    let result: any[] = await getMarketRateExactOut(env, amountToWei(BN.from(10), 6));
+    let result: any[] = await getMarketRateExactOut(
+      env,
+      env.xyt.address,
+      env.testToken.address,
+      amountToWei(BN.from(10), 6)
+    );
 
     await swapExactOutXytToToken(env, bob, amountToWei(BN.from(10), 6));
 
@@ -209,13 +214,23 @@ describe('AaveV2-market', async () => {
 
   it('getMarketRateExactOut', async () => {
     await bootstrapMarket(env, alice, REF_AMOUNT);
-    let result: any[] = await getMarketRateExactOut(env, amountToWei(BN.from(10), 6));
+    let result: any[] = await getMarketRateExactOut(
+      env,
+      env.xyt.address,
+      env.testToken.address,
+      amountToWei(BN.from(10), 6)
+    );
     approxBigNumber(result[1], 11111205, 1000);
   });
 
   it('getMarketRateExactIn', async () => {
     await bootstrapMarket(env, alice, REF_AMOUNT);
-    let result: any[] = await getMarketRateExactIn(env, amountToWei(BN.from(10), 6));
+    let result: any[] = await getMarketRateExactIn(
+      env,
+      env.testToken.address,
+      env.xyt.address,
+      amountToWei(BN.from(10), 6)
+    );
     approxBigNumber(result[1], 9090839, 1000);
   });
 

@@ -1,13 +1,14 @@
 import { Contract, providers, Wallet } from 'ethers';
+import hre from 'hardhat';
 import PendleCompoundMarket from '../../../build/artifacts/contracts/core/compound/PendleCompoundMarket.sol/PendleCompoundMarket.json';
 import MockPendleAaveMarket from '../../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json';
 import TestToken from '../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json';
-import { consts, mintXytAave, mintXytCompound, tokens } from '../../helpers';
+import { consts, emptyToken, getA2Contract, getCContract, tokens, mintXytAave, mintXytCompound } from '../../helpers';
 import { AaveV2ForgeFixture } from './aaveV2Forge.fixture';
 import { CompoundFixture } from './compoundForge.fixture';
 import { CoreFixture } from './core.fixture';
 import { RouterFixture, routerFixtureNoMint } from './router.fixture';
-const { waffle } = require('hardhat');
+const { waffle } = hre;
 const { deployContract, loadFixture } = waffle;
 
 export interface MarketFixture {
