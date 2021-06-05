@@ -149,7 +149,7 @@ describe('lp-formula', async () => {
     await runTestRemoveLiqSingleToken(scenario.scenarioRemove04());
   });
 
-  it.only('add liquidity dual token test 1', async () => {
+  it('add liquidity dual token test 1', async () => {
     const amountOfXyt = amountToWei(BN.from(331), 6);
     const amountOfToken = amountToWei(BN.from(891), 6);
     await bootstrapMarket(env, alice, amountOfXyt, amountOfToken);
