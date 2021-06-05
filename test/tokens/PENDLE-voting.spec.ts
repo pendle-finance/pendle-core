@@ -8,7 +8,7 @@ chai.use(solidity);
 const { waffle } = require('hardhat');
 const { provider, deployContract } = waffle;
 
-describe('PENDLE-voting [@skip-on-coverage]', () => {
+describe('PENDLE-voting', () => {
   const wallets: Wallet[] = provider.getWallets();
   const [root, a1, a2, ...accounts] = wallets;
 

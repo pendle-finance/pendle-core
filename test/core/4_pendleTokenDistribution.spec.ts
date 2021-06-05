@@ -9,7 +9,7 @@ chai.use(solidity);
 const { waffle } = require('hardhat');
 const { provider, deployContract } = waffle;
 
-describe('pendleTokenDistribution [@skip-on-coverage]', async () => {
+describe('pendleTokenDistribution', async () => {
   const wallets = provider.getWallets();
   const [governance, bob, charlie, salesMultisig, liqIncentivesRecipient] = wallets;
   const newEmissionRateMultiplierNumerator = BN.from(123456);
