@@ -628,8 +628,13 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
             }
         } else {
             if (_isETH(token)) {
-                require(msg.value == transfer.amount, "ETH_SENT_MISMATCH");
-                weth.deposit{value: msg.value}();
+                require(msg.value >= transfer.amount, "INSUFFICENT_ETH_AMOUNT");
+                // we only need transfer.amount, so we return the excess
+                uint256 excess = msg.value.sub(transfer.amount);
+                (bool success, ) = msg.sender.call{value: excess}("");
+                require(success, "TRANSFER_FAILED");
+
+                weth.deposit{value: transfer.amount}();
                 weth.transfer(market, transfer.amount);
             } else {
                 // its a transfer in of token. If its an XYT
