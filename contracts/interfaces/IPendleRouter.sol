@@ -71,7 +71,13 @@ interface IPendleRouter {
      * @param market The market address.
      * @param exactOutLp The exact LP minted
      */
-    event Join(address indexed sender, uint256 token0Amount, uint256 token1Amount, address market, uint256 exactOutLp);
+    event Join(
+        address indexed sender,
+        uint256 token0Amount,
+        uint256 token1Amount,
+        address market,
+        uint256 exactOutLp
+    );
 
     /**
      * @dev Emitted when user removes liquidity
@@ -81,7 +87,13 @@ interface IPendleRouter {
      * @param market The market address.
      * @param exactInLp The exact Lp to remove
      */
-    event Exit(address indexed sender, uint256 token0Amount, uint256 token1Amount, address market, uint256 exactInLp);
+    event Exit(
+        address indexed sender,
+        uint256 token0Amount,
+        uint256 token1Amount,
+        address market,
+        uint256 exactInLp
+    );
 
     struct Swap {
         uint256 swapAmount;
