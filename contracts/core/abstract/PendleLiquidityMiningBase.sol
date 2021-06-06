@@ -204,6 +204,7 @@ abstract contract PendleLiquidityMiningBase is
         for (uint256 i = 0; i < expiries.length; i++) {
             IPendleLpHolder(expiryData[expiries[i]].lpHolder).setUpEmergencyMode(spender);
         }
+        IERC20(pendleTokenAddress).approve(spender, type(uint256).max);
     }
 
     /**
@@ -885,10 +886,10 @@ abstract contract PendleLiquidityMiningBase is
         return startTime.add(t.mul(epochDuration));
     }
 
-    // There shouldn't be any fund in here (LPs and yield tokens are kept in LP holders)
-    // hence governance is allowed to withdraw anything from here.
-    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
-        allowed = true;
+    // There should be only PENDLE in here(LPs and yield tokens are kept in LP holders)
+    // hence governance is allowed to withdraw anything other than PENDLE
+    function _allowedToWithdraw(address _token) internal view override returns (bool allowed) {
+        allowed = _token != pendleTokenAddress;
     }
 
     function _updateDueInterests(uint256 expiry, address user) internal virtual;
