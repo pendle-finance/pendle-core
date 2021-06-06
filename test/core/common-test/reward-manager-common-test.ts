@@ -321,12 +321,10 @@ export function runTest(mode: Mode) {
       }
     });
 
-    it('skippingRewards should work correctly', async() => {
+    it('skippingRewards should work correctly', async () => {
       async function redeemRewardsToken(person: Wallet): Promise<BN> {
         let lastBalance: BN = await rewardToken.balanceOf(person.address);
-        await env.rewardManager.redeemRewards(
-          env.USDTContract.address, env.EXPIRY, person.address, consts.HG          
-        );
+        await env.rewardManager.redeemRewards(env.USDTContract.address, env.EXPIRY, person.address, consts.HG);
         let currentBalance: BN = await rewardToken.balanceOf(person.address);
         return currentBalance.sub(lastBalance);
       }
@@ -335,15 +333,15 @@ export function runTest(mode: Mode) {
       for (let person of [bob, charlie, dave, eve]) {
         await tokenizeYield(env, alice, amount, person.address);
       }
-      
-      // Should receive pending reward before skippingRewards    
+
+      // Should receive pending reward before skippingRewards
       await advanceTime(consts.ONE_MONTH);
       for (let person of [bob, charlie, dave, eve]) {
         expect((await redeemRewardsToken(person)).eq(0)).to.be.equal(false);
       }
 
-      // Should not receive pending reward after skippingRewards    
-      await env.rewardManager.setSkippingRewards(true); 
+      // Should not receive pending reward after skippingRewards
+      await env.rewardManager.setSkippingRewards(true);
       await advanceTime(consts.ONE_MONTH);
 
       for (let person of [bob, charlie, dave, eve]) {

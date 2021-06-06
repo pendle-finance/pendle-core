@@ -7,7 +7,7 @@ import { amountToWei, consts, tokens } from '../../helpers';
 import { CompoundFixture } from './compoundForge.fixture';
 import { CoreFixture } from './core.fixture';
 import { marketFixture, MarketFixture } from './market.fixture';
-import { emptyToken } from '../../helpers/TokenHelpers'
+import { emptyToken } from '../../helpers/TokenHelpers';
 const { waffle } = require('hardhat');
 const { deployContract, loadFixture } = waffle;
 
@@ -253,7 +253,7 @@ export async function liquidityMiningFixture(
   await a2LiquidityMining18.fund(params.REWARDS_PER_EPOCH);
   await cLiquidityMining.fund(params.REWARDS_PER_EPOCH);
 
-  await pdl.transfer(eve.address, (await pdl.balanceOf(alice.address)));
+  await pdl.transfer(eve.address, await pdl.balanceOf(alice.address));
 
   let lpBalanceA2Market = await a2Market.balanceOf(alice.address);
   let lpBalanceA2Market18 = await a2Market18.balanceOf(alice.address);

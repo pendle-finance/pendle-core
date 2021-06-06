@@ -203,48 +203,33 @@ export function runTest(mode: Mode) {
       await redeemRewards(env, bob);
     });
 
-    it("topUpRewards should work correctly", async () => {
+    it('topUpRewards should work correctly', async () => {
       /// assuming current epoch is 1
       await env.pdl.connect(eve).transfer(alice.address, await env.pdl.balanceOf(eve.address));
 
-      const amount = BN.from(10**9);
-      await expect(
-        env.liq.topUpRewards([2, 3, 4], [1, 2])
-      ).to.be.revertedWith(errMsg.INVALID_ARRAYS);
-      
+      const amount = BN.from(10 ** 9);
+      await expect(env.liq.topUpRewards([2, 3, 4], [1, 2])).to.be.revertedWith(errMsg.INVALID_ARRAYS);
+
       await setTimeNextBlock((await env.liq.startTime()).add(1));
-      await expect(
-        env.liq.topUpRewards([1, 2, 3], [1, 2, 3])
-      ).to.be.revertedWith(errMsg.INVALID_EPOCH_ID);
+      await expect(env.liq.topUpRewards([1, 2, 3], [1, 2, 3])).to.be.revertedWith(errMsg.INVALID_EPOCH_ID);
 
-      await expect(
-        env.liq.topUpRewards([99, 2, 3], [1, 2, 3])
-      ).to.be.revertedWith(errMsg.INVALID_EPOCH_ID);
+      await expect(env.liq.topUpRewards([99, 2, 3], [1, 2, 3])).to.be.revertedWith(errMsg.INVALID_EPOCH_ID);
 
+      await expect(env.liq.topUpRewards([2, 3, 4], [0, 0, 0])).to.be.revertedWith(errMsg.ZERO_FUND);
 
-      await expect(
-        env.liq.topUpRewards([2, 3, 4], [0, 0, 0])
-      ).to.be.revertedWith(errMsg.ZERO_FUND);
-
-      
       const epochIdToAdd = [2, 6, 9, 12];
       const amountToTopUp = [amount, amount.mul(1), amount.mul(2), amount.mul(3)];
 
       await env.liq.topUpRewards(epochIdToAdd, amountToTopUp);
-      for(let i = 0; i < epochIdToAdd.length; ++i) {
+      for (let i = 0; i < epochIdToAdd.length; ++i) {
         const epoch = epochIdToAdd[i];
         const toppedUpReward = amountToTopUp[i];
         let reward: BN = (await env.liq.readEpochData(epoch)).totalRewards;
-        approxBigNumber(
-          reward,
-          env.liqParams.REWARDS_PER_EPOCH[epoch-1].add(toppedUpReward),
-          0,
-          true
-        );
+        approxBigNumber(reward, env.liqParams.REWARDS_PER_EPOCH[epoch - 1].add(toppedUpReward), 0, true);
       }
     });
 
-    it("Read functions should work correctly", async () => {
+    it('Read functions should work correctly', async () => {
       await setTimeNextBlock((await env.liq.startTime()).add(1));
       await env.liq.readStakeUnitsForUser(1, alice.address, env.EXPIRY);
       await env.liq.readAvailableRewardsForUser(1, alice.address);
