@@ -288,7 +288,6 @@ export function runTest(mode: Mode) {
 
         await advanceTime(consts.ONE_MONTH);
         await env.rewardManager.redeemRewards(env.USDTContract.address, env.EXPIRY, person.address, consts.HG);
-
         await env.rewardManager.connect(person).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG);
       }
     });
@@ -317,10 +316,55 @@ export function runTest(mode: Mode) {
         for (let person of [bob, charlie, dave]) {
           await env.ot.connect(person).transfer(alice.address, amountToTransfer, consts.LG);
         }
-
         await expect(env.ot.connect(eve).transfer(alice.address, amountToTransfer, consts.LG)).to.be.reverted;
-
         await env.ot.connect(eve).transfer(alice.address, amountToTransfer, consts.HG);
+      }
+    });
+
+    it('skippingRewards should work correctly', async() => {
+      async function redeemRewardsToken(person: Wallet): Promise<BN> {
+        let lastBalance: BN = await rewardToken.balanceOf(person.address);
+        await env.rewardManager.redeemRewards(
+          env.USDTContract.address, env.EXPIRY, person.address, consts.HG          
+        );
+        let currentBalance: BN = await rewardToken.balanceOf(person.address);
+        return currentBalance.sub(lastBalance);
+      }
+
+      const amount = userInitialYieldToken.div(10);
+      for (let person of [bob, charlie, dave, eve]) {
+        await tokenizeYield(env, alice, amount, person.address);
+      }
+      
+      // Should receive pending reward before skippingRewards    
+      await advanceTime(consts.ONE_MONTH);
+      for (let person of [bob, charlie, dave, eve]) {
+        expect((await redeemRewardsToken(person)).eq(0)).to.be.equal(false);
+      }
+
+      // Should not receive pending reward after skippingRewards    
+      await env.rewardManager.setSkippingRewards(true); 
+      await advanceTime(consts.ONE_MONTH);
+
+      for (let person of [bob, charlie, dave, eve]) {
+        // ParamL was updated when eve last redeem their reward. Thus, other actors should still receive their pending reward calculated up to that moment.
+        if (person.address == eve.address) {
+          expect((await redeemRewardsToken(person)).eq(0)).to.be.equal(true);
+        } else {
+          expect((await redeemRewardsToken(person)).eq(0)).to.be.equal(false);
+        }
+      }
+      // just to see if it affects the skipping rewards.
+      await env.rewardManager.setUpdateFrequency([env.USDTContract.address], [2], consts.HG);
+      await env.rewardManager.connect(alice).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG);
+
+      for (let person of [bob, charlie, dave, eve]) {
+        expect((await redeemRewardsToken(person)).eq(0)).to.be.equal(true);
+      }
+
+      // Transfering ot should be cheap
+      for (let person of [bob, charlie, dave]) {
+        await env.ot.connect(person).transfer(alice.address, amount, consts.LG);
       }
     });
   });
