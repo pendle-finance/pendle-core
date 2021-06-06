@@ -321,12 +321,24 @@ export function runTest(mode: Mode) {
       }
     });
 
-    it('skippingRewards should work correctly', async () => {
+    it.only('skippingRewards should work correctly', async () => {
       async function redeemRewardsToken(person: Wallet): Promise<BN> {
         let lastBalance: BN = await rewardToken.balanceOf(person.address);
         await env.rewardManager.redeemRewards(env.USDTContract.address, env.EXPIRY, person.address, consts.HG);
         let currentBalance: BN = await rewardToken.balanceOf(person.address);
         return currentBalance.sub(lastBalance);
+      }
+
+      async function ensureParamLUnchanged(functionToCall: any) {
+        /// This function aims to check the change of paramL before and after a promise function is called
+        const paramLBefore: BN = (
+          await env.rewardManager.readRewardData(env.USDTContract.address, env.EXPIRY, alice.address)
+        ).paramL;
+        await functionToCall;
+        const paramLAfter: BN = (
+          await env.rewardManager.readRewardData(env.USDTContract.address, env.EXPIRY, alice.address)
+        ).paramL;
+        approxBigNumber(paramLBefore, paramLAfter, 0, false);
       }
 
       const amount = userInitialYieldToken.div(10);
@@ -364,6 +376,16 @@ export function runTest(mode: Mode) {
       for (let person of [bob, charlie, dave]) {
         await env.ot.connect(person).transfer(alice.address, amount, consts.LG);
       }
+
+      // After skippingRewards, nothing should be able to change paramL
+      for(let person of [bob, charlie, dave]) {
+        /// redeemRewards
+        await ensureParamLUnchanged(redeemRewardsToken(person));
+        await ensureParamLUnchanged(env.ot.connect(alice).transfer(person.address, 1, consts.HG));
+      }
+      await ensureParamLUnchanged(env.rewardManager.setUpdateFrequency([env.USDTContract.address], [2], consts.HG));
+      await ensureParamLUnchanged(env.rewardManager.setSkippingRewards(true)); /// Must not set it false here :joy:
+      await ensureParamLUnchanged(env.rewardManager.connect(alice).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG));
     });
   });
 }

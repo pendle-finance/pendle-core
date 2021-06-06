@@ -96,6 +96,27 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         router = forge.router();
     }
 
+    function readRewardData(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address user
+    )
+        external
+        view
+        returns (
+            uint256 paramL,
+            uint256 lastRewardBalance,
+            uint256 lastParamL,
+            uint256 dueRewards
+        )
+    {
+        RewardData storage rwd = rewardData[_underlyingAsset][_expiry];
+        paramL = rwd.paramL;
+        lastRewardBalance = rwd.lastRewardBalance;
+        lastParamL = rwd.lastParamL[user];
+        dueRewards = rwd.dueRewards[user];
+    }
+
     /**
     Use:
         To set how often rewards should be updated for yieldTokenHolders of an underlyingAsset

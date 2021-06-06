@@ -208,7 +208,7 @@ export function runTest(mode: Mode) {
       await env.pdl.connect(eve).transfer(alice.address, await env.pdl.balanceOf(eve.address));
 
       const amount = BN.from(10 ** 9);
-      
+
       /// INVALID ARRAYS with different sizes
       await expect(env.liq.topUpRewards([2, 3, 4], [1, 2])).to.be.revertedWith(errMsg.INVALID_ARRAYS);
 
