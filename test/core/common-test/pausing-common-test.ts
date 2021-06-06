@@ -118,7 +118,7 @@ export async function runTest(mode: Mode) {
     );
     expect(paused).to.be.eq(true);
     expect(locked).to.be.eq(true);
-    await env.market.setUpEmergencyMode([env.xyt.address, env.testToken.address], charlie.address);
+    await env.market.setUpEmergencyMode(charlie.address);
 
     const marketXytBalanceBefore = await env.xyt.balanceOf(env.market.address);
     console.log(`\t\tmarketXytBalanceBefore = ${marketXytBalanceBefore}`);

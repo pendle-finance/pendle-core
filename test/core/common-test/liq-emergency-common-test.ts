@@ -11,14 +11,14 @@ import {
   evm_snapshot,
   redeemRewards,
   stake,
-  withdraw,
+  withdraw
 } from '../../helpers';
 import {
   liquidityMiningFixture,
   LiquidityMiningFixture,
   Mode,
   parseTestEnvLiquidityMiningFixture,
-  TestEnv,
+  TestEnv
 } from '../fixtures';
 const { waffle } = require('hardhat');
 chai.use(solidity);
@@ -130,7 +130,7 @@ export function runTest(mode: Mode) {
       await env.pausingManager.setPausingAdmin(bob.address, true, consts.HG);
       await env.pausingManager.setLiqMiningLocked(env.liq.address, consts.HG);
 
-      await env.liq.setUpEmergencyMode([env.pdl.address], [env.EXPIRY], [env.market.address], dave.address, consts.HG);
+      await env.liq.setUpEmergencyMode([env.EXPIRY], dave.address, consts.HG);
 
       await emptyToken(env.market, eve);
       await emptyToken(env.pdl, eve);

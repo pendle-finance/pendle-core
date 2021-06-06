@@ -47,6 +47,7 @@ contract PendleLiquidityMiningEmergencyHandler is PermissionsV2 {
 
     mapping(address => mapping(uint256 => LiqData)) public liqData;
     IPendlePausingManager public immutable pausingManager;
+    IERC20 public immutable pendleToken;
 
     modifier oneTimeWithdrawal(address _liqAddr, uint256 _expiry) {
         require(!liqData[_liqAddr][_expiry].haveWithdrawn[msg.sender], "NOTHING_TO_WITHDRAW");
@@ -54,11 +55,14 @@ contract PendleLiquidityMiningEmergencyHandler is PermissionsV2 {
         liqData[_liqAddr][_expiry].haveWithdrawn[msg.sender] = true;
     }
 
-    constructor(address _governanceManager, address _pausingManager)
-        PermissionsV2(_governanceManager)
-    {
+    constructor(
+        address _governanceManager,
+        address _pausingManager,
+        address _pendleTokenAddress
+    ) PermissionsV2(_governanceManager) {
         require(_pausingManager != address(0), "ZERO_ADDRESS");
         pausingManager = IPendlePausingManager(_pausingManager);
+        pendleToken = IERC20(_pendleTokenAddress);
     }
 
     function setUpEmergencyMode(address _liqAddr, uint256[] calldata _expiries)
@@ -103,5 +107,9 @@ contract PendleLiquidityMiningEmergencyHandler is PermissionsV2 {
         );
 
         lid.totalLp = lid.totalLp.sub(amountLpOut);
+    }
+
+    function withdrawPendle(address _liqAddr, address _to) public onlyGovernance {
+        pendleToken.transferFrom(_liqAddr, _to, pendleToken.balanceOf(_liqAddr));
     }
 }
