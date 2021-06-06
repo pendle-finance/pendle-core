@@ -1,16 +1,13 @@
-import { BigNumber as BN, Contract, Wallet } from "ethers";
-import {
-  consts, getA2Contract, getAContract, getCContract, tokens, getERC20Contract
-} from "../../helpers";
-import { CoreFixture } from "./core.fixture";
-import { LiqParams, LiquidityMiningFixture } from "./liquidityMining.fixture";
-import { MarketFixture } from "./market.fixture";
-import { RouterFixture } from "./router.fixture";
+import { BigNumber as BN, Contract, Wallet } from 'ethers';
+import { consts, getA2Contract, getCContract, getERC20Contract, Token, tokens } from '../../helpers';
+import { CoreFixture } from './core.fixture';
+import { LiqParams, LiquidityMiningFixture } from './liquidityMining.fixture';
+import { MarketFixture } from './market.fixture';
+import { RouterFixture } from './router.fixture';
 
 export enum Mode {
-  AAVE_V1 = 1,
-  AAVE_V2,
-  COMPOUND
+  AAVE_V2 = 1,
+  COMPOUND,
 }
 
 export interface TestEnv {
@@ -26,17 +23,21 @@ export interface TestEnv {
   forge: Contract;
 
   ot: Contract;
+  ot18: Contract;
   xyt: Contract;
-  xyt2: Contract;
-  yUSDT: Contract;
+  xyt18: Contract;
+  yToken: Contract;
   testToken: Contract;
   market: Contract;
+  market18: Contract;
   marketEth: Contract;
   pdl: Contract;
   liq: Contract;
+  liq18: Contract;
   USDTContract: Contract;
 
   // test params
+  ETH_TEST: boolean;
   T0: BN;
   FORGE_ID: string;
   INITIAL_YIELD_TOKEN_AMOUNT: BN;
@@ -44,6 +45,7 @@ export interface TestEnv {
   EXPIRY: BN;
   MARKET_FACTORY_ID: string;
   liqParams: LiqParams;
+  underlyingAsset: Token;
 
   // fixture
   routerFixture: RouterFixture;
@@ -58,7 +60,9 @@ export async function parseTestEnvCoreFixture(env: TestEnv, alice: Wallet, fixtu
   env.marketReader = fixture.marketReader;
   env.pausingManager = fixture.pausingManager;
   env.marketReader = fixture.marketReader;
-  env.USDTContract = await getERC20Contract(alice, tokens.USDT)
+  env.USDTContract = await getERC20Contract(alice, tokens.USDT);
+  env.underlyingAsset = tokens.USDT;
+  env.ETH_TEST = false;
 }
 
 export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: RouterFixture) {
@@ -66,36 +70,27 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
   await parseTestEnvCoreFixture(env, alice, fixture.core);
 
   env.routerFixture = fixture;
-  if (env.mode == Mode.AAVE_V1) {
-    env.T0 = consts.T0; env.EXPIRY = env.T0.add(consts.SIX_MONTH);
-    env.forge = fixture.aForge.aaveForge;
-    env.ot = fixture.aForge.aOwnershipToken;
-    env.xyt = fixture.aForge.aFutureYieldToken;
-    env.xyt2 = fixture.aForge.aFutureYieldToken2;
-    env.rewardManager = fixture.aForge.aRewardManager;
-    env.yUSDT = await getAContract(alice, env.forge, tokens.USDT);
-    env.FORGE_ID = consts.FORGE_AAVE;
-    env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
-  }
-  else if (env.mode == Mode.AAVE_V2) {
-    env.T0 = consts.T0_A2; env.EXPIRY = env.T0.add(consts.SIX_MONTH);
+  if (env.mode == Mode.AAVE_V2) {
+    env.T0 = consts.T0_A2;
+    env.EXPIRY = env.T0.add(consts.SIX_MONTH);
     env.forge = fixture.a2Forge.aaveV2Forge;
     env.ot = fixture.a2Forge.a2OwnershipToken;
+    env.ot18 = fixture.a2Forge.a2OwnershipToken18;
     env.xyt = fixture.a2Forge.a2FutureYieldToken;
-    env.xyt2 = fixture.a2Forge.a2FutureYieldToken2;
+    env.xyt18 = fixture.a2Forge.a2FutureYieldToken18;
     env.rewardManager = fixture.a2Forge.a2RewardManager;
-    env.yUSDT = await getA2Contract(alice, env.forge, tokens.USDT);
+    env.yToken = await getA2Contract(alice, env.forge, tokens.USDT);
     env.FORGE_ID = consts.FORGE_AAVE_V2;
     env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
-  }
-  else if (env.mode == Mode.COMPOUND) {
-    env.T0 = consts.T0_C; env.EXPIRY = env.T0.add(consts.SIX_MONTH);
+  } else if (env.mode == Mode.COMPOUND) {
+    env.T0 = consts.T0_C;
+    env.EXPIRY = env.T0.add(consts.SIX_MONTH);
     env.forge = fixture.cForge.compoundForge;
     env.ot = fixture.cForge.cOwnershipToken;
     env.xyt = fixture.cForge.cFutureYieldToken;
-    // no xyt2
+    // no ot18, xyt18
     env.rewardManager = fixture.cForge.cRewardManager;
-    env.yUSDT = await getCContract(alice, tokens.USDT);
+    env.yToken = await getCContract(alice, tokens.USDT);
     env.FORGE_ID = consts.FORGE_COMPOUND;
     env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_COMPOUND_TOKEN_AMOUNT;
   }
@@ -103,43 +98,42 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
 
 export async function parseTestEnvMarketFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: MarketFixture) {
   env.mode = mode;
-  parseTestEnvRouterFixture(alice, mode, env, fixture.routerFix);
+  await parseTestEnvRouterFixture(alice, mode, env, fixture.routerFix);
 
   env.testToken = fixture.testToken;
   env.marketFixture = fixture;
 
-  if (env.mode == Mode.AAVE_V1) {
-    env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE;
-    env.market = fixture.aMarket;
-    env.marketEth = fixture.marketEth;
-  }
-  else if (env.mode == Mode.AAVE_V2) {
+  if (env.mode == Mode.AAVE_V2) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE_V2;
     env.market = fixture.a2Market;
-    // no marketEth for AaveV2
-  }
-  else if (env.mode == Mode.COMPOUND) {
+    env.market18 = fixture.a2Market18;
+    env.marketEth = fixture.marketEth;
+  } else if (env.mode == Mode.COMPOUND) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_COMPOUND;
     env.market = fixture.cMarket;
+    // no market18
     // no marketEth for Compound
   }
 }
 
-export async function parseTestEnvLiquidityMiningFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: LiquidityMiningFixture) {
+export async function parseTestEnvLiquidityMiningFixture(
+  alice: Wallet,
+  mode: Mode,
+  env: TestEnv,
+  fixture: LiquidityMiningFixture
+) {
   env.mode = mode;
-  parseTestEnvMarketFixture(alice, mode, env, fixture.marketFix);
+  await parseTestEnvMarketFixture(alice, mode, env, fixture.marketFix);
 
   env.pdl = fixture.pdl;
   env.liqMiningFixture = fixture;
   env.liqParams = fixture.params;
 
-  if (env.mode == Mode.AAVE_V1) {
-    env.liq = fixture.aLiquidityMining;
-  }
-  else if (env.mode == Mode.AAVE_V2) {
-  }
-  else if (env.mode == Mode.COMPOUND) {
+  if (env.mode == Mode.AAVE_V2) {
+    env.liq = fixture.a2LiquidityMining;
+    env.liq18 = fixture.a2LiquidityMining18;
+  } else if (env.mode == Mode.COMPOUND) {
     env.liq = fixture.cLiquidityMining;
+    // no liq18
   }
-
 }

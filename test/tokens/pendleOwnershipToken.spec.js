@@ -28,8 +28,8 @@ contract('PendleOwnershipToken', function (accounts) {
       name,
       symbol,
       6,
-      consts.T0,
-      consts.T0.add(consts.SIX_MONTH),
+      consts.T0_A2,
+      consts.T0_A2.add(consts.SIX_MONTH),
       initialHolder,
       initialSupply
     );

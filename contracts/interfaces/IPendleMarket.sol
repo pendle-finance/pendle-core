@@ -22,19 +22,14 @@
  */
 
 pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
+pragma abicoder v2;
 
 import "./IPendleRouter.sol";
 import "./IPendleBaseToken.sol";
-import "./IPendleStructs.sol";
+import "../libraries/PendleStructs.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IPendleMarket is IERC20, IPendleStructs {
-    struct TokenReserve {
-        uint256 weight;
-        uint256 balance;
-    }
-
+interface IPendleMarket is IERC20 {
     /**
      * @notice Emitted when reserves pool has been updated
      * @param reserve0 The XYT reserves.

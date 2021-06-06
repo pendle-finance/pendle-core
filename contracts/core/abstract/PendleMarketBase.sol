@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
+pragma abicoder v2;
 
 import "../../interfaces/IPendleData.sol";
 import "../../interfaces/IPendleMarket.sol";
@@ -31,7 +31,7 @@ import "../../interfaces/IPendleYieldToken.sol";
 import "../../interfaces/IPendlePausingManager.sol";
 import "../../periphery/WithdrawableV2.sol";
 import "../../tokens/PendleBaseToken.sol";
-import "../../libraries/MathLib.sol";
+import "../../libraries/MarketMath.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 /**
@@ -123,6 +123,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
+        require(_token != IPendleYieldToken(_xyt).underlyingYieldToken(), "INVALID_TOKEN_PAIR");
 
         IPendleForge _forge = IPendleYieldToken(_xyt).forge();
 
@@ -355,7 +356,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         uint256 totalLp = totalSupply();
 
         // Calc out amount of LP token.
-        uint256 exactOutLp = _calcOutAmountLp(_exactIn, inTokenReserve, data.swapFee(), totalLp);
+        uint256 exactOutLp =
+            MarketMath._calcOutAmountLp(_exactIn, inTokenReserve, data.swapFee(), totalLp);
         require(exactOutLp >= _minOutLp, "HIGH_LP_OUT_LIMIT");
 
         // Update reserves and operate underlying LP and inToken.
@@ -451,7 +453,8 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         uint256 swapFee = data.swapFee();
         uint256 totalLp = totalSupply();
 
-        uint256 outAmountToken = _calcOutAmountToken(outTokenReserve, totalLp, _inLp, swapFee);
+        uint256 outAmountToken =
+            MarketMath._calcOutAmountToken(outTokenReserve, totalLp, _inLp, swapFee);
         require(outAmountToken >= _minOutAmountToken, "INSUFFICIENT_TOKEN_OUT");
 
         outTokenReserve.balance = outTokenReserve.balance.sub(outAmountToken);
@@ -486,7 +489,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken);
 
         // calc out amount of token to be swapped out
-        outAmount = _calcExactOut(inTokenReserve, outTokenReserve, inAmount, data.swapFee());
+        outAmount = MarketMath._calcExactOut(
+            inTokenReserve,
+            outTokenReserve,
+            inAmount,
+            data.swapFee()
+        );
         require(outAmount >= minOutAmount, "HIGH_OUT_LIMIT");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
@@ -525,7 +533,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         TokenReserve memory outTokenReserve = parseTokenReserveData(outToken);
 
         // Calc in amount.
-        inAmount = _calcExactIn(inTokenReserve, outTokenReserve, outAmount, data.swapFee());
+        inAmount = MarketMath._calcExactIn(
+            inTokenReserve,
+            outTokenReserve,
+            outAmount,
+            data.swapFee()
+        );
         require(inAmount <= maxInAmount, "LOW_IN_LIMIT");
 
         inTokenReserve.balance = inTokenReserve.balance.add(inAmount);
@@ -554,7 +567,6 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
      */
     function redeemLpInterests(address user) external override returns (uint256 interests) {
         checkAddRemoveSwapClaimAllowed(true);
-        checkNotPaused();
         interests = _beforeTransferDueInterests(user);
         _safeTransferYieldToken(user, interests);
     }
@@ -574,119 +586,11 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
             uint256 currentBlock
         )
     {
-        (xytWeight, tokenWeight, ) = _updateWeightDry();
-        (xytBalance, tokenBalance, , ) = readReserveData();
+        (xytBalance, tokenBalance, xytWeight, tokenWeight) = readReserveData();
+        if (checkNeedCurveShift()) {
+            (xytWeight, tokenWeight, ) = _updateWeightDry();
+        }
         currentBlock = block.number;
-    }
-
-    /**
-     * @notice calculate the exact amount of tokens that user need to put in the market
-     *      in order to get back certain amount of the other token
-     * @param inTokenReserve market reserve details of token that user wants to put in
-     * @param outTokenReserve market reserve details of token that user wants to get back
-     * @param exactOut exact amount of token that user wants to get back
-     * @param swapFee swap fee ratio for swap
-     * @dev The formula for this function can be referred in the AMM Specs
-     */
-    function _calcExactIn(
-        TokenReserve memory inTokenReserve,
-        TokenReserve memory outTokenReserve,
-        uint256 exactOut,
-        uint256 swapFee
-    ) internal pure returns (uint256 exactIn) {
-        uint256 weightRatio = Math.rdiv(outTokenReserve.weight, inTokenReserve.weight);
-        uint256 diff = outTokenReserve.balance.sub(exactOut);
-        uint256 y = Math.rdiv(outTokenReserve.balance, diff);
-        uint256 foo = Math.rpow(y, weightRatio);
-
-        foo = foo.sub(Math.RONE);
-        exactIn = Math.RONE.sub(swapFee);
-        exactIn = Math.rdiv(Math.rmul(inTokenReserve.balance, foo), exactIn);
-    }
-
-    /**
-     * @notice calculate the exact amount of tokens that user can get back from the market
-     *      if user put in certain amount of the other token
-     * @param inTokenReserve market reserve details of token that user wants to put in
-     * @param outTokenReserve market reserve details of token that user wants to get back
-     * @param exactIn exact amount of token that user wants to put in
-     * @param swapFee swap fee (percentage) for swap
-     * @dev The formula for this function can be referred in the AMM Specs
-     */
-    function _calcExactOut(
-        TokenReserve memory inTokenReserve,
-        TokenReserve memory outTokenReserve,
-        uint256 exactIn,
-        uint256 swapFee
-    ) internal pure returns (uint256 exactOut) {
-        uint256 weightRatio = Math.rdiv(inTokenReserve.weight, outTokenReserve.weight);
-        uint256 adjustedIn = Math.RONE.sub(swapFee);
-        adjustedIn = Math.rmul(exactIn, adjustedIn);
-        uint256 y = Math.rdiv(inTokenReserve.balance, inTokenReserve.balance.add(adjustedIn));
-        uint256 foo = Math.rpow(y, weightRatio);
-        uint256 bar = Math.RONE.sub(foo);
-
-        exactOut = Math.rmul(outTokenReserve.balance, bar);
-    }
-
-    /**
-     * @notice to calculate exact amount of lp token to be minted if single token liquidity is added to market
-     * @param inAmount exact amount of the token that user wants to put in
-     * @param inTokenReserve market reserve details of the token that user wants to put in
-     * @param swapFee swap fee (percentage) for swap
-     * @param totalSupplyLp current (before adding liquidity) lp supply
-     * @dev swap fee applies here since add liquidity by single token is equivalent of a swap
-     * @dev used when add liquidity by single token
-     * @dev The formula for this function can be referred in the AMM Specs
-     */
-    function _calcOutAmountLp(
-        uint256 inAmount,
-        TokenReserve memory inTokenReserve,
-        uint256 swapFee,
-        uint256 totalSupplyLp
-    ) internal pure returns (uint256 exactOutLp) {
-        uint256 nWeight = inTokenReserve.weight;
-        uint256 feePortion = Math.rmul(Math.RONE.sub(nWeight), swapFee);
-        uint256 inAmountAfterFee = Math.rmul(inAmount, Math.RONE.sub(feePortion));
-
-        uint256 inBalanceUpdated = inTokenReserve.balance.add(inAmountAfterFee);
-        uint256 inTokenRatio = Math.rdiv(inBalanceUpdated, inTokenReserve.balance);
-
-        uint256 lpTokenRatio = Math.rpow(inTokenRatio, nWeight);
-        uint256 totalSupplyLpUpdated = Math.rmul(lpTokenRatio, totalSupplyLp);
-        exactOutLp = totalSupplyLpUpdated.sub(totalSupplyLp);
-        return exactOutLp;
-    }
-
-    /**
-     * @notice to calculate exact amount of token that user can get back if
-     *      single token liquidity is removed from market
-     * @param outTokenReserve market reserve details of the token that user wants to get back
-     * @param totalSupplyLp current (before adding liquidity) lp supply
-     * @param inLp exact amount of the lp token (single liquidity to remove) that user wants to put in
-     * @param swapFee swap fee (percentage) for swap
-     * @dev swap fee applies here since add liquidity by single token is equivalent of a swap
-     * @dev used when remove liquidity by single token
-     * @dev The formula for this function can be referred in the AMM Specs
-     */
-    function _calcOutAmountToken(
-        TokenReserve memory outTokenReserve,
-        uint256 totalSupplyLp,
-        uint256 inLp,
-        uint256 swapFee
-    ) internal pure returns (uint256 exactOutToken) {
-        uint256 nWeight = outTokenReserve.weight;
-        uint256 totalSupplyLpUpdated = totalSupplyLp.sub(inLp);
-        uint256 lpRatio = Math.rdiv(totalSupplyLpUpdated, totalSupplyLp);
-
-        uint256 outTokenRatio = Math.rpow(lpRatio, Math.rdiv(Math.RONE, nWeight));
-        uint256 outTokenBalanceUpdated = Math.rmul(outTokenRatio, outTokenReserve.balance);
-
-        uint256 outAmountTokenBeforeSwapFee = outTokenReserve.balance.sub(outTokenBalanceUpdated);
-
-        uint256 feePortion = Math.rmul(Math.RONE.sub(nWeight), swapFee);
-        exactOutToken = Math.rmul(outAmountTokenBeforeSwapFee, Math.RONE.sub(feePortion));
-        return exactOutToken;
     }
 
     /**

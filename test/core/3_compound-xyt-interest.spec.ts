@@ -15,8 +15,8 @@ import {
 } from '../helpers';
 import { routerFixture } from './fixtures';
 import testData from './fixtures/yieldTokenizeAndRedeem.scenario.json';
+const { waffle } = require('hardhat');
 
-import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
 interface YieldTest {
@@ -31,6 +31,7 @@ describe('compound-xyt-interest', async () => {
   const [alice, bob, charlie, dave, eve] = wallets;
 
   let router: Contract;
+  let data: Contract;
   let cOt: Contract;
   let cUSDT: Contract;
   let cForge: Contract;
@@ -43,6 +44,7 @@ describe('compound-xyt-interest', async () => {
     globalSnapshotId = await evm_snapshot();
 
     router = fixture.core.router;
+    data = fixture.core.data;
     cOt = fixture.cForge.cOwnershipToken;
     tokenUSDT = tokens.USDT;
     cForge = fixture.cForge.compoundForge;
@@ -72,20 +74,14 @@ describe('compound-xyt-interest', async () => {
       tokenUSDT.address,
       consts.T0_C.add(consts.SIX_MONTH),
       user.address,
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
   }
 
   async function redeemUnderlying(user: Wallet, amount: BN) {
     await router
       .connect(user)
-      .redeemUnderlying(
-        consts.FORGE_COMPOUND,
-        tokenUSDT.address,
-        consts.T0_C.add(consts.SIX_MONTH),
-        amount,
-        consts.HIGH_GAS_OVERRIDE
-      );
+      .redeemUnderlying(consts.FORGE_COMPOUND, tokenUSDT.address, consts.T0_C.add(consts.SIX_MONTH), amount, consts.HG);
   }
 
   async function tokenizeYield(user: Wallet, amount: BN) {
@@ -97,7 +93,7 @@ describe('compound-xyt-interest', async () => {
         consts.T0_C.add(consts.SIX_MONTH),
         amount,
         user.address,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
   }
 
@@ -108,7 +104,7 @@ describe('compound-xyt-interest', async () => {
   }
 
   async function runTest(yieldTest: YieldTest[]) {
-    let curTime = consts.T0;
+    let curTime = consts.T0_C;
     for (let id = 0; id < yieldTest.length; id++) {
       let curTest = yieldTest[id];
       let user = wallets[curTest.user];

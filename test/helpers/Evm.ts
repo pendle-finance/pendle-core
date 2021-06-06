@@ -11,6 +11,13 @@ export async function impersonateAccount(address: String) {
   });
 }
 
+export async function impersonateAccountStop(address: String) {
+  await hre.network.provider.request({
+    method: 'hardhat_stopImpersonatingAccount',
+    params: [address],
+  });
+}
+
 export async function evm_snapshot(): Promise<string> {
   return await hre.network.provider.request({
     method: 'evm_snapshot',

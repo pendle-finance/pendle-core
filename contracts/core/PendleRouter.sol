@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
+pragma abicoder v2;
 
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -56,7 +56,6 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
     IWETH public immutable override weth;
     IPendleData public immutable override data;
     address private constant ETH_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
-    address private constant DUMMY_ERC20 = address(0x123);
     // if someone's allowance for the router is below this amount,
     // we will approve the router again (to spend from their account)
     // if we already call .approveRouter for the a token, we shouldn't need to approve again
@@ -358,8 +357,8 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         } else {
             emit Join(msg.sender, 0, _exactIn, address(market), exactOutLp);
         }
-        // DUMMY_ERC20 because we only need to transfer ONE token in
-        _settlePendingTransfers(transfers, assetToTransferIn, DUMMY_ERC20, address(market));
+        // We only need settle the transfering in of the assetToTransferIn
+        _settleTokenTransfer(assetToTransferIn, transfers[0], address(market));
     }
 
     /**
@@ -652,8 +651,13 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
             }
         } else {
             if (_isETH(token)) {
-                require(msg.value == transfer.amount, "ETH_SENT_MISMATCH");
-                weth.deposit{value: msg.value}();
+                require(msg.value >= transfer.amount, "INSUFFICENT_ETH_AMOUNT");
+                // we only need transfer.amount, so we return the excess
+                uint256 excess = msg.value.sub(transfer.amount);
+                (bool success, ) = msg.sender.call{value: excess}("");
+                require(success, "TRANSFER_FAILED");
+
+                weth.deposit{value: transfer.amount}();
                 weth.transfer(market, transfer.amount);
             } else {
                 // its a transfer in of token. If its an XYT
@@ -664,15 +668,6 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
                 IERC20(token).safeTransferFrom(msg.sender, market, transfer.amount);
             }
         }
-    }
-
-    /**
-     * @notice This function turns ETH_ADDRESS into WETH address if applicable
-     *    it is called "marketToken" because its the token address used in the markets
-     */
-    function _getMarketToken(address token) internal view returns (address) {
-        if (_isETH(token)) return address(weth);
-        return token;
     }
 
     // Check if an user has approved the router to spend the amount

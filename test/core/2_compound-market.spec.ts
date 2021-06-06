@@ -1,9 +1,11 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
 import { advanceTime, amountToWei, consts, evm_revert, evm_snapshot } from '../helpers';
 import { marketFixture } from './fixtures';
+const { waffle } = require('hardhat');
+chai.use(solidity);
 
-import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
 describe('compound-market', async () => {
@@ -45,7 +47,7 @@ describe('compound-market', async () => {
       testToken.address,
       amount,
       amount,
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
   }
 
@@ -63,7 +65,7 @@ describe('compound-market', async () => {
       false,
       amount.div(10),
       totalSupply.div(21),
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
     let currentWalletBalance = await market.balanceOf(alice.address);
     expect(currentWalletBalance).to.be.gt(initialWalletBalance);
@@ -97,7 +99,7 @@ describe('compound-market', async () => {
         amount,
         BN.from(0),
         BN.from(0),
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
 
     let xytBalance = await xyt.balanceOf(market.address);
@@ -131,13 +133,13 @@ describe('compound-market', async () => {
         amountToWei(BN.from(10), 6),
         amountToWei(BN.from(100), 6),
         consts.MARKET_FACTORY_COMPOUND,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
 
     let xytBalance = await xyt.balanceOf(market.address);
     let testTokenBalance = await testToken.balanceOf(market.address);
 
-    expect(xytBalance.toNumber()).to.be.approximately(xytBalanceBefore.add(BN.from(result[1])).toNumber(), 20);
+    expect(xytBalance.toNumber()).to.be.approximately(xytBalanceBefore.add(BN.from(result[1])).toNumber(), 200);
     expect(testTokenBalance).to.be.equal(amount.sub(amount.div(10)));
   });
 
@@ -154,13 +156,13 @@ describe('compound-market', async () => {
         amountToWei(BN.from(10), 6),
         BN.from(0),
         consts.MARKET_FACTORY_COMPOUND,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
 
     let xytBalance = await xyt.balanceOf(market.address);
     let testTokenBalance = await testToken.balanceOf(market.address);
 
-    expect(xytBalance.toNumber()).to.be.approximately(amount.add(amount.div(10)).toNumber(), 30);
+    expect(xytBalance.toNumber()).to.be.approximately(amount.add(amount.div(10)).toNumber(), 300);
 
     expect(testTokenBalance.toNumber()).to.be.approximately(
       amount.sub(amount.div(10)).toNumber(),
@@ -181,7 +183,7 @@ describe('compound-market', async () => {
       totalSupply.div(10),
       BN.from(0),
       BN.from(0),
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
 
     let xytBalance = await xyt.balanceOf(market.address);
@@ -263,7 +265,7 @@ describe('compound-market', async () => {
       false,
       amount.div(10),
       totalSupply.div(21),
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
 
     let currentLpTokenBal = await market.balanceOf(alice.address);
@@ -293,7 +295,7 @@ describe('compound-market', async () => {
       true,
       amount.div(10),
       totalSupply.div(21),
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
 
     let currentLpTokenBal = await market.balanceOf(alice.address);
@@ -313,7 +315,7 @@ describe('compound-market', async () => {
 
   it("shouldn't be able to create duplicated markets", async () => {
     await expect(
-      router.createMarket(consts.MARKET_FACTORY_COMPOUND, xyt.address, testToken.address, consts.HIGH_GAS_OVERRIDE)
+      router.createMarket(consts.MARKET_FACTORY_COMPOUND, xyt.address, testToken.address, consts.HG)
     ).to.be.revertedWith('EXISTED_MARKET');
   });
 });

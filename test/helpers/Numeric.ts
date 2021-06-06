@@ -1,5 +1,7 @@
-import { BigNumber as BN } from 'ethers';
+import { BigNumber as BN, BigNumberish } from 'ethers';
+import { assert, expect } from 'chai';
 import { LiqParams, TestEnv, UserStakeAction } from '../core/fixtures';
+const PRECISION = BN.from(2).pow(40);
 
 // returns a rewards object = BN[][]
 //    rewards[userId][0] is the rewards withdrawable at currentEpoch
@@ -8,9 +10,12 @@ import { LiqParams, TestEnv, UserStakeAction } from '../core/fixtures';
 export function calcExpectedRewards(
   userStakingData: UserStakeAction[][][],
   params: LiqParams,
-  currentEpoch: number
+  currentEpoch: number,
+  usingAllocationSetting: Boolean
 ): BN[][] {
   let nUsers = userStakingData[0].length;
+  let numerator: BN = params.TOTAL_NUMERATOR;
+  let denominator: BN = params.TOTAL_NUMERATOR;
   /*
   pushing params.NUMBER_OF_EPOCHS empty epochs to mimic the real-life situation where users
   will continue to receive rewards even if they don't do any action
@@ -41,6 +46,10 @@ export function calcExpectedRewards(
   }
 
   userStakingData.forEach((epochData, i) => {
+    if (usingAllocationSetting) {
+      numerator = params.ALLOCATION_SETTING[i + 1];
+    }
+
     let epochId = i + 1;
     if (epochId >= currentEpoch) return; // only count for epochs before currentEpoch
     let userStakeSeconds: BN[] = [];
@@ -74,7 +83,9 @@ export function calcExpectedRewards(
         const rewardsPerVestingEpoch = params.REWARDS_PER_EPOCH[epochId - 1]
           .mul(userStakeSeconds[userId])
           .div(totalStakeSeconds)
-          .div(params.VESTING_EPOCHS);
+          .div(params.VESTING_EPOCHS)
+          .mul(numerator)
+          .div(denominator);
         for (let e: number = epochId + 1; e <= epochId + params.VESTING_EPOCHS.toNumber(); e++) {
           if (e <= currentEpoch) {
             rewards[userId][0] = rewards[userId][0].add(rewardsPerVestingEpoch);
@@ -119,4 +130,65 @@ export function epochOfTimestamp(params: LiqParams, t: BN): BN {
 
 export function startOfEpoch(params: LiqParams, e: number): BN {
   return params.EPOCH_DURATION.mul(e - 1).add(params.START_TIME);
+}
+
+/**
+ * convert an amount to Wei
+ * @param inp if inp is number => inp is the number of decimal digits
+ *            if inp is Token => the number of decimal digits will be extracted from Token
+ */
+export function amountToWei(amount: BN, decimal: number) {
+  return BN.from(10).pow(decimal).mul(amount);
+}
+
+export function toFixedPoint(val: string | number): BN {
+  if (typeof val === 'number') {
+    return BN.from(val).mul(PRECISION);
+  }
+  var pos: number = val.indexOf('.');
+  if (pos == -1) {
+    return BN.from(val).mul(PRECISION);
+  }
+  var lenFrac = val.length - pos - 1;
+  val = val.replace('.', '');
+  return BN.from(val).mul(PRECISION).div(BN.from(10).pow(lenFrac));
+}
+
+export function randomBN(range?: number | BN): BN {
+  let lim = 10 ** 15;
+  return BN.from(Math.floor(Math.random() * lim))
+    .mul(BN.from(range))
+    .div(lim);
+}
+
+export function randomNumber(range?: number): number {
+  return randomBN(range).toNumber();
+}
+
+export function approxBigNumber(
+  _actual: BigNumberish,
+  _expected: BigNumberish,
+  _delta: BigNumberish,
+  log: boolean = true
+) {
+  let actual: BN = BN.from(_actual);
+  let expected: BN = BN.from(_expected);
+  let delta: BN = BN.from(_delta);
+
+  var diff = expected.sub(actual);
+  if (diff.lt(0)) {
+    diff = diff.mul(-1);
+  }
+  if (diff.lte(delta) == false) {
+    expect(
+      diff.lte(delta),
+      `expecting: ${expected.toString()}, received: ${actual.toString()}, diff: ${diff.toString()}, allowedDelta: ${delta.toString()}`
+    ).to.be.true;
+  } else {
+    if (log) {
+      console.log(
+        `expecting: ${expected.toString()}, received: ${actual.toString()}, diff: ${diff.toString()}, allowedDelta: ${delta.toString()}`
+      );
+    }
+  }
 }

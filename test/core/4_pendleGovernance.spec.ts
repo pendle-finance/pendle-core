@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { constants, Contract } from 'ethers';
 import { governanceFixture } from './fixtures';
 
-import { waffle } from 'hardhat';
+const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
 describe('PendleGovernance', () => {

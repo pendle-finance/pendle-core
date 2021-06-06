@@ -216,7 +216,13 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         );
 
         // transfer back to the user
-        _safeTransfer(yieldToken, _underlyingAsset, _expiry, _user, redeemedAmount);
+        redeemedAmount = _safeTransfer(
+            yieldToken,
+            _underlyingAsset,
+            _expiry,
+            _user,
+            redeemedAmount
+        );
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, expiredOTamount, redeemedAmount);
     }
@@ -257,7 +263,13 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         );
 
         // transfer the amountTransferOut back to the user
-        _safeTransfer(yieldToken, _underlyingAsset, _expiry, _user, redeemedAmount);
+        redeemedAmount = _safeTransfer(
+            yieldToken,
+            _underlyingAsset,
+            _expiry,
+            _user,
+            redeemedAmount
+        );
 
         emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem, redeemedAmount);
 
@@ -282,7 +294,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         // update the dueInterests of the user before we transfer out
         amountOut = _beforeTransferDueInterests(tokens, _underlyingAsset, _expiry, _user, false);
 
-        _safeTransfer(yieldToken, _underlyingAsset, _expiry, _user, amountOut);
+        amountOut = _safeTransfer(yieldToken, _underlyingAsset, _expiry, _user, amountOut);
     }
 
     /**
@@ -441,11 +453,12 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         uint256 _expiry,
         address _user,
         uint256 _amount
-    ) internal {
-        if (_amount == 0) return;
+    ) internal returns (uint256) {
         address yieldTokenHolder = yieldTokenHolders[_underlyingAsset][_expiry];
         _amount = Math.min(_amount, _yieldToken.balanceOf(yieldTokenHolder));
+        if (_amount == 0) return 0;
         _yieldToken.safeTransferFrom(yieldTokenHolder, _user, _amount);
+        return _amount;
     }
 
     function _getTokens(address _underlyingAsset, uint256 _expiry)
