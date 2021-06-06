@@ -194,27 +194,15 @@ abstract contract PendleLiquidityMiningBase is
     // this will allow a spender to spend the whole balance of the specified tokens from this contract
     // as well as to spend tokensForLpHolder from the respective lp holders for expiries specified
     // the spender should ideally be a contract with logic for users to withdraw out their funds.
-    function setUpEmergencyMode(
-        address[] calldata tokens,
-        uint256[] calldata expiries,
-        address[] calldata tokensForLpHolder,
-        address spender
-    ) external override {
+    function setUpEmergencyMode(uint256[] calldata expiries, address spender) external override {
         (, bool emergencyMode) = pausingManager.checkLiqMiningStatus(address(this));
         require(emergencyMode, "NOT_EMERGENCY");
-        require(expiries.length == tokensForLpHolder.length, "ARRAY_LENGTH_MISMATCH");
 
         (address liqMiningEmergencyHandler, , ) = pausingManager.liqMiningEmergencyHandler();
         require(msg.sender == liqMiningEmergencyHandler, "NOT_EMERGENCY_HANDLER");
-        for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(spender, type(uint256).max);
-        }
 
         for (uint256 i = 0; i < expiries.length; i++) {
-            IPendleLpHolder(expiryData[expiries[i]].lpHolder).setUpEmergencyMode(
-                tokensForLpHolder[i],
-                spender
-            );
+            IPendleLpHolder(expiryData[expiries[i]].lpHolder).setUpEmergencyMode(spender);
         }
     }
 

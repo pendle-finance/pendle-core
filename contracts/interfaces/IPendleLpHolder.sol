@@ -23,11 +23,15 @@
 pragma solidity 0.7.6;
 
 interface IPendleLpHolder {
+    function underlyingYieldToken() external returns (address);
+
+    function pendleMarket() external returns (address);
+
     function sendLp(address user, uint256 amount) external;
 
     function sendInterests(address user, uint256 amount) external;
 
     function redeemLpInterests() external;
 
-    function setUpEmergencyMode(address token, address spender) external;
+    function setUpEmergencyMode(address spender) external;
 }
