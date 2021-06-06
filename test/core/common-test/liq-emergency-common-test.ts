@@ -11,14 +11,14 @@ import {
   evm_snapshot,
   redeemRewards,
   stake,
-  withdraw
+  withdraw,
 } from '../../helpers';
 import {
   liquidityMiningFixture,
   LiquidityMiningFixture,
   Mode,
   parseTestEnvLiquidityMiningFixture,
-  TestEnv
+  TestEnv,
 } from '../fixtures';
 const { waffle } = require('hardhat');
 chai.use(solidity);
