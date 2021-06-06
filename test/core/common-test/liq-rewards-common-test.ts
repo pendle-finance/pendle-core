@@ -208,13 +208,20 @@ export function runTest(mode: Mode) {
       await env.pdl.connect(eve).transfer(alice.address, await env.pdl.balanceOf(eve.address));
 
       const amount = BN.from(10 ** 9);
+      
+      /// INVALID ARRAYS with different sizes
       await expect(env.liq.topUpRewards([2, 3, 4], [1, 2])).to.be.revertedWith(errMsg.INVALID_ARRAYS);
 
       await setTimeNextBlock((await env.liq.startTime()).add(1));
+
+      /// INVALID EPOCH ID: 1
       await expect(env.liq.topUpRewards([1, 2, 3], [1, 2, 3])).to.be.revertedWith(errMsg.INVALID_EPOCH_ID);
 
+      /// INVALID EPOCH ID: 99
       await expect(env.liq.topUpRewards([99, 2, 3], [1, 2, 3])).to.be.revertedWith(errMsg.INVALID_EPOCH_ID);
 
+      /// INVALID EPOCH ID: sumReward = 0
+      /// Question: It's an onlyGoverance function but technically we can fill in negative integers but still get away from this error
       await expect(env.liq.topUpRewards([2, 3, 4], [0, 0, 0])).to.be.revertedWith(errMsg.ZERO_FUND);
 
       const epochIdToAdd = [2, 6, 9, 12];
