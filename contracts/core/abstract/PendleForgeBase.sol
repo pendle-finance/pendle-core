@@ -122,7 +122,6 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
     function setUpEmergencyMode(
         address _underlyingAsset,
         uint256 _expiry,
-        address[] calldata tokens,
         address spender
     ) external override {
         (, bool emergencyMode) =
@@ -131,7 +130,6 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         (address forgeEmergencyHandler, , ) = pausingManager.forgeEmergencyHandler();
         require(msg.sender == forgeEmergencyHandler, "NOT_EMERGENCY_HANDLER");
         IPendleYieldTokenHolder(yieldTokenHolders[_underlyingAsset][_expiry]).setUpEmergencyMode(
-            tokens,
             spender
         );
     }

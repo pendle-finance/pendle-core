@@ -93,7 +93,6 @@ interface IPendleForge {
     function setUpEmergencyMode(
         address _underlyingAsset,
         uint256 _expiry,
-        address[] calldata tokens,
         address spender
     ) external;
 
