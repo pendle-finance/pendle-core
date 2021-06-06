@@ -378,14 +378,16 @@ export function runTest(mode: Mode) {
       }
 
       // After skippingRewards, nothing should be able to change paramL
-      for(let person of [bob, charlie, dave]) {
+      for (let person of [bob, charlie, dave]) {
         /// redeemRewards
         await ensureParamLUnchanged(redeemRewardsToken(person));
         await ensureParamLUnchanged(env.ot.connect(alice).transfer(person.address, 1, consts.HG));
       }
       await ensureParamLUnchanged(env.rewardManager.setUpdateFrequency([env.USDTContract.address], [2], consts.HG));
       await ensureParamLUnchanged(env.rewardManager.setSkippingRewards(true)); /// Must not set it false here :joy:
-      await ensureParamLUnchanged(env.rewardManager.connect(alice).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG));
+      await ensureParamLUnchanged(
+        env.rewardManager.connect(alice).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG)
+      );
     });
   });
 }
