@@ -1,6 +1,6 @@
-import { BigNumber as BN } from "ethers";
-import { startOfEpoch } from "../../helpers";
-import { LiqParams, UserStakeAction } from "./liquidityMining.fixture";
+import { BigNumber as BN } from 'ethers';
+import { startOfEpoch } from '../../helpers';
+import { LiqParams, UserStakeAction } from './liquidityMining.fixture';
 const SAME_AMOUNT: BN = BN.from(10000);
 
 export function scenario01(params: LiqParams): UserStakeAction[][][] {
@@ -8,62 +8,22 @@ export function scenario01(params: LiqParams): UserStakeAction[][][] {
   return [
     [
       [
-        new UserStakeAction(
-          startOfEpoch(params, 1),
-          SAME_AMOUNT,
-          true,
-          0
-        ),
-        new UserStakeAction(
-          startOfEpoch(params, 1).add(LENGTH.div(3)),
-          SAME_AMOUNT.mul(3).div(2),
-          true,
-          0
-        ),
+        new UserStakeAction(startOfEpoch(params, 1), SAME_AMOUNT, true, 0),
+        new UserStakeAction(startOfEpoch(params, 1).add(LENGTH.div(3)), SAME_AMOUNT.mul(3).div(2), true, 0),
       ],
       [
-        new UserStakeAction(
-          startOfEpoch(params, 1).add(LENGTH.div(2)),
-          SAME_AMOUNT.div(5),
-          true,
-          1
-        ),
-        new UserStakeAction(
-          startOfEpoch(params, 1).add(LENGTH.mul(4).div(5)),
-          SAME_AMOUNT,
-          true,
-          1
-        ),
+        new UserStakeAction(startOfEpoch(params, 1).add(LENGTH.div(2)), SAME_AMOUNT.div(5), true, 1),
+        new UserStakeAction(startOfEpoch(params, 1).add(LENGTH.mul(4).div(5)), SAME_AMOUNT, true, 1),
       ],
     ],
     [
       [
-        new UserStakeAction(
-          startOfEpoch(params, 2),
-          SAME_AMOUNT.div(3),
-          false,
-          0
-        ),
-        new UserStakeAction(
-          startOfEpoch(params, 2).add(LENGTH.div(3)),
-          SAME_AMOUNT,
-          true,
-          0
-        ),
+        new UserStakeAction(startOfEpoch(params, 2), SAME_AMOUNT.div(3), false, 0),
+        new UserStakeAction(startOfEpoch(params, 2).add(LENGTH.div(3)), SAME_AMOUNT, true, 0),
       ],
       [
-        new UserStakeAction(
-          startOfEpoch(params, 2).add(LENGTH.div(2)),
-          SAME_AMOUNT.div(8),
-          false,
-          1
-        ),
-        new UserStakeAction(
-          startOfEpoch(params, 2).add(LENGTH.mul(4).div(5)),
-          SAME_AMOUNT,
-          true,
-          1
-        ),
+        new UserStakeAction(startOfEpoch(params, 2).add(LENGTH.div(2)), SAME_AMOUNT.div(8), false, 1),
+        new UserStakeAction(startOfEpoch(params, 2).add(LENGTH.mul(4).div(5)), SAME_AMOUNT, true, 1),
       ],
     ],
   ];
@@ -72,9 +32,7 @@ export function scenario01(params: LiqParams): UserStakeAction[][][] {
 export function scenario04(params: LiqParams): UserStakeAction[][][] {
   return [
     [
-      [
-        new UserStakeAction(startOfEpoch(params, 1).add(801427), BN.from(745), true, 0),
-      ],
+      [new UserStakeAction(startOfEpoch(params, 1).add(801427), BN.from(745), true, 0)],
       [
         new UserStakeAction(startOfEpoch(params, 1).add(110339), BN.from(584), true, 1),
         new UserStakeAction(startOfEpoch(params, 1).add(174944), BN.from(217), false, 1),
@@ -90,7 +48,7 @@ export function scenario04(params: LiqParams): UserStakeAction[][][] {
         new UserStakeAction(startOfEpoch(params, 1).add(126315), BN.from(659), true, 3),
         new UserStakeAction(startOfEpoch(params, 1).add(524408), BN.from(831), true, 3),
         new UserStakeAction(startOfEpoch(params, 1).add(646377), BN.from(254), true, 3),
-      ]
+      ],
     ],
     [
       [
@@ -114,7 +72,7 @@ export function scenario04(params: LiqParams): UserStakeAction[][][] {
       [
         new UserStakeAction(startOfEpoch(params, 2).add(431733), BN.from(1303), false, 3),
         new UserStakeAction(startOfEpoch(params, 2).add(551955), BN.from(117), false, 3),
-      ]
+      ],
     ],
     [
       [
@@ -136,7 +94,7 @@ export function scenario04(params: LiqParams): UserStakeAction[][][] {
         new UserStakeAction(startOfEpoch(params, 3).add(182573), BN.from(849), true, 3),
         new UserStakeAction(startOfEpoch(params, 3).add(493521), BN.from(315), false, 3),
         new UserStakeAction(startOfEpoch(params, 3).add(543419), BN.from(1), false, 3),
-      ]
+      ],
     ],
     [
       [
@@ -157,7 +115,7 @@ export function scenario04(params: LiqParams): UserStakeAction[][][] {
         new UserStakeAction(startOfEpoch(params, 4).add(239958), BN.from(283), true, 3),
         new UserStakeAction(startOfEpoch(params, 4).add(685410), BN.from(647), true, 3),
         new UserStakeAction(startOfEpoch(params, 4).add(698688), BN.from(239), true, 3),
-      ]
+      ],
     ],
     [
       [
@@ -171,24 +129,20 @@ export function scenario04(params: LiqParams): UserStakeAction[][][] {
         new UserStakeAction(startOfEpoch(params, 5).add(23888), BN.from(521), true, 1),
         new UserStakeAction(startOfEpoch(params, 5).add(699612), BN.from(2249), false, 1),
       ],
-      [
-        new UserStakeAction(startOfEpoch(params, 5).add(268619), BN.from(284), true, 2),
-      ],
+      [new UserStakeAction(startOfEpoch(params, 5).add(268619), BN.from(284), true, 2)],
       [
         new UserStakeAction(startOfEpoch(params, 5).add(77091), BN.from(465), true, 3),
         new UserStakeAction(startOfEpoch(params, 5).add(374716), BN.from(200), true, 3),
         new UserStakeAction(startOfEpoch(params, 5).add(458030), BN.from(144), true, 3),
-      ]
-    ]
-  ]
+      ],
+    ],
+  ];
 }
 
 export function scenario06(params: LiqParams): UserStakeAction[][][] {
   return [
     [
-      [
-        new UserStakeAction(startOfEpoch(params, 1).add(801427), BN.from(745), true, 0),
-      ],
+      [new UserStakeAction(startOfEpoch(params, 1).add(801427), BN.from(745), true, 0)],
       [
         new UserStakeAction(startOfEpoch(params, 1).add(110339), BN.from(584), true, 1),
         new UserStakeAction(startOfEpoch(params, 1).add(174944), BN.from(217), false, 1),
@@ -204,37 +158,11 @@ export function scenario06(params: LiqParams): UserStakeAction[][][] {
         new UserStakeAction(startOfEpoch(params, 1).add(126315), BN.from(659), true, 3),
         new UserStakeAction(startOfEpoch(params, 1).add(524408), BN.from(831), true, 3),
         new UserStakeAction(startOfEpoch(params, 1).add(646377), BN.from(254), true, 3),
-      ]
+      ],
     ],
-    [
-      [
-      ],
-      [
-      ],
-      [
-      ],
-      [
-      ]
-    ],
-    [
-      [
-      ],
-      [
-      ],
-      [
-      ],
-      [
-      ]
-    ],
-    [
-      [
-      ],
-      [],
-      [
-      ],
-      [
-      ]
-    ],
+    [[], [], [], []],
+    [[], [], [], []],
+    [[], [], [], []],
     [
       [
         new UserStakeAction(startOfEpoch(params, 5).add(168997), BN.from(745), false, 0),
@@ -247,59 +175,22 @@ export function scenario06(params: LiqParams): UserStakeAction[][][] {
         new UserStakeAction(startOfEpoch(params, 5).add(23888), BN.from(521), true, 1),
         new UserStakeAction(startOfEpoch(params, 5).add(699612), BN.from(1950), false, 1),
       ],
-      [
-        new UserStakeAction(startOfEpoch(params, 5).add(268619), BN.from(284), true, 2),
-      ],
+      [new UserStakeAction(startOfEpoch(params, 5).add(268619), BN.from(284), true, 2)],
       [
         new UserStakeAction(startOfEpoch(params, 5).add(77091), BN.from(465), true, 3),
         new UserStakeAction(startOfEpoch(params, 5).add(374716), BN.from(200), true, 3),
         new UserStakeAction(startOfEpoch(params, 5).add(458030), BN.from(144), true, 3),
-      ]
-    ]
-  ]
+      ],
+    ],
+  ];
 }
 
 export function scenario07(params: LiqParams): UserStakeAction[][][] {
   return [
-    [
-      [
-      ],
-      [
-      ],
-      [
-      ],
-      [
-      ]
-    ],
-    [
-      [
-      ],
-      [
-      ],
-      [
-      ],
-      [
-      ]
-    ],
-    [
-      [
-      ],
-      [
-      ],
-      [
-      ],
-      [
-      ]
-    ],
-    [
-      [
-      ],
-      [],
-      [
-      ],
-      [
-      ]
-    ],
+    [[], [], [], []],
+    [[], [], [], []],
+    [[], [], [], []],
+    [[], [], [], []],
     [
       [
         new UserStakeAction(startOfEpoch(params, 5).add(168997), BN.from(745), true, 0),
@@ -312,14 +203,12 @@ export function scenario07(params: LiqParams): UserStakeAction[][][] {
         new UserStakeAction(startOfEpoch(params, 5).add(23888), BN.from(521), true, 1),
         new UserStakeAction(startOfEpoch(params, 5).add(699612), BN.from(1950), true, 1),
       ],
-      [
-        new UserStakeAction(startOfEpoch(params, 5).add(268619), BN.from(284), true, 2),
-      ],
+      [new UserStakeAction(startOfEpoch(params, 5).add(268619), BN.from(284), true, 2)],
       [
         new UserStakeAction(startOfEpoch(params, 5).add(77091), BN.from(465), true, 3),
         new UserStakeAction(startOfEpoch(params, 5).add(374716), BN.from(200), true, 3),
         new UserStakeAction(startOfEpoch(params, 5).add(458030), BN.from(144), true, 3),
-      ]
-    ]
-  ]
+      ],
+    ],
+  ];
 }

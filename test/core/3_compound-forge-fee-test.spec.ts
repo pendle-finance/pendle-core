@@ -10,13 +10,13 @@ import {
   mint,
   mintCompoundToken,
   setTimeNextBlock,
+  toFixedPoint,
   Token,
   tokens,
-  toFixedPoint,
 } from '../helpers';
 import { routerFixture } from './fixtures';
 
-import { waffle } from 'hardhat';
+const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
 interface YieldTest {
@@ -74,7 +74,7 @@ describe('compound-forge-fee', async () => {
       tokenUSDT.address,
       consts.T0_C.add(consts.SIX_MONTH),
       user.address,
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
   }
 
@@ -87,7 +87,7 @@ describe('compound-forge-fee', async () => {
         consts.T0_C.add(consts.SIX_MONTH),
         amount,
         user.address,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
   }
 

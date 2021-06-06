@@ -1,13 +1,15 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
 import PendleTokenDistribution from '../../build/artifacts/contracts/core/PendleTokenDistribution.sol/PendleTokenDistribution.json';
 import PENDLE from '../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json';
 import { consts, evm_revert, evm_snapshot, setTimeNextBlock } from '../helpers';
+chai.use(solidity);
 
 const { waffle } = require('hardhat');
 const { provider, deployContract } = waffle;
 
-describe('pendleTokenDistribution [@skip-on-coverage]', async () => {
+describe('pendleTokenDistribution', async () => {
   const wallets = provider.getWallets();
   const [governance, bob, charlie, salesMultisig, liqIncentivesRecipient] = wallets;
   const newEmissionRateMultiplierNumerator = BN.from(123456);
@@ -211,12 +213,12 @@ describe('pendleTokenDistribution [@skip-on-coverage]', async () => {
   });
   it('should be able to delegate and transfer PENDLE', async () => {
     const testAmount = BN.from(13).mul(consts.ONE_E_18);
-    await pendle.connect(salesMultisig).transfer(consts.DUMMY_ADDRESS, testAmount, consts.HIGH_GAS_OVERRIDE);
+    await pendle.connect(salesMultisig).transfer(consts.DUMMY_ADDRESS, testAmount, consts.HG);
 
-    await pendle.delegate(governance.address, consts.HIGH_GAS_OVERRIDE);
+    await pendle.delegate(governance.address, consts.HG);
     const balanceBefore = await pendle.balanceOf(salesMultisig.address);
 
-    await pendle.connect(salesMultisig).transfer(consts.DUMMY_ADDRESS, testAmount, consts.HIGH_GAS_OVERRIDE);
+    await pendle.connect(salesMultisig).transfer(consts.DUMMY_ADDRESS, testAmount, consts.HG);
     const balanceAfter = await pendle.balanceOf(salesMultisig.address);
     expect(balanceAfter).to.be.eq(balanceBefore.sub(testAmount));
   });

@@ -1,5 +1,4 @@
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
-import { waffle } from 'hardhat';
 import {
   amountToWei,
   approxBigNumber,
@@ -16,6 +15,7 @@ import {
 } from '../helpers';
 import { routerFixture } from './fixtures';
 import testData from './fixtures/yieldTokenizeAndRedeem.scenario.json';
+const { waffle } = require('hardhat');
 
 const { loadFixture, provider } = waffle;
 
@@ -74,20 +74,14 @@ describe('compound-xyt-interest', async () => {
       tokenUSDT.address,
       consts.T0_C.add(consts.SIX_MONTH),
       user.address,
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
   }
 
   async function redeemUnderlying(user: Wallet, amount: BN) {
     await router
       .connect(user)
-      .redeemUnderlying(
-        consts.FORGE_COMPOUND,
-        tokenUSDT.address,
-        consts.T0_C.add(consts.SIX_MONTH),
-        amount,
-        consts.HIGH_GAS_OVERRIDE
-      );
+      .redeemUnderlying(consts.FORGE_COMPOUND, tokenUSDT.address, consts.T0_C.add(consts.SIX_MONTH), amount, consts.HG);
   }
 
   async function tokenizeYield(user: Wallet, amount: BN) {
@@ -99,7 +93,7 @@ describe('compound-xyt-interest', async () => {
         consts.T0_C.add(consts.SIX_MONTH),
         amount,
         user.address,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
   }
 

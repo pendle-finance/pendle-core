@@ -1,22 +1,17 @@
 import { assert, expect } from 'chai';
 import { BigNumber as BN } from 'ethers';
-import { waffle } from 'hardhat';
 import {
   approxBigNumber,
   calcExpectedRewards,
   consts,
-
-
   evm_revert,
   evm_snapshot,
-
-
   redeemRewards,
   setTime,
   setTimeNextBlock,
   stake,
   startOfEpoch,
-  withdraw
+  withdraw,
 } from '../../helpers';
 import {
   liquidityMiningFixture,
@@ -24,9 +19,10 @@ import {
   Mode,
   parseTestEnvLiquidityMiningFixture,
   TestEnv,
-  UserStakeAction
+  UserStakeAction,
 } from '../fixtures';
 import * as scenario from '../fixtures/liquidityMiningScenario.fixture';
+const { waffle } = require('hardhat');
 
 const { loadFixture, provider } = waffle;
 
@@ -77,9 +73,9 @@ export function runTest(mode: Mode) {
       if (alloc_setting[currentEpoch].toString() != alloc_setting[currentEpoch - 1].toString()) {
         await setTimeNextBlock(startOfEpoch(env.liqParams, currentEpoch).sub(consts.ONE_HOUR.div(4)));
         await env.liq.setAllocationSetting(
-          [env.EXPIRY, consts.T0_A2.add(consts.THREE_MONTH)],
+          [env.EXPIRY, env.T0.add(consts.THREE_MONTH)],
           [alloc_setting[currentEpoch], env.liqParams.TOTAL_NUMERATOR.sub(alloc_setting[currentEpoch])],
-          consts.HIGH_GAS_OVERRIDE
+          consts.HG
         );
       }
     }
@@ -99,7 +95,6 @@ export function runTest(mode: Mode) {
           });
         });
       });
-
 
       flatData = flatData.sort((a, b) => {
         return a.time.sub(b.time).toNumber();
@@ -134,7 +129,12 @@ export function runTest(mode: Mode) {
       epochToCheck: number,
       usingAllocationSetting: Boolean
     ) {
-      let expectedRewards: BN[][] = calcExpectedRewards(userStakingData, env.liqParams, epochToCheck, usingAllocationSetting);
+      let expectedRewards: BN[][] = calcExpectedRewards(
+        userStakingData,
+        env.liqParams,
+        epochToCheck,
+        usingAllocationSetting
+      );
       await setTime(startOfEpoch(env.liqParams, epochToCheck));
       let numUser = expectedRewards.length;
       let allocationRateDiv = 1;

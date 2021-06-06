@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import {
   amountToWei,
@@ -14,8 +15,9 @@ import {
   tokens,
 } from '../helpers';
 import { routerFixture } from './fixtures';
+const { waffle } = require('hardhat');
+chai.use(solidity);
 
-import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
 describe('compound-router', async () => {
@@ -65,7 +67,7 @@ describe('compound-router', async () => {
         consts.T0_C.add(consts.SIX_MONTH),
         amount,
         user.address,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       );
   }
 
@@ -133,7 +135,7 @@ describe('compound-router', async () => {
         tokenUSDT.address,
         consts.T0_C.add(consts.SIX_MONTH),
         amount,
-        consts.HIGH_GAS_OVERRIDE
+        consts.HG
       )
     ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
   });
@@ -149,7 +151,7 @@ describe('compound-router', async () => {
       tokenUSDT.address,
       consts.T0_C.add(consts.SIX_MONTH),
       await cXyt.balanceOf(alice.address),
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
 
     // if user can receive the exact amount of cUSDT that he has sent in, then he has already received
@@ -282,7 +284,7 @@ describe('compound-router', async () => {
       tokenUSDT.address,
       consts.T0_C.add(consts.SIX_MONTH),
       await cXyt.balanceOf(alice.address),
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
 
     const curcUSDTbalanace = await cUSDT.balanceOf(alice.address);

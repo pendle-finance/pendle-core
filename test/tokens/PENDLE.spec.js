@@ -12,7 +12,7 @@ const {
 const MockPENDLE = artifacts.require('../../build/artifacts/contracts/mock/MockPENDLE.sol/MockPENDLE.json');
 const TestToken = artifacts.require('../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json');
 
-contract('PENDLE [@skip-on-coverage]', function (accounts) {
+contract('PENDLE', function (accounts) {
   const [initialHolder, recipient, anotherAccount] = accounts;
   const name = 'Pendle';
   const symbol = 'PENDLE';

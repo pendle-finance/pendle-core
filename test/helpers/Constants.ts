@@ -4,13 +4,16 @@ export type Token = {
   decimal: number;
   compound: string;
   owner?: string;
+  source?: string;
 };
 
 type TokenMap = Record<string, Token>;
 
+const ONE_E_12 = BN.from(10).pow(12);
 const ONE_E_18 = BN.from(10).pow(18);
 
 export const consts = {
+  ONE_E_12,
   ONE_E_18,
   DUMMY_ADDRESS: '0xDEADbeEfEEeEEEeEEEeEEeeeeeEeEEeeeeEEEEeE',
   DUMMY_GOVERNANCE_ADDRESS: '0xdac17f958d2ee523a2206206994597c13d831ec7',
@@ -41,13 +44,14 @@ export const consts = {
   ONE_YEAR: BN.from(31536000),
   T0_A2: BN.from(1623715050), // the time that the first AaveV2_XYT is minted
   T0_C: BN.from(1623715100), // the time that the first Compound_XYT is minted
-  HIGH_GAS_OVERRIDE: { gasLimit: 80000000 },
+  HG: { gasLimit: 80000000 },
+  LG: { gasLimit: 200000 },
   INITIAL_AAVE_USDT_AMOUNT: BN.from(10 ** 5),
   INITIAL_COMPOUND_USDT_AMOUNT: BN.from(10 ** 7),
   INITIAL_AAVE_TOKEN_AMOUNT: BN.from(10 ** 4),
   INITIAL_COMPOUND_TOKEN_AMOUNT: BN.from(10 ** 6),
   INITIAL_OT_XYT_AMOUNT: BN.from(10 ** 4),
-  TEST_TOKEN_DELTA: BN.from(10).pow(2),
+  TEST_TOKEN_DELTA: BN.from(200),
   LOCK_NUMERATOR: BN.from(1),
   LOCK_DENOMINATOR: BN.from(180),
   INTEREST_UPDATE_RATE_DELTA_FOR_MARKET: BN.from(2).pow(40).div(10000), // 0.01% delta
@@ -93,5 +97,11 @@ export const tokens: TokenMap = {
     address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     decimal: 6,
     compound: '0x39aa39c021dfbae8fac545936693ac917d5e7563',
+  },
+  UNI: {
+    address: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
+    decimal: 18,
+    compound: '0x35a18000230da775cac24873d00ff85bccded550',
+    source: '0x47173b170c64d16393a52e6c480b3ad8c302ba1e',
   },
 };

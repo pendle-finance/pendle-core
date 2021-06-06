@@ -1,13 +1,12 @@
 import { expect } from 'chai';
-import { Contract, providers, Wallet, BigNumber as BN, utils } from 'ethers';
-import PENDLE from '../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json';
+import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import MockPendle from '../../build/artifacts/contracts/mock/MockPENDLE.sol/MockPENDLE.json';
-import { errMsg, consts, evm_revert, evm_snapshot, setTimeNextBlock, advanceTime, approxBigNumber } from '../helpers';
+import { advanceTime, approxBigNumber, consts, evm_revert, evm_snapshot } from '../helpers';
 
 const { waffle } = require('hardhat');
 const { provider, deployContract } = waffle;
 
-describe('Token name test [@skip-on-coverage]', async () => {
+describe('Token name test', async () => {
   const wallets: Wallet[] = provider.getWallets();
 
   const [root, a1, a2, a3, a4] = wallets;
@@ -206,14 +205,14 @@ describe('Token name test [@skip-on-coverage]', async () => {
         const connected = PENDLE.connect(a4);
 
         if (l > 2) await advanceTime(consts.ONE_WEEK.mul(BN.from(l - 2)));
-        const pastClaimed = BN.from(await connected.callStatic.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE));
-        await connected.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE);
+        const pastClaimed = BN.from(await connected.callStatic.claimLiquidityEmissions(consts.HG));
+        await connected.claimLiquidityEmissions(consts.HG);
 
         if (l == 1) await advanceTime(consts.ONE_WEEK.mul(BN.from(r - l)));
         else await advanceTime(consts.ONE_WEEK.mul(BN.from(r - l + 1)));
 
-        const nowClaimed = BN.from(await connected.callStatic.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE));
-        await connected.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE);
+        const nowClaimed = BN.from(await connected.callStatic.claimLiquidityEmissions(consts.HG));
+        await connected.claimLiquidityEmissions(consts.HG);
 
         const amountClaimed = nowClaimed;
         expect(amountClaimed.eq(shouldBeClaiming)).to.be.true;
@@ -241,7 +240,7 @@ describe('Token name test [@skip-on-coverage]', async () => {
       let emissionForAddress = [BN.from(0), BN.from(0), INITIAL_LIQUIDITY_EMISSION];
 
       let lastWeekClaimed = INITIAL_LIQUIDITY_EMISSION.div(26);
-      let totalSupplyNumber = await root_connected.callStatic.getTotalSupply(consts.HIGH_GAS_OVERRIDE);
+      let totalSupplyNumber = await root_connected.callStatic.getTotalSupply(consts.HG);
       let totalSupply = BN.from(totalSupplyNumber);
 
       let recipentIndex = 2;
@@ -261,7 +260,7 @@ describe('Token name test [@skip-on-coverage]', async () => {
         _terminalInflationRateNumerator: BN,
         _liquidityIncentivesRecipient: string
       ) {
-        configChangesInitiated = await root_connected.getCurrentTime(consts.HIGH_GAS_OVERRIDE);
+        configChangesInitiated = await root_connected.getCurrentTime(consts.HG);
         pendingEmissionRateMultiplierNumerator = _emissionRateMultiplierNumerator;
         pendingTerminalInflationRateNumerator = _terminalInflationRateNumerator;
         pendingLiquidityIncentivesRecipient = _liquidityIncentivesRecipient;
@@ -269,7 +268,7 @@ describe('Token name test [@skip-on-coverage]', async () => {
           _emissionRateMultiplierNumerator,
           _terminalInflationRateNumerator,
           _liquidityIncentivesRecipient,
-          consts.HIGH_GAS_OVERRIDE
+          consts.HG
         );
       }
 
@@ -303,13 +302,13 @@ describe('Token name test [@skip-on-coverage]', async () => {
       async function applyConfigSimulator() {
         const recipent_connected = PENDLE.connect(recipents[recipentIndex]);
         emissionForAddress[recipentIndex] = emissionForAddress[recipentIndex].add(
-          await recipent_connected.callStatic.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE)
+          await recipent_connected.callStatic.claimLiquidityEmissions(consts.HG)
         );
 
-        await recipent_connected.claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE);
+        await recipent_connected.claimLiquidityEmissions(consts.HG);
 
         if (configChangesInitiated.eq(BN.from(0))) return;
-        await root_connected.applyConfigChanges(consts.HIGH_GAS_OVERRIDE);
+        await root_connected.applyConfigChanges(consts.HG);
 
         emissionRateMultiplierNumerator = pendingEmissionRateMultiplierNumerator;
         terminalInflationRateNumerator = pendingTerminalInflationRateNumerator;
@@ -320,9 +319,9 @@ describe('Token name test [@skip-on-coverage]', async () => {
 
       async function claimLiquidityEmissionsSimulator() {
         const claimedAmount = await PENDLE.connect(recipents[recipentIndex]).callStatic.claimLiquidityEmissions(
-          consts.HIGH_GAS_OVERRIDE
+          consts.HG
         );
-        await PENDLE.connect(recipents[recipentIndex]).claimLiquidityEmissions(consts.HIGH_GAS_OVERRIDE);
+        await PENDLE.connect(recipents[recipentIndex]).claimLiquidityEmissions(consts.HG);
         emissionForAddress[recipentIndex] = emissionForAddress[recipentIndex].add(claimedAmount);
         return claimedAmount;
       }

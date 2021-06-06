@@ -1,6 +1,6 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Wallet } from 'ethers';
-import { waffle } from 'hardhat';
 import {
   amountToWei,
   approxBigNumber,
@@ -19,6 +19,8 @@ import {
   tokens,
 } from '../helpers';
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from './fixtures';
+const { waffle } = require('hardhat');
+chai.use(solidity);
 
 const { loadFixture, provider } = waffle;
 
@@ -54,7 +56,7 @@ describe('aaveV2-router', async () => {
   beforeEach(async () => {
     await evm_revert(snapshotId);
     snapshotId = await evm_snapshot();
-    initialAUSDTbalance = await env.yUSDT.balanceOf(alice.address);
+    initialAUSDTbalance = await env.yToken.balanceOf(alice.address);
   });
 
   async function startCalInterest(walletToUse: Wallet, initialAmount: BN) {
@@ -63,7 +65,7 @@ describe('aaveV2-router', async () => {
   }
 
   async function getCurInterest(walletToUse: Wallet, initialAmount: BN): Promise<BN> {
-    return (await env.yUSDT.balanceOf(walletToUse.address)).sub(initialAmount);
+    return (await env.yToken.balanceOf(walletToUse.address)).sub(initialAmount);
   }
 
   it("OT & XYT's underlyingAsset's address should be correct", async () => {
@@ -89,7 +91,7 @@ describe('aaveV2-router', async () => {
   });
 
   it('tokenizeYield', async () => {
-    console.log(`aUSDT balance = ${await env.yUSDT.balanceOf(alice.address)}`);
+    console.log(`aUSDT balance = ${await env.yToken.balanceOf(alice.address)}`);
     let amount = await tokenizeYield(env, alice, refAmount);
     const balanceOwnershipToken = await env.ot.balanceOf(alice.address);
     const balanceFutureYieldToken = await env.xyt.balanceOf(alice.address);
@@ -112,7 +114,7 @@ describe('aaveV2-router', async () => {
 
     await redeemUnderlying(env, alice, amount);
 
-    const finalAUSDTbalance = await env.yUSDT.balanceOf(alice.address);
+    const finalAUSDTbalance = await env.yToken.balanceOf(alice.address);
 
     const expectedGain = await getCurInterest(charlie, refAmount);
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(initialAUSDTbalance.add(expectedGain).toNumber(), 10000);
@@ -124,14 +126,14 @@ describe('aaveV2-router', async () => {
 
     await env.ot.transfer(bob.address, await env.ot.balanceOf(alice.address));
 
-    const afterLendingAUSDTbalance = await env.yUSDT.balanceOf(alice.address);
+    const afterLendingAUSDTbalance = await env.yToken.balanceOf(alice.address);
 
     await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
 
     await redeemDueInterests(env, alice);
 
     const expectedGain = await getCurInterest(charlie, refAmount);
-    const finalAUSDTbalance = await env.yUSDT.balanceOf(alice.address);
+    const finalAUSDTbalance = await env.yToken.balanceOf(alice.address);
 
     expect(finalAUSDTbalance.toNumber()).to.be.below(initialAUSDTbalance.toNumber());
     expect(finalAUSDTbalance.toNumber()).to.be.approximately(
@@ -151,7 +153,7 @@ describe('aaveV2-router', async () => {
 
     await redeemDueInterests(env, bob);
 
-    const actualGain = await env.yUSDT.balanceOf(bob.address);
+    const actualGain = await env.yToken.balanceOf(bob.address);
     const expectedGain = await getCurInterest(charlie, refAmount);
 
     expect(actualGain.toNumber()).to.be.approximately(expectedGain.toNumber(), 10000);
@@ -169,7 +171,7 @@ describe('aaveV2-router', async () => {
     await redeemDueInterests(env, bob);
 
     approxBigNumber(
-      await env.yUSDT.balanceOf(bob.address),
+      await env.yToken.balanceOf(bob.address),
       await getCurInterest(charlie, refAmount),
       env.TEST_DELTA,
       false
@@ -183,7 +185,7 @@ describe('aaveV2-router', async () => {
     await redeemAfterExpiry(env, alice);
 
     const expectedGain = await getCurInterest(dave, refAmount);
-    const finalAUSDTbalance = await env.yUSDT.balanceOf(alice.address);
+    const finalAUSDTbalance = await env.yToken.balanceOf(alice.address);
     approxBigNumber(finalAUSDTbalance, initialAUSDTbalance.add(expectedGain), env.TEST_DELTA);
   });
 
@@ -198,7 +200,7 @@ describe('aaveV2-router', async () => {
     await redeemDueInterests(env, bob);
 
     await startCalInterest(dave, refAmount);
-    approxBigNumber(await env.yUSDT.balanceOf(bob.address), await getCurInterest(charlie, refAmount), env.TEST_DELTA);
+    approxBigNumber(await env.yToken.balanceOf(bob.address), await getCurInterest(charlie, refAmount), env.TEST_DELTA);
 
     const T2 = T1.add(consts.ONE_MONTH);
     await setTimeNextBlock(T2);
@@ -206,7 +208,7 @@ describe('aaveV2-router', async () => {
     await redeemAfterExpiry(env, alice);
 
     const expectedGain = await getCurInterest(dave, refAmount);
-    const finalAUSDTbalance = await env.yUSDT.balanceOf(alice.address);
+    const finalAUSDTbalance = await env.yToken.balanceOf(alice.address);
     approxBigNumber(finalAUSDTbalance, initialAUSDTbalance.add(expectedGain), env.TEST_DELTA, true);
   });
 
@@ -234,7 +236,7 @@ describe('aaveV2-router', async () => {
       USDT.address,
       env.T0.add(consts.ONE_YEAR),
       consts.RONE.div(2), // 50%
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
 
     await env.router.renewYield(
@@ -243,12 +245,12 @@ describe('aaveV2-router', async () => {
       USDT.address,
       env.T0.add(consts.ONE_YEAR),
       consts.RONE.div(2),
-      consts.HIGH_GAS_OVERRIDE
+      consts.HG
     );
 
     await setTimeNextBlock(env.T0.add(consts.ONE_MONTH.mul(11)));
     await redeemDueInterests(env, alice, env.T0.add(consts.ONE_YEAR));
-    let actualGain = await env.yUSDT.balanceOf(alice.address);
+    let actualGain = await env.yToken.balanceOf(alice.address);
     let expectedGain = await getCurInterest(dave, amountRenewed);
     approxBigNumber(actualGain, expectedGain, env.TEST_DELTA);
   });
@@ -265,14 +267,14 @@ describe('aaveV2-router', async () => {
 
     // because we have tokenized all aUSDT of alice, curAUSDTbalance will equal to the interest
     // she has received from her xyt
-    const curAUSDTbalance = await env.yUSDT.balanceOf(alice.address);
+    const curAUSDTbalance = await env.yToken.balanceOf(alice.address);
     approxBigNumber(curAUSDTbalance, expectedGain, env.TEST_DELTA);
   });
 
   it('newYieldContracts is not possible [if underlyingAsset is invalid]', async () => {
     // random underlyingAsset
     await expect(
-      env.router.newYieldContracts(env.FORGE_ID, consts.RANDOM_ADDRESS, consts.T0_A2.add(consts.ONE_YEAR))
+      env.router.newYieldContracts(env.FORGE_ID, consts.RANDOM_ADDRESS, env.T0.add(consts.ONE_YEAR))
     ).to.be.revertedWith(errMsg.INVALID_UNDERLYING_ASSET);
   });
 });
