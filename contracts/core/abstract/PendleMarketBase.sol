@@ -246,8 +246,9 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
 
         _afterBootstrap();
         // Taking inspiration from Uniswap, we will keep MINIMUM_LIQUIDITY in the market to make sure the market is always non-empty
-        uint256 exactOutLp =
-            Math.sqrt(initialXytLiquidity.mul(initialTokenLiquidity)).sub(MINIMUM_LIQUIDITY);
+        exactOutLp = Math.sqrt(initialXytLiquidity.mul(initialTokenLiquidity)).sub(
+            MINIMUM_LIQUIDITY
+        );
 
         // No one should possibly own a specific address like this 0x1
         // We mint to 0x1 instead of 0x0 because sending to 0x0 is not permitted
@@ -356,8 +357,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         uint256 totalLp = totalSupply();
 
         // Calc out amount of LP token.
-        uint256 exactOutLp =
-            MarketMath._calcOutAmountLp(_exactIn, inTokenReserve, data.swapFee(), totalLp);
+        exactOutLp = MarketMath._calcOutAmountLp(
+            _exactIn,
+            inTokenReserve,
+            data.swapFee(),
+            totalLp
+        );
         require(exactOutLp >= _minOutLp, "HIGH_LP_OUT_LIMIT");
 
         // Update reserves and operate underlying LP and inToken.

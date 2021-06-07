@@ -313,7 +313,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
 
         amountXytUsed = transfers[0].amount;
         amountTokenUsed = transfers[1].amount;
-        emit Join(msg.sender, transfers[0].amount, transfers[1].amount, address(market), lpOut);
+        emit Join(msg.sender, amountXytUsed, amountTokenUsed, address(market), lpOut);
     }
 
     /**
@@ -330,7 +330,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         bool _forXyt,
         uint256 _exactIn,
         uint256 _minOutLp
-    ) external payable override nonReentrant {
+    ) external payable override nonReentrant returns (uint256 exactOutLp) {
         require(_exactIn != 0, "ZERO_AMOUNTS");
 
         address originalToken = _token;
@@ -344,7 +344,6 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
 
         // note that LP minting will be done in the market
         PendingTransfer[2] memory transfers;
-        uint256 exactOutLp;
         (transfers, exactOutLp) = market.addMarketLiquiditySingle(
             msg.sender,
             assetForMarket,
@@ -388,14 +387,9 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
             market.removeMarketLiquidityDual(msg.sender, _exactInLp, _minOutXyt, _minOutToken);
 
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
-        emit Exit(
-            msg.sender,
-            transfers[0].amount,
-            transfers[1].amount,
-            address(market),
-            _exactInLp
-        );
-        return (transfers[0].amount, transfers[1].amount);
+        exactOutXyt = transfers[0].amount;
+        exactOutToken = transfers[1].amount;
+        emit Exit(msg.sender, exactOutXyt, exactOutToken, address(market), _exactInLp);
     }
 
     /**

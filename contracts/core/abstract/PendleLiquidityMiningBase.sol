@@ -226,7 +226,7 @@ abstract contract PendleLiquidityMiningBase is
      * conditions:
         * Must only be called by governance
      */
-    function fund(uint256[] memory _rewards) external override onlyGovernance {
+    function fund(uint256[] calldata _rewards) external override onlyGovernance {
         checkNotPaused();
         // Can only be fund if there is already a setting
         require(latestSetting.id > 0, "NO_ALLOC_SETTING");
@@ -245,6 +245,7 @@ abstract contract PendleLiquidityMiningBase is
         funded = true;
         numberOfEpochs = numberOfEpochs.add(nNewEpochs);
         IERC20(pendleTokenAddress).safeTransferFrom(msg.sender, address(this), totalFunded);
+        emit Funded(_rewards, numberOfEpochs);
     }
 
     /**
@@ -253,7 +254,7 @@ abstract contract PendleLiquidityMiningBase is
         * Must only be called by governance
         * The contract must have been funded already
     */
-    function topUpRewards(uint256[] memory _epochIds, uint256[] memory _rewards)
+    function topUpRewards(uint256[] calldata _epochIds, uint256[] calldata _rewards)
         external
         override
         onlyGovernance
@@ -277,6 +278,7 @@ abstract contract PendleLiquidityMiningBase is
 
         require(totalTopUp > 0, "ZERO_FUND");
         IERC20(pendleTokenAddress).safeTransferFrom(msg.sender, address(this), totalTopUp);
+        emit RewardsToppedUp(_epochIds, _rewards);
     }
 
     /**
@@ -317,6 +319,7 @@ abstract contract PendleLiquidityMiningBase is
             sumAllocationNumerators = sumAllocationNumerators.add(_allocationNumerators[_i]);
         }
         require(sumAllocationNumerators == ALLOCATION_DENOMINATOR, "INVALID_ALLOCATION");
+        emit AllocationSettingSet(_expiries, _allocationNumerators);
     }
 
     /**
@@ -394,6 +397,7 @@ abstract contract PendleLiquidityMiningBase is
         require(exd.balances[msg.sender] >= amount, "INSUFFICIENT_BALANCE");
 
         _pushLpToken(expiry, amount);
+        emit Withdrawn(expiry, msg.sender, amount);
     }
 
     /**
@@ -567,6 +571,7 @@ abstract contract PendleLiquidityMiningBase is
         }
 
         _pullLpToken(marketAddress, expiry, amount);
+        emit Staked(expiry, msg.sender, amount);
     }
 
     /**
@@ -820,7 +825,7 @@ abstract contract PendleLiquidityMiningBase is
         }
 
         expiryData[expiry].lastEpochClaimed[user] = _lastEpoch;
-
+        emit PendleRewardsSettled(expiry, user, amountOut);
         return amountOut;
     }
 

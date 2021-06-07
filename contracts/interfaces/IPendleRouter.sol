@@ -203,7 +203,7 @@ interface IPendleRouter {
         bool forXyt,
         uint256 exactInAsset,
         uint256 minOutLp
-    ) external payable;
+    ) external payable returns (uint256 exactOutLp);
 
     function removeMarketLiquidityDual(
         bytes32 marketFactoryId,

@@ -33,13 +33,16 @@ interface IPendleForge {
      * @param forgeId The forgeId
      * @param underlyingAsset The address of the underlying yield token.
      * @param expiry The expiry of the XYT token
-     * @param amount The amount to be minted.
+     * @param amountToTokenize The amount of yield bearing assets to tokenize
+     * @param amountTokenMinted The amount of OT/XYT minted
      **/
-    event MintYieldToken(
+    event MintYieldTokens(
         bytes32 forgeId,
         address indexed underlyingAsset,
         uint256 indexed expiry,
-        uint256 amount
+        uint256 amountToTokenize,
+        uint256 amountTokenMinted,
+        address indexed user
     );
 
     /**
@@ -72,7 +75,8 @@ interface IPendleForge {
         address indexed underlyingAsset,
         uint256 indexed expiry,
         uint256 amountToRedeem,
-        uint256 redeemedAmount
+        uint256 redeemedAmount,
+        address indexed user
     );
 
     /**
@@ -80,15 +84,30 @@ interface IPendleForge {
      * @param forgeId The forgeId
      * @param underlyingAsset the address of the underlying asset
      * @param expiry The expiry of the XYT token
-     * @param receiver Interest receiver Address
+     * @param user Interest receiver Address
      * @param amount The amount of interest claimed
      **/
-    event DueInterestSettled(
+    event DueInterestsSettled(
         bytes32 forgeId,
         address indexed underlyingAsset,
         uint256 indexed expiry,
         uint256 amount,
-        address indexed receiver
+        uint256 forgeFeeAmount,
+        address indexed user
+    );
+
+    /**
+     * @dev Emitted when forge fee is withdrawn
+     * @param forgeId The forgeId
+     * @param underlyingAsset the address of the underlying asset
+     * @param expiry The expiry of the XYT token
+     * @param amount The amount of interest claimed
+     **/
+    event ForgeFeeWithdrawn(
+        bytes32 forgeId,
+        address indexed underlyingAsset,
+        uint256 indexed expiry,
+        uint256 amount
     );
 
     function setUpEmergencyMode(

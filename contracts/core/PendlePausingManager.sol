@@ -207,18 +207,22 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
     //// Lock permanently parts of the features
     function lockPausingManagerPermanently() external override onlyGovernance notPermLocked {
         permLocked = true;
+        emit PausingManagerLocked();
     }
 
     function lockForgeHandlerPermanently() external override onlyGovernance notPermLocked {
         permForgeHandlerLocked = true;
+        emit ForgeHandlerLocked();
     }
 
     function lockMarketHandlerPermanently() external override onlyGovernance notPermLocked {
         permMarketHandlerLocked = true;
+        emit MarketHandlerLocked();
     }
 
     function lockLiqMiningHandlerPermanently() external override onlyGovernance notPermLocked {
         permLiqMiningHandlerLocked = true;
+        emit LiqMiningHandlerLocked();
     }
 
     /////////////////////////
@@ -232,6 +236,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         forgePaused[forgeId] = settingToPaused;
+        emit SetForgePaused(forgeId, settingToPaused);
     }
 
     function setForgeAssetPaused(
@@ -240,6 +245,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         bool settingToPaused
     ) external override updateSomeStatus isAllowedToSetPaused(settingToPaused) notPermLocked {
         forgeAssetPaused[forgeId][underlyingAsset] = settingToPaused;
+        emit SetForgeAssetPaused(forgeId, underlyingAsset, settingToPaused);
     }
 
     function setForgeAssetExpiryPaused(
@@ -249,6 +255,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         bool settingToPaused
     ) external override updateSomeStatus isAllowedToSetPaused(settingToPaused) notPermLocked {
         forgeAssetExpiryPaused[forgeId][underlyingAsset][expiry] = settingToPaused;
+        emit SetForgeAssetExpiryPaused(forgeId, underlyingAsset, expiry, settingToPaused);
     }
 
     function setForgeLocked(bytes32 forgeId)
@@ -259,6 +266,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         forgeLocked[forgeId] = true;
+        emit SetForgeLocked(forgeId);
     }
 
     function setForgeAssetLocked(bytes32 forgeId, address underlyingAsset)
@@ -269,6 +277,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         forgeAssetLocked[forgeId][underlyingAsset] = true;
+        emit SetForgeAssetLocked(forgeId, underlyingAsset);
     }
 
     function setForgeAssetExpiryLocked(
@@ -277,6 +286,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         uint256 expiry
     ) external override updateSomeStatus onlyGovernance notPermLocked {
         forgeAssetExpiryLocked[forgeId][underlyingAsset][expiry] = true;
+        emit SetForgeAssetExpiryLocked(forgeId, underlyingAsset, expiry);
     }
 
     function _isYieldContractPaused(
@@ -338,6 +348,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         marketFactoryPaused[marketFactoryId] = settingToPaused;
+        emit SetMarketFactoryPaused(marketFactoryId, settingToPaused);
     }
 
     function setMarketPaused(
@@ -346,6 +357,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         bool settingToPaused
     ) external override updateSomeStatus isAllowedToSetPaused(settingToPaused) notPermLocked {
         marketPaused[marketFactoryId][market] = settingToPaused;
+        emit SetMarketPaused(marketFactoryId, market, settingToPaused);
     }
 
     function setMarketFactoryLocked(bytes32 marketFactoryId)
@@ -356,6 +368,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         marketFactoryLocked[marketFactoryId] = true;
+        emit SetMarketFactoryLocked(marketFactoryId);
     }
 
     function setMarketLocked(bytes32 marketFactoryId, address market)
@@ -366,6 +379,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         marketLocked[marketFactoryId][market] = true;
+        emit SetMarketLocked(marketFactoryId, market);
     }
 
     function _isMarketPaused(bytes32 marketFactoryId, address market)
@@ -419,6 +433,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         liqMiningPaused[liqMiningContract] = settingToPaused;
+        emit SetLiqMiningPaused(liqMiningContract, settingToPaused);
     }
 
     function setLiqMiningLocked(address liqMiningContract)
@@ -429,6 +444,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         liqMiningLocked[liqMiningContract] = true;
+        emit SetLiqMiningLocked(liqMiningContract);
     }
 
     function checkLiqMiningStatus(address liqMiningContract)
