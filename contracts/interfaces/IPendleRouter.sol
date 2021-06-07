@@ -95,14 +95,6 @@ interface IPendleRouter {
         uint256 exactInLp
     );
 
-    struct Swap {
-        uint256 swapAmount;
-        uint256 limitReturnAmount;
-        address market;
-        address tokenIn;
-        address tokenOut;
-    }
-
     /**
      * @notice Gets a reference to the PendleData contract.
      * @return Returns the data contract reference.
