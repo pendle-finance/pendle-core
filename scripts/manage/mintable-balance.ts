@@ -22,7 +22,7 @@ async function main() {
   const comptroller = await hre.ethers.getContractAt('IComptroller', consts.misc.COMPOUND_COMPTROLLER_ADDRESS);
 
   // Joseph account which already has a borrow position of 100 USDT
-  // and a collateral of 1ETH
+  // and a collateral of 200 USDC
   const user = '0xE8A4095437dd20a01e66115dE33164eBCEA9B09a';
 
   console.log(`\t cUSDC address = ${cUSDC.address}`);
