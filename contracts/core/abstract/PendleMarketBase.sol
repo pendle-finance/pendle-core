@@ -60,17 +60,17 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     uint256 private constant LN_PI_PLUSONE = 1562071538258; // this is equal to Math.ln(Math.PI_PLUSONE,Math.RONE)
     uint256 internal constant MULTIPLIER = 10**20;
 
-    // 3 variables for LP interests calc
-    uint256 internal paramL;
-    uint256 internal lastNYield;
+    // variables for LP interests calc
+    uint256 public paramL;
+    uint256 public lastNYield;
     mapping(address => uint256) internal lastParamL;
     mapping(address => uint256) internal dueInterests;
 
     // paramK used for mintProtocolFee. ParamK = xytBal ^ xytWeight * tokenBal ^ tokenW
-    uint256 internal lastParamK;
+    uint256 public lastParamK;
 
     // the last block that we do curveShift
-    uint256 private lastCurveShiftBlock;
+    uint256 public lastCurveShiftBlock;
 
     /*
     * The reserveData will consist of 3 variables: xytBalance, tokenBalance & xytWeight
@@ -602,12 +602,11 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
      * @notice update the weights of the market
      */
     function _updateWeight() internal {
-        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
+        (uint256 xytBalance, uint256 tokenBalance, , ) = readReserveData(); // unpack data
         (uint256 xytWeightUpdated, , uint256 currentRelativePrice) = _updateWeightDry();
         writeReserveData(xytBalance, tokenBalance, xytWeightUpdated); // repack data
 
         lastRelativePrice = currentRelativePrice;
-        emit Shift(xytWeight, xytWeightUpdated);
     }
 
     // do the weight update calculation but don't update the token reserve memory
