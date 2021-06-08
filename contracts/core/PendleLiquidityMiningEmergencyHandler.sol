@@ -31,8 +31,9 @@ import "../interfaces/IPendlePausingManager.sol";
 import "../interfaces/IPendleForge.sol";
 import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract PendleLiquidityMiningEmergencyHandler is PermissionsV2 {
+contract PendleLiquidityMiningEmergencyHandler is PermissionsV2, ReentrancyGuard {
     using Math for uint256;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -89,6 +90,7 @@ contract PendleLiquidityMiningEmergencyHandler is PermissionsV2 {
     function withdraw(address _liqAddr, uint256 _expiry)
         public
         oneTimeWithdrawal(_liqAddr, _expiry)
+        nonReentrant
     {
         LiqData storage lid = liqData[_liqAddr][_expiry];
 

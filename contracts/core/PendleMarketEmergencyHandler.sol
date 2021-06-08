@@ -31,8 +31,9 @@ import "../interfaces/IPendlePausingManager.sol";
 import "../interfaces/IPendleForge.sol";
 import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract PendleMarketEmergencyHandler is PermissionsV2 {
+contract PendleMarketEmergencyHandler is PermissionsV2, ReentrancyGuard {
     using Math for uint256;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -81,7 +82,7 @@ contract PendleMarketEmergencyHandler is PermissionsV2 {
     decrease the totalLp of market. This way, the amount of xyt/token/yieldToken they receive when
     doing withdraw will always be proportional to amountLpUser/totalLp
     */
-    function withdraw(address _marketAddr) public oneTimeWithdrawal(_marketAddr) {
+    function withdraw(address _marketAddr) public oneTimeWithdrawal(_marketAddr) nonReentrant {
         MarketData storage mad = marketData[_marketAddr];
 
         uint256 amountLpUser = _getTotalLpUser(_marketAddr);

@@ -30,8 +30,9 @@ import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleYieldTokenHolder.sol";
 import "../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract PendleForgeEmergencyHandler is PermissionsV2 {
+contract PendleForgeEmergencyHandler is PermissionsV2, ReentrancyGuard {
     using Math for uint256;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -45,7 +46,6 @@ contract PendleForgeEmergencyHandler is PermissionsV2 {
         mapping(address => bool) haveWithdrawn;
     }
     mapping(address => mapping(address => mapping(uint256 => ForgeData))) public forgeData;
-    IPendlePausingManager public immutable pausingManager;
     IPendleData public immutable data;
 
     modifier oneTimeWithdrawal(
@@ -67,7 +67,6 @@ contract PendleForgeEmergencyHandler is PermissionsV2 {
         address _data
     ) PermissionsV2(_governanceManager) {
         require(_pausingManager != address(0), "ZERO_ADDRESS");
-        pausingManager = IPendlePausingManager(_pausingManager);
         data = IPendleData(_data);
     }
 
@@ -85,11 +84,7 @@ contract PendleForgeEmergencyHandler is PermissionsV2 {
         );
         fod.yieldToken = IERC20(fod.yieldTokenHolder.yieldToken());
         fod.rewardToken = IERC20(fod.yieldTokenHolder.rewardToken());
-        fod.ot = data.otTokens(
-            forge.forgeId(),
-            forge.getYieldBearingToken(_underlyingAsset),
-            _expiry
-        );
+        fod.ot = data.otTokens(forge.forgeId(), _underlyingAsset, _expiry);
         fod.totalOt = fod.ot.totalSupply();
     }
 
@@ -103,7 +98,7 @@ contract PendleForgeEmergencyHandler is PermissionsV2 {
         address _forgeAddr,
         address _underlyingAsset,
         uint256 _expiry
-    ) public oneTimeWithdrawal(_forgeAddr, _underlyingAsset, _expiry) {
+    ) public oneTimeWithdrawal(_forgeAddr, _underlyingAsset, _expiry) nonReentrant {
         ForgeData storage fod = forgeData[_forgeAddr][_underlyingAsset][_expiry];
 
         uint256 amountOtUser = fod.ot.balanceOf(msg.sender);
