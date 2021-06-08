@@ -31,7 +31,6 @@ import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
-import "../interfaces/IPendleRewardManager.sol";
 import "../periphery/PermissionsV2.sol";
 import "../periphery/WithdrawableV2.sol";
 import "../periphery/PendleRouterNonReentrant.sol";
@@ -74,7 +73,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
      * @dev Accepts ETH via fallback from the WETH contract.
      **/
     receive() external payable {
-        assert(msg.sender == address(weth));
+        require(msg.sender == address(weth), "ETH_NOT_FROM_WETH");
     }
 
     /**

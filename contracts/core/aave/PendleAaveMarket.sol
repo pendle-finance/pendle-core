@@ -62,10 +62,11 @@ contract PendleAaveMarket is PendleMarketBase {
         // , which is the normalisedIncome from the last time paramL got updated (aka the last time we get external income)
         uint256 normIncomeNow = globalLastNormalizedIncome;
         uint256 principal = balanceOf(user);
+        uint256 _paramL = paramL; // save value in memory to save gas
 
         if (lastIncome == 0) {
             userLastNormalizedIncome[user] = normIncomeNow;
-            lastParamL[user] = paramL;
+            lastParamL[user] = _paramL;
             return;
         }
 
@@ -84,7 +85,7 @@ contract PendleAaveMarket is PendleMarketBase {
                 = paramL -  lastParamL[user] * globalLastNormalizedIncome /userLastNormalizedIncome[user]
         */
         uint256 interestValuePerLP =
-            paramL.subMax0(lastParamL[user].mul(normIncomeNow).div(lastIncome));
+            _paramL.subMax0(lastParamL[user].mul(normIncomeNow).div(lastIncome));
 
         uint256 interestFromLp = principal.mul(interestValuePerLP).div(MULTIPLIER);
 
@@ -93,7 +94,7 @@ contract PendleAaveMarket is PendleMarketBase {
         );
 
         userLastNormalizedIncome[user] = normIncomeNow;
-        lastParamL[user] = paramL;
+        lastParamL[user] = _paramL;
     }
 
     /// @inheritdoc PendleMarketBase
@@ -115,6 +116,6 @@ contract PendleAaveMarket is PendleMarketBase {
 
     /// @inheritdoc PendleMarketBase
     function _getIncomeIndexIncreaseRate() internal view override returns (uint256 increaseRate) {
-        return _getReserveNormalizedIncome().rdiv(globalLastNormalizedIncome) - Math.RONE;
+        return _getReserveNormalizedIncome().rdiv(globalLastNormalizedIncome).sub(Math.RONE);
     }
 }
