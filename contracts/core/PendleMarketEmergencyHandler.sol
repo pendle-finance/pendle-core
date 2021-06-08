@@ -65,10 +65,12 @@ contract PendleMarketEmergencyHandler is PermissionsV2, ReentrancyGuard {
     }
 
     function setUpEmergencyMode(address _marketAddr, address _liqAddr) public onlyGovernance {
+        MarketData storage mad = marketData[_marketAddr];
+        // if this set of params has been used before, mad.factoryId must be != 0x0
+        require(mad.factoryId != 0x0, "DUPLICATED_EMERGENCY_SETUP");
+
         IPendleMarket market = IPendleMarket(_marketAddr);
         market.setUpEmergencyMode(address(this));
-        MarketData storage mad = marketData[_marketAddr];
-
         mad.factoryId = market.factoryId();
         mad.xyt = IPendleYieldToken(market.xyt());
         mad.token = IERC20(market.token());

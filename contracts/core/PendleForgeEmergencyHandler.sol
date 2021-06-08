@@ -76,6 +76,9 @@ contract PendleForgeEmergencyHandler is PermissionsV2, ReentrancyGuard {
         uint256 _expiry
     ) public onlyGovernance {
         ForgeData storage fod = forgeData[_forgeAddr][_underlyingAsset][_expiry];
+        // if this set of params has been used before, fod.yieldTokenHolder must be != 0
+        require(address(fod.yieldTokenHolder) != address(0), "DUPLICATED_EMERGENCY_SETUP");
+
         IPendleForge forge = IPendleForge(_forgeAddr);
         forge.setUpEmergencyMode(_underlyingAsset, _expiry, address(this));
 

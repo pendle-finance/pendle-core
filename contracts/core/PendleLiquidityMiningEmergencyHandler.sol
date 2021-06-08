@@ -74,6 +74,8 @@ contract PendleLiquidityMiningEmergencyHandler is PermissionsV2, ReentrancyGuard
         liq.setUpEmergencyMode(_expiries, address(this));
         for (uint256 i = 0; i < _expiries.length; i++) {
             LiqData storage lid = liqData[_liqAddr][_expiries[i]];
+            require(address(lid.lpHolder) != address(0), "DUPLICATED_EMERGENCY_SETUP");
+
             lid.lpHolder = IPendleLpHolder(liq.lpHolderForExpiry(_expiries[i]));
             lid.lpToken = IERC20(lid.lpHolder.pendleMarket());
             lid.underlyingYieldToken = IERC20(lid.lpHolder.underlyingYieldToken());
