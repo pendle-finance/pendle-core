@@ -108,7 +108,7 @@ abstract contract PendleLiquidityMiningBase is
     IPendleData public immutable data;
     address public immutable override pendleTokenAddress;
     bytes32 public immutable override forgeId;
-    address internal immutable forge;
+    address public immutable override forge;
     bytes32 public immutable override marketFactoryId;
     IPendlePausingManager private immutable pausingManager;
 

@@ -110,4 +110,6 @@ interface IPendleLiquidityMining {
     function marketFactoryId() external view returns (bytes32);
 
     function forgeId() external view returns (bytes32);
+
+    function forge() external view returns (address);
 }

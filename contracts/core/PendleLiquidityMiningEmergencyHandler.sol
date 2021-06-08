@@ -67,7 +67,7 @@ contract PendleLiquidityMiningEmergencyHandler is PermissionsV2, ReentrancyGuard
     }
 
     function setUpEmergencyMode(address _liqAddr, uint256[] calldata _expiries)
-        public
+        external
         onlyGovernance
     {
         IPendleLiquidityMining liq = IPendleLiquidityMining(_liqAddr);
@@ -90,7 +90,7 @@ contract PendleLiquidityMiningEmergencyHandler is PermissionsV2, ReentrancyGuard
     doing withdraw will always be proportional to amountLpOut/totalLp
     */
     function withdraw(address _liqAddr, uint256 _expiry)
-        public
+        external
         oneTimeWithdrawal(_liqAddr, _expiry)
         nonReentrant
     {
@@ -113,7 +113,7 @@ contract PendleLiquidityMiningEmergencyHandler is PermissionsV2, ReentrancyGuard
         lid.totalLp = lid.totalLp.sub(amountLpOut);
     }
 
-    function withdrawPendle(address _liqAddr, address _to) public onlyGovernance {
+    function withdrawPendle(address _liqAddr, address _to) external onlyGovernance {
         pendleToken.transferFrom(_liqAddr, _to, pendleToken.balanceOf(_liqAddr));
     }
 }

@@ -74,7 +74,7 @@ contract PendleForgeEmergencyHandler is PermissionsV2, ReentrancyGuard {
         address _forgeAddr,
         address _underlyingAsset,
         uint256 _expiry
-    ) public onlyGovernance {
+    ) external onlyGovernance {
         ForgeData storage fod = forgeData[_forgeAddr][_underlyingAsset][_expiry];
         // if this set of params has been used before, fod.yieldTokenHolder must be != 0
         require(address(fod.yieldTokenHolder) != address(0), "DUPLICATED_EMERGENCY_SETUP");
@@ -101,7 +101,7 @@ contract PendleForgeEmergencyHandler is PermissionsV2, ReentrancyGuard {
         address _forgeAddr,
         address _underlyingAsset,
         uint256 _expiry
-    ) public oneTimeWithdrawal(_forgeAddr, _underlyingAsset, _expiry) nonReentrant {
+    ) external oneTimeWithdrawal(_forgeAddr, _underlyingAsset, _expiry) nonReentrant {
         ForgeData storage fod = forgeData[_forgeAddr][_underlyingAsset][_expiry];
 
         uint256 amountOtUser = fod.ot.balanceOf(msg.sender);
