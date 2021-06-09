@@ -118,7 +118,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         address _underlyingAsset,
         uint256 _expiry
     ) public override nonReentrant returns (uint256 redeemedAmount) {
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_YT");
         require(_expiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
 
         // guaranteed to be a valid forge by the isValidXYT check
@@ -139,7 +139,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         uint256 _expiry,
         address _user
     ) external override nonReentrant returns (uint256 interests) {
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_YT");
         require(_user != address(0), "ZERO_ADDRESS");
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         interests = forge.redeemDueInterests(_user, _underlyingAsset, _expiry);
@@ -157,7 +157,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         uint256 _expiry,
         uint256 _amountToRedeem
     ) external override nonReentrant returns (uint256 redeemedAmount) {
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_YT");
         require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
         require(_amountToRedeem != 0, "ZERO_AMOUNT");
 
@@ -231,7 +231,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
             uint256 amountTokenMinted
         )
     {
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_YT");
         require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
         require(_to != address(0), "ZERO_ADDRESS");
         require(_amountToTokenize != 0, "ZERO_AMOUNT");
@@ -286,7 +286,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
     {
         require(
             _desiredXytAmount != 0 && _desiredXytAmount >= _xytMinAmount,
-            "INVALID_XYT_AMOUNTS"
+            "INVALID_YT_AMOUNTS"
         );
         require(
             _desiredTokenAmount != 0 && _desiredTokenAmount >= _tokenMinAmount,
@@ -450,8 +450,8 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
     ) external override nonReentrant returns (address market) {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
-        require(data.isXyt(_xyt), "INVALID_XYT");
-        require(!data.isXyt(_token), "XYT_QUOTE_PAIR_FORBIDDEN");
+        require(data.isXyt(_xyt), "INVALID_YT");
+        require(!data.isXyt(_token), "YT_QUOTE_PAIR_FORBIDDEN");
         require(data.getMarket(_marketFactoryId, _xyt, _token) == address(0), "EXISTED_MARKET");
 
         IPendleMarketFactory factory =
@@ -478,7 +478,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         uint256 _initialXytLiquidity,
         uint256 _initialTokenLiquidity
     ) external payable override nonReentrant {
-        require(_initialXytLiquidity > 0, "INVALID_XYT_AMOUNT");
+        require(_initialXytLiquidity > 0, "INVALID_YT_AMOUNT");
         require(_initialTokenLiquidity > 0, "INVALID_TOKEN_AMOUNT");
 
         address originalToken = _token;

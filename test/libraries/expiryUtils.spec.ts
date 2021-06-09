@@ -7,7 +7,7 @@ const { waffle } = require('hardhat');
 const provider = waffle.provider;
 
 const OT = 'OT';
-const XYT = 'XYT';
+const XYT = 'YT';
 const AAVE_NAME = 'Aave interest bearing USDT';
 const AAVE_SYMBOL = 'aUSDT';
 

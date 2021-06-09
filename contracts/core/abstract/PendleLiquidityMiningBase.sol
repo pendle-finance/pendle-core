@@ -546,7 +546,7 @@ abstract contract PendleLiquidityMiningBase is
 
         address xyt = address(data.xytTokens(forgeId, underlyingAsset, expiry));
         address marketAddress = data.getMarket(marketFactoryId, xyt, baseToken);
-        require(xyt != address(0), "XYT_NOT_FOUND");
+        require(xyt != address(0), "YT_NOT_FOUND");
         require(marketAddress != address(0), "MARKET_NOT_FOUND");
 
         // there is no lpHolder for this expiry yet, we will create one
