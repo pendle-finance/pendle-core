@@ -12,7 +12,7 @@ import {
   minerStop,
   redeemAfterExpiry,
   redeemUnderlying,
-  tokenizeYield,
+  tokenizeYield
 } from '../../helpers';
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 
@@ -217,7 +217,7 @@ export function runTest(mode: Mode) {
       await redeemAndCheckRewardAndSendTnx(async () => await redeemAfterExpiry(env, charlie));
 
       await advanceTimeAndBlock(consts.ONE_MONTH, 4);
-      await redeemAndCheckRewardAndSendTnx(async () => {});
+      await redeemAndCheckRewardAndSendTnx(async () => { });
     });
 
     xit('OT transferring gas should not be too large', async () => {
@@ -288,7 +288,6 @@ export function runTest(mode: Mode) {
 
         await advanceTime(consts.ONE_MONTH);
         await env.rewardManager.redeemRewards(env.USDTContract.address, env.EXPIRY, person.address, consts.HG);
-
         await env.rewardManager.connect(person).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG);
       }
     });
@@ -317,11 +316,78 @@ export function runTest(mode: Mode) {
         for (let person of [bob, charlie, dave]) {
           await env.ot.connect(person).transfer(alice.address, amountToTransfer, consts.LG);
         }
-
         await expect(env.ot.connect(eve).transfer(alice.address, amountToTransfer, consts.LG)).to.be.reverted;
-
         await env.ot.connect(eve).transfer(alice.address, amountToTransfer, consts.HG);
       }
+    });
+
+    it('skippingRewards should work correctly', async () => {
+      async function redeemRewardsToken(person: Wallet): Promise<BN> {
+        let lastBalance: BN = await rewardToken.balanceOf(person.address);
+        await env.rewardManager.redeemRewards(env.USDTContract.address, env.EXPIRY, person.address, consts.HG);
+        let currentBalance: BN = await rewardToken.balanceOf(person.address);
+        return currentBalance.sub(lastBalance);
+      }
+
+      async function ensureParamLUnchanged(functionToCall: any) {
+        /// This function aims to check the change of paramL before and after a promise function is called
+        const paramLBefore: BN = (
+          await env.rewardManager.readRewardData(env.USDTContract.address, env.EXPIRY, alice.address)
+        ).paramL;
+        await functionToCall;
+        const paramLAfter: BN = (
+          await env.rewardManager.readRewardData(env.USDTContract.address, env.EXPIRY, alice.address)
+        ).paramL;
+        approxBigNumber(paramLBefore, paramLAfter, 0, false);
+      }
+
+      const amount = userInitialYieldToken.div(10);
+      for (let person of [bob, charlie, dave, eve]) {
+        await tokenizeYield(env, alice, amount, person.address);
+      }
+
+      // Should receive pending reward before skippingRewards
+      await advanceTime(consts.ONE_MONTH);
+      for (let person of [bob, charlie, dave, eve]) {
+        expect((await redeemRewardsToken(person)).eq(0)).to.be.equal(false);
+      }
+
+      // Should not receive pending reward after skippingRewards
+      await env.rewardManager.setSkippingRewards(true);
+      await advanceTime(consts.ONE_MONTH);
+
+      for (let person of [bob, charlie, dave, eve]) {
+        // ParamL was updated when eve last redeem their reward. Thus, other actors should still receive their pending reward calculated up to that moment.
+        if (person.address == eve.address) {
+          expect((await redeemRewardsToken(person)).eq(0)).to.be.equal(true);
+        } else {
+          expect((await redeemRewardsToken(person)).eq(0)).to.be.equal(false);
+        }
+      }
+      // just to see if it affects the skipping rewards.
+      await env.rewardManager.setUpdateFrequency([env.USDTContract.address], [2], consts.HG);
+      await env.rewardManager.connect(alice).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG);
+
+      for (let person of [bob, charlie, dave, eve]) {
+        expect((await redeemRewardsToken(person)).eq(0)).to.be.equal(true);
+      }
+
+      // Transfering ot should be cheap
+      for (let person of [bob, charlie, dave]) {
+        await env.ot.connect(person).transfer(alice.address, amount, consts.LG);
+      }
+
+      // After skippingRewards, nothing should be able to change paramL
+      for (let person of [bob, charlie, dave]) {
+        /// redeemRewards
+        await ensureParamLUnchanged(redeemRewardsToken(person));
+        await ensureParamLUnchanged(env.ot.connect(alice).transfer(person.address, 1, consts.HG));
+      }
+      await ensureParamLUnchanged(env.rewardManager.setUpdateFrequency([env.USDTContract.address], [2], consts.HG));
+      await ensureParamLUnchanged(env.rewardManager.setSkippingRewards(true)); /// Must not set it false here :joy:
+      await ensureParamLUnchanged(
+        env.rewardManager.connect(alice).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG)
+      );
     });
   });
 }
