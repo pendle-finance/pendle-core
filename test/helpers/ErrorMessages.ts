@@ -41,4 +41,7 @@ export const errMsg = {
   TOKEN_BALANCE_ERROR: prefix + ' ' + 'TOKEN_BALANCE_ERROR',
   LIQ_MINING_PAUSED: prefix + ' ' + 'LIQ_MINING_PAUSED',
   TIMELOCK_NOT_OVER: prefix + ' ' + 'TIMELOCK_NOT_OVER',
+  INVALID_ARRAYS: prefix + ' ' + 'INVALID_ARRAYS',
+  INVALID_EPOCH_ID: prefix + ' ' + 'INVALID_EPOCH_ID',
+  ZERO_FUND: prefix + ' ' + 'ZERO_FUND',
 };

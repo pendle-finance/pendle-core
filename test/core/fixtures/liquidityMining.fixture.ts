@@ -7,6 +7,7 @@ import { amountToWei, consts, tokens } from '../../helpers';
 import { CompoundFixture } from './compoundForge.fixture';
 import { CoreFixture } from './core.fixture';
 import { marketFixture, MarketFixture } from './market.fixture';
+import { emptyToken } from '../../helpers/TokenHelpers';
 const { waffle } = require('hardhat');
 const { deployContract, loadFixture } = waffle;
 
@@ -131,7 +132,7 @@ export async function liquidityMiningFixture(
   provider: providers.Web3Provider
 ): Promise<LiquidityMiningFixture> {
   const wallets = waffle.provider.getWallets();
-  let [alice, bob, charlie, dave] = wallets;
+  let [alice, bob, charlie, dave, eve] = wallets;
 
   let marketFix: MarketFixture = await loadFixture(marketFixture);
   let { core, a2Forge, cForge, testToken, a2Market, a2Market18, cMarket } = marketFix;
@@ -251,9 +252,8 @@ export async function liquidityMiningFixture(
   await a2LiquidityMining.fund(params.REWARDS_PER_EPOCH);
   await a2LiquidityMining18.fund(params.REWARDS_PER_EPOCH);
   await cLiquidityMining.fund(params.REWARDS_PER_EPOCH);
-  await pdl.transfer(a2LiquidityMining.address, await pdl.balanceOf(alice.address));
-  await pdl.transfer(a2LiquidityMining18.address, await pdl.balanceOf(alice.address));
-  await pdl.transfer(cLiquidityMining.address, await pdl.balanceOf(alice.address));
+
+  await pdl.transfer(eve.address, await pdl.balanceOf(alice.address));
 
   let lpBalanceA2Market = await a2Market.balanceOf(alice.address);
   let lpBalanceA2Market18 = await a2Market18.balanceOf(alice.address);
