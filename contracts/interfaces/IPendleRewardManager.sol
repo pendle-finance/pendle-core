@@ -26,6 +26,14 @@ interface IPendleRewardManager {
     event UpdateFrequencySet(address[], uint256[]);
     event SkippingRewardsSet(bool);
 
+    event DueRewardsSettled(
+        bytes32 forgeId,
+        address underlyingAsset,
+        uint256 expiry,
+        uint256 amountOut,
+        address user
+    );
+
     function redeemRewards(
         address _underlyingAsset,
         uint256 _expiry,

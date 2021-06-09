@@ -1,5 +1,5 @@
 import { Contract, providers, Wallet } from 'ethers';
-import PendleGovernance from '../../../build/artifacts/contracts/core/PendleGovernance.sol/PendleGovernance.json';
+import PendleGovernance from '../../../build/artifacts/contracts/governance/PendleGovernance.sol/PendleGovernance.json';
 import Timelock from '../../../build/artifacts/contracts/periphery/Timelock.sol/Timelock.json';
 import PENDLE from '../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json';
 

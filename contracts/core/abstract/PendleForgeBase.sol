@@ -177,7 +177,7 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
 
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
-        emit NewYieldContracts(forgeId, _underlyingAsset, _expiry, ot, xyt);
+        emit NewYieldContracts(forgeId, _underlyingAsset, _expiry, ot, xyt, yieldToken);
     }
 
     /**
@@ -223,7 +223,18 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
             redeemedAmount
         );
 
-        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, expiredOTamount, redeemedAmount);
+        // Notice for anyone taking values from this event:
+        //   The redeemedAmount includes the interest due to any XYT held
+        //   to get the exact yieldToken redeemed from OT, we need to deduct the (amount +forgeFeeAmount) of interests
+        //   settled that was emitted in the DueInterestsSettled event emitted earlier in this same transaction
+        emit RedeemYieldToken(
+            forgeId,
+            _underlyingAsset,
+            _expiry,
+            expiredOTamount,
+            redeemedAmount,
+            _user
+        );
     }
 
     /**
@@ -266,7 +277,18 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
             redeemedAmount
         );
 
-        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem, redeemedAmount);
+        // Notice for anyone taking values from this event:
+        //   The redeemedAmount includes the interest due to the XYT held
+        //   to get the exact yieldToken redeemed from OT+XYT, we need to deduct the (amount +forgeFeeAmount) of interests
+        //   settled that was emitted in the DueInterestsSettled event emitted earlier in this same transaction
+        emit RedeemYieldToken(
+            forgeId,
+            _underlyingAsset,
+            _expiry,
+            _amountToRedeem,
+            redeemedAmount,
+            _user
+        );
 
         return redeemedAmount;
     }
@@ -364,7 +386,14 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         // updateDueInterests will be called in mint
         tokens.xyt.mint(_to, amountTokenMinted);
 
-        emit MintYieldToken(forgeId, _underlyingAsset, _expiry, amountTokenMinted);
+        emit MintYieldTokens(
+            forgeId,
+            _underlyingAsset,
+            _expiry,
+            _amountToTokenize,
+            amountTokenMinted,
+            _to
+        );
         return (address(tokens.ot), address(tokens.xyt), amountTokenMinted);
     }
 
@@ -391,7 +420,14 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         totalFee[_underlyingAsset][_expiry] = 0;
 
         address treasuryAddress = data.treasury();
-        _safeTransfer(yieldToken, _underlyingAsset, _expiry, treasuryAddress, _totalFee);
+        _totalFee = _safeTransfer(
+            yieldToken,
+            _underlyingAsset,
+            _expiry,
+            treasuryAddress,
+            _totalFee
+        );
+        emit ForgeFeeWithdrawn(forgeId, _underlyingAsset, _expiry, _totalFee);
     }
 
     function getYieldBearingToken(address _underlyingAsset) external override returns (address) {
@@ -420,17 +456,25 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         dueInterests[_underlyingAsset][_expiry][_user] = 0;
 
         uint256 forgeFee = data.forgeFee();
+        uint256 forgeFeeAmount;
         /*
          * Collect the forgeFee
          * INVARIANT: all XYT interest payout must go through this line
          */
         if (forgeFee > 0) {
-            uint256 forgeFeeAmount = amountOut.rmul(forgeFee);
+            forgeFeeAmount = amountOut.rmul(forgeFee);
             amountOut = amountOut.sub(forgeFeeAmount);
             _updateForgeFee(_underlyingAsset, _expiry, forgeFeeAmount);
         }
 
-        emit DueInterestSettled(forgeId, _underlyingAsset, _expiry, amountOut, _user);
+        emit DueInterestsSettled(
+            forgeId,
+            _underlyingAsset,
+            _expiry,
+            amountOut,
+            forgeFeeAmount,
+            _user
+        );
     }
 
     /**

@@ -35,10 +35,9 @@ interface IPendleMarket is IERC20 {
      * @param reserve0 The XYT reserves.
      * @param weight0  The XYT weight
      * @param reserve1 The generic token reserves.
+     * For the generic Token weight it can be inferred by (2^40) - weight0
      **/
     event Sync(uint256 reserve0, uint256 weight0, uint256 reserve1);
-
-    event Shift(uint256 xytWeightOld, uint256 xytWeightNew);
 
     function setUpEmergencyMode(address[] calldata tokens, address spender) external;
 
@@ -46,14 +45,14 @@ interface IPendleMarket is IERC20 {
         address user,
         uint256 initialXytLiquidity,
         uint256 initialTokenLiquidity
-    ) external returns (PendingTransfer[2] memory transfers);
+    ) external returns (PendingTransfer[2] memory transfers, uint256 exactOutLp);
 
     function addMarketLiquiditySingle(
         address user,
         address inToken,
         uint256 inAmount,
         uint256 minOutLp
-    ) external returns (PendingTransfer[2] memory transfers);
+    ) external returns (PendingTransfer[2] memory transfers, uint256 exactOutLp);
 
     function addMarketLiquidityDual(
         address user,

@@ -106,7 +106,7 @@ export async function runTest(mode: Mode) {
     console.log(`\t\tyieldTokenHolderBalanceBefore = ${yieldTokenHolderBalanceBefore}`);
     await env.yToken.connect(charlie).transferFrom(yieldTokenHolder, charlie.address, yieldTokenHolderBalanceBefore);
     const yieldTokenHolderBalanceAfter = await env.yToken.balanceOf(yieldTokenHolder);
-    expect(yieldTokenHolderBalanceAfter).to.be.lt(BN.from(300));
+    expect(yieldTokenHolderBalanceAfter).to.be.lt(BN.from(500));
     console.log(`\t\tyieldTokenHolderBalanceAfter = ${yieldTokenHolderBalanceAfter}`);
   }
 
