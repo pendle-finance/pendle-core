@@ -64,7 +64,10 @@ contract PendleMarketEmergencyHandler is PermissionsV2, ReentrancyGuard {
         pausingManager = IPendlePausingManager(_pausingManager);
     }
 
-    function validateLiqAddrArray(address _marketAddr, address[] calldata _liqAddrArray) public {
+    function validateLiqAddrArray(address _marketAddr, address[] calldata _liqAddrArray)
+        public
+        view
+    {
         IPendleMarket market = IPendleMarket(_marketAddr);
         for (uint256 i = 0; i < _liqAddrArray.length; i++) {
             IPendleLiquidityMining liq = IPendleLiquidityMining(_liqAddrArray[i]);

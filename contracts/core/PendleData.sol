@@ -59,6 +59,7 @@ contract PendleData is IPendleData, PermissionsV2 {
     address[] public allMarkets;
 
     uint256 private constant FEE_HARD_LIMIT = 109951162777; // equals to MATH.RONE / 10 = 10%
+    uint256 private constant FORGE_FEE_HARD_LIMIT = 219902325555; // equals to MATH.RONE / 5 = 20%
 
     // Parameters to be set by governance;
     uint256 public override forgeFee; // portion of interests from XYT for the protocol
@@ -178,7 +179,7 @@ contract PendleData is IPendleData, PermissionsV2 {
     }
 
     function setForgeFee(uint256 _forgeFee) external override initialized onlyGovernance {
-        require(_forgeFee <= FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
+        require(_forgeFee <= FORGE_FEE_HARD_LIMIT, "FEE_EXCEED_LIMIT");
         forgeFee = _forgeFee;
         emit ForgeFeeSet(_forgeFee);
     }
