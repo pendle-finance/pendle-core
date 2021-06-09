@@ -12,7 +12,7 @@ import {
   minerStop,
   redeemAfterExpiry,
   redeemUnderlying,
-  tokenizeYield
+  tokenizeYield,
 } from '../../helpers';
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 
@@ -217,7 +217,7 @@ export function runTest(mode: Mode) {
       await redeemAndCheckRewardAndSendTnx(async () => await redeemAfterExpiry(env, charlie));
 
       await advanceTimeAndBlock(consts.ONE_MONTH, 4);
-      await redeemAndCheckRewardAndSendTnx(async () => { });
+      await redeemAndCheckRewardAndSendTnx(async () => {});
     });
 
     xit('OT transferring gas should not be too large', async () => {
