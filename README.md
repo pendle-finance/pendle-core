@@ -1,30 +1,18 @@
-# Pendle Protocol
+# Pendle Core
+This repository contains the core smart contracts for the Pendle Protocol.
 
 ## Introduction
+Prominent DeFi protocols have introduced various yield bearing tokens, like Aave's aToken or Compound's cToken, which has shown incredible growth
+and community acceptance. Pendle Protocol builds on top of this layer, by splitting the yield bearing tokens into two tokens: the Yield Token (YT) that represents the right to receive the yield, and the Ownership Token (OT) that represents the right to the underlying yield bearing tokens. This
+allows for the trading of yield, which has wide-ranging applications.
 
-Pendle’s protocol leverages on the base lending layer created by prominent DeFi protocols such as Aave and Compound, which has shown incredible growth and community acceptance. We build on this layer by separating the future cash flows from these lending protocols’ yield tokens and tokenizing it. This allows future yield to be traded without affecting ownership of the underlying
-asset.
-
-Ownership of the future cash flows is guaranteed by the smart contract, so there is no need to worry about collateral or counterparty risk, as long as the underlying lending protocol is not compromised.
-
-## What does this allow?
-
-This allows for freely tradable on-chain fixed and floating yields of alt coins, creating forward yield curves across tokens, giving the lending market greater visibility and more maturity. Having on-chain information tradable across multiple time horizons creates a new avenue for yield strategies such as Yearn vaults to maximize or protect returns. It allows for lenders to lock in their yields and traders to speculate and gain exposure to changes in yield.
-
-The tokenization of future yields also allows for the creation of products with future yield as collateral. Various new trading derivatives will be feasible, such as rate swap products, the selling and buying of yield protection and spread trading. Besides creating a vibrant rates trading layer across the most relevant lending token pairs, Pendle may also participate in the creation of yield products,providing the ecosystem with a greater selection of strategies to choose from to easily express their view of the market.
-
-## Contracts' terminologies
-* `underlyingAsset`: the token that was deposited into Aave. For example: USDT
-* `underlyingYieldToken`: the Aave aToken. For example, aUSDT
-* Each OT and XYT is uniquely identified by `(bytes32 forgeId, address underlyingAsset, address underlyingYieldToken uint256 expiry)`
-  * The `expiry` is the UNIX timestamp at 0:00 UTC of the day right after the expiry date. For example: if it expires on 3rd Oct, the `expiry` is the Unix timestamp of 4th Oct, 0:00 UTC
+On top of yield tokenisation, Pendle Protocol has an AMM specifically designed for the trading of time-decaying assets, which aims to minimise
+impermanent loss (IL) for liquidity providers.
 
 ## Deployment:
 * To deploy core contracts:
   * set the multisig addresses in `.env`, similar to `.env.example`
     * Please note that for networks other than `mainnet` and `kovan`, the scripts will use the deploying key as all the multisig.
-    * Therefore, if we want to deploy a test instance with seeded contracts to kovan, we should use network `kovantest` instead of `kovan`
-    * `kovan` will be used when we rehearse the real deployment steps (before doing it real on mainnet)
   * Run: (this runs `scripts/deploy/deploy.ts`)
   ```
   yarn deploy:core --network <network>
@@ -39,7 +27,6 @@ The tokenization of future yields also allows for the creation of products with 
   EXPIRY=<expiry_to_seed> yarn deploy:seed --network <network>
   ```
   * This will save the new yield contracts to `deployments/<network>.json` as well
-  * If `EXPIRY` is not set, it will use the default expiry as `TEST_EXPIRY_3` in the `consts.misc` object
 * To verify contracts that have been deployed in `deployments/<network>.json`:
   * First, install tenderly [link](https://github.com/Tenderly/tenderly-cli)
   * Then, `tenderly login`
@@ -57,3 +44,13 @@ The tokenization of future yields also allows for the creation of products with 
   ```
   yarn test
   ```
+
+## Note on naming
+* In the contracts and tests, Yield Token (YT) are referred to as XYT. XYT and YT refer to the same thing.
+
+## Licensing
+The primary license for Pendle Core is the Business Source License 1.1 (BUSL-1.1), see [`LICENSE`](./LICENSE).
+### Exceptions
+- All files in `contracts/interfaces/`, `contracts/governance/` and `contracts/mock` are licensed under `MIT` (as indicated in their SPDX headers)
+- `contracts/periphery/Timelock.sol` and `contracts/tokens/PENDLE.sol` are also licensed under `MIT` (as indicated in their SPDX header)
+- All files in `contracts/libraries/` are licensed under `GPL-2.0-or-later` (as indicated in their SPDX headers), see [`contracts/libraries/LICENSE`](contracts/libraries/LICENSE)
