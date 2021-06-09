@@ -23,20 +23,41 @@
 pragma solidity 0.7.6;
 
 interface IPendlePausingManager {
-    /* struct EmergencyHandlerSetting {
-        address handler;
-        address pendingHandler;
-        uint256 timelockDeadline;
-    } */
+    event AddPausingAdmin(address admin);
+    event RemovePausingAdmin(address admin);
+    event PendingForgeEmergencyHandler(address _pendingForgeHandler);
+    event PendingMarketEmergencyHandler(address _pendingMarketHandler);
+    event PendingLiqMiningEmergencyHandler(address _pendingLiqMiningHandler);
+    event ForgeEmergencyHandlerSet(address forgeEmergencyHandler);
+    event MarketEmergencyHandlerSet(address marketEmergencyHandler);
+    event LiqMiningEmergencyHandlerSet(address liqMiningEmergencyHandler);
 
-    event AddPausingAdmin(address);
-    event RemovePausingAdmin(address);
-    event PendingForgeEmergencyHandler(address);
-    event PendingMarketEmergencyHandler(address);
-    event PendingLiqMiningEmergencyHandler(address);
-    event ForgeEmergencyHandlerSet(address);
-    event MarketEmergencyHandlerSet(address);
-    event LiqMiningEmergencyHandlerSet(address);
+    event PausingManagerLocked();
+    event ForgeHandlerLocked();
+    event MarketHandlerLocked();
+    event LiqMiningHandlerLocked();
+
+    event SetForgePaused(bytes32 forgeId, bool settingToPaused);
+    event SetForgeAssetPaused(bytes32 forgeId, address underlyingAsset, bool settingToPaused);
+    event SetForgeAssetExpiryPaused(
+        bytes32 forgeId,
+        address underlyingAsset,
+        uint256 expiry,
+        bool settingToPaused
+    );
+
+    event SetForgeLocked(bytes32 forgeId);
+    event SetForgeAssetLocked(bytes32 forgeId, address underlyingAsset);
+    event SetForgeAssetExpiryLocked(bytes32 forgeId, address underlyingAsset, uint256 expiry);
+
+    event SetMarketFactoryPaused(bytes32 marketFactoryId, bool settingToPaused);
+    event SetMarketPaused(bytes32 marketFactoryId, address market, bool settingToPaused);
+
+    event SetMarketFactoryLocked(bytes32 marketFactoryId);
+    event SetMarketLocked(bytes32 marketFactoryId, address market);
+
+    event SetLiqMiningPaused(address liqMiningContract, bool settingToPaused);
+    event SetLiqMiningLocked(address liqMiningContract);
 
     function forgeEmergencyHandler()
         external

@@ -59,19 +59,21 @@ contract PendleCompoundMarket is PendleMarketBase {
     function _updateDueInterests(address user) internal override {
         // before calc the interest for users, updateParamL
         _updateParamL();
+        uint256 _paramL = paramL;
+        uint256 userLastParamL = lastParamL[user];
 
-        if (lastParamL[user] == 0) {
-            lastParamL[user] = paramL;
+        if (userLastParamL == 0) {
+            lastParamL[user] = _paramL;
             return;
         }
 
         uint256 principal = balanceOf(user);
-        uint256 interestValuePerLP = paramL.sub(lastParamL[user]);
+        uint256 interestValuePerLP = _paramL.sub(userLastParamL);
 
         uint256 interestFromLp = principal.mul(interestValuePerLP).div(MULTIPLIER);
 
         dueInterests[user] = dueInterests[user].add(interestFromLp);
-        lastParamL[user] = paramL;
+        lastParamL[user] = _paramL;
     }
 
     /// @inheritdoc PendleMarketBase

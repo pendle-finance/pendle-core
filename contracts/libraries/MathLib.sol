@@ -156,7 +156,6 @@ library Math {
 
         uint256 curTerm = RONE;
 
-        /* no limit on n. If the function cannot converge, it will lead to out of gas*/
         for (uint256 n = 0; ; n++) {
             res += curTerm;
             curTerm = rmul(curTerm, rdiv(exp, toFP(n + 1)));

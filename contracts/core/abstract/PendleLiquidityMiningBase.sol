@@ -108,7 +108,7 @@ abstract contract PendleLiquidityMiningBase is
     IPendleData public immutable data;
     address public immutable override pendleTokenAddress;
     bytes32 public immutable override forgeId;
-    address internal immutable forge;
+    address public immutable override forge;
     bytes32 public immutable override marketFactoryId;
     IPendlePausingManager private immutable pausingManager;
 
@@ -194,28 +194,17 @@ abstract contract PendleLiquidityMiningBase is
     // this will allow a spender to spend the whole balance of the specified tokens from this contract
     // as well as to spend tokensForLpHolder from the respective lp holders for expiries specified
     // the spender should ideally be a contract with logic for users to withdraw out their funds.
-    function setUpEmergencyMode(
-        address[] calldata tokens,
-        uint256[] calldata expiries,
-        address[] calldata tokensForLpHolder,
-        address spender
-    ) external override {
+    function setUpEmergencyMode(uint256[] calldata expiries, address spender) external override {
         (, bool emergencyMode) = pausingManager.checkLiqMiningStatus(address(this));
         require(emergencyMode, "NOT_EMERGENCY");
-        require(expiries.length == tokensForLpHolder.length, "ARRAY_LENGTH_MISMATCH");
 
         (address liqMiningEmergencyHandler, , ) = pausingManager.liqMiningEmergencyHandler();
         require(msg.sender == liqMiningEmergencyHandler, "NOT_EMERGENCY_HANDLER");
-        for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(spender, type(uint256).max);
-        }
 
         for (uint256 i = 0; i < expiries.length; i++) {
-            IPendleLpHolder(expiryData[expiries[i]].lpHolder).setUpEmergencyMode(
-                tokensForLpHolder[i],
-                spender
-            );
+            IPendleLpHolder(expiryData[expiries[i]].lpHolder).setUpEmergencyMode(spender);
         }
+        IERC20(pendleTokenAddress).approve(spender, type(uint256).max);
     }
 
     /**
@@ -226,7 +215,7 @@ abstract contract PendleLiquidityMiningBase is
      * conditions:
         * Must only be called by governance
      */
-    function fund(uint256[] memory _rewards) external override onlyGovernance {
+    function fund(uint256[] calldata _rewards) external override onlyGovernance {
         checkNotPaused();
         // Can only be fund if there is already a setting
         require(latestSetting.id > 0, "NO_ALLOC_SETTING");
@@ -245,6 +234,7 @@ abstract contract PendleLiquidityMiningBase is
         funded = true;
         numberOfEpochs = numberOfEpochs.add(nNewEpochs);
         IERC20(pendleTokenAddress).safeTransferFrom(msg.sender, address(this), totalFunded);
+        emit Funded(_rewards, numberOfEpochs);
     }
 
     /**
@@ -253,7 +243,7 @@ abstract contract PendleLiquidityMiningBase is
         * Must only be called by governance
         * The contract must have been funded already
     */
-    function topUpRewards(uint256[] memory _epochIds, uint256[] memory _rewards)
+    function topUpRewards(uint256[] calldata _epochIds, uint256[] calldata _rewards)
         external
         override
         onlyGovernance
@@ -277,6 +267,7 @@ abstract contract PendleLiquidityMiningBase is
 
         require(totalTopUp > 0, "ZERO_FUND");
         IERC20(pendleTokenAddress).safeTransferFrom(msg.sender, address(this), totalTopUp);
+        emit RewardsToppedUp(_epochIds, _rewards);
     }
 
     /**
@@ -317,6 +308,7 @@ abstract contract PendleLiquidityMiningBase is
             sumAllocationNumerators = sumAllocationNumerators.add(_allocationNumerators[_i]);
         }
         require(sumAllocationNumerators == ALLOCATION_DENOMINATOR, "INVALID_ALLOCATION");
+        emit AllocationSettingSet(_expiries, _allocationNumerators);
     }
 
     /**
@@ -394,6 +386,7 @@ abstract contract PendleLiquidityMiningBase is
         require(exd.balances[msg.sender] >= amount, "INSUFFICIENT_BALANCE");
 
         _pushLpToken(expiry, amount);
+        emit Withdrawn(expiry, msg.sender, amount);
     }
 
     /**
@@ -567,6 +560,7 @@ abstract contract PendleLiquidityMiningBase is
         }
 
         _pullLpToken(marketAddress, expiry, amount);
+        emit Staked(expiry, msg.sender, amount);
     }
 
     /**
@@ -820,7 +814,7 @@ abstract contract PendleLiquidityMiningBase is
         }
 
         expiryData[expiry].lastEpochClaimed[user] = _lastEpoch;
-
+        emit PendleRewardsSettled(expiry, user, amountOut);
         return amountOut;
     }
 
@@ -897,10 +891,10 @@ abstract contract PendleLiquidityMiningBase is
         return startTime.add(t.mul(epochDuration));
     }
 
-    // There shouldn't be any fund in here (LPs and yield tokens are kept in LP holders)
-    // hence governance is allowed to withdraw anything from here.
-    function _allowedToWithdraw(address) internal pure override returns (bool allowed) {
-        allowed = true;
+    // There should be only PENDLE in here(LPs and yield tokens are kept in LP holders)
+    // hence governance is allowed to withdraw anything other than PENDLE
+    function _allowedToWithdraw(address _token) internal view override returns (bool allowed) {
+        allowed = _token != pendleTokenAddress;
     }
 
     function _updateDueInterests(uint256 expiry, address user) internal virtual;

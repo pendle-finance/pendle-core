@@ -31,7 +31,6 @@ import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
-import "../interfaces/IPendleRewardManager.sol";
 import "../periphery/PermissionsV2.sol";
 import "../periphery/WithdrawableV2.sol";
 import "../periphery/PendleRouterNonReentrant.sol";
@@ -74,7 +73,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
      * @dev Accepts ETH via fallback from the WETH contract.
      **/
     receive() external payable {
-        assert(msg.sender == address(weth));
+        require(msg.sender == address(weth), "ETH_NOT_FROM_WETH");
     }
 
     /**
@@ -313,7 +312,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
 
         amountXytUsed = transfers[0].amount;
         amountTokenUsed = transfers[1].amount;
-        emit Join(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
+        emit Join(msg.sender, amountXytUsed, amountTokenUsed, address(market), lpOut);
     }
 
     /**
@@ -330,7 +329,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         bool _forXyt,
         uint256 _exactIn,
         uint256 _minOutLp
-    ) external payable override nonReentrant {
+    ) external payable override nonReentrant returns (uint256 exactOutLp) {
         require(_exactIn != 0, "ZERO_AMOUNTS");
 
         address originalToken = _token;
@@ -343,13 +342,18 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         address assetForMarket = _forXyt ? _xyt : _token;
 
         // note that LP minting will be done in the market
-        PendingTransfer[2] memory transfers =
-            market.addMarketLiquiditySingle(msg.sender, assetForMarket, _exactIn, _minOutLp);
+        PendingTransfer[2] memory transfers;
+        (transfers, exactOutLp) = market.addMarketLiquiditySingle(
+            msg.sender,
+            assetForMarket,
+            _exactIn,
+            _minOutLp
+        );
 
         if (_forXyt) {
-            emit Join(msg.sender, _exactIn, 0, address(market));
+            emit Join(msg.sender, _exactIn, 0, address(market), exactOutLp);
         } else {
-            emit Join(msg.sender, 0, _exactIn, address(market));
+            emit Join(msg.sender, 0, _exactIn, address(market), exactOutLp);
         }
         // We only need settle the transfering in of the assetToTransferIn
         _settleTokenTransfer(assetToTransferIn, transfers[0], address(market));
@@ -382,8 +386,9 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
             market.removeMarketLiquidityDual(msg.sender, _exactInLp, _minOutXyt, _minOutToken);
 
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
-        emit Exit(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
-        return (transfers[0].amount, transfers[1].amount);
+        exactOutXyt = transfers[0].amount;
+        exactOutToken = transfers[1].amount;
+        emit Exit(msg.sender, exactOutXyt, exactOutToken, address(market), _exactInLp);
     }
 
     /**
@@ -424,10 +429,10 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         _settleTokenTransfer(assetToTransferOut, transfers[0], address(market));
 
         if (_forXyt) {
-            emit Exit(msg.sender, transfers[0].amount, 0, address(market));
+            emit Exit(msg.sender, transfers[0].amount, 0, address(market), _exactInLp);
             return (transfers[0].amount, 0);
         } else {
-            emit Exit(msg.sender, 0, transfers[0].amount, address(market));
+            emit Exit(msg.sender, 0, transfers[0].amount, address(market), _exactInLp);
             return (0, transfers[0].amount);
         }
     }
@@ -482,11 +487,22 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
-        PendingTransfer[2] memory transfers =
-            market.bootstrap(msg.sender, _initialXytLiquidity, _initialTokenLiquidity);
+        PendingTransfer[2] memory transfers;
+        uint256 exactOutLp;
+        (transfers, exactOutLp) = market.bootstrap(
+            msg.sender,
+            _initialXytLiquidity,
+            _initialTokenLiquidity
+        );
 
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
-        emit Join(msg.sender, _initialXytLiquidity, _initialTokenLiquidity, address(market));
+        emit Join(
+            msg.sender,
+            _initialXytLiquidity,
+            _initialTokenLiquidity,
+            address(market),
+            exactOutLp
+        );
     }
 
     /**

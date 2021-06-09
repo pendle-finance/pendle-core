@@ -30,10 +30,10 @@ import "../../periphery/WithdrawableV2.sol";
 abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder, WithdrawableV2 {
     using SafeERC20 for IERC20;
 
-    address internal immutable yieldToken;
-    address public immutable forge;
-    address internal immutable rewardToken;
-    uint256 public immutable expiry;
+    address public immutable override yieldToken;
+    address public immutable override forge;
+    address public immutable override rewardToken;
+    uint256 public immutable override expiry;
 
     constructor(
         address _governanceManager,
@@ -58,11 +58,10 @@ abstract contract PendleYieldTokenHolderBase is IPendleYieldTokenHolder, Withdra
     // Only forge can call this function
     // this will allow a spender to spend the whole balance of the specified tokens
     // the spender should ideally be a contract with logic for users to withdraw out their funds.
-    function setUpEmergencyMode(address[] calldata tokens, address spender) external override {
+    function setUpEmergencyMode(address spender) external override {
         require(msg.sender == forge, "NOT_FROM_FORGE");
-        for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(spender, type(uint256).max);
-        }
+        IERC20(yieldToken).safeApprove(spender, type(uint256).max);
+        IERC20(rewardToken).safeApprove(spender, type(uint256).max);
     }
 
     // The governance address will be able to withdraw any tokens except for

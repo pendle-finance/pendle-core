@@ -22,14 +22,6 @@
  */
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "../periphery/PermissionsV2.sol";
-import "../interfaces/IPendleYieldTokenHolder.sol";
-import "../interfaces/IPendleRewardManager.sol";
-import "../interfaces/IPendleForge.sol";
-
 interface IPendleWhitelist {
     event AddedToWhiteList(address);
     event RemovedFromWhiteList(address);
@@ -39,4 +31,6 @@ interface IPendleWhitelist {
     function addToWhitelist(address[] calldata _addresses) external;
 
     function removeFromWhitelist(address[] calldata _addresses) external;
+
+    function getWhitelist() external view returns (address[] memory list);
 }

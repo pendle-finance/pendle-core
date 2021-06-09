@@ -224,6 +224,7 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         rwd.dueRewards[_user] = 0;
 
         rwd.lastRewardBalance = rwd.lastRewardBalance.sub(amountOut);
+        emit DueRewardsSettled(forgeId, _underlyingAsset, _expiry, amountOut, _user);
     }
 
     /**

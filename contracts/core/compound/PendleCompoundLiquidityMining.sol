@@ -84,19 +84,21 @@ contract PendleCompoundLiquidityMining is PendleLiquidityMiningBase {
         require(exd.lpHolder != address(0), "INVALID_EXPIRY");
 
         _updateParamL(expiry);
+        uint256 paramL = exd.paramL;
+        uint256 userLastParamL = exd.lastParamL[user];
 
-        if (exd.lastParamL[user] == 0) {
-            exd.lastParamL[user] = exd.paramL;
+        if (userLastParamL == 0) {
+            exd.lastParamL[user] = paramL;
             return;
         }
 
         uint256 principal = exd.balances[user];
-        uint256 interestValuePerLP = exd.paramL.sub(exd.lastParamL[user]);
+        uint256 interestValuePerLP = paramL.sub(userLastParamL);
 
         uint256 interestFromLp = principal.mul(interestValuePerLP).div(MULTIPLIER);
 
         exd.dueInterests[user] = exd.dueInterests[user].add(interestFromLp);
-        exd.lastParamL[user] = exd.paramL;
+        exd.lastParamL[user] = paramL;
     }
 
     /**

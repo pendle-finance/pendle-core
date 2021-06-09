@@ -60,22 +60,12 @@ contract PendleMarketReader {
         address _tokenOut,
         uint256 _inSwapAmount,
         bytes32 _marketFactoryId
-    ) external view returns (IPendleRouter.Swap memory swap, uint256 outSwapAmount) {
-        address market = data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId);
+    ) external view returns (address market, uint256 outSwapAmount) {
+        market = data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId);
         require(address(market) != address(0), "MARKET_NOT_FOUND");
         Market memory marketData = _getMarketData(_tokenIn, _tokenOut, market);
 
         outSwapAmount = _calcExactOut(_inSwapAmount, marketData);
-
-        swap = IPendleRouter.Swap({
-            market: market,
-            tokenIn: _tokenIn,
-            tokenOut: _tokenOut,
-            swapAmount: _inSwapAmount,
-            limitReturnAmount: 0
-        });
-
-        return (swap, outSwapAmount);
     }
 
     /**
@@ -86,22 +76,12 @@ contract PendleMarketReader {
         address _tokenOut,
         uint256 _outSwapAmount,
         bytes32 _marketFactoryId
-    ) external view returns (IPendleRouter.Swap memory swap, uint256 inSwapAmount) {
-        address market = data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId);
+    ) external view returns (address market, uint256 inSwapAmount) {
+        market = data.getMarketFromKey(_tokenIn, _tokenOut, _marketFactoryId);
         require(address(market) != address(0), "MARKET_NOT_FOUND");
         Market memory marketData = _getMarketData(_tokenIn, _tokenOut, market);
 
         inSwapAmount = _calcExactIn(_outSwapAmount, marketData);
-
-        swap = IPendleRouter.Swap({
-            market: market,
-            tokenIn: _tokenIn,
-            tokenOut: _tokenOut,
-            swapAmount: inSwapAmount,
-            limitReturnAmount: type(uint256).max
-        });
-
-        return (swap, inSwapAmount);
     }
 
     /**

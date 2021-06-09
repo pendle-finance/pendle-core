@@ -24,15 +24,22 @@
 pragma solidity 0.7.6;
 
 interface IPendleLiquidityMining {
+    event Funded(uint256[] _rewards, uint256 numberOfEpochs);
+    event RewardsToppedUp(uint256[] _epochIds, uint256[] _rewards);
+    event AllocationSettingSet(uint256[] _expiries, uint256[] _allocationNumerators);
+    event Staked(uint256 expiry, address user, uint256 amount);
+    event Withdrawn(uint256 expiry, address user, uint256 amount);
+    event PendleRewardsSettled(uint256 expiry, address user, uint256 amount);
+
     /**
      * @notice fund new epochs
      */
-    function fund(uint256[] memory rewards) external;
+    function fund(uint256[] calldata rewards) external;
 
     /**
     @notice top up rewards for any funded future epochs (but not to create new epochs)
     */
-    function topUpRewards(uint256[] memory _epochIds, uint256[] memory _rewards) external;
+    function topUpRewards(uint256[] calldata _epochIds, uint256[] calldata _rewards) external;
 
     /**
      * @notice Stake an exact amount of LP_expiry
@@ -75,12 +82,7 @@ interface IPendleLiquidityMining {
      * @notice Let the liqMiningEmergencyHandler call to approve spender to spend tokens from liqMiningContract
      *          and to spend tokensForLpHolder from the respective lp holders for expiries specified
      */
-    function setUpEmergencyMode(
-        address[] calldata tokens,
-        uint256[] calldata expiries,
-        address[] calldata tokensForLpHolder,
-        address spender
-    ) external;
+    function setUpEmergencyMode(uint256[] calldata expiries, address spender) external;
 
     /**
      * @notice Read the all the expiries that user has staked LP for
@@ -115,4 +117,6 @@ interface IPendleLiquidityMining {
     function marketFactoryId() external view returns (bytes32);
 
     function forgeId() external view returns (bytes32);
+
+    function forge() external view returns (address);
 }
