@@ -23,12 +23,12 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "../periphery/PermissionsV2.sol";
-import "../interfaces/IPendlePausingManager.sol";
-import "../interfaces/IPendleForge.sol";
-import "../interfaces/IPendleData.sol";
-import "../interfaces/IPendleYieldTokenHolder.sol";
-import "../libraries/MathLib.sol";
+import "../../periphery/PermissionsV2.sol";
+import "../../interfaces/IPendlePausingManager.sol";
+import "../../interfaces/IPendleForge.sol";
+import "../../interfaces/IPendleData.sol";
+import "../../interfaces/IPendleYieldTokenHolder.sol";
+import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
