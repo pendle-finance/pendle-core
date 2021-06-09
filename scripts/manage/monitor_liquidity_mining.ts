@@ -44,7 +44,7 @@ async function main() {
   const existingDeploymentJson = JSON.parse(fs.readFileSync(filePath, "utf8"));
   const deployment = existingDeploymentJson as Deployment;
 
-  const pendle = await getContractFromDeployment(hre, deployment, 'Pendle');
+  const pendle = await getContractFromDeployment(hre, deployment, 'PENDLE');
 
   //query amount details
 
@@ -52,7 +52,7 @@ async function main() {
   allExpiries = await liqMining.allExpiries();
   var lpStakedTotal: any; //to print
   allExpiries.forEach(expiry => async() => {
-    lpStakedTotal += await liqMining.totalStakeLP(allExpiries)
+    lpStakedTotal += await liqMining.totalStakeLP(expiry)
   });
 
   const rewardsLeft = await pendle.balanceOf(liqMiningAddress);
