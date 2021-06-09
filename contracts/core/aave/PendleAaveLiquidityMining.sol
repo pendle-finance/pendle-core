@@ -89,15 +89,16 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         uint256 lastIncome = userLastNormalizedIncome[expiry][user];
         uint256 normIncomeNow = globalLastNormalizedIncome[expiry];
         uint256 principal = exd.balances[user];
+        uint256 paramL = exd.paramL;
 
         if (lastIncome == 0) {
             userLastNormalizedIncome[expiry][user] = normIncomeNow;
-            exd.lastParamL[user] = exd.paramL;
+            exd.lastParamL[user] = paramL;
             return;
         }
 
         uint256 interestValuePerLP =
-            exd.paramL.subMax0(exd.lastParamL[user].mul(normIncomeNow).div(lastIncome));
+            paramL.subMax0(exd.lastParamL[user].mul(normIncomeNow).div(lastIncome));
 
         uint256 interestFromLp = principal.mul(interestValuePerLP).div(MULTIPLIER);
 
@@ -106,7 +107,7 @@ contract PendleAaveLiquidityMining is PendleLiquidityMiningBase {
         );
 
         userLastNormalizedIncome[expiry][user] = normIncomeNow;
-        exd.lastParamL[user] = exd.paramL;
+        exd.lastParamL[user] = paramL;
     }
 
     /**

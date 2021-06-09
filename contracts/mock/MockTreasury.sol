@@ -22,7 +22,7 @@
  */
 pragma solidity 0.7.6;
 
-import "../core/PendleTreasury.sol";
+import "../governance/PendleTreasury.sol";
 
 contract MockTreasury is PendleTreasury {
     constructor() PendleTreasury(0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa) {}
