@@ -172,7 +172,6 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
             _expiry
         );
 
-        // ot address is passed in to be used in the salt of CREATE2
         yieldTokenHolders[_underlyingAsset][_expiry] = yieldContractDeployer
             .deployYieldTokenHolder(yieldToken, _expiry);
 
@@ -243,10 +242,6 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
     ) external override onlyRouter returns (uint256 redeemedAmount) {
         checkNotPaused(_underlyingAsset, _expiry);
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-
-        // explicitly verify that the user has enough tokens to burn
-        require(tokens.ot.balanceOf(_user) >= _amountToRedeem, "INSUFFICIENT_OT_AMOUNT");
-        require(tokens.xyt.balanceOf(_user) >= _amountToRedeem, "INSUFFICIENT_XYT_AMOUNT");
 
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
 
