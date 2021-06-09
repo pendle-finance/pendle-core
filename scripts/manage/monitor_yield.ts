@@ -62,24 +62,24 @@ async function main() {
   const yieldTokenHolder = forge.yieldTokenHolders(underlyingAssetContractAddress, expiry);
   //const ATokenAddress = await forgeAddress.reserveATokenAddress(underlyingAssetContractAddress);  //TODO: not sure how to determine it's a aave forge or compound forge
   //const CTokenAddress = await forgeAddress.underlyingToCToken(underlyingAssetContractAddress);  //TODO: not sure how to determine it's a aave forge or compound forge
-  const bearingTokenAddress = await forge.getYieldBearingToken(underlyingAssetContractAddress);
+  const bearingTokenAddress = await forge.callStatic.getYieldBearingToken(underlyingAssetContractAddress);
   const bearToken = await hre.ethers.getContractAt("TestToken", bearingTokenAddress);
 
   //const aYieldBalance = ATokenAddress.balanceOf(yieldTokenHolder);  //to print
   //const cYieldBalance = CTokenAddress.balanceOf(yieldTokenHolder);  //to print
 
-  const yieldBalance = bearToken.balanceOf(yieldTokenHolder);
+  const yieldBalance = await bearToken.balanceOf(yieldTokenHolder);
 
   const rewardTokenAddress = await forge.rewardToken();
   const rewardToken = await hre.ethers.getContractAt("TestToken", rewardTokenAddress);
   const rewardTokenBalance = await rewardToken.balanceOf(yieldTokenHolder); //to print
   
-  const forgeFee = await forge.totalFee(underlyingAssetContractAddress, expiry); //to print
+  //const forgeFee = forge.totalFee(underlyingAssetContractAddress, expiry); //to print //@@XM TODO: totalFee no view function
 
   console.log(`total amount of OTs/XYTs = ${otTotal} , ${xytTotal}`);
   console.log(`total amount of yield tokens in the yieldTokenHolder = ${yieldBalance}`);
   console.log(`total amount of reward token (stkAAVE/COMP) in the yieldTokenHolder = ${rewardTokenBalance}`);
-  console.log(`forge fees earned so far = ${JSON.stringify(forgeFee)}`);
+  //console.log(`forge fees earned so far = ${JSON.stringify(forgeFee)}`); //@@XM TODO: totalFee no view function
 }
 
 main()
