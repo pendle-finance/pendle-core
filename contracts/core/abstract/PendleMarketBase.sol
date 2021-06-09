@@ -215,14 +215,14 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     // Only the marketEmergencyHandler can call this function, when its in emergencyMode
     // this will allow a spender to spend the whole balance of the specified tokens
     // the spender should ideally be a contract with logic for users to withdraw out their funds.
-    function setUpEmergencyMode(address[] calldata tokens, address spender) external override {
+    function setUpEmergencyMode(address spender) external override {
         (, bool emergencyMode) = pausingManager.checkMarketStatus(factoryId, address(this));
         require(emergencyMode, "NOT_EMERGENCY");
         (address marketEmergencyHandler, , ) = pausingManager.marketEmergencyHandler();
         require(msg.sender == marketEmergencyHandler, "NOT_EMERGENCY_HANDLER");
-        for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(spender, type(uint256).max);
-        }
+        IERC20(xyt).safeApprove(spender, type(uint256).max);
+        IERC20(token).safeApprove(spender, type(uint256).max);
+        IERC20(underlyingYieldToken).safeApprove(spender, type(uint256).max);
     }
 
     function bootstrap(

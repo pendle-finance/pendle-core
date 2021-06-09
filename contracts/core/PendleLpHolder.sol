@@ -32,8 +32,8 @@ contract PendleLpHolder is IPendleLpHolder, WithdrawableV2 {
     using SafeERC20 for IERC20;
 
     address private immutable pendleLiquidityMining;
-    address private immutable underlyingYieldToken;
-    address private immutable pendleMarket;
+    address public immutable override underlyingYieldToken;
+    address public immutable override pendleMarket;
     address private immutable router;
 
     modifier onlyLiquidityMining() {
@@ -80,11 +80,8 @@ contract PendleLpHolder is IPendleLpHolder, WithdrawableV2 {
     // Only liquidityMining contract can call this function
     // this will allow a spender to spend the whole balance of the specified token
     // the spender should ideally be a contract with logic for users to withdraw out their funds.
-    function setUpEmergencyMode(address token, address spender)
-        external
-        override
-        onlyLiquidityMining
-    {
-        IERC20(token).safeApprove(spender, type(uint256).max);
+    function setUpEmergencyMode(address spender) external override onlyLiquidityMining {
+        IERC20(underlyingYieldToken).safeApprove(spender, type(uint256).max);
+        IERC20(pendleMarket).safeApprove(spender, type(uint256).max);
     }
 }

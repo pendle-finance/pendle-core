@@ -101,7 +101,7 @@ export async function runTest(mode: Mode) {
     const [paused, locked] = await env.pausingManager.callStatic.checkYieldContractStatus(...forgeArgs);
     expect(paused).to.be.eq(true);
     expect(locked).to.be.eq(true);
-    await env.forge.setUpEmergencyMode(env.USDTContract.address, env.EXPIRY, [env.yToken.address], charlie.address);
+    await env.forge.setUpEmergencyMode(env.USDTContract.address, env.EXPIRY, charlie.address);
     const yieldTokenHolderBalanceBefore = await env.yToken.balanceOf(yieldTokenHolder);
     console.log(`\t\tyieldTokenHolderBalanceBefore = ${yieldTokenHolderBalanceBefore}`);
     await env.yToken.connect(charlie).transferFrom(yieldTokenHolder, charlie.address, yieldTokenHolderBalanceBefore);
@@ -118,7 +118,7 @@ export async function runTest(mode: Mode) {
     );
     expect(paused).to.be.eq(true);
     expect(locked).to.be.eq(true);
-    await env.market.setUpEmergencyMode([env.xyt.address, env.testToken.address], charlie.address);
+    await env.market.setUpEmergencyMode(charlie.address);
 
     const marketXytBalanceBefore = await env.xyt.balanceOf(env.market.address);
     console.log(`\t\tmarketXytBalanceBefore = ${marketXytBalanceBefore}`);

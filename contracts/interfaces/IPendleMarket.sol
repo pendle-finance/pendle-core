@@ -39,7 +39,7 @@ interface IPendleMarket is IERC20 {
      **/
     event Sync(uint256 reserve0, uint256 weight0, uint256 reserve1);
 
-    function setUpEmergencyMode(address[] calldata tokens, address spender) external;
+    function setUpEmergencyMode(address spender) external;
 
     function bootstrap(
         address user,
