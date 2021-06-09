@@ -64,12 +64,12 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
     mapping(address => mapping(uint256 => address)) public override yieldTokenHolders; // yieldTokenHolders[underlyingAsset][expiry]
 
     string private constant OT = "OT";
-    string private constant XYT = "XYT";
+    string private constant XYT = "YT";
 
     modifier onlyXYT(address _underlyingAsset, uint256 _expiry) {
         require(
             msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
-            "ONLY_XYT"
+            "ONLY_YT"
         );
         _;
     }

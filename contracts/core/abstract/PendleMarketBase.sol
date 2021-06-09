@@ -204,7 +204,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         uint256 tokenBalance,
         uint256 xytWeight
     ) internal {
-        require(0 < xytBalance && xytBalance <= MAX_TOKEN_RESERVE_BALANCE, "XYT_BALANCE_ERROR");
+        require(0 < xytBalance && xytBalance <= MAX_TOKEN_RESERVE_BALANCE, "YT_BALANCE_ERROR");
         require(
             0 < tokenBalance && tokenBalance <= MAX_TOKEN_RESERVE_BALANCE,
             "TOKEN_BALANCE_ERROR"
@@ -301,7 +301,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         } else {
             // using _desiredTokenAmount to determine the LP and add liquidity
             amountXytUsed = _desiredTokenAmount.mul(xytBalance).div(tokenBalance);
-            require(amountXytUsed >= _xytMinAmount, "INSUFFICIENT_XYT_AMOUNT");
+            require(amountXytUsed >= _xytMinAmount, "INSUFFICIENT_YT_AMOUNT");
             amountTokenUsed = _desiredTokenAmount;
             lpOut = _desiredTokenAmount.mul(totalSupply()).div(tokenBalance);
         }
@@ -409,7 +409,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         uint256 tokenOut = _inLp.mul(tokenBalance).div(totalLp);
 
         require(tokenOut >= _minOutToken, "INSUFFICIENT_TOKEN_OUT");
-        require(xytOut >= _minOutXyt, "INSUFFICIENT_XYT_OUT");
+        require(xytOut >= _minOutXyt, "INSUFFICIENT_YT_OUT");
 
         xytBalance = xytBalance.sub(xytOut);
         tokenBalance = tokenBalance.sub(tokenOut);
