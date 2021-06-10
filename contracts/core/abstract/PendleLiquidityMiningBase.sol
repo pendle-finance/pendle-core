@@ -120,10 +120,7 @@ abstract contract PendleLiquidityMiningBase is
 
     modifier nonContractOrWhitelisted() {
         bool isEOA = !Address.isContract(msg.sender) && tx.origin == msg.sender;
-        require(
-            isEOA || whitelist.whitelisted(msg.sender),
-            "CONTRACT_NOT_WHITELISTED"
-        );
+        require(isEOA || whitelist.whitelisted(msg.sender), "CONTRACT_NOT_WHITELISTED");
         _;
     }
 
