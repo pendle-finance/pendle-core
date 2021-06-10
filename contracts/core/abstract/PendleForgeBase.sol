@@ -1,25 +1,4 @@
-// SPDX-License-Identifier: MIT
-/*
- * MIT License
- * ===========
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- */
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -64,12 +43,12 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
     mapping(address => mapping(uint256 => address)) public override yieldTokenHolders; // yieldTokenHolders[underlyingAsset][expiry]
 
     string private constant OT = "OT";
-    string private constant XYT = "XYT";
+    string private constant XYT = "YT";
 
     modifier onlyXYT(address _underlyingAsset, uint256 _expiry) {
         require(
             msg.sender == address(data.xytTokens(forgeId, _underlyingAsset, _expiry)),
-            "ONLY_XYT"
+            "ONLY_YT"
         );
         _;
     }
@@ -122,7 +101,6 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
     function setUpEmergencyMode(
         address _underlyingAsset,
         uint256 _expiry,
-        address[] calldata tokens,
         address spender
     ) external override {
         (, bool emergencyMode) =
@@ -131,7 +109,6 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         (address forgeEmergencyHandler, , ) = pausingManager.forgeEmergencyHandler();
         require(msg.sender == forgeEmergencyHandler, "NOT_EMERGENCY_HANDLER");
         IPendleYieldTokenHolder(yieldTokenHolders[_underlyingAsset][_expiry]).setUpEmergencyMode(
-            tokens,
             spender
         );
     }
@@ -172,13 +149,12 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
             _expiry
         );
 
-        // ot address is passed in to be used in the salt of CREATE2
         yieldTokenHolders[_underlyingAsset][_expiry] = yieldContractDeployer
             .deployYieldTokenHolder(yieldToken, _expiry);
 
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
-        emit NewYieldContracts(forgeId, _underlyingAsset, _expiry, ot, xyt);
+        emit NewYieldContracts(forgeId, _underlyingAsset, _expiry, ot, xyt, yieldToken);
     }
 
     /**
@@ -224,7 +200,18 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
             redeemedAmount
         );
 
-        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, expiredOTamount, redeemedAmount);
+        // Notice for anyone taking values from this event:
+        //   The redeemedAmount includes the interest due to any XYT held
+        //   to get the exact yieldToken redeemed from OT, we need to deduct the (amount +forgeFeeAmount) of interests
+        //   settled that was emitted in the DueInterestsSettled event emitted earlier in this same transaction
+        emit RedeemYieldToken(
+            forgeId,
+            _underlyingAsset,
+            _expiry,
+            expiredOTamount,
+            redeemedAmount,
+            _user
+        );
     }
 
     /**
@@ -243,10 +230,6 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
     ) external override onlyRouter returns (uint256 redeemedAmount) {
         checkNotPaused(_underlyingAsset, _expiry);
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-
-        // explicitly verify that the user has enough tokens to burn
-        require(tokens.ot.balanceOf(_user) >= _amountToRedeem, "INSUFFICIENT_OT_AMOUNT");
-        require(tokens.xyt.balanceOf(_user) >= _amountToRedeem, "INSUFFICIENT_XYT_AMOUNT");
 
         IERC20 yieldToken = IERC20(_getYieldBearingToken(_underlyingAsset));
 
@@ -271,7 +254,18 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
             redeemedAmount
         );
 
-        emit RedeemYieldToken(forgeId, _underlyingAsset, _expiry, _amountToRedeem, redeemedAmount);
+        // Notice for anyone taking values from this event:
+        //   The redeemedAmount includes the interest due to the XYT held
+        //   to get the exact yieldToken redeemed from OT+XYT, we need to deduct the (amount +forgeFeeAmount) of interests
+        //   settled that was emitted in the DueInterestsSettled event emitted earlier in this same transaction
+        emit RedeemYieldToken(
+            forgeId,
+            _underlyingAsset,
+            _expiry,
+            _amountToRedeem,
+            redeemedAmount,
+            _user
+        );
 
         return redeemedAmount;
     }
@@ -369,7 +363,14 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         // updateDueInterests will be called in mint
         tokens.xyt.mint(_to, amountTokenMinted);
 
-        emit MintYieldToken(forgeId, _underlyingAsset, _expiry, amountTokenMinted);
+        emit MintYieldTokens(
+            forgeId,
+            _underlyingAsset,
+            _expiry,
+            _amountToTokenize,
+            amountTokenMinted,
+            _to
+        );
         return (address(tokens.ot), address(tokens.xyt), amountTokenMinted);
     }
 
@@ -396,7 +397,14 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         totalFee[_underlyingAsset][_expiry] = 0;
 
         address treasuryAddress = data.treasury();
-        _safeTransfer(yieldToken, _underlyingAsset, _expiry, treasuryAddress, _totalFee);
+        _totalFee = _safeTransfer(
+            yieldToken,
+            _underlyingAsset,
+            _expiry,
+            treasuryAddress,
+            _totalFee
+        );
+        emit ForgeFeeWithdrawn(forgeId, _underlyingAsset, _expiry, _totalFee);
     }
 
     function getYieldBearingToken(address _underlyingAsset) external override returns (address) {
@@ -425,17 +433,25 @@ abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGua
         dueInterests[_underlyingAsset][_expiry][_user] = 0;
 
         uint256 forgeFee = data.forgeFee();
+        uint256 forgeFeeAmount;
         /*
          * Collect the forgeFee
          * INVARIANT: all XYT interest payout must go through this line
          */
         if (forgeFee > 0) {
-            uint256 forgeFeeAmount = amountOut.rmul(forgeFee);
+            forgeFeeAmount = amountOut.rmul(forgeFee);
             amountOut = amountOut.sub(forgeFeeAmount);
             _updateForgeFee(_underlyingAsset, _expiry, forgeFeeAmount);
         }
 
-        emit DueInterestSettled(forgeId, _underlyingAsset, _expiry, amountOut, _user);
+        emit DueInterestsSettled(
+            forgeId,
+            _underlyingAsset,
+            _expiry,
+            amountOut,
+            forgeFeeAmount,
+            _user
+        );
     }
 
     /**

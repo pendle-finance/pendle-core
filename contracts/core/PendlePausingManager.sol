@@ -1,25 +1,4 @@
-// SPDX-License-Identifier: MIT
-/*
- * MIT License
- * ===========
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- */
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.7.6;
 
 import "../periphery/PermissionsV2.sol";
@@ -207,18 +186,22 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
     //// Lock permanently parts of the features
     function lockPausingManagerPermanently() external override onlyGovernance notPermLocked {
         permLocked = true;
+        emit PausingManagerLocked();
     }
 
     function lockForgeHandlerPermanently() external override onlyGovernance notPermLocked {
         permForgeHandlerLocked = true;
+        emit ForgeHandlerLocked();
     }
 
     function lockMarketHandlerPermanently() external override onlyGovernance notPermLocked {
         permMarketHandlerLocked = true;
+        emit MarketHandlerLocked();
     }
 
     function lockLiqMiningHandlerPermanently() external override onlyGovernance notPermLocked {
         permLiqMiningHandlerLocked = true;
+        emit LiqMiningHandlerLocked();
     }
 
     /////////////////////////
@@ -232,6 +215,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         forgePaused[forgeId] = settingToPaused;
+        emit SetForgePaused(forgeId, settingToPaused);
     }
 
     function setForgeAssetPaused(
@@ -240,6 +224,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         bool settingToPaused
     ) external override updateSomeStatus isAllowedToSetPaused(settingToPaused) notPermLocked {
         forgeAssetPaused[forgeId][underlyingAsset] = settingToPaused;
+        emit SetForgeAssetPaused(forgeId, underlyingAsset, settingToPaused);
     }
 
     function setForgeAssetExpiryPaused(
@@ -249,6 +234,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         bool settingToPaused
     ) external override updateSomeStatus isAllowedToSetPaused(settingToPaused) notPermLocked {
         forgeAssetExpiryPaused[forgeId][underlyingAsset][expiry] = settingToPaused;
+        emit SetForgeAssetExpiryPaused(forgeId, underlyingAsset, expiry, settingToPaused);
     }
 
     function setForgeLocked(bytes32 forgeId)
@@ -259,6 +245,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         forgeLocked[forgeId] = true;
+        emit SetForgeLocked(forgeId);
     }
 
     function setForgeAssetLocked(bytes32 forgeId, address underlyingAsset)
@@ -269,6 +256,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         forgeAssetLocked[forgeId][underlyingAsset] = true;
+        emit SetForgeAssetLocked(forgeId, underlyingAsset);
     }
 
     function setForgeAssetExpiryLocked(
@@ -277,6 +265,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         uint256 expiry
     ) external override updateSomeStatus onlyGovernance notPermLocked {
         forgeAssetExpiryLocked[forgeId][underlyingAsset][expiry] = true;
+        emit SetForgeAssetExpiryLocked(forgeId, underlyingAsset, expiry);
     }
 
     function _isYieldContractPaused(
@@ -338,6 +327,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         marketFactoryPaused[marketFactoryId] = settingToPaused;
+        emit SetMarketFactoryPaused(marketFactoryId, settingToPaused);
     }
 
     function setMarketPaused(
@@ -346,6 +336,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         bool settingToPaused
     ) external override updateSomeStatus isAllowedToSetPaused(settingToPaused) notPermLocked {
         marketPaused[marketFactoryId][market] = settingToPaused;
+        emit SetMarketPaused(marketFactoryId, market, settingToPaused);
     }
 
     function setMarketFactoryLocked(bytes32 marketFactoryId)
@@ -356,6 +347,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         marketFactoryLocked[marketFactoryId] = true;
+        emit SetMarketFactoryLocked(marketFactoryId);
     }
 
     function setMarketLocked(bytes32 marketFactoryId, address market)
@@ -366,6 +358,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         marketLocked[marketFactoryId][market] = true;
+        emit SetMarketLocked(marketFactoryId, market);
     }
 
     function _isMarketPaused(bytes32 marketFactoryId, address market)
@@ -419,6 +412,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         liqMiningPaused[liqMiningContract] = settingToPaused;
+        emit SetLiqMiningPaused(liqMiningContract, settingToPaused);
     }
 
     function setLiqMiningLocked(address liqMiningContract)
@@ -429,6 +423,7 @@ contract PendlePausingManager is PermissionsV2, IPendlePausingManager {
         notPermLocked
     {
         liqMiningLocked[liqMiningContract] = true;
+        emit SetLiqMiningLocked(liqMiningContract);
     }
 
     function checkLiqMiningStatus(address liqMiningContract)

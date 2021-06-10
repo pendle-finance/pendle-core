@@ -1,4 +1,3 @@
-/* solhint-disable ordering*/
 // SPDX-License-Identifier: MIT
 /*
  * MIT License
@@ -69,8 +68,15 @@ interface IPendleRouter {
      * @param token0Amount the amount of token0 (xyt) provided by user
      * @param token1Amount the amount of token1 provided by user
      * @param market The market address.
+     * @param exactOutLp The exact LP minted
      */
-    event Join(address indexed sender, uint256 token0Amount, uint256 token1Amount, address market);
+    event Join(
+        address indexed sender,
+        uint256 token0Amount,
+        uint256 token1Amount,
+        address market,
+        uint256 exactOutLp
+    );
 
     /**
      * @dev Emitted when user removes liquidity
@@ -78,16 +84,15 @@ interface IPendleRouter {
      * @param token0Amount the amount of token0 (xyt) given to user
      * @param token1Amount the amount of token1 given to user
      * @param market The market address.
+     * @param exactInLp The exact Lp to remove
      */
-    event Exit(address indexed sender, uint256 token0Amount, uint256 token1Amount, address market);
-
-    struct Swap {
-        uint256 swapAmount;
-        uint256 limitReturnAmount;
-        address market;
-        address tokenIn;
-        address tokenOut;
-    }
+    event Exit(
+        address indexed sender,
+        uint256 token0Amount,
+        uint256 token1Amount,
+        address market,
+        uint256 exactInLp
+    );
 
     /**
      * @notice Gets a reference to the PendleData contract.
@@ -189,7 +194,7 @@ interface IPendleRouter {
         bool forXyt,
         uint256 exactInAsset,
         uint256 minOutLp
-    ) external payable;
+    ) external payable returns (uint256 exactOutLp);
 
     function removeMarketLiquidityDual(
         bytes32 marketFactoryId,

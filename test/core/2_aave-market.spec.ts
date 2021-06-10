@@ -287,7 +287,7 @@ describe('AaveV2-market', async () => {
   it('createMarket using XYT as the quote pair is not possible', async () => {
     await expect(
       env.router.createMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.xyt18.address, consts.HG)
-    ).to.be.revertedWith('XYT_QUOTE_PAIR_FORBIDDEN');
+    ).to.be.revertedWith('YT_QUOTE_PAIR_FORBIDDEN');
   });
 
   it("AMM's formulas is correct for swapExactIn", async () => {

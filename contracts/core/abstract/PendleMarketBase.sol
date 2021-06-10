@@ -1,25 +1,4 @@
-// SPDX-License-Identifier: MIT
-/*
- * MIT License
- * ===========
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- */
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
@@ -60,17 +39,17 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     uint256 private constant LN_PI_PLUSONE = 1562071538258; // this is equal to Math.ln(Math.PI_PLUSONE,Math.RONE)
     uint256 internal constant MULTIPLIER = 10**20;
 
-    // 3 variables for LP interests calc
-    uint256 internal paramL;
-    uint256 internal lastNYield;
+    // variables for LP interests calc
+    uint256 public paramL;
+    uint256 public lastNYield;
     mapping(address => uint256) internal lastParamL;
     mapping(address => uint256) internal dueInterests;
 
     // paramK used for mintProtocolFee. ParamK = xytBal ^ xytWeight * tokenBal ^ tokenW
-    uint256 internal lastParamK;
+    uint256 public lastParamK;
 
     // the last block that we do curveShift
-    uint256 private lastCurveShiftBlock;
+    uint256 public lastCurveShiftBlock;
 
     /*
     * The reserveData will consist of 3 variables: xytBalance, tokenBalance & xytWeight
@@ -204,7 +183,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         uint256 tokenBalance,
         uint256 xytWeight
     ) internal {
-        require(0 < xytBalance && xytBalance <= MAX_TOKEN_RESERVE_BALANCE, "XYT_BALANCE_ERROR");
+        require(0 < xytBalance && xytBalance <= MAX_TOKEN_RESERVE_BALANCE, "YT_BALANCE_ERROR");
         require(
             0 < tokenBalance && tokenBalance <= MAX_TOKEN_RESERVE_BALANCE,
             "TOKEN_BALANCE_ERROR"
@@ -215,21 +194,21 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
     // Only the marketEmergencyHandler can call this function, when its in emergencyMode
     // this will allow a spender to spend the whole balance of the specified tokens
     // the spender should ideally be a contract with logic for users to withdraw out their funds.
-    function setUpEmergencyMode(address[] calldata tokens, address spender) external override {
+    function setUpEmergencyMode(address spender) external override {
         (, bool emergencyMode) = pausingManager.checkMarketStatus(factoryId, address(this));
         require(emergencyMode, "NOT_EMERGENCY");
         (address marketEmergencyHandler, , ) = pausingManager.marketEmergencyHandler();
         require(msg.sender == marketEmergencyHandler, "NOT_EMERGENCY_HANDLER");
-        for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(spender, type(uint256).max);
-        }
+        IERC20(xyt).safeApprove(spender, type(uint256).max);
+        IERC20(token).safeApprove(spender, type(uint256).max);
+        IERC20(underlyingYieldToken).safeApprove(spender, type(uint256).max);
     }
 
     function bootstrap(
         address user,
         uint256 initialXytLiquidity,
         uint256 initialTokenLiquidity
-    ) external override returns (PendingTransfer[2] memory transfers) {
+    ) external override returns (PendingTransfer[2] memory transfers, uint256 exactOutLp) {
         require(msg.sender == address(router), "ONLY_ROUTER");
         checkNotPaused();
         require(!bootstrapped, "ALREADY_BOOTSTRAPPED");
@@ -246,13 +225,14 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
 
         _afterBootstrap();
         // Taking inspiration from Uniswap, we will keep MINIMUM_LIQUIDITY in the market to make sure the market is always non-empty
-        uint256 liquidity =
-            Math.sqrt(initialXytLiquidity.mul(initialTokenLiquidity)).sub(MINIMUM_LIQUIDITY);
+        exactOutLp = Math.sqrt(initialXytLiquidity.mul(initialTokenLiquidity)).sub(
+            MINIMUM_LIQUIDITY
+        );
 
         // No one should possibly own a specific address like this 0x1
         // We mint to 0x1 instead of 0x0 because sending to 0x0 is not permitted
         _mint(address(0x1), MINIMUM_LIQUIDITY);
-        _mint(user, liquidity);
+        _mint(user, exactOutLp);
 
         transfers[0].amount = initialXytLiquidity;
         transfers[0].isOut = false;
@@ -300,7 +280,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         } else {
             // using _desiredTokenAmount to determine the LP and add liquidity
             amountXytUsed = _desiredTokenAmount.mul(xytBalance).div(tokenBalance);
-            require(amountXytUsed >= _xytMinAmount, "INSUFFICIENT_XYT_AMOUNT");
+            require(amountXytUsed >= _xytMinAmount, "INSUFFICIENT_YT_AMOUNT");
             amountTokenUsed = _desiredTokenAmount;
             lpOut = _desiredTokenAmount.mul(totalSupply()).div(tokenBalance);
         }
@@ -336,7 +316,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         address _inToken,
         uint256 _exactIn,
         uint256 _minOutLp
-    ) external override returns (PendingTransfer[2] memory transfers) {
+    ) external override returns (PendingTransfer[2] memory transfers, uint256 exactOutLp) {
         checkAddRemoveSwapClaimAllowed(false);
 
         // mint protocol fees before k is changed by a non-swap event (add liquidity)
@@ -356,8 +336,12 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         uint256 totalLp = totalSupply();
 
         // Calc out amount of LP token.
-        uint256 exactOutLp =
-            MarketMath._calcOutAmountLp(_exactIn, inTokenReserve, data.swapFee(), totalLp);
+        exactOutLp = MarketMath._calcOutAmountLp(
+            _exactIn,
+            inTokenReserve,
+            data.swapFee(),
+            totalLp
+        );
         require(exactOutLp >= _minOutLp, "HIGH_LP_OUT_LIMIT");
 
         // Update reserves and operate underlying LP and inToken.
@@ -404,7 +388,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         uint256 tokenOut = _inLp.mul(tokenBalance).div(totalLp);
 
         require(tokenOut >= _minOutToken, "INSUFFICIENT_TOKEN_OUT");
-        require(xytOut >= _minOutXyt, "INSUFFICIENT_XYT_OUT");
+        require(xytOut >= _minOutXyt, "INSUFFICIENT_YT_OUT");
 
         xytBalance = xytBalance.sub(xytOut);
         tokenBalance = tokenBalance.sub(tokenOut);
@@ -597,12 +581,11 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
      * @notice update the weights of the market
      */
     function _updateWeight() internal {
-        (uint256 xytBalance, uint256 tokenBalance, uint256 xytWeight, ) = readReserveData(); // unpack data
+        (uint256 xytBalance, uint256 tokenBalance, , ) = readReserveData(); // unpack data
         (uint256 xytWeightUpdated, , uint256 currentRelativePrice) = _updateWeightDry();
         writeReserveData(xytBalance, tokenBalance, xytWeightUpdated); // repack data
 
         lastRelativePrice = currentRelativePrice;
-        emit Shift(xytWeight, xytWeightUpdated);
     }
 
     // do the weight update calculation but don't update the token reserve memory

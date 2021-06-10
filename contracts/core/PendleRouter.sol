@@ -1,25 +1,4 @@
-// SPDX-License-Identifier: MIT
-/*
- * MIT License
- * ===========
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- */
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
@@ -31,7 +10,6 @@ import "../interfaces/IPendleData.sol";
 import "../interfaces/IPendleForge.sol";
 import "../interfaces/IPendleMarketFactory.sol";
 import "../interfaces/IPendleMarket.sol";
-import "../interfaces/IPendleRewardManager.sol";
 import "../periphery/PermissionsV2.sol";
 import "../periphery/WithdrawableV2.sol";
 import "../periphery/PendleRouterNonReentrant.sol";
@@ -74,7 +52,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
      * @dev Accepts ETH via fallback from the WETH contract.
      **/
     receive() external payable {
-        assert(msg.sender == address(weth));
+        require(msg.sender == address(weth), "ETH_NOT_FROM_WETH");
     }
 
     /**
@@ -119,7 +97,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         address _underlyingAsset,
         uint256 _expiry
     ) public override nonReentrant returns (uint256 redeemedAmount) {
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_YT");
         require(_expiry < block.timestamp, "MUST_BE_AFTER_EXPIRY");
 
         // guaranteed to be a valid forge by the isValidXYT check
@@ -140,7 +118,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         uint256 _expiry,
         address _user
     ) external override nonReentrant returns (uint256 interests) {
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_YT");
         require(_user != address(0), "ZERO_ADDRESS");
         IPendleForge forge = IPendleForge(data.getForgeAddress(_forgeId));
         interests = forge.redeemDueInterests(_user, _underlyingAsset, _expiry);
@@ -158,7 +136,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         uint256 _expiry,
         uint256 _amountToRedeem
     ) external override nonReentrant returns (uint256 redeemedAmount) {
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_YT");
         require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
         require(_amountToRedeem != 0, "ZERO_AMOUNT");
 
@@ -232,7 +210,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
             uint256 amountTokenMinted
         )
     {
-        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_XYT");
+        require(data.isValidXYT(_forgeId, _underlyingAsset, _expiry), "INVALID_YT");
         require(block.timestamp < _expiry, "YIELD_CONTRACT_EXPIRED");
         require(_to != address(0), "ZERO_ADDRESS");
         require(_amountToTokenize != 0, "ZERO_AMOUNT");
@@ -287,7 +265,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
     {
         require(
             _desiredXytAmount != 0 && _desiredXytAmount >= _xytMinAmount,
-            "INVALID_XYT_AMOUNTS"
+            "INVALID_YT_AMOUNTS"
         );
         require(
             _desiredTokenAmount != 0 && _desiredTokenAmount >= _tokenMinAmount,
@@ -313,7 +291,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
 
         amountXytUsed = transfers[0].amount;
         amountTokenUsed = transfers[1].amount;
-        emit Join(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
+        emit Join(msg.sender, amountXytUsed, amountTokenUsed, address(market), lpOut);
     }
 
     /**
@@ -330,7 +308,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         bool _forXyt,
         uint256 _exactIn,
         uint256 _minOutLp
-    ) external payable override nonReentrant {
+    ) external payable override nonReentrant returns (uint256 exactOutLp) {
         require(_exactIn != 0, "ZERO_AMOUNTS");
 
         address originalToken = _token;
@@ -343,13 +321,18 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         address assetForMarket = _forXyt ? _xyt : _token;
 
         // note that LP minting will be done in the market
-        PendingTransfer[2] memory transfers =
-            market.addMarketLiquiditySingle(msg.sender, assetForMarket, _exactIn, _minOutLp);
+        PendingTransfer[2] memory transfers;
+        (transfers, exactOutLp) = market.addMarketLiquiditySingle(
+            msg.sender,
+            assetForMarket,
+            _exactIn,
+            _minOutLp
+        );
 
         if (_forXyt) {
-            emit Join(msg.sender, _exactIn, 0, address(market));
+            emit Join(msg.sender, _exactIn, 0, address(market), exactOutLp);
         } else {
-            emit Join(msg.sender, 0, _exactIn, address(market));
+            emit Join(msg.sender, 0, _exactIn, address(market), exactOutLp);
         }
         // We only need settle the transfering in of the assetToTransferIn
         _settleTokenTransfer(assetToTransferIn, transfers[0], address(market));
@@ -382,8 +365,9 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
             market.removeMarketLiquidityDual(msg.sender, _exactInLp, _minOutXyt, _minOutToken);
 
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
-        emit Exit(msg.sender, transfers[0].amount, transfers[1].amount, address(market));
-        return (transfers[0].amount, transfers[1].amount);
+        exactOutXyt = transfers[0].amount;
+        exactOutToken = transfers[1].amount;
+        emit Exit(msg.sender, exactOutXyt, exactOutToken, address(market), _exactInLp);
     }
 
     /**
@@ -424,10 +408,10 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         _settleTokenTransfer(assetToTransferOut, transfers[0], address(market));
 
         if (_forXyt) {
-            emit Exit(msg.sender, transfers[0].amount, 0, address(market));
+            emit Exit(msg.sender, transfers[0].amount, 0, address(market), _exactInLp);
             return (transfers[0].amount, 0);
         } else {
-            emit Exit(msg.sender, 0, transfers[0].amount, address(market));
+            emit Exit(msg.sender, 0, transfers[0].amount, address(market), _exactInLp);
             return (0, transfers[0].amount);
         }
     }
@@ -445,8 +429,8 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
     ) external override nonReentrant returns (address market) {
         require(_xyt != address(0), "ZERO_ADDRESS");
         require(_token != address(0), "ZERO_ADDRESS");
-        require(data.isXyt(_xyt), "INVALID_XYT");
-        require(!data.isXyt(_token), "XYT_QUOTE_PAIR_FORBIDDEN");
+        require(data.isXyt(_xyt), "INVALID_YT");
+        require(!data.isXyt(_token), "YT_QUOTE_PAIR_FORBIDDEN");
         require(data.getMarket(_marketFactoryId, _xyt, _token) == address(0), "EXISTED_MARKET");
 
         IPendleMarketFactory factory =
@@ -473,7 +457,7 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         uint256 _initialXytLiquidity,
         uint256 _initialTokenLiquidity
     ) external payable override nonReentrant {
-        require(_initialXytLiquidity > 0, "INVALID_XYT_AMOUNT");
+        require(_initialXytLiquidity > 0, "INVALID_YT_AMOUNT");
         require(_initialTokenLiquidity > 0, "INVALID_TOKEN_AMOUNT");
 
         address originalToken = _token;
@@ -482,11 +466,22 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
         IPendleMarket market = IPendleMarket(data.getMarket(_marketFactoryId, _xyt, _token));
         require(address(market) != address(0), "MARKET_NOT_FOUND");
 
-        PendingTransfer[2] memory transfers =
-            market.bootstrap(msg.sender, _initialXytLiquidity, _initialTokenLiquidity);
+        PendingTransfer[2] memory transfers;
+        uint256 exactOutLp;
+        (transfers, exactOutLp) = market.bootstrap(
+            msg.sender,
+            _initialXytLiquidity,
+            _initialTokenLiquidity
+        );
 
         _settlePendingTransfers(transfers, _xyt, originalToken, address(market));
-        emit Join(msg.sender, _initialXytLiquidity, _initialTokenLiquidity, address(market));
+        emit Join(
+            msg.sender,
+            _initialXytLiquidity,
+            _initialTokenLiquidity,
+            address(market),
+            exactOutLp
+        );
     }
 
     /**
