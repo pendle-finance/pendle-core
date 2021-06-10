@@ -176,7 +176,7 @@ export const kovanConstants = {
       compound: '0x4a92e71227d294f041bd82dd8f78591b75140d63',
     },
     AUSDT: {
-      address: '0xA01bA9fB493b851F4Ac5093A324CB081A909C34B',
+      address: '0xff3c8bc103682fa918c954e84f5056ab4dd5189d',
       decimal: 6,
       // owner: "0x81dfbbaF5011e3b86383f72A24793EE44ea547C5"
     },

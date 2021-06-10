@@ -1,14 +1,11 @@
 import hre from 'hardhat';
-import { BigNumber as bigNumber} from "bignumber.js";
+import { BigNumber as bigNumber } from 'bignumber.js';
 
 const bN = (s: string): bigNumber => {
   return new bigNumber(s);
-}
+};
 
-import {
-  devConstants,
-  kovanConstants,
-} from '../helpers/deployHelpers';
+import { devConstants, kovanConstants } from '../helpers/deployHelpers';
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
   const network = hre.network.name;
@@ -50,9 +47,9 @@ async function main() {
   console.log(`Step 1: principalPerXYTRawScaled1e18 = ${principalPerXYTRawScaled1e18}`);
 
   // Step 2:
-  const principalPerXYT = bN(principalPerXYTRawScaled1e18.toString()).times(
-    bN('10').pow(xytTokenDecimal - underlyingAssetDecimal)
-  ).div(bN('10').pow(18));
+  const principalPerXYT = bN(principalPerXYTRawScaled1e18.toString())
+    .times(bN('10').pow(xytTokenDecimal - underlyingAssetDecimal))
+    .div(bN('10').pow(18));
   console.log(`Step 2: principalPerXYT = ${principalPerXYT}`);
 
   // Step 3:
@@ -63,22 +60,25 @@ async function main() {
   const xytWeight = bN(reserveData.xytWeight.toString());
   const tokenBalance = bN(reserveData.tokenBalance.toString());
   const tokenWeight = bN(reserveData.tokenWeight.toString());
-  const xytPriceInBaseToken = tokenBalance.times(xytWeight)
+  const xytPriceInBaseToken = tokenBalance
+    .times(xytWeight)
     .div(xytBalance.times(tokenWeight))
     .times(bN('10').pow(xytTokenDecimal - baseTokenDecimal));
   const xytPrice = xytPriceInBaseToken.times(baseTokenPrice);
-  console.log(`Step 3: underlyingPrice=${underlyingPrice} xytPriceInBaseToken = ${xytPriceInBaseToken} xytPrice=${xytPrice}`);
+  console.log(
+    `Step 3: underlyingPrice=${underlyingPrice} xytPriceInBaseToken = ${xytPriceInBaseToken} xytPrice=${xytPrice}`
+  );
 
   // Step 3.1:
-  const p = xytPrice.div( principalPerXYT.times(underlyingPrice) );
+  const p = xytPrice.div(principalPerXYT.times(underlyingPrice));
   console.log(`Step 3.1: p = ${p}`);
 
   // Step 4:
-  const daysLeft = (EXPIRY - (new Date()).getTime() / 1000) / (24 * 3600);
+  const daysLeft = (EXPIRY - new Date().getTime() / 1000) / (24 * 3600);
   console.log(`Step 4: daysLeft = ${daysLeft}`);
 
   // Step 5:
-  const yAnnum = p.toNumber() / (1-p.toNumber()) * 365 / daysLeft;
+  const yAnnum = ((p.toNumber() / (1 - p.toNumber())) * 365) / daysLeft;
   const yAnnumPercentage = yAnnum * 100;
   console.log(`Step 5: yAnnum = ${yAnnum} = ${yAnnumPercentage} %`);
 }

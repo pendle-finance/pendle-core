@@ -2,6 +2,10 @@ const hre = require('hardhat');
 import fs from 'fs';
 import path from 'path';
 import { utils, BigNumber as BN } from 'ethers';
+import { BigNumber as bigNumber } from 'bignumber.js';
+const bN = (s: string): bigNumber => {
+  return new bigNumber(s);
+};
 
 import { devConstants, kovanConstants } from '../helpers/deployHelpers';
 async function main() {
@@ -57,8 +61,12 @@ async function main() {
     .mul(BN.from(10).pow(underlyingDecimals))
     .div(consts.misc.ONE_E_18);
   console.log(`Step 6: [calculation] mintableUnderlyingRaw = ${mintableUnderlyingRaw}`);
-  const mintableCToken = mintableUnderlyingRaw.mul(consts.misc.ONE_E_18).div(exchangeRate);
-  console.log(`Step 6: mintable cToken (raw, scaled by 10^cTokenDecimals) = ${mintableCToken}`);
+  const mintableCTokenRawCalculated = mintableUnderlyingRaw.mul(consts.misc.ONE_E_18).div(exchangeRate);
+  console.log(`Step 6: mintable cToken (raw, scaled by 10^cTokenDecimals) Calculated = ${mintableCTokenRawCalculated}`);
+  const cTokenBalance = await cUSDC.balanceOf(user);
+  console.log(`\t cToken balance of user = ${cTokenBalance}`);
+  const mintableBalanceRaw = bigNumber.min(bN(cTokenBalance.toString()), bN(mintableCTokenRawCalculated.toString()));
+  console.log(`Step 6: mintableBalanceRaw = ${mintableBalanceRaw}`);
 }
 
 main()
