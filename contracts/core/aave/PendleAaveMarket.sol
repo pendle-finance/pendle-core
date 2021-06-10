@@ -1,25 +1,4 @@
-// SPDX-License-Identifier: MIT
-/*
- * MIT License
- * ===========
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- */
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
@@ -62,10 +41,11 @@ contract PendleAaveMarket is PendleMarketBase {
         // , which is the normalisedIncome from the last time paramL got updated (aka the last time we get external income)
         uint256 normIncomeNow = globalLastNormalizedIncome;
         uint256 principal = balanceOf(user);
+        uint256 _paramL = paramL; // save value in memory to save gas
 
         if (lastIncome == 0) {
             userLastNormalizedIncome[user] = normIncomeNow;
-            lastParamL[user] = paramL;
+            lastParamL[user] = _paramL;
             return;
         }
 
@@ -84,7 +64,7 @@ contract PendleAaveMarket is PendleMarketBase {
                 = paramL -  lastParamL[user] * globalLastNormalizedIncome /userLastNormalizedIncome[user]
         */
         uint256 interestValuePerLP =
-            paramL.subMax0(lastParamL[user].mul(normIncomeNow).div(lastIncome));
+            _paramL.subMax0(lastParamL[user].mul(normIncomeNow).div(lastIncome));
 
         uint256 interestFromLp = principal.mul(interestValuePerLP).div(MULTIPLIER);
 
@@ -93,7 +73,7 @@ contract PendleAaveMarket is PendleMarketBase {
         );
 
         userLastNormalizedIncome[user] = normIncomeNow;
-        lastParamL[user] = paramL;
+        lastParamL[user] = _paramL;
     }
 
     /// @inheritdoc PendleMarketBase
@@ -115,6 +95,6 @@ contract PendleAaveMarket is PendleMarketBase {
 
     /// @inheritdoc PendleMarketBase
     function _getIncomeIndexIncreaseRate() internal view override returns (uint256 increaseRate) {
-        return _getReserveNormalizedIncome().rdiv(globalLastNormalizedIncome) - Math.RONE;
+        return _getReserveNormalizedIncome().rdiv(globalLastNormalizedIncome).sub(Math.RONE);
     }
 }

@@ -1,15 +1,15 @@
 import { Contract, providers, Wallet } from 'ethers';
 import PendleCompoundForge from '../../../build/artifacts/contracts/core/compound/PendleCompoundForge.sol/PendleCompoundForge.json';
-import PendleCompoundYieldContractDeployer from "../../../build/artifacts/contracts/core/compound/PendleCompoundYieldContractDeployer.sol/PendleCompoundYieldContractDeployer.json";
-import MockPendleRewardManager from "../../../build/artifacts/contracts/mock/MockPendleRewardManager.sol/MockPendleRewardManager.json";
-import PendleFutureYieldToken from "../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json";
+import PendleCompoundYieldContractDeployer from '../../../build/artifacts/contracts/core/compound/PendleCompoundYieldContractDeployer.sol/PendleCompoundYieldContractDeployer.json';
+import MockPendleRewardManager from '../../../build/artifacts/contracts/mock/MockPendleRewardManager.sol/MockPendleRewardManager.json';
+import PendleFutureYieldToken from '../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json';
 import PendleOwnershipToken from '../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json';
-import MockPendleOwnershipToken from "../../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json";
+import MockPendleOwnershipToken from '../../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json';
 
-import { consts, setTimeNextBlock, tokens } from "../../helpers";
-import { CoreFixture } from "./core.fixture";
-import { GovernanceFixture } from "./governance.fixture";
-const { waffle } = require("hardhat");
+import { consts, setTimeNextBlock, tokens } from '../../helpers';
+import { CoreFixture } from './core.fixture';
+import { GovernanceFixture } from './governance.fixture';
+const { waffle } = require('hardhat');
 const { deployContract } = waffle;
 
 export interface CompoundFixture {
@@ -27,12 +27,12 @@ export async function compoundForgeFixture(
 ): Promise<CompoundFixture> {
   const cRewardManager = await deployContract(alice, MockPendleRewardManager, [
     govManager.address, //governance
-    consts.FORGE_COMPOUND
+    consts.FORGE_COMPOUND,
   ]);
 
   const cYieldContractDeployer = await deployContract(alice, PendleCompoundYieldContractDeployer, [
     govManager.address, //governance
-    consts.FORGE_COMPOUND
+    consts.FORGE_COMPOUND,
   ]);
 
   const compoundForge = await deployContract(alice, PendleCompoundForge, [
@@ -43,7 +43,7 @@ export async function compoundForgeFixture(
     consts.COMP_ADDRESS,
     cRewardManager.address,
     cYieldContractDeployer.address,
-    consts.COMP_ETH
+    consts.COMP_ETH,
   ]);
   await cRewardManager.initialize(compoundForge.address);
 
@@ -75,6 +75,6 @@ export async function compoundForgeFixture(
     compoundForge,
     cOwnershipToken,
     cFutureYieldToken,
-    cRewardManager
+    cRewardManager,
   };
 }

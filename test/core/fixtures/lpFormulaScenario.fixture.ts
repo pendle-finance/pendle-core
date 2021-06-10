@@ -1,5 +1,5 @@
-import { BigNumber as BN } from "ethers";
-import { consts } from "../../helpers";
+import { BigNumber as BN } from 'ethers';
+import { consts } from '../../helpers';
 export class TestAddLiq {
   timeOffset: BN;
   initTokenAmount: BN;
@@ -8,7 +8,15 @@ export class TestAddLiq {
   amountXytChange: BN;
   expectedLpBal1: BN;
   expectedLpBal2: BN;
-  constructor(timeOffset: BN, initTokenAmount: number, amountTokenChange: number, expectedLpBal1: string, initXytAmount: number, amountXytChange: number, expectedLpBal2: string) {
+  constructor(
+    timeOffset: BN,
+    initTokenAmount: number,
+    amountTokenChange: number,
+    expectedLpBal1: string,
+    initXytAmount: number,
+    amountXytChange: number,
+    expectedLpBal2: string
+  ) {
     this.timeOffset = timeOffset;
     this.initTokenAmount = BN.from(initTokenAmount);
     this.initXytAmount = BN.from(initXytAmount);
@@ -27,7 +35,15 @@ export class TestRemoveLiq {
   initXytAmount: BN;
   ratioLpForXyt: BN;
   expectedXytDiff: BN;
-  constructor(timeOffset: BN, initTokenAmount: number | string, ratioLpForToken: number | string, expectedTokenDiff: number | string, initXytAmount: number | string, ratioLpForXyt: number | string, expectedXytDiff: number | string) {
+  constructor(
+    timeOffset: BN,
+    initTokenAmount: number | string,
+    ratioLpForToken: number | string,
+    expectedTokenDiff: number | string,
+    initXytAmount: number | string,
+    ratioLpForXyt: number | string,
+    expectedXytDiff: number | string
+  ) {
     this.timeOffset = timeOffset;
     this.initTokenAmount = BN.from(initTokenAmount);
     this.initXytAmount = BN.from(initXytAmount);
@@ -59,21 +75,21 @@ export function scenarioRemove05(): TestRemoveLiq {
 }
 
 export function scenarioAdd01(): TestAddLiq {
-  return new TestAddLiq(consts.THREE_MONTH, 891, 50, "18085079", 331, 57, "36505357");
+  return new TestAddLiq(consts.THREE_MONTH, 891, 50, '18085079', 331, 57, '36505357');
 }
 
 export function scenarioAdd02(): TestAddLiq {
-  return new TestAddLiq(consts.ONE_MONTH, 381, 157, "50015925", 167, 36, "29257706");
+  return new TestAddLiq(consts.ONE_MONTH, 381, 157, '50015925', 167, 36, '29257706');
 }
 
 export function scenarioAdd03(): TestAddLiq {
-  return new TestAddLiq(consts.FIVE_MONTH, 594, 784334, "125153154247", 407, 397405, "460160784843");
+  return new TestAddLiq(consts.FIVE_MONTH, 594, 784334, '125153154247', 407, 397405, '460160784843');
 }
 
 export function scenarioAdd04(): TestAddLiq {
-  return new TestAddLiq(consts.THREE_MONTH, 891, 1000, "310064648", 331, 2697, "1201658307");
+  return new TestAddLiq(consts.THREE_MONTH, 891, 1000, '310064648', 331, 2697, '1201658307');
 }
 
 export function scenarioAdd05(): TestAddLiq {
-  return new TestAddLiq(consts.ONE_MONTH, 292, 4769482, "86452840114", 979, 5636155, "5182800312870");
+  return new TestAddLiq(consts.ONE_MONTH, 292, 4769482, '86452840114', 979, 5636155, '5182800312870');
 }

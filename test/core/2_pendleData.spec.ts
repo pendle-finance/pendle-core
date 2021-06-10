@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { Contract } from 'ethers';
-import { waffle } from 'hardhat';
 import { evm_revert, evm_snapshot } from '../helpers';
 import { marketFixture, MarketFixture } from './fixtures';
+const { waffle } = require('hardhat');
 
 const { loadFixture } = waffle;
 
@@ -40,7 +40,7 @@ describe('PendleData', async () => {
 
   it('should be able to get allMarketsLength', async () => {
     let allMarketsLength = await data.allMarketsLength();
-    expect(allMarketsLength).to.be.eq(3); // numbers of markets that have been created in marketFixture
+    expect(allMarketsLength).to.be.eq(4); // numbers of markets that have been created in marketFixture
   });
 
   it('Should be able to setTreasury', async () => {

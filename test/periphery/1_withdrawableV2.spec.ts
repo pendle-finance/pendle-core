@@ -1,11 +1,12 @@
-import { expect } from 'chai';
-import { BigNumber as BN, constants, Contract, utils } from 'ethers';
-import hre from 'hardhat';
-import { errMsg, mint, tokens, withdraw } from '../helpers';
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
+import { BigNumber as BN, Contract, utils } from 'ethers';
+import hre, { waffle } from 'hardhat';
 import PendleGovernanceManager from '../../build/artifacts/contracts/core/PendleGovernanceManager.sol/PendleGovernanceManager.json';
 import MockWithdrawableV2 from '../../build/artifacts/contracts/mock/MockWithdrawableV2.sol/MockWithdrawableV2.json';
+import { errMsg, mint, tokens } from '../helpers';
+chai.use(solidity);
 
-import { waffle } from 'hardhat';
 const { deployContract, provider } = waffle;
 
 describe('WithdrawableV2', () => {

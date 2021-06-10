@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
 import {
   amountToWei,
@@ -16,14 +17,15 @@ import {
   tokens,
 } from '../helpers';
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from './fixtures';
+const { waffle } = require('hardhat');
+chai.use(solidity);
 
-import { waffle } from 'hardhat';
 const { loadFixture, provider } = waffle;
 
 describe('aave-forge-fee', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie, dave] = wallets;
-  const forgeFee = randomBN(consts.RONE.toNumber() / 10);
+  const forgeFee = randomBN(consts.RONE.div(10));
 
   let fixture: RouterFixture;
   let snapshotId: string;
@@ -61,13 +63,13 @@ describe('aave-forge-fee', async () => {
   // Charlie has equivalent amount of aUSDT
   // When bob redeem due interests, Bob should get the interest gotten by Charlie - fee portion
   it('User should get back interest minus forge fees', async () => {
-    await env.yUSDT.transfer(charlie.address, REF_AMOUNT);
+    await env.yToken.transfer(charlie.address, REF_AMOUNT);
     await tokenizeYield(env, alice, REF_AMOUNT, bob.address);
 
     await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
     await redeemDueInterests(env, bob);
-    const bobInterest = await env.yUSDT.balanceOf(bob.address);
-    const charlieInterest = (await env.yUSDT.balanceOf(charlie.address)).sub(REF_AMOUNT);
+    const bobInterest = await env.yToken.balanceOf(bob.address);
+    const charlieInterest = (await env.yToken.balanceOf(charlie.address)).sub(REF_AMOUNT);
     approxBigNumber(charlieInterest.mul(consts.RONE.sub(forgeFee)).div(consts.RONE), bobInterest, BN.from(200));
 
     const totalFee = await env.forge.totalFee(USDT.address, env.EXPIRY);
@@ -83,7 +85,7 @@ describe('aave-forge-fee', async () => {
     const totalFee = await env.forge.totalFee(USDT.address, env.EXPIRY);
     await env.forge.withdrawForgeFee(USDT.address, env.EXPIRY);
     const treasuryAddress = await env.data.treasury();
-    const treasuryBalance = await env.yUSDT.balanceOf(treasuryAddress);
+    const treasuryBalance = await env.yToken.balanceOf(treasuryAddress);
     approxBigNumber(totalFee, treasuryBalance, BN.from(100));
     const forgeFeeLeft = await env.forge.totalFee(USDT.address, env.EXPIRY);
     approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(100));

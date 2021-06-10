@@ -4,18 +4,10 @@ import {
   approxBigNumber,
   bootstrapMarket,
   consts,
-
-
-
-
-
-
-
-
-
-  randomNumber, setTimeNextBlock,
+  randomNumber,
+  setTimeNextBlock,
   swapExactInTokenToXyt,
-  swapExactInXytToToken
+  swapExactInXytToToken,
 } from '../../helpers';
 import { TestEnv } from '../fixtures';
 
@@ -24,27 +16,20 @@ export async function MultiExpiryMarketTest(environments: TestEnv[], wallets: an
   let nMarket = environments.length;
   const env0 = environments[0];
 
-
   const amount = BN.from(10 ** 9);
   for (let m = 0; m < nMarket; ++m) {
     await bootstrapMarket(environments[m], dave, amount, amount);
   }
 
-
-  let currentTime = (await env0.testToken.getTime(consts.HIGH_GAS_OVERRIDE)).sub(env0.T0);
+  let currentTime = (await env0.testToken.getTime(consts.HG)).sub(env0.T0);
 
   async function checkOutcome(outcomes: any) {
     for (let i = 0; i + 1 < nMarket; ++i) {
       for (let j = 0; j < outcomes[i].length; ++j) {
-        approxBigNumber(
-          outcomes[i][j],
-          outcomes[i + 1][j],
-          BN.from(10),
-          false
-        );
+        approxBigNumber(outcomes[i][j], outcomes[i + 1][j], BN.from(10), false);
       }
     }
-    console.log("Checked", outcomes[0].length, "actions!");
+    console.log('Checked', outcomes[0].length, 'actions!');
   }
 
   async function doMarketActions(env: TestEnv, scenario: number[][]) {
@@ -73,7 +58,7 @@ export async function MultiExpiryMarketTest(environments: TestEnv[], wallets: an
 
   while (consts.SIX_MONTH.gt(currentTime.add(60).mul(2))) {
     let scenario = await generateRandomScenario(randomNumber(6) + 5);
-    let outcomes = []
+    let outcomes = [];
 
     for (let j = 0; j < nMarket; ++j) {
       if (j == 0) currentTime = currentTime.add(60);

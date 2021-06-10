@@ -1,6 +1,6 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
-import { waffle } from 'hardhat';
 import {
   addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
@@ -32,6 +32,8 @@ import {
 } from './common-test/amm-formula-test';
 import { MultiExpiryMarketTest } from './common-test/multi-market-common-test';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
+const { waffle } = require('hardhat');
+chai.use(solidity);
 
 const { loadFixture, provider } = waffle;
 
@@ -92,7 +94,12 @@ describe('AaveV2-market', async () => {
 
     let xytBalanceBefore = await env.xyt.balanceOf(env.market.address);
 
-    let result: any[] = await getMarketRateExactOut(env, amountToWei(BN.from(10), 6));
+    let result: any[] = await getMarketRateExactOut(
+      env,
+      env.xyt.address,
+      env.testToken.address,
+      amountToWei(BN.from(10), 6)
+    );
 
     await swapExactOutXytToToken(env, bob, amountToWei(BN.from(10), 6));
 
@@ -207,13 +214,23 @@ describe('AaveV2-market', async () => {
 
   it('getMarketRateExactOut', async () => {
     await bootstrapMarket(env, alice, REF_AMOUNT);
-    let result: any[] = await getMarketRateExactOut(env, amountToWei(BN.from(10), 6));
+    let result: any[] = await getMarketRateExactOut(
+      env,
+      env.xyt.address,
+      env.testToken.address,
+      amountToWei(BN.from(10), 6)
+    );
     approxBigNumber(result[1], 11111205, 1000);
   });
 
   it('getMarketRateExactIn', async () => {
     await bootstrapMarket(env, alice, REF_AMOUNT);
-    let result: any[] = await getMarketRateExactIn(env, amountToWei(BN.from(10), 6));
+    let result: any[] = await getMarketRateExactIn(
+      env,
+      env.testToken.address,
+      env.xyt.address,
+      amountToWei(BN.from(10), 6)
+    );
     approxBigNumber(result[1], 9090839, 1000);
   });
 
@@ -263,14 +280,14 @@ describe('AaveV2-market', async () => {
 
   it('createMarket with a duplicated pair of XYT/token is not possible', async () => {
     await expect(
-      env.router.createMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.testToken.address, consts.HIGH_GAS_OVERRIDE)
+      env.router.createMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.testToken.address, consts.HG)
     ).to.be.revertedWith('EXISTED_MARKET');
   });
 
   it('createMarket using XYT as the quote pair is not possible', async () => {
     await expect(
-      env.router.createMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.xyt2.address, consts.HIGH_GAS_OVERRIDE)
-    ).to.be.revertedWith('XYT_QUOTE_PAIR_FORBIDDEN');
+      env.router.createMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.xyt18.address, consts.HG)
+    ).to.be.revertedWith('YT_QUOTE_PAIR_FORBIDDEN');
   });
 
   it("AMM's formulas is correct for swapExactIn", async () => {

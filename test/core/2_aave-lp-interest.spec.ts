@@ -9,7 +9,7 @@ import {
   emptyToken,
   evm_revert,
   evm_snapshot,
-  mintOtAndXyt,
+  mintXytAave,
   redeemDueInterests,
   redeemLpInterests,
   removeMarketLiquidityDual,
@@ -20,7 +20,7 @@ import {
 } from '../helpers';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
 
-import { waffle } from 'hardhat';
+const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
 describe('Aave-lp-interest', async () => {
@@ -55,7 +55,7 @@ describe('Aave-lp-interest', async () => {
       await emptyToken(env.xyt, user);
     }
 
-    await mintOtAndXytUSDT(alice, amountXytRef.div(10 ** 6).mul(4));
+    await mintXytUSDT(alice, amountXytRef.div(10 ** 6).mul(4));
     amountXytRef = (await env.xyt.balanceOf(alice.address)).div(4);
     for (let user of [bob, charlie, dave]) {
       await env.ot.transfer(user.address, amountXytRef);
@@ -63,7 +63,7 @@ describe('Aave-lp-interest', async () => {
     }
 
     for (let user of [alice, bob, charlie, dave, eve]) {
-      await emptyToken(env.yUSDT, user);
+      await emptyToken(env.yToken, user);
     }
     snapshotId = await evm_snapshot();
   });
@@ -77,8 +77,8 @@ describe('Aave-lp-interest', async () => {
     snapshotId = await evm_snapshot();
   });
 
-  async function mintOtAndXytUSDT(user: Wallet, amount: BN) {
-    await mintOtAndXyt(USDT, user, amount, env.routerFixture);
+  async function mintXytUSDT(user: Wallet, amount: BN) {
+    await mintXytAave(USDT, user, amount, env.routerFixture, env.T0.add(consts.SIX_MONTH));
   }
 
   async function getLPBalance(user: Wallet) {
@@ -87,12 +87,12 @@ describe('Aave-lp-interest', async () => {
 
   async function checkAUSDTBalance(expectedResult: number[]) {
     for (let id = 0; id < 4; id++) {
-      approxBigNumber(await env.yUSDT.balanceOf(wallets[id].address), BN.from(expectedResult[id]), env.TEST_DELTA);
+      approxBigNumber(await env.yToken.balanceOf(wallets[id].address), BN.from(expectedResult[id]), env.TEST_DELTA);
     }
   }
 
   it('Users should still receive correct amount of LP interest if markets have many addMarketLiquidityDual & swapExactInXytToToken actions', async () => {
-    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+    await mintXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapMarket(env, alice, BN.from(10).pow(10));
 
@@ -128,14 +128,14 @@ describe('Aave-lp-interest', async () => {
     await redeemAll();
 
     // for (let user of [alice, bob, charlie, dave]) {
-    //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
+    //   console.log((await env.yToken.balanceOf(user.address)).toString());
     // }
     const aaveV2ExpectedResult: number[] = [1153260349, 767185299, 817213684, 952028819];
     await checkAUSDTBalance(aaveV2ExpectedResult);
   });
 
   it('Users should still receive correct amount of LP interest if markets have many addMarketLiquiditySingle & swapExactInXytToToken actions', async () => {
-    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+    await mintXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapMarket(env, alice, BN.from(10).pow(10));
 
@@ -171,7 +171,7 @@ describe('Aave-lp-interest', async () => {
     await redeemAll();
 
     // for (let user of [alice, bob, charlie, dave]) {
-    //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
+    //   console.log((await env.yToken.balanceOf(user.address)).toString());
     // }
 
     const aaveV1ExpectedResult: number[] = [560854502, 209872643, 204051274, 218780693];
@@ -180,7 +180,7 @@ describe('Aave-lp-interest', async () => {
   });
 
   // xit("test 3", async () => {
-  //   await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+  //   await mintXytUSDT(eve, BN.from(10).pow(5));
 
   //   await bootstrapMarket(env,alice,BN.from(10).pow(10));
 
@@ -216,37 +216,37 @@ describe('Aave-lp-interest', async () => {
   //   await redeemAll();
 
   // for (let user of [alice, bob, charlie, dave]) {
-  //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
+  //   console.log((await env.yToken.balanceOf(user.address)).toString());
   // }
 
   //   console.log(1);
   //   approxBigNumber(
-  //     await env.yUSDT.balanceOf(alice.address),
+  //     await env.yToken.balanceOf(alice.address),
   //     BN.from(803722622),
   //     acceptedDelta
   //   );
   //   console.log(1);
   //   approxBigNumber(
-  //     await env.yUSDT.balanceOf(bob.address),
+  //     await env.yToken.balanceOf(bob.address),
   //     BN.from(803722622),
   //     acceptedDelta
   //   );
   //   console.log(1);
   //   approxBigNumber(
-  //     await env.yUSDT.balanceOf(charlie.address),
+  //     await env.yToken.balanceOf(charlie.address),
   //     BN.from(803722622),
   //     acceptedDelta
   //   );
   //   console.log(1);
   //   approxBigNumber(
-  //     await env.yUSDT.balanceOf(dave.address),
+  //     await env.yToken.balanceOf(dave.address),
   //     BN.from(803722622),
   //     acceptedDelta
   //   );
   // });
 
   it('Users should still receive correct amount of LP interest if markets have many addMarketLiquiditySingle, removeMarketLiquidityDual, removeMarketLiquiditySingle, swapExactInXytToToken actions', async () => {
-    await mintOtAndXytUSDT(eve, BN.from(10).pow(5));
+    await mintXytUSDT(eve, BN.from(10).pow(5));
 
     await bootstrapMarket(env, alice, BN.from(10).pow(10));
     await advanceTime(consts.ONE_DAY.mul(5));
@@ -288,7 +288,7 @@ describe('Aave-lp-interest', async () => {
     await redeemAll();
 
     // for (let user of [alice, bob, charlie, dave]) {
-    //   console.log((await env.yUSDT.balanceOf(user.address)).toString());
+    //   console.log((await env.yToken.balanceOf(user.address)).toString());
     // }
 
     const aaveV1ExpectedResult: number[] = [541848416, 209321674, 259943291, 250376098];
@@ -335,9 +335,9 @@ describe('Aave-lp-interest', async () => {
       }
     }
 
-    let expectedResult = await env.yUSDT.balanceOf(dave.address);
+    let expectedResult = await env.yToken.balanceOf(dave.address);
     for (let user of [alice, bob, charlie]) {
-      approxBigNumber(await env.yUSDT.balanceOf(user.address), expectedResult, env.TEST_DELTA);
+      approxBigNumber(await env.yToken.balanceOf(user.address), expectedResult, env.TEST_DELTA);
     }
   });
 });

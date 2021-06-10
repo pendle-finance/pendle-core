@@ -23,7 +23,7 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "../core/PendleGovernance.sol";
+import "../governance/PendleGovernance.sol";
 
 contract MockGovernance is PendleGovernance {
     constructor(

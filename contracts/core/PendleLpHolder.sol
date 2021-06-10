@@ -1,25 +1,4 @@
-// SPDX-License-Identifier: MIT
-/*
- * MIT License
- * ===========
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- */
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -32,8 +11,8 @@ contract PendleLpHolder is IPendleLpHolder, WithdrawableV2 {
     using SafeERC20 for IERC20;
 
     address private immutable pendleLiquidityMining;
-    address private immutable underlyingYieldToken;
-    address private immutable pendleMarket;
+    address public immutable override underlyingYieldToken;
+    address public immutable override pendleMarket;
     address private immutable router;
 
     modifier onlyLiquidityMining() {
@@ -80,11 +59,8 @@ contract PendleLpHolder is IPendleLpHolder, WithdrawableV2 {
     // Only liquidityMining contract can call this function
     // this will allow a spender to spend the whole balance of the specified token
     // the spender should ideally be a contract with logic for users to withdraw out their funds.
-    function setUpEmergencyMode(address token, address spender)
-        external
-        override
-        onlyLiquidityMining
-    {
-        IERC20(token).safeApprove(spender, type(uint256).max);
+    function setUpEmergencyMode(address spender) external override onlyLiquidityMining {
+        IERC20(underlyingYieldToken).safeApprove(spender, type(uint256).max);
+        IERC20(pendleMarket).safeApprove(spender, type(uint256).max);
     }
 }
