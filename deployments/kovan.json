@@ -46,8 +46,8 @@
       "tx": "0xb405c6f47207209804b5c56a162b5b57fe91474f3b56288e800b18519dfd190e"
     },
     "PendleCompoundLiquidityMining": {
-      "address": "0x6A1d164354320F930D3e32313Cb75f43b95472Bb",
-      "tx": "0x76a09650d0287913415264c6b800af8df4dbea8895c79e76b3c8d3dd989dfa38"
+      "address": "0xCeCd8b6b1bf90818C9B07D6F007fCE618061608E",
+      "tx": "0x29f388d17eb3ba7516a3ed4c1a7f4be34fb9c81a235fde75eef806475f95ccfe"
     },
     "PendlePausingManager": {
       "address": "0xFD2D154ECd173A2dA972B17f24B4898b3F50bEc1",
@@ -118,6 +118,20 @@
         },
         "PendleLiquidityMining": {
           "USDT": "0x6A1d164354320F930D3e32313Cb75f43b95472Bb"
+        }
+      },
+      "USDC": {
+        "expiries": {
+          "1672272000": {
+            "XYT": "0x32c944879fb9337be7cd7A8368Fe1B4C1420Af72",
+            "OT": "0x8cc05dC452B86472b473f04Ec822D65eAA3ef7ab",
+            "markets": {
+              "USDT": "0x070e213A922026037CE40F2C878914eb1DD5093F"
+            }
+          }
+        },
+        "PendleLiquidityMining": {
+          "USDT": "0xCeCd8b6b1bf90818C9B07D6F007fCE618061608E"
         }
       }
     }
