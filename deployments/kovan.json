@@ -2,88 +2,80 @@
   "step": 9,
   "contracts": {
     "PENDLE": {
-      "address": "0xDf84f43015372B9c6023CC0F14fa1Ff8B7c4bb04",
-      "tx": "0xfa9a16784caf8ed31a55934c79f2facd9fe660be72f684d3d4105c7154318a5f"
+      "address": "0x0fC57Dc1d42F0EA56A447904bA25104d5584a796",
+      "tx": "0x37a87ad570c3d89cb4425538dcd3271a9b3543d03dc24ef2fa40080a3f497414"
     },
     "PendleData": {
-      "address": "0x58ecd45fACCa9503A6Df8E1Db5faaf12122da82b",
-      "tx": "0x88bcdda2368389fd917531b422e3480f7cff833cab5a04ef9a74986a59a5c167"
+      "address": "0xf79f239CcB30694E3daB030787aC8647AC58bfe5",
+      "tx": "0xa29754e1685e7f174f734a94ca4d187c1ecb23742fab47c171585b4bbbc77e28"
     },
     "PendleMarketReader": {
-      "address": "0xE131801B7E8c62F01405907f4cab6908aB13E691",
-      "tx": "0x98664d485bde7ba165525dc88c5dc46118b53042d2e7a18b4c6a70cd209826d7"
+      "address": "0x3E804C68539B9b5a48D238a6BC6Fefc786605e4F",
+      "tx": "0xb9b191582f90bf6676539f6c7a7071dead89b61365077cb3e3c7cbbd19d89905"
     },
     "PendleRouter": {
-      "address": "0xe8906375aF47C6452ed5A19f811D258CA0d10023",
-      "tx": "0xd171a00798fd7007804ff2916d346fdcfbbd57b0ff03b67066af5ea6da6d2b39"
-    },
-    "PendleAaveForge": {
-      "address": "0xd36ebdB39BC811034E7DB86C425bBeAA14b3FC31",
-      "tx": "0x2dbb4366e61d1e91e332754942b84173b91488d43b8317819f4d51c5d8e17acc"
+      "address": "0xe7148Eb95627E5C43997c5f7F480e44d03959558",
+      "tx": "0x12de7a7c151f84e2b00358977ebbb9caa8acfebce13af6688350304da6840918"
     },
     "PendleAaveMarketFactory": {
-      "address": "0xfa3E13518B7c91c8F950247e2e02ac3FcfE76C1e",
-      "tx": "0x1e5d9770e8e147628b69cceaa7ae8bc63bd66e82b10e6836e6c77a67b5aaa42f"
+      "address": "0xB27Dc3acfB84a92A16ad3055CFA490019802a173",
+      "tx": "0x603b10f8643318c43eaf1d1088dfdf78c3e19bd7a7fab6e28fda96b5ab6dd841"
     },
     "PendleCompoundForge": {
-      "address": "0x642BE6ee6b288223F202fF3DCb573De7496AB18a",
-      "tx": "0x56237458549da1a1982f83714087b371546950cd73555bf1bece768d66293025"
+      "address": "0x2F4CB9eF79952F66a137B88A1E0C271A4C1210C6",
+      "tx": "0x2b80f2e8f4c8516b47ef50c0c3959c68737f38689b845aec52949fcb5c79f2ec"
     },
     "PendleCompoundMarketFactory": {
-      "address": "0x4098Ec7fD4143454C50D8D8976C6728bceea9a9A",
-      "tx": "0x5b0e2b23c8445b44678f9a03a7db611d5a57331a65220fa98657b4f94c3c60a0"
+      "address": "0x85c24A90235dA647AF57f53C57a907204e0BbcA9",
+      "tx": "0x51547cb7d3dd80e62d046002747479053506b25e8ffde8adda2bf0d0827e3001"
     },
     "PendleAaveV2Forge": {
-      "address": "0x069322eFa9057971D227b8fc711E5E15183b1D23",
-      "tx": "0x87d2fa7042392478bb5b8004caf38b480e9d222280523efd3e60aa098d92117c"
+      "address": "0xc3352545F91B313A9C102ed8cB0299e61fc17829",
+      "tx": "0xec19d8d1995a6d520e59d57202c5678bed5530724e3f4837db5604b1b51f26ee"
     },
     "PendleAaveLiquidityMining": {
-      "address": "0xc95710EbD862f6DDBaB79e417B49925070d27643",
-      "tx": "0x4669bd2cd6f0e0ea505817732eab1c8db9fbb43fa2c8a0e6e858b67b2fc034c4"
+      "address": "0x580Ec8C8182807e4c099410912f6665400A97889",
+      "tx": "0x7f53213e844532a148b5092bc9f7132bc780e330a0b3baf2c38bb76b5fc7c71a"
     },
     "PendleTeamTokens": {
-      "address": "0xA775B8217387Bfb83DC9dC91Df588dBbb16206C3",
-      "tx": "0x7d3b284cc045cc644edb58dcc0def47307c7536778611fa15739a36c1f46b57a"
+      "address": "0x4299484C9DA7E2a0E48D4900A9dAff140623bBB2",
+      "tx": "0x7c6019a24de7268226a875d625c6abaa65c5d769834636a6a113e67cce2c3291"
     },
     "PendleEcosystemFund": {
-      "address": "0xfb41622a1c85c68E152522503E99597C48b22342",
-      "tx": "0x541b11d22562b8dbee346b3c529183f2e4b2adad6aee99a646dde85bae779fde"
+      "address": "0xB80C10fb4b0EB6a95D53b1EC1B7cCe827ABDc9BB",
+      "tx": "0xb405c6f47207209804b5c56a162b5b57fe91474f3b56288e800b18519dfd190e"
     },
     "PendleCompoundLiquidityMining": {
-      "address": "0x2a559915fe5b9754E24194a20994F4AB0916F6e4",
-      "tx": "0xa9b945987b8ec52cd9279d2c70000352e46f63d1ccf596553a855e48c4f7e787"
+      "address": "0x6A1d164354320F930D3e32313Cb75f43b95472Bb",
+      "tx": "0x76a09650d0287913415264c6b800af8df4dbea8895c79e76b3c8d3dd989dfa38"
     },
     "PendlePausingManager": {
-      "address": "0xE9526eD4d199Dca60430f44f75E939a4a094ab9D",
-      "tx": "0xe9de62dfb80ea8aa4e9183d063ca9cd5d7ad41338ece2fa1e3838aff43cf7eae"
+      "address": "0xFD2D154ECd173A2dA972B17f24B4898b3F50bEc1",
+      "tx": "0xd56e447815f06b42813106aef1723cd6fc580a3198cc5c005714759d0878e16f"
     },
     "PendleRewardManager": {
-      "address": "0x96905Fd11C817c0Dc61f50d432367D0Bb37432d3",
-      "tx": "0x5220c5a164665b86f31420c0f23ada0169692f57a25f628626f34a40c1d57a0b"
-    },
-    "PendleAaveYieldContractDeployer": {
-      "address": "0x28FC366420E9b850369CC2D1aBf2d85FfB1BD2c8",
-      "tx": "0x12757b539762b9f841963f6d0b08f6d5db9caf5f7763e05753726289c7b0ba8f"
+      "address": "0xb87ED4b7826B0F99EC30FEcA312e623da825B6c9",
+      "tx": "0xba708ba3010bfaa6123417280df76d5ed74ea224b0516720ad9fd5b387b18f04"
     },
     "PendleRedeemProxy": {
-      "address": "0xE54F302047a0B830c5D465e84C4dB95951E65856",
-      "tx": "0xa80eef02551752a65b4c15612fbd87e327e7e940aaf98e19af10b598babbcb9e"
+      "address": "0x419825c13732b725723887fF1537b7B4d6EaEc4E",
+      "tx": "0xed7ac5301954fb61da0f2a6b604406333391fa2194f77284d4c5429fa3fb0910"
     },
     "PendleGovernanceManager": {
-      "address": "0x195D747D0bF40cD5Fe53f9Bde0F872FCF2CF7512",
-      "tx": "0x586bd7e7d13ad24df42a95eaeab2994c9c08cbf6e4420a711344ae14400bebdc"
+      "address": "0x3cacfeD860fa64F62FBFE29945e9AaeFad9d1bBd",
+      "tx": "0x90584e5deee828a6d5fcc9a846935013299ee9e9e95a7de29058d0621e76a901"
     },
     "PendleWhitelist": {
-      "address": "0x78C626E99C61Ecca33c7a263B020F5b0535BE383",
-      "tx": "0x4fd89c4d74fc876356f579abbc8ed5226c9144190afdc256f15ef35c7bd245b5"
+      "address": "0xFEb37C5e1CDB906Bff1becA196Fb0Ffa01E8eb4e",
+      "tx": "0x252d7f28a50423a1726ac32a9a0ade267681a7322da5a0b678d58a49c3791209"
     },
     "PendleCompoundYieldContractDeployer": {
-      "address": "0x6EDF9571114f3FF33f91E2eA11e9Cc3c9852b4bf",
-      "tx": "0xb014ab1c4630ad848f85504cedbed897caac5a0a5aa6fd6b6a85b660464c9e1f"
+      "address": "0x0174F9692426EABe27a5aCB94461a4D98f4C6EFD",
+      "tx": "0x7b5d47d110c749ec360c873fc9370376e4d25163c645660462c5d558262c4fb7"
     },
     "PendleAaveV2YieldContractDeployer": {
-      "address": "0xC790701742208849441cc8BD907F046b6e42B07B",
-      "tx": "0x369aa06476ba84916411c10e5889620cc1362e69dd5f31d37fff9a475d0b0750"
+      "address": "0x4aFBa60550c49eeCa0cCD41158433CFBf6342445",
+      "tx": "0x427099418a015a36ae425e84a200533f71b7c2e29a5637e3606e6ce5c5e7e09a"
     }
   },
   "variables": {
@@ -100,32 +92,32 @@
     "AaveV2": {
       "USDT": {
         "expiries": {
-          "1626652800": {
-            "XYT": "0xfECaAAdB0707009E1f1cC4d64E57E577c368306A",
-            "OT": "0xC20555e78458233529e961400784BfF7eEf3A4b2",
+          "1672272000": {
+            "XYT": "0x2618929B23d8d7316D9858BE338F59Ae283646AE",
+            "OT": "0xBF285Bdd9261CB0BdB98268f4DA96D54f5984E07",
             "markets": {
-              "USDT": "0x8702b8bAD3eF33d159d1139ED0617b779c81E086"
+              "USDT": "0x6eea907c23BE91f0966E59B6E1fc26f3205ED136"
             }
           }
         },
         "PendleLiquidityMining": {
-          "USDT": "0xc95710EbD862f6DDBaB79e417B49925070d27643"
+          "USDT": "0x580Ec8C8182807e4c099410912f6665400A97889"
         }
       }
     },
     "Compound": {
       "USDT": {
         "expiries": {
-          "1626652800": {
-            "XYT": "0x3F74AE5BD9E1945BFe36F41eB1cAe1eECDd62758",
-            "OT": "0xE74e9Aa18191c4255DE2ce25DECCf48450CdA874",
+          "1672272000": {
+            "XYT": "0xBfD6EF17E09c112b8837e92cf743c260a513EDAa",
+            "OT": "0xd40D39d5E9CC4F242d29aF30723b15DEb97dfa9E",
             "markets": {
-              "USDT": "0x776f0D16D26b942228724f1265DDFf2A63806292"
+              "USDT": "0xDd4BD553b8211D320b9f1d64c89083f4288CB214"
             }
           }
         },
         "PendleLiquidityMining": {
-          "USDT": "0x2a559915fe5b9754E24194a20994F4AB0916F6e4"
+          "USDT": "0x6A1d164354320F930D3e32313Cb75f43b95472Bb"
         }
       }
     }

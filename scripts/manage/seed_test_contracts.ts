@@ -2,7 +2,7 @@ const hre = require('hardhat');
 import fs from 'fs';
 import path from 'path';
 import { utils, BigNumber as BN } from 'ethers';
-import { mintAaveV2Token, mintCompoundToken, mint } from '../../test/helpers';
+import { mintAaveV2Token, mintCompoundToken, mint, tokens } from '../../test/helpers';
 const { execSync } = require('child_process');
 
 const UNDERLYING_YIELD_TOKEN_TO_SEED = BN.from(1000000);
@@ -55,15 +55,14 @@ async function main() {
   }
   if (network == 'development' || network == 'hardhat') {
     // seed USDTs, aUSDTs, cUSDTs
-    await mintAaveV2Token(consts.tokens.USDT_AAVE, deployer, UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6));
-    await mintCompoundToken(consts.tokens.USDT_COMPOUND, deployer, UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6));
-    await mint(consts.tokens.USDT_COMPOUND, deployer, BASE_TOKEN_TO_SEED.mul(2).div(10 ** 6));
+    await mintAaveV2Token(tokens.USDT, deployer, UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6));
+    await mintCompoundToken(tokens.USDT, deployer, UNDERLYING_YIELD_TOKEN_TO_SEED.div(10 ** 6));
+    await mint(tokens.USDT, deployer, BASE_TOKEN_TO_SEED.mul(2).div(10 ** 6));
   }
 
   const existingDeploymentJson = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   const deployment = existingDeploymentJson as Deployment;
-
-  const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
+  // const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
 
   const usdtCompoundContract = await (await hre.ethers.getContractFactory('TestToken')).attach(
     consts.tokens.USDT_COMPOUND.address
