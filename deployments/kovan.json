@@ -34,8 +34,8 @@
       "tx": "0xec19d8d1995a6d520e59d57202c5678bed5530724e3f4837db5604b1b51f26ee"
     },
     "PendleAaveLiquidityMining": {
-      "address": "0x580Ec8C8182807e4c099410912f6665400A97889",
-      "tx": "0x7f53213e844532a148b5092bc9f7132bc780e330a0b3baf2c38bb76b5fc7c71a"
+      "address": "0xaB90D91086C55bdAB4D639d3EF11A3a2A855DB94",
+      "tx": "0x7974e44c2c55a47eed25b028153f4ec7526b7ab5d8f2ee68921850a426840be4"
     },
     "PendleTeamTokens": {
       "address": "0x4299484C9DA7E2a0E48D4900A9dAff140623bBB2",
@@ -101,7 +101,7 @@
           }
         },
         "PendleLiquidityMining": {
-          "USDT": "0x580Ec8C8182807e4c099410912f6665400A97889"
+          "USDT": "0xaB90D91086C55bdAB4D639d3EF11A3a2A855DB94"
         }
       }
     },
