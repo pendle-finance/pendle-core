@@ -12,7 +12,7 @@ export async function beforeAll(deployer: any, hre: any, deployment: Deployment,
     'LIQ_MINING_EMERGENCY_HANDLER',
   ];
 
-  if (!['mainnet', 'goerli'].includes(hre.network.name)) {
+  if (!['mainnet', 'goerli', 'kovan'].includes(hre.network.name)) {
     console.log(
       `[NOTICE] its not mainnet, so we are using deployer account ${deployer.address} as the multisigs, and the emergency handlers`
     );

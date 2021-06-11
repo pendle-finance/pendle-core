@@ -83,8 +83,13 @@ async function main() {
         break;
       }
       case 2: {
-        console.log(`\n[Step ${step}]: Deploying PendleData`);
+        console.log(`\n[Step ${step}]: Deploying GovernanceManagerMain, governanceManagerLiqMining, PausingManagerMain, pausingManagerLiqMining`);
         await step2(deployer, hre, deployment, consts);
+        break;
+      }
+      case 3: {
+        console.log(`\n[Step ${step}]: Deploying PendleData`);
+        await step3(deployer, hre, deployment, consts);
         break;
       }
       case 3: {
