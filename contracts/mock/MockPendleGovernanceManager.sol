@@ -26,9 +26,7 @@ pragma abicoder v2;
 import "../core/PendleGovernanceManager.sol";
 
 contract MockPendleGovernanceManager is PendleGovernanceManager {
-    constructor(address _governance) 
-        PendleGovernanceManager(_governance)
-    {}
+    constructor(address _governance) PendleGovernanceManager(_governance) {}
 
     function stub() external onlyGovernance {}
 }
