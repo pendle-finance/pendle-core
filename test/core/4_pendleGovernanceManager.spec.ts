@@ -1,9 +1,9 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
-import { BigNumber as BN, Contract } from 'ethers';
+import { Contract } from 'ethers';
 import PendleGovernanceManager from '../../build/artifacts/contracts/core/PendleGovernanceManager.sol/PendleGovernanceManager.json'
 import MockPendleGovernanceManager from '../../build/artifacts/contracts/mock/MockPendleGovernanceManager.sol/MockPendleGovernanceManager.json'
-import { consts, evm_revert, evm_snapshot, setTimeNextBlock } from '../helpers';
+import { consts, evm_revert, evm_snapshot } from '../helpers';
 chai.use(solidity);
 
 const { waffle } = require('hardhat');
@@ -20,7 +20,7 @@ describe('pendleGovernanceManager', async () => {
 
   before(async () => {
     globalSnapshotId = await evm_snapshot();
-    pendleGovernanceManagerContract = await deployContract(alice, PendleGovernanceManager, [alice]);
+    pendleGovernanceManagerContract = await deployContract(alice, PendleGovernanceManager, [alice.address]);
     snapshotId = await evm_snapshot();
   });
 
@@ -37,7 +37,7 @@ describe('pendleGovernanceManager', async () => {
     const governance = await pendleGovernanceManagerContract.governance();
     const pendingGovernance = await pendleGovernanceManagerContract.pendingGovernance();
 
-    expect(governance).to.be.eq(alice);
+    expect(governance).to.be.eq(alice.address);
     expect(pendingGovernance).to.be.eq(consts.ZERO_ADDRESS)
   })
 
@@ -50,37 +50,37 @@ describe('pendleGovernanceManager', async () => {
   })
 
   it('should be able to transfer governance', async () => {
-    await pendleGovernanceManagerContract.connect(alice).transferGovernance(bob);
+    await pendleGovernanceManagerContract.connect(alice).transferGovernance(bob.address);
     const pendingGovernance = await pendleGovernanceManagerContract.pendingGovernance();
-    expect(pendingGovernance).to.be.eq(bob);
+    expect(pendingGovernance).to.be.eq(bob.address);
     await pendleGovernanceManagerContract.connect(bob).claimGovernance()
-    const newGovernance = await pendingGovernance.governance();
-    expect(newGovernance).to.be.eq(bob);
+    const newGovernance = await pendleGovernanceManagerContract.governance();
+    expect(newGovernance).to.be.eq(bob.address);
     const newPendingGovernance = await pendleGovernanceManagerContract.pendingGovernance();
     expect(newPendingGovernance).to.be.eq(consts.ZERO_ADDRESS);
   })
 
   it('non-governance address shall not be able to transfer governance', async () => {
-    await expect(pendleGovernanceManagerContract.connect(bob).transferGovernance(bob)).to.be.revertedWith("ONLY_GOVERNANCE");
+    await expect(pendleGovernanceManagerContract.connect(bob).transferGovernance(bob.address)).to.be.revertedWith("ONLY_GOVERNANCE");
   })
 
   it('non-pendingGovernance shall not be able to claim governance', async() => {
-    await pendleGovernanceManagerContract.connect(alice).trasferGovernance(bob);
+    await pendleGovernanceManagerContract.connect(alice).transferGovernance(bob.address);
     await expect(pendleGovernanceManagerContract.connect(charlie).claimGovernance()).to.be.revertedWith("WRONG_GOVERNANCE");
-    await pendleGovernanceManagerContract.connect(alice).trasferGovernance(charlie);
+    await pendleGovernanceManagerContract.connect(alice).transferGovernance(charlie.address);
     await expect(pendleGovernanceManagerContract.connect(bob).claimGovernance()).to.be.revertedWith("WRONG_GOVERNANCE");
   })
 
   it('TransferGovernancePending and GovernanceClaimed event should be emitted upon successful transfer and claiming', async () => {
-    await expect(pendleGovernanceManagerContract.connect(alice).trasferGovernance(bob))
-      .to.emit(pendleGovernanceManagerContract, "TransferGovernancePending").withArgs(bob);
+    await expect(pendleGovernanceManagerContract.connect(alice).transferGovernance(bob.address))
+      .to.emit(pendleGovernanceManagerContract, "TransferGovernancePending").withArgs(bob.address);
     await expect(pendleGovernanceManagerContract.connect(bob).claimGovernance())
-      .to.emit(pendleGovernanceManagerContract, "GovernanceClaimed").withArgs(bob, alice);
+      .to.emit(pendleGovernanceManagerContract, "GovernanceClaimed").withArgs(bob.address, alice.address);
   })
 
   it('OnlyGovernance modifier should reject non-governance address', async () => {
     let MockPendleGovernanceManagerContract: Contract;
-    MockPendleGovernanceManagerContract = await deployContract(alice, MockPendleGovernanceManager, [alice]);
+    MockPendleGovernanceManagerContract = await deployContract(alice, MockPendleGovernanceManager, [alice.address]);
     await expect(MockPendleGovernanceManagerContract.connect(bob).stub()).to.be.revertedWith("ONLY_GOVERNANCE");
   })
 });
