@@ -507,6 +507,10 @@ abstract contract PendleLiquidityMiningBase is
         stakeUnitsForUser = epochData[epochId].stakeUnitsForUser[user][expiry];
     }
 
+    function readAllExpiriesLength() external view override returns (uint256 length) {
+        length = allExpiries.length;
+    }
+
     function checkNotPaused() internal {
         (bool paused, ) = pausingManager.checkLiqMiningStatus(address(this));
         require(!paused, "LIQ_MINING_PAUSED");
