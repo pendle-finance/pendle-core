@@ -12,6 +12,7 @@ import "../../interfaces/IPendleWhitelist.sol";
 import "../../interfaces/IPendlePausingManager.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 /**
 @dev things that must hold in this contract:
@@ -118,10 +119,8 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     modifier nonContractOrWhitelisted() {
-        require(
-            msg.sender == tx.origin || whitelist.whitelisted(msg.sender),
-            "CONTRACT_NOT_WHITELISTED"
-        );
+        bool isEOA = !Address.isContract(msg.sender) && tx.origin == msg.sender;
+        require(isEOA || whitelist.whitelisted(msg.sender), "CONTRACT_NOT_WHITELISTED");
         _;
     }
 
@@ -506,6 +505,10 @@ abstract contract PendleLiquidityMiningBase is
         uint256 expiry
     ) external view returns (uint256 stakeUnitsForUser) {
         stakeUnitsForUser = epochData[epochId].stakeUnitsForUser[user][expiry];
+    }
+
+    function readAllExpiriesLength() external view override returns (uint256 length) {
+        length = allExpiries.length;
     }
 
     function checkNotPaused() internal {

@@ -626,8 +626,10 @@ contract PendleRouter is IPendleRouter, WithdrawableV2, PendleRouterNonReentrant
                 require(msg.value >= transfer.amount, "INSUFFICENT_ETH_AMOUNT");
                 // we only need transfer.amount, so we return the excess
                 uint256 excess = msg.value.sub(transfer.amount);
-                (bool success, ) = msg.sender.call{value: excess}("");
-                require(success, "TRANSFER_FAILED");
+                if (excess != 0) {
+                    (bool success, ) = msg.sender.call{value: excess}("");
+                    require(success, "TRANSFER_FAILED");
+                }
 
                 weth.deposit{value: transfer.amount}();
                 weth.transfer(market, transfer.amount);

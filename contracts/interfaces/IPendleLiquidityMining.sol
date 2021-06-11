@@ -119,4 +119,6 @@ interface IPendleLiquidityMining {
     function forgeId() external view returns (bytes32);
 
     function forge() external view returns (address);
+
+    function readAllExpiriesLength() external view returns (uint256);
 }
