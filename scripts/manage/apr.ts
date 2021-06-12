@@ -1,25 +1,20 @@
 const hre = require('hardhat');
 import fs from 'fs';
 import path from 'path';
-import { utils, BigNumber as BN } from 'ethers';
-import { mintAaveToken, mintCompoundToken, mint } from '../../test/helpers';
+import { BigNumber as BN } from 'ethers';
+import { BigNumber as bigNumber } from 'bignumber.js';
 import PendleRouter from '../../build/artifacts/contracts/core/PendleRouter.sol/PendleRouter.json';
-import PendleRedeemProxy from '../../build/artifacts/contracts/proxies/PendleRedeemProxy.sol/PendleRedeemProxy.json';
-const { execSync } = require('child_process');
 
-const UNDERLYING_YIELD_TOKEN_TO_SEED = BN.from(1000000);
-const BASE_TOKEN_TO_SEED = BN.from(1000000);
+const bN = (s: string): bigNumber => {
+  return new bigNumber(s);
+};
+
 
 import {
   devConstants,
   kovanConstants,
   Deployment,
-  DeployedContract,
-  saveDeployment,
   getContractFromDeployment,
-  createNewYieldContractAndMarket,
-  mintXytAndBootstrapMarket,
-  setupLiquidityMining,
 } from '../helpers/deployHelpers';
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
@@ -54,22 +49,23 @@ async function main() {
   );
 
   // const xytAddress = "0xc2D5FfFeDf7C08C67B4EE3d8f93e3DB6e088d3b5";
-  const xytAddress = '0x55c9bcd1327477541c31d80366369505F8E24bDE';
+  const xytAddress = '0x2618929B23d8d7316D9858BE338F59Ae283646AE';
   // const user = "0xE8A4095437dd20a01e66115dE33164eBCEA9B09a";
-  const pendleAddress = '0x9f7a4af55f74bc2275ed058a4e247b4eb1d84003';
-  const user = '0xE8A4095437dd20a01e66115dE33164eBCEA9B09a';
-  const marketAddress = '0xD992e0F45BE5C403bc0FDF7EFBA29C9014fF3807';
-  const liqMiningAddress = '0xDA4287310e07763D454c256EEacE64dB8Ac2ACf1';
-  const EXPIRY = BN.from(1627430400);
+  const pendleAddress = '0x0fC57Dc1d42F0EA56A447904bA25104d5584a796';
+  // const user = '0xE8A4095437dd20a01e66115dE33164eBCEA9B09a';
+  const marketAddress = '0x6eea907c23BE91f0966E59B6E1fc26f3205ED136';
 
-  const data = await getContractFromDeployment(hre, deployment, 'PendleData');
+  const liqMiningAddress = '0xaB90D91086C55bdAB4D639d3EF11A3a2A855DB94';
+  const EXPIRY = BN.from(1672272000);
 
-  const xyt = await (await hre.ethers.getContractFactory('PendleFutureYieldToken')).attach(xytAddress);
+  // const data = await getContractFromDeployment(hre, deployment, 'PendleData');
+
+  // const xyt = await (await hre.ethers.getContractFactory('PendleFutureYieldToken')).attach(xytAddress);
   const market = await (await hre.ethers.getContractFactory('PendleAaveMarket')).attach(marketAddress);
   const liqMining = await (await hre.ethers.getContractFactory('PendleCompoundLiquidityMining')).attach(
     liqMiningAddress
   );
-  const pendle = await (await hre.ethers.getContractFactory('PENDLE')).attach(pendleAddress);
+  // const pendle = await (await hre.ethers.getContractFactory('PENDLE')).attach(pendleAddress);
 
   const epochId = 1;
   // Step 1:
@@ -93,7 +89,7 @@ async function main() {
   console.log(`Step 4: pendlePerEpochPerLP (raw, x 1e18 balance) = ${pendlePerEpochPerLP}`);
 
   // Step 5:
-  const { xytBalance, xytWeight, tokenBalance, tokenWeight } = await market.getReserves();
+  const { tokenBalance, tokenWeight } = await market.getReserves();
   const BASE_TOKEN_PRICE = 1; // $1
   const SCALING_FACTOR = BN.from(100000); // multiply with numbers to keep precision;
   const BASE_TOKEN_DECIMALS = 6; // USDT has 6 decimals
