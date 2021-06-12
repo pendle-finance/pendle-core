@@ -6,17 +6,18 @@ export async function step2(deployer: any, hre: any, deployment: Deployment, con
   const marketEmergencyHandler = deployment.variables.MARKET_EMERGENCY_HANDLER;
   const liqMiningEmergencyHandler = deployment.variables.LIQ_MINING_EMERGENCY_HANDLER;
 
+  console.log(`\t deployer (temporary governance) = ${deployer.address}`);
   console.log(`\t governanceMultisig = ${governanceMultisig}`);
   console.log(`\t forgeEmergencyHandler = ${forgeEmergencyHandler}`);
   console.log(`\t marketEmergencyHandler = ${marketEmergencyHandler}`);
   console.log(`\t liqMiningEmergencyHandler = ${liqMiningEmergencyHandler}`);
 
   const governanceManagerMain = await deployWithName(hre, deployment, 'PendleGovernanceManager', 'PendleGovernanceManagerMain', [
-    governanceMultisig,
+    deployer.address,
   ]);
 
   const governanceManagerLiqMining = await deployWithName(hre, deployment, 'PendleGovernanceManager', 'PendleGovernanceManagerLiqMining', [
-    governanceMultisig,
+    deployer.address,
   ]);
 
   const pausingManagerMain = await deployWithName(hre, deployment, 'PendlePausingManager', 'PendlePausingManagerMain', [
@@ -27,7 +28,7 @@ export async function step2(deployer: any, hre: any, deployment: Deployment, con
   ]);
 
   const pausingManagerLiqMining = await deployWithName(hre, deployment, 'PendlePausingManager', 'PendlePausingManagerLiqMining', [
-    governanceManagerMain.address,
+    governanceManagerLiqMining.address,
     forgeEmergencyHandler,
     marketEmergencyHandler,
     liqMiningEmergencyHandler,

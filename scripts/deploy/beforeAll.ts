@@ -1,4 +1,4 @@
-import { Deployment, validAddress, deploy } from '../helpers/deployHelpers';
+import { Deployment, validAddress } from '../helpers/deployHelpers';
 
 export async function beforeAll(deployer: any, hre: any, deployment: Deployment, consts: any) {
   const multisigNames = [
@@ -10,6 +10,7 @@ export async function beforeAll(deployer: any, hre: any, deployment: Deployment,
     'FORGE_EMERGENCY_HANDLER',
     'MARKET_EMERGENCY_HANDLER',
     'LIQ_MINING_EMERGENCY_HANDLER',
+    'TREASURY_MULTISIG'
   ];
 
   if (!['mainnet', 'goerli', 'kovan'].includes(hre.network.name)) {

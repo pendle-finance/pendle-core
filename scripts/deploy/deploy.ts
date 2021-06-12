@@ -1,4 +1,4 @@
-const hre = require('hardhat');
+import hre from 'hardhat';
 import fs from 'fs';
 import path from 'path';
 
@@ -6,12 +6,13 @@ import {
   devConstants,
   kovanConstants,
   mainnetConstants,
-  goerliConstants,
+  goerliConstants
+} from '../helpers/constants';
+
+import {
   Deployment,
-  DeployedContract,
-  createNewYieldContractAndMarket,
-  getContractFromDeployment,
 } from '../helpers/deployHelpers';
+
 import { beforeAll } from './beforeAll';
 import { step0 } from './step0';
 import { step1 } from './step1';
@@ -23,7 +24,10 @@ import { step6 } from './step6';
 import { step7 } from './step7';
 import { step8 } from './step8';
 import { step9 } from './step9';
-const NUMBER_OF_STEPS = 9;
+import { step10 } from './step10';
+import { step11 } from './step11';
+import { step12 } from './step12';
+const NUMBER_OF_STEPS = 12;
 
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
@@ -83,7 +87,7 @@ async function main() {
         break;
       }
       case 2: {
-        console.log(`\n[Step ${step}]: Deploying GovernanceManagerMain, governanceManagerLiqMining, PausingManagerMain, pausingManagerLiqMining`);
+        console.log(`\n[Step ${step}]: Deploying GovernanceManagerMain, GovernanceManagerLiqMining, PausingManagerMain, PausingManagerLiqMining`);
         await step2(deployer, hre, deployment, consts);
         break;
       }
@@ -91,42 +95,58 @@ async function main() {
         console.log(`\n[Step ${step}]: Deploying PendleData`);
         await step3(deployer, hre, deployment, consts);
         break;
-      }
-      case 3: {
-        console.log(`\n[Step ${step}]: Deploying PendleMarketReader`);
-        await step3(deployer, hre, deployment, consts);
-        break;
-      }
+      } //DONE
       case 4: {
-        console.log(`\n[Step ${step}]: Deploying PendleRouter`);
+        console.log(`\n[Step ${step}]: Deploying PendleMarketReader`);
         await step4(deployer, hre, deployment, consts);
         break;
-      }
+      } //DONE
       case 5: {
-        console.log(`\n[Step ${step}]: Initializing PendleData`);
+        console.log(`\n[Step ${step}]: Deploying PendleRouter`);
         await step5(deployer, hre, deployment, consts);
         break;
-      }
+      } // DONE
       case 6: {
-        console.log(`\n[Step ${step}]: Deploying PendleRedeemProxy`);
+        console.log(`\n[Step ${step}]: Initialise PendleData`);
         await step6(deployer, hre, deployment, consts);
         break;
-      }
+      } // DONE
       case 7: {
-        console.log(`\n[Step ${step}]: Deploying PendleAaveForge & PendleAaveMarketFactory`);
+        console.log(`\n[Step ${step}]: Deploying PendleRedeemProxy & PendleWhitelist`);
         await step7(deployer, hre, deployment, consts);
         break;
-      }
+      }// DONE
       case 8: {
-        console.log(`\n[Step ${step}]: Deploying PendleCompoundForge & PendleCompoundMarketFactory`);
+        console.log(`\n[Step ${step}]: Deploying PendleCompoundForge, cRewardManager (+init), cYieldContractDeployer (+init) & PendleCompoundMarketFactory`);
         await step8(deployer, hre, deployment, consts);
         break;
-      }
+      } //DONE
       case 9: {
-        console.log(`\n[Step ${step}]: Deploying PendleAaveV2Forge`);
+        console.log(`\n[Step ${step}]: Deploying PendleAaveV2Forge, a2RewardManager (+init), a2YieldContractDeployer (+init) & PendleAaveMarketFactory`);
         await step9(deployer, hre, deployment, consts);
         break;
-      }
+      } //DONE
+      case 10: {
+        console.log(`\n[Step ${step}]: Set up params in PendleData`);
+        await step10(deployer, hre, deployment, consts);
+        break;
+      } //DONE
+      case 11: {
+        console.log(`\n[Step ${step}]: Add forges and market factories`);
+        await step11(deployer, hre, deployment, consts);
+        break;
+      } //DONE
+      case 12: {
+        console.log(`\n[Step ${step}]: Transfer governance to governance multisig`);
+        await step12(deployer, hre, deployment, consts);
+        break;
+      } //DONE
+      // case 999: {
+      //   console.log(`\n[Step ${step}]: Adding PendleCompoundForge + PendleCompoundMarketFactory`);
+      //   await step9(deployer, hre, deployment, consts);
+      //   break;
+      // }
+
       default: {
         break;
       }

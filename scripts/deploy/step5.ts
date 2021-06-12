@@ -1,24 +1,17 @@
-import { Deployment, validAddress, deploy, getContractFromDeployment } from '../helpers/deployHelpers';
+import { Deployment, validAddress, deploy } from '../helpers/deployHelpers';
 
 export async function step5(deployer: any, hre: any, deployment: Deployment, consts: any) {
-  const pendleRouterAddress = deployment.contracts.PendleRouter.address;
+  const wethAddress = consts.tokens.WETH.address;
   const pendleDataAddress = deployment.contracts.PendleData.address;
+  const governanceManagerMain = deployment.contracts.PendleGovernanceManagerMain.address;
 
-  if (!validAddress('PendleRouter address', pendleRouterAddress)) process.exit(1);
-  if (!validAddress('PendleData address', pendleDataAddress)) process.exit(1);
+  if (!validAddress('pendleDataAddress', pendleDataAddress)) process.exit(1);
+  if (!validAddress('governanceManagerMain', governanceManagerMain)) process.exit(1);
+  if (!validAddress('WETH address', wethAddress)) process.exit(1);
 
-  const pendleData = await getContractFromDeployment(hre, deployment, 'PendleData');
-  console.log(`PendleData = ${pendleData.address}`);
-  await pendleData.initialize(pendleRouterAddress);
-  console.log(`13`);
+  console.log(`\t\tpendleDataAddress used = ${pendleDataAddress}`);
+  console.log(`\t\tgovernanceManagerMain used = ${governanceManagerMain}`);
+  console.log(`\t\tWETH used = ${wethAddress}`);
 
-  await pendleData.setLockParams(consts.misc.LOCK_NUMERATOR, consts.misc.LOCK_DENOMINATOR);
-  console.log(`\t\tSet lock parameters for markets`);
-
-  await pendleData.setInterestUpdateRateDeltaForMarket(consts.misc.INTEREST_UPDATE_RATE_DELTA_FOR_MARKET);
-  await pendleData.setForgeFee(consts.misc.FORGE_FEE);
-  await pendleData.setMarketFees(consts.misc.SWAP_FEE, consts.misc.PROTOCOL_SWAP_FEE);
-
-  console.log(`\tPendleRouter address used = ${pendleRouterAddress}`);
-  console.log(`\tPendleData address used = ${pendleDataAddress}`);
+  await deploy(hre, deployment, 'PendleRouter', [governanceManagerMain, wethAddress, pendleDataAddress]);
 }
