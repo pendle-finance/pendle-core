@@ -107,12 +107,12 @@ export async function parseTestEnvMarketFixture(alice: Wallet, mode: Mode, env: 
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE_V2;
     env.market = fixture.a2Market;
     env.market18 = fixture.a2Market18;
-    env.marketEth = fixture.marketEth;
+    env.marketEth = fixture.a2MarketEth;
   } else if (env.mode == Mode.COMPOUND) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_COMPOUND;
     env.market = fixture.cMarket;
+    env.marketEth = fixture.cMarketEth;
     // no market18
-    // no marketEth for Compound
   }
 }
 

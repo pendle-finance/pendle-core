@@ -3,7 +3,7 @@ import hre from 'hardhat';
 import PendleCompoundMarket from '../../../build/artifacts/contracts/core/compound/PendleCompoundMarket.sol/PendleCompoundMarket.json';
 import MockPendleAaveMarket from '../../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json';
 import TestToken from '../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json';
-import { consts, emptyToken, getA2Contract, getCContract, tokens, mintXytAave, mintXytCompound } from '../../helpers';
+import { consts, mintXytAave, mintXytCompound, tokens } from '../../helpers';
 import { AaveV2ForgeFixture } from './aaveV2Forge.fixture';
 import { CompoundFixture } from './compoundForge.fixture';
 import { CoreFixture } from './core.fixture';
@@ -20,7 +20,8 @@ export interface MarketFixture {
   a2Market: Contract;
   a2Market18: Contract;
   cMarket: Contract;
-  marketEth: Contract;
+  a2MarketEth: Contract;
+  cMarketEth: Contract;
 }
 
 export async function marketFixture(_: Wallet[], provider: providers.Web3Provider): Promise<MarketFixture> {
@@ -69,6 +70,9 @@ export async function marketFixture(_: Wallet[], provider: providers.Web3Provide
   // a2XYT - WETH
   await router.createMarket(consts.MARKET_FACTORY_AAVE_V2, a2FutureYieldToken.address, tokens.WETH.address, consts.HG);
 
+  // cXYT - WETH
+  await router.createMarket(consts.MARKET_FACTORY_COMPOUND, cFutureYieldToken.address, tokens.WETH.address, consts.HG);
+
   const a2MarketAddress = await data.getMarket(
     consts.MARKET_FACTORY_AAVE_V2,
     a2FutureYieldToken.address,
@@ -87,20 +91,27 @@ export async function marketFixture(_: Wallet[], provider: providers.Web3Provide
     testToken.address
   );
 
-  const marketEthAddress = await data.getMarket(
+  const a2MarketEthAddress = await data.getMarket(
     consts.MARKET_FACTORY_AAVE_V2,
     a2FutureYieldToken.address,
+    tokens.WETH.address
+  );
+
+  const cMarketEthAddress = await data.getMarket(
+    consts.MARKET_FACTORY_COMPOUND,
+    cFutureYieldToken.address,
     tokens.WETH.address
   );
 
   const a2Market = new Contract(a2MarketAddress, MockPendleAaveMarket.abi, alice);
   const a2Market18 = new Contract(a2Market18Address, MockPendleAaveMarket.abi, alice);
   const cMarket = new Contract(cMarketAddress, PendleCompoundMarket.abi, alice);
-  const marketEth = new Contract(marketEthAddress, MockPendleAaveMarket.abi, alice);
+  const a2MarketEth = new Contract(a2MarketEthAddress, MockPendleAaveMarket.abi, alice);
+  const cMarketEth = new Contract(cMarketEthAddress, MockPendleAaveMarket.abi, alice);
 
   for (var person of [alice, bob, charlie, dave, eve]) {
     await testToken.connect(person).approve(router.address, totalSupply);
   }
 
-  return { routerFix, core, a2Forge, cForge, testToken, a2Market, a2Market18, cMarket, marketEth };
+  return { routerFix, core, a2Forge, cForge, testToken, a2Market, a2Market18, cMarket, a2MarketEth, cMarketEth };
 }
