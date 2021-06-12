@@ -10,13 +10,14 @@ import {
   bootstrapMarket,
   consts,
   errMsg,
+  mineBlock,
   removeMarketLiquiditySingle,
   setTimeNextBlock,
   swapExactInTokenToXyt,
   swapExactInXytToToken,
   swapExactOutTokenToXyt,
   swapExactOutXytToToken,
-  toFixedPoint,
+  toFixedPoint
 } from '../../helpers';
 import { TestEnv } from '../fixtures';
 chai.use(solidity);
@@ -42,6 +43,29 @@ export async function AMMTest(env: TestEnv, useSwapIn: boolean) {
   await runTestXytToToken(env, env.T0.add(15120300), BN.from(400000000), BN.from(21595046), useSwapIn);
   await runTestTokenToXyt(env, env.T0.add(15120360), BN.from(3696839), BN.from(80000000), useSwapIn);
   await runTestXytToToken(env, env.T0.add(15379200), BN.from(800000016), BN.from(11997610), useSwapIn);
+}
+
+export async function AMMTestWhenBlockDeltaIsNonZero(env: TestEnv, useSwapIn: boolean) {
+  /*-------------------------------------------------------------*/
+  const amount = amountToWei(BN.from(1000), 6);
+  await bootstrapMarket(env, alice, amount);
+  let BLOCK_DELTA = 3;
+  await env.data.setCurveShiftBlockDelta(BLOCK_DELTA);
+  // await env.testToken.approve(env.market.address, consts.INF);
+  for (let i = 0; i < BLOCK_DELTA; i++) {
+    await mineBlock();
+  }
+
+  // have curveShift
+  await runTestXytToToken(env, env.T0.add(2592000), BN.from(100000000), BN.from(82629492), useSwapIn);
+  // no curveShift
+  await runTestXytToToken(env, env.T0.add(5184000), BN.from(100000000), BN.from(69458410), useSwapIn);
+  // no curveShift
+  await runTestTokenToXyt(env, env.T0.add(7776000), BN.from(100000000), BN.from(139100663), useSwapIn);
+  // no curveShift
+  await runTestXytToToken(env, env.T0.add(10368000), BN.from(100000000), BN.from(74198713), useSwapIn);
+  // have curveShift
+  await runTestTokenToXyt(env, env.T0.add(12960000), BN.from(100000000), BN.from(355627611), useSwapIn);
 }
 
 export async function AMMNearCloseTest(

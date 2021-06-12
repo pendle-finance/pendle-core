@@ -19,16 +19,17 @@ import {
   removeMarketLiquiditySingle,
   setTimeNextBlock,
   swapExactInXytToToken,
-  swapExactOutXytToToken,
+  swapExactOutXytToToken
 } from '../helpers';
 import {
   AMMCheckLPNearCloseTest,
   AMMNearCloseTest,
   AMMTest,
+  AMMTestWhenBlockDeltaIsNonZero,
   marketBalanceNonZeroSwapTest,
   marketBalanceNonZeroTest,
   MarketFeesTest,
-  ProtocolFeeTest,
+  ProtocolFeeTest
 } from './common-test/amm-formula-test';
 import { MultiExpiryMarketTest } from './common-test/multi-market-common-test';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
@@ -292,6 +293,14 @@ describe('AaveV2-market', async () => {
 
   it("AMM's formulas is correct for swapExactIn", async () => {
     await AMMTest(env, true);
+  });
+
+  it("AMM's formulas is correct for swapExactIn when BLOCK_DELTA is non-zero", async () => {
+    await AMMTestWhenBlockDeltaIsNonZero(env, true);
+  });
+
+  it("AMM's formulas is correct for swapExactOut when BLOCK_DELTA is non-zero", async () => {
+    await AMMTestWhenBlockDeltaIsNonZero(env, false);
   });
 
   it("AMM's formulas is correct for swapExactOut", async () => {
