@@ -14,7 +14,14 @@ import {
   Token,
   tokens,
 } from '../helpers';
-import { Mode, parseTestEnvRouterFixture, TestEnv, MarketFixture, marketFixture, parseTestEnvMarketFixture } from './fixtures';
+import {
+  Mode,
+  parseTestEnvRouterFixture,
+  TestEnv,
+  MarketFixture,
+  marketFixture,
+  parseTestEnvMarketFixture,
+} from './fixtures';
 
 const { loadFixture, provider } = waffle;
 
@@ -52,9 +59,9 @@ describe('router-negative-test', async () => {
 
   it("shouldn't be able to newYieldContracts with an expiry in the past", async () => {
     let futureTime = env.T0.sub(consts.ONE_MONTH);
-    await expect(env.router.newYieldContracts(consts.FORGE_AAVE_V2, env.underlyingAsset.address, futureTime)).to.be.revertedWith(
-      errMsg.INVALID_EXPIRY
-    );
+    await expect(
+      env.router.newYieldContracts(consts.FORGE_AAVE_V2, env.underlyingAsset.address, futureTime)
+    ).to.be.revertedWith(errMsg.INVALID_EXPIRY);
   });
 
   it("shouldn't be able to newYieldContracts with an expiry not divisible for expiryDivisor", async () => {
@@ -62,13 +69,12 @@ describe('router-negative-test', async () => {
     if (futureTime.mod(await env.data.expiryDivisor()).eq(0)) {
       futureTime = futureTime.add(1);
     }
-    await expect(env.router.newYieldContracts(consts.FORGE_AAVE_V2, env.underlyingAsset.address, futureTime)).to.be.revertedWith(
-      errMsg.INVALID_EXPIRY
-    );
+    await expect(
+      env.router.newYieldContracts(consts.FORGE_AAVE_V2, env.underlyingAsset.address, futureTime)
+    ).to.be.revertedWith(errMsg.INVALID_EXPIRY);
   });
 
   it("shouldn't be able to redeemUnderlying if the yield contract has expired", async () => {
-
     await setTimeNextBlock(env.T0.add(consts.ONE_YEAR));
 
     await expect(
@@ -104,7 +110,12 @@ describe('router-negative-test', async () => {
 
   it("shouldn't be able to redeemUnderlying with zero amount", async () => {
     await expect(
-      env.router.redeemUnderlying(consts.FORGE_AAVE_V2, env.underlyingAsset.address, env.T0.add(consts.SIX_MONTH), BN.from(0))
+      env.router.redeemUnderlying(
+        consts.FORGE_AAVE_V2,
+        env.underlyingAsset.address,
+        env.T0.add(consts.SIX_MONTH),
+        BN.from(0)
+      )
     ).to.be.revertedWith(errMsg.ZERO_AMOUNT);
   });
 
@@ -172,20 +183,25 @@ describe('router-negative-test', async () => {
   });
 
   it("shouldn't be able to add duplicate markets", async () => {
-    await expect(
-      createAaveMarketWithExpiry(env, env.EXPIRY, wallets)
-    ).to.be.revertedWith(errMsg.DUPLICATE_YIELD_CONTRACT);
+    await expect(createAaveMarketWithExpiry(env, env.EXPIRY, wallets)).to.be.revertedWith(
+      errMsg.DUPLICATE_YIELD_CONTRACT
+    );
     await expect(
       env.router.createMarket(env.MARKET_FACTORY_ID, env.xyt.address, env.testToken.address, consts.HG)
     ).to.be.revertedWith(errMsg.EXISTED_MARKET);
 
     let newMarketEnv: TestEnv = await createAaveMarketWithExpiry(env, env.EXPIRY.add(consts.THREE_MONTH), wallets);
     await expect(
-      env.router.createMarket(newMarketEnv.MARKET_FACTORY_ID, newMarketEnv.xyt.address, newMarketEnv.testToken.address, consts.HG)
+      env.router.createMarket(
+        newMarketEnv.MARKET_FACTORY_ID,
+        newMarketEnv.xyt.address,
+        newMarketEnv.testToken.address,
+        consts.HG
+      )
     ).to.be.revertedWith(errMsg.EXISTED_MARKET);
   });
 
-  it("shouldn't be able to create aave markets with wrong factory", async() => {
+  it("shouldn't be able to create aave markets with wrong factory", async () => {
     await expect(
       env.router.createMarket(consts.MARKET_FACTORY_COMPOUND, env.xyt.address, env.testToken.address, consts.HG)
     ).to.be.revertedWith(errMsg.INVALID_FORGE_FACTORY);
