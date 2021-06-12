@@ -50,20 +50,6 @@ describe('router-negative-test', async () => {
     refAmount = amountToWei(consts.INITIAL_AAVE_TOKEN_AMOUNT, 6);
   });
 
-  async function tokenizeYield(user: Wallet, amount: BN): Promise<BN> {
-    let amountTokenMinted = await env.ot.balanceOf(user.address);
-    await env.router.tokenizeYield(
-      consts.FORGE_AAVE_V2,
-      env.underlyingAsset.address,
-      env.T0.add(consts.SIX_MONTH),
-      amount,
-      user.address,
-      consts.HG
-    );
-    amountTokenMinted = (await env.ot.balanceOf(user.address)).sub(amountTokenMinted);
-    return amountTokenMinted;
-  }
-
   it("shouldn't be able to newYieldContracts with an expiry in the past", async () => {
     let futureTime = env.T0.sub(consts.ONE_MONTH);
     await expect(env.router.newYieldContracts(consts.FORGE_AAVE_V2, env.underlyingAsset.address, futureTime)).to.be.revertedWith(
@@ -82,7 +68,6 @@ describe('router-negative-test', async () => {
   });
 
   it("shouldn't be able to redeemUnderlying if the yield contract has expired", async () => {
-    let amount = await tokenizeYield(alice, refAmount);
 
     await setTimeNextBlock(env.T0.add(consts.ONE_YEAR));
 
