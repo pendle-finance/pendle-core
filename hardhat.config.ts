@@ -12,7 +12,8 @@ dotenv.config();
 const dummyPrivateKey = '1111111111111111111111111111111111111111111111111111111111111111';
 
 const config: HardhatUserConfig = {
-  defaultNetwork: 'hardhat',
+  //defaultNetwork: 'hardhat',
+  defaultNetwork: 'kovantest',
   // gasReporter: {
   //   currency: 'USD',
   //   gasPrice: 100
@@ -70,13 +71,14 @@ const config: HardhatUserConfig = {
       url: 'http://127.0.0.1:8545',
       gas: 12400000,
       timeout: 1000000,
+      gasPrice: 1
     },
-    // kovan: {
-    //   url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY || "dummyKey"}`,
-    //   gas: 8000000,
-    //   timeout: 100000,
-    //   accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
-    // },
+    kovan: {
+      url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY || "dummyKey"}`,
+      gas: 8000000,
+      timeout: 100000,
+      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
+    },
     // kovantest: {
     //   // url: `https://eth-kovan.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
     //   url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY || "dummyKey"}`,
