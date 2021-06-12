@@ -17,6 +17,6 @@ export async function step3(deployer: any, hre: any, deployment: Deployment, con
   const pendleData = await deploy(hre, deployment, 'PendleData', [
     governanceManagerMainAddress,
     treasuryAddress,
-    pausingManagerMainAddress
+    pausingManagerMainAddress,
   ]);
 }

@@ -1,4 +1,9 @@
-import { Deployment, validAddress, sendAndWaitForTransaction, getContractFromDeployment } from '../helpers/deployHelpers';
+import {
+  Deployment,
+  validAddress,
+  sendAndWaitForTransaction,
+  getContractFromDeployment,
+} from '../helpers/deployHelpers';
 
 export async function step6(_: any, hre: any, deployment: Deployment, consts: any) {
   const pendleRouterAddress = deployment.contracts.PendleRouter.address;
@@ -8,7 +13,5 @@ export async function step6(_: any, hre: any, deployment: Deployment, consts: an
 
   const pendleData = await getContractFromDeployment(hre, deployment, 'PendleData');
   console.log(`\t\tPendleData address = ${pendleData.address}`);
-  await sendAndWaitForTransaction(hre, pendleData.initialize, 'initialize PendleData', [
-    pendleRouterAddress
-  ]);
+  await sendAndWaitForTransaction(hre, pendleData.initialize, 'initialize PendleData', [pendleRouterAddress]);
 }

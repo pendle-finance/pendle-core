@@ -37,12 +37,12 @@ export async function step9(deployer: any, hre: any, deployment: Deployment, con
   ]);
 
   await sendAndWaitForTransaction(hre, a2RewardManager.initialize, 'initialize a2RewardManager', [
-    pendleAaveV2Forge.address
+    pendleAaveV2Forge.address,
   ]);
 
   await sendAndWaitForTransaction(hre, a2YieldContractDeployer.initialize, 'initialize a2YieldContractDeployer', [
-    pendleAaveV2Forge.address
-  ])
+    pendleAaveV2Forge.address,
+  ]);
 
   const pendleAaveMarketFactory = await deploy(hre, deployment, 'PendleAaveMarketFactory', [
     pendleRouterAddress,

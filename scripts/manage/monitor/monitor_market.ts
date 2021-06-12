@@ -1,7 +1,7 @@
-const hre = require("hardhat");
-import fs from "fs";
-import path from "path";
-import { utils, BigNumber as BN } from "ethers";
+const hre = require('hardhat');
+import fs from 'fs';
+import path from 'path';
+import { utils, BigNumber as BN } from 'ethers';
 
 import {
   devConstants,
@@ -10,7 +10,7 @@ import {
   goerliConstants,
   Deployment,
   getContractFromDeployment,
-} from "../helpers/deployHelpers";
+} from '../helpers/deployHelpers';
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
   const network = hre.network.name;
@@ -18,7 +18,8 @@ async function main() {
   let consts: any;
 
   //check and load arguments
-  if (process.argv.length != 5) { //marketFactoryId, xyt, token
+  if (process.argv.length != 5) {
+    //marketFactoryId, xyt, token
     console.error('Expected three argument!');
     process.exit(1);
   }
@@ -26,14 +27,14 @@ async function main() {
   const xytAddress = process.argv[3];
   const baseTokenAddress = process.argv[4];
 
-  const xytContract = await (await hre.ethers.getContractFactory("PendleFutureYieldToken")).attach(xytAddress);
-  
+  const xytContract = await (await hre.ethers.getContractFactory('PendleFutureYieldToken')).attach(xytAddress);
+
   //check network and load constant
-  if (network == "kovan" || network == "kovantest") {
+  if (network == 'kovan' || network == 'kovantest') {
     consts = kovanConstants;
-  } else if (network == "goerli") {
+  } else if (network == 'goerli') {
     consts = goerliConstants;
-  } else if (network == "mainnet") {
+  } else if (network == 'mainnet') {
     consts = mainnetConstants;
   } else {
     consts = devConstants;
@@ -43,7 +44,7 @@ async function main() {
   console.log(`\tDeployment's filePath = ${filePath}`);
 
   //load depolyment and deployed contracts
-  const existingDeploymentJson = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  const existingDeploymentJson = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   const deployment = existingDeploymentJson as Deployment;
 
   const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
@@ -51,16 +52,20 @@ async function main() {
   const pendleMarketReader = await getContractFromDeployment(hre, deployment, 'PendleMarketReader');
   const pendlePausingManager = await getContractFromDeployment(hre, deployment, 'PendlePausingManager');
   //const market = await pendleData.getMarket(marketFactoryId, xytAddress, baseTokenAddress);
-  const marketAddress = await pendleData.getMarket(marketFactoryId, xytAddress, baseTokenAddress)
-  const market = await hre.ethers.getContractAt("IPendleMarket", marketAddress);
+  const marketAddress = await pendleData.getMarket(marketFactoryId, xytAddress, baseTokenAddress);
+  const market = await hre.ethers.getContractAt('IPendleMarket', marketAddress);
 
   console.log(`marketId = ${marketFactoryId}`);
   console.log(`marketAddress = ${market.address}`);
 
   //query amount details
-  const reserveBalanceResult = await pendleMarketReader.getMarketReserves(marketFactoryId, xytAddress, baseTokenAddress); //to print
+  const reserveBalanceResult = await pendleMarketReader.getMarketReserves(
+    marketFactoryId,
+    xytAddress,
+    baseTokenAddress
+  ); //to print
   const [xytBalance, xytWeight, tokenBalance, tokenWeight] = await market.getReserves(); //to print
-  const price = (xytBalance / xytWeight) / (tokenBalance / tokenWeight); // TODO: where is the spot price calculation //to print
+  const price = xytBalance / xytWeight / (tokenBalance / tokenWeight); // TODO: where is the spot price calculation //to print
 
   const lpTotal = await market.totalSupply(); //to print
 
@@ -68,7 +73,7 @@ async function main() {
   console.log(`underlyingAssetContractAddress = ${underlyingAssetContractAddress}`);
 
   const forgeAddress = await xytContract.forge();
-  const forge = await hre.ethers.getContractAt("IPendleForge", forgeAddress);
+  const forge = await hre.ethers.getContractAt('IPendleForge', forgeAddress);
   console.log(`forgeAddress = ${forgeAddress}`);
 
   const bearingTokenAddress = await forge.callStatic.getYieldBearingToken(underlyingAssetContractAddress);
@@ -76,14 +81,14 @@ async function main() {
   console.log(`bearingTokenaddress = ${bearingTokenAddress}`);
 
   const yieldBalance = await bearToken.balanceOf(marketAddress);
- 
-  const rewardTokenAddress = await forge.rewardToken();
-  const rewardToken = await hre.ethers.getContractAt("TestToken", rewardTokenAddress);
-  const rewardTokenBalance = await rewardToken.balanceOf(marketAddress); //to print
- 
-  const timeTillExpiry = await xytContract.expiry() - Math.floor(Date.now() / 1000); //to print
 
-  const [,islocked] = await pendlePausingManager.callStatic.checkMarketStatus(marketFactoryId, marketAddress);  //to print
+  const rewardTokenAddress = await forge.rewardToken();
+  const rewardToken = await hre.ethers.getContractAt('TestToken', rewardTokenAddress);
+  const rewardTokenBalance = await rewardToken.balanceOf(marketAddress); //to print
+
+  const timeTillExpiry = (await xytContract.expiry()) - Math.floor(Date.now() / 1000); //to print
+
+  const [, islocked] = await pendlePausingManager.callStatic.checkMarketStatus(marketFactoryId, marketAddress); //to print
 
   console.log(`amount of XYTs & baseToken = ${xytBalance} , ${tokenBalance}`);
   console.log(`weight of XYTs & baseToken = ${xytWeight} , ${tokenWeight}`);

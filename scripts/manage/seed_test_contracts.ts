@@ -75,13 +75,9 @@ async function main() {
   );
 
   const a2Forge = await hre.ethers.getContractAt('PendleAaveV2Forge', '0xc3352545F91B313A9C102ed8cB0299e61fc17829');
-  const a2RewardManager = await hre.ethers.getContractAt(
-    'PendleRewardManager',
-    (await a2Forge.rewardManager())
-  );
+  const a2RewardManager = await hre.ethers.getContractAt('PendleRewardManager', await a2Forge.rewardManager());
   await a2RewardManager.setSkippingRewards(true);
   console.log(`\tSkipped rewards`);
-
 
   //Seed contracts for TEST_EXPIRY_3
   // await createNewYieldContractAndMarket(

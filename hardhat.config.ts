@@ -13,7 +13,7 @@ const dummyPrivateKey = '1111111111111111111111111111111111111111111111111111111
 
 const config: HardhatUserConfig = {
   //defaultNetwork: 'hardhat',
-  defaultNetwork: 'kovantest',
+  defaultNetwork: 'development',
   // gasReporter: {
   //   currency: 'USD',
   //   gasPrice: 100

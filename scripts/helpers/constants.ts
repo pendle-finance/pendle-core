@@ -1,6 +1,8 @@
 import { BigNumber as BN, utils } from 'ethers';
 const ONE_E_18 = BN.from(10).pow(18);
+const ONE_DAY = BN.from(86400);
 const RONE = BN.from(2).pow(40);
+const LIQ_MINING_ALLOCATION_DENOMINATOR = 1000000000;
 
 const common = {
   ONE_E_18,
@@ -10,11 +12,19 @@ const common = {
   MARKET_FACTORY_COMPOUND: utils.formatBytes32String('Compound'),
   ZERO_ADDRESS: '0x0000000000000000000000000000000000000000',
   MAX_ALLOWANCE: BN.from(2).pow(BN.from(256)).sub(BN.from(1)),
-  ONE_DAY: BN.from(86400),
+  ONE_DAY,
   TEST_EXPIRY: 1624147200,
-  LIQ_MINING_ALLOCATION_DENOMINATOR: 1000000000,
-  HIGH_GAS_OVERRIDE: { gasLimit: 80000000 }
-}
+  LIQ_MINING_ALLOCATION_DENOMINATOR,
+  HIGH_GAS_OVERRIDE: { gasLimit: 80000000 },
+  liqParams: {
+    EPOCH_DURATION: ONE_DAY.mul(7),
+    VESTING_EPOCHS: 5,
+    EXPIRIES: [],
+    ALLOCATIONS: [LIQ_MINING_ALLOCATION_DENOMINATOR],
+    REWARDS_PER_EPOCH: [], // = [10000000000, 20000000000, ..]
+    START_TIME: 0,
+  },
+};
 
 export const devConstants = {
   common,

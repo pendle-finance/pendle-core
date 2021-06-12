@@ -36,12 +36,12 @@ export async function step8(deployer: any, hre: any, deployment: Deployment, con
   ]);
 
   await sendAndWaitForTransaction(hre, cRewardManager.initialize, 'initialise cRewardManager', [
-    pendleCompoundForge.address
-  ])
+    pendleCompoundForge.address,
+  ]);
 
   await sendAndWaitForTransaction(hre, cYieldContractDeployer.initialize, 'initialize cYieldContractDeployer', [
-    pendleCompoundForge.address
-  ])
+    pendleCompoundForge.address,
+  ]);
 
   const pendleCompoundMarketFactory = await deploy(hre, deployment, 'PendleCompoundMarketFactory', [
     pendleRouterAddress,

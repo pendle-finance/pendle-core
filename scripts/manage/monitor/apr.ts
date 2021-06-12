@@ -9,13 +9,7 @@ const bN = (s: string): bigNumber => {
   return new bigNumber(s);
 };
 
-
-import {
-  devConstants,
-  kovanConstants,
-  Deployment,
-  getContractFromDeployment,
-} from '../helpers/deployHelpers';
+import { devConstants, kovanConstants, Deployment, getContractFromDeployment } from '../helpers/deployHelpers';
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
   const network = hre.network.name;

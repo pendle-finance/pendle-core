@@ -73,27 +73,24 @@ export async function getContractFromDeployment(hre: any, deployment: Deployment
   return await contractFactory.attach(contractAddress);
 }
 
-export async function createNewYieldContractAndMarket(
+export async function createNewYieldContract(
   hre: any,
   deployment: Deployment,
   forgeId: string,
-  marketFactoryId: string,
   underlyingAssetContract: any,
-  expiry: number,
-  baseTokenContract: any
+  expiry: number
 ) {
   const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
   const pendleData = await getContractFromDeployment(hre, deployment, 'PendleData');
 
   const underlyingAssetSymbol = await underlyingAssetContract.symbol();
-  const baseTokenSymbol = await baseTokenContract.symbol();
   const forgeIdString = utils.parseBytes32String(forgeId);
 
   console.log(
-    `\tCreating new yield contracts and market for ${forgeIdString}, underlyingAsset-${baseTokenSymbol}, expiry=${expiry}, baseToken-${baseTokenSymbol}`
+    `\tCreating new yield contract for ${forgeIdString}, underlyingAsset-${underlyingAssetSymbol}, expiry=${expiry}`
   );
 
-  console.log(`\tunderlyingAssetContract = ${underlyingAssetContract.address}`);
+  console.log(`\t underlyingAssetContract = ${underlyingAssetContract.address}`);
   await sendAndWaitForTransaction(hre, pendleRouter.newYieldContracts, 'newYieldContract', [
     forgeId,
     underlyingAssetContract.address,
@@ -101,13 +98,7 @@ export async function createNewYieldContractAndMarket(
   ]);
   const xytAddress = await pendleData.xytTokens(forgeId, underlyingAssetContract.address, expiry);
   const otAddress = await pendleData.otTokens(forgeId, underlyingAssetContract.address, expiry);
-
-  await sendAndWaitForTransaction(hre, pendleRouter.createMarket, 'createMarket', [
-    marketFactoryId,
-    xytAddress,
-    baseTokenContract.address,
-  ]);
-  const marketAddress = await pendleData.getMarket(marketFactoryId, xytAddress, baseTokenContract.address);
+  console.log(`\t\t xyt address = ${xytAddress}, otAddress = ${otAddress}`);
 
   if (deployment.yieldContracts[forgeIdString] == null) {
     deployment.yieldContracts[forgeIdString] = {};
@@ -127,6 +118,38 @@ export async function createNewYieldContractAndMarket(
       markets: {},
     };
   }
+}
+
+export async function createNewMarket(
+  hre: any,
+  deployment: Deployment,
+  forgeId: string,
+  marketFactoryId: string,
+  underlyingAssetContract: any,
+  expiry: number,
+  baseTokenContract: any
+) {
+  const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
+  const pendleData = await getContractFromDeployment(hre, deployment, 'PendleData');
+  const underlyingAssetSymbol = await underlyingAssetContract.symbol();
+  const baseTokenSymbol = await baseTokenContract.symbol();
+  const forgeIdString = utils.parseBytes32String(forgeId);
+
+  const xytAddress = deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[expiry].XYT;
+
+  console.log(
+    `\tCreating new market for XYT (${forgeIdString} ${underlyingAssetSymbol} ${expiry}), baseToken-${baseTokenSymbol}`
+  );
+
+  console.log(`\tunderlyingAssetContract = ${underlyingAssetContract.address}`);
+
+  await sendAndWaitForTransaction(hre, pendleRouter.createMarket, 'createMarket', [
+    marketFactoryId,
+    xytAddress,
+    baseTokenContract.address,
+  ]);
+  const marketAddress = await pendleData.getMarket(marketFactoryId, xytAddress, baseTokenContract.address);
+  console.log(`\t Market created at ${marketAddress}`);
 
   deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[expiry].markets[
     baseTokenSymbol
@@ -234,10 +257,16 @@ export async function setupLiquidityMining(
 ) {
   const [deployer] = await hre.ethers.getSigners();
   const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
-  const governanceManager = await getContractFromDeployment(hre, deployment, 'PendleGovernanceManager');
-  const pausingManager = await getContractFromDeployment(hre, deployment, 'PendlePausingManager');
+  const governanceManagerLiqMining = await hre.ethers.getContractAt(
+    'PendleGovernanceManager',
+    deployment.contracts.PendleGovernanceManagerLiqMining.address
+  );
+  const pausingManagerLiqMining = await hre.ethers.getContractAt(
+    'PendlePausingManager',
+    deployment.contracts.PendlePausingManagerLiqMining.address
+  );
   const whitelist = await getContractFromDeployment(hre, deployment, 'PendleWhitelist');
-
+  console.log('269');
   const underlyingAssetSymbol = await underlyingAssetContract.symbol();
   const baseTokenSymbol = await baseTokenContract.symbol();
   const forgeIdString = utils.parseBytes32String(forgeId);
@@ -248,8 +277,8 @@ export async function setupLiquidityMining(
   const pendle = await getContractFromDeployment(hre, deployment, 'PENDLE');
 
   const liqMiningContract = await deploy(hre, deployment, liqMiningContractName, [
-    governanceManager.address,
-    pausingManager.address,
+    governanceManagerLiqMining.address,
+    pausingManagerLiqMining.address,
     whitelist.address,
     pendle.address,
     pendleRouter.address,
@@ -257,7 +286,7 @@ export async function setupLiquidityMining(
     forgeId,
     underlyingAssetContract.address,
     baseTokenContract.address,
-    Math.floor(new Date().getTime() / 1000) + 3600, // starts in 1 hour
+    liqParams.START_TIME,
     liqParams.EPOCH_DURATION,
     liqParams.VESTING_EPOCHS,
   ]);
@@ -278,6 +307,11 @@ export async function setupLiquidityMining(
 
 export function saveDeployment(filePath: string, deployment: Deployment) {
   fs.writeFileSync(filePath, JSON.stringify(deployment, null, '  '), 'utf8');
+}
+
+export function getDeployment(filePath: string): Deployment {
+  const existingDeploymentJson = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  return existingDeploymentJson as Deployment;
 }
 
 export async function sendAndWaitForTransaction(

@@ -1,4 +1,10 @@
-import { Deployment, validAddress, deploy, getContractFromDeployment, sendAndWaitForTransaction } from '../helpers/deployHelpers';
+import {
+  Deployment,
+  validAddress,
+  deploy,
+  getContractFromDeployment,
+  sendAndWaitForTransaction,
+} from '../helpers/deployHelpers';
 
 export async function step11(deployer: any, hre: any, deployment: Deployment, consts: any) {
   const pendleCompoundForgeAddress = deployment.contracts.PendleCompoundForge.address;
@@ -21,38 +27,39 @@ export async function step11(deployer: any, hre: any, deployment: Deployment, co
 
   await sendAndWaitForTransaction(hre, pendleData.addForge, 'add compound forge', [
     consts.common.FORGE_COMPOUND,
-    pendleCompoundForgeAddress
+    pendleCompoundForgeAddress,
   ]);
   await sendAndWaitForTransaction(hre, pendleData.addMarketFactory, 'add compound market factory', [
     consts.common.MARKET_FACTORY_COMPOUND,
-    pendleCompoundMarketFactoryAddress
+    pendleCompoundMarketFactoryAddress,
   ]);
   await sendAndWaitForTransaction(hre, pendleData.setForgeFactoryValidity, 'set forge-factory validity for Compound', [
     consts.common.FORGE_COMPOUND,
     consts.common.MARKET_FACTORY_COMPOUND,
-    true
+    true,
   ]);
 
   // Setup for aaveV2
   await sendAndWaitForTransaction(hre, pendleData.addForge, 'add aaveV2 forge', [
     consts.common.FORGE_AAVE_V2,
-    pendleAaveV2ForgeAddress
+    pendleAaveV2ForgeAddress,
   ]);
   await sendAndWaitForTransaction(hre, pendleData.addMarketFactory, 'add aave market factory', [
     consts.common.MARKET_FACTORY_AAVE,
-    pendleAaveMarketFactoryAddress
+    pendleAaveMarketFactoryAddress,
   ]);
   await sendAndWaitForTransaction(hre, pendleData.setForgeFactoryValidity, 'set forge-factory validity for aave', [
     consts.common.FORGE_AAVE_V2,
     consts.common.MARKET_FACTORY_AAVE,
-    true
+    true,
   ]);
   if (hre.network.name == 'kovan') {
     console.log(`\t Its Kovan, so we are skipping rewards for aaveV2`);
-    const a2RewardManager = await hre.ethers.getContractAt('PendleRewardManager', deployment.contracts.PendleRewardManagerAaveV2.address);
-    await sendAndWaitForTransaction(hre, a2RewardManager.setSkippingRewards, 'set skipping rewards', [
-      true
-    ]);
+    const a2RewardManager = await hre.ethers.getContractAt(
+      'PendleRewardManager',
+      deployment.contracts.PendleRewardManagerAaveV2.address
+    );
+    await sendAndWaitForTransaction(hre, a2RewardManager.setSkippingRewards, 'set skipping rewards', [true]);
   }
 
   deployment.yieldContracts = {}; //reset yield contracts

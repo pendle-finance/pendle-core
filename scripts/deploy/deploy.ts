@@ -2,16 +2,9 @@ import hre from 'hardhat';
 import fs from 'fs';
 import path from 'path';
 
-import {
-  devConstants,
-  kovanConstants,
-  mainnetConstants,
-  goerliConstants
-} from '../helpers/constants';
+import { devConstants, kovanConstants, mainnetConstants, goerliConstants } from '../helpers/constants';
 
-import {
-  Deployment,
-} from '../helpers/deployHelpers';
+import { Deployment, getDeployment } from '../helpers/deployHelpers';
 
 import { beforeAll } from './beforeAll';
 import { step0 } from './step0';
@@ -51,9 +44,7 @@ async function main() {
 
   if (fs.existsSync(filePath)) {
     // const
-    const existingDeploymentJson = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    deployment = existingDeploymentJson as Deployment;
-
+    deployment = getDeployment(filePath);
     console.log(`\tThere is an existing deployment`);
   } else {
     console.log(`\tNo existing deployment file`);
@@ -87,7 +78,9 @@ async function main() {
         break;
       }
       case 2: {
-        console.log(`\n[Step ${step}]: Deploying GovernanceManagerMain, GovernanceManagerLiqMining, PausingManagerMain, PausingManagerLiqMining`);
+        console.log(
+          `\n[Step ${step}]: Deploying GovernanceManagerMain, GovernanceManagerLiqMining, PausingManagerMain, PausingManagerLiqMining`
+        );
         await step2(deployer, hre, deployment, consts);
         break;
       }
@@ -115,14 +108,18 @@ async function main() {
         console.log(`\n[Step ${step}]: Deploying PendleRedeemProxy & PendleWhitelist`);
         await step7(deployer, hre, deployment, consts);
         break;
-      }// DONE
+      } // DONE
       case 8: {
-        console.log(`\n[Step ${step}]: Deploying PendleCompoundForge, cRewardManager (+init), cYieldContractDeployer (+init) & PendleCompoundMarketFactory`);
+        console.log(
+          `\n[Step ${step}]: Deploying PendleCompoundForge, cRewardManager (+init), cYieldContractDeployer (+init) & PendleCompoundMarketFactory`
+        );
         await step8(deployer, hre, deployment, consts);
         break;
       } //DONE
       case 9: {
-        console.log(`\n[Step ${step}]: Deploying PendleAaveV2Forge, a2RewardManager (+init), a2YieldContractDeployer (+init) & PendleAaveMarketFactory`);
+        console.log(
+          `\n[Step ${step}]: Deploying PendleAaveV2Forge, a2RewardManager (+init), a2YieldContractDeployer (+init) & PendleAaveMarketFactory`
+        );
         await step9(deployer, hre, deployment, consts);
         break;
       } //DONE

@@ -10,7 +10,7 @@ export async function beforeAll(deployer: any, hre: any, deployment: Deployment,
     'FORGE_EMERGENCY_HANDLER',
     'MARKET_EMERGENCY_HANDLER',
     'LIQ_MINING_EMERGENCY_HANDLER',
-    'TREASURY_MULTISIG'
+    'TREASURY_MULTISIG',
   ];
 
   if (!['mainnet', 'goerli', 'kovan'].includes(hre.network.name)) {

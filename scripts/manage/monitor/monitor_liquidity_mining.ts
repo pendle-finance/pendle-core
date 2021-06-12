@@ -1,7 +1,7 @@
-const hre = require("hardhat");
-import fs from "fs";
-import path from "path";
-import { BigNumber as BN } from "ethers";
+const hre = require('hardhat');
+import fs from 'fs';
+import path from 'path';
+import { BigNumber as BN } from 'ethers';
 
 import {
   devConstants,
@@ -10,7 +10,7 @@ import {
   goerliConstants,
   Deployment,
   getContractFromDeployment,
-} from "../helpers/deployHelpers";
+} from '../helpers/deployHelpers';
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
   const network = hre.network.name;
@@ -18,20 +18,21 @@ async function main() {
   let consts: any;
 
   //check and load arguments
-  if (process.argv.length != 4) { //liquidity mining contract address, liquidity mining contract name
+  if (process.argv.length != 4) {
+    //liquidity mining contract address, liquidity mining contract name
     console.error('Expected three argument!');
     process.exit(1);
   }
   const liqMiningAddress = process.argv[2];
   const liqMiningContractName = process.argv[3];
   const liqMining = await (await hre.ethers.getContractFactory(liqMiningContractName)).attach(liqMiningAddress);
-  
+
   //check network and load constant
-  if (network == "kovan" || network == "kovantest") {
+  if (network == 'kovan' || network == 'kovantest') {
     consts = kovanConstants;
-  } else if (network == "goerli") {
+  } else if (network == 'goerli') {
     consts = goerliConstants;
-  } else if (network == "mainnet") {
+  } else if (network == 'mainnet') {
     consts = mainnetConstants;
   } else {
     consts = devConstants;
@@ -41,18 +42,18 @@ async function main() {
   console.log(`\tDeployment's filePath = ${filePath}`);
 
   //load depolyment and deployed contracts
-  const existingDeploymentJson = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  const existingDeploymentJson = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   const deployment = existingDeploymentJson as Deployment;
 
   const pendle = await getContractFromDeployment(hre, deployment, 'PENDLE');
 
   //query amount details
 
-  var allExpiries: Uint32Array
+  var allExpiries: Uint32Array;
   allExpiries = await liqMining.allExpiries();
   var lpStakedTotal: any; //to print
-  allExpiries.forEach(expiry => async() => {
-    lpStakedTotal += await liqMining.totalStakeLP(expiry)
+  allExpiries.forEach((expiry) => async () => {
+    lpStakedTotal += await liqMining.totalStakeLP(expiry);
   });
 
   const rewardsLeft = await pendle.balanceOf(liqMiningAddress);
@@ -63,21 +64,23 @@ async function main() {
   const numberOfEpochs = await liqMining.numberOfEpochs();
 
   const currentEpoch = (Math.floor(Date.now() / 1000) - startTime) / epochDuration + 1; //to print
-  const epochLeft = numberOfEpochs - currentEpoch;  //-1? //to print
+  const epochLeft = numberOfEpochs - currentEpoch; //-1? //to print
 
   const [, settingId] = await liqMining.readEpochData(currentEpoch);
   //var allocationSettings: [Uint32Array[1], Uint32Array[1]]; //[expiry, allocationSetting]
   var allocationSettings: [Uint32Array[1], Uint32Array[1]]; //[expiry, allocationSetting]
-  var allocationSetting: Uint32Array[1];  //to print
-  allExpiries.forEach(expiry => async() => {
+  var allocationSetting: Uint32Array[1]; //to print
+  allExpiries.forEach((expiry) => async () => {
     allocationSetting = await liqMining.allocationSettings(expiry);
     allocationSettings.push(expiry, allocationSetting);
   });
 
-  const yieldTokenContract = await (await hre.ethers.getContractFactory("PendleFutureYieldToken")).attach(await liqMining.underlyingYieldToken());
+  const yieldTokenContract = await (await hre.ethers.getContractFactory('PendleFutureYieldToken')).attach(
+    await liqMining.underlyingYieldToken()
+  );
   var yieldTokenBalances: [Uint32Array[1], Uint32Array[1]]; //[expiry, yield token balance]
-  var yieldTokenBalance: Uint32Array[1];  //to print
-  allExpiries.forEach(expiry => async() => {
+  var yieldTokenBalance: Uint32Array[1]; //to print
+  allExpiries.forEach((expiry) => async () => {
     yieldTokenBalance = await yieldTokenContract.balanceOf(await liqMining.lpHolderForExpiry(expiry));
     yieldTokenBalances.push(expiry, yieldTokenBalance);
   });
