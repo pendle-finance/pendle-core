@@ -19,7 +19,7 @@ import {
   removeMarketLiquiditySingle,
   setTimeNextBlock,
   swapExactInXytToToken,
-  swapExactOutXytToToken
+  swapExactOutXytToToken,
 } from '../helpers';
 import {
   AMMCheckLPNearCloseTest,
@@ -29,7 +29,7 @@ import {
   marketBalanceNonZeroSwapTest,
   marketBalanceNonZeroTest,
   MarketFeesTest,
-  ProtocolFeeTest
+  ProtocolFeeTest,
 } from './common-test/amm-formula-test';
 import { MultiExpiryMarketTest } from './common-test/multi-market-common-test';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';

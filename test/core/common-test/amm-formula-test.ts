@@ -17,7 +17,7 @@ import {
   swapExactInXytToToken,
   swapExactOutTokenToXyt,
   swapExactOutXytToToken,
-  toFixedPoint
+  toFixedPoint,
 } from '../../helpers';
 import { TestEnv } from '../fixtures';
 chai.use(solidity);
