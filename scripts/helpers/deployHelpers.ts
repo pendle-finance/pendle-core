@@ -277,6 +277,7 @@ export async function setupLiquidityMining(
     `\tSetting up liquidity mining for ${forgeIdString}, underlyingAsset-${baseTokenSymbol}, baseToken-${baseTokenSymbol}`
   );
   const pendle = await getContractFromDeployment(hre, deployment, 'PENDLE');
+  console.log(`\t !! PendleAddress !! = ${pendle.address}`);
 
   const liqMiningContract = await deploy(hre, deployment, liqMiningContractName, [
     governanceManagerLiqMining.address,
