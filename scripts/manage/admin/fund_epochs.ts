@@ -10,11 +10,8 @@ async function main() {
   //check and load arguments
   //liquidity mining contract address, liquidity mining contract name, rewards
 
-  const pendle = await hre.ethers.getContractAt('IERC20', '0xff3b42ccb73Dc70Af4BB2a03EfCF021B5ad08033');
-  console.log(`pendle balance of deployer = ${await pendle.balanceOf(deployer.address)}`);
-
   const liqMiningAddress = process.argv[2];
-  const rewardPerEpoch = BN.from(10).pow(18).mul(1000);
+  const rewardPerEpoch = BN.from(process.argv[3]).mul(BN.from(10).pow(18));
   const rewards = [rewardPerEpoch, rewardPerEpoch];
 
   const liqMiningContract = await hre.ethers.getContractAt('IPendleLiquidityMining', liqMiningAddress);

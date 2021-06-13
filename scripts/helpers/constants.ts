@@ -154,13 +154,18 @@ export const kovanConstants = {
     USDC: {
       address: '0xe22da380ee6b445bb8273c81944adeb6e8450422',
       decimal: 6,
-      // compound: '0x4a92e71227d294f041bd82dd8f78591b75140d63',
+      compound: '0x4a92e71227d294f041bd82dd8f78591b75140d63',
     },
     AUSDT: {
       address: '0xff3c8bc103682fa918c954e84f5056ab4dd5189d',
       decimal: 6,
       // owner: "0x81dfbbaF5011e3b86383f72A24793EE44ea547C5"
     },
+    DAI: {
+      address: '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa',
+      decimals: 8,
+      compound: '0xf0d0eb522cfa50b716b3b1604c4f0fa6f04376ad'
+    }
   },
 };
 

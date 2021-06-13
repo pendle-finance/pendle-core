@@ -108,6 +108,7 @@ export async function createNewYieldContract(
 
   if (deployment.yieldContracts[forgeIdString][underlyingAssetSymbol] == null) {
     deployment.yieldContracts[forgeIdString][underlyingAssetSymbol] = {
+      address: underlyingAssetContract.address,
       expiries: {},
       PendleLiquidityMining: {},
     };
