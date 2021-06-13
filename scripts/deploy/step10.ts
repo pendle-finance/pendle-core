@@ -13,6 +13,7 @@ export async function step10(deployer: any, hre: any, deployment: Deployment, co
   console.log(`\t\t SWAP_FEE = ${consts.common.SWAP_FEE}`);
   console.log(`\t\t PROTOCOL_SWAP_FEE = ${consts.common.PROTOCOL_SWAP_FEE}`);
   console.log(`\t\t EXPIRY_DIVISOR = ${consts.common.EXPIRY_DIVISOR}`);
+  console.log(`\t\t B_DELTA = ${consts.common.B_DELTA}`);
 
   const pendleData = await getContractFromDeployment(hre, deployment, 'PendleData');
   console.log(`\t\tPendleData address = ${pendleData.address}`);
