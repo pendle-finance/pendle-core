@@ -191,9 +191,11 @@ export const goerliConstants = {
 export const mainnetConstants = {
   common,
   misc: {
-    ONE_E_18,
-    ZERO_ADDRESS: '0x0000000000000000000000000000000000000000',
-    MAX_ALLOWANCE: BN.from(2).pow(BN.from(256)).sub(BN.from(1)),
+    // AAVE_LENDING_POOL_CORE_ADDRESS: '0x3dfd23A6c5E8BbcFc9581d2E864a68feb6a076d3',
+    // AAVE_LENDING_POOL_ADDRESS: '0x398ec7346dcd622edc5ae82352f02be94c62d119',
+    COMPOUND_COMPTROLLER_ADDRESS: '0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b', //checked
+    AAVE_V2_LENDING_POOL_ADDRESS: '0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9', //checked
+
     // Pendle token distribution
     INVESTOR_AMOUNT: BN.from(37417125).mul(ONE_E_18),
     ADVISOR_AMOUNT: BN.from(2500000).mul(ONE_E_18),
@@ -201,7 +203,45 @@ export const mainnetConstants = {
     TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94917125).mul(ONE_E_18),
     ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(46 * 10 ** 6).mul(ONE_E_18),
     PUBLIC_SALES_TOKEN_AMOUNT: BN.from(16582875).mul(ONE_E_18),
+    INITIAL_LIQUIDITY_EMISSION: BN.from(1200000).mul(ONE_E_18),
+    CONFIG_DENOMINATOR: BN.from(72000000000),
+    CONFIG_CHANGES_TIME_LOCK: BN.from(7 * 24 * 3600),
+    PENDLE_START_TIME: BN.from(4000000000),
+    INITIAL_WEEKLY_EMISSION: BN.from(1200000).mul(ONE_E_18),
     ONE_QUARTER: BN.from(7884000),
+
+    // OT rewards
+    STKAAVE_ADDRESS: '0x4da27a545c0c5b758a6ba100e3a049001de870f5', // checked
+    COMP_ADDRESS: '0xc00e94cb662c3520282e6f5717214004a7f26888', // checked
+    AAVE_INCENTIVES_CONTROLLER: '0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5', //checked
   },
-  tokens: {},
+  tokens: {
+    USDT_AAVE: { // USDT
+      address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+      decimal: 6,
+      owner: '0xC6CDE7C39eB2f0F0095F41570af89eFC2C1Ea828',
+      compound: '0xf650c3d88d12db855b8bf7d11be6c55a4e07dcc9',
+    },
+    USDT_COMPOUND: { // USDT
+      address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+      decimal: 6,
+      owner: '0xC6CDE7C39eB2f0F0095F41570af89eFC2C1Ea828',
+      compound: '0xf650c3d88d12db855b8bf7d11be6c55a4e07dcc9',
+    },
+    WETH: { // must check
+      address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // checked
+      decimal: 18,
+      compound: '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5', // cEther - checked
+    },
+    USDC: {
+      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // checked
+      decimal: 6,
+      compound: '0x39aa39c021dfbae8fac545936693ac917d5e7563', // cUSDC - checked
+    },
+    // AUSDT: {
+    //   address: '0x71fc860F7D3A592A4a98740e39dB31d25db65ae8',
+    //   decimal: 6,
+    //   owner: '0x4188a7dca2757ebc7d9a5bd39134a15b9f3c6402',
+    // },
+  },
 };
