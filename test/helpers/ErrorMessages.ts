@@ -44,4 +44,7 @@ export const errMsg = {
   INVALID_ARRAYS: prefix + ' ' + 'INVALID_ARRAYS',
   INVALID_EPOCH_ID: prefix + ' ' + 'INVALID_EPOCH_ID',
   ZERO_FUND: prefix + ' ' + 'ZERO_FUND',
+  EXISTED_MARKET: prefix + ' ' + 'EXISTED_MARKET',
+  INVALID_FORGE_FACTORY: prefix + ' ' + 'INVALID_FORGE_FACTORY',
+  FORGE_ID_MISMATCH: prefix + ' ' + 'FORGE_ID_MISMATCH',
 };
