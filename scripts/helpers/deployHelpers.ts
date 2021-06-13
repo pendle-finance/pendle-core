@@ -1,6 +1,8 @@
 import { BigNumber as BN, utils } from 'ethers';
 import fs from 'fs';
 
+import { common as commonConsts } from './constants';
+
 export interface DeployedContract {
   address: string;
   tx: string;
@@ -159,7 +161,6 @@ export async function createNewMarket(
 export async function mintXytAndBootstrapMarket(
   hre: any,
   deployment: Deployment,
-  consts: any,
   forgeId: string,
   marketFactoryId: string,
   underlyingAssetContract: any,
@@ -177,7 +178,7 @@ export async function mintXytAndBootstrapMarket(
   const forgeIdString = utils.parseBytes32String(forgeId);
 
   console.log(
-    `\tMinting xyt and bootstrapping market for ${forgeIdString}, underlyingAsset-${baseTokenSymbol}, expiry=${expiry}, baseToken-${baseTokenSymbol}, a/cToken amount=${underlyingYieldTokenAmount}, baseTokenAmount=${baseTokenAmount}`
+    `\tMinting xyt and bootstrapping market for ${forgeIdString}, underlyingAsset-${underlyingAssetSymbol}, expiry=${expiry}, baseToken-${baseTokenSymbol}, a/cToken amount=${underlyingYieldTokenAmount}, baseTokenAmount=${baseTokenAmount}`
   );
   const xytAddress = await pendleData.xytTokens(forgeId, underlyingAssetContract.address, expiry);
   const otAddress = await pendleData.otTokens(forgeId, underlyingAssetContract.address, expiry);
@@ -200,7 +201,7 @@ export async function mintXytAndBootstrapMarket(
   const initialXytBalance = await xytContract.balanceOf(deployer.address);
   await sendAndWaitForTransaction(hre, underlyingYieldTokenContract.approve, 'approve Router for a/cToken', [
     pendleRouter.address,
-    consts.common.MAX_ALLOWANCE,
+    commonConsts.MAX_ALLOWANCE,
   ]);
 
   await sendAndWaitForTransaction(hre, pendleRouter.tokenizeYield, 'tokenizeYield', [
@@ -224,13 +225,13 @@ export async function mintXytAndBootstrapMarket(
   console.log(`\t\tMinted ${xytMinted} XYTs`);
   await sendAndWaitForTransaction(hre, xytContract.approve, 'approve Router for xyt', [
     pendleRouter.address,
-    consts.common.MAX_ALLOWANCE,
+    commonConsts.MAX_ALLOWANCE,
   ]);
   const baseTokenAllowance = await baseTokenContract.allowance(deployer.address, pendleRouter.address);
   if (baseTokenAllowance.lt(baseTokenAmount)) {
     await sendAndWaitForTransaction(hre, baseTokenContract.approve, 'approve Router for baseToken', [
       pendleRouter.address,
-      consts.common.MAX_ALLOWANCE,
+      commonConsts.MAX_ALLOWANCE,
     ]);
   }
 
@@ -301,8 +302,6 @@ export async function setupLiquidityMining(
     liqParams.EXPIRIES,
     liqParams.ALLOCATIONS,
   ]);
-
-  await sendAndWaitForTransaction(hre, liqMiningContract.fund, 'fund liq-mining', [liqParams.REWARDS_PER_EPOCH]);
 }
 
 export function saveDeployment(filePath: string, deployment: Deployment) {

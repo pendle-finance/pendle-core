@@ -4,7 +4,7 @@ const ONE_DAY = BN.from(86400);
 const RONE = BN.from(2).pow(40);
 const LIQ_MINING_ALLOCATION_DENOMINATOR = 1000000000;
 
-const common = {
+export const common = {
   ONE_E_18,
   FORGE_AAVE_V2: utils.formatBytes32String('AaveV2'),
   MARKET_FACTORY_AAVE: utils.formatBytes32String('Aave'),
@@ -19,11 +19,22 @@ const common = {
   liqParams: {
     EPOCH_DURATION: ONE_DAY.mul(7),
     VESTING_EPOCHS: 5,
-    EXPIRIES: [],
     ALLOCATIONS: [LIQ_MINING_ALLOCATION_DENOMINATOR],
-    REWARDS_PER_EPOCH: [], // = [10000000000, 20000000000, ..]
-    START_TIME: 0,
+    REWARDS_PER_EPOCH: [], // TO BE OVERRIDED in script
+    EXPIRIES: [], // TO BE OVERRIDED in script
+    START_TIME: 0, // TO BE OVERRIDED in script
   },
+
+  // Protocol params;
+  LOCK_NUMERATOR: BN.from(1),
+  LOCK_DENOMINATOR: BN.from(20),
+  INTEREST_UPDATE_RATE_DELTA_FOR_MARKET: BN.from(2).pow(40).mul(277754).div(1e9), // 0.0277754 %
+  EXPIRY_DIVISOR: ONE_DAY.mul(7),
+  B_DELTA: BN.from(6595),
+  // Fee
+  FORGE_FEE: RONE.mul(3).div(100), // 3% forge fee
+  SWAP_FEE: RONE.mul(35).div(10000), // 0.35%
+  PROTOCOL_SWAP_FEE: RONE.div(7), // 1/7 * 0.35% = 0.05%
 };
 
 export const devConstants = {
@@ -33,8 +44,6 @@ export const devConstants = {
     AAVE_LENDING_POOL_ADDRESS: '0x398ec7346dcd622edc5ae82352f02be94c62d119',
     COMPOUND_COMPTROLLER_ADDRESS: '0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b',
     AAVE_V2_LENDING_POOL_ADDRESS: '0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9',
-    LOCK_NUMERATOR: BN.from(1),
-    LOCK_DENOMINATOR: BN.from(20),
 
     // Pendle token distribution
     INVESTOR_AMOUNT: BN.from(36959981).mul(ONE_E_18),
@@ -50,17 +59,10 @@ export const devConstants = {
     INITIAL_WEEKLY_EMISSION: BN.from(1200000).mul(ONE_E_18),
     ONE_QUARTER: BN.from(7884000),
 
-    INTEREST_UPDATE_RATE_DELTA_FOR_MARKET: BN.from(2).pow(40).mul(277754).div(1e9), // 0.0277754 %
-
     // OT rewards
     STKAAVE_ADDRESS: '0x4da27a545c0c5b758a6ba100e3a049001de870f5',
     COMP_ADDRESS: '0xc00e94cb662c3520282e6f5717214004a7f26888',
     AAVE_INCENTIVES_CONTROLLER: '0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5',
-
-    // Fee
-    FORGE_FEE: RONE.mul(3).div(100), // 3% forge fee
-    SWAP_FEE: RONE.mul(35).div(10000), // 0.35%
-    PROTOCOL_SWAP_FEE: RONE.div(7), // 1/7 * 0.35% = 0.05%
   },
   tokens: {
     USDT_AAVE: {
@@ -150,9 +152,9 @@ export const kovanConstants = {
       compound: '0x41B5844f4680a8C38fBb695b7F9CFd1F64474a72',
     },
     USDC: {
-      address: '0xb7a4f3e9097c08da09517b5ab877f7a917224ede',
+      address: '0xe22da380ee6b445bb8273c81944adeb6e8450422',
       decimal: 6,
-      compound: '0x4a92e71227d294f041bd82dd8f78591b75140d63',
+      // compound: '0x4a92e71227d294f041bd82dd8f78591b75140d63',
     },
     AUSDT: {
       address: '0xff3c8bc103682fa918c954e84f5056ab4dd5189d',

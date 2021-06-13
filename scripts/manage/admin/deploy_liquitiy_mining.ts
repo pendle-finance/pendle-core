@@ -14,10 +14,10 @@ async function main() {
   let consts: any;
 
   //check and load arguments
-  if (process.argv.length != 10) {
+  if (process.argv.length != 9) {
     //forgeId, marketFactoryId, liqMiningContractName, underlying asset, base token, expiry
     console.error(
-      'Expected 8 arguments ! forgeId, marketFactoryId, liqMiningContractName, underlying asset, base token, expiry'
+      'Expected 7 arguments ! forgeId, marketFactoryId, liqMiningContractName, underlying asset, base token, expiry, start time'
     );
     process.exit(1);
   }
@@ -27,8 +27,7 @@ async function main() {
   const underlyingAssetAddress = process.argv[5];
   const baseTokenAddress = process.argv[6];
   const expiry = BN.from(process.argv[7]);
-  const rewardPerEpoch = BN.from(process.argv[8]);
-  const startTime = BN.from(process.argv[9]);
+  const startTime = BN.from(process.argv[8]);
 
   //check network and load constant
   if (network == 'kovan' || network == 'kovantest') {
@@ -49,14 +48,12 @@ async function main() {
 
   const liqParams = consts.common.liqParams;
   liqParams.EXPIRIES = [expiry];
-  liqParams.REWARDS_PER_EPOCH = [rewardPerEpoch];
   liqParams.START_TIME = startTime;
 
   console.log(`\t epoch duration = ${liqParams.EPOCH_DURATION}`);
   console.log(`\t vesting epoches = ${liqParams.VESTING_EPOCHS}`);
   console.log(`\t expiries = ${liqParams.EXPIRIES}`);
   console.log(`\t allocations = ${liqParams.ALLOCATIONS}`);
-  console.log(`\t rewards per epoch = ${liqParams.REWARDS_PER_EPOCH}`);
   console.log(`\t start time = ${liqParams.START_TIME}`);
 
   const underlyingAssetContract = await (await hre.ethers.getContractFactory('TestToken')).attach(
