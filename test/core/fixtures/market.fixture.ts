@@ -23,6 +23,7 @@ export interface MarketFixture {
   cMarket: Contract;
   a2MarketEth: Contract;
   cMarketEth: Contract;
+  cMarket8: Contract;
   mockMarketMath: Contract;
 }
 
@@ -32,8 +33,8 @@ export async function marketFixture(_: Wallet[], provider: providers.Web3Provide
   const routerFix = await loadFixture(routerFixtureNoMint);
   const { core, a2Forge, cForge } = routerFix;
   const { router, a2MarketFactory, cMarketFactory, data } = core;
-  const { a2FutureYieldToken, aaveV2Forge, a2FutureYieldToken18 } = a2Forge;
-  const { cFutureYieldToken } = cForge;
+  const { a2FutureYieldToken, a2FutureYieldToken18 } = a2Forge;
+  const { cFutureYieldToken, cFutureYieldToken8 } = cForge;
 
   const testToken = await deployContract(alice, TestToken, ['Test Token', 'TEST', 6]);
 
@@ -42,6 +43,13 @@ export async function marketFixture(_: Wallet[], provider: providers.Web3Provide
     await mintXytAave(tokens.UNI, person, consts.INITIAL_OT_XYT_AMOUNT, routerFix, consts.T0_A2.add(consts.SIX_MONTH));
     await mintXytCompound(
       tokens.USDT,
+      person,
+      consts.INITIAL_OT_XYT_AMOUNT,
+      routerFix,
+      consts.T0_C.add(consts.SIX_MONTH)
+    );
+    await mintXytCompound(
+      tokens.WETH,
       person,
       consts.INITIAL_OT_XYT_AMOUNT,
       routerFix,
@@ -69,6 +77,9 @@ export async function marketFixture(_: Wallet[], provider: providers.Web3Provide
   // cXYT - testToken
   await router.createMarket(consts.MARKET_FACTORY_COMPOUND, cFutureYieldToken.address, testToken.address, consts.HG);
 
+  // cXYT18 - testToken
+  await router.createMarket(consts.MARKET_FACTORY_COMPOUND, cFutureYieldToken8.address, testToken.address, consts.HG);
+
   // a2XYT - WETH
   await router.createMarket(consts.MARKET_FACTORY_AAVE_V2, a2FutureYieldToken.address, tokens.WETH.address, consts.HG);
 
@@ -93,6 +104,12 @@ export async function marketFixture(_: Wallet[], provider: providers.Web3Provide
     testToken.address
   );
 
+  const cMarket8Address = await data.getMarket(
+    consts.MARKET_FACTORY_COMPOUND,
+    cFutureYieldToken8.address,
+    testToken.address
+  );
+
   const a2MarketEthAddress = await data.getMarket(
     consts.MARKET_FACTORY_AAVE_V2,
     a2FutureYieldToken.address,
@@ -108,6 +125,7 @@ export async function marketFixture(_: Wallet[], provider: providers.Web3Provide
   const a2Market = new Contract(a2MarketAddress, MockPendleAaveMarket.abi, alice);
   const a2Market18 = new Contract(a2Market18Address, MockPendleAaveMarket.abi, alice);
   const cMarket = new Contract(cMarketAddress, PendleCompoundMarket.abi, alice);
+  const cMarket8 = new Contract(cMarket8Address, PendleCompoundMarket.abi, alice);
   const a2MarketEth = new Contract(a2MarketEthAddress, MockPendleAaveMarket.abi, alice);
   const cMarketEth = new Contract(cMarketEthAddress, MockPendleAaveMarket.abi, alice);
   const mockMarketMath: Contract = await deployContract(alice, MockMarketMath);
@@ -116,5 +134,18 @@ export async function marketFixture(_: Wallet[], provider: providers.Web3Provide
     await testToken.connect(person).approve(router.address, totalSupply);
   }
 
-  return { routerFix, core, a2Forge, cForge, testToken, a2Market, a2Market18, cMarket, a2MarketEth, cMarketEth, mockMarketMath };
+  return {
+    routerFix,
+    core,
+    a2Forge,
+    cForge,
+    testToken,
+    a2Market,
+    a2Market18,
+    cMarket,
+    cMarket8,
+    a2MarketEth,
+    cMarketEth,
+    mockMarketMath
+  };
 }
