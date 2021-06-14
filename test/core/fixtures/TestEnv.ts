@@ -24,15 +24,19 @@ export interface TestEnv {
 
   ot: Contract;
   ot18: Contract;
+  ot8: Contract;
   xyt: Contract;
+  xyt8: Contract;
   xyt18: Contract;
   yToken: Contract;
   testToken: Contract;
   market: Contract;
+  market8: Contract;
   market18: Contract;
   marketEth: Contract;
   pdl: Contract;
   liq: Contract;
+  liq8: Contract;
   liq18: Contract;
   USDTContract: Contract;
 
@@ -88,6 +92,8 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
     env.forge = fixture.cForge.compoundForge;
     env.ot = fixture.cForge.cOwnershipToken;
     env.xyt = fixture.cForge.cFutureYieldToken;
+    env.ot8 = fixture.cForge.cOwnershipToken8;
+    env.xyt8 = fixture.cForge.cFutureYieldToken8;
     // no ot18, xyt18
     env.rewardManager = fixture.cForge.cRewardManager;
     env.yToken = await getCContract(alice, tokens.USDT);
@@ -111,6 +117,7 @@ export async function parseTestEnvMarketFixture(alice: Wallet, mode: Mode, env: 
   } else if (env.mode == Mode.COMPOUND) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_COMPOUND;
     env.market = fixture.cMarket;
+    env.market8 = fixture.cMarket8;
     env.marketEth = fixture.cMarketEth;
     // no market18
   }
@@ -134,6 +141,7 @@ export async function parseTestEnvLiquidityMiningFixture(
     env.liq18 = fixture.a2LiquidityMining18;
   } else if (env.mode == Mode.COMPOUND) {
     env.liq = fixture.cLiquidityMining;
+    env.liq8 = fixture.cLiquidityMining8;
     // no liq18
   }
 }

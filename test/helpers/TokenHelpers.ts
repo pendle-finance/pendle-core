@@ -1,14 +1,13 @@
 import { assert } from 'chai';
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
+import { amountToWei, consts, impersonateAccount, impersonateAccountStop, Token, tokens, wrapEth } from '.';
 import ERC20 from '../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 import AToken from '../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json';
-import CToken from '../../build/artifacts/contracts/interfaces/ICToken.sol/ICToken.json';
 import TetherToken from '../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json';
+import ICTokenTest from '../../build/artifacts/contracts/mock/ICTokenTest.sol/ICTokenTest.json';
+import ICEtherTest from '../../build/artifacts/contracts/mock/ICEtherTest.sol/ICEtherTest.json';
 import { RouterFixture } from '../core/fixtures';
 import { aaveV2Fixture } from '../core/fixtures/aaveV2.fixture';
-import { consts, Token, tokens } from './Constants';
-import { impersonateAccount, impersonateAccountStop } from './Evm';
-import { amountToWei } from './Numeric';
 
 const hre = require('hardhat');
 const { waffle } = require('hardhat');
@@ -52,7 +51,7 @@ export async function mintXytCompound(
     .tokenizeYield(
       consts.FORGE_COMPOUND,
       token.address,
-      consts.T0_C.add(consts.SIX_MONTH),
+      expiry,
       postCTokenBal.sub(preCTokenBal),
       user.address,
       consts.HG
@@ -82,11 +81,15 @@ export async function convertToAaveV2Token(token: Token, alice: Wallet, amount: 
 
 export async function convertToCompoundToken(token: Token, alice: Wallet, amount: BN) {
   const tokenAmount = amountToWei(amount, token.decimal);
-
-  const cToken = new Contract(token.compound, CToken.abi, alice);
+  if (token == tokens.WETH) {
+    const cToken = new Contract(token.compound, ICEtherTest.abi, alice);
+    let override: any = wrapEth(consts.HG, tokenAmount);
+    await cToken.mint(override);
+    return;
+  }
+  const cToken = new Contract(token.compound, ICTokenTest.abi, alice);
   const erc20 = new Contract(token.address, ERC20.abi, alice);
   await erc20.approve(cToken.address, tokenAmount);
-
   await cToken.mint(tokenAmount);
 }
 
@@ -96,7 +99,9 @@ export async function mintAaveV2Token(token: Token, alice: Wallet, amount: BN) {
 }
 
 export async function mintCompoundToken(token: Token, alice: Wallet, amount: BN) {
-  await mint(token, alice, amount);
+  if (token != tokens.WETH) {
+    await mint(token, alice, amount);
+  }
   await convertToCompoundToken(token, alice, amount);
 }
 
@@ -111,7 +116,10 @@ export async function getA2Contract(alice: Wallet, aaveV2Forge: Contract, token:
 }
 
 export async function getCContract(alice: Wallet, token: Token): Promise<Contract> {
-  return new Contract(token.compound, CToken.abi, alice);
+  if (token == tokens.WETH) {
+    return new Contract(token.compound, ICEtherTest.abi, alice);
+  }
+  return new Contract(token.compound, ICTokenTest.abi, alice);
 }
 
 export async function getERC20Contract(alice: Wallet, token: Token): Promise<Contract> {
