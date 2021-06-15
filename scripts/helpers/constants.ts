@@ -13,7 +13,7 @@ export const common = {
   ZERO_ADDRESS: '0x0000000000000000000000000000000000000000',
   MAX_ALLOWANCE: BN.from(2).pow(BN.from(256)).sub(BN.from(1)),
   ONE_DAY,
-  TEST_EXPIRY: 1624147200,
+  // TEST_EXPIRY: 1624147200,
   LIQ_MINING_ALLOCATION_DENOMINATOR,
   HIGH_GAS_OVERRIDE: { gasLimit: 80000000 },
   liqParams: {
@@ -28,7 +28,7 @@ export const common = {
   // Protocol params;
   LOCK_NUMERATOR: BN.from(1),
   LOCK_DENOMINATOR: BN.from(20),
-  INTEREST_UPDATE_RATE_DELTA_FOR_MARKET: BN.from(2).pow(40).mul(277754).div(1e9), // 0.0277754 %
+  INTEREST_UPDATE_RATE_DELTA_FOR_MARKET: BN.from(2).pow(40).mul(334184).div(1e10), // 0.00334184 %
   EXPIRY_DIVISOR: ONE_DAY.mul(7),
   B_DELTA: BN.from(6595),
   // Fee
@@ -193,8 +193,8 @@ export const mainnetConstants = {
   misc: {
     // AAVE_LENDING_POOL_CORE_ADDRESS: '0x3dfd23A6c5E8BbcFc9581d2E864a68feb6a076d3',
     // AAVE_LENDING_POOL_ADDRESS: '0x398ec7346dcd622edc5ae82352f02be94c62d119',
-    COMPOUND_COMPTROLLER_ADDRESS: '0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b', //checked
-    AAVE_V2_LENDING_POOL_ADDRESS: '0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9', //checked
+    COMPOUND_COMPTROLLER_ADDRESS: '0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b', //checked *2
+    AAVE_V2_LENDING_POOL_ADDRESS: '0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9', //checked *2
 
     // Pendle token distribution
     INVESTOR_AMOUNT: BN.from(37417125).mul(ONE_E_18),
@@ -211,9 +211,9 @@ export const mainnetConstants = {
     ONE_QUARTER: BN.from(7884000),
 
     // OT rewards
-    STKAAVE_ADDRESS: '0x4da27a545c0c5b758a6ba100e3a049001de870f5', // checked
-    COMP_ADDRESS: '0xc00e94cb662c3520282e6f5717214004a7f26888', // checked
-    AAVE_INCENTIVES_CONTROLLER: '0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5', //checked
+    STKAAVE_ADDRESS: '0x4da27a545c0c5b758a6ba100e3a049001de870f5', // checked * 2
+    COMP_ADDRESS: '0xc00e94cb662c3520282e6f5717214004a7f26888', // checked * 2
+    AAVE_INCENTIVES_CONTROLLER: '0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5', //checked * 2
   },
   tokens: {
     USDT_AAVE: { // USDT
@@ -229,14 +229,14 @@ export const mainnetConstants = {
       compound: '0xf650c3d88d12db855b8bf7d11be6c55a4e07dcc9',
     },
     WETH: { // must check
-      address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // checked
+      address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // checked * 2
       decimal: 18,
-      compound: '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5', // cEther - checked
+      compound: '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5', // cEther - checked * 2
     },
     USDC: {
-      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // checked
+      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // checked * 2
       decimal: 6,
-      compound: '0x39aa39c021dfbae8fac545936693ac917d5e7563', // cUSDC - checked
+      compound: '0x39aa39c021dfbae8fac545936693ac917d5e7563', // cUSDC - checked * 2
     },
     // AUSDT: {
     //   address: '0x71fc860F7D3A592A4a98740e39dB31d25db65ae8',

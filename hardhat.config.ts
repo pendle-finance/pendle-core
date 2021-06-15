@@ -13,7 +13,7 @@ const dummyPrivateKey = '1111111111111111111111111111111111111111111111111111111
 
 const config: HardhatUserConfig = {
   //defaultNetwork: 'hardhat',
-  defaultNetwork: 'development',
+  defaultNetwork: 'mainnet',
   // gasReporter: {
   //   currency: 'USD',
   //   gasPrice: 100
@@ -92,12 +92,12 @@ const config: HardhatUserConfig = {
     //   accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
     //   timeout: 20000,
     // },
-    // mainnet: {
-    //   url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-    //   accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
-    //   gasPrice: 130 * 1000000000,
-    //   timeout: 200000,
-    // }
+    mainnet: {
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
+      gasPrice: 16 * 1000000000,
+      timeout: 200000,
+    }
   },
   solidity: {
     compilers: [
