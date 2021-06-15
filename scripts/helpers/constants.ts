@@ -164,8 +164,8 @@ export const kovanConstants = {
     DAI: {
       address: '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa',
       decimals: 8,
-      compound: '0xf0d0eb522cfa50b716b3b1604c4f0fa6f04376ad'
-    }
+      compound: '0xf0d0eb522cfa50b716b3b1604c4f0fa6f04376ad',
+    },
   },
 };
 
@@ -216,19 +216,22 @@ export const mainnetConstants = {
     AAVE_INCENTIVES_CONTROLLER: '0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5', //checked * 2
   },
   tokens: {
-    USDT_AAVE: { // USDT
+    USDT_AAVE: {
+      // USDT
       address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
       decimal: 6,
       owner: '0xC6CDE7C39eB2f0F0095F41570af89eFC2C1Ea828',
       compound: '0xf650c3d88d12db855b8bf7d11be6c55a4e07dcc9',
     },
-    USDT_COMPOUND: { // USDT
+    USDT_COMPOUND: {
+      // USDT
       address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
       decimal: 6,
       owner: '0xC6CDE7C39eB2f0F0095F41570af89eFC2C1Ea828',
       compound: '0xf650c3d88d12db855b8bf7d11be6c55a4e07dcc9',
     },
-    WETH: { // must check
+    WETH: {
+      // must check
       address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // checked * 2
       decimal: 18,
       compound: '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5', // cEther - checked * 2
