@@ -29,7 +29,7 @@ interface IComptroller {
         uint256 collateralFactorMantissa;
     }
 
-    function markets(address) external returns (Market memory);
+    function markets(address) external view returns (Market memory);
 
     function claimComp(
         address[] memory holders,
@@ -37,4 +37,13 @@ interface IComptroller {
         bool borrowers,
         bool suppliers
     ) external;
+
+    function getAccountLiquidity(address account)
+        external
+        view
+        returns (
+            uint256 error,
+            uint256 liquidity,
+            uint256 shortfall
+        );
 }
