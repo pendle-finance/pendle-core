@@ -30,6 +30,7 @@ import {
   marketBalanceNonZeroTest,
   MarketFeesTest,
   ProtocolFeeTest,
+  marketAddLiquidityDualTest
 } from './common-test/amm-formula-test';
 import { MultiExpiryMarketTest } from './common-test/multi-market-common-test';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
@@ -346,5 +347,9 @@ describe('AaveV2-market', async () => {
     await setTimeNextBlock(env.T0.add(currentTime.mul(4)));
     environments.push(await createAaveMarketWithExpiry(env, env.T0.add(consts.ONE_MONTH.mul(48)), wallets));
     await MultiExpiryMarketTest(environments, wallets);
+  });
+
+  it('AddMarketLiquidityDual test', async() => {
+    await marketAddLiquidityDualTest(env);
   });
 });

@@ -10,6 +10,7 @@ import {
   bootstrapMarket,
   consts,
   errMsg,
+  logMarketReservesData,
   mineBlock,
   removeMarketLiquiditySingle,
   setTimeNextBlock,
@@ -253,6 +254,28 @@ export async function marketBalanceNonZeroSwapTest(env: TestEnv) {
   await bootstrapMarket(env, alice, amount, BN.from(1));
   await setTimeNextBlock(env.EXPIRY.sub(consts.ONE_DAY.add(consts.ONE_HOUR)));
   await expect(swapExactInTokenToXyt(env, alice, BN.from(1000000000))).to.be.revertedWith(errMsg.XYT_BALANCE_ERROR);
+}
+
+export async function marketAddLiquidityDualTest(env: TestEnv) {
+  const amountXyt = BN.from(1000); 
+  const amountToken = BN.from(1000000); /// bootstrap with ratio xyt 1:1000 token
+
+  await bootstrapMarket(env, alice, amountXyt, amountToken);
+  await addMarketLiquidityDual(env, alice, amountXyt); /// Desires to add 1000 xyt, 1000 token in
+
+  approxBigNumber(
+    await env.xyt.balanceOf(env.market.address),
+    1001,
+    0,
+    true
+  );
+
+  approxBigNumber(
+    await env.testToken.balanceOf(env.market.address),
+    1001000,
+    0,
+    true
+  );
 }
 
 async function runTestTokenToXyt(
