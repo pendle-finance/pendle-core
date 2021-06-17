@@ -49,9 +49,11 @@ interface ICToken is IERC20 {
         external
         view
         returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
+            uint256 error,
+            uint256 balance,
+            uint256 borrowed,
+            uint256 exchangeRate
         );
+
+    function decimals() external view returns (uint256);
 }

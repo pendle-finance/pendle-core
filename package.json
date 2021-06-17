@@ -73,9 +73,12 @@
     "test": "yarn hardhat test",
     "test:all": "yarn test test/**/*.spec.*",
     "ci": "yarn hardhat compile && yarn coverage:all",
-    "format": "yarn prettier --write \"contracts/**/*.sol\" && yarn prettier --write \"{src,test}/**/*.{js,ts}\"",
+    "format": "yarn prettier --write \"contracts/**/*.sol\" && yarn prettier --write \"{scripts,test}/**/*.{js,ts}\" && yarn prettier --write \"{scripts,test}/**/**/*.{js,ts}\"",
     "deploy:core": "yarn hardhat run scripts/deploy/deploy.ts",
     "deploy:seed": "yarn hardhat run scripts/manage/seed_test_contracts.ts",
     "verify": "yarn hardhat run scripts/manage/verify_tenderly.ts"
+  },
+  "dependencies": {
+    "bignumber.js": "^9.0.1"
   }
 }

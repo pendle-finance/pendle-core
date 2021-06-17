@@ -22,13 +22,13 @@ export async function step0(deployer: any, hre: any, deployment: Deployment, con
       consts.misc.TEAM_AMOUNT.div(8),
       consts.misc.TEAM_AMOUNT.div(8),
       consts.misc.TEAM_AMOUNT.div(8),
-      consts.misc.MAX_ALLOWANCE,
+      consts.common.MAX_ALLOWANCE,
     ],
   ]);
 
   await deployWithName(hre, deployment, 'PendleTokenDistribution', 'PendleEcosystemFund', [
     deployment.variables.ECOSYSTEM_FUND_MULTISIG,
     [BN.from(0), consts.misc.ONE_QUARTER.mul(4)],
-    [consts.misc.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2), consts.misc.MAX_ALLOWANCE],
+    [consts.misc.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2), consts.common.MAX_ALLOWANCE],
   ]);
 }
