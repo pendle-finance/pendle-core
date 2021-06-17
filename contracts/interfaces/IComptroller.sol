@@ -46,5 +46,6 @@ interface IComptroller {
             uint256 liquidity,
             uint256 shortfall
         );
+
     function getAssetsIn(address account) external view returns (address[] memory);
 }
