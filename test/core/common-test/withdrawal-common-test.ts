@@ -116,19 +116,23 @@ export async function runTest(mode: Mode) {
 
     // stake to init a lpHolder contract
     await stake(env, charlie, refAmount.div(2));
-
     console.log("Done staking");
 
-    // distribute tokens to alice and bob
     for (let token of tokensToTest) {
-      for (let person of [alice, bob]) {
-        await emptyToken(token, person);
-      }
-      for (let person of [alice, bob]) {
-        await token.connect(eve).transfer(person.address, 300, consts.HG);
+      for (let person of [alice, bob, charlie, dave]) {
+        const bal = (await token.connect(person).balanceOf(person.address));
+        await token.connect(person).transfer(eve.address, bal, consts.HG);
       }
     }
 
+    // distribute tokens to alice and bob
+    for (let token of tokensToTest) {
+      console.log(token.address);
+      for (let person of [alice, bob]) {
+        await token.connect(eve).transfer(person.address, 1000, consts.HG);
+      }
+    }
+    console.log("Done distributing");
   }
 
   it('should be able to withdraw allowed (and not for disallowed) tokens', async () => {
