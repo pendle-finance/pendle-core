@@ -109,7 +109,7 @@ export async function runTest(mode: Mode) {
     for (let person of wallets) {
       await env.rewardManager.redeemRewards(env.underlyingAsset.address, env.EXPIRY, person.address, consts.HG);
     }
-    
+
     // stake to init a lpHolder contract
     await stake(env, charlie, refAmount.div(2));
 
@@ -123,7 +123,6 @@ export async function runTest(mode: Mode) {
         await token.connect(eve).transfer(person.address, balance.div(5), consts.HG);
       }
     }
-
   }
 
   it('should be able to withdraw allowed (and not for disallowed) tokens', async () => {
