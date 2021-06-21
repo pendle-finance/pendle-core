@@ -2,6 +2,7 @@ import "@nomiclabs/hardhat-truffle5";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import "@tenderly/hardhat-tenderly";
+import "@nomiclabs/hardhat-etherscan";
 import * as dotenv from "dotenv";
 // import "hardhat-gas-reporter";
 import "hardhat-typechain";
@@ -9,6 +10,9 @@ import { HardhatUserConfig } from "hardhat/types";
 import "solidity-coverage";
 import "@tenderly/hardhat-tenderly";
 dotenv.config();
+
+require('./scripts/verification.js');
+
 const dummyPrivateKey = '1111111111111111111111111111111111111111111111111111111111111111';
 
 const config: HardhatUserConfig = {
@@ -118,6 +122,11 @@ const config: HardhatUserConfig = {
   tenderly: {
     username: "Yongkhang",
     project: "pendle-finance"
+  },
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: process.env.ETHERSCAN_KEY
   }
 };
 

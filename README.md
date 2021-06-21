@@ -9,6 +9,9 @@ allows for the trading of yield, which has wide-ranging applications.
 On top of yield tokenisation, Pendle Protocol has an AMM specifically designed for the trading of time-decaying assets, which aims to minimise
 impermanent loss (IL) for liquidity providers.
 
+## How it works
+* All current documentations for how Pendle works is [at this link](./docs/SPECS.md)
+
 ## Deployment:
 * To deploy core contracts:
   * set the multisig addresses in `.env`, similar to `.env.example`

@@ -26,6 +26,8 @@ pragma solidity 0.7.6;
 import "./IPendleRouter.sol";
 import "./IPendleRewardManager.sol";
 import "./IPendleYieldContractDeployer.sol";
+import "./IPendleData.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IPendleForge {
     /**

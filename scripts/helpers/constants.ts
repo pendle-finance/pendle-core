@@ -8,7 +8,7 @@ export const common = {
   ONE_E_18,
   FORGE_AAVE_V2: utils.formatBytes32String('AaveV2'),
   MARKET_FACTORY_AAVE: utils.formatBytes32String('Aave'),
-  FORGE_COMPOUND: utils.formatBytes32String('Compound'),
+  FORGE_COMPOUND: utils.formatBytes32String('CompoundV2'),
   MARKET_FACTORY_COMPOUND: utils.formatBytes32String('Compound'),
   ZERO_ADDRESS: '0x0000000000000000000000000000000000000000',
   MAX_ALLOWANCE: BN.from(2).pow(BN.from(256)).sub(BN.from(1)),
