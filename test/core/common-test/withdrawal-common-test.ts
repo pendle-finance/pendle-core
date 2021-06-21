@@ -36,7 +36,7 @@ const { loadFixture, provider } = waffle;
 /// TODO: Modify this test to new format
 export async function runTest(mode: Mode) {
   const wallets = provider.getWallets();
-  const refAmount = BN.from(10 ** 9);
+  const refAmount = BN.from(10 ** 5);
   const [alice, bob, charlie, dave, eve] = wallets;
 
   let env: TestEnv = {} as TestEnv;
@@ -71,7 +71,7 @@ export async function runTest(mode: Mode) {
     allowedTokens: Contract[],
     disallowedTokens: Contract[]
   ): Promise<void> {
-    const testAmount = BN.from(100);
+    const testAmount = BN.from(1);
     for (let person of [alice, bob]) {
       for (let token of allowedTokens) {
         if (token.address != contract.address) {
@@ -113,17 +113,19 @@ export async function runTest(mode: Mode) {
     // stake to init a lpHolder contract
     await stake(env, charlie, refAmount.div(2));
 
-    // distribute tokens to alice and bob
     for (let token of tokensToTest) {
-      for (let person of [alice, bob]) {
-        await emptyToken(token, person);
-      }
-      const balance: BN = await token.balanceOf(eve.address);
-      for (let person of [alice, bob]) {
-        await token.connect(eve).transfer(person.address, (await token.balanceOf(eve.address)).div(3), consts.HG);
+      for (let person of [alice, bob, charlie, dave]) {
+        const bal = (await token.connect(person).balanceOf(person.address));
+        await token.connect(person).transfer(eve.address, bal, consts.HG);
       }
     }
 
+    // distribute tokens to alice and bob
+    for (let token of tokensToTest) {
+      for (let person of [alice, bob]) {
+        await token.connect(eve).transfer(person.address, 1000, consts.HG);
+      }
+    }
   }
 
   it('should be able to withdraw allowed (and not for disallowed) tokens', async () => {
