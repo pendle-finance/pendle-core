@@ -1,6 +1,6 @@
 import { runTest } from './common-test/withdrawal-common-test';
 import { Mode } from './fixtures/TestEnv';
-describe.only('aaveV2-withdrawal', function () {
+describe('aaveV2-withdrawal', function () {
   runTest(Mode.AAVE_V2);
 });
 

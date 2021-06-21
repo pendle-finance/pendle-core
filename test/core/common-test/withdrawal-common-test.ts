@@ -36,7 +36,7 @@ const { loadFixture, provider } = waffle;
 /// TODO: Modify this test to new format
 export async function runTest(mode: Mode) {
   const wallets = provider.getWallets();
-  const refAmount = BN.from(10 ** 9);
+  const refAmount = BN.from(10 ** 5);
   const [alice, bob, charlie, dave, eve] = wallets;
 
   let env: TestEnv = {} as TestEnv;
@@ -104,14 +104,20 @@ export async function runTest(mode: Mode) {
       await addMarketLiquidityDual(env, person, refAmount);
     }
 
+    console.log("Done minting!!!");
+
     // redeem rewardToken
     await advanceTime(consts.ONE_MONTH);
     for (let person of wallets) {
       await env.rewardManager.redeemRewards(env.underlyingAsset.address, env.EXPIRY, person.address, consts.HG);
     }
 
+    console.log("Done redeeming");
+
     // stake to init a lpHolder contract
     await stake(env, charlie, refAmount.div(2));
+
+    console.log("Done staking");
 
     // distribute tokens to alice and bob
     for (let token of tokensToTest) {
@@ -119,7 +125,7 @@ export async function runTest(mode: Mode) {
         await emptyToken(token, person);
       }
       for (let person of [alice, bob]) {
-        await token.connect(eve).transfer(person.address, 100, consts.HG);
+        await token.connect(eve).transfer(person.address, 300, consts.HG);
       }
     }
 
