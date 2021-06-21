@@ -104,7 +104,7 @@ export async function runTest(mode: Mode) {
       await addMarketLiquidityDual(env, person, refAmount);
     }
 
-    console.log("Done minting!!!");
+    console.log('Done minting!!!');
 
     // redeem rewardToken
     await advanceTime(consts.ONE_MONTH);
@@ -112,15 +112,15 @@ export async function runTest(mode: Mode) {
       await env.rewardManager.redeemRewards(env.underlyingAsset.address, env.EXPIRY, person.address, consts.HG);
     }
 
-    console.log("Done redeeming");
+    console.log('Done redeeming');
 
     // stake to init a lpHolder contract
     await stake(env, charlie, refAmount.div(2));
-    console.log("Done staking");
+    console.log('Done staking');
 
     for (let token of tokensToTest) {
       for (let person of [alice, bob, charlie, dave]) {
-        const bal = (await token.connect(person).balanceOf(person.address));
+        const bal = await token.connect(person).balanceOf(person.address);
         await token.connect(person).transfer(eve.address, bal, consts.HG);
       }
     }
@@ -132,7 +132,7 @@ export async function runTest(mode: Mode) {
         await token.connect(eve).transfer(person.address, 1000, consts.HG);
       }
     }
-    console.log("Done distributing");
+    console.log('Done distributing');
   }
 
   it('should be able to withdraw allowed (and not for disallowed) tokens', async () => {
