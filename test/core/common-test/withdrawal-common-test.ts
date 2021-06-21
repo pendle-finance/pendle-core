@@ -109,6 +109,9 @@ export async function runTest(mode: Mode) {
     for (let person of wallets) {
       await env.rewardManager.redeemRewards(env.underlyingAsset.address, env.EXPIRY, person.address, consts.HG);
     }
+    
+    // stake to init a lpHolder contract
+    await stake(env, charlie, refAmount.div(2));
 
     // distribute tokens to alice and bob
     for (let token of tokensToTest) {
@@ -121,8 +124,6 @@ export async function runTest(mode: Mode) {
       }
     }
 
-    // stake to init a lpHolder contract
-    await stake(env, charlie, refAmount.div(2));
   }
 
   it('should be able to withdraw allowed (and not for disallowed) tokens', async () => {
