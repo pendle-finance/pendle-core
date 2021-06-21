@@ -88,6 +88,10 @@
     "PendleCompoundLiquidityMining": {
       "address": "0x5B1C59Eb6872f88a92469751a034B9B5ADA9A73F",
       "tx": "0x315191175c071e310dea214f2bd369838b7853e908773afb99b08df68ac39674"
+    },
+    "PendleLiquidityRewardsProxy": {
+      "address": "0x246Bc457768b96003349C367E42021ef47DF1640",
+      "tx": ""
     }
   },
   "variables": {
@@ -116,23 +120,6 @@
         },
         "PendleLiquidityMining": {
           "USDC": "0x6f40A68E99645C60F14b497E75aE024777d61726"
-        }
-      }
-    },
-    "Compound": {
-      "DAI": {
-        "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
-        "expiries": {
-          "1672272000": {
-            "XYT": "0x4ff131D2E5808A413Da7057690c20761343349bD",
-            "OT": "0x8F0a6CEBcc41b4D101071E7B00A2028E86c5C297",
-            "markets": {
-              "USDC": "0x73A62De3B35126AE8f6a4547b9cbc170bC852001"
-            }
-          }
-        },
-        "PendleLiquidityMining": {
-          "USDC": "0x8FF4633BF701e5FDa99eEDd91b90B526b23aBfA9"
         }
       }
     },
