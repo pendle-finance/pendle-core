@@ -71,7 +71,7 @@ export async function runTest(mode: Mode) {
     allowedTokens: Contract[],
     disallowedTokens: Contract[]
   ): Promise<void> {
-    const testAmount = BN.from(100);
+    const testAmount = BN.from(1);
     for (let person of [alice, bob]) {
       for (let token of allowedTokens) {
         if (token.address != contract.address) {
@@ -118,9 +118,8 @@ export async function runTest(mode: Mode) {
       for (let person of [alice, bob]) {
         await emptyToken(token, person);
       }
-      const balance: BN = await token.balanceOf(eve.address);
       for (let person of [alice, bob]) {
-        await token.connect(eve).transfer(person.address, (await token.balanceOf(eve.address)).div(3), consts.HG);
+        await token.connect(eve).transfer(person.address, 100, consts.HG);
       }
     }
 
