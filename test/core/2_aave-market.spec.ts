@@ -354,12 +354,12 @@ describe('AaveV2-market', async () => {
     await MultiExpiryMarketTest(environments, wallets);
   });
 
-  it('Market\'s checkNeedCurveShift should work correctly with curveShiftBlockDelta > 1', async() => {
+  it("Market's checkNeedCurveShift should work correctly with curveShiftBlockDelta > 1", async () => {
     async function getTokenWeight(): Promise<BN> {
       const tokenReserves = await env.market.getReserves();
       return tokenReserves.tokenWeight;
     }
-    
+
     await bootstrapMarket(env, alice, REF_AMOUNT, REF_AMOUNT);
     /// market weights should be the same for every (delta + 1) blocks
     const delta = 3;
@@ -367,13 +367,13 @@ describe('AaveV2-market', async () => {
 
     // getting weights from blocks
     let weights: BN[] = [];
-    for(let i = 0; i < 20; ++i) {
+    for (let i = 0; i < 20; ++i) {
       weights.push(await getTokenWeight());
       await addMarketLiquiditySingle(env, alice, BN.from(100), true);
     }
 
     // Compare the weights...
-    for(let i = 1; i < weights.length; ++i) {
+    for (let i = 1; i < weights.length; ++i) {
       if (!weights[i].eq(weights[i - 1])) {
         if (i + delta < weights.length) {
           approxBigNumber(weights[i], weights[i + delta], 0);
@@ -382,14 +382,14 @@ describe('AaveV2-market', async () => {
     }
   });
 
-  it('Changing market feeRatio to 0% and back to 0.35% should work normally', async() => {
+  it('Changing market feeRatio to 0% and back to 0.35% should work normally', async () => {
     async function checkLpTreausry(promise: any, shouldBeChanged: Boolean) {
       const treasuryLp: BN = await env.market.balanceOf(env.treasury.address);
       await promise;
       const newTreasuryLp: BN = await env.market.balanceOf(env.treasury.address);
       expect(treasuryLp.lt(newTreasuryLp)).to.be.equal(shouldBeChanged);
     }
-    
+
     const swapFee: BN = toFixedPoint('0.0035');
     const protocolFee: BN = toFixedPoint('0.2');
 
@@ -405,28 +405,19 @@ describe('AaveV2-market', async () => {
     await env.data.setMarketFees(swapFee, 0, consts.HG);
 
     // Treasury should stay unchanged here and lastParamK should be updated to 0
-    await checkLpTreausry(
-      addMarketLiquidityDual(env, alice, REF_AMOUNT),
-      false
-    );
+    await checkLpTreausry(addMarketLiquidityDual(env, alice, REF_AMOUNT), false);
 
     await env.data.setMarketFees(swapFee, protocolFee, consts.HG);
-    
+
     // as lastParamK is 0, treasury should not be updated here
     await swapExactInXytToToken(env, alice, REF_AMOUNT);
-    await checkLpTreausry(
-      addMarketLiquidityDual(env, alice, REF_AMOUNT),
-      false
-    );
-    
+    await checkLpTreausry(addMarketLiquidityDual(env, alice, REF_AMOUNT), false);
+
     // Everything is back to normal here, thus treasury is updated
     await swapExactInXytToToken(env, alice, REF_AMOUNT);
-    await checkLpTreausry(
-      addMarketLiquidityDual(env, alice, REF_AMOUNT),
-      true
-    );
+    await checkLpTreausry(addMarketLiquidityDual(env, alice, REF_AMOUNT), true);
   });
-  
+
   it('AddMarketLiquidityDual test', async () => {
     await marketAddLiquidityDualTest(env);
   });

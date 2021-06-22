@@ -229,8 +229,8 @@ export async function stakeWithPermit(env: TestEnv, user: Wallet, amount: BN, ex
   if (expiry == null) expiry = env.EXPIRY;
 
   const Domain = (contract: any) => ({
-    name: "Pendle Market",
-    version: "1",
+    name: 'Pendle Market',
+    version: '1',
     chainId: consts.DEFAULT_CHAIN_ID,
     verifyingContract: contract.address,
   });
@@ -241,16 +241,16 @@ export async function stakeWithPermit(env: TestEnv, user: Wallet, amount: BN, ex
       { name: 'spender', type: 'address' },
       { name: 'value', type: 'uint256' },
       { name: 'nonce', type: 'uint256' },
-      { name: 'deadline', type: 'uint256' }
+      { name: 'deadline', type: 'uint256' },
     ],
   };
-  
+
   const Data = {
     owner: user.address,
     spender: env.liq.address,
     value: amount,
     nonce: 0,
-    deadline: 10e9
+    deadline: 10e9,
   };
 
   const { v, r, s } = utils.splitSignature(await user._signTypedData(Domain(env.market), Types, Data));

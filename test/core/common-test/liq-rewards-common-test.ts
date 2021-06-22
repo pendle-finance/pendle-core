@@ -237,7 +237,7 @@ export function runTest(mode: Mode) {
       }
     });
 
-    it('stakeWithPermit test', async() => {
+    it('stakeWithPermit test', async () => {
       // reverted with this message means the permitting process has finished
       await expect(stakeWithPermit(env, bob, BN.from(1000))).to.be.revertedWith(errMsg.NOT_STARTED);
     });
