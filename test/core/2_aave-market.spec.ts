@@ -2,6 +2,7 @@ import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
 import {
+  addMarketLiquidityDual,
   addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
   advanceTime,
@@ -15,11 +16,14 @@ import {
   evm_snapshot,
   getMarketRateExactIn,
   getMarketRateExactOut,
+  logMarketReservesData,
+  mineBlock,
   removeMarketLiquidityDual,
   removeMarketLiquiditySingle,
   setTimeNextBlock,
   swapExactInXytToToken,
   swapExactOutXytToToken,
+  toFixedPoint,
 } from '../helpers';
 import {
   AMMCheckLPNearCloseTest,
@@ -346,5 +350,78 @@ describe('AaveV2-market', async () => {
     await setTimeNextBlock(env.T0.add(currentTime.mul(4)));
     environments.push(await createAaveMarketWithExpiry(env, env.T0.add(consts.ONE_MONTH.mul(48)), wallets));
     await MultiExpiryMarketTest(environments, wallets);
+  });
+
+  it('Market\'s checkNeedCurveShift should work correctly with curveShiftBlockDelta > 1', async() => {
+    async function getTokenWeight(): Promise<BN> {
+      const tokenReserves = await env.market.getReserves();
+      return tokenReserves.tokenWeight;
+    }
+    
+    await bootstrapMarket(env, alice, REF_AMOUNT, REF_AMOUNT);
+    /// market weights should be the same for every (delta + 1) blocks
+    const delta = 3;
+    await env.data.setCurveShiftBlockDelta(delta);
+
+    // getting weights from blocks
+    let weights: BN[] = [];
+    for(let i = 0; i < 20; ++i) {
+      weights.push(await getTokenWeight());
+      await addMarketLiquiditySingle(env, alice, BN.from(100), true);
+    }
+
+    // Compare the weights...
+    for(let i = 1; i < weights.length; ++i) {
+      if (!weights[i].eq(weights[i - 1])) {
+        if (i + delta < weights.length) {
+          approxBigNumber(weights[i], weights[i + delta], 0);
+        }
+      }
+    }
+  });
+
+  it('Changing market feeRatio to 0% and back to 0.35% should work normally', async() => {
+    async function checkLpTreausry(promise: any, shouldBeChanged: Boolean) {
+      const treasuryLp: BN = await env.market.balanceOf(env.treasury.address);
+      await promise;
+      const newTreasuryLp: BN = await env.market.balanceOf(env.treasury.address);
+      expect(treasuryLp.lt(newTreasuryLp)).to.be.equal(shouldBeChanged);
+    }
+    
+    const swapFee: BN = toFixedPoint('0.0035');
+    const protocolFee: BN = toFixedPoint('0.2');
+
+    await env.data.setMarketFees(swapFee, protocolFee, consts.HG);
+    await bootstrapMarket(env, alice, REF_AMOUNT, REF_AMOUNT);
+
+    // large delta so treasury is not affected by swapping
+    const delta = 20;
+    await env.data.setCurveShiftBlockDelta(delta);
+
+    // Swap exact in one time so the paramK is promisely changed
+    await swapExactInXytToToken(env, alice, REF_AMOUNT);
+    await env.data.setMarketFees(swapFee, 0, consts.HG);
+
+    // Treasury should stay unchanged here and lastParamK should be updated to 0
+    await checkLpTreausry(
+      addMarketLiquidityDual(env, alice, REF_AMOUNT),
+      false
+    );
+
+    await env.data.setMarketFees(swapFee, protocolFee, consts.HG);
+    
+    // as lastParamK is 0, treasury should not be updated here
+    await swapExactInXytToToken(env, alice, REF_AMOUNT);
+    await checkLpTreausry(
+      addMarketLiquidityDual(env, alice, REF_AMOUNT),
+      false
+    );
+    
+    // Everything is back to normal here, thus treasury is updated
+    await swapExactInXytToToken(env, alice, REF_AMOUNT);
+    await checkLpTreausry(
+      addMarketLiquidityDual(env, alice, REF_AMOUNT),
+      true
+    );
   });
 });
