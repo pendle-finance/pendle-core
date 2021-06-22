@@ -253,6 +253,7 @@ export function runTest(mode: Mode) {
       await env.liq.lpHolderForExpiry(env.EXPIRY);
       await env.liq.readExpiryData(env.EXPIRY);
       await env.liq.readUserSpecificExpiryData(env.EXPIRY, alice.address);
+      await env.liq.readAllExpiriesLength();
     });
   });
 }

@@ -24,6 +24,7 @@ import {
   swapExactInXytToToken,
   swapExactOutXytToToken,
   toFixedPoint,
+  approxByPercent,
 } from '../helpers';
 import {
   AMMCheckLPNearCloseTest,
@@ -34,6 +35,7 @@ import {
   marketBalanceNonZeroTest,
   MarketFeesTest,
   ProtocolFeeTest,
+  marketAddLiquidityDualTest,
 } from './common-test/amm-formula-test';
 import { MultiExpiryMarketTest } from './common-test/multi-market-common-test';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
@@ -422,6 +424,75 @@ describe('AaveV2-market', async () => {
     await checkLpTreausry(
       addMarketLiquidityDual(env, alice, REF_AMOUNT),
       true
+    );
+  });
+  
+  it('AddMarketLiquidityDual test', async () => {
+    await marketAddLiquidityDualTest(env);
+  });
+
+  it('Market Math extreme case', async () => {
+    // This test aims to test the market when close to the end only (token: USDG, xyt: WETH)
+    const toUSDG: BN = amountToWei(BN.from(1), 2);
+    const toWETH: BN = amountToWei(BN.from(1), 18);
+
+    const tokenWeight: BN = BN.from(997156320982);
+    const xytWeight: BN = BN.from(102355306794);
+    const tokenBalance: BN = BN.from(toUSDG.mul(1000));
+    const xytBalance: BN = BN.from(toWETH.mul(1000000000)); /// This is already very very extreme and likely to never happen
+    const totalSupplyLp: BN = tokenBalance.mul(xytBalance);
+
+    const token: any = {
+      weight: tokenWeight,
+      balance: tokenBalance,
+    };
+
+    const xyt: any = {
+      weight: xytWeight,
+      balance: xytBalance,
+    };
+
+    /// ========== SWAP TOKEN TO XYT ==========
+    approxByPercent(await env.mockMarketMath.calcExactOut(token, xyt, 1, 0), BN.from('97415834753633712764316'));
+
+    approxByPercent(
+      await env.mockMarketMath.calcExactIn(token, xyt, BN.from('1273461827346132412312213'), 0),
+      BN.from('13')
+    );
+
+    // ========== SWAP XYT TO TOKEN ==========
+    approxByPercent(
+      await env.mockMarketMath.calcExactOut(xyt, token, BN.from('127346331827346132412312213'), 0),
+      BN.from('1223')
+    );
+
+    approxByPercent(
+      await env.mockMarketMath.calcExactIn(xyt, token, BN.from('10000'), 0),
+      BN.from('1791093309883636288779774305')
+    );
+
+    // ========== ADD TOKEN ==========
+    approxByPercent(
+      await env.mockMarketMath.calcOutAmountLp(1000, token, 0, totalSupplyLp),
+      BN.from('906487793047224024828821200000')
+    );
+
+    // ========== ADD XYT ==========
+    approxByPercent(
+      await env.mockMarketMath.calcOutAmountLp(xytBalance.div(2), xyt, 0, totalSupplyLp),
+      BN.from('3846680494591338024458126400000')
+    );
+
+    // ========== REMOVE TOKEN ==========
+    approxByPercent(
+      await env.mockMarketMath.calcOutAmountToken(token, totalSupplyLp, totalSupplyLp.div(10), 0),
+      BN.from('10968')
+    );
+
+    // ========== REMOVE XYT ==========
+    approxByPercent(
+      await env.mockMarketMath.calcOutAmountToken(xyt, totalSupplyLp, totalSupplyLp.div(3), 0),
+      BN.from('987164614857793524891035594')
     );
   });
 });
