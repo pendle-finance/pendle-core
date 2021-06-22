@@ -115,7 +115,7 @@ export async function runTest(mode: Mode) {
 
     for (let token of tokensToTest) {
       for (let person of [alice, bob, charlie, dave]) {
-        const bal = (await token.connect(person).balanceOf(person.address));
+        const bal = await token.connect(person).balanceOf(person.address);
         await token.connect(person).transfer(eve.address, bal, consts.HG);
       }
     }
