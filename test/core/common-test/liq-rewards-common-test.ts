@@ -11,6 +11,7 @@ import {
   setTime,
   setTimeNextBlock,
   stake,
+  stakeWithPermit,
   startOfEpoch,
   withdraw,
 } from '../../helpers';
@@ -234,6 +235,11 @@ export function runTest(mode: Mode) {
         let reward: BN = (await env.liq.readEpochData(epoch)).totalRewards;
         approxBigNumber(reward, env.liqParams.REWARDS_PER_EPOCH[epoch - 1].add(toppedUpReward), 0, true);
       }
+    });
+
+    it('stakeWithPermit test', async() => {
+      // reverted with this message means the permitting process has finished
+      await expect(stakeWithPermit(env, bob, BN.from(1000))).to.be.revertedWith(errMsg.NOT_STARTED);
     });
 
     it('Read functions should work correctly', async () => {

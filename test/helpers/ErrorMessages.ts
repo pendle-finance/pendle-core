@@ -47,4 +47,5 @@ export const errMsg = {
   EXISTED_MARKET: prefix + ' ' + 'EXISTED_MARKET',
   INVALID_FORGE_FACTORY: prefix + ' ' + 'INVALID_FORGE_FACTORY',
   FORGE_ID_MISMATCH: prefix + ' ' + 'FORGE_ID_MISMATCH',
+  NOT_STARTED: prefix + ' ' + 'NOT_STARTED',
 };
