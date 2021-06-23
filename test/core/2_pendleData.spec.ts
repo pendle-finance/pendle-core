@@ -43,11 +43,11 @@ describe('PendleData', async () => {
 
   it('Should be able to deploy with correct initial data', async () => {
     const treasuryInData = await data.treasury();
-    expect(treasuryInData).to.be.eq(treasury.address);
+    expect(treasuryInData.toLowerCase()).to.be.eq(treasury.address.toLowerCase());
     const pausingManagerInData = await data.pausingManager();
-    expect(pausingManagerInData).to.be.eq(pausingManager.address);
+    expect(pausingManagerInData.toLowerCase()).to.be.eq(pausingManager.address.toLowerCase());
     const routerInData = await data.router();
-    expect(routerInData).to.be.eq(fixture.core.router.address);
+    expect(routerInData.toLowerCase()).to.be.eq(fixture.core.router.address.toLowerCase());
   });
 
   it('Should not be able to construct with zero address as treasury', async () => {
@@ -144,9 +144,9 @@ describe('PendleData', async () => {
 
   it('Should be able to add forge', async () => {
     const av2ForgeAddress = await data.getForgeAddress(consts.FORGE_AAVE_V2);
-    expect(av2ForgeAddress).to.be.eq(fixture.a2Forge.aaveV2Forge.address);
+    expect(av2ForgeAddress.toLowerCase()).to.be.eq(fixture.a2Forge.aaveV2Forge.address.toLowerCase());
     const cForgeAddress = await data.getForgeAddress(consts.FORGE_COMPOUND);
-    expect(cForgeAddress).to.be.eq(fixture.cForge.compoundForge.address);
+    expect(cForgeAddress.toLowerCase()).to.be.eq(fixture.cForge.compoundForge.address.toLowerCase());
   });
 
   it('Should revert invalid forge addition', async () => {
@@ -179,8 +179,8 @@ describe('PendleData', async () => {
       consts.T0_A2.add(consts.SIX_MONTH)
     );
     const [ot, xyt] = yieldTokens;
-    expect(ot).to.be.eq(fixture.a2Forge.a2OwnershipToken.address);
-    expect(xyt).to.be.eq(fixture.a2Forge.a2FutureYieldToken.address);
+    expect(ot.toLowerCase()).to.be.eq(fixture.a2Forge.a2OwnershipToken.address.toLowerCase());
+    expect(xyt.toLowerCase()).to.be.eq(fixture.a2Forge.a2FutureYieldToken.address.toLowerCase());
   });
 
   it('Should be able to correctly determine validity of xyt', async () => {
@@ -215,9 +215,9 @@ describe('PendleData', async () => {
 
   it('Should be able to add market factory', async () => {
     const av2MarketFactoryaddress = await data.getMarketFactoryAddress(consts.MARKET_FACTORY_AAVE_V2);
-    expect(av2MarketFactoryaddress).to.be.eq(fixture.core.a2MarketFactory.address);
+    expect(av2MarketFactoryaddress.toLowerCase()).to.be.eq(fixture.core.a2MarketFactory.address.toLowerCase());
     const cMarketFactoryaddress = await data.getMarketFactoryAddress(consts.MARKET_FACTORY_COMPOUND);
-    expect(cMarketFactoryaddress).to.be.eq(fixture.core.cMarketFactory.address);
+    expect(cMarketFactoryaddress.toLowerCase()).to.be.eq(fixture.core.cMarketFactory.address.toLowerCase());
   });
 
   it('Should revert invalid market factory addition', async () => {
@@ -252,13 +252,13 @@ describe('PendleData', async () => {
       fixture.a2Forge.a2FutureYieldToken.address,
       testToken.address
     );
-    expect(aMarketAddress).to.be.eq(fixture.a2Market.address);
+    expect(aMarketAddress.toLowerCase()).to.be.eq(fixture.a2Market.address.toLowerCase());
     const cMarketAddress = await data.getMarket(
       consts.MARKET_FACTORY_COMPOUND,
       fixture.cForge.cFutureYieldToken.address,
       testToken.address
     );
-    expect(cMarketAddress).to.be.eq(fixture.cMarket.address);
+    expect(cMarketAddress.toLowerCase()).to.be.eq(fixture.cMarket.address.toLowerCase());
   });
 
   // it('Should not be able to add multiple market of same signature', async() => {
@@ -304,7 +304,7 @@ describe('PendleData', async () => {
   it('Should be able to get market by index', async () => {
     let allMarketsLength = await data.allMarketsLength();
     const marketAddress = await data.getMarketByIndex(allMarketsLength - 1);
-    expect(marketAddress).to.be.not.eq(consts.ZERO_ADDRESS);
+    expect(marketAddress.toLowerCase()).to.be.not.eq(consts.ZERO_ADDRESS);
     await expect(data.getMarketByIndex(allMarketsLength)).to.be.revertedWith('INVALID_INDEX');
   });
 
@@ -314,12 +314,12 @@ describe('PendleData', async () => {
       fixture.testToken.address,
       consts.MARKET_FACTORY_AAVE_V2
     );
-    expect(marketAddress).to.be.eq(fixture.a2Market.address);
+    expect(marketAddress.toLowerCase()).to.be.eq(fixture.a2Market.address.toLowerCase());
     const marketAddressExpectZero = await data.getMarketFromKey(
       fixture.a2Forge.a2FutureYieldToken18.address,
       fixture.testToken.address,
       consts.MARKET_FACTORY_COMPOUND
     );
-    expect(marketAddressExpectZero).to.be.eq(consts.ZERO_ADDRESS);
+    expect(marketAddressExpectZero.toLowerCase()).to.be.eq(consts.ZERO_ADDRESS.toLowerCase());
   });
 });
