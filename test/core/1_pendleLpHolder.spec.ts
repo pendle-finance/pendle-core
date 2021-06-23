@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { BigNumber as BN, Contract } from 'ethers';
 import { consts, evm_revert, evm_snapshot, getCContract, tokens } from '../helpers';
-import { LiqParams, liquidityMiningFixture, LiquidityMiningFixture } from './fixtures';
+import { liquidityMiningFixture, LiquidityMiningFixture } from './fixtures';
 import pendleLpHolder from '../../build/artifacts/contracts/core/PendleLpHolder.sol/PendleLpHolder.json';
 import mockPendleLpHolder from '../../build/artifacts/contracts/mock/MockPendleLpHolder.sol/MockPendleLpHolder.json';
 
@@ -11,25 +11,18 @@ const { loadFixture, provider, deployContract } = waffle;
 describe('pendleLpHolder', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie, dave, eve] = wallets;
-  let liq: Contract;
   let market: Contract;
-  let pdl: Contract;
-  let params: LiqParams;
   let cUSDT: Contract;
   let router: Contract;
   let lpHolder: Contract;
   let mockLpHolder: Contract;
   let snapshotId: string;
   let globalSnapshotId: string;
-  let EXPIRY: BN = consts.T0_C.add(consts.SIX_MONTH);
   before(async () => {
     const fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);
     globalSnapshotId = await evm_snapshot();
-    liq = fixture.cLiquidityMining;
     market = fixture.cMarket;
-    params = fixture.params;
     router = fixture.core.router
-    pdl = fixture.pdl;
     cUSDT = await getCContract(alice, tokens.USDT);
     lpHolder = await deployContract(alice, pendleLpHolder, [fixture.core.govManager.address, market.address, router.address, cUSDT.address]);
     mockLpHolder = await deployContract(alice, mockPendleLpHolder, [fixture.core.govManager.address, market.address, router.address, cUSDT.address]);
@@ -66,7 +59,5 @@ describe('pendleLpHolder', async () => {
     const notAllowed = await mockLpHolder.allowedToWithdraw(cUSDT.address);
     expect(notAllowed).to.be.false;
   })
-
-
   
 });
