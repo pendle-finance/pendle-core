@@ -28,11 +28,21 @@ describe('pendleLpHolder', async () => {
     liq = fixture.cLiquidityMining;
     market = fixture.cMarket;
     params = fixture.params;
-    router = fixture.core.router
+    router = fixture.core.router;
     pdl = fixture.pdl;
     cUSDT = await getCContract(alice, tokens.USDT);
-    lpHolder = await deployContract(alice, pendleLpHolder, [fixture.core.govManager.address, market.address, router.address, cUSDT.address]);
-    mockLpHolder = await deployContract(alice, mockPendleLpHolder, [fixture.core.govManager.address, market.address, router.address, cUSDT.address]);
+    lpHolder = await deployContract(alice, pendleLpHolder, [
+      fixture.core.govManager.address,
+      market.address,
+      router.address,
+      cUSDT.address,
+    ]);
+    mockLpHolder = await deployContract(alice, mockPendleLpHolder, [
+      fixture.core.govManager.address,
+      market.address,
+      router.address,
+      cUSDT.address,
+    ]);
     snapshotId = await evm_snapshot();
   });
 
@@ -45,28 +55,29 @@ describe('pendleLpHolder', async () => {
     snapshotId = await evm_snapshot();
   });
 
-  it('Cannot be initialized with zero address as argument(s)', async() => {
-    await expect(deployContract(alice, pendleLpHolder, [consts.ZERO_ADDRESS, market.address, router.address, cUSDT.address])).to.be.revertedWith("ZERO_ADDRESS");
-  })
+  it('Cannot be initialized with zero address as argument(s)', async () => {
+    await expect(
+      deployContract(alice, pendleLpHolder, [consts.ZERO_ADDRESS, market.address, router.address, cUSDT.address])
+    ).to.be.revertedWith('ZERO_ADDRESS');
+  });
 
-  it('Should correctly initialize', async() => {
+  it('Should correctly initialize', async () => {
     const underlyingYieldToken = await lpHolder.underlyingYieldToken();
     expect(underlyingYieldToken.toLowerCase()).to.be.eq(cUSDT.address.toLowerCase());
     const pendleMarket = await lpHolder.pendleMarket();
     expect(pendleMarket.toLowerCase()).to.be.eq(market.address.toLowerCase());
-  })
+  });
 
-  it('Only liquidityMoning modifier should reject transactions by non-liquidity-mining address', async() => {
-    await expect(lpHolder.connect(bob).sendInterests(bob.address, BN.from(100))).to.be.revertedWith("ONLY_LIQUIDITY_MINING");
-  })
+  it('Only liquidityMoning modifier should reject transactions by non-liquidity-mining address', async () => {
+    await expect(lpHolder.connect(bob).sendInterests(bob.address, BN.from(100))).to.be.revertedWith(
+      'ONLY_LIQUIDITY_MINING'
+    );
+  });
 
-  it('Should return correct allowed_to_withdraw information', async() => {
+  it('Should return correct allowed_to_withdraw information', async () => {
     const allowed = await mockLpHolder.allowedToWithdraw(consts.RANDOM_ADDRESS);
     expect(allowed).to.be.true;
     const notAllowed = await mockLpHolder.allowedToWithdraw(cUSDT.address);
     expect(notAllowed).to.be.false;
-  })
-
-
-  
+  });
 });
