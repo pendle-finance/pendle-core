@@ -390,21 +390,28 @@ export function runTest(mode: Mode) {
       );
     });
 
-    it("isValidOT modifier should reject redeem interest request on invalid OT token", async() => {
-      await expect(env.rewardManager.redeemRewards(consts.RANDOM_ADDRESS, env.EXPIRY, bob.address)).to.be.revertedWith("INVALID_OT");
+    it('isValidOT modifier should reject redeem interest request on invalid OT token', async () => {
+      await expect(env.rewardManager.redeemRewards(consts.RANDOM_ADDRESS, env.EXPIRY, bob.address)).to.be.revertedWith(
+        'INVALID_OT'
+      );
     });
 
-    it("onlyForge modifier should reject update reward request from non-forge", async() => {
-      await expect(env.rewardManager.updatePendingRewards(env.USDTContract.address, env.EXPIRY, alice.address)).to.be.revertedWith("ONLY_FORGE");
-    })
+    it('onlyForge modifier should reject update reward request from non-forge', async () => {
+      await expect(
+        env.rewardManager.updatePendingRewards(env.USDTContract.address, env.EXPIRY, alice.address)
+      ).to.be.revertedWith('ONLY_FORGE');
+    });
 
-    it("setUpdateFrequency should reject inconsistent input array length", async() => {
-      await expect(env.rewardManager.setUpdateFrequency([env.USDTContract.address], [BN.from(100), consts.RONE])).to.be.revertedWith("ARRAY_LENGTH_MISMATCH");
-    })
+    it('setUpdateFrequency should reject inconsistent input array length', async () => {
+      await expect(
+        env.rewardManager.setUpdateFrequency([env.USDTContract.address], [BN.from(100), consts.RONE])
+      ).to.be.revertedWith('ARRAY_LENGTH_MISMATCH');
+    });
 
-    it("updataParamL should be rejected for underlying asset with no existing yield token holder", async() => {
-      await expect(env.rewardManager.updateParamLManual(consts.RANDOM_ADDRESS, alice.address)).to.be.revertedWith("INVALID_YIELD_TOKEN_HOLDER");
-    })
-
+    it('updataParamL should be rejected for underlying asset with no existing yield token holder', async () => {
+      await expect(env.rewardManager.updateParamLManual(consts.RANDOM_ADDRESS, alice.address)).to.be.revertedWith(
+        'INVALID_YIELD_TOKEN_HOLDER'
+      );
+    });
   });
 }
