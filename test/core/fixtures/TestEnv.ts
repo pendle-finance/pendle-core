@@ -1,13 +1,21 @@
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
+import { assert } from 'hardhat';
 import { consts, getA2Contract, getCContract, getERC20Contract, Token, tokens } from '../../helpers';
 import { CoreFixture } from './core.fixture';
 import { LiqParams, LiquidityMiningFixture } from './liquidityMining.fixture';
 import { MarketFixture } from './market.fixture';
 import { RouterFixture } from './router.fixture';
 
+const { waffle } = require('hardhat');
+const { provider } = waffle;
+const wallets = provider.getWallets();
+const [alice, bob, charlie, dave, eve] = wallets;
+
 export enum Mode {
   AAVE_V2 = 1,
   COMPOUND,
+  SUSHISWAP_COMPLEX,
+  SUSHISWAP_SIMPLE,
 }
 
 export interface TestEnv {
@@ -39,6 +47,7 @@ export interface TestEnv {
   liq8: Contract;
   liq18: Contract;
   USDTContract: Contract;
+  WETHContract: Contract;
 
   // mock pure contracts
   mockMarketMath: Contract;
@@ -60,21 +69,21 @@ export interface TestEnv {
   liqMiningFixture: LiquidityMiningFixture;
 }
 
-export async function parseTestEnvCoreFixture(env: TestEnv, alice: Wallet, fixture: CoreFixture) {
+export async function parseTestEnvCoreFixture(env: TestEnv, user: Wallet, fixture: CoreFixture) {
   env.router = fixture.router;
   env.data = fixture.data;
   env.treasury = fixture.treasury;
   env.marketReader = fixture.marketReader;
   env.pausingManager = fixture.pausingManager;
   env.marketReader = fixture.marketReader;
-  env.USDTContract = await getERC20Contract(alice, tokens.USDT);
-  env.underlyingAsset = tokens.USDT;
+  env.USDTContract = await getERC20Contract(user, tokens.USDT);
+  env.WETHContract = await getERC20Contract(user, tokens.WETH);
   env.ETH_TEST = false;
 }
 
-export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: RouterFixture) {
+export async function parseTestEnvRouterFixture(user: Wallet, mode: Mode, env: TestEnv, fixture: RouterFixture) {
   env.mode = mode;
-  await parseTestEnvCoreFixture(env, alice, fixture.core);
+  await parseTestEnvCoreFixture(env, user, fixture.core);
 
   env.routerFixture = fixture;
   if (env.mode == Mode.AAVE_V2) {
@@ -86,9 +95,10 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
     env.xyt = fixture.a2Forge.a2FutureYieldToken;
     env.xyt18 = fixture.a2Forge.a2FutureYieldToken18;
     env.rewardManager = fixture.a2Forge.a2RewardManager;
-    env.yToken = await getA2Contract(alice, env.forge, tokens.USDT);
+    env.yToken = await getA2Contract(user, env.forge, tokens.USDT);
     env.FORGE_ID = consts.FORGE_AAVE_V2;
     env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_AAVE_TOKEN_AMOUNT;
+    env.underlyingAsset = tokens.USDT;
   } else if (env.mode == Mode.COMPOUND) {
     env.T0 = consts.T0_C;
     env.EXPIRY = env.T0.add(consts.SIX_MONTH);
@@ -99,15 +109,56 @@ export async function parseTestEnvRouterFixture(alice: Wallet, mode: Mode, env: 
     env.xyt8 = fixture.cForge.cFutureYieldToken8;
     // no ot18, xyt18
     env.rewardManager = fixture.cForge.cRewardManager;
-    env.yToken = await getCContract(alice, tokens.USDT);
+    env.yToken = await getCContract(user, tokens.USDT);
     env.FORGE_ID = consts.FORGE_COMPOUND;
     env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_COMPOUND_TOKEN_AMOUNT;
+    env.underlyingAsset = tokens.USDT;
+  } else if (env.mode == Mode.SUSHISWAP_COMPLEX) {
+    env.T0 = consts.T0_SC;
+    env.EXPIRY = env.T0.add(consts.SIX_MONTH);
+    env.forge = fixture.scForge.sushiswapComplexForge;
+    env.ot = fixture.scForge.scOwnershipToken;
+    // env.ot18 = fixture.scForge.scOwnershipToken18;
+    env.xyt = fixture.scForge.scFutureYieldToken;
+    // env.xyt18 = fixture.scForge.scFutureYieldToken18;
+    env.rewardManager = fixture.scForge.scRewardManager;
+    env.yToken = await getERC20Contract(user, tokens.SUSHI_USDT_WETH_LP);
+    env.FORGE_ID = consts.FORGE_SUSHISWAP_COMPLEX;
+    env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_SUSHI_TOKEN_AMOUNT;
+    env.underlyingAsset = tokens.SUSHI_USDT_WETH_LP;
+
+    for (var person of [alice, bob, charlie, dave, eve]) {
+      await env.USDTContract.connect(person).approve(consts.SUSHISWAP_ROUTER_ADDRESS, 0, consts.HG);
+      await env.WETHContract.connect(person).approve(consts.SUSHISWAP_ROUTER_ADDRESS, 0, consts.HG);
+      await env.USDTContract.connect(person).approve(consts.SUSHISWAP_ROUTER_ADDRESS, consts.INF, consts.HG);
+      await env.WETHContract.connect(person).approve(consts.SUSHISWAP_ROUTER_ADDRESS, consts.INF, consts.HG);
+    }
+  } else if (env.mode == Mode.SUSHISWAP_SIMPLE) {
+    env.T0 = consts.T0_SS;
+    env.EXPIRY = env.T0.add(consts.SIX_MONTH);
+    env.forge = fixture.ssForge.sushiswapSimpleForge;
+    env.ot = fixture.ssForge.ssOwnershipToken;
+    env.xyt = fixture.ssForge.ssFutureYieldToken;
+    env.rewardManager = fixture.ssForge.ssRewardManager;
+    env.yToken = await getERC20Contract(user, tokens.SUSHI_USDT_WETH_LP);
+
+    env.FORGE_ID = consts.FORGE_SUSHISWAP_SIMPLE;
+    env.INITIAL_YIELD_TOKEN_AMOUNT = consts.INITIAL_SUSHI_TOKEN_AMOUNT;
+    env.underlyingAsset = tokens.SUSHI_USDT_WETH_LP;
+    for (var person of [alice, bob, charlie, dave, eve]) {
+      await env.USDTContract.connect(person).approve(consts.SUSHISWAP_ROUTER_ADDRESS, 0, consts.HG);
+      await env.WETHContract.connect(person).approve(consts.SUSHISWAP_ROUTER_ADDRESS, 0, consts.HG);
+      await env.USDTContract.connect(person).approve(consts.SUSHISWAP_ROUTER_ADDRESS, consts.INF, consts.HG);
+      await env.WETHContract.connect(person).approve(consts.SUSHISWAP_ROUTER_ADDRESS, consts.INF, consts.HG);
+    }
+  } else {
+    assert(false, 'NOT SUPPORTED');
   }
 }
 
-export async function parseTestEnvMarketFixture(alice: Wallet, mode: Mode, env: TestEnv, fixture: MarketFixture) {
+export async function parseTestEnvMarketFixture(user: Wallet, mode: Mode, env: TestEnv, fixture: MarketFixture) {
   env.mode = mode;
-  await parseTestEnvRouterFixture(alice, mode, env, fixture.routerFix);
+  await parseTestEnvRouterFixture(user, mode, env, fixture.routerFix);
 
   env.mockMarketMath = fixture.mockMarketMath;
   env.testToken = fixture.testToken;
@@ -124,17 +175,27 @@ export async function parseTestEnvMarketFixture(alice: Wallet, mode: Mode, env: 
     env.market8 = fixture.cMarket8;
     env.marketEth = fixture.cMarketEth;
     // no market18
+  } else if (env.mode == Mode.SUSHISWAP_COMPLEX) {
+    env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_SUSHISWAP_COMPLEX;
+    env.market = fixture.scMarket;
+    // env.market18 = fixture.a2Market18;
+    // env.marketEth = fixture.a2MarketEth;
+  } else if (env.mode == Mode.SUSHISWAP_SIMPLE) {
+    env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_SUSHISWAP_SIMPLE;
+    env.market = fixture.ssMarket;
+  } else {
+    assert(false, 'NOT SUPPORTED');
   }
 }
 
 export async function parseTestEnvLiquidityMiningFixture(
-  alice: Wallet,
+  user: Wallet,
   mode: Mode,
   env: TestEnv,
   fixture: LiquidityMiningFixture
 ) {
   env.mode = mode;
-  await parseTestEnvMarketFixture(alice, mode, env, fixture.marketFix);
+  await parseTestEnvMarketFixture(user, mode, env, fixture.marketFix);
 
   env.pdl = fixture.pdl;
   env.liqMiningFixture = fixture;
@@ -147,5 +208,11 @@ export async function parseTestEnvLiquidityMiningFixture(
     env.liq = fixture.cLiquidityMining;
     env.liq8 = fixture.cLiquidityMining8;
     // no liq18
+  } else if (env.mode == Mode.SUSHISWAP_COMPLEX) {
+    env.liq = fixture.scLiquidityMining;
+  } else if (env.mode == Mode.SUSHISWAP_SIMPLE) {
+    env.liq = fixture.ssLiquidityMining;
+  } else {
+    assert(false, 'NOT SUPPORTED');
   }
 }

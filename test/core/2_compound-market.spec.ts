@@ -8,7 +8,7 @@ chai.use(solidity);
 
 const { loadFixture, provider } = waffle;
 
-describe('compound-market', async () => {
+describe('compound-market @skip-on-coverage', async () => {
   const wallets = provider.getWallets();
   const [alice, bob] = wallets;
   let router: Contract;

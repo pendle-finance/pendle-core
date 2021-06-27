@@ -35,12 +35,12 @@ async function main() {
   const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
   const routerWeb3 = new hre.web3.eth.Contract(PendleRouter.abi, pendleRouter.address);
 
-  const usdtCompoundContract = await (await hre.ethers.getContractFactory('TestToken')).attach(
-    consts.tokens.USDT_COMPOUND.address
-  );
-  const usdtAaveContract = await (await hre.ethers.getContractFactory('TestToken')).attach(
-    consts.tokens.USDT_AAVE.address
-  );
+  const usdtCompoundContract = await (
+    await hre.ethers.getContractFactory('TestToken')
+  ).attach(consts.tokens.USDT_COMPOUND.address);
+  const usdtAaveContract = await (
+    await hre.ethers.getContractFactory('TestToken')
+  ).attach(consts.tokens.USDT_AAVE.address);
 
   // const xytAddress = "0xc2D5FfFeDf7C08C67B4EE3d8f93e3DB6e088d3b5";
   const xytAddress = '0x2618929B23d8d7316D9858BE338F59Ae283646AE';
@@ -56,9 +56,9 @@ async function main() {
 
   // const xyt = await (await hre.ethers.getContractFactory('PendleFutureYieldToken')).attach(xytAddress);
   const market = await (await hre.ethers.getContractFactory('PendleAaveMarket')).attach(marketAddress);
-  const liqMining = await (await hre.ethers.getContractFactory('PendleCompoundLiquidityMining')).attach(
-    liqMiningAddress
-  );
+  const liqMining = await (
+    await hre.ethers.getContractFactory('PendleCompoundLiquidityMining')
+  ).attach(liqMiningAddress);
   // const pendle = await (await hre.ethers.getContractFactory('PENDLE')).attach(pendleAddress);
 
   const epochId = 1;

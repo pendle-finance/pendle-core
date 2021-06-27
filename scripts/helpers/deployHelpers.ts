@@ -154,9 +154,8 @@ export async function createNewMarket(
   const marketAddress = await pendleData.getMarket(marketFactoryId, xytAddress, baseTokenContract.address);
   console.log(`\t Market created at ${marketAddress}`);
 
-  deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[expiry].markets[
-    baseTokenSymbol
-  ] = marketAddress;
+  deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[expiry].markets[baseTokenSymbol] =
+    marketAddress;
 }
 
 export async function mintXytAndBootstrapMarket(
@@ -192,9 +191,9 @@ export async function mintXytAndBootstrapMarket(
   console.log(`\tunderlyingYieldTokenAddress = ${underlyingYieldTokenAddress}`);
   console.log(`\tunderlyingAssetAddress = ${underlyingAssetContract.address}`);
   console.log(`\tbaseTokenContract.address = ${baseTokenContract.address}`);
-  const underlyingYieldTokenContract = await (await hre.ethers.getContractFactory('TestToken')).attach(
-    underlyingYieldTokenAddress
-  );
+  const underlyingYieldTokenContract = await (
+    await hre.ethers.getContractFactory('TestToken')
+  ).attach(underlyingYieldTokenAddress);
 
   console.log(`\ta/cToken balance = ${await underlyingYieldTokenContract.balanceOf(deployer.address)}`);
   console.log(`\tbaseToken balance = ${await baseTokenContract.balanceOf(deployer.address)}`);

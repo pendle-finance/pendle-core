@@ -28,7 +28,7 @@ export async function redeemAfterExpiry(env: TestEnv, user: Wallet, expiry?: BN)
   if (expiry == null) {
     expiry = env.EXPIRY;
   }
-  await env.router.connect(user).redeemAfterExpiry(env.FORGE_ID, env.underlyingAsset.address, expiry);
+  await env.router.connect(user).redeemAfterExpiry(env.FORGE_ID, env.underlyingAsset.address, expiry, consts.HG);
 }
 
 export async function redeemUnderlying(env: TestEnv, user: Wallet, amount: BN, expiry?: BN) {
@@ -265,4 +265,16 @@ export async function withdraw(env: TestEnv, user: Wallet, amount: BN, expiry?: 
 export async function redeemRewards(env: TestEnv, user: Wallet, expiry?: BN) {
   if (expiry == null) expiry = env.EXPIRY;
   await env.liq.connect(user).redeemRewards(expiry, user.address, consts.HG);
+}
+
+export async function otBalance(env: TestEnv, user: Wallet): Promise<BN> {
+  return env.ot.balanceOf(user.address);
+}
+
+export async function xytBalance(env: TestEnv, user: Wallet): Promise<BN> {
+  return env.xyt.balanceOf(user.address);
+}
+
+export async function yTokenBalance(env: TestEnv, user: Wallet): Promise<BN> {
+  return env.yToken.balanceOf(user.address);
 }

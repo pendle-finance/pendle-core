@@ -6,7 +6,7 @@ import { advanceTime, approxBigNumber, consts, evm_revert, evm_snapshot } from '
 const { waffle } = require('hardhat');
 const { provider, deployContract } = waffle;
 
-describe('Token name test', async () => {
+describe('Token name test @skip-on-coverage', async () => {
   const wallets: Wallet[] = provider.getWallets();
 
   const [root, a1, a2, a3, a4] = wallets;

@@ -44,7 +44,7 @@ chai.use(solidity);
 
 const { loadFixture, provider } = waffle;
 
-describe('AaveV2-market', async () => {
+describe('AaveV2-market @skip-on-coverage', async () => {
   const wallets = provider.getWallets();
   const [alice, bob] = wallets;
   let snapshotId: string;

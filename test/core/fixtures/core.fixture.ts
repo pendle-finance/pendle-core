@@ -1,12 +1,14 @@
 import { BigNumber as BN, Contract, providers, Wallet } from 'ethers';
 import PendleAaveMarketFactory from '../../../build/artifacts/contracts/core/aave/PendleAaveMarketFactory.sol/PendleAaveMarketFactory.json';
 import PendleCompoundMarketFactory from '../../../build/artifacts/contracts/core/compound/PendleCompoundMarketFactory.sol/PendleCompoundMarketFactory.json';
+import PendleSushiswapComplexMarketFactory from '../../../build/artifacts/contracts/core/GenOne/PendleGenOneMarketFactory.sol/PendleGenOneMarketFactory.json';
+import PendleSushiswapSimpleMarketFactory from '../../../build/artifacts/contracts/core/GenOne/PendleGenOneMarketFactory.sol/PendleGenOneMarketFactory.json';
 import PendleData from '../../../build/artifacts/contracts/core/PendleData.sol/PendleData.json';
-import PendleMarketReader from '../../../build/artifacts/contracts/readers/PendleMarketReader.sol/PendleMarketReader.json';
+import PendleGovernanceManager from '../../../build/artifacts/contracts/core/PendleGovernanceManager.sol/PendleGovernanceManager.json';
 import PendlePausingManager from '../../../build/artifacts/contracts/core/PendlePausingManager.sol/PendlePausingManager.json';
 import PendleRouter from '../../../build/artifacts/contracts/core/PendleRouter.sol/PendleRouter.json';
 import PendleTreasury from '../../../build/artifacts/contracts/governance/PendleTreasury.sol/PendleTreasury.json';
-import PendleGovernanceManager from '../../../build/artifacts/contracts/core/PendleGovernanceManager.sol/PendleGovernanceManager.json';
+import PendleMarketReader from '../../../build/artifacts/contracts/readers/PendleMarketReader.sol/PendleMarketReader.json';
 import { consts, tokens } from '../../helpers';
 const hre = require('hardhat');
 
@@ -18,6 +20,8 @@ export interface CoreFixture {
   treasury: Contract;
   a2MarketFactory: Contract;
   cMarketFactory: Contract;
+  scMarketFactory: Contract;
+  ssMarketFactory: Contract;
   data: Contract;
   marketReader: Contract;
   pausingManager: Contract;
@@ -47,6 +51,14 @@ export async function coreFixture(_: Wallet[], provider: providers.Web3Provider)
     router.address,
     consts.MARKET_FACTORY_COMPOUND,
   ]);
+  const scMarketFactory = await deployContract(alice, PendleSushiswapComplexMarketFactory, [
+    router.address,
+    consts.MARKET_FACTORY_SUSHISWAP_COMPLEX,
+  ]);
+  const ssMarketFactory = await deployContract(alice, PendleSushiswapSimpleMarketFactory, [
+    router.address,
+    consts.MARKET_FACTORY_SUSHISWAP_SIMPLE,
+  ]);
 
   await data.initialize(router.address);
 
@@ -54,5 +66,16 @@ export async function coreFixture(_: Wallet[], provider: providers.Web3Provider)
   await data.setLockParams(BN.from(consts.LOCK_NUMERATOR), BN.from(consts.LOCK_DENOMINATOR)); // lock market
   await data.setInterestUpdateRateDeltaForMarket(consts.INTEREST_UPDATE_RATE_DELTA_FOR_MARKET);
 
-  return { router, treasury, a2MarketFactory, cMarketFactory, data, marketReader, pausingManager, govManager };
+  return {
+    router,
+    treasury,
+    a2MarketFactory,
+    cMarketFactory,
+    scMarketFactory,
+    data,
+    marketReader,
+    pausingManager,
+    govManager,
+    ssMarketFactory,
+  };
 }

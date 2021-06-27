@@ -10,7 +10,7 @@ chai.use(solidity);
 const { waffle } = require('hardhat');
 const { provider, deployContract } = waffle;
 
-describe('pendleWhitelist', async () => {
+describe('pendleWhitelist @skip-on-coverage', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie, dave, governance] = wallets;
 

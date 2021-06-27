@@ -25,7 +25,7 @@ import {
 
 const { loadFixture, provider } = waffle;
 
-describe('router-negative-test', async () => {
+describe('router-negative-test @skip-on-coverage', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie, dave] = wallets;
 

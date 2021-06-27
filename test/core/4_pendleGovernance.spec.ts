@@ -5,7 +5,7 @@ import { governanceFixture } from './fixtures';
 const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
-describe('PendleGovernance', () => {
+describe('PendleGovernance @skip-on-coverage', () => {
   const [alice] = provider.getWallets();
 
   let pendle: Contract;

@@ -18,7 +18,7 @@ import { marketFixture, MarketFixture } from './fixtures';
 const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
-describe('compound-lp-interest', async () => {
+describe('compound-lp-interest @skip-on-coverage', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie, dave, eve] = wallets;
   let router: Contract;

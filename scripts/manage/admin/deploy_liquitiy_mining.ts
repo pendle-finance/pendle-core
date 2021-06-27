@@ -56,9 +56,9 @@ async function main() {
   console.log(`\t allocations = ${liqParams.ALLOCATIONS}`);
   console.log(`\t start time = ${liqParams.START_TIME}`);
 
-  const underlyingAssetContract = await (await hre.ethers.getContractFactory('TestToken')).attach(
-    underlyingAssetAddress
-  );
+  const underlyingAssetContract = await (
+    await hre.ethers.getContractFactory('TestToken')
+  ).attach(underlyingAssetAddress);
 
   const baseTokenContract = await (await hre.ethers.getContractFactory('TestToken')).attach(baseTokenAddress);
 

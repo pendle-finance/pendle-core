@@ -8,7 +8,7 @@ import hre from 'hardhat';
 const { waffle } = hre;
 const { provider, deployContract } = waffle;
 
-describe('Redeem Proxy', async () => {
+describe('Redeem Proxy @skip-on-coverage', async () => {
   const wallets = provider.getWallets();
   const loadFixture = createFixtureLoader(wallets, provider);
   const [alice, bob] = wallets;

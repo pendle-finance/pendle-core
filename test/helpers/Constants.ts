@@ -2,7 +2,7 @@ import { BigNumber as BN, utils } from 'ethers';
 export type Token = {
   address: string;
   decimal: number;
-  compound: string;
+  compound?: string;
   owner?: string;
   source?: string;
 };
@@ -21,11 +21,17 @@ export const consts = {
 
   COMPOUND_COMPTROLLER_ADDRESS: '0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b',
   AAVE_V2_LENDING_POOL_ADDRESS: '0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9',
+  MASTERCHEF_V1_ADDRESS: '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd',
+  SUSHISWAP_ROUTER_ADDRESS: '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
   AAVE_DUMMY_REFERRAL_CODE: 0,
   FORGE_AAVE_V2: utils.formatBytes32String('AaveV2'),
   MARKET_FACTORY_AAVE_V2: utils.formatBytes32String('AaveV2'),
   FORGE_COMPOUND: utils.formatBytes32String('Compound'),
   MARKET_FACTORY_COMPOUND: utils.formatBytes32String('Compound'),
+  FORGE_SUSHISWAP_COMPLEX: utils.formatBytes32String('SushiswapComplex'),
+  FORGE_SUSHISWAP_SIMPLE: utils.formatBytes32String('SushiswapSimple'),
+  MARKET_FACTORY_SUSHISWAP_COMPLEX: utils.formatBytes32String('SushiswapComplex'),
+  MARKET_FACTORY_SUSHISWAP_SIMPLE: utils.formatBytes32String('SushiswapSimple'),
   ZERO_BYTES: utils.formatBytes32String(''),
   RANDOM_BYTES: utils.formatBytes32String('ZpTw6Y3Ft4ruk7pmwTJF'),
   ZERO_ADDRESS: '0x0000000000000000000000000000000000000000',
@@ -44,12 +50,15 @@ export const consts = {
   ONE_YEAR: BN.from(31536000),
   T0_A2: BN.from(1623715050), // the time that the first AaveV2_XYT is minted
   T0_C: BN.from(1623715100), // the time that the first Compound_XYT is minted
+  T0_SC: BN.from(1623715150), // the time that the first SushiswapComplex_XYT is minted
+  T0_SS: BN.from(1623715200),
   HG: { gasLimit: 80000000 },
   LG: { gasLimit: 200000 },
   INITIAL_AAVE_USDT_AMOUNT: BN.from(10 ** 5),
   INITIAL_COMPOUND_USDT_AMOUNT: BN.from(10 ** 7),
   INITIAL_AAVE_TOKEN_AMOUNT: BN.from(10 ** 4),
   INITIAL_COMPOUND_TOKEN_AMOUNT: BN.from(10 ** 6),
+  INITIAL_SUSHI_TOKEN_AMOUNT: BN.from('171489293677797333'),
   INITIAL_OT_XYT_AMOUNT: BN.from(10 ** 4),
   TEST_TOKEN_DELTA: BN.from(200),
   LOCK_NUMERATOR: BN.from(1),
@@ -70,11 +79,12 @@ export const consts = {
   INITIAL_WEEKLY_EMISSION: BN.from(1200000).mul(ONE_E_18),
   ONE_QUARTER: BN.from(7884000),
 
-  // COMP/StkAAVE rewards related
+  // COMP/StkAAVE/SUSHI rewards related
   STKAAVE_ADDRESS: '0x4da27a545c0c5b758a6ba100e3a049001de870f5',
   COMP_ADDRESS: '0xc00e94cb662c3520282e6f5717214004a7f26888',
   AAVE_INCENTIVES_CONTROLLER: '0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5',
   COMP_ETH: '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5',
+  SUSHI_ADDRESS: '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2',
 };
 
 // export function setT0(time: BN) {
@@ -103,5 +113,9 @@ export const tokens: TokenMap = {
     decimal: 18,
     compound: '0x35a18000230da775cac24873d00ff85bccded550',
     source: '0x47173b170c64d16393a52e6c480b3ad8c302ba1e',
+  },
+  SUSHI_USDT_WETH_LP: {
+    address: '0x06da0fd433c1a5d7a4faa01111c044910a184553',
+    decimal: 12,
   },
 };

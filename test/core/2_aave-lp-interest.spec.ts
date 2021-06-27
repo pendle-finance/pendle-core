@@ -23,7 +23,7 @@ import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv 
 const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
-describe('Aave-lp-interest', async () => {
+describe('Aave-lp-interest @skip-on-coverage', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie, dave, eve] = wallets;
 

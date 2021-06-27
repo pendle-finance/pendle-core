@@ -24,7 +24,7 @@ chai.use(solidity);
 
 const { loadFixture, provider } = waffle;
 
-describe('aaveV2-router', async () => {
+describe('aaveV2-router @skip-on-coverage', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie, dave] = wallets;
 

@@ -9,7 +9,7 @@ chai.use(solidity);
 const { waffle } = require('hardhat');
 const { provider, deployContract } = waffle;
 
-describe('pendleGovernanceManager', async () => {
+describe('pendleGovernanceManager @skip-on-coverage', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie, salesMultisig, liqIncentivesRecipient] = wallets;
 

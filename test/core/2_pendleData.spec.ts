@@ -9,7 +9,7 @@ const { waffle } = require('hardhat');
 
 const { provider, deployContract, loadFixture } = waffle;
 
-describe('PendleData', async () => {
+describe('PendleData @skip-on-coverage', async () => {
   let data: Contract;
   let treasury: Contract;
   let fixture: MarketFixture;

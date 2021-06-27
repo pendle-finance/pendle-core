@@ -7,7 +7,7 @@ import testData from './fixtures/pendleMockMathLibrary.json';
 const { waffle } = require('hardhat');
 const { provider, deployContract } = waffle;
 
-describe('Math tests', async () => {
+describe('Math tests @skip-on-coverage', async () => {
   const wallets = provider.getWallets();
   const [alice, bob] = wallets;
   const RONE: BN = BN.from(2).pow(40);

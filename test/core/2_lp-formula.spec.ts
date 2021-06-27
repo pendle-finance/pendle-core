@@ -22,7 +22,7 @@ const { waffle } = require('hardhat');
 
 const { loadFixture, provider } = waffle;
 
-describe('lp-formula', async () => {
+describe('lp-formula @skip-on-coverage', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie] = wallets;
   let snapshotId: string;

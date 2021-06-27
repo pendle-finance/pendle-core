@@ -6,7 +6,7 @@ import { LiqParams, liquidityMiningFixture } from './fixtures';
 const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
-describe('compound-liquidityMining', async () => {
+describe('compound-liquidityMining @skip-on-coverage', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie, dave, eve] = wallets;
   let liq: Contract;

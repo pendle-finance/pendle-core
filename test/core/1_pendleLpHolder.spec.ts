@@ -8,7 +8,7 @@ import mockPendleLpHolder from '../../build/artifacts/contracts/mock/MockPendleL
 const { waffle } = require('hardhat');
 const { loadFixture, provider, deployContract } = waffle;
 
-describe('pendleLpHolder', async () => {
+describe('pendleLpHolder @skip-on-coverage', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie, dave, eve] = wallets;
   let market: Contract;

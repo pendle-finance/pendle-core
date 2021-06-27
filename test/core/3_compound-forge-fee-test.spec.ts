@@ -26,7 +26,7 @@ interface YieldTest {
   timeDelta: number;
 }
 
-describe('compound-forge-fee', async () => {
+describe('compound-forge-fee @skip-on-coverage', async () => {
   const wallets = provider.getWallets();
   const [alice, bob, charlie, dave, eve] = wallets;
 
