@@ -267,7 +267,4 @@ describe('pendleTokenDistribution', async () => {
       ],
     ])).to.be.revertedWith("MISMATCH_ARRAY_LENGTH")
   });
-  it('should not be able to claim beyond set time durations', async() => {
-    await expect(teamTokensContract.connect(governance).claimTokens(BN.from(10))).to.be.revertedWith("INVALID_INDEX");
-  })
 });
