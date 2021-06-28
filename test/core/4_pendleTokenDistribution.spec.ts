@@ -243,4 +243,28 @@ describe('pendleTokenDistribution', async () => {
     const balanceAfter = await pendle.balanceOf(governance.address);
     expect(balanceAfter).to.be.eq(balanceBefore.add(consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4)));
   });
+  it('should not be able to deploy with unequal lengths of durations and funds', async() => {
+    await expect(deployContract(governance, PendleTokenDistribution, [governance, [
+      consts.ONE_QUARTER,
+      consts.ONE_QUARTER.mul(2),
+      consts.ONE_QUARTER.mul(3),
+      consts.ONE_QUARTER.mul(4),
+      consts.ONE_QUARTER.mul(5),
+      consts.ONE_QUARTER.mul(6),
+      consts.ONE_QUARTER.mul(7),
+      consts.ONE_QUARTER.mul(8),
+    ],
+    [
+      consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
+      consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
+      consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
+      consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4).add(consts.TEAM_AMOUNT.div(2)),
+      consts.TEAM_AMOUNT.div(8),
+      consts.TEAM_AMOUNT.div(8),
+      consts.TEAM_AMOUNT.div(8),
+    ]])).to.be.revertedWith("MISMATCH_ARRAY_LENGTH")
+  });
+  it('should not be able to claim beyond set time durations', async() => {
+    await expect(teamTokensContract.connect(governance).claimTokens(BN.from(10))).to.be.revertedWith("INVALID_INDEX");
+  })
 });
