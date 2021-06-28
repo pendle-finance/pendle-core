@@ -318,4 +318,58 @@ describe('compound-market', async () => {
       router.createMarket(consts.MARKET_FACTORY_COMPOUND, xyt.address, testToken.address, consts.HG)
     ).to.be.revertedWith('EXISTED_MARKET');
   });
+
+  it("shouldn't be able to create markets if tokens, factoryId are invalid", async() => {
+    await expect(router.createMarket(consts.MARKET_FACTORY_COMPOUND, consts.ZERO_ADDRESS, testToken.address, consts.HG)).to.be.revertedWith("ZERO_ADDRESS");
+    await expect(router.createMarket(consts.MARKET_FACTORY_COMPOUND, xyt.address, consts.ZERO_ADDRESS, consts.HG)).to.be.revertedWith("ZERO_ADDRESS");
+    await expect(
+      router.createMarket(consts.MARKET_FACTORY_COMPOUND, consts.RANDOM_ADDRESS, testToken.address, consts.HG)
+    ).to.be.revertedWith('INVALID_YT');
+    await expect(
+      router.createMarket(consts.ZERO_BYTES, xyt.address, testToken.address, consts.HG)
+    ).to.be.revertedWith('ZERO_ADDRESS');
+    await expect(
+      router.createMarket(consts.MARKET_FACTORY_AAVE_V2, xyt.address, testToken.address, consts.HG)
+    ).to.be.revertedWith('INVALID_FORGE_FACTORY');
+  })
+
+  it('router should reject dual liquidity addition if token amount is invalid or market does not exist', async() => {
+    await expect(router.addMarketLiquidityDual(consts.MARKET_FACTORY_COMPOUND, xyt.address, testToken.address, BN.from(100), BN.from(100), consts.INF, BN.from(0))).to.be.revertedWith("INVALID_YT_AMOUNTS");
+    await expect(router.addMarketLiquidityDual(consts.MARKET_FACTORY_COMPOUND, xyt.address, testToken.address, BN.from(100), BN.from(0), BN.from(0), BN.from(0))).to.be.revertedWith("INVALID_TOKEN_AMOUNTS");
+    await expect(router.addMarketLiquidityDual(consts.MARKET_FACTORY_COMPOUND, xyt.address, consts.RANDOM_ADDRESS, BN.from(100), consts.INF, BN.from(100), BN.from(0))).to.be.revertedWith("MARKET_NOT_FOUND");
+  })
+
+  it('router should reject single sided liquidity addition if in-amount is zero or if market does not exist', async() => {
+    await expect(router.addMarketLiquiditySingle(consts.MARKET_FACTORY_COMPOUND, xyt.address, testToken.address, true, BN.from(0), BN.from(0))).to.be.revertedWith("ZERO_AMOUNTS");
+    await expect(router.addMarketLiquiditySingle(consts.MARKET_FACTORY_COMPOUND, consts.RANDOM_ADDRESS, testToken.address, true, BN.from(100), BN.from(0))).to.be.revertedWith("MARKET_NOT_FOUND");
+  })
+
+  it('router should reject dual liquidity removal if in-LP is zero or if market does not exist', async() => {
+    await expect(router.removeMarketLiquidityDual(consts.MARKET_FACTORY_COMPOUND, xyt.address, testToken.address, BN.from(0), BN.from(0), BN.from(0))).to.be.revertedWith("ZERO_LP_IN");
+    await expect(router.removeMarketLiquidityDual(consts.MARKET_FACTORY_AAVE_V2, xyt.address, testToken.address, BN.from(10), BN.from(0), BN.from(0))).to.be.revertedWith("MARKET_NOT_FOUND");
+  })
+
+  it('router should reject single sided liquidity removal if in-LP is zero or if market does not exist', async() => {
+    await expect(router.removeMarketLiquiditySingle(consts.MARKET_FACTORY_COMPOUND, xyt.address, testToken.address, true, BN.from(0), BN.from(0))).to.be.revertedWith("ZERO_LP_IN");
+    await expect(router.removeMarketLiquiditySingle(consts.MARKET_FACTORY_COMPOUND, xyt.address, consts.RANDOM_ADDRESS, false, BN.from(10), BN.from(0))).to.be.revertedWith("MARKET_NOT_FOUND");
+  });
+
+  it('router should reject bootstrap attempt if in-token amount is zero or if market does not exist', async() => {
+    await expect(router.bootstrapMarket(consts.MARKET_FACTORY_COMPOUND, xyt.address, testToken.address, BN.from(0), BN.from(100))).to.be.revertedWith("INVALID_YT_AMOUNT");
+    await expect(router.bootstrapMarket(consts.MARKET_FACTORY_COMPOUND, xyt.address, testToken.address, BN.from(100), BN.from(0))).to.be.revertedWith("INVALID_TOKEN_AMOUNT");
+    await expect(router.bootstrapMarket(consts.MARKET_FACTORY_COMPOUND, xyt.address, consts.RANDOM_ADDRESS, BN.from(100), BN.from(1000))).to.be.revertedWith("MARKET_NOT_FOUND");
+  });
+
+  it('router should reject swap attempt if amount is zero or market does not exist', async() => {
+    await expect(router.swapExactIn(xyt.address, testToken.address, BN.from(0), BN.from(0), consts.MARKET_FACTORY_COMPOUND)).to.be.revertedWith("ZERO_IN_AMOUNT");
+    await expect(router.swapExactIn(xyt.address, testToken.address, BN.from(100), BN.from(0), consts.MARKET_FACTORY_AAVE_V2)).to.be.revertedWith("MARKET_NOT_FOUND");
+    await expect(router.swapExactOut(xyt.address, testToken.address, BN.from(0), BN.from(100), consts.MARKET_FACTORY_COMPOUND)).to.be.revertedWith("ZERO_OUT_AMOUNT");
+    await expect(router.swapExactOut(consts.RANDOM_ADDRESS, testToken.address, BN.from(100), BN.from(100), consts.MARKET_FACTORY_COMPOUND)).to.be.revertedWith("MARKET_NOT_FOUND");
+  });
+
+  it('router should reject redeem LP interests attempt if market is invalid, or user is zero address', async() => {
+    await expect(router.redeemLpInterests(consts.RANDOM_ADDRESS, alice.address)).to.be.revertedWith("INVALID_MARKET");
+    await expect(router.redeemLpInterests(market.address, consts.ZERO_ADDRESS)).to.be.revertedWith("ZERO_ADDRESS");
+  });
+
 });
