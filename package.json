@@ -76,7 +76,9 @@
     "format": "yarn prettier --write \"contracts/**/*.sol\" && yarn prettier --write \"{scripts,test}/**/*.{js,ts}\" && yarn prettier --write \"{scripts,test}/**/**/*.{js,ts}\"",
     "deploy:core": "yarn hardhat run scripts/deploy/deploy.ts",
     "deploy:seed": "yarn hardhat run scripts/manage/seed_test_contracts.ts",
-    "verify": "yarn hardhat run scripts/manage/verify_tenderly.ts"
+    "verify": "yarn hardhat run scripts/manage/verify_tenderly.ts",
+    "dev": "yarn hardhat run scripts/manage/dev/development_self_fund.ts --network development && yarn hardhat run scripts/manage/dev/alice_participate.ts --network development",
+    "teleport": "yarn hardhat run scripts/manage/dev/teleport.ts --network development"
   },
   "dependencies": {
     "bignumber.js": "^9.0.1"

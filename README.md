@@ -48,6 +48,20 @@ impermanent loss (IL) for liquidity providers.
   yarn test
   ```
 
+## Setup for UI development environment (forking mainnet)
+* In a separate terminal:
+```
+yarn hardhat node
+```
+* Mint tokens to alice, bob, charlie and let alice tokeniseYield, add liquidity and stake:
+```
+yarn dev
+```
+* Teleport by 1 week
+```
+yarn teleport
+```
+
 ## Note on naming
 * In the contracts and tests, Yield Token (YT) are referred to as XYT. XYT and YT refer to the same thing.
 

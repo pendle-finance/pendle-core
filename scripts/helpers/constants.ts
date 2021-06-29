@@ -87,6 +87,15 @@ export const devConstants = {
       decimal: 6,
       compound: '0x39aa39c021dfbae8fac545936693ac917d5e7563',
     },
+    AUSDC: {
+      address: '0xbcca60bb61934080951369a648fb03df4f96263c',
+    },
+    CDAI: {
+      address: '0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643',
+    },
+    DAI: {
+      address: '0x6b175474e89094c44da98b954eedeac495271d0f',
+    },
     AUSDT: {
       address: '0x71fc860F7D3A592A4a98740e39dB31d25db65ae8',
       decimal: 6,
