@@ -4,17 +4,20 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "../../interfaces/IUniswapV2Pair.sol";
 import "../../interfaces/IPendleUniswapV2Forge.sol";
-import "../abstract/PendleForgeBase.sol";
+import "../abstractV2/PendleForgeBaseV2.sol";
 
-contract PendleUniswapForge is PendleForgeBase, IPendleUniswapV2Forge {
-    using EnumerableSet for EnumerableSet.AddressSet;
+contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleUniswapV2Forge {
     using SafeMath for uint256;
     using Math for uint256;
 
-    EnumerableSet.AddressSet private supportedUTokens;
+    struct UTokenInfo {
+        bool registered;
+        address lockedInPool;
+    }
+
+    mapping(address => UTokenInfo) public uTokenInfo;
     mapping(address => mapping(uint256 => uint256)) public lastRateBeforeExpiry;
     mapping(address => mapping(uint256 => mapping(address => uint256))) public lastRate;
 
@@ -24,26 +27,31 @@ contract PendleUniswapForge is PendleForgeBase, IPendleUniswapV2Forge {
         address _governanceManager,
         IPendleRouter _router,
         bytes32 _forgeId,
+        address _rewardToken,
         address _rewardManager,
-        address _yieldContractDeployer,
-        address _coumpoundEth
+        address _yieldContractDeployer
     )
-        PendleForgeBase(
+        PendleForgeBaseV2(
             _governanceManager,
             _router,
             _forgeId,
-            address(0),
+            _rewardToken,
             _rewardManager,
             _yieldContractDeployer
         )
     {}
 
     /// For Uniswap LP we have to register each LP token manually
-    function registerUTokens(address[] calldata _uTokens) external onlyGovernance {
+    function registerUTokens(address[] calldata _uTokens, address[] calldata _lockedInPools)
+        external
+        onlyGovernance
+    {
+        require(_uTokens.length == _lockedInPools.length, "LENGTH_MISMATCH");
         for (uint256 i = 0; i < _uTokens.length; ++i) {
-            require(!supportedUTokens.contains(_uTokens[i]), "EXISTED_UTOKENS");
+            UTokenInfo storage info = uTokenInfo[_uTokens[i]];
+            require(!info.registered, "EXISTED_UTOKENS");
             // verifyCToken(_underlyingAssets[i], _cTokens[i]); // TODO
-            supportedUTokens.add(_uTokens[i]);
+            info.lockedInPool = _lockedInPools[i];
         }
         emit RegisterUTokens(_uTokens);
     }
@@ -106,8 +114,13 @@ contract PendleUniswapForge is PendleForgeBase, IPendleUniswapV2Forge {
         override
         returns (address)
     {
-        require(supportedUTokens.contains(_underlyingAsset), "INVALID_UNDERLYING_ASSET");
+        require(uTokenInfo[_underlyingAsset].registered, "INVALID_UNDERLYING_ASSET");
         return _underlyingAsset;
+    }
+
+    function _getLockedInPool(address _underlyingAsset) internal view override returns (address) {
+        require(uTokenInfo[_underlyingAsset].registered, "INVALID_UNDERLYING_ASSET");
+        return uTokenInfo[_underlyingAsset].lockedInPool;
     }
 
     function _updateDueInterests(
