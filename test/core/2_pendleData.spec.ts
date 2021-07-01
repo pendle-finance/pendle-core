@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { Contract, FixedNumber, BigNumber as BN } from 'ethers';
 
-import { consts, evm_revert, evm_snapshot, tokens } from '../helpers';
+import { consts, evm_revert, evm_snapshot, tokens, errMsg } from '../helpers';
 import { marketFixture, MarketFixture } from './fixtures';
 import PendleData from '../../build/artifacts/contracts/core/PendleData.sol/PendleData.json';
 
@@ -57,7 +57,7 @@ describe('PendleData', async () => {
         consts.ZERO_ADDRESS,
         fixture.core.pausingManager.address,
       ])
-    ).to.be.revertedWith('ZERO_ADDRESS');
+    ).to.be.revertedWith(errMsg.ZERO_ADDRESS);
   });
 
   it('Should not be initialized by non-initializer and should not be able to initialize router to zero address', async () => {
@@ -68,10 +68,10 @@ describe('PendleData', async () => {
       fixture.core.pausingManager.address,
     ]);
     await expect(testPendleDataContract.connect(bob).initialize(fixture.core.router.address)).to.be.revertedWith(
-      'FORBIDDEN'
+      errMsg.FORBIDDEN
     );
     await expect(testPendleDataContract.connect(alice).initialize(consts.ZERO_ADDRESS)).to.be.revertedWith(
-      'ZERO_ADDRESS'
+      errMsg.ZERO_ADDRESS
     );
   });
 
@@ -94,7 +94,7 @@ describe('PendleData', async () => {
   });
 
   it('Should not be able to set zero address as Treasury', async () => {
-    await expect(data.setTreasury(consts.ZERO_ADDRESS)).to.be.revertedWith('ZERO_ADDRESS');
+    await expect(data.setTreasury(consts.ZERO_ADDRESS)).to.be.revertedWith(errMsg.ZERO_ADDRESS);
   });
 
   it('Should be able to set lock numerator and denominator', async () => {
@@ -110,8 +110,8 @@ describe('PendleData', async () => {
   });
 
   it('Should not be able to set invalid lock numerator and denominator', async () => {
-    await expect(data.setLockParams(BN.from(17), BN.from(5))).to.be.revertedWith('INVALID_LOCK_PARAMS');
-    await expect(data.setLockParams(BN.from(0), BN.from(0))).to.be.revertedWith('INVALID_LOCK_PARAMS');
+    await expect(data.setLockParams(BN.from(17), BN.from(5))).to.be.revertedWith(errMsg.INVALID_LOCK_PARAMS);
+    await expect(data.setLockParams(BN.from(0), BN.from(0))).to.be.revertedWith(errMsg.INVALID_LOCK_PARAMS);
   });
 
   it('Should be able to set expiry divisor', async () => {
@@ -125,7 +125,7 @@ describe('PendleData', async () => {
 
   it('Should not be able to set 0 as enpiry divisor', async () => {
     let divisor = 0;
-    await expect(data.setExpiryDivisor(BN.from(divisor))).to.be.revertedWith('INVALID_EXPIRY_DIVISOR');
+    await expect(data.setExpiryDivisor(BN.from(divisor))).to.be.revertedWith(errMsg.INVALID_EXPIRY_DIVISOR);
   });
 
   it('Onlyforge modifier should revert transactions from non-forge', async () => {
@@ -139,7 +139,7 @@ describe('PendleData', async () => {
           tokens.USDT.address,
           consts.T0_A2.add(consts.SIX_MONTH)
         )
-    ).to.be.revertedWith('ONLY_FORGE');
+    ).to.be.revertedWith(errMsg.ONLY_FORGE);
   });
 
   it('Should be able to add forge', async () => {
@@ -150,13 +150,13 @@ describe('PendleData', async () => {
   });
 
   it('Should revert invalid forge addition', async () => {
-    await expect(data.addForge(consts.ZERO_BYTES, consts.RANDOM_ADDRESS)).to.be.revertedWith('ZERO_BYTES');
-    await expect(data.addForge(consts.FORGE_COMPOUND, consts.ZERO_ADDRESS)).to.be.revertedWith('ZERO_ADDRESS');
+    await expect(data.addForge(consts.ZERO_BYTES, consts.RANDOM_ADDRESS)).to.be.revertedWith(errMsg.ZERO_BYTES);
+    await expect(data.addForge(consts.FORGE_COMPOUND, consts.ZERO_ADDRESS)).to.be.revertedWith(errMsg.ZERO_ADDRESS);
     await expect(data.addForge(consts.FORGE_COMPOUND, fixture.a2Forge.aaveV2Forge.address)).to.be.revertedWith(
-      'INVALID_ID'
+      errMsg.INVALID_ID
     );
     await expect(data.addForge(consts.FORGE_AAVE_V2, fixture.a2Forge.aaveV2Forge.address)).to.be.revertedWith(
-      'EXISTED_ID'
+      errMsg.EXISTED_ID
     );
   });
 
@@ -169,7 +169,7 @@ describe('PendleData', async () => {
   });
 
   it('Should revert setting forge fee above cap', async () => {
-    await expect(data.setForgeFee(consts.RONE)).to.be.revertedWith('FEE_EXCEED_LIMIT');
+    await expect(data.setForgeFee(consts.RONE)).to.be.revertedWith(errMsg.FEE_EXCEED_LIMIT);
   });
 
   it('Should be able to return correct pendle yield tokens', async () => {
@@ -222,15 +222,15 @@ describe('PendleData', async () => {
 
   it('Should revert invalid market factory addition', async () => {
     await expect(data.addMarketFactory(consts.ZERO_BYTES, fixture.core.cMarketFactory.address)).to.be.revertedWith(
-      'ZERO_BYTES'
+      errMsg.ZERO_BYTES
     );
-    await expect(data.addMarketFactory(consts.RANDOM_BYTES, consts.ZERO_ADDRESS)).to.be.revertedWith('ZERO_ADDRESS');
+    await expect(data.addMarketFactory(consts.RANDOM_BYTES, consts.ZERO_ADDRESS)).to.be.revertedWith(errMsg.ZERO_ADDRESS);
     await expect(data.addMarketFactory(consts.RANDOM_BYTES, fixture.core.a2MarketFactory.address)).to.be.revertedWith(
-      'INVALID_FACTORY_ID'
+      errMsg.INVALID_FACTORY_ID
     );
     await expect(
       data.addMarketFactory(consts.MARKET_FACTORY_COMPOUND, fixture.core.cMarketFactory.address)
-    ).to.be.revertedWith('EXISTED_ID');
+    ).to.be.revertedWith(errMsg.EXISTED_ID);
   });
 
   it('OnlyMarketFactory modifier should revert tansactions from non-marketFactory', async () => {
@@ -243,7 +243,7 @@ describe('PendleData', async () => {
           testToken.address,
           consts.RANDOM_ADDRESS
         )
-    ).to.be.revertedWith('ONLY_MARKET_FACTORY');
+    ).to.be.revertedWith(errMsg.ONLY_MARKET_FACTORY);
   });
 
   it('Should be able to add markets', async () => {
@@ -287,9 +287,9 @@ describe('PendleData', async () => {
 
   it('Should not be able to set market fee above cap', async () => {
     const swapFeeLimit = consts.RONE.div(10);
-    await expect(data.setMarketFees(swapFeeLimit.mul(2), consts.RONE)).to.be.revertedWith('FEE_EXCEED_LIMIT');
+    await expect(data.setMarketFees(swapFeeLimit.mul(2), consts.RONE)).to.be.revertedWith(errMsg.FEE_EXCEED_LIMIT);
     await expect(data.setMarketFees(consts.RONE.div(BN.from(100)), consts.RONE.mul(2))).to.be.revertedWith(
-      'PROTOCOL_FEE_EXCEED_LIMIT'
+      errMsg.PROTOCOL_FEE_EXCEED_LIMIT
     );
   });
 
@@ -305,7 +305,7 @@ describe('PendleData', async () => {
     let allMarketsLength = await data.allMarketsLength();
     const marketAddress = await data.getMarketByIndex(allMarketsLength - 1);
     expect(marketAddress.toLowerCase()).to.be.not.eq(consts.ZERO_ADDRESS);
-    await expect(data.getMarketByIndex(allMarketsLength)).to.be.revertedWith('INVALID_INDEX');
+    await expect(data.getMarketByIndex(allMarketsLength)).to.be.revertedWith(errMsg.INVALID_INDEX);
   });
 
   it('Should be able to get market by tokens and factory', async () => {
