@@ -9,6 +9,7 @@ import "../../interfaces/IPendleData.sol";
 import "../../interfaces/IPendleForge.sol";
 import "../../interfaces/IPendleRewardManager.sol";
 import "../../interfaces/IPendleYieldContractDeployer.sol";
+import "../../interfaces/IPendleYieldContractDeployerV2.sol";
 import "../../interfaces/IPendleYieldTokenHolderV2.sol";
 import "../../periphery/WithdrawableV2.sol";
 import "../../libraries/MathLib.sol";
@@ -128,7 +129,7 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
         returns (address ot, address xyt)
     {
         checkNotPaused(_underlyingAsset, _expiry);
-        address yieldToken = _getYieldBearingToken(_underlyingAsset);
+        address yieldToken = getYieldBearingToken(_underlyingAsset);
 
         uint8 yieldTokenDecimals = IPendleYieldToken(yieldToken).decimals();
 
@@ -151,8 +152,10 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
             _expiry
         );
 
-        yieldTokenHolders[_underlyingAsset][_expiry] = yieldContractDeployer
-            .deployYieldTokenHolder(yieldToken, _expiry);
+        yieldTokenHolders[_underlyingAsset][_expiry] = IPendleYieldContractDeployerV2(
+            address(yieldContractDeployer)
+        )
+            .deployYieldTokenHolder(yieldToken, _expiry, getOptContainer(_underlyingAsset));
 
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
@@ -392,9 +395,13 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
         emit ForgeFeeWithdrawn(forgeId, _underlyingAsset, _expiry, _totalFee);
     }
 
-    function getYieldBearingToken(address _underlyingAsset) external override returns (address) {
-        return _getYieldBearingToken(_underlyingAsset);
-    }
+    function getYieldBearingToken(address _underlyingAsset)
+        public
+        virtual
+        override
+        returns (address);
+
+    function getOptContainer(address) public virtual returns (uint256[] memory);
 
     /**
     @notice To be called before the dueInterest of any users is redeemed.
@@ -513,9 +520,4 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
         internal
         virtual
         returns (uint256 amountToMint);
-
-    /// Get the address of the yieldBearingToken from Aave/Compound
-    function _getYieldBearingToken(address _underlyingAsset) internal virtual returns (address);
-
-    function _getLockedInPool(address _underlyingAsset) internal virtual returns (address);
 }

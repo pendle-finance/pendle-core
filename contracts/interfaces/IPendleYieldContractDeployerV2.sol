@@ -44,6 +44,6 @@ interface IPendleYieldContractDeployerV2 {
     function deployYieldTokenHolder(
         address yieldToken,
         uint256 expiry,
-        address lockedInPool
+        uint256[] calldata opt
     ) external returns (address yieldTokenHolder);
 }

@@ -4,6 +4,7 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../../interfaces/IPendleYieldTokenHolderV2.sol";
+import "../../interfaces/IPendleForge.sol";
 import "../../periphery/WithdrawableV2.sol";
 import "../../libraries/MathLib.sol";
 
@@ -20,12 +21,11 @@ contract PendleYieldTokenHolderBaseV2 is IPendleYieldTokenHolderV2, Withdrawable
         address _governanceManager,
         address _forge,
         address _yieldToken,
-        address _rewardToken,
-        address _rewardManager,
         uint256 _expiry
     ) PermissionsV2(_governanceManager) {
         // rewardToken can be ZERO_ADDRESS
         require(_yieldToken != address(0), "ZERO_ADDRESS");
+        address _rewardToken = address(IPendleForge(_forge).rewardToken());
         yieldToken = _yieldToken;
         forge = _forge;
         rewardToken = _rewardToken;
@@ -33,7 +33,8 @@ contract PendleYieldTokenHolderBaseV2 is IPendleYieldTokenHolderV2, Withdrawable
 
         IERC20(_yieldToken).safeApprove(_forge, type(uint256).max);
         if (_rewardToken != address(0)) {
-            IERC20(_rewardToken).safeApprove(_rewardManager, type(uint256).max);
+            address rewardManager = address(IPendleForge(_forge).rewardManager());
+            IERC20(_rewardToken).safeApprove(rewardManager, type(uint256).max);
         }
     }
 

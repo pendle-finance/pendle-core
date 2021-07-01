@@ -33,6 +33,14 @@ const LIST = [
   'PendleFutureYieldToken.sol',
   'PendleOwnershipToken.sol',
   'PENDLE.sol',
+  'PendleYieldContractDeployerBaseV2.sol',
+  'PendleYieldTokenHolderBaseV2.sol',
+  'PendleUniswapV2Forge.sol',
+  'PendleUniswapV2YieldContractDeployer.sol',
+  'PendleUniswapV2YieldTokenHolder.sol',
+  'PendleSushiV2Forge.sol',
+  'PendleSushiV2YieldContractDeployer.sol',
+  'PendleSushiV2YieldTokenHolder.sol',
 ];
 
 async function generateReport() {

@@ -77,15 +77,13 @@ contract PendleYieldContractDeployerBaseV2 is IPendleYieldContractDeployerV2, Pe
     function deployYieldTokenHolder(
         address _yieldToken,
         uint256 _expiry,
-        address
+        uint256[] calldata
     ) external virtual override onlyForge returns (address yieldTokenHolder) {
         yieldTokenHolder = address(
             new PendleYieldTokenHolderBaseV2(
                 address(governanceManager),
                 address(forge),
                 _yieldToken,
-                address(forge.rewardToken()),
-                address(forge.rewardManager()),
                 _expiry
             )
         );
