@@ -12,12 +12,12 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleUniswapV2Forge {
     using SafeMath for uint256;
     using Math for uint256;
 
-    struct UTokenInfo {
+    struct TokenInfo {
         bool registered;
-        address lockedInPool;
+        uint256[] container;
     }
 
-    mapping(address => UTokenInfo) public uTokenInfo;
+    mapping(address => TokenInfo) public tokenInfo;
     mapping(address => mapping(uint256 => uint256)) public lastRateBeforeExpiry;
     mapping(address => mapping(uint256 => mapping(address => uint256))) public lastRate;
 
@@ -42,18 +42,20 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleUniswapV2Forge {
     {}
 
     /// For Uniswap LP we have to register each LP token manually
-    function registerUTokens(address[] calldata _uTokens, address[] calldata _lockedInPools)
+    function registerUTokens(address[] calldata _tokenAddrs, uint256[][] calldata _tokenInfos)
         external
+        virtual
         onlyGovernance
     {
-        require(_uTokens.length == _lockedInPools.length, "LENGTH_MISMATCH");
-        for (uint256 i = 0; i < _uTokens.length; ++i) {
-            UTokenInfo storage info = uTokenInfo[_uTokens[i]];
+        require(_tokenAddrs.length == _tokenInfos.length, "LENGTH_MISMATCH");
+        for (uint256 i = 0; i < _tokenAddrs.length; ++i) {
+            TokenInfo storage info = tokenInfo[_tokenAddrs[i]];
             require(!info.registered, "EXISTED_UTOKENS");
             // verifyCToken(_underlyingAssets[i], _cTokens[i]); // TODO
-            info.lockedInPool = _lockedInPools[i];
+            info.registered = true;
+            info.container = _tokenInfos[i];
         }
-        emit RegisterUTokens(_uTokens);
+        emit RegisterUTokens(_tokenAddrs);
     }
 
     function _calcTotalAfterExpiry(
@@ -108,19 +110,24 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleUniswapV2Forge {
         amountToMint = _amountToTokenize.mul(getExchangeRate(_underlyingAsset));
     }
 
-    function _getYieldBearingToken(address _underlyingAsset)
-        internal
+    function getYieldBearingToken(address _underlyingAsset)
+        public
         view
-        override
+        override(IPendleForge, PendleForgeBaseV2)
         returns (address)
     {
-        require(uTokenInfo[_underlyingAsset].registered, "INVALID_UNDERLYING_ASSET");
+        require(tokenInfo[_underlyingAsset].registered, "INVALID_UNDERLYING_ASSET");
         return _underlyingAsset;
     }
 
-    function _getLockedInPool(address _underlyingAsset) internal view override returns (address) {
-        require(uTokenInfo[_underlyingAsset].registered, "INVALID_UNDERLYING_ASSET");
-        return uTokenInfo[_underlyingAsset].lockedInPool;
+    function getOptContainer(address _underlyingAsset)
+        public
+        view
+        override
+        returns (uint256[] memory)
+    {
+        require(tokenInfo[_underlyingAsset].registered, "INVALID_UNDERLYING_ASSET");
+        return tokenInfo[_underlyingAsset].container;
     }
 
     function _updateDueInterests(
