@@ -51,7 +51,8 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleUniswapV2Forge {
         for (uint256 i = 0; i < _tokenAddrs.length; ++i) {
             TokenInfo storage info = tokenInfo[_tokenAddrs[i]];
             require(!info.registered, "EXISTED_UTOKENS");
-            // verifyCToken(_underlyingAssets[i], _cTokens[i]); // TODO
+            // TODO: create a virtual verifyToken function, so that each forge will have to
+            // implement its own verify function
             info.registered = true;
             info.container = _tokenInfos[i];
         }
