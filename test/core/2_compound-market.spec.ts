@@ -482,7 +482,9 @@ describe('compound-market', async () => {
   });
 
   it('router should reject redeem LP interests attempt if market is invalid, or user is zero address', async () => {
-    await expect(router.redeemLpInterests(consts.RANDOM_ADDRESS, alice.address)).to.be.revertedWith(errMsg.INVALID_MARKET);
+    await expect(router.redeemLpInterests(consts.RANDOM_ADDRESS, alice.address)).to.be.revertedWith(
+      errMsg.INVALID_MARKET
+    );
     await expect(router.redeemLpInterests(market.address, consts.ZERO_ADDRESS)).to.be.revertedWith(errMsg.ZERO_ADDRESS);
   });
 });
