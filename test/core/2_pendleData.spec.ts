@@ -89,8 +89,8 @@ describe('PendleData', async () => {
     await expect(data.setInterestUpdateRateDeltaForMarket(BN.from(delta)))
       .to.emit(data, 'InterestUpdateRateDeltaForMarketSet')
       .withArgs(BN.from(delta));
-    const deltaInData = await data.interestUpdateRateDeltaForMarket();
-    expect(deltaInData).to.be.eq(BN.from(delta));
+    const newDelta = await data.interestUpdateRateDeltaForMarket();
+    expect(newDelta).to.be.eq(BN.from(delta));
   });
 
   it('Should not be able to set zero address as Treasury', async () => {
@@ -184,33 +184,17 @@ describe('PendleData', async () => {
   });
 
   it('Should be able to correctly determine validity of xyt', async () => {
-    const resExpectTrue = await data.isValidXYT(
-      consts.FORGE_AAVE_V2,
-      tokens.UNI.address,
-      consts.T0_A2.add(consts.SIX_MONTH)
-    );
-    expect(resExpectTrue).to.be.true;
-    const resExpectFalse = await data.isValidXYT(
-      consts.FORGE_COMPOUND,
-      tokens.USDT.address,
-      consts.T0_C.add(consts.ONE_YEAR)
-    );
-    expect(resExpectFalse).to.be.false;
+    expect(await data.isValidXYT(consts.FORGE_AAVE_V2, tokens.UNI.address, consts.T0_A2.add(consts.SIX_MONTH))).to.be
+      .true;
+    expect(await data.isValidXYT(consts.FORGE_COMPOUND, tokens.USDT.address, consts.T0_C.add(consts.ONE_YEAR))).to.be
+      .false;
   });
 
   it('Should be able to correctly determine validity of ot', async () => {
-    const resExpectTrue = await data.isValidOT(
-      consts.FORGE_COMPOUND,
-      tokens.USDT.address,
-      consts.T0_C.add(consts.SIX_MONTH)
-    );
-    expect(resExpectTrue).to.be.true;
-    const resExpectFalse = await data.isValidOT(
-      consts.FORGE_AAVE_V2,
-      tokens.USDC.address,
-      consts.T0_C.add(consts.SIX_MONTH)
-    );
-    expect(resExpectFalse).to.be.false;
+    expect(await data.isValidOT(consts.FORGE_COMPOUND, tokens.USDT.address, consts.T0_C.add(consts.SIX_MONTH))).to.be
+      .true;
+    expect(await data.isValidOT(consts.FORGE_AAVE_V2, tokens.USDC.address, consts.T0_C.add(consts.SIX_MONTH))).to.be
+      .false;
   });
 
   it('Should be able to add market factory', async () => {
@@ -224,7 +208,9 @@ describe('PendleData', async () => {
     await expect(data.addMarketFactory(consts.ZERO_BYTES, fixture.core.cMarketFactory.address)).to.be.revertedWith(
       errMsg.ZERO_BYTES
     );
-    await expect(data.addMarketFactory(consts.RANDOM_BYTES, consts.ZERO_ADDRESS)).to.be.revertedWith(errMsg.ZERO_ADDRESS);
+    await expect(data.addMarketFactory(consts.RANDOM_BYTES, consts.ZERO_ADDRESS)).to.be.revertedWith(
+      errMsg.ZERO_ADDRESS
+    );
     await expect(data.addMarketFactory(consts.RANDOM_BYTES, fixture.core.a2MarketFactory.address)).to.be.revertedWith(
       errMsg.INVALID_FACTORY_ID
     );
@@ -269,8 +255,7 @@ describe('PendleData', async () => {
     await expect(data.setForgeFactoryValidity(consts.FORGE_AAVE_V2, consts.MARKET_FACTORY_AAVE_V2, true))
       .to.emit(data, 'ForgeFactoryValiditySet')
       .withArgs(consts.FORGE_AAVE_V2, consts.MARKET_FACTORY_AAVE_V2, true);
-    const resExpectTrue = await data.validForgeFactoryPair(consts.FORGE_AAVE_V2, consts.MARKET_FACTORY_AAVE_V2);
-    expect(resExpectTrue).to.be.true;
+    expect(await data.validForgeFactoryPair(consts.FORGE_AAVE_V2, consts.MARKET_FACTORY_AAVE_V2)).to.be.true;
   });
 
   it('Should be able to set market fee', async () => {
@@ -297,8 +282,7 @@ describe('PendleData', async () => {
     await expect(data.setCurveShiftBlockDelta(BN.from(1)))
       .to.emit(data, 'CurveShiftBlockDeltaSet')
       .withArgs(BN.from(1));
-    const deltaInData = await data.curveShiftBlockDelta();
-    expect(deltaInData).to.be.eq(BN.from(1));
+    expect(await data.curveShiftBlockDelta()).to.be.eq(BN.from(1));
   });
 
   it('Should be able to get market by index', async () => {
