@@ -3,7 +3,7 @@ import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
 import PendleTokenDistribution from '../../build/artifacts/contracts/core/PendleTokenDistribution.sol/PendleTokenDistribution.json';
 import PENDLE from '../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json';
-import { consts, evm_revert, evm_snapshot, setTimeNextBlock } from '../helpers';
+import { consts, errMsg, evm_revert, evm_snapshot, setTimeNextBlock } from '../helpers';
 chai.use(solidity);
 
 const { waffle } = require('hardhat');
@@ -267,6 +267,6 @@ describe('pendleTokenDistribution', async () => {
           consts.TEAM_AMOUNT.div(8),
         ],
       ])
-    ).to.be.revertedWith('MISMATCH_ARRAY_LENGTH');
+    ).to.be.revertedWith(errMsg.MISMATCH_ARRAY_LENGTH);
   });
 });
