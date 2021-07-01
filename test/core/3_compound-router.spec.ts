@@ -292,29 +292,29 @@ describe('compound-router', async () => {
   });
 
   it('should reject ETH payments from non-WETH address', async () => {
-    await expect(alice.sendTransaction({ to: router.address, value: 1 })).to.be.revertedWith('ETH_NOT_FROM_WETH');
+    await expect(alice.sendTransaction({ to: router.address, value: 1 })).to.be.revertedWith(errMsg.ETH_NOT_FROM_WETH);
   });
 
   it('should perform sanity checks when deploying new yield contracts', async () => {
     await expect(
       router.newYieldContracts(consts.FORGE_COMPOUND, consts.ZERO_ADDRESS, consts.T0_C.add(consts.SIX_MONTH))
-    ).to.be.revertedWith('ZERO_ADDRESS');
+    ).to.be.revertedWith(errMsg.ZERO_ADDRESS);
     await expect(
       router.newYieldContracts(consts.RANDOM_BYTES, tokenUSDT.address, consts.T0_C.add(consts.SIX_MONTH))
-    ).to.be.revertedWith('FORGE_NOT_EXISTS');
+    ).to.be.revertedWith(errMsg.FORGE_NOT_EXISTS);
     await expect(
       router.newYieldContracts(consts.FORGE_COMPOUND, tokens.USDT.address, consts.T0_C.add(consts.SIX_MONTH))
-    ).to.be.revertedWith('DUPLICATE_YIELD_CONTRACT');
+    ).to.be.revertedWith(errMsg.DUPLICATE_YIELD_CONTRACT);
   });
 
   it('should reject invalid OT or transactions before expiry when redeeming after expiry', async () => {
     await expect(
       router.redeemAfterExpiry(consts.FORGE_COMPOUND, consts.RANDOM_ADDRESS, consts.T0_C.add(consts.SIX_MONTH))
-    ).to.be.revertedWith('INVALID_YT');
+    ).to.be.revertedWith(errMsg.INVALID_XYT);
     await setTimeNextBlock(consts.T0_C.add(consts.THREE_MONTH));
     await expect(
       router.redeemAfterExpiry(consts.FORGE_COMPOUND, tokenUSDT.address, consts.T0_C.add(consts.SIX_MONTH))
-    ).to.be.revertedWith('MUST_BE_AFTER_EXPIRY');
+    ).to.be.revertedWith(errMsg.MUST_BE_AFTER_EXPIRY);
   });
 
   it('should reject invalid YT or zero address as user when redeeming due interests', async () => {
@@ -325,7 +325,7 @@ describe('compound-router', async () => {
         consts.T0_C.add(consts.SIX_MONTH),
         alice.address
       )
-    ).to.be.revertedWith('INVALID_YT');
+    ).to.be.revertedWith(errMsg.INVALID_XYT);
     await expect(
       router.redeemDueInterests(
         consts.FORGE_COMPOUND,
@@ -333,7 +333,7 @@ describe('compound-router', async () => {
         consts.T0_C.add(consts.SIX_MONTH),
         consts.ZERO_ADDRESS
       )
-    ).to.be.revertedWith('ZERO_ADDRESS');
+    ).to.be.revertedWith(errMsg.ZERO_ADDRESS);
   });
 
   it('should reject invalid or expired YT or zero redeem amount ', async () => {
@@ -344,14 +344,14 @@ describe('compound-router', async () => {
         consts.T0_C.add(consts.SIX_MONTH),
         BN.from(100)
       )
-    ).to.be.revertedWith('INVALID_YT');
+    ).to.be.revertedWith(errMsg.INVALID_XYT);
     await expect(
       router.redeemUnderlying(consts.FORGE_COMPOUND, tokenUSDT.address, consts.T0_C.add(consts.SIX_MONTH), BN.from(0))
-    ).to.be.revertedWith('ZERO_AMOUNT');
+    ).to.be.revertedWith(errMsg.ZERO_AMOUNT);
     await setTimeNextBlock(consts.T0_C.add(consts.ONE_YEAR));
     await expect(
       router.redeemUnderlying(consts.FORGE_COMPOUND, tokenUSDT.address, consts.T0_C.add(consts.SIX_MONTH), BN.from(100))
-    ).to.be.revertedWith('YIELD_CONTRACT_EXPIRED');
+    ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
   });
 
   it('should reject non-positive renewal rate', async () => {
@@ -363,7 +363,7 @@ describe('compound-router', async () => {
         consts.T0_C.add(consts.ONE_YEAR),
         BN.from(0)
       )
-    ).to.be.revertedWith('INVALID_RENEWAL_RATE');
+    ).to.be.revertedWith(errMsg.INVALID_RENEWAL_RATE);
   });
 
   it('should perform sanity checks when tokenizing yield', async () => {
@@ -375,7 +375,7 @@ describe('compound-router', async () => {
         BN.from(100),
         alice.address
       )
-    ).to.be.revertedWith('INVALID_YT');
+    ).to.be.revertedWith(errMsg.INVALID_XYT);
     await expect(
       router.tokenizeYield(
         consts.FORGE_COMPOUND,
@@ -384,7 +384,7 @@ describe('compound-router', async () => {
         BN.from(100),
         consts.ZERO_ADDRESS
       )
-    ).to.be.revertedWith('ZERO_ADDRESS');
+    ).to.be.revertedWith(errMsg.ZERO_ADDRESS);
     await expect(
       router.tokenizeYield(
         consts.FORGE_COMPOUND,
@@ -393,7 +393,7 @@ describe('compound-router', async () => {
         BN.from(0),
         alice.address
       )
-    ).to.be.revertedWith('ZERO_AMOUNT');
+    ).to.be.revertedWith(errMsg.ZERO_AMOUNT);
     await setTimeNextBlock(consts.T0_C.add(consts.ONE_YEAR));
     await expect(
       router.tokenizeYield(
@@ -403,6 +403,6 @@ describe('compound-router', async () => {
         BN.from(100),
         alice.address
       )
-    ).to.be.revertedWith('YIELD_CONTRACT_EXPIRED');
+    ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
   });
 });
