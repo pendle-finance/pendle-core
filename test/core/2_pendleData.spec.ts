@@ -224,7 +224,9 @@ describe('PendleData', async () => {
     await expect(data.addMarketFactory(consts.ZERO_BYTES, fixture.core.cMarketFactory.address)).to.be.revertedWith(
       errMsg.ZERO_BYTES
     );
-    await expect(data.addMarketFactory(consts.RANDOM_BYTES, consts.ZERO_ADDRESS)).to.be.revertedWith(errMsg.ZERO_ADDRESS);
+    await expect(data.addMarketFactory(consts.RANDOM_BYTES, consts.ZERO_ADDRESS)).to.be.revertedWith(
+      errMsg.ZERO_ADDRESS
+    );
     await expect(data.addMarketFactory(consts.RANDOM_BYTES, fixture.core.a2MarketFactory.address)).to.be.revertedWith(
       errMsg.INVALID_FACTORY_ID
     );
