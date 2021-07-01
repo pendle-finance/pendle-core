@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { BigNumber as BN, Contract } from 'ethers';
-import { consts, evm_revert, evm_snapshot, getCContract, tokens } from '../helpers';
+import { consts, errMsg, evm_revert, evm_snapshot, getCContract, tokens } from '../helpers';
 import { liquidityMiningFixture, LiquidityMiningFixture } from './fixtures';
 import pendleLpHolder from '../../build/artifacts/contracts/core/PendleLpHolder.sol/PendleLpHolder.json';
 import mockPendleLpHolder from '../../build/artifacts/contracts/mock/MockPendleLpHolder.sol/MockPendleLpHolder.json';
@@ -51,7 +51,7 @@ describe('pendleLpHolder', async () => {
   it('Cannot be initialized with zero address as argument(s)', async () => {
     await expect(
       deployContract(alice, pendleLpHolder, [consts.ZERO_ADDRESS, market.address, router.address, cUSDT.address])
-    ).to.be.revertedWith('ZERO_ADDRESS');
+    ).to.be.revertedWith(errMsg.ZERO_ADDRESS);
   });
 
   it('Should correctly initialize', async () => {
@@ -63,14 +63,12 @@ describe('pendleLpHolder', async () => {
 
   it('Only liquidityMoning modifier should reject transactions by non-liquidity-mining address', async () => {
     await expect(lpHolder.connect(bob).sendInterests(bob.address, BN.from(100))).to.be.revertedWith(
-      'ONLY_LIQUIDITY_MINING'
+      errMsg.ONLY_LIQUIDITY_MINING
     );
   });
 
   it('Should return correct allowed_to_withdraw information', async () => {
-    const allowed = await mockLpHolder.allowedToWithdraw(consts.RANDOM_ADDRESS);
-    expect(allowed).to.be.true;
-    const notAllowed = await mockLpHolder.allowedToWithdraw(cUSDT.address);
-    expect(notAllowed).to.be.false;
+    expect(await mockLpHolder.allowedToWithdraw(consts.RANDOM_ADDRESS)).to.be.true;
+    expect(await mockLpHolder.allowedToWithdraw(cUSDT.address)).to.be.false;
   });
 });
