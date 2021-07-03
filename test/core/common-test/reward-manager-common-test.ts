@@ -220,52 +220,6 @@ export function runTest(mode: Mode) {
       await redeemAndCheckRewardAndSendTnx(async () => {});
     });
 
-    xit('OT transferring gas should not be too large', async () => {
-      let amount = userInitialYieldToken.div(10);
-      await tokenizeYield(env, alice, amount, bob.address);
-      await tokenizeYield(env, alice, amount, charlie.address);
-      await tokenizeYield(env, alice, amount, dave.address);
-      await tokenizeYield(env, alice, amount, eve.address);
-
-      const otBalance = (await env.ot.balanceOf(charlie.address)).div(2);
-
-      async function checkGasCost(from: Wallet, to: Wallet) {
-        await env.ot.connect(from).transfer(to.address, otBalance, consts.HG);
-        return;
-      }
-
-      console.log('GAS USED:');
-      await checkGasCost(bob, charlie);
-
-      await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 20);
-      await checkGasCost(eve, dave);
-
-      await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 20);
-      await checkGasCost(dave, bob);
-
-      await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 20);
-      await checkGasCost(charlie, eve);
-
-      console.log();
-      console.log('Reward skipped!');
-
-      await env.rewardManager.setSkippingRewards(true, consts.HG);
-
-      await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 20);
-      await checkGasCost(bob, charlie);
-
-      await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 20);
-      await checkGasCost(eve, dave);
-
-      await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 20);
-      await checkGasCost(dave, bob);
-
-      await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 20);
-      await checkGasCost(charlie, eve);
-
-      console.log('=============================================');
-    });
-
     it('Reward manager should work normally after updating updateFrequency to INF', async () => {
       let amount = userInitialYieldToken.div(10);
       for (let person of [bob, charlie, dave, eve]) {

@@ -1,5 +1,5 @@
 import { assert } from 'chai';
-import { BigNumber as BN, Contract, Wallet } from 'ethers';
+import { BigNumber as BN, Contract, utils, Wallet } from 'ethers';
 import { consts, wrapEth } from '.';
 import { TestEnv } from '../core/fixtures';
 
@@ -223,6 +223,38 @@ export async function getMarketRateExactOut(
 export async function stake(env: TestEnv, user: Wallet, amount: BN, expiry?: BN) {
   if (expiry == null) expiry = env.EXPIRY;
   await env.liq.connect(user).stake(expiry, amount, consts.HG);
+}
+
+export async function stakeWithPermit(env: TestEnv, user: Wallet, amount: BN, expiry?: BN) {
+  if (expiry == null) expiry = env.EXPIRY;
+
+  const Domain = (contract: any) => ({
+    name: 'Pendle Market',
+    version: '1',
+    chainId: consts.DEFAULT_CHAIN_ID,
+    verifyingContract: contract.address,
+  });
+
+  const Types = {
+    Permit: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+      { name: 'value', type: 'uint256' },
+      { name: 'nonce', type: 'uint256' },
+      { name: 'deadline', type: 'uint256' },
+    ],
+  };
+
+  const Data = {
+    owner: user.address,
+    spender: env.liq.address,
+    value: amount,
+    nonce: 0,
+    deadline: 10e9,
+  };
+
+  const { v, r, s } = utils.splitSignature(await user._signTypedData(Domain(env.market), Types, Data));
+  await env.liq.connect(user).stakeWithPermit(expiry, amount, 10e9, v, r, s, consts.HG);
 }
 
 export async function withdraw(env: TestEnv, user: Wallet, amount: BN, expiry?: BN) {

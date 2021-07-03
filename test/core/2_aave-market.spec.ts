@@ -2,6 +2,7 @@ import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
 import {
+  addMarketLiquidityDual,
   addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
   advanceTime,
@@ -15,20 +16,26 @@ import {
   evm_snapshot,
   getMarketRateExactIn,
   getMarketRateExactOut,
+  logMarketReservesData,
+  mineBlock,
   removeMarketLiquidityDual,
   removeMarketLiquiditySingle,
   setTimeNextBlock,
   swapExactInXytToToken,
   swapExactOutXytToToken,
+  toFixedPoint,
+  approxByPercent,
 } from '../helpers';
 import {
   AMMCheckLPNearCloseTest,
   AMMNearCloseTest,
   AMMTest,
+  AMMTestWhenBlockDeltaIsNonZero,
   marketBalanceNonZeroSwapTest,
   marketBalanceNonZeroTest,
   MarketFeesTest,
   ProtocolFeeTest,
+  marketAddLiquidityDualTest,
 } from './common-test/amm-formula-test';
 import { MultiExpiryMarketTest } from './common-test/multi-market-common-test';
 import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
@@ -294,6 +301,14 @@ describe('AaveV2-market', async () => {
     await AMMTest(env, true);
   });
 
+  it("AMM's formulas is correct for swapExactIn when BLOCK_DELTA is non-zero", async () => {
+    await AMMTestWhenBlockDeltaIsNonZero(env, true);
+  });
+
+  it("AMM's formulas is correct for swapExactOut when BLOCK_DELTA is non-zero", async () => {
+    await AMMTestWhenBlockDeltaIsNonZero(env, false);
+  });
+
   it("AMM's formulas is correct for swapExactOut", async () => {
     await AMMTest(env, false);
   });
@@ -337,5 +352,138 @@ describe('AaveV2-market', async () => {
     await setTimeNextBlock(env.T0.add(currentTime.mul(4)));
     environments.push(await createAaveMarketWithExpiry(env, env.T0.add(consts.ONE_MONTH.mul(48)), wallets));
     await MultiExpiryMarketTest(environments, wallets);
+  });
+
+  it("Market's checkNeedCurveShift should work correctly with curveShiftBlockDelta > 1", async () => {
+    async function getTokenWeight(): Promise<BN> {
+      const tokenReserves = await env.market.getReserves();
+      return tokenReserves.tokenWeight;
+    }
+
+    await bootstrapMarket(env, alice, REF_AMOUNT, REF_AMOUNT);
+    /// market weights should be the same for every (delta + 1) blocks
+    const delta = 3;
+    await env.data.setCurveShiftBlockDelta(delta);
+
+    // getting weights from blocks
+    let weights: BN[] = [];
+    for (let i = 0; i < 20; ++i) {
+      weights.push(await getTokenWeight());
+      await addMarketLiquiditySingle(env, alice, BN.from(100), true);
+    }
+
+    // Compare the weights...
+    for (let i = 1; i < weights.length; ++i) {
+      if (!weights[i].eq(weights[i - 1])) {
+        if (i + delta < weights.length) {
+          approxBigNumber(weights[i], weights[i + delta], 0);
+        }
+      }
+    }
+  });
+
+  it('Changing market feeRatio to 0% and back to 0.35% should work normally', async () => {
+    async function checkLpTreausry(promise: any, shouldBeChanged: Boolean) {
+      const treasuryLp: BN = await env.market.balanceOf(env.treasury.address);
+      await promise;
+      const newTreasuryLp: BN = await env.market.balanceOf(env.treasury.address);
+      expect(treasuryLp.lt(newTreasuryLp)).to.be.equal(shouldBeChanged);
+    }
+
+    const swapFee: BN = toFixedPoint('0.0035');
+    const protocolFee: BN = toFixedPoint('0.2');
+
+    await env.data.setMarketFees(swapFee, protocolFee, consts.HG);
+    await bootstrapMarket(env, alice, REF_AMOUNT, REF_AMOUNT);
+
+    // large delta so treasury is not affected by swapping
+    const delta = 20;
+    await env.data.setCurveShiftBlockDelta(delta);
+
+    // Swap exact in one time so the paramK is promisely changed
+    await swapExactInXytToToken(env, alice, REF_AMOUNT);
+    await env.data.setMarketFees(swapFee, 0, consts.HG);
+
+    // Treasury should stay unchanged here and lastParamK should be updated to 0
+    await checkLpTreausry(addMarketLiquidityDual(env, alice, REF_AMOUNT), false);
+
+    await env.data.setMarketFees(swapFee, protocolFee, consts.HG);
+
+    // as lastParamK is 0, treasury should not be updated here
+    await swapExactInXytToToken(env, alice, REF_AMOUNT);
+    await checkLpTreausry(addMarketLiquidityDual(env, alice, REF_AMOUNT), false);
+
+    // Everything is back to normal here, thus treasury is updated
+    await swapExactInXytToToken(env, alice, REF_AMOUNT);
+    await checkLpTreausry(addMarketLiquidityDual(env, alice, REF_AMOUNT), true);
+  });
+
+  it('AddMarketLiquidityDual test', async () => {
+    await marketAddLiquidityDualTest(env);
+  });
+
+  it('Market Math extreme case', async () => {
+    // This test aims to test the market when close to the end only (token: USDG, xyt: WETH)
+    const toUSDG: BN = amountToWei(BN.from(1), 2);
+    const toWETH: BN = amountToWei(BN.from(1), 18);
+
+    const tokenWeight: BN = BN.from(997156320982);
+    const xytWeight: BN = BN.from(102355306794);
+    const tokenBalance: BN = BN.from(toUSDG.mul(1000));
+    const xytBalance: BN = BN.from(toWETH.mul(1000000000)); /// This is already very very extreme and likely to never happen
+    const totalSupplyLp: BN = tokenBalance.mul(xytBalance);
+
+    const token: any = {
+      weight: tokenWeight,
+      balance: tokenBalance,
+    };
+
+    const xyt: any = {
+      weight: xytWeight,
+      balance: xytBalance,
+    };
+
+    /// ========== SWAP TOKEN TO XYT ==========
+    approxByPercent(await env.mockMarketMath.calcExactOut(token, xyt, 1, 0), BN.from('97415834753633712764316'));
+
+    approxByPercent(
+      await env.mockMarketMath.calcExactIn(token, xyt, BN.from('1273461827346132412312213'), 0),
+      BN.from('13')
+    );
+
+    // ========== SWAP XYT TO TOKEN ==========
+    approxByPercent(
+      await env.mockMarketMath.calcExactOut(xyt, token, BN.from('127346331827346132412312213'), 0),
+      BN.from('1223')
+    );
+
+    approxByPercent(
+      await env.mockMarketMath.calcExactIn(xyt, token, BN.from('10000'), 0),
+      BN.from('1791093309883636288779774305')
+    );
+
+    // ========== ADD TOKEN ==========
+    approxByPercent(
+      await env.mockMarketMath.calcOutAmountLp(1000, token, 0, totalSupplyLp),
+      BN.from('906487793047224024828821200000')
+    );
+
+    // ========== ADD XYT ==========
+    approxByPercent(
+      await env.mockMarketMath.calcOutAmountLp(xytBalance.div(2), xyt, 0, totalSupplyLp),
+      BN.from('3846680494591338024458126400000')
+    );
+
+    // ========== REMOVE TOKEN ==========
+    approxByPercent(
+      await env.mockMarketMath.calcOutAmountToken(token, totalSupplyLp, totalSupplyLp.div(10), 0),
+      BN.from('10968')
+    );
+
+    // ========== REMOVE XYT ==========
+    approxByPercent(
+      await env.mockMarketMath.calcOutAmountToken(xyt, totalSupplyLp, totalSupplyLp.div(3), 0),
+      BN.from('987164614857793524891035594')
+    );
   });
 });

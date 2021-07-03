@@ -3,6 +3,7 @@ import hre from 'hardhat';
 import PendleCompoundMarket from '../../../build/artifacts/contracts/core/compound/PendleCompoundMarket.sol/PendleCompoundMarket.json';
 import MockPendleAaveMarket from '../../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json';
 import TestToken from '../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json';
+import MockMarketMath from '../../../build/artifacts/contracts/mock/MockMarketMath.sol/MockMarketMath.json';
 import { consts, emptyToken, getA2Contract, getCContract, tokens, mintXytAave, mintXytCompound } from '../../helpers';
 import { AaveV2ForgeFixture } from './aaveV2Forge.fixture';
 import { CompoundFixture } from './compoundForge.fixture';
@@ -21,6 +22,7 @@ export interface MarketFixture {
   a2Market18: Contract;
   cMarket: Contract;
   marketEth: Contract;
+  mockMarketMath: Contract;
 }
 
 export async function marketFixture(_: Wallet[], provider: providers.Web3Provider): Promise<MarketFixture> {
@@ -97,10 +99,11 @@ export async function marketFixture(_: Wallet[], provider: providers.Web3Provide
   const a2Market18 = new Contract(a2Market18Address, MockPendleAaveMarket.abi, alice);
   const cMarket = new Contract(cMarketAddress, PendleCompoundMarket.abi, alice);
   const marketEth = new Contract(marketEthAddress, MockPendleAaveMarket.abi, alice);
+  const mockMarketMath: Contract = await deployContract(alice, MockMarketMath);
 
   for (var person of [alice, bob, charlie, dave, eve]) {
     await testToken.connect(person).approve(router.address, totalSupply);
   }
 
-  return { routerFix, core, a2Forge, cForge, testToken, a2Market, a2Market18, cMarket, marketEth };
+  return { routerFix, core, a2Forge, cForge, testToken, a2Market, a2Market18, cMarket, marketEth, mockMarketMath };
 }

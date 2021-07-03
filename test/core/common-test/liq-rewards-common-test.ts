@@ -11,6 +11,7 @@ import {
   setTime,
   setTimeNextBlock,
   stake,
+  stakeWithPermit,
   startOfEpoch,
   withdraw,
 } from '../../helpers';
@@ -236,6 +237,11 @@ export function runTest(mode: Mode) {
       }
     });
 
+    it('stakeWithPermit test', async () => {
+      // reverted with this message means the permitting process has finished
+      await expect(stakeWithPermit(env, bob, BN.from(1000))).to.be.revertedWith(errMsg.NOT_STARTED);
+    });
+
     it('Read functions should work correctly', async () => {
       await setTimeNextBlock((await env.liq.startTime()).add(1));
       await env.liq.readStakeUnitsForUser(1, alice.address, env.EXPIRY);
@@ -247,6 +253,7 @@ export function runTest(mode: Mode) {
       await env.liq.lpHolderForExpiry(env.EXPIRY);
       await env.liq.readExpiryData(env.EXPIRY);
       await env.liq.readUserSpecificExpiryData(env.EXPIRY, alice.address);
+      await env.liq.readAllExpiriesLength();
     });
   });
 }

@@ -36,6 +36,9 @@ export interface TestEnv {
   liq18: Contract;
   USDTContract: Contract;
 
+  // mock pure contracts
+  mockMarketMath: Contract;
+
   // test params
   ETH_TEST: boolean;
   T0: BN;
@@ -100,6 +103,7 @@ export async function parseTestEnvMarketFixture(alice: Wallet, mode: Mode, env: 
   env.mode = mode;
   await parseTestEnvRouterFixture(alice, mode, env, fixture.routerFix);
 
+  env.mockMarketMath = fixture.mockMarketMath;
   env.testToken = fixture.testToken;
   env.marketFixture = fixture;
 
