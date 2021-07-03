@@ -1,6 +1,5 @@
 import { BigNumber as BN } from 'ethers';
 import {
-  addFakeIncomeCompoundEth,
   approxBigNumber,
   consts,
   emptyToken,
