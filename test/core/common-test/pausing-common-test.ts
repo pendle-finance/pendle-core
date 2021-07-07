@@ -22,7 +22,6 @@ export async function runTest(mode: Mode) {
 
   async function buildCommonEnv() {
     let fixture: MarketFixture = await loadFixture(marketFixture);
-    console.log(`\tLoaded routerFixture`);
     await parseTestEnvMarketFixture(alice, mode, env, fixture);
     env.TEST_DELTA = BN.from(1500000);
   }

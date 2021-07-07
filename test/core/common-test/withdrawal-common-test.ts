@@ -48,7 +48,6 @@ export async function runTest(mode: Mode) {
     let fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);
     await parseTestEnvLiquidityMiningFixture(alice, mode, env, fixture);
     rewardToken = await hre.ethers.getContractAt('TestToken', await env.forge.rewardToken());
-    console.log(`\tLoaded routerFixture`);
   }
 
   before(async () => {

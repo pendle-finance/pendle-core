@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import hre from 'hardhat';
 import {
@@ -13,7 +14,9 @@ import {
   redeemAfterExpiry,
   redeemUnderlying,
   tokenizeYield,
+  errMsg,
 } from '../../helpers';
+chai.use(solidity);
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 
 const { waffle } = require('hardhat');
@@ -33,7 +36,6 @@ export function runTest(mode: Mode) {
 
     async function buildTestEnv() {
       let fixture: RouterFixture = await loadFixture(routerFixture);
-      console.log(`\tLoaded routerFixture`);
       await parseTestEnvRouterFixture(alice, mode, env, fixture);
       env.TEST_DELTA = BN.from(1500000);
     }
@@ -341,6 +343,30 @@ export function runTest(mode: Mode) {
       await ensureParamLUnchanged(env.rewardManager.setSkippingRewards(true)); /// Must not set it false here :joy:
       await ensureParamLUnchanged(
         env.rewardManager.connect(alice).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG)
+      );
+    });
+
+    it('isValidOT modifier should reject redeem interest request on invalid OT token', async () => {
+      await expect(env.rewardManager.redeemRewards(consts.RANDOM_ADDRESS, env.EXPIRY, bob.address)).to.be.revertedWith(
+        errMsg.INVALID_OT
+      );
+    });
+
+    it('onlyForge modifier should reject update reward request from non-forge', async () => {
+      await expect(
+        env.rewardManager.updatePendingRewards(env.USDTContract.address, env.EXPIRY, alice.address)
+      ).to.be.revertedWith(errMsg.ONLY_FORGE);
+    });
+
+    it('setUpdateFrequency should reject inconsistent input array length', async () => {
+      await expect(
+        env.rewardManager.setUpdateFrequency([env.USDTContract.address], [BN.from(100), consts.RONE])
+      ).to.be.revertedWith(errMsg.ARRAY_LENGTH_MISMATCH);
+    });
+
+    it('updataParamL should be rejected for underlying asset with no existing yield token holder', async () => {
+      await expect(env.rewardManager.updateParamLManual(consts.RANDOM_ADDRESS, alice.address)).to.be.revertedWith(
+        errMsg.INVALID_YIELD_TOKEN_HOLDER
       );
     });
   });

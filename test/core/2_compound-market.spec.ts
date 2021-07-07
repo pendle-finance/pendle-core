@@ -1,7 +1,7 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
-import { advanceTime, amountToWei, consts, evm_revert, evm_snapshot } from '../helpers';
+import { advanceTime, amountToWei, consts, errMsg, evm_revert, evm_snapshot } from '../helpers';
 import { marketFixture } from './fixtures';
 const { waffle } = require('hardhat');
 chai.use(solidity);
@@ -311,11 +311,5 @@ describe('compound-market', async () => {
     let { token: receivedToken, xyt: receivedXyt } = await marketReader.getMarketTokenAddresses(market.address);
     expect(receivedToken).to.be.equal(testToken.address);
     expect(receivedXyt).to.be.equal(xyt.address);
-  });
-
-  it("shouldn't be able to create duplicated markets", async () => {
-    await expect(
-      router.createMarket(consts.MARKET_FACTORY_COMPOUND, xyt.address, testToken.address, consts.HG)
-    ).to.be.revertedWith('EXISTED_MARKET');
   });
 });

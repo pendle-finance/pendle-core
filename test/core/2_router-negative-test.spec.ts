@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { BigNumber as BN, Contract, utils, Wallet } from 'ethers';
-import { waffle } from 'hardhat';
+const { waffle } = require('hardhat');
 import {
   advanceTime,
   amountToWei,
@@ -34,11 +34,13 @@ describe('router-negative-test', async () => {
   let globalSnapshotId: string;
   let env: TestEnv = {} as TestEnv;
   let refAmount: BN;
+  let USDT: Token;
 
   async function buildTestEnv() {
     fixture = await loadFixture(marketFixture);
     await parseTestEnvMarketFixture(alice, Mode.AAVE_V2, env, fixture);
     env.TEST_DELTA = BN.from(6000);
+    USDT = tokens.USDT;
   }
 
   before(async () => {
@@ -205,5 +207,325 @@ describe('router-negative-test', async () => {
     await expect(
       env.router.createMarket(consts.MARKET_FACTORY_COMPOUND, env.xyt.address, env.testToken.address, consts.HG)
     ).to.be.revertedWith(errMsg.INVALID_FORGE_FACTORY);
+  });
+
+  it("shouldn't be able to create duplicated markets", async () => {
+    await expect(
+      env.router.createMarket(consts.MARKET_FACTORY_AAVE_V2, env.xyt.address, env.testToken.address, consts.HG)
+    ).to.be.revertedWith(errMsg.EXISTED_MARKET);
+  });
+
+  it("shouldn't be able to create markets if tokens, factoryId are invalid", async () => {
+    await expect(
+      env.router.createMarket(consts.MARKET_FACTORY_AAVE_V2, consts.ZERO_ADDRESS, env.testToken.address, consts.HG)
+    ).to.be.revertedWith(errMsg.ZERO_ADDRESS);
+    await expect(
+      env.router.createMarket(consts.MARKET_FACTORY_AAVE_V2, env.xyt.address, consts.ZERO_ADDRESS, consts.HG)
+    ).to.be.revertedWith(errMsg.ZERO_ADDRESS);
+    await expect(
+      env.router.createMarket(consts.MARKET_FACTORY_AAVE_V2, consts.RANDOM_ADDRESS, env.testToken.address, consts.HG)
+    ).to.be.revertedWith(errMsg.INVALID_XYT);
+    await expect(
+      env.router.createMarket(consts.ZERO_BYTES, env.xyt.address, env.testToken.address, consts.HG)
+    ).to.be.revertedWith(errMsg.ZERO_ADDRESS);
+    await expect(
+      env.router.createMarket(consts.MARKET_FACTORY_COMPOUND, env.xyt.address, env.testToken.address, consts.HG)
+    ).to.be.revertedWith(errMsg.INVALID_FORGE_FACTORY);
+  });
+
+  it('router should reject dual liquidity addition if token amount is invalid or market does not exist', async () => {
+    await expect(
+      env.router.addMarketLiquidityDual(
+        consts.MARKET_FACTORY_AAVE_V2,
+        env.xyt.address,
+        env.testToken.address,
+        BN.from(100),
+        BN.from(100),
+        consts.INF,
+        BN.from(0)
+      )
+    ).to.be.revertedWith(errMsg.INVALID_YT_AMOUNTS);
+    await expect(
+      env.router.addMarketLiquidityDual(
+        consts.MARKET_FACTORY_AAVE_V2,
+        env.xyt.address,
+        env.testToken.address,
+        BN.from(100),
+        BN.from(0),
+        BN.from(0),
+        BN.from(0)
+      )
+    ).to.be.revertedWith(errMsg.INVALID_TOKEN_AMOUNTS);
+    await expect(
+      env.router.addMarketLiquidityDual(
+        consts.MARKET_FACTORY_AAVE_V2,
+        env.xyt.address,
+        consts.RANDOM_ADDRESS,
+        BN.from(100),
+        consts.INF,
+        BN.from(100),
+        BN.from(0)
+      )
+    ).to.be.revertedWith(errMsg.MARKET_NOT_FOUND);
+  });
+
+  it('router should reject single sided liquidity addition if in-amount is zero or if market does not exist', async () => {
+    await expect(
+      env.router.addMarketLiquiditySingle(
+        consts.MARKET_FACTORY_AAVE_V2,
+        env.xyt.address,
+        env.testToken.address,
+        true,
+        BN.from(0),
+        BN.from(0)
+      )
+    ).to.be.revertedWith(errMsg.ZERO_AMOUNTS);
+    await expect(
+      env.router.addMarketLiquiditySingle(
+        consts.MARKET_FACTORY_AAVE_V2,
+        consts.RANDOM_ADDRESS,
+        env.testToken.address,
+        true,
+        BN.from(100),
+        BN.from(0)
+      )
+    ).to.be.revertedWith(errMsg.MARKET_NOT_FOUND);
+  });
+
+  it('router should reject dual liquidity removal if in-LP is zero or if market does not exist', async () => {
+    await expect(
+      env.router.removeMarketLiquidityDual(
+        consts.MARKET_FACTORY_AAVE_V2,
+        env.xyt.address,
+        env.testToken.address,
+        BN.from(0),
+        BN.from(0),
+        BN.from(0)
+      )
+    ).to.be.revertedWith(errMsg.ZERO_LP_IN);
+    await expect(
+      env.router.removeMarketLiquidityDual(
+        consts.MARKET_FACTORY_COMPOUND,
+        env.xyt.address,
+        env.testToken.address,
+        BN.from(10),
+        BN.from(0),
+        BN.from(0)
+      )
+    ).to.be.revertedWith(errMsg.MARKET_NOT_FOUND);
+  });
+
+  it('router should reject single sided liquidity removal if in-LP is zero or if market does not exist', async () => {
+    await expect(
+      env.router.removeMarketLiquiditySingle(
+        consts.MARKET_FACTORY_AAVE_V2,
+        env.xyt.address,
+        env.testToken.address,
+        true,
+        BN.from(0),
+        BN.from(0)
+      )
+    ).to.be.revertedWith(errMsg.ZERO_LP_IN);
+    await expect(
+      env.router.removeMarketLiquiditySingle(
+        consts.MARKET_FACTORY_AAVE_V2,
+        env.xyt.address,
+        consts.RANDOM_ADDRESS,
+        false,
+        BN.from(10),
+        BN.from(0)
+      )
+    ).to.be.revertedWith(errMsg.MARKET_NOT_FOUND);
+  });
+
+  it('router should reject bootstrap attempt if in-token amount is zero or if market does not exist', async () => {
+    await expect(
+      env.router.bootstrapMarket(
+        consts.MARKET_FACTORY_AAVE_V2,
+        env.xyt.address,
+        env.testToken.address,
+        BN.from(0),
+        BN.from(100)
+      )
+    ).to.be.revertedWith(errMsg.INVALID_YT_AMOUNT);
+    await expect(
+      env.router.bootstrapMarket(
+        consts.MARKET_FACTORY_AAVE_V2,
+        env.xyt.address,
+        env.testToken.address,
+        BN.from(100),
+        BN.from(0)
+      )
+    ).to.be.revertedWith(errMsg.INVALID_TOKEN_AMOUNT);
+    await expect(
+      env.router.bootstrapMarket(
+        consts.MARKET_FACTORY_AAVE_V2,
+        env.xyt.address,
+        consts.RANDOM_ADDRESS,
+        BN.from(100),
+        BN.from(1000)
+      )
+    ).to.be.revertedWith(errMsg.MARKET_NOT_FOUND);
+  });
+
+  it('router should reject swap attempt if amount is zero or market does not exist', async () => {
+    await expect(
+      env.router.swapExactIn(
+        env.xyt.address,
+        env.testToken.address,
+        BN.from(0),
+        BN.from(0),
+        consts.MARKET_FACTORY_AAVE_V2
+      )
+    ).to.be.revertedWith(errMsg.ZERO_IN_AMOUNT);
+    await expect(
+      env.router.swapExactIn(
+        env.xyt.address,
+        env.testToken.address,
+        BN.from(100),
+        BN.from(0),
+        consts.MARKET_FACTORY_COMPOUND
+      )
+    ).to.be.revertedWith(errMsg.MARKET_NOT_FOUND);
+    await expect(
+      env.router.swapExactOut(
+        env.xyt.address,
+        env.testToken.address,
+        BN.from(0),
+        BN.from(100),
+        consts.MARKET_FACTORY_AAVE_V2
+      )
+    ).to.be.revertedWith(errMsg.ZERO_OUT_AMOUNT);
+    await expect(
+      env.router.swapExactOut(
+        consts.RANDOM_ADDRESS,
+        env.testToken.address,
+        BN.from(100),
+        BN.from(100),
+        consts.MARKET_FACTORY_AAVE_V2
+      )
+    ).to.be.revertedWith(errMsg.MARKET_NOT_FOUND);
+  });
+
+  it('router should reject redeem LP interests attempt if market is invalid, or user is zero address', async () => {
+    await expect(env.router.redeemLpInterests(consts.RANDOM_ADDRESS, alice.address)).to.be.revertedWith(
+      errMsg.INVALID_MARKET
+    );
+    await expect(env.router.redeemLpInterests(env.market.address, consts.ZERO_ADDRESS)).to.be.revertedWith(
+      errMsg.ZERO_ADDRESS
+    );
+  });
+
+  ///
+  it('should reject ETH payments from non-WETH address', async () => {
+    await expect(alice.sendTransaction({ to: env.router.address, value: 1 })).to.be.revertedWith(
+      errMsg.ETH_NOT_FROM_WETH
+    );
+  });
+
+  it('should perform sanity checks when deploying new yield contracts', async () => {
+    await expect(
+      env.router.newYieldContracts(consts.FORGE_COMPOUND, consts.ZERO_ADDRESS, consts.T0_C.add(consts.SIX_MONTH))
+    ).to.be.revertedWith(errMsg.ZERO_ADDRESS);
+    await expect(
+      env.router.newYieldContracts(consts.RANDOM_BYTES, USDT.address, consts.T0_C.add(consts.SIX_MONTH))
+    ).to.be.revertedWith(errMsg.FORGE_NOT_EXISTS);
+    await expect(
+      env.router.newYieldContracts(consts.FORGE_COMPOUND, USDT.address, consts.T0_C.add(consts.SIX_MONTH))
+    ).to.be.revertedWith(errMsg.DUPLICATE_YIELD_CONTRACT);
+  });
+
+  it('should reject invalid OT or transactions before expiry when redeeming after expiry', async () => {
+    await expect(
+      env.router.redeemAfterExpiry(consts.FORGE_COMPOUND, consts.RANDOM_ADDRESS, consts.T0_C.add(consts.SIX_MONTH))
+    ).to.be.revertedWith(errMsg.INVALID_XYT);
+    await setTimeNextBlock(consts.T0_C.add(consts.THREE_MONTH));
+    await expect(
+      env.router.redeemAfterExpiry(consts.FORGE_COMPOUND, USDT.address, consts.T0_C.add(consts.SIX_MONTH))
+    ).to.be.revertedWith(errMsg.MUST_BE_AFTER_EXPIRY);
+  });
+
+  it('should reject invalid YT or zero address as user when redeeming due interests', async () => {
+    await expect(
+      env.router.redeemDueInterests(consts.RANDOM_BYTES, USDT.address, consts.T0_C.add(consts.SIX_MONTH), alice.address)
+    ).to.be.revertedWith(errMsg.INVALID_XYT);
+    await expect(
+      env.router.redeemDueInterests(
+        consts.FORGE_COMPOUND,
+        USDT.address,
+        consts.T0_C.add(consts.SIX_MONTH),
+        consts.ZERO_ADDRESS
+      )
+    ).to.be.revertedWith(errMsg.ZERO_ADDRESS);
+  });
+
+  it('should reject invalid or expired YT or zero redeem amount ', async () => {
+    await expect(
+      env.router.redeemUnderlying(
+        consts.FORGE_COMPOUND,
+        consts.RANDOM_ADDRESS,
+        consts.T0_C.add(consts.SIX_MONTH),
+        BN.from(100)
+      )
+    ).to.be.revertedWith(errMsg.INVALID_XYT);
+    await expect(
+      env.router.redeemUnderlying(consts.FORGE_COMPOUND, USDT.address, consts.T0_C.add(consts.SIX_MONTH), BN.from(0))
+    ).to.be.revertedWith(errMsg.ZERO_AMOUNT);
+    await setTimeNextBlock(consts.T0_C.add(consts.ONE_YEAR));
+    await expect(
+      env.router.redeemUnderlying(consts.FORGE_COMPOUND, USDT.address, consts.T0_C.add(consts.SIX_MONTH), BN.from(100))
+    ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
+  });
+
+  it('should reject non-positive renewal rate', async () => {
+    await expect(
+      env.router.renewYield(
+        consts.FORGE_COMPOUND,
+        consts.T0_C.add(consts.SIX_MONTH),
+        USDT.address,
+        consts.T0_C.add(consts.ONE_YEAR),
+        BN.from(0)
+      )
+    ).to.be.revertedWith(errMsg.INVALID_RENEWAL_RATE);
+  });
+
+  it('should perform sanity checks when tokenizing yield', async () => {
+    await expect(
+      env.router.tokenizeYield(
+        consts.FORGE_COMPOUND,
+        USDT.address,
+        consts.T0_C.add(consts.ONE_MONTH),
+        BN.from(100),
+        alice.address
+      )
+    ).to.be.revertedWith(errMsg.INVALID_XYT);
+    await expect(
+      env.router.tokenizeYield(
+        consts.FORGE_COMPOUND,
+        USDT.address,
+        consts.T0_C.add(consts.SIX_MONTH),
+        BN.from(100),
+        consts.ZERO_ADDRESS
+      )
+    ).to.be.revertedWith(errMsg.ZERO_ADDRESS);
+    await expect(
+      env.router.tokenizeYield(
+        consts.FORGE_COMPOUND,
+        USDT.address,
+        consts.T0_C.add(consts.SIX_MONTH),
+        BN.from(0),
+        alice.address
+      )
+    ).to.be.revertedWith(errMsg.ZERO_AMOUNT);
+    await setTimeNextBlock(consts.T0_C.add(consts.ONE_YEAR));
+    await expect(
+      env.router.tokenizeYield(
+        consts.FORGE_COMPOUND,
+        USDT.address,
+        consts.T0_C.add(consts.SIX_MONTH),
+        BN.from(100),
+        alice.address
+      )
+    ).to.be.revertedWith(errMsg.YIELD_CONTRACT_EXPIRED);
   });
 });
