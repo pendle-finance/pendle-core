@@ -192,3 +192,16 @@ export function approxBigNumber(
     }
   }
 }
+
+export function approxByPercent(
+  _actual: BigNumberish,
+  _expected: BigNumberish,
+  _percentInDecimal: BigNumberish = 10000
+) {
+  approxBigNumber(
+    BN.from(_actual),
+    BN.from(_expected),
+    BN.from(_expected).add(_percentInDecimal).sub(1).div(_percentInDecimal),
+    false
+  );
+}

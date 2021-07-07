@@ -3,7 +3,7 @@ import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
 import PendleTokenDistribution from '../../build/artifacts/contracts/core/PendleTokenDistribution.sol/PendleTokenDistribution.json';
 import PENDLE from '../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json';
-import { consts, evm_revert, evm_snapshot, setTimeNextBlock } from '../helpers';
+import { consts, errMsg, evm_revert, evm_snapshot, setTimeNextBlock } from '../helpers';
 chai.use(solidity);
 
 const { waffle } = require('hardhat');
@@ -242,5 +242,31 @@ describe('pendleTokenDistribution', async () => {
     await teamTokensContract.claimTokens(BN.from(0));
     const balanceAfter = await pendle.balanceOf(governance.address);
     expect(balanceAfter).to.be.eq(balanceBefore.add(consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4)));
+  });
+  it('should not be able to deploy with unequal lengths of durations and funds', async () => {
+    await expect(
+      deployContract(governance, PendleTokenDistribution, [
+        governance.address,
+        [
+          consts.ONE_QUARTER,
+          consts.ONE_QUARTER.mul(2),
+          consts.ONE_QUARTER.mul(3),
+          consts.ONE_QUARTER.mul(4),
+          consts.ONE_QUARTER.mul(5),
+          consts.ONE_QUARTER.mul(6),
+          consts.ONE_QUARTER.mul(7),
+          consts.ONE_QUARTER.mul(8),
+        ],
+        [
+          consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
+          consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
+          consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4),
+          consts.INVESTOR_AMOUNT.add(consts.ADVISOR_AMOUNT).div(4).add(consts.TEAM_AMOUNT.div(2)),
+          consts.TEAM_AMOUNT.div(8),
+          consts.TEAM_AMOUNT.div(8),
+          consts.TEAM_AMOUNT.div(8),
+        ],
+      ])
+    ).to.be.revertedWith(errMsg.MISMATCH_ARRAY_LENGTH);
   });
 });
