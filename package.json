@@ -72,8 +72,9 @@
     "size": "yarn ts-node scripts/contractBytecodeSize.js",
     "test": "yarn hardhat test",
     "test:all": "yarn test test/**/*.spec.*",
-    "ci": "yarn hardhat compile && yarn coverage:all",
-    "format": "yarn prettier --write \"contracts/**/*.sol\" && yarn prettier --write \"{scripts,test}/**/*.{js,ts}\" && yarn prettier --write \"{scripts,test}/**/**/*.{js,ts}\"",
+    "ci": "yarn compile && yarn coverage:all",
+    "format": "yarn prettier --write \"{scripts,test}/**/*.{js,ts}\" && yarn prettier --write \"{scripts,test}/**/**/*.{js,ts}\"",
+    "format-contracts": "yarn prettier --write \"contracts/**/*.sol\"",
     "deploy:core": "yarn hardhat run scripts/deploy/deploy.ts",
     "deploy:seed": "yarn hardhat run scripts/manage/seed_test_contracts.ts",
     "verify": "yarn hardhat run scripts/manage/verify_tenderly.ts"
