@@ -1,14 +1,13 @@
 import { Contract, providers, Wallet } from 'ethers';
 import PendleCompoundForge from '../../../build/artifacts/contracts/core/compound/PendleCompoundForge.sol/PendleCompoundForge.json';
 import PendleCompoundYieldContractDeployer from '../../../build/artifacts/contracts/core/compound/PendleCompoundYieldContractDeployer.sol/PendleCompoundYieldContractDeployer.json';
+import MockPendleOwnershipToken from '../../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json';
 import MockPendleRewardManager from '../../../build/artifacts/contracts/mock/MockPendleRewardManager.sol/MockPendleRewardManager.json';
 import PendleFutureYieldToken from '../../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json';
-import PendleOwnershipToken from '../../../build/artifacts/contracts/tokens/PendleOwnershipToken.sol/PendleOwnershipToken.json';
-import MockPendleOwnershipToken from '../../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json';
-
 import { consts, setTimeNextBlock, tokens } from '../../helpers';
 import { CoreFixture } from './core.fixture';
 import { GovernanceFixture } from './governance.fixture';
+
 const { waffle } = require('hardhat');
 const { deployContract } = waffle;
 
@@ -16,6 +15,8 @@ export interface CompoundFixture {
   compoundForge: Contract;
   cOwnershipToken: Contract;
   cFutureYieldToken: Contract;
+  cOwnershipToken8: Contract;
+  cFutureYieldToken8: Contract;
   cRewardManager: Contract;
 }
 
@@ -71,10 +72,29 @@ export async function compoundForgeFixture(
   const cOwnershipToken = new Contract(otTokenAddress, MockPendleOwnershipToken.abi, alice);
   const cFutureYieldToken = new Contract(xytTokenAddress, PendleFutureYieldToken.abi, alice);
 
+  // ETH
+  await router.newYieldContracts(consts.FORGE_COMPOUND, tokens.WETH.address, consts.T0_C.add(consts.SIX_MONTH));
+  const otTokenAddress8 = await data.otTokens(
+    consts.FORGE_COMPOUND,
+    tokens.WETH.address,
+    consts.T0_C.add(consts.SIX_MONTH)
+  );
+
+  const xytTokenAddress8 = await data.xytTokens(
+    consts.FORGE_COMPOUND,
+    tokens.WETH.address,
+    consts.T0_C.add(consts.SIX_MONTH)
+  );
+
+  const cOwnershipToken8 = new Contract(otTokenAddress8, MockPendleOwnershipToken.abi, alice);
+  const cFutureYieldToken8 = new Contract(xytTokenAddress8, PendleFutureYieldToken.abi, alice);
+
   return {
     compoundForge,
     cOwnershipToken,
     cFutureYieldToken,
+    cOwnershipToken8,
+    cFutureYieldToken8,
     cRewardManager,
   };
 }

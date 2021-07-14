@@ -91,7 +91,7 @@ export const tokens: TokenMap = {
   WETH: {
     address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     decimal: 18,
-    compound: '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5',
+    compound: '0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5',
   },
   USDC: {
     address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
