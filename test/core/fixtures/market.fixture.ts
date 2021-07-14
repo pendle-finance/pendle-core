@@ -146,6 +146,6 @@ export async function marketFixture(_: Wallet[], provider: providers.Web3Provide
     cMarket8,
     a2MarketEth,
     cMarketEth,
-    mockMarketMath
+    mockMarketMath,
   };
 }
