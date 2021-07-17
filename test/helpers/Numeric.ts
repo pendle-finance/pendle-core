@@ -11,7 +11,7 @@ export function calcExpectedRewards(
   userStakingData: UserStakeAction[][][],
   params: LiqParams,
   currentEpoch: number,
-  usingAllocationSetting: Boolean
+  usingAllocationSetting: Boolean = false
 ): BN[][] {
   let nUsers = userStakingData[0].length;
   let numerator: BN = params.TOTAL_NUMERATOR;

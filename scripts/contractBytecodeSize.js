@@ -12,6 +12,7 @@ const STAT = promisify(fs.stat);
 const LIST = [
   'PendleForgeBase.sol',
   'PendleLiquidityMiningBase.sol',
+  'PendleLiquidityMiningBaseV2.sol',
   'PendleMarketBase.sol',
   'PendleMarketFactoryBase.sol',
   'PendleAaveLiquidityMining.sol',

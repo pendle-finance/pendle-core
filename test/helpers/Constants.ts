@@ -85,6 +85,7 @@ export const consts = {
   AAVE_INCENTIVES_CONTROLLER: '0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5',
   COMP_ETH: '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5',
   SUSHI_ADDRESS: '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2',
+  SUSHI_USDT_WETH_PID: 0
 };
 
 // export function setT0(time: BN) {
