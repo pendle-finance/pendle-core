@@ -25,7 +25,11 @@ pragma solidity 0.7.6;
 import "./IPendleYieldTokenHolder.sol";
 
 interface IPendleYieldTokenHolderV2 is IPendleYieldTokenHolder {
-    function pushYieldTokens(address to, uint256 amount) external returns (uint256);
+    function pushYieldTokens(
+        address to,
+        uint256 amount,
+        uint256 minNYieldAfterPush
+    ) external returns (uint256);
 
     function afterReceiveTokens() external;
 }

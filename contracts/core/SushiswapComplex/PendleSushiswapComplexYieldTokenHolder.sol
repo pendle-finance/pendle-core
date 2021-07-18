@@ -39,17 +39,16 @@ contract PendleSushiswapComplexYieldTokenHolder is PendleYieldTokenHolderBaseV2 
         masterChef.deposit(pid, IERC20(yieldToken).balanceOf(address(this)));
     }
 
-    function pushYieldTokens(address _to, uint256 _amount)
-        external
-        virtual
-        override
-        onlyForge
-        returns (uint256 outAmount)
-    {
+    function pushYieldTokens(
+        address _to,
+        uint256 _amount,
+        uint256 minNYieldAfterPush
+    ) external virtual override onlyForge returns (uint256 outAmount) {
         uint256 yieldTokenBal = masterChef.userInfo(pid, address(this)).amount;
         outAmount = Math.min(_amount, yieldTokenBal);
 
         masterChef.withdraw(pid, outAmount);
         IERC20(yieldToken).safeTransfer(_to, outAmount);
+        require(yieldTokenBal - outAmount >= minNYieldAfterPush, "INVARIANCE_ERROR");
     }
 }

@@ -52,15 +52,15 @@ contract PendleYieldTokenHolderBaseV2 is IPendleYieldTokenHolderV2, Withdrawable
 
     function afterReceiveTokens() external virtual override {} // intentionally left empty
 
-    function pushYieldTokens(address to, uint256 amount)
-        external
-        virtual
-        override
-        onlyForge
-        returns (uint256 outAmount)
-    {
-        outAmount = Math.min(amount, IERC20(yieldToken).balanceOf(address(this)));
+    function pushYieldTokens(
+        address to,
+        uint256 amount,
+        uint256 minNYieldAfterPush
+    ) external virtual override onlyForge returns (uint256 outAmount) {
+        uint256 yieldTokenBal = IERC20(yieldToken).balanceOf(address(this));
+        outAmount = Math.min(amount, yieldTokenBal);
         IERC20(yieldToken).transfer(to, outAmount);
+        require(yieldTokenBal - outAmount >= minNYieldAfterPush, "INVARIANCE_ERROR");
     }
 
     // The governance address will be able to withdraw any tokens except for

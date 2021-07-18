@@ -499,8 +499,15 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
         address _user,
         uint256 _amount
     ) internal virtual returns (uint256 outAmount) {
+        PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
+        uint256 otBalance = tokens.ot.balanceOf(yieldTokenHolders[_underlyingAsset][_expiry]);
+        uint256 minNYieldAfterPush = (
+            block.timestamp < _expiry
+                ? _calcUnderlyingToRedeem(_underlyingAsset, otBalance)
+                : _calcTotalAfterExpiry(_underlyingAsset, _expiry, otBalance)
+        );
         outAmount = IPendleYieldTokenHolderV2(yieldTokenHolders[_underlyingAsset][_expiry])
-        .pushYieldTokens(_user, _amount);
+        .pushYieldTokens(_user, _amount, minNYieldAfterPush);
     }
 
     function _getTokens(address _underlyingAsset, uint256 _expiry)
@@ -547,13 +554,11 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
         uint256 redeemedAmount
     ) internal virtual returns (uint256 totalAfterExpiry);
 
-    /// Calc the amount of underlying asset to redeem. Default is 1 OT -> 1 yieldToken, except for Compound
     function _calcUnderlyingToRedeem(address, uint256 _amountToRedeem)
         internal
         virtual
         returns (uint256 underlyingToRedeem);
 
-    /// Calc the amount of OT & XYT to mint. Default is 1 yieldToken -> 1 OT & 1 XYT, except for Compound
     function _calcAmountToMint(address, uint256 _amountToTokenize)
         internal
         virtual
