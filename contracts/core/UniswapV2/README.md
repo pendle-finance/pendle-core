@@ -1,14 +1,3 @@
-# UniswapV2
-
-## Criterias of tokens to be compatible with UniswapV2
-
-- Is a UniswapV2's LP token
-
-## Forge
-
-- `PendleUniswapV2Forge` inherits from `PendleForgeBaseV2`, but override all interest-related function
-- Please refer to the UniswapV2's detailed specs for more information
-
 ## YieldContractDeployer & YieldTokenHolder
 
 - UniswapV2 will use the `PendleYieldTokenHolderBaseV2` & `PendleYieldContractDeployerBaseV2` directly since it has no special requirements (no rewards, no external pools to lock tokens in)

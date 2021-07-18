@@ -28,16 +28,4 @@ contract PendleCompoundV2YieldTokenHolder is PendleYieldTokenHolderBaseV2 {
         holders[0] = address(this);
         comptroller.claimComp(holders, cTokens, false, true);
     }
-
-    function pushYieldTokens(
-        address to,
-        uint256 amount,
-        uint256 minNYieldAfterPush
-    ) external virtual override onlyForge returns (uint256 outAmount) {
-        uint256 yieldTokenBal = IERC20(yieldToken).balanceOf(address(this));
-        outAmount = Math.min(amount, yieldTokenBal);
-
-        IERC20(yieldToken).safeTransfer(to, outAmount);
-        require(yieldTokenBal - outAmount >= minNYieldAfterPush, "INVARIANCE_ERROR");
-    }
 }

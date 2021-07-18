@@ -9,12 +9,17 @@ import "../../interfaces/IPendleGenOneForge.sol";
 import "../abstractV2/PendleForgeBaseV2.sol";
 import "../../libraries/UniswapV2Lib.sol";
 
+/*
+ * Most of the calculation logic of this contract is the same as CompoundV2
+ */
 contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
     using SafeMath for uint256;
     using Math for uint256;
 
     mapping(address => mapping(uint256 => uint256)) public lastRateBeforeExpiry;
     mapping(address => mapping(uint256 => mapping(address => uint256))) public lastRate;
+    bytes private constant CODE_HASH =
+        hex"96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f";
 
     constructor(
         address _governanceManager,
@@ -34,6 +39,9 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
         )
     {}
 
+    /**
+    @dev the logic of verifying tokens is the same as Uniswap
+    */
     function verifyToken(address _underlyingAsset, uint256[] calldata _tokenInfo)
         public
         virtual
@@ -42,11 +50,18 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
         // in the case of Uniswap, _underlyingAsset == tokenAddr
         require(_tokenInfo.length == 0, "INVALID_TOKEN_INFO");
         IUniswapV2Pair pair = IUniswapV2Pair(_underlyingAsset);
-
-        address poolAddr = UniswapV2Library.pairFor(pair.factory(), pair.token0(), pair.token1());
+        address poolAddr = UniswapV2Library.pairFor(
+            pair.factory(),
+            pair.token0(),
+            pair.token1(),
+            CODE_HASH
+        );
         require(poolAddr == _underlyingAsset, "INVALID_TOKEN_ADDR");
     }
 
+    /**
+    @dev for the logic of the exchangeRate, please refer to the specs
+    */
     function getExchangeRate(address _underlyingAsset)
         public
         view
@@ -60,6 +75,9 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
         rate = currentK.rdiv(totalSupply);
     }
 
+    /**
+    @dev for Uniswap, the yieldBearingToken of an asset is itself
+    */
     function getYieldBearingToken(address _underlyingAsset)
         public
         view
@@ -73,9 +91,9 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
     function _calcTotalAfterExpiry(
         address _underlyingAsset,
         uint256 _expiry,
-        uint256 redeemedAmount
+        uint256 _redeemedAmount
     ) internal view override returns (uint256 totalAfterExpiry) {
-        totalAfterExpiry = redeemedAmount.rdiv(lastRateBeforeExpiry[_underlyingAsset][_expiry]);
+        totalAfterExpiry = _redeemedAmount.rdiv(lastRateBeforeExpiry[_underlyingAsset][_expiry]);
     }
 
     function getExchangeRateBeforeExpiry(address _underlyingAsset, uint256 _expiry)
@@ -110,7 +128,7 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
     }
 
     function _updateDueInterests(
-        uint256 principal,
+        uint256 _principal,
         address _underlyingAsset,
         uint256 _expiry,
         address _user
@@ -124,7 +142,7 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
             return;
         }
 
-        uint256 interestFromXyt = principal.mul(currentRate.sub(prevRate)).rdiv(
+        uint256 interestFromXyt = _principal.mul(currentRate.sub(prevRate)).rdiv(
             prevRate.mul(currentRate)
         );
 

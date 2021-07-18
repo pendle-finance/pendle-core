@@ -29,6 +29,8 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
         IPendleYieldToken ot;
     }
 
+    // the container here will contain any data needed by tokens. Fields of type that are not
+    // uin256 will be upcasted to uint256 and downcasted when use
     struct TokenInfo {
         bool registered;
         uint256[] container;
@@ -53,7 +55,7 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     string private constant OT = "OT";
     string private constant XYT = "YT";
 
-    event RegisterTokens(bytes32 forgeId, address token, uint256[] container);
+    event RegisterTokens(bytes32 forgeId, address underlyingAsset, uint256[] container);
 
     modifier onlyXYT(address _underlyingAsset, uint256 _expiry) {
         require(
@@ -86,7 +88,9 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     ) PermissionsV2(_governanceManager) {
         require(address(_router) != address(0), "ZERO_ADDRESS");
         require(_forgeId != 0x0, "ZERO_BYTES");
-
+        require(_rewardToken != address(0), "ZERO_ADDRESS");
+        // In the case there is no rewardToken, a valid ERC20 token must still be passed in for
+        // compatibility reasons
         router = _router;
         forgeId = _forgeId;
         IPendleData _dataTemp = IPendleRouter(_router).data();
@@ -129,6 +133,11 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
         );
     }
 
+    /**
+    @dev each element in the _underlyingAssets array will have one auxillary array in _tokenInfos
+    to store necessary data.
+    @dev only governance can call this. In V2 we no longer allow users to self-register new tokens
+    */
     function registerTokens(address[] calldata _underlyingAssets, uint256[][] calldata _tokenInfos)
         external
         virtual
@@ -141,19 +150,19 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
             verifyToken(_underlyingAssets[i], _tokenInfos[i]);
             info.registered = true;
             info.container = _tokenInfos[i];
-            // by default, the address of the token will be the same as its underlyingAsset
-            // i.e: the underlyingAsset of the token its itself
             emit RegisterTokens(forgeId, _underlyingAssets[i], _tokenInfos[i]);
         }
     }
 
-    // the verify function should be implemented on a best effort basis, since we only call from governance anyway
+    /**
+    @dev this function should be implemented on a best effort basis, since we only call from
+    governance anyway
+    */
     function verifyToken(address _underlyingAsset, uint256[] calldata _tokenInfo) public virtual;
 
     /**
-    Use:
-        To create a newYieldContract
-    Conditions:
+    @notice to create a newYieldContract
+    @dev Conditions:
         * only call by Router
         * the yield contract for this pair of _underlyingAsset & _expiry must not exist yet (checked on Router)
     */
@@ -186,11 +195,11 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
             _expiry
         );
 
-        // Because we have to conform with the IPendleForge interface, so we must store
+        // Because we have to conform with the IPendleForge interface, we must store
         // YieldContractDeployerV2 as V1, then upcast here
         yieldTokenHolders[_underlyingAsset][_expiry] = IPendleYieldContractDeployerV2(
             address(yieldContractDeployer)
-        ).deployYieldTokenHolder(yieldToken, _expiry, getOptContainer(_underlyingAsset));
+        ).deployYieldTokenHolder(yieldToken, _expiry, tokenInfo[_underlyingAsset].container);
 
         data.storeTokens(forgeId, ot, xyt, _underlyingAsset, _expiry);
 
@@ -198,15 +207,11 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     }
 
     /**
-    Use:
-        * To redeem the underlying asset & due interests after the XYT has expired
-    Conditions:
+    @notice To redeem the underlying asset & due interests after the XYT has expired
+    @dev Conditions:
         * only be called by Router
         * only callable after XYT has expired (checked on Router)
         * If _transferOutRate != RONE, there should be a forwardYieldToken call outside
-    Consideration:
-        * Why not use redeemUnderlying? Because redeemAfterExpiry doesn't require XYT (which has zero value now).
-            Users just need OT to redeem
     */
     function redeemAfterExpiry(
         address _user,
@@ -248,9 +253,8 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     }
 
     /**
-    Use:
-        * To redeem the underlying asset & due interests before the expiry of the XYT. In this case, for each OT used
-        to redeem, there must be an XYT (of the same yield contract)
+    @notice To redeem the underlying asset & due interests before the expiry of the XYT.
+    In this case, for each OT used to redeem, there must be an XYT (of the same yield contract)
     Conditions:
         * only be called by Router
         * only callable if the XYT hasn't expired
@@ -269,20 +273,21 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
 
         /*
         * calc the amount of underlying asset for OT + the amount of dueInterests for XYT
-        * dueInterests for XYT has been updated during the process of burning XYT, so we skip updating dueInterests in
-            the _beforeTransferDueInterests function
+        * dueInterests for XYT has been updated during the process of burning XYT, so we skip
+        updating dueInterests in the _beforeTransferDueInterests function
         */
         redeemedAmount = _calcUnderlyingToRedeem(_underlyingAsset, _amountToRedeem).add(
             _beforeTransferDueInterests(tokens, _underlyingAsset, _expiry, _user, true)
         );
 
-        // transfer the amountTransferOut back to the user
+        // transfer back to the user
         redeemedAmount = _pushYieldToken(_underlyingAsset, _expiry, _user, redeemedAmount);
 
         // Notice for anyone taking values from this event:
         //   The redeemedAmount includes the interest due to the XYT held
-        //   to get the exact yieldToken redeemed from OT+XYT, we need to deduct the (amount +forgeFeeAmount) of interests
-        //   settled that was emitted in the DueInterestsSettled event emitted earlier in this same transaction
+        //   to get the exact yieldToken redeemed from OT+XYT, we need to deduct the
+        //   (amount +forgeFeeAmount) of interests settled that was emitted in the
+        //   DueInterestsSettled event emitted earlier in this same transaction
         emit RedeemYieldToken(
             forgeId,
             _underlyingAsset,
@@ -296,9 +301,9 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     }
 
     /**
-    Use:
-        * To redeem the due interests. This function can always be called regardless of whether the XYT has expired or not
-    Conditions:
+    @notice To redeem the due interests. This function can always be called regardless of whether
+        the XYT has expired or not
+    @dev Conditions:
         * only be called by Router
     */
     function redeemDueInterests(
@@ -316,11 +321,10 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     }
 
     /**
-    Use:
-        * To update the dueInterests for users(before their balances of XYT changes)
-        * This must be called before any transfer / mint/ burn action of XYT
+    @notice To update the dueInterests for users(before their balances of XYT changes)
+    @dev This must be called before any transfer / mint/ burn action of XYT
         (and this has been implemented in the beforeTokenTransfer of the PendleFutureYieldToken)
-    Conditions:
+    @dev Conditions:
         * Can only be called by the respective XYT contract, before transferring XYTs
     */
     function updateDueInterests(
@@ -335,11 +339,10 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     }
 
     /**
-    Use:
-        * To redeem the rewards (COMP and StkAAVE) for users(before their balances of OT changes)
-        * This must be called before any transfer / mint/ burn action of OT
+    @notice To redeem the rewards (COMP and StkAAVE) for users(before their balances of OT changes)
+    @dev This must be called before any transfer / mint/ burn action of OT
         (and this has been implemented in the beforeTokenTransfer of the PendleOwnershipToken)
-    Conditions:
+    @dev Conditions:
         * Can only be called by the respective OT contract, before transferring OTs
     Note:
         This function is just a proxy to call to rewardManager
@@ -354,10 +357,9 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     }
 
     /**
-    Use:
-        * To mint OT & XYT given that the user has transferred in _amountToTokenize of aToken/cToken
-        * The newly minted OT & XYT can be minted to somebody else different from the user who transfer the aToken/cToken in
-    Conditions:
+    @notice To mint OT & XYT given that the user has transferred in _amountToTokenize of yieldToken
+    @dev The newly minted OT & XYT can be minted to somebody else different from the user who transfer the aToken/cToken in
+    @dev Conditions:
         * Should only be called by Router
         * The yield contract (OT & XYT) must not be expired yet (checked at Router)
     */
@@ -405,13 +407,10 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     }
 
     /**
-    Use:
-        * To withdraw the forgeFee
-    Conditions:
+    @notice To withdraw the forgeFee
+    @dev Conditions:
         * Should only be called by Governance
         * This function must be the only way to withdrawForgeFee
-    Consideration:
-        * Although this function can be called directly, it doesn't have ReentrancyGuard since it can only be called by governance
     */
     function withdrawForgeFee(address _underlyingAsset, uint256 _expiry)
         external
@@ -435,11 +434,6 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
         virtual
         override
         returns (address);
-
-    function getOptContainer(address _underlyingAsset) public view returns (uint256[] memory) {
-        require(tokenInfo[_underlyingAsset].registered, "INVALID_UNDERLYING_ASSET");
-        return tokenInfo[_underlyingAsset].container;
-    }
 
     /**
     @notice To be called before the dueInterest of any users is redeemed.
@@ -485,13 +479,15 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     }
 
     /**
-    Use:
-        * Must be the only way to transfer aToken/cToken out
-    Consideration:
-        * Due to mathematical precision, in some extreme cases, the forge may lack a few wei of tokens to transfer back
-            That's why there is a call to minimize the amount to transfer out with the balance of the contract
-        * Nonetheless, because we are collecting some forge fee, so it's expected that all users will receive the full
-        amount of aToken/cToken (and we will receive a little less than the correct amount)
+    @dev Must be the only way to transfer yieldToken out
+    @dev summary of invariance logic:
+    - making sure that the underlyingAsset of OTs are always protected
+    - this pushYieldTokens function rely on the same calc function as other functions. Why it
+    is safe to do that? Because to drain funds, hackers need to compromise the calc function to
+    return a very large result (hence large _amount in this function) but in the same transaction,
+    they also need to compromise the very same calc function to return a very small result (so that
+    to fool the contract that all the underlyingAsset of OTs are still intact). Doing these 2
+    compromises in one single transaction is much harder than doing just one compromise
     */
     function _pushYieldToken(
         address _underlyingAsset,
@@ -501,11 +497,9 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     ) internal virtual returns (uint256 outAmount) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         uint256 otBalance = tokens.ot.balanceOf(yieldTokenHolders[_underlyingAsset][_expiry]);
-        uint256 minNYieldAfterPush = (
-            block.timestamp < _expiry
-                ? _calcUnderlyingToRedeem(_underlyingAsset, otBalance)
-                : _calcTotalAfterExpiry(_underlyingAsset, _expiry, otBalance)
-        );
+        uint256 minNYieldAfterPush = block.timestamp < _expiry
+            ? _calcUnderlyingToRedeem(_underlyingAsset, otBalance)
+            : _calcTotalAfterExpiry(_underlyingAsset, _expiry, otBalance);
         outAmount = IPendleYieldTokenHolderV2(yieldTokenHolders[_underlyingAsset][_expiry])
         .pushYieldTokens(_user, _amount, minNYieldAfterPush);
     }
@@ -536,10 +530,9 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     ) internal virtual;
 
     /**
-    Use:
-        * To update the amount of forgeFee (taking into account the compound interest effect)
-        * To be called whenever the forge collect fees, or before withdrawing the fee
-    * @param _feeAmount the new fee that this forge just collected
+    @notice To update the amount of forgeFee (taking into account the compound interest effect)
+    @dev To be called whenever the forge collect fees, or before withdrawing the fee
+    @param _feeAmount the new fee that this forge just collected
     */
     function _updateForgeFee(
         address _underlyingAsset,

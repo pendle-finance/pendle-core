@@ -44,13 +44,16 @@ contract PendleYieldTokenHolderBaseV2 is IPendleYieldTokenHolderV2, Withdrawable
     // this will allow a spender to spend the whole balance of the specified tokens
     // the spender should ideally be a contract with logic for users to withdraw out their funds.
     function setUpEmergencyMode(address spender) external virtual override onlyForge {
+        // by default we store all the tokens inside this contract, so just approve
         IERC20(yieldToken).safeApprove(spender, type(uint256).max);
         IERC20(rewardToken).safeApprove(spender, type(uint256).max);
     }
 
-    function redeemRewards() external virtual override {} // intentionally left empty
+    /// @dev by default the token doesn't have any rewards
+    function redeemRewards() external virtual override {}
 
-    function afterReceiveTokens() external virtual override {} // intentionally left empty
+    /// @dev by default we will keep all tokens in this contract, so no further actions necessary
+    function afterReceiveTokens() external virtual override {}
 
     function pushYieldTokens(
         address to,

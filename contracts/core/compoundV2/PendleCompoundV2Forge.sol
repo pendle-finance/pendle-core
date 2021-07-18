@@ -9,6 +9,10 @@ import "../abstractV2/PendleForgeBaseV2.sol";
 import "../../interfaces/IComptroller.sol";
 import "../../interfaces/ICToken.sol";
 
+/*
+- For this Forge, the container of each underlyingAsset will contain only the address of its
+corresponding cToken
+*/
 contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
     using SafeMath for uint256;
     using Math for uint256;
@@ -47,6 +51,7 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
         tokenInfo[weth].container[0] = uint256(_coumpoundEth);
     }
 
+    /// @inheritdoc PendleForgeBaseV2
     function verifyToken(address _underlyingAsset, uint256[] calldata _tokenInfo)
         public
         virtual
@@ -67,6 +72,7 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
         return ICToken(cTokenAddr).exchangeRateCurrent();
     }
 
+    /// @inheritdoc PendleForgeBaseV2
     function getYieldBearingToken(address _underlyingAsset)
         public
         view
@@ -78,14 +84,19 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
         return cTokenAddr;
     }
 
+    /// @inheritdoc PendleForgeBaseV2
     function _calcTotalAfterExpiry(
         address _underlyingAsset,
         uint256 _expiry,
-        uint256 redeemedAmount
+        uint256 _redeemedAmount
     ) internal view override returns (uint256 totalAfterExpiry) {
-        totalAfterExpiry = redeemedAmount.rdiv(lastRateBeforeExpiry[_underlyingAsset][_expiry]);
+        totalAfterExpiry = _redeemedAmount.rdiv(lastRateBeforeExpiry[_underlyingAsset][_expiry]);
     }
 
+    /**
+    @dev this function serves functions that take into account the lastRateBeforeExpiry
+    Else, call getExchangeRate instead
+    */
     function getExchangeRateBeforeExpiry(address _underlyingAsset, uint256 _expiry)
         internal
         returns (uint256)
@@ -99,6 +110,7 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
         return exchangeRate;
     }
 
+    /// @inheritdoc PendleForgeBaseV2
     function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
         internal
         override
@@ -107,6 +119,7 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
         underlyingToRedeem = _amountToRedeem.rdiv(getExchangeRate(_underlyingAsset));
     }
 
+    /// @inheritdoc PendleForgeBaseV2
     function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)
         internal
         override
@@ -115,8 +128,13 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
         amountToMint = _amountToTokenize.rmul(getExchangeRate(_underlyingAsset));
     }
 
+    /**
+    @dev no compound interest like AaveForge
+    @dev Since there is no compound effect, we don't need to calc the compound interest of the XYT
+    after it has expired like Aave, and also we don't need to update the dueInterest
+    */
     function _updateDueInterests(
-        uint256 principal,
+        uint256 _principal,
         address _underlyingAsset,
         uint256 _expiry,
         address _user
@@ -130,7 +148,7 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
             return;
         }
 
-        uint256 interestFromXyt = principal.mul(currentRate.sub(prevRate)).rdiv(
+        uint256 interestFromXyt = _principal.mul(currentRate.sub(prevRate)).rdiv(
             prevRate.mul(currentRate)
         );
 
@@ -140,6 +158,10 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
         .add(interestFromXyt);
     }
 
+    /**
+    @dev different from AaveForge, here there is no compound interest occurred because the amount
+    of cToken always remains unchanged, so just add the _feeAmount in
+    */
     function _updateForgeFee(
         address _underlyingAsset,
         uint256 _expiry,
