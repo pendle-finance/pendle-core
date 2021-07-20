@@ -496,7 +496,7 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
         uint256 _amount
     ) internal virtual returns (uint256 outAmount) {
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
-        uint256 otBalance = tokens.ot.balanceOf(yieldTokenHolders[_underlyingAsset][_expiry]);
+        uint256 otBalance = tokens.ot.totalSupply();
         uint256 minNYieldAfterPush = block.timestamp < _expiry
             ? _calcUnderlyingToRedeem(_underlyingAsset, otBalance)
             : _calcTotalAfterExpiry(_underlyingAsset, _expiry, otBalance);
