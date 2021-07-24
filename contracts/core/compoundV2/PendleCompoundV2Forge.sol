@@ -4,7 +4,7 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../../interfaces/IPendleGenOneForge.sol";
+import "../../interfaces/IPendleGenericForge.sol";
 import "../abstractV2/PendleForgeBaseV2.sol";
 import "../../interfaces/IComptroller.sol";
 import "../../interfaces/ICToken.sol";
@@ -13,7 +13,7 @@ import "../../interfaces/ICToken.sol";
 - For this Forge, the container of each underlyingAsset will contain only the address of its
 corresponding cToken
 */
-contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
+contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     using SafeMath for uint256;
     using Math for uint256;
 

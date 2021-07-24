@@ -1,9 +1,9 @@
 import { BigNumber as BN, Contract, providers, Wallet } from 'ethers';
 import { checkDisabled, Mode } from '.';
 import PendleCompoundLiquidityMining from '../../../build/artifacts/contracts/core/compound/PendleCompoundLiquidityMining.sol/PendleCompoundLiquidityMining.json';
-import PendleGenOneLiquidityMining from '../../../build/artifacts/contracts/core/GenOne/PendleGenOneLiquidityMining.sol/PendleGenOneLiquidityMining.json';
+import PendleGenericLiquidityMining from '../../../build/artifacts/contracts/core/Generic/PendleGenericLiquidityMining.sol/PendleGenericLiquidityMining.json';
 import PendleWhitelist from '../../../build/artifacts/contracts/core/PendleWhitelist.sol/PendleWhitelist.json';
-import PendleSushiswapComplexLiquidityMining from '../../../build/artifacts/contracts/core/SushiswapComplex/PendleSushiswapComplexLiquidityMining.sol/PendleSushiswapComplexLiquidityMining.json';
+import PendleSLPLiquidityMining from '../../../build/artifacts/contracts/core/SushiswapComplex/PendleSLPLiquidityMining.sol/PendleSLPLiquidityMining.json';
 import MockPendleAaveLiquidityMining from '../../../build/artifacts/contracts/mock/MockPendleAaveLiquidityMining.sol/MockPendleAaveLiquidityMining.json';
 import PENDLE from '../../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json';
 import { amountToWei, consts, tokens } from '../../helpers';
@@ -275,7 +275,7 @@ export async function liquidityMiningFixture(
       amount.mul(10 ** 6),
       consts.HG
     );
-    scLiquidityMining = await deployContract(alice, PendleGenOneLiquidityMining, [
+    scLiquidityMining = await deployContract(alice, PendleGenericLiquidityMining, [
       core.govManager.address,
       core.pausingManager.address,
       whitelist.address,
@@ -315,7 +315,7 @@ export async function liquidityMiningFixture(
       amount.mul(10 ** 6),
       consts.HG
     );
-    ssLiquidityMining = await deployContract(alice, PendleGenOneLiquidityMining, [
+    ssLiquidityMining = await deployContract(alice, PendleGenericLiquidityMining, [
       core.govManager.address,
       core.pausingManager.address,
       whitelist.address,
@@ -346,7 +346,7 @@ export async function liquidityMiningFixture(
   }
 
   if (!checkDisabled(Mode.SUSHISWAP_LIQ_V2)) {
-    sushiLiquidityMiningV2 = await deployContract(alice, PendleSushiswapComplexLiquidityMining, [
+    sushiLiquidityMiningV2 = await deployContract(alice, PendleSLPLiquidityMining, [
       core.govManager.address,
       core.pausingManager.address,
       whitelist.address,

@@ -25,4 +25,4 @@ pragma solidity 0.7.6;
 
 import "./IPendleCompoundForge.sol";
 
-interface IPendleGenOneForge is IPendleCompoundForge {}
+interface IPendleGenericForge is IPendleCompoundForge {}

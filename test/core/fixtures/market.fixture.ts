@@ -1,7 +1,7 @@
 import { Contract, providers, Wallet } from 'ethers';
 import hre from 'hardhat';
 import PendleCompoundMarket from '../../../build/artifacts/contracts/core/compound/PendleCompoundMarket.sol/PendleCompoundMarket.json';
-import PendleGenOneMarket from '../../../build/artifacts/contracts/core/GenOne/PendleGenOneMarket.sol/PendleGenOneMarket.json';
+import PendleGenericMarket from '../../../build/artifacts/contracts/core/Generic/PendleGenericMarket.sol/PendleGenericMarket.json';
 import MockMarketMath from '../../../build/artifacts/contracts/mock/MockMarketMath.sol/MockMarketMath.json';
 import MockPendleAaveMarket from '../../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json';
 import TestToken from '../../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json';
@@ -196,7 +196,7 @@ export async function marketFixture(_: Wallet[], provider: providers.Web3Provide
       scFutureYieldToken.address,
       testToken.address
     );
-    scMarket = new Contract(scMarketAddress, PendleGenOneMarket.abi, alice);
+    scMarket = new Contract(scMarketAddress, PendleGenericMarket.abi, alice);
   }
 
   if (!checkDisabled(Mode.SUSHISWAP_SIMPLE)) {
@@ -223,7 +223,7 @@ export async function marketFixture(_: Wallet[], provider: providers.Web3Provide
       ssFutureYieldToken.address,
       testToken.address
     );
-    ssMarket = new Contract(ssMarketAddress, PendleGenOneMarket.abi, alice);
+    ssMarket = new Contract(ssMarketAddress, PendleGenericMarket.abi, alice);
   }
 
   const totalSupply = await testToken.totalSupply();

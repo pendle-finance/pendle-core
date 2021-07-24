@@ -4,7 +4,7 @@ pragma abicoder v2;
 
 import "../compound/PendleCompoundMarket.sol";
 
-contract PendleGenOneMarket is PendleCompoundMarket {
+contract PendleGenericMarket is PendleCompoundMarket {
     constructor(
         address _governanceManager,
         address _xyt,

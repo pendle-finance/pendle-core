@@ -4,4 +4,4 @@
 
 ## Market, MarketFactory & LiquidityMining
 
-- Similar to UniswapV2, SushiswapSimple will use 3 contracts from `GenOne` folder because UniswapV2's YT has the same interest distribution mechanism as Compound's YT
+- Similar to UniswapV2, SushiswapSimple will use 3 contracts from `Generic` folder because UniswapV2's YT has the same interest distribution mechanism as Compound's YT

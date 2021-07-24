@@ -5,14 +5,14 @@ pragma abicoder v2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../../interfaces/IUniswapV2Pair.sol";
-import "../../interfaces/IPendleGenOneForge.sol";
+import "../../interfaces/IPendleGenericForge.sol";
 import "../abstractV2/PendleForgeBaseV2.sol";
 import "../../libraries/UniswapV2Lib.sol";
 
 /*
  * Most of the calculation logic of this contract is the same as CompoundV2
  */
-contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenOneForge {
+contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     using SafeMath for uint256;
     using Math for uint256;
 

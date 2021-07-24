@@ -1,8 +1,7 @@
 import { BigNumber as BN, Contract, providers, Wallet } from 'ethers';
 import PendleAaveMarketFactory from '../../../build/artifacts/contracts/core/aave/PendleAaveMarketFactory.sol/PendleAaveMarketFactory.json';
 import PendleCompoundMarketFactory from '../../../build/artifacts/contracts/core/compound/PendleCompoundMarketFactory.sol/PendleCompoundMarketFactory.json';
-import PendleSushiswapComplexMarketFactory from '../../../build/artifacts/contracts/core/GenOne/PendleGenOneMarketFactory.sol/PendleGenOneMarketFactory.json';
-import PendleSushiswapSimpleMarketFactory from '../../../build/artifacts/contracts/core/GenOne/PendleGenOneMarketFactory.sol/PendleGenOneMarketFactory.json';
+import PendleGenericMarketFactory from '../../../build/artifacts/contracts/core/Generic/PendleGenericMarketFactory.sol/PendleGenericMarketFactory.json';
 import PendleData from '../../../build/artifacts/contracts/core/PendleData.sol/PendleData.json';
 import PendleGovernanceManager from '../../../build/artifacts/contracts/core/PendleGovernanceManager.sol/PendleGovernanceManager.json';
 import PendlePausingManager from '../../../build/artifacts/contracts/core/PendlePausingManager.sol/PendlePausingManager.json';
@@ -63,13 +62,13 @@ export async function coreFixture(_: Wallet[], provider: providers.Web3Provider)
     ]);
   }
   if (!checkDisabled(Mode.SUSHISWAP_COMPLEX)) {
-    scMarketFactory = await deployContract(alice, PendleSushiswapComplexMarketFactory, [
+    scMarketFactory = await deployContract(alice, PendleGenericMarketFactory, [
       router.address,
       consts.MARKET_FACTORY_SUSHISWAP_COMPLEX,
     ]);
   }
   if (!checkDisabled(Mode.SUSHISWAP_SIMPLE)) {
-    ssMarketFactory = await deployContract(alice, PendleSushiswapSimpleMarketFactory, [
+    ssMarketFactory = await deployContract(alice, PendleGenericMarketFactory, [
       router.address,
       consts.MARKET_FACTORY_SUSHISWAP_SIMPLE,
     ]);

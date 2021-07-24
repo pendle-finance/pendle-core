@@ -2,10 +2,10 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "../abstractV2/PendleLiquidityMiningBaseV2.sol";
+import "..//abstractV2/PendleLiquidityMiningBaseV2.sol";
 import "../../interfaces/IMasterChef.sol";
 
-contract PendleSushiswapComplexLiquidityMining is PendleLiquidityMiningBaseV2 {
+contract PendleSLPLiquidityMining is PendleLiquidityMiningBaseV2 {
     using SafeERC20 for IERC20;
     IMasterChef public immutable masterChef;
     uint256 public immutable pid;

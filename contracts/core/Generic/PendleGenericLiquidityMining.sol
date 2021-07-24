@@ -3,7 +3,7 @@ pragma solidity 0.7.6;
 
 import "../compound/PendleCompoundLiquidityMining.sol";
 
-contract PendleGenOneLiquidityMining is PendleCompoundLiquidityMining {
+contract PendleGenericLiquidityMining is PendleCompoundLiquidityMining {
     constructor(
         address _governanceManager,
         address _pausingManager,
