@@ -495,6 +495,7 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
         address _user,
         uint256 _amount
     ) internal virtual returns (uint256 outAmount) {
+        if (_amount == 0) return 0;
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         uint256 otBalance = tokens.ot.totalSupply();
         uint256 minNYieldAfterPush = block.timestamp < _expiry
