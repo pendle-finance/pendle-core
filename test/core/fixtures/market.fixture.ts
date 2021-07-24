@@ -19,7 +19,7 @@ import { CoreFixture } from './core.fixture';
 import { RouterFixture, routerFixtureNoMint } from './router.fixture';
 import { SushiswapComplexForgeFixture } from './SushiswapComplexForge.fixture';
 import { SushiswapSimpleForgeFixture } from './SushiswapSimpleForge.fixture';
-
+import { Mode, checkDisabled } from '.';
 const { waffle } = hre;
 const { deployContract, loadFixture } = waffle;
 
@@ -54,148 +54,186 @@ export async function marketFixture(_: Wallet[], provider: providers.Web3Provide
   const { ssFutureYieldToken } = ssForge;
 
   const testToken = await deployContract(alice, TestToken, ['Test Token', 'TEST', 6]);
+  let a2Market: Contract = {} as Contract;
+  let a2Market18: Contract = {} as Contract;
+  let cMarket: Contract = {} as Contract;
+  let a2MarketEth: Contract = {} as Contract;
+  let cMarketEth: Contract = {} as Contract;
+  let cMarket8: Contract = {} as Contract;
+  let scMarket: Contract = {} as Contract;
+  let ssMarket: Contract = {} as Contract;
 
-  for (var person of [alice, bob, charlie, dave]) {
-    await mintXytAave(tokens.USDT, person, consts.INITIAL_OT_XYT_AMOUNT, routerFix, consts.T0_A2.add(consts.SIX_MONTH));
-    await mintXytAave(tokens.UNI, person, consts.INITIAL_OT_XYT_AMOUNT, routerFix, consts.T0_A2.add(consts.SIX_MONTH));
-    await mintXytCompound(
-      tokens.USDT,
-      person,
-      consts.INITIAL_OT_XYT_AMOUNT,
-      routerFix,
-      consts.T0_C.add(consts.SIX_MONTH)
+  if (!checkDisabled(Mode.AAVE_V2)) {
+    for (var person of [alice, bob, charlie, dave]) {
+      await mintXytAave(
+        tokens.USDT,
+        person,
+        consts.INITIAL_OT_XYT_AMOUNT,
+        routerFix,
+        consts.T0_A2.add(consts.SIX_MONTH)
+      );
+      await mintXytAave(
+        tokens.UNI,
+        person,
+        consts.INITIAL_OT_XYT_AMOUNT,
+        routerFix,
+        consts.T0_A2.add(consts.SIX_MONTH)
+      );
+    }
+    await data.addMarketFactory(consts.MARKET_FACTORY_AAVE_V2, a2MarketFactory.address, consts.HG);
+    await data.setForgeFactoryValidity(consts.FORGE_AAVE_V2, consts.MARKET_FACTORY_AAVE_V2, true, consts.HG);
+    // a2XYT - testToken
+    await router.createMarket(consts.MARKET_FACTORY_AAVE_V2, a2FutureYieldToken.address, testToken.address, consts.HG);
+    // a2XYT18 - testToken
+    await router.createMarket(
+      consts.MARKET_FACTORY_AAVE_V2,
+      a2FutureYieldToken18.address,
+      testToken.address,
+      consts.HG
     );
-    await mintXytCompound(
-      tokens.WETH,
-      person,
-      consts.INITIAL_OT_XYT_AMOUNT,
-      routerFix,
-      consts.T0_C.add(consts.SIX_MONTH)
+    // a2XYT - WETH
+    await router.createMarket(
+      consts.MARKET_FACTORY_AAVE_V2,
+      a2FutureYieldToken.address,
+      tokens.WETH.address,
+      consts.HG
     );
-    await mintXytSushiswapComplexFixed(person, routerFix, consts.T0_SC.add(consts.SIX_MONTH));
-    await mintXytSushiswapSimpleFixed(person, routerFix, consts.T0_SS.add(consts.SIX_MONTH));
+
+    const a2MarketAddress = await data.getMarket(
+      consts.MARKET_FACTORY_AAVE_V2,
+      a2FutureYieldToken.address,
+      testToken.address
+    );
+
+    const a2Market18Address = await data.getMarket(
+      consts.MARKET_FACTORY_AAVE_V2,
+      a2FutureYieldToken18.address,
+      testToken.address
+    );
+
+    const a2MarketEthAddress = await data.getMarket(
+      consts.MARKET_FACTORY_AAVE_V2,
+      a2FutureYieldToken.address,
+      tokens.WETH.address
+    );
+    a2Market = new Contract(a2MarketAddress, MockPendleAaveMarket.abi, alice);
+    a2Market18 = new Contract(a2Market18Address, MockPendleAaveMarket.abi, alice);
+    a2MarketEth = new Contract(a2MarketEthAddress, MockPendleAaveMarket.abi, alice);
+  }
+
+  if (!checkDisabled(Mode.COMPOUND)) {
+    for (var person of [alice, bob, charlie, dave]) {
+      await mintXytCompound(
+        tokens.USDT,
+        person,
+        consts.INITIAL_OT_XYT_AMOUNT,
+        routerFix,
+        consts.T0_C.add(consts.SIX_MONTH)
+      );
+      await mintXytCompound(
+        tokens.WETH,
+        person,
+        consts.INITIAL_OT_XYT_AMOUNT,
+        routerFix,
+        consts.T0_C.add(consts.SIX_MONTH)
+      );
+    }
+    await data.addMarketFactory(consts.MARKET_FACTORY_COMPOUND, cMarketFactory.address, consts.HG);
+    await data.setForgeFactoryValidity(consts.FORGE_COMPOUND, consts.MARKET_FACTORY_COMPOUND, true, consts.HG);
+    // cXYT - testToken
+    await router.createMarket(consts.MARKET_FACTORY_COMPOUND, cFutureYieldToken.address, testToken.address, consts.HG);
+    // cXYT18 - testToken
+    await router.createMarket(consts.MARKET_FACTORY_COMPOUND, cFutureYieldToken8.address, testToken.address, consts.HG);
+    // cXYT - WETH
+    await router.createMarket(
+      consts.MARKET_FACTORY_COMPOUND,
+      cFutureYieldToken.address,
+      tokens.WETH.address,
+      consts.HG
+    );
+    const cMarketAddress = await data.getMarket(
+      consts.MARKET_FACTORY_COMPOUND,
+      cFutureYieldToken.address,
+      testToken.address
+    );
+
+    const cMarket8Address = await data.getMarket(
+      consts.MARKET_FACTORY_COMPOUND,
+      cFutureYieldToken8.address,
+      testToken.address
+    );
+
+    const cMarketEthAddress = await data.getMarket(
+      consts.MARKET_FACTORY_COMPOUND,
+      cFutureYieldToken.address,
+      tokens.WETH.address
+    );
+    cMarket = new Contract(cMarketAddress, PendleCompoundMarket.abi, alice);
+    cMarket8 = new Contract(cMarket8Address, PendleCompoundMarket.abi, alice);
+    cMarketEth = new Contract(cMarketEthAddress, MockPendleAaveMarket.abi, alice);
+  }
+
+  if (!checkDisabled(Mode.SUSHISWAP_COMPLEX)) {
+    for (var person of [alice, bob, charlie, dave]) {
+      await mintXytSushiswapComplexFixed(person, routerFix, consts.T0_SC.add(consts.SIX_MONTH));
+    }
+    await data.addMarketFactory(consts.MARKET_FACTORY_SUSHISWAP_COMPLEX, scMarketFactory.address, consts.HG);
+    await data.setForgeFactoryValidity(
+      consts.FORGE_SUSHISWAP_COMPLEX,
+      consts.MARKET_FACTORY_SUSHISWAP_COMPLEX,
+      true,
+      consts.HG
+    );
+    // scXYT - testToken
+    await router.createMarket(
+      consts.MARKET_FACTORY_SUSHISWAP_COMPLEX,
+      scFutureYieldToken.address,
+      testToken.address,
+      consts.HG
+    );
+    const scMarketAddress = await data.getMarket(
+      consts.MARKET_FACTORY_SUSHISWAP_COMPLEX,
+      scFutureYieldToken.address,
+      testToken.address
+    );
+    scMarket = new Contract(scMarketAddress, PendleGenOneMarket.abi, alice);
+  }
+
+  if (!checkDisabled(Mode.SUSHISWAP_SIMPLE)) {
+    for (var person of [alice, bob, charlie, dave]) {
+      await mintXytSushiswapSimpleFixed(person, routerFix, consts.T0_SS.add(consts.SIX_MONTH));
+    }
+    await data.addMarketFactory(consts.MARKET_FACTORY_SUSHISWAP_SIMPLE, ssMarketFactory.address, consts.HG);
+
+    await data.setForgeFactoryValidity(
+      consts.FORGE_SUSHISWAP_SIMPLE,
+      consts.MARKET_FACTORY_SUSHISWAP_SIMPLE,
+      true,
+      consts.HG
+    );
+    // ssXYT - testToken
+    await router.createMarket(
+      consts.MARKET_FACTORY_SUSHISWAP_SIMPLE,
+      ssFutureYieldToken.address,
+      testToken.address,
+      consts.HG
+    );
+    const ssMarketAddress = await data.getMarket(
+      consts.MARKET_FACTORY_SUSHISWAP_SIMPLE,
+      ssFutureYieldToken.address,
+      testToken.address
+    );
+    ssMarket = new Contract(ssMarketAddress, PendleGenOneMarket.abi, alice);
   }
 
   const totalSupply = await testToken.totalSupply();
   for (var person of [bob, charlie, dave, eve]) {
     await testToken.transfer(person.address, totalSupply.div(5), consts.HG);
   }
-
-  await data.addMarketFactory(consts.MARKET_FACTORY_AAVE_V2, a2MarketFactory.address, consts.HG);
-  await data.addMarketFactory(consts.MARKET_FACTORY_COMPOUND, cMarketFactory.address, consts.HG);
-  await data.addMarketFactory(consts.MARKET_FACTORY_SUSHISWAP_COMPLEX, scMarketFactory.address, consts.HG);
-  await data.addMarketFactory(consts.MARKET_FACTORY_SUSHISWAP_SIMPLE, ssMarketFactory.address, consts.HG);
-
-  await data.setForgeFactoryValidity(consts.FORGE_AAVE_V2, consts.MARKET_FACTORY_AAVE_V2, true, consts.HG);
-  await data.setForgeFactoryValidity(consts.FORGE_COMPOUND, consts.MARKET_FACTORY_COMPOUND, true, consts.HG);
-  await data.setForgeFactoryValidity(
-    consts.FORGE_SUSHISWAP_COMPLEX,
-    consts.MARKET_FACTORY_SUSHISWAP_COMPLEX,
-    true,
-    consts.HG
-  );
-  await data.setForgeFactoryValidity(
-    consts.FORGE_SUSHISWAP_SIMPLE,
-    consts.MARKET_FACTORY_SUSHISWAP_SIMPLE,
-    true,
-    consts.HG
-  );
-
-  // a2XYT - testToken
-  await router.createMarket(consts.MARKET_FACTORY_AAVE_V2, a2FutureYieldToken.address, testToken.address, consts.HG);
-
-  // a2XYT18 - testToken
-  await router.createMarket(consts.MARKET_FACTORY_AAVE_V2, a2FutureYieldToken18.address, testToken.address, consts.HG);
-
-  // cXYT - testToken
-  await router.createMarket(consts.MARKET_FACTORY_COMPOUND, cFutureYieldToken.address, testToken.address, consts.HG);
-
-  // cXYT18 - testToken
-  await router.createMarket(consts.MARKET_FACTORY_COMPOUND, cFutureYieldToken8.address, testToken.address, consts.HG);
-
-  // a2XYT - WETH
-  await router.createMarket(consts.MARKET_FACTORY_AAVE_V2, a2FutureYieldToken.address, tokens.WETH.address, consts.HG);
-
-  // cXYT - WETH
-  await router.createMarket(consts.MARKET_FACTORY_COMPOUND, cFutureYieldToken.address, tokens.WETH.address, consts.HG);
-
-  // scXYT - testToken
-  await router.createMarket(
-    consts.MARKET_FACTORY_SUSHISWAP_COMPLEX,
-    scFutureYieldToken.address,
-    testToken.address,
-    consts.HG
-  );
-
-  // ssXYT - testToken
-  await router.createMarket(
-    consts.MARKET_FACTORY_SUSHISWAP_SIMPLE,
-    ssFutureYieldToken.address,
-    testToken.address,
-    consts.HG
-  );
-
-  const a2MarketAddress = await data.getMarket(
-    consts.MARKET_FACTORY_AAVE_V2,
-    a2FutureYieldToken.address,
-    testToken.address
-  );
-
-  const a2Market18Address = await data.getMarket(
-    consts.MARKET_FACTORY_AAVE_V2,
-    a2FutureYieldToken18.address,
-    testToken.address
-  );
-
-  const cMarketAddress = await data.getMarket(
-    consts.MARKET_FACTORY_COMPOUND,
-    cFutureYieldToken.address,
-    testToken.address
-  );
-
-  const cMarket8Address = await data.getMarket(
-    consts.MARKET_FACTORY_COMPOUND,
-    cFutureYieldToken8.address,
-    testToken.address
-  );
-
-  const a2MarketEthAddress = await data.getMarket(
-    consts.MARKET_FACTORY_AAVE_V2,
-    a2FutureYieldToken.address,
-    tokens.WETH.address
-  );
-
-  const cMarketEthAddress = await data.getMarket(
-    consts.MARKET_FACTORY_COMPOUND,
-    cFutureYieldToken.address,
-    tokens.WETH.address
-  );
-
-  const scMarketAddress = await data.getMarket(
-    consts.MARKET_FACTORY_SUSHISWAP_COMPLEX,
-    scFutureYieldToken.address,
-    testToken.address
-  );
-
-  const ssMarketAddress = await data.getMarket(
-    consts.MARKET_FACTORY_SUSHISWAP_SIMPLE,
-    ssFutureYieldToken.address,
-    testToken.address
-  );
-
-  const a2Market = new Contract(a2MarketAddress, MockPendleAaveMarket.abi, alice);
-  const a2Market18 = new Contract(a2Market18Address, MockPendleAaveMarket.abi, alice);
-  const cMarket = new Contract(cMarketAddress, PendleCompoundMarket.abi, alice);
-  const cMarket8 = new Contract(cMarket8Address, PendleCompoundMarket.abi, alice);
-  const a2MarketEth = new Contract(a2MarketEthAddress, MockPendleAaveMarket.abi, alice);
-  const cMarketEth = new Contract(cMarketEthAddress, MockPendleAaveMarket.abi, alice);
-  const scMarket = new Contract(scMarketAddress, PendleGenOneMarket.abi, alice);
-  const ssMarket = new Contract(ssMarketAddress, PendleGenOneMarket.abi, alice);
-  const mockMarketMath: Contract = await deployContract(alice, MockMarketMath);
-
   for (var person of [alice, bob, charlie, dave, eve]) {
     await testToken.connect(person).approve(router.address, totalSupply, consts.HG);
   }
+  const mockMarketMath: Contract = await deployContract(alice, MockMarketMath);
 
   return {
     routerFix,

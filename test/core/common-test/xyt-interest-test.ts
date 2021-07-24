@@ -29,13 +29,6 @@ import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv 
 const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
-interface YieldTest {
-  type: string;
-  user: number;
-  amount: number;
-  timeDelta: number;
-}
-
 export async function runTest(mode: Mode) {
   describe('', async () => {
     const wallets = provider.getWallets();

@@ -16,8 +16,17 @@ export enum Mode {
   COMPOUND,
   SUSHISWAP_COMPLEX,
   SUSHISWAP_SIMPLE,
-  BASE_LIQ_V2,
   SUSHISWAP_LIQ_V2,
+  GENERAL_TEST, // must only be enabled when all other modes are enabled
+}
+
+let disabledModes: Map<Mode, boolean> = new Map<number, boolean>();
+for (let x of [Mode.AAVE_V2, Mode.COMPOUND, Mode.GENERAL_TEST]) {
+  disabledModes.set(x, true);
+}
+
+export function checkDisabled(mode: Mode): boolean {
+  return disabledModes.get(mode)!;
 }
 
 export interface TestEnv {
@@ -88,7 +97,7 @@ export async function parseTestEnvRouterFixture(user: Wallet, mode: Mode, env: T
   await parseTestEnvCoreFixture(env, user, fixture.core);
 
   env.routerFixture = fixture;
-  if (env.mode == Mode.AAVE_V2 || env.mode == Mode.BASE_LIQ_V2) {
+  if (env.mode == Mode.AAVE_V2) {
     env.T0 = consts.T0_A2;
     env.EXPIRY = env.T0.add(consts.SIX_MONTH);
     env.forge = fixture.a2Forge.aaveV2Forge;
@@ -166,7 +175,7 @@ export async function parseTestEnvMarketFixture(user: Wallet, mode: Mode, env: T
   env.testToken = fixture.testToken;
   env.marketFixture = fixture;
 
-  if (env.mode == Mode.AAVE_V2 || env.mode == Mode.BASE_LIQ_V2) {
+  if (env.mode == Mode.AAVE_V2) {
     env.MARKET_FACTORY_ID = consts.MARKET_FACTORY_AAVE_V2;
     env.market = fixture.a2Market;
     env.market18 = fixture.a2Market18;
@@ -214,12 +223,9 @@ export async function parseTestEnvLiquidityMiningFixture(
     env.liq = fixture.scLiquidityMining;
   } else if (env.mode == Mode.SUSHISWAP_SIMPLE) {
     env.liq = fixture.ssLiquidityMining;
-  } else if (env.mode == Mode.BASE_LIQ_V2) {
-    env.liq = fixture.baseLiquidityMiningV2;
   } else if (env.mode == Mode.SUSHISWAP_LIQ_V2) {
     env.liq = fixture.sushiLiquidityMiningV2;
-  } 
-  else {
+  } else {
     assert(false, 'NOT SUPPORTED');
   }
 }

@@ -17,6 +17,7 @@ import { coreFixture, CoreFixture } from './core.fixture';
 import { GovernanceFixture, governanceFixture } from './governance.fixture';
 import { SushiswapComplexForgeFixture, sushiswapComplexForgeFixture } from './SushiswapComplexForge.fixture';
 import { SushiswapSimpleForgeFixture, sushiswapSimpleForgeFixture } from './SushiswapSimpleForge.fixture';
+import { checkDisabled, Mode } from '.';
 const { waffle } = require('hardhat');
 const { loadFixture } = waffle;
 
@@ -37,12 +38,17 @@ export async function routerFixture(_: Wallet[], __: providers.Web3Provider): Pr
 
   const noMintFixture: RouterFixture = await loadFixture(routerFixtureNoMint);
 
-  await mint(tokens.USDT, alice, consts.INITIAL_AAVE_TOKEN_AMOUNT);
-  await convertToAaveV2Token(tokens.USDT, alice, consts.INITIAL_AAVE_TOKEN_AMOUNT);
-  await mint(tokens.USDT, alice, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-  await convertToCompoundToken(tokens.USDT, alice, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-  await mintSushiswapLpFixed(alice);
-
+  if (!checkDisabled(Mode.AAVE_V2)) {
+    await mint(tokens.USDT, alice, consts.INITIAL_AAVE_TOKEN_AMOUNT);
+    await convertToAaveV2Token(tokens.USDT, alice, consts.INITIAL_AAVE_TOKEN_AMOUNT);
+  }
+  if (!checkDisabled(Mode.COMPOUND)) {
+    await mint(tokens.USDT, alice, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    await convertToCompoundToken(tokens.USDT, alice, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+  }
+  if (!checkDisabled(Mode.SUSHISWAP_COMPLEX) || !checkDisabled(Mode.SUSHISWAP_SIMPLE)) {
+    await mintSushiswapLpFixed(alice);
+  }
   return {
     core: noMintFixture.core,
     governance: noMintFixture.governance,
@@ -61,18 +67,30 @@ export async function routerFixtureNoMint(_: Wallet[], provider: providers.Web3P
   const core = await loadFixture(coreFixture);
   const governance = await loadFixture(governanceFixture);
 
-  const a2Forge = await aaveV2ForgeFixture(alice, provider, core, governance);
-  const cForge = await compoundForgeFixture(alice, provider, core, governance);
-  const scForge = await sushiswapComplexForgeFixture(alice, provider, core, governance);
-  const ssForge = await sushiswapSimpleForgeFixture(alice, provider, core, governance);
-  const aaveV2 = await aaveV2Fixture(alice);
+  let aaveV2: AaveV2Fixture = {} as AaveV2Fixture;
+  let a2Forge: AaveV2ForgeFixture = {} as AaveV2ForgeFixture;
+  let cForge: CompoundFixture = {} as CompoundFixture;
+  let scForge: SushiswapComplexForgeFixture = {} as SushiswapComplexForgeFixture;
+  let ssForge: SushiswapSimpleForgeFixture = {} as SushiswapSimpleForgeFixture;
 
-  const a2Contract = await getA2Contract(alice, a2Forge.aaveV2Forge, tokens.USDT);
-  await a2Contract.approve(core.router.address, consts.INF);
-  const cContract = await getCContract(alice, tokens.USDT);
-  await cContract.approve(core.router.address, consts.INF);
-  const scContract = await getERC20Contract(alice, tokens.SUSHI_USDT_WETH_LP);
-  await scContract.approve(core.router.address, consts.INF);
-
+  if (!checkDisabled(Mode.AAVE_V2)) {
+    a2Forge = await aaveV2ForgeFixture(alice, provider, core, governance);
+    aaveV2 = await aaveV2Fixture(alice);
+    const a2Contract = await getA2Contract(alice, a2Forge.aaveV2Forge, tokens.USDT);
+    await a2Contract.approve(core.router.address, consts.INF);
+  }
+  if (!checkDisabled(Mode.COMPOUND)) {
+    cForge = await compoundForgeFixture(alice, provider, core, governance);
+    const cContract = await getCContract(alice, tokens.USDT);
+    await cContract.approve(core.router.address, consts.INF);
+  }
+  if (!checkDisabled(Mode.SUSHISWAP_COMPLEX)) {
+    scForge = await sushiswapComplexForgeFixture(alice, provider, core, governance);
+    const scContract = await getERC20Contract(alice, tokens.SUSHI_USDT_WETH_LP);
+    await scContract.approve(core.router.address, consts.INF);
+  }
+  if (!checkDisabled(Mode.SUSHISWAP_SIMPLE)) {
+    ssForge = await sushiswapSimpleForgeFixture(alice, provider, core, governance);
+  }
   return { core, governance, aaveV2, a2Forge, cForge, scForge, ssForge, minted: false };
 }

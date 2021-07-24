@@ -10,6 +10,8 @@ import PendleRouter from '../../../build/artifacts/contracts/core/PendleRouter.s
 import PendleTreasury from '../../../build/artifacts/contracts/governance/PendleTreasury.sol/PendleTreasury.json';
 import PendleMarketReader from '../../../build/artifacts/contracts/readers/PendleMarketReader.sol/PendleMarketReader.json';
 import { consts, tokens } from '../../helpers';
+import { checkDisabled, Mode } from '.';
+
 const hre = require('hardhat');
 
 const { waffle } = require('hardhat');
@@ -43,25 +45,37 @@ export async function coreFixture(_: Wallet[], provider: providers.Web3Provider)
   const data = await deployContract(alice, PendleData, [govManager.address, treasury.address, pausingManager.address]);
   const router = await deployContract(alice, PendleRouter, [govManager.address, tokens.WETH.address, data.address]);
   const marketReader = await deployContract(alice, PendleMarketReader, [data.address]);
-  const a2MarketFactory = await deployContract(alice, PendleAaveMarketFactory, [
-    router.address,
-    consts.MARKET_FACTORY_AAVE_V2,
-  ]);
-  const cMarketFactory = await deployContract(alice, PendleCompoundMarketFactory, [
-    router.address,
-    consts.MARKET_FACTORY_COMPOUND,
-  ]);
-  const scMarketFactory = await deployContract(alice, PendleSushiswapComplexMarketFactory, [
-    router.address,
-    consts.MARKET_FACTORY_SUSHISWAP_COMPLEX,
-  ]);
-  const ssMarketFactory = await deployContract(alice, PendleSushiswapSimpleMarketFactory, [
-    router.address,
-    consts.MARKET_FACTORY_SUSHISWAP_SIMPLE,
-  ]);
+  let a2MarketFactory: Contract = {} as Contract;
+  let cMarketFactory: Contract = {} as Contract;
+  let scMarketFactory: Contract = {} as Contract;
+  let ssMarketFactory: Contract = {} as Contract;
+
+  if (!checkDisabled(Mode.AAVE_V2)) {
+    a2MarketFactory = await deployContract(alice, PendleAaveMarketFactory, [
+      router.address,
+      consts.MARKET_FACTORY_AAVE_V2,
+    ]);
+  }
+  if (!checkDisabled(Mode.COMPOUND)) {
+    cMarketFactory = await deployContract(alice, PendleCompoundMarketFactory, [
+      router.address,
+      consts.MARKET_FACTORY_COMPOUND,
+    ]);
+  }
+  if (!checkDisabled(Mode.SUSHISWAP_COMPLEX)) {
+    scMarketFactory = await deployContract(alice, PendleSushiswapComplexMarketFactory, [
+      router.address,
+      consts.MARKET_FACTORY_SUSHISWAP_COMPLEX,
+    ]);
+  }
+  if (!checkDisabled(Mode.SUSHISWAP_SIMPLE)) {
+    ssMarketFactory = await deployContract(alice, PendleSushiswapSimpleMarketFactory, [
+      router.address,
+      consts.MARKET_FACTORY_SUSHISWAP_SIMPLE,
+    ]);
+  }
 
   await data.initialize(router.address);
-
   await data.setExpiryDivisor(BN.from(10)); // for ease of testing
   await data.setLockParams(BN.from(consts.LOCK_NUMERATOR), BN.from(consts.LOCK_DENOMINATOR)); // lock market
   await data.setInterestUpdateRateDeltaForMarket(consts.INTEREST_UPDATE_RATE_DELTA_FOR_MARKET);

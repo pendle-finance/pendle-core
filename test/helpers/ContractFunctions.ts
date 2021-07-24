@@ -221,7 +221,7 @@ export async function getMarketRateExactOut(
 }
 
 export async function stake(env: TestEnv, user: Wallet, amount: BN, expiry?: BN, forAddr?: Wallet) {
-  if (env.mode == Mode.BASE_LIQ_V2 || env.mode == Mode.SUSHISWAP_LIQ_V2) {
+  if (env.mode == Mode.SUSHISWAP_LIQ_V2) {
     await env.liq.connect(user).stake(forAddr != null ? forAddr.address : user.address, amount, consts.HG);
   } else {
     if (expiry == null) expiry = env.EXPIRY;
@@ -262,7 +262,7 @@ export async function stakeWithPermit(env: TestEnv, user: Wallet, amount: BN, ex
 }
 
 export async function withdraw(env: TestEnv, user: Wallet, amount: BN, expiry?: BN, to?: Wallet) {
-  if (env.mode == Mode.BASE_LIQ_V2 || env.mode == Mode.SUSHISWAP_LIQ_V2) {
+  if (env.mode == Mode.SUSHISWAP_LIQ_V2) {
     await env.liq.connect(user).withdraw(to != null ? to.address : user.address, amount, consts.HG);
   } else {
     if (expiry == null) expiry = env.EXPIRY;
@@ -271,7 +271,7 @@ export async function withdraw(env: TestEnv, user: Wallet, amount: BN, expiry?: 
 }
 
 export async function redeemRewards(env: TestEnv, user: Wallet, expiry?: BN) {
-  if (env.mode == Mode.BASE_LIQ_V2) {
+  if (env.mode == Mode.SUSHISWAP_LIQ_V2) {
     await env.liq.connect(user).redeemRewards(user.address, consts.HG);
   } else {
     if (expiry == null) expiry = env.EXPIRY;
