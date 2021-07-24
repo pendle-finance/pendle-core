@@ -6,7 +6,6 @@ import "../abstractV2/PendleYieldTokenHolderBaseV2.sol";
 import "../../interfaces/IComptroller.sol";
 
 contract PendleCompoundV2YieldTokenHolder is PendleYieldTokenHolderBaseV2 {
-    using SafeERC20 for IERC20;
     IComptroller private immutable comptroller;
 
     constructor(
@@ -20,7 +19,9 @@ contract PendleCompoundV2YieldTokenHolder is PendleYieldTokenHolderBaseV2 {
         comptroller = IComptroller(_comptroller);
     }
 
-    // same logic as CompoundV1
+    /**
+    @dev same logic as in V1
+    */
     function redeemRewards() external virtual override {
         address[] memory cTokens = new address[](1);
         address[] memory holders = new address[](1);

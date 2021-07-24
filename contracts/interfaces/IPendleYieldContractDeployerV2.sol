@@ -26,19 +26,19 @@ interface IPendleYieldContractDeployerV2 {
     function forgeId() external returns (bytes32);
 
     function forgeOwnershipToken(
-        address _underlyingAsset,
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _expiry
+        address underlyingAsset,
+        string memory name,
+        string memory symbol,
+        uint8 decimals,
+        uint256 expiry
     ) external returns (address ot);
 
     function forgeFutureYieldToken(
-        address _underlyingAsset,
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _expiry
+        address underlyingAsset,
+        string memory name,
+        string memory symbol,
+        uint8 decimals,
+        uint256 expiry
     ) external returns (address xyt);
 
     function deployYieldTokenHolder(

@@ -24,15 +24,15 @@
 pragma solidity 0.7.6;
 
 interface IPendleLiquidityMiningV2 {
-    event Funded(uint256[] _rewards, uint256 numberOfEpochs);
-    event RewardsToppedUp(uint256[] _epochIds, uint256[] _rewards);
+    event Funded(uint256[] rewards, uint256 numberOfEpochs);
+    event RewardsToppedUp(uint256[] epochIds, uint256[] rewards);
     event Staked(address user, uint256 amount);
     event Withdrawn(address user, uint256 amount);
     event PendleRewardsSettled(address user, uint256 amount);
 
     function fund(uint256[] calldata rewards) external;
 
-    function topUpRewards(uint256[] calldata _epochIds, uint256[] calldata _rewards) external;
+    function topUpRewards(uint256[] calldata epochIds, uint256[] calldata rewards) external;
 
     function stake(address forAddr, uint256 amount) external;
 

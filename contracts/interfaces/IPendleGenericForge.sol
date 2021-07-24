@@ -25,4 +25,7 @@ pragma solidity 0.7.6;
 
 import "./IPendleCompoundForge.sol";
 
-interface IPendleGenericForge is IPendleCompoundForge {}
+// Forges should implement this Interface to guarantee compatibility with GenericMarket & Liq
+interface IPendleGenericForge is IPendleCompoundForge {
+
+}

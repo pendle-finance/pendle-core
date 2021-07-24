@@ -14,6 +14,7 @@ import "../../interfaces/IPendleYieldContractDeployerV2.sol";
 import "../../interfaces/IPendleYieldTokenHolderV2.sol";
 import "../../periphery/WithdrawableV2.sol";
 import "../../libraries/MathLib.sol";
+import "../../libraries/TokenUtilsLib.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @notice Common contract base for a forge implementation.
@@ -88,9 +89,9 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     ) PermissionsV2(_governanceManager) {
         require(address(_router) != address(0), "ZERO_ADDRESS");
         require(_forgeId != 0x0, "ZERO_BYTES");
-        require(_rewardToken != address(0), "ZERO_ADDRESS");
         // In the case there is no rewardToken, a valid ERC20 token must still be passed in for
         // compatibility reasons
+        TokenUtils.requireERC20(_rewardToken);
         router = _router;
         forgeId = _forgeId;
         IPendleData _dataTemp = IPendleRouter(_router).data();

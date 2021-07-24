@@ -51,7 +51,11 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         tokenInfo[weth].container[0] = uint256(_coumpoundEth);
     }
 
-    /// @inheritdoc PendleForgeBaseV2
+    /**
+    @notice  verify the validity of a cToken
+    @dev the logic of this function is similar to how Compound verify an address is cToken
+    @dev Same logic as in V1
+     */
     function verifyToken(address _underlyingAsset, uint256[] calldata _tokenInfo)
         public
         virtual

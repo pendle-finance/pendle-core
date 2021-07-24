@@ -13,9 +13,8 @@ contract PendleCompoundV2YieldContractDeployer is PendleYieldContractDeployerBas
     function deployYieldTokenHolder(
         address _yieldToken,
         uint256 _expiry,
-        uint256[] calldata _opt
+        uint256[] calldata
     ) external override onlyForge returns (address yieldTokenHolder) {
-        require(_opt.length == 0, "INVALID_OPT_CONTAINER");
         yieldTokenHolder = address(
             new PendleCompoundV2YieldTokenHolder(
                 address(governanceManager),
