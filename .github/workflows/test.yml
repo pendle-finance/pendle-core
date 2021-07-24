@@ -33,6 +33,7 @@ jobs:
         env:
           INFURA_KEY: ${{ secrets.INFURA_KEY }}
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
+          NODE_OPTIONS: --max-old-space-size=7000
       - uses: actions/upload-artifact@v2
         with:
           name: coverage
