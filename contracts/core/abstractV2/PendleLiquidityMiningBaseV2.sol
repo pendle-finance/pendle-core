@@ -7,6 +7,7 @@ import "../../interfaces/IPendleLiquidityMiningV2.sol";
 import "../../interfaces/IPendlePausingManager.sol";
 import "../../interfaces/IPendleWhitelist.sol";
 import "../../libraries/MathLib.sol";
+import "../../libraries/TokenUtilsLib.sol";
 
 contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2, ReentrancyGuard {
     using Math for uint256;
@@ -76,8 +77,8 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
         uint256 _vestingEpochs
     ) PermissionsV2(_governanceManager) {
         require(_startTime > block.timestamp, "INVALID_START_TIME");
-        require(IERC20(_pendleTokenAddress).totalSupply() > 0, "INVALID_ERC20");
-        require(IERC20(_stakeToken).totalSupply() > 0, "INVALID_ERC20");
+        TokenUtils.requireERC20(_pendleTokenAddress);
+        TokenUtils.requireERC20(_stakeToken);
         require(_vestingEpochs > 0, "INVALID_VESTING_EPOCHS");
         // yieldToken can be zero address
         pausingManager = IPendlePausingManager(_pausingManager);

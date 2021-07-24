@@ -573,9 +573,10 @@ abstract contract PendleLiquidityMiningBase is
             // if the epoch hasn't been fully updated yet, we will update it
             // just add the amount of units contributed by users since lastUpdatedForEpoch -> now
             // by calling _calcUnitsStakeInEpoch
-            epochData[i].stakeUnitsForExpiry[expiry] = epochData[i]
-            .stakeUnitsForExpiry[expiry]
-            .add(_calcUnitsStakeInEpoch(expiryData[expiry].totalStakeLP, lastUpdatedForEpoch, i));
+            epochData[i].stakeUnitsForExpiry[expiry] = epochData[i].stakeUnitsForExpiry[expiry]
+                .add(
+                _calcUnitsStakeInEpoch(expiryData[expiry].totalStakeLP, lastUpdatedForEpoch, i)
+            );
             // If the epoch has ended, lastUpdated = epochEndTime
             // If not yet, lastUpdated = block.timestamp (aka now)
             epochData[i].lastUpdatedForExpiry[expiry] = Math.min(block.timestamp, epochEndTime);
@@ -626,8 +627,8 @@ abstract contract PendleLiquidityMiningBase is
             // updating stakeUnits for users. The logic of this is similar to that of _updateStakeDataForExpiry
             // Please refer to _updateStakeDataForExpiry for more details
             epochData[epochId].stakeUnitsForUser[user][expiry] = epochData[epochId]
-            .stakeUnitsForUser[user][expiry]
-            .add(
+                .stakeUnitsForUser[user][expiry]
+                .add(
                 _calcUnitsStakeInEpoch(
                     exd.balances[user],
                     exd.lastTimeUserStakeUpdated[user],
@@ -654,18 +655,16 @@ abstract contract PendleLiquidityMiningBase is
             require(epochData[epochId].stakeUnitsForExpiry[expiry] != 0, "INTERNAL_ERROR");
 
             // calc the amount of rewards the user is eligible to receive from this epoch
-            uint256 rewardsPerVestingEpoch = _calcAmountRewardsForUserInEpoch(
-                expiry,
-                user,
-                epochId
-            );
+            uint256 rewardsPerVestingEpoch =
+                _calcAmountRewardsForUserInEpoch(expiry, user, epochId);
 
             // Now we distribute this rewards over the vestingEpochs starting from epochId + 1
             // to epochId + vestingEpochs
             for (uint256 i = epochId + 1; i <= epochId + vestingEpochs; i++) {
-                epochData[i].availableRewardsForUser[user] = epochData[i]
-                .availableRewardsForUser[user]
-                .add(rewardsPerVestingEpoch);
+                epochData[i].availableRewardsForUser[user] = epochData[i].availableRewardsForUser[
+                    user
+                ]
+                    .add(rewardsPerVestingEpoch);
             }
         }
 
@@ -679,19 +678,20 @@ abstract contract PendleLiquidityMiningBase is
         address user,
         uint256 epochId
     ) internal view returns (uint256 rewardsPerVestingEpoch) {
-        uint256 settingId = epochId >= latestSetting.firstEpochToApply
-            ? latestSetting.id
-            : epochData[epochId].settingId;
+        uint256 settingId =
+            epochId >= latestSetting.firstEpochToApply
+                ? latestSetting.id
+                : epochData[epochId].settingId;
 
-        uint256 rewardsForThisExpiry = epochData[epochId]
-        .totalRewards
-        .mul(allocationSettings[settingId][expiry])
-        .div(ALLOCATION_DENOMINATOR);
+        uint256 rewardsForThisExpiry =
+            epochData[epochId].totalRewards.mul(allocationSettings[settingId][expiry]).div(
+                ALLOCATION_DENOMINATOR
+            );
 
         rewardsPerVestingEpoch = rewardsForThisExpiry
-        .mul(epochData[epochId].stakeUnitsForUser[user][expiry])
-        .div(epochData[epochId].stakeUnitsForExpiry[expiry])
-        .div(vestingEpochs);
+            .mul(epochData[epochId].stakeUnitsForUser[user][expiry])
+            .div(epochData[epochId].stakeUnitsForExpiry[expiry])
+            .div(vestingEpochs);
     }
 
     /**

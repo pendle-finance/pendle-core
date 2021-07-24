@@ -18,10 +18,10 @@ contract PendleSushiswapComplexYieldContractDeployer is PendleYieldContractDeplo
     function deployYieldTokenHolder(
         address _yieldToken,
         uint256 _expiry,
-        uint256[] calldata _opt
+        uint256[] calldata _container
     ) external override onlyForge returns (address yieldTokenHolder) {
-        require(_opt.length == 1, "INVALID_OPT_CONTAINER");
-        // opt[0] = pid
+        require(_container.length == 1, "INVALID_CONTAINER");
+        // container[0] = pid
         yieldTokenHolder = address(
             new PendleSushiswapComplexYieldTokenHolder(
                 address(governanceManager),
@@ -29,7 +29,7 @@ contract PendleSushiswapComplexYieldContractDeployer is PendleYieldContractDeplo
                 _yieldToken,
                 _expiry,
                 address(masterChef),
-                _opt[0]
+                _container[0]
             )
         );
     }
