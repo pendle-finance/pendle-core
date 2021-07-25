@@ -340,7 +340,7 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     }
 
     /**
-    @notice To redeem the rewards (COMP and StkAAVE) for users(before their balances of OT changes)
+    @notice To redeem the rewards (COMP, StkAAVE, SUSHI,...) for users(before their balances of OT changes)
     @dev This must be called before any transfer / mint/ burn action of OT
         (and this has been implemented in the beforeTokenTransfer of the PendleOwnershipToken)
     @dev Conditions:
@@ -483,9 +483,12 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     /**
     @dev Must be the only way to transfer yieldToken out
     @dev summary of invariance logic:
-    - making sure that the underlyingAsset of OTs are always protected
-    - this pushYieldTokens function rely on the same calc function as other functions. Why it
-    is safe to do that? Because to drain funds, hackers need to compromise the calc function to
+    - This is the only function where the underlying yield tokens are transfered out
+    - After this function executes (at the end of the .pushYieldTokens() function), we require that
+    there must be enough yield tokens left to entertain all OT holders redeeming
+    - As such, protocol users are always assured that they can redeem back their underlying yield tokens
+    - Further note: this pushYieldTokens function relies on the same calc functions (_calcUnderlyingToRedeem and _calcTotalAfterExpiry) as the
+    functions that called pushYieldTokens. Why it is safe to do that? Because to drain funds, hackers need to compromise the calc functions to
     return a very large result (hence large _amount in this function) but in the same transaction,
     they also need to compromise the very same calc function to return a very small result (so that
     to fool the contract that all the underlyingAsset of OTs are still intact). Doing these 2

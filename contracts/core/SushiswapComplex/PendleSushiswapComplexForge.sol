@@ -6,6 +6,10 @@ pragma abicoder v2;
 import "../UniswapV2/PendleUniswapV2Forge.sol";
 import "../../interfaces/IMasterChef.sol";
 
+/*
+- SushiswapComplexForge is for tokens that are in Sushiswap's Onsen program & receive their rewards
+from MasterChefV1 (and not from MasterChefV2)
+*/
 contract PendleSushiswapComplexForge is PendleUniswapV2Forge {
     IMasterChef public immutable masterChef;
 

@@ -1,16 +1,5 @@
 # SushiswapComplex
 
-## Criterias of tokens to be compatible with SushiswapComplex
-
-- Is a Sushiswap's LP token
-- Is in Sushiswap's Onsen program
-- Receives its rewards by `MasterChefV1` (and not `MasterChefV2`)
-
-## Forge
-
-- `PendleSushiswapComplexForge` inherits most of its functions from `PendleUniswapV2Forge` (since Sushiswap has a very similar set of contracts to UniswapV2)
-- Only `verifyToken` needs to be overridden
-
 ## YieldContractDeployer
 
 - `PendleSushiswapComplexYieldContractDeployer` inherits most of its function from `PendleYieldContractDeployerBaseV2`, but obviously `deployYieldTokenHolder` will have to be overriden to provide additional arguments for `MasterChef` & `pid`
@@ -24,4 +13,4 @@
 
 ## Market, MarketFactory & LiquidityMining
 
-- Please refer to the explanation for UniswapV2
+- Similar to UniswapV2, SushiswapSimple will use 3 contracts from `Generic` folder because UniswapV2's YT has the same interest distribution mechanism as Compound's YT
