@@ -1,0 +1,49 @@
+name: Mythx
+
+on:
+  workflow_dispatch:
+
+jobs:
+  mythx:
+    name: Submit to Mythx
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install node dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Install pip3
+        run: |
+          python -m pip install --upgrade pip
+      - name: Install mythx CLI
+        run: |
+          pip3 install mythx-cli
+      - name: Install solc-select
+        run: |
+          pip3 install solc-select
+      - name: Install solc 0.7.6
+        run: |
+          solc-select install 0.7.6
+          solc-select use 0.7.6
+      - name: Submit code to Mythx
+        run: |
+          echo y|mythx --api-key ${{ secrets.MYTHX_API_KEY }} \
+            analyze contracts/core/**/*.sol \
+            --mode deep \
+            --async \
+            --create-group \
+            --group-name "@pendle@${{ github.sha }}" \
+            --solc-version 0.7.6 \
+            --remap-import "@openzeppelin/=$(pwd)/node_modules/@openzeppelin/"
