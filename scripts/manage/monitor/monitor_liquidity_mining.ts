@@ -75,9 +75,9 @@ async function main() {
     allocationSettings.push(expiry, allocationSetting);
   });
 
-  const yieldTokenContract = await (await hre.ethers.getContractFactory('PendleFutureYieldToken')).attach(
-    await liqMining.underlyingYieldToken()
-  );
+  const yieldTokenContract = await (
+    await hre.ethers.getContractFactory('PendleFutureYieldToken')
+  ).attach(await liqMining.underlyingYieldToken());
   var yieldTokenBalances: [Uint32Array[1], Uint32Array[1]]; //[expiry, yield token balance]
   var yieldTokenBalance: Uint32Array[1]; //to print
   allExpiries.forEach((expiry) => async () => {

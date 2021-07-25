@@ -1,5 +1,5 @@
+import { expect } from 'chai';
 import { BigNumber as BN, BigNumberish } from 'ethers';
-import { assert, expect } from 'chai';
 import { LiqParams, TestEnv, UserStakeAction } from '../core/fixtures';
 const PRECISION = BN.from(2).pow(40);
 
@@ -11,7 +11,7 @@ export function calcExpectedRewards(
   userStakingData: UserStakeAction[][][],
   params: LiqParams,
   currentEpoch: number,
-  usingAllocationSetting: Boolean
+  usingAllocationSetting: Boolean = false
 ): BN[][] {
   let nUsers = userStakingData[0].length;
   let numerator: BN = params.TOTAL_NUMERATOR;
@@ -104,9 +104,7 @@ export function calcExpectedRewards(
   return rewards;
 }
 
-async function calEffectiveLiquidity(
-  env: TestEnv
-): Promise<{
+async function calEffectiveLiquidity(env: TestEnv): Promise<{
   xytAmount: BN;
   tokenAmount: BN;
 }> {
@@ -196,12 +194,24 @@ export function approxBigNumber(
 export function approxByPercent(
   _actual: BigNumberish,
   _expected: BigNumberish,
-  _percentInDecimal: BigNumberish = 10000
+  _percentInDecimal: BigNumberish = 1000000 // default delta is 1e-6
 ) {
-  approxBigNumber(
-    BN.from(_actual),
-    BN.from(_expected),
-    BN.from(_expected).add(_percentInDecimal).sub(1).div(_percentInDecimal),
-    false
-  );
+  let delta: BN = BN.from(_expected).div(_percentInDecimal);
+  if (delta.eq(0)) delta = BN.from(1);
+  approxBigNumber(BN.from(_actual), BN.from(_expected), delta);
+}
+
+export function sqrt(y: BN): BN {
+  let z: BN = BN.from(0);
+  if (y.gt(3)) {
+    z = y;
+    let x = y.div(2).add(1);
+    while (x.lt(z)) {
+      z = x;
+      x = y.div(x).add(x).div(2);
+    }
+  } else if (!y.eq(0)) {
+    z = BN.from(1);
+  }
+  return z;
 }

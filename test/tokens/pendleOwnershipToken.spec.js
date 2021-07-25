@@ -14,7 +14,7 @@ const MockPendleOwnerShipToken = artifacts.require(
 );
 const TestToken = artifacts.require('../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json');
 
-contract('PendleOwnershipToken', function (accounts) {
+contract('PendleOwnershipToken @skip-on-coverage', function (accounts) {
   const [initialHolder, recipient, anotherAccount] = accounts;
   const name = 'My Token';
   const symbol = 'MTKN';

@@ -10,7 +10,7 @@ chai.use(solidity);
 const { waffle } = require('hardhat');
 const { deployContract, provider } = waffle;
 
-describe('WithdrawableV2', () => {
+describe('WithdrawableV2 @skip-on-coverage', () => {
   const [alice] = provider.getWallets();
 
   let govManager: Contract;

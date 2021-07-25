@@ -1,6 +1,7 @@
 import { BigNumber as BN } from 'ethers';
 import {
   addFakeIncomeCompoundUSDT,
+  addFakeIncomeSushi,
   approxBigNumber,
   consts,
   emptyToken,
@@ -92,9 +93,10 @@ export function runTest(mode: Mode) {
           liqBalance[userID] = liqBalance[userID].sub(amount);
           lpBalance[userID] = lpBalance[userID].add(amount);
         } else if (actionType == 2) {
-          await env.liq.redeemLpInterests(env.EXPIRY, wallets[userID].address);
+          await env.liq.redeemLpInterests(env.EXPIRY, wallets[userID].address, consts.HG);
         }
         if (mode == Mode.COMPOUND) await addFakeIncomeCompoundUSDT(env, eve);
+        else if (mode == Mode.SUSHISWAP_COMPLEX || mode == Mode.SUSHISWAP_SIMPLE) await addFakeIncomeSushi(env, eve);
       }
 
       await redeemDueInterests(env, eve);

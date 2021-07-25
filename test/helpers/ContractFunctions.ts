@@ -1,7 +1,7 @@
 import { assert } from 'chai';
 import { BigNumber as BN, Contract, utils, Wallet } from 'ethers';
 import { consts, wrapEth } from '.';
-import { TestEnv } from '../core/fixtures';
+import { Mode, TestEnv } from '../core/fixtures';
 
 export async function tokenizeYield(env: TestEnv, user: Wallet, amount: BN, to?: string): Promise<BN> {
   if (to == null) {
@@ -28,7 +28,7 @@ export async function redeemAfterExpiry(env: TestEnv, user: Wallet, expiry?: BN)
   if (expiry == null) {
     expiry = env.EXPIRY;
   }
-  await env.router.connect(user).redeemAfterExpiry(env.FORGE_ID, env.underlyingAsset.address, expiry);
+  await env.router.connect(user).redeemAfterExpiry(env.FORGE_ID, env.underlyingAsset.address, expiry, consts.HG);
 }
 
 export async function redeemUnderlying(env: TestEnv, user: Wallet, amount: BN, expiry?: BN) {
@@ -220,9 +220,13 @@ export async function getMarketRateExactOut(
   return await env.marketReader.getMarketRateExactOut(tokenIn, tokenOut, amount, env.MARKET_FACTORY_ID);
 }
 
-export async function stake(env: TestEnv, user: Wallet, amount: BN, expiry?: BN) {
-  if (expiry == null) expiry = env.EXPIRY;
-  await env.liq.connect(user).stake(expiry, amount, consts.HG);
+export async function stake(env: TestEnv, user: Wallet, amount: BN, expiry?: BN, forAddr?: Wallet) {
+  if (env.mode == Mode.SUSHISWAP_LIQ_V2) {
+    await env.liq.connect(user).stake(forAddr != null ? forAddr.address : user.address, amount, consts.HG);
+  } else {
+    if (expiry == null) expiry = env.EXPIRY;
+    await env.liq.connect(user).stake(expiry, amount, consts.HG);
+  }
 }
 
 export async function stakeWithPermit(env: TestEnv, user: Wallet, amount: BN, expiry?: BN) {
@@ -257,12 +261,32 @@ export async function stakeWithPermit(env: TestEnv, user: Wallet, amount: BN, ex
   await env.liq.connect(user).stakeWithPermit(expiry, amount, 10e9, v, r, s, consts.HG);
 }
 
-export async function withdraw(env: TestEnv, user: Wallet, amount: BN, expiry?: BN) {
-  if (expiry == null) expiry = env.EXPIRY;
-  await env.liq.connect(user).withdraw(expiry, amount, consts.HG);
+export async function withdraw(env: TestEnv, user: Wallet, amount: BN, expiry?: BN, to?: Wallet) {
+  if (env.mode == Mode.SUSHISWAP_LIQ_V2) {
+    await env.liq.connect(user).withdraw(to != null ? to.address : user.address, amount, consts.HG);
+  } else {
+    if (expiry == null) expiry = env.EXPIRY;
+    await env.liq.connect(user).withdraw(expiry, amount, consts.HG);
+  }
 }
 
 export async function redeemRewards(env: TestEnv, user: Wallet, expiry?: BN) {
-  if (expiry == null) expiry = env.EXPIRY;
-  await env.liq.connect(user).redeemRewards(expiry, user.address, consts.HG);
+  if (env.mode == Mode.SUSHISWAP_LIQ_V2) {
+    await env.liq.connect(user).redeemRewards(user.address, consts.HG);
+  } else {
+    if (expiry == null) expiry = env.EXPIRY;
+    await env.liq.connect(user).redeemRewards(expiry, user.address, consts.HG);
+  }
+}
+
+export async function otBalance(env: TestEnv, user: Wallet): Promise<BN> {
+  return env.ot.balanceOf(user.address);
+}
+
+export async function xytBalance(env: TestEnv, user: Wallet): Promise<BN> {
+  return env.xyt.balanceOf(user.address);
+}
+
+export async function yTokenBalance(env: TestEnv, user: Wallet): Promise<BN> {
+  return env.yToken.balanceOf(user.address);
 }
