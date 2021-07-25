@@ -49,8 +49,7 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         // Pre-register for cEther
         address weth = address(_router.weth());
         tokenInfo[weth].registered = true;
-        tokenInfo[weth].container = new uint256[](1);
-        tokenInfo[weth].container[0] = uint256(_coumpoundEth);
+        tokenInfo[weth].container.push(uint256(_coumpoundEth));
     }
 
     /**
