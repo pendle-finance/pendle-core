@@ -4,6 +4,7 @@ pragma abicoder v2;
 
 import "..//abstractV2/PendleLiquidityMiningBaseV2.sol";
 import "../../interfaces/IMasterChef.sol";
+import "../../libraries/TokenUtilsLib.sol";
 
 contract PendleSLPLiquidityMining is PendleLiquidityMiningBaseV2 {
     using SafeERC20 for IERC20;
@@ -36,7 +37,11 @@ contract PendleSLPLiquidityMining is PendleLiquidityMiningBaseV2 {
         )
     {
         require(_masterChef != address(0), "ZERO_ADDRESS");
-        require(IERC20(_yieldToken).totalSupply() > 0, "INVALID_ERC20");
+        TokenUtils.requireERC20(_yieldToken);
+        require(
+            address(IMasterChef(_masterChef).poolInfo(_pid).lpToken) == _stakeToken,
+            "INVALID_TOKEN_INFO"
+        );
 
         masterChef = IMasterChef(_masterChef);
         pid = _pid;
