@@ -12,10 +12,12 @@ import "../../interfaces/ICToken.sol";
 /*
 - For this Forge, the container of each underlyingAsset will contain only the address of its
 corresponding cToken
+- Since Compound uses 1e18 scale in their Math, if we want to make 1 cToken = 1 YT, we need to use
+the same math here. Hence we will use cmul & cdiv instead of rmul & rdiv
 */
 contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     using SafeMath for uint256;
-    using Math for uint256;
+    using CompoundMath for uint256;
 
     IComptroller public immutable comptroller;
     mapping(address => mapping(uint256 => uint256)) public lastRateBeforeExpiry;
@@ -94,7 +96,7 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         uint256 _expiry,
         uint256 _redeemedAmount
     ) internal view override returns (uint256 totalAfterExpiry) {
-        totalAfterExpiry = _redeemedAmount.rdiv(lastRateBeforeExpiry[_underlyingAsset][_expiry]);
+        totalAfterExpiry = _redeemedAmount.cdiv(lastRateBeforeExpiry[_underlyingAsset][_expiry]);
     }
 
     /**
@@ -120,7 +122,7 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         override
         returns (uint256 underlyingToRedeem)
     {
-        underlyingToRedeem = _amountToRedeem.rdiv(getExchangeRate(_underlyingAsset));
+        underlyingToRedeem = _amountToRedeem.cdiv(getExchangeRate(_underlyingAsset));
     }
 
     /// @inheritdoc PendleForgeBaseV2
@@ -129,7 +131,7 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         override
         returns (uint256 amountToMint)
     {
-        amountToMint = _amountToTokenize.rmul(getExchangeRate(_underlyingAsset));
+        amountToMint = _amountToTokenize.cmul(getExchangeRate(_underlyingAsset));
     }
 
     /**
@@ -152,7 +154,7 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
             return;
         }
 
-        uint256 interestFromXyt = _principal.mul(currentRate.sub(prevRate)).rdiv(
+        uint256 interestFromXyt = _principal.mul(currentRate.sub(prevRate)).cdiv(
             prevRate.mul(currentRate)
         );
 
@@ -172,5 +174,18 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         uint256 _feeAmount
     ) internal override {
         totalFee[_underlyingAsset][_expiry] = totalFee[_underlyingAsset][_expiry].add(_feeAmount);
+    }
+}
+
+library CompoundMath {
+    uint256 internal constant ONE_E_18 = 1e18;
+    using SafeMath for uint256;
+
+    function cmul(uint256 x, uint256 y) internal pure returns (uint256) {
+        return x.mul(y).div(ONE_E_18);
+    }
+
+    function cdiv(uint256 x, uint256 y) internal pure returns (uint256) {
+        return x.mul(ONE_E_18).div(y);
     }
 }
