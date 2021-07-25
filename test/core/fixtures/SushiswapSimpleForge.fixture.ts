@@ -41,6 +41,7 @@ export async function sushiswapSimpleForgeFixture(
     tokens.USDT.address,
     ssRewardManager.address,
     ssYieldContractDeployer.address,
+    consts.CODE_HASH_SUSHISWAP,
   ]);
 
   await ssRewardManager.setSkippingRewards(true, consts.HG);

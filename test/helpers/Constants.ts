@@ -29,6 +29,8 @@ export const consts = {
   FORGE_COMPOUND: utils.formatBytes32String('Compound'),
   MARKET_FACTORY_COMPOUND: utils.formatBytes32String('Compound'),
   FORGE_SUSHISWAP_COMPLEX: utils.formatBytes32String('SushiswapComplex'),
+  CODE_HASH_SUSHISWAP: '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303',
+  CODE_HASH_UNISWAP: '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
   FORGE_SUSHISWAP_SIMPLE: utils.formatBytes32String('SushiswapSimple'),
   MARKET_FACTORY_SUSHISWAP_COMPLEX: utils.formatBytes32String('SushiswapComplex'),
   MARKET_FACTORY_SUSHISWAP_SIMPLE: utils.formatBytes32String('SushiswapSimple'),

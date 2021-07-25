@@ -18,8 +18,7 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
 
     mapping(address => mapping(uint256 => uint256)) public lastRateBeforeExpiry;
     mapping(address => mapping(uint256 => mapping(address => uint256))) public lastRate;
-    bytes private constant CODE_HASH =
-        hex"96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f";
+    bytes internal codeHash;
 
     constructor(
         address _governanceManager,
@@ -27,7 +26,8 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         bytes32 _forgeId,
         address _rewardToken,
         address _rewardManager,
-        address _yieldContractDeployer
+        address _yieldContractDeployer,
+        bytes memory _codeHash
     )
         PendleForgeBaseV2(
             _governanceManager,
@@ -37,7 +37,9 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
             _rewardManager,
             _yieldContractDeployer
         )
-    {}
+    {
+        codeHash = _codeHash;
+    }
 
     /**
     @dev the logic of verifying tokens is the same as Uniswap
@@ -54,7 +56,7 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
             pair.factory(),
             pair.token0(),
             pair.token1(),
-            CODE_HASH
+            codeHash
         );
         require(poolAddr == _underlyingAsset, "INVALID_TOKEN_ADDR");
     }

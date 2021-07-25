@@ -42,6 +42,7 @@ export async function sushiswapComplexForgeFixture(
     consts.SUSHI_ADDRESS,
     scRewardManager.address,
     scYieldContractDeployer.address,
+    consts.CODE_HASH_SUSHISWAP,
     consts.MASTERCHEF_V1_ADDRESS,
   ]);
 

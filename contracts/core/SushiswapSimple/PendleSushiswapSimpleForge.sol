@@ -13,16 +13,14 @@ the MasterChef)
 of the logic
 */
 contract PendleSushiswapSimpleForge is PendleUniswapV2Forge {
-    bytes private constant CODE_HASH =
-        hex"e18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303";
-
     constructor(
         address _governanceManager,
         IPendleRouter _router,
         bytes32 _forgeId,
         address _rewardToken,
         address _rewardManager,
-        address _yieldContractDeployer
+        address _yieldContractDeployer,
+        bytes memory _codeHash
     )
         PendleUniswapV2Forge(
             _governanceManager,
@@ -30,25 +28,8 @@ contract PendleSushiswapSimpleForge is PendleUniswapV2Forge {
             _forgeId,
             _rewardToken,
             _rewardManager,
-            _yieldContractDeployer
+            _yieldContractDeployer,
+            _codeHash
         )
     {}
-
-    function verifyToken(address _underlyingAsset, uint256[] calldata _tokenInfo)
-        public
-        virtual
-        override
-    {
-        // in the case of Sushiswap, _underlyingAsset == tokenAddr
-        require(_tokenInfo.length == 0, "INVALID_TOKEN_INFO");
-        IUniswapV2Pair pair = IUniswapV2Pair(_underlyingAsset);
-
-        address poolAddr = UniswapV2Library.pairFor(
-            pair.factory(),
-            pair.token0(),
-            pair.token1(),
-            CODE_HASH
-        );
-        require(poolAddr == _underlyingAsset, "INVALID_TOKEN_ADDR");
-    }
 }

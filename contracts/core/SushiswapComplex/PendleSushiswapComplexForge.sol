@@ -16,6 +16,7 @@ contract PendleSushiswapComplexForge is PendleUniswapV2Forge {
         address _rewardToken,
         address _rewardManager,
         address _yieldContractDeployer,
+        bytes memory _codeHash,
         address _masterChef
     )
         PendleUniswapV2Forge(
@@ -24,7 +25,8 @@ contract PendleSushiswapComplexForge is PendleUniswapV2Forge {
             _forgeId,
             _rewardToken,
             _rewardManager,
-            _yieldContractDeployer
+            _yieldContractDeployer,
+            _codeHash
         )
     {
         masterChef = IMasterChef(_masterChef);
