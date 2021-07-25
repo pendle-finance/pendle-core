@@ -74,25 +74,25 @@ contract PendleSLPLiquidityMining is PendleLiquidityMiningBaseV2 {
     /**
     @dev after tokens are pulled in they will be deposited into MasterChef
      */
-    function _pullStakeToken(address from, uint256 _amount) internal virtual override {
-        IERC20(stakeToken).safeTransferFrom(from, address(this), _amount);
-        masterChef.deposit(pid, IERC20(stakeToken).balanceOf(address(this)));
+    function _pullStakeToken(address from, uint256 amount) internal virtual override {
+        IERC20(stakeToken).safeTransferFrom(from, address(this), amount);
+        masterChef.deposit(pid, amount);
     }
 
     /**
     @dev tokens will be pulled from MasterChef before being transfered to users. MasterChefV1
     doesn't allow direct transfer
      */
-    function _pushStakeToken(address to, uint256 _amount)
+    function _pushStakeToken(address to, uint256 amount)
         internal
         virtual
         override
         returns (uint256 outAmount)
     {
         uint256 stakeTokenBal = masterChef.userInfo(pid, address(this)).amount;
-        outAmount = Math.min(_amount, stakeTokenBal);
+        outAmount = Math.min(amount, stakeTokenBal);
 
-        masterChef.withdraw(pid, _amount);
-        IERC20(stakeToken).safeTransfer(to, _amount);
+        masterChef.withdraw(pid, amount);
+        IERC20(stakeToken).safeTransfer(to, amount);
     }
 }

@@ -35,8 +35,8 @@ contract PendleSushiswapComplexYieldTokenHolder is PendleYieldTokenHolderBaseV2 
         masterChef.withdraw(pid, 0);
     }
 
-    function afterReceiveTokens() external virtual override {
-        masterChef.deposit(pid, IERC20(yieldToken).balanceOf(address(this)));
+    function afterReceiveTokens(uint256 amount) external virtual override {
+        masterChef.deposit(pid, amount);
     }
 
     function pushYieldTokens(

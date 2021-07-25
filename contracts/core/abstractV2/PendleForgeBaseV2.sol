@@ -383,8 +383,9 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
         checkNotPaused(_underlyingAsset, _expiry);
 
         // surely if any users call tokenizeYield, they will have to call this function
-        IPendleYieldTokenHolderV2(yieldTokenHolders[_underlyingAsset][_expiry])
-            .afterReceiveTokens();
+        IPendleYieldTokenHolderV2(yieldTokenHolders[_underlyingAsset][_expiry]).afterReceiveTokens(
+            _amountToTokenize
+        );
 
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
 

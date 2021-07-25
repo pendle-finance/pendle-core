@@ -53,7 +53,7 @@ contract PendleYieldTokenHolderBaseV2 is IPendleYieldTokenHolderV2, Withdrawable
     function redeemRewards() external virtual override {}
 
     /// @dev by default we will keep all tokens in this contract, so no further actions necessary
-    function afterReceiveTokens() external virtual override {}
+    function afterReceiveTokens(uint256 amount) external virtual override {}
 
     function pushYieldTokens(
         address to,
