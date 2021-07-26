@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
+// solhint-disable ordering
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
@@ -18,7 +19,7 @@ import "../../libraries/TokenUtilsLib.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @notice Common contract base for a forge implementation.
-/// @dev Each specific forge implementation will need to implement the virtual functions
+/// @dev Each specific forge implementation will need to override necessary virtual functions
 abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyGuard {
     using ExpiryUtils for string;
     using SafeMath for uint256;
@@ -40,7 +41,7 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     IPendleRouter public immutable override router;
     IPendleData public immutable override data;
     bytes32 public immutable override forgeId;
-    IERC20 public immutable override rewardToken; // COMP/StkAAVE
+    IERC20 public immutable override rewardToken;
     IPendleRewardManager public immutable override rewardManager;
     IPendleYieldContractDeployer public immutable override yieldContractDeployer;
     IPendlePausingManager public immutable pausingManager;
@@ -102,8 +103,10 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
         pausingManager = _dataTemp.pausingManager();
     }
 
-    // INVARIANT: All write functions must go through this check.
-    // All XYT/OT transfers must go through this check as well. As such, XYT/OT transfers are also paused
+    /**
+    @dev INVARIANT: All write functions must go through this check.
+    All XYT/OT transfers must go through this check as well. As such, XYT/OT transfers are also paused
+    */
     function checkNotPaused(address _underlyingAsset, uint256 _expiry) internal virtual {
         (bool paused, ) = pausingManager.checkYieldContractStatus(
             forgeId,
@@ -113,9 +116,12 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
         require(!paused, "YIELD_CONTRACT_PAUSED");
     }
 
-    // Only the forgeEmergencyHandler can call this function, when its in emergencyMode
-    // this will allow a spender to spend the whole balance of the specified tokens of the yieldTokenHolder contract
-    // the spender should ideally be a contract with logic for users to withdraw out their funds.
+    /**
+    @dev Only the forgeEmergencyHandler can call this function, when its in emergencyMode.
+    @dev This will allow a spender to spend the whole balance of the specified tokens of the yieldTokenHolder
+    contract.
+    @dev The spender should ideally be a contract with logic for users to withdraw out their funds.
+    */
     function setUpEmergencyMode(
         address _underlyingAsset,
         uint256 _expiry,
@@ -212,7 +218,6 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     @dev Conditions:
         * only be called by Router
         * only callable after XYT has expired (checked on Router)
-        * If _transferOutRate != RONE, there should be a forwardYieldToken call outside
     */
     function redeemAfterExpiry(
         address _user,
@@ -256,7 +261,7 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     /**
     @notice To redeem the underlying asset & due interests before the expiry of the XYT.
     In this case, for each OT used to redeem, there must be an XYT (of the same yield contract)
-    Conditions:
+    @dev  Conditions:
         * only be called by Router
         * only callable if the XYT hasn't expired
     */
@@ -487,12 +492,13 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     - After this function executes (at the end of the .pushYieldTokens() function), we require that
     there must be enough yield tokens left to entertain all OT holders redeeming
     - As such, protocol users are always assured that they can redeem back their underlying yield tokens
-    - Further note: this pushYieldTokens function relies on the same calc functions (_calcUnderlyingToRedeem and _calcTotalAfterExpiry) as the
-    functions that called pushYieldTokens. Why it is safe to do that? Because to drain funds, hackers need to compromise the calc functions to
+    - Further note: this pushYieldTokens function relies on the same calc functions
+    (_calcUnderlyingToRedeem and _calcTotalAfterExpiry) as the functions that called pushYieldTokens.
+    Why it is safe to do that? Because to drain funds, hackers need to compromise the calc functions to
     return a very large result (hence large _amount in this function) but in the same transaction,
-    they also need to compromise the very same calc function to return a very small result (so that
-    to fool the contract that all the underlyingAsset of OTs are still intact). Doing these 2
-    compromises in one single transaction is much harder than doing just one compromise
+    they also need to compromise the very same calc function to return a very small result (to fool
+    the contract that all the underlyingAsset of OTs are still intact). Doing these 2
+    compromises in one single transaction is much harder than doing just one
     */
     function _pushYieldToken(
         address _underlyingAsset,

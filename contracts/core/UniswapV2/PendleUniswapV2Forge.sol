@@ -10,8 +10,8 @@ import "../abstractV2/PendleForgeBaseV2.sol";
 import "../../libraries/UniswapV2Lib.sol";
 
 /*
- * Most of the calculation logic of this contract is the same as CompoundV2
- */
+- For UniswapV2, the container of each underlyingAsset will be empty
+*/
 contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     using SafeMath for uint256;
     using Math for uint256;
@@ -42,7 +42,7 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     }
 
     /**
-    @dev the logic of verifying tokens is the same as Uniswap
+    @dev the logic of verifying tokens is the same as how Uniswap does it
     */
     function verifyToken(address _underlyingAsset, uint256[] calldata _tokenInfo)
         public
@@ -62,7 +62,7 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     }
 
     /**
-    @dev for the logic of the exchangeRate, please refer to the specs
+    @dev please refer to the specs
     */
     function getExchangeRate(address _underlyingAsset)
         public
@@ -90,6 +90,9 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         return _underlyingAsset;
     }
 
+    /**
+    @dev please refer to the specs
+    */
     function _calcTotalAfterExpiry(
         address _underlyingAsset,
         uint256 _expiry,
@@ -111,6 +114,9 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         return exchangeRate;
     }
 
+    /**
+    @dev please refer to the specs
+    */
     function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
         internal
         view
@@ -120,6 +126,9 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         underlyingToRedeem = _amountToRedeem.rdiv(getExchangeRate(_underlyingAsset));
     }
 
+    /**
+    @dev please refer to the specs
+    */
     function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)
         internal
         view
@@ -129,6 +138,9 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         amountToMint = _amountToTokenize.rmul(getExchangeRate(_underlyingAsset));
     }
 
+    /**
+    @dev please refer to the specs
+    */
     function _updateDueInterests(
         uint256 _principal,
         address _underlyingAsset,
@@ -154,6 +166,9 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         .add(interestFromXyt);
     }
 
+    /**
+    @dev please refer to the specs
+    */
     function _updateForgeFee(
         address _underlyingAsset,
         uint256 _expiry,

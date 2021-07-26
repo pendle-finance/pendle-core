@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-// solhint-disable ordering
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
@@ -9,6 +8,8 @@ import "../../interfaces/IMasterChef.sol";
 /*
 - SushiswapComplexForge is for tokens that are in Sushiswap's Onsen program & receive their rewards
 from MasterChefV1 (and not from MasterChefV2)
+- For SushiswapComplex, the container of each underlyingAsset will contain 1 element which is the
+pid of the pool in MasterChefV1
 */
 contract PendleSushiswapComplexForge is PendleUniswapV2Forge {
     IMasterChef public immutable masterChef;
