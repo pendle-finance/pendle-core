@@ -14,6 +14,8 @@ import "../../interfaces/ICToken.sol";
 corresponding cToken
 - Since Compound uses 1e18 scale in their Math, if we want to make 1 cToken = 1 YT, we need to use
 the same math here. Hence we will use cmul & cdiv instead of rmul & rdiv
+- For CompoundV2, the container of each underlyingAsset will contain 1 element which is the addr
+of the corresponding cToken
 */
 contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     using SafeMath for uint256;
@@ -53,7 +55,7 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     }
 
     /**
-    @notice  verify the validity of a cToken
+    @notice verify the validity of a cToken
     @dev the logic of this function is similar to how Compound verify an address is cToken
     @dev Same logic as in V1
      */
@@ -89,7 +91,9 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         return cTokenAddr;
     }
 
-    /// @inheritdoc PendleForgeBaseV2
+    /**
+    @dev Same logic as UniswapV2's Forge
+     */
     function _calcTotalAfterExpiry(
         address _underlyingAsset,
         uint256 _expiry,
@@ -115,7 +119,9 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         return exchangeRate;
     }
 
-    /// @inheritdoc PendleForgeBaseV2
+    /**
+    @dev Same logic as UniswapV2's Forge
+     */
     function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
         internal
         override
@@ -124,7 +130,9 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         underlyingToRedeem = _amountToRedeem.cdiv(getExchangeRate(_underlyingAsset));
     }
 
-    /// @inheritdoc PendleForgeBaseV2
+    /**
+    @dev Same logic as UniswapV2's Forge
+     */
     function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)
         internal
         override
@@ -134,10 +142,8 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     }
 
     /**
-    @dev no compound interest like AaveForge
-    @dev Since there is no compound effect, we don't need to calc the compound interest of the XYT
-    after it has expired like Aave, and also we don't need to update the dueInterest
-    */
+    @dev same logic as UniswapV2's Forge
+     */
     function _updateDueInterests(
         uint256 _principal,
         address _underlyingAsset,
@@ -164,9 +170,8 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     }
 
     /**
-    @dev different from AaveForge, here there is no compound interest occurred because the amount
-    of cToken always remains unchanged, so just add the _feeAmount in
-    */
+    @dev same logic as UniswapV2's Forge
+     */
     function _updateForgeFee(
         address _underlyingAsset,
         uint256 _expiry,
