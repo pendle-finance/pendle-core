@@ -103,7 +103,7 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
     @notice set up emergencyMode by pulling all tokens back to this contract & approve spender to
     spend infinity amount
     */
-    function setUpEmergencyMode(address spender) external virtual override {
+    function setUpEmergencyMode(address spender, bool) external virtual override {
         (, bool emergencyMode) = pausingManager.checkLiqMiningStatus(address(this));
         require(emergencyMode, "NOT_EMERGENCY");
 
@@ -530,7 +530,7 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
         // For the case that we don't need to stake the stakeToken anywhere else, just transfer out
         // from the current contract
         outAmount = Math.min(amount, IERC20(stakeToken).balanceOf(address(this)));
-        if (outAmount != 0) IERC20(stakeToken).transfer(to, outAmount);
+        if (outAmount != 0) IERC20(stakeToken).safeTransfer(to, outAmount);
     }
 
     function _pushYieldToken(address to, uint256 amount)

@@ -24,9 +24,17 @@ contract PendleSushiswapComplexYieldTokenHolder is PendleYieldTokenHolderBaseV2 
         IERC20(_yieldToken).safeApprove(_masterChef, type(uint256).max);
     }
 
-    function setUpEmergencyMode(address spender) external override onlyForge {
+    function setUpEmergencyModeV2(address spender, bool useEmergencyWithdraw)
+        external
+        override
+        onlyForge
+    {
         // withdraw all yieldToken back (and all rewards at the same time)
-        masterChef.withdraw(pid, masterChef.userInfo(pid, address(this)).amount);
+        if (useEmergencyWithdraw) {
+            masterChef.emergencyWithdraw(pid);
+        } else {
+            masterChef.withdraw(pid, masterChef.userInfo(pid, address(this)).amount);
+        }
         IERC20(yieldToken).safeApprove(spender, type(uint256).max);
         IERC20(rewardToken).safeApprove(spender, type(uint256).max);
     }

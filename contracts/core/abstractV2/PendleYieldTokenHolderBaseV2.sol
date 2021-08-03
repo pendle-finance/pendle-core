@@ -41,11 +41,16 @@ contract PendleYieldTokenHolderBaseV2 is IPendleYieldTokenHolderV2, Withdrawable
     }
 
     /**
-    @dev Only forge can call this function
-    @dev this will allow a spender to spend the whole balance of the specified tokens
-    @dev the spender should ideally be a contract with logic for users to withdraw out their funds.
+    @dev function has been depreciated but must still be left here to conform with the interface
     */
-    function setUpEmergencyMode(address spender) external virtual override onlyForge {
+    function setUpEmergencyMode(address) external pure override {
+        revert("FUNCTION_DEPRECIATED");
+    }
+
+    // Only forge can call this function
+    // this will allow a spender to spend the whole balance of the specified tokens
+    // the spender should ideally be a contract with logic for users to withdraw out their funds.
+    function setUpEmergencyModeV2(address spender, bool) external virtual override onlyForge {
         // by default we store all the tokens inside this contract, so just approve
         IERC20(yieldToken).safeApprove(spender, type(uint256).max);
         IERC20(rewardToken).safeApprove(spender, type(uint256).max);
@@ -65,8 +70,7 @@ contract PendleYieldTokenHolderBaseV2 is IPendleYieldTokenHolderV2, Withdrawable
         uint256 yieldTokenBal = IERC20(yieldToken).balanceOf(address(this));
         outAmount = Math.min(amount, yieldTokenBal);
         require(yieldTokenBal - outAmount >= minNYieldAfterPush, "INVARIANCE_ERROR");
-
-        IERC20(yieldToken).transfer(to, outAmount);
+        IERC20(yieldToken).safeTransfer(to, outAmount);
     }
 
     // The governance address will be able to withdraw any tokens except for

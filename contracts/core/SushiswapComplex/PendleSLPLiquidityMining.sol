@@ -45,21 +45,29 @@ contract PendleSLPLiquidityMining is PendleLiquidityMiningBaseV2 {
 
         masterChef = IMasterChef(_masterChef);
         pid = _pid;
-        IERC20(_stakeToken).approve(address(_masterChef), type(uint256).max);
+        IERC20(_stakeToken).safeApprove(address(_masterChef), type(uint256).max);
     }
 
-    function setUpEmergencyMode(address spender) external virtual override {
+    function setUpEmergencyMode(address spender, bool useEmergencyWithdraw)
+        external
+        virtual
+        override
+    {
         (, bool emergencyMode) = pausingManager.checkLiqMiningStatus(address(this));
         require(emergencyMode, "NOT_EMERGENCY");
 
         (address liqMiningEmergencyHandler, , ) = pausingManager.liqMiningEmergencyHandler();
         require(msg.sender == liqMiningEmergencyHandler, "NOT_EMERGENCY_HANDLER");
 
-        masterChef.withdraw(pid, masterChef.userInfo(pid, address(this)).amount);
+        if (useEmergencyWithdraw) {
+            masterChef.emergencyWithdraw(pid);
+        } else {
+            masterChef.withdraw(pid, masterChef.userInfo(pid, address(this)).amount);
+        }
 
         IERC20(pendleTokenAddress).safeApprove(spender, type(uint256).max);
         IERC20(stakeToken).safeApprove(spender, type(uint256).max);
-        IERC20(yieldToken).approve(spender, type(uint256).max);
+        IERC20(yieldToken).safeApprove(spender, type(uint256).max);
     }
 
     /**

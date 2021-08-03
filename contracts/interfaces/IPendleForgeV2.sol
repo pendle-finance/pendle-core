@@ -20,18 +20,17 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
+
 pragma solidity 0.7.6;
 
-import "./IPendleYieldTokenHolder.sol";
+import "./IPendleForge.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IPendleYieldTokenHolderV2 is IPendleYieldTokenHolder {
-    function setUpEmergencyModeV2(address spender, bool extraFlag) external;
-
-    function pushYieldTokens(
-        address to,
-        uint256 amount,
-        uint256 minNYieldAfterPush
-    ) external returns (uint256);
-
-    function afterReceiveTokens(uint256 amount) external;
+interface IPendleForgeV2 is IPendleForge {
+    function setUpEmergencyModeV2(
+        address _underlyingAsset,
+        uint256 _expiry,
+        address spender,
+        bool extraFlag
+    ) external;
 }

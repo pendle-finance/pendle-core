@@ -42,7 +42,7 @@ interface IPendleLiquidityMiningV2 {
 
     function redeemDueInterests(address user) external returns (uint256 amountOut);
 
-    function setUpEmergencyMode(address spender) external;
+    function setUpEmergencyMode(address spender, bool) external;
 
     function balances(address user) external view returns (uint256);
 

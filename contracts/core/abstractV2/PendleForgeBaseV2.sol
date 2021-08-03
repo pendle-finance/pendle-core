@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../../libraries/ExpiryUtilsLib.sol";
 import "../../interfaces/IPendleBaseToken.sol";
 import "../../interfaces/IPendleData.sol";
-import "../../interfaces/IPendleForge.sol";
+import "../../interfaces/IPendleForgeV2.sol";
 import "../../interfaces/IPendleRewardManager.sol";
 import "../../interfaces/IPendleYieldContractDeployer.sol";
 import "../../interfaces/IPendleYieldContractDeployerV2.sol";
@@ -20,7 +20,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @notice Common contract base for a forge implementation.
 /// @dev Each specific forge implementation will need to override necessary virtual functions
-abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyGuard {
+abstract contract PendleForgeBaseV2 is IPendleForgeV2, WithdrawableV2, ReentrancyGuard {
     using ExpiryUtils for string;
     using SafeMath for uint256;
     using Math for uint256;
@@ -117,16 +117,29 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
     }
 
     /**
-    @dev Only the forgeEmergencyHandler can call this function, when its in emergencyMode.
-    @dev This will allow a spender to spend the whole balance of the specified tokens of the yieldTokenHolder
-    contract.
-    @dev The spender should ideally be a contract with logic for users to withdraw out their funds.
+    @dev function has been depreciated but must still be left here to conform with the interface
     */
     function setUpEmergencyMode(
+        address,
+        uint256,
+        address
+    ) external pure override {
+        revert("FUNCTION_DEPRECIATED");
+    }
+
+    /**
+    @dev  Only the forgeEmergencyHandler can call this function, when its in emergencyMode this
+    will allow a spender to spend the whole balance of the specified tokens of the yieldTokenHolder contract
+    @dev the spender should ideally be a contract with logic for users to withdraw out their funds
+    @param extraFlag an optional flag for any forges which need an additional flag (like SushiComplex
+    which allows either normal withdraw or emergencyWithdraw)
+    */
+    function setUpEmergencyModeV2(
         address _underlyingAsset,
         uint256 _expiry,
-        address spender
-    ) external virtual override {
+        address spender,
+        bool extraFlag
+    ) public virtual override {
         (, bool emergencyMode) = pausingManager.checkYieldContractStatus(
             forgeId,
             _underlyingAsset,
@@ -135,9 +148,8 @@ abstract contract PendleForgeBaseV2 is IPendleForge, WithdrawableV2, ReentrancyG
         require(emergencyMode, "NOT_EMERGENCY");
         (address forgeEmergencyHandler, , ) = pausingManager.forgeEmergencyHandler();
         require(msg.sender == forgeEmergencyHandler, "NOT_EMERGENCY_HANDLER");
-        IPendleYieldTokenHolderV2(yieldTokenHolders[_underlyingAsset][_expiry]).setUpEmergencyMode(
-            spender
-        );
+        IPendleYieldTokenHolderV2(yieldTokenHolders[_underlyingAsset][_expiry])
+            .setUpEmergencyModeV2(spender, extraFlag);
     }
 
     /**
