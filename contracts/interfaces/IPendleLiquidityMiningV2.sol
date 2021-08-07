@@ -44,6 +44,16 @@ interface IPendleLiquidityMiningV2 {
 
     function setUpEmergencyMode(address spender, bool) external;
 
+    function updateAndReadEpochData(uint256 epochId, address user)
+        external
+        returns (
+            uint256 totalStakeUnits,
+            uint256 totalRewards,
+            uint256 lastUpdated,
+            uint256 stakeUnitsForUser,
+            uint256 availableRewardsForUser
+        );
+
     function balances(address user) external view returns (uint256);
 
     function startTime() external view returns (uint256);

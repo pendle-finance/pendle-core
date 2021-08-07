@@ -96,15 +96,7 @@ contract PendleSLPLiquidityMining is PendleLiquidityMiningBaseV2 {
     @dev tokens will be pulled from MasterChef before being transfered to users. MasterChefV1
     doesn't allow direct transfer
      */
-    function _pushStakeToken(address to, uint256 amount)
-        internal
-        virtual
-        override
-        returns (uint256 outAmount)
-    {
-        uint256 stakeTokenBal = masterChef.userInfo(pid, address(this)).amount;
-        outAmount = Math.min(amount, stakeTokenBal);
-
+    function _pushStakeToken(address to, uint256 amount) internal virtual override {
         masterChef.withdraw(pid, amount);
         IERC20(stakeToken).safeTransfer(to, amount);
     }

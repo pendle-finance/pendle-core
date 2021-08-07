@@ -242,11 +242,28 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
         require(user != address(0), "ZERO_ADDRESS");
 
         amountOut = _beforeTransferDueInterests(user);
-        _pushYieldToken(user, amountOut);
+        amountOut = _pushYieldToken(user, amountOut);
+    }
+
+    function updateAndReadEpochData(uint256 epochId, address user)
+        external
+        override
+        nonReentrant
+        isUserAllowedToUse
+        returns (
+            uint256 totalStakeUnits,
+            uint256 totalRewards,
+            uint256 lastUpdated,
+            uint256 stakeUnitsForUser,
+            uint256 availableRewardsForUser
+        )
+    {
+        _updatePendingRewards(user);
+        return readEpochData(epochId, user);
     }
 
     function readEpochData(uint256 epochId, address user)
-        external
+        public
         view
         override
         returns (
@@ -284,20 +301,25 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
         // if _curEpoch<=numberOfEpochs => the endEpoch hasn't ended yet (since endEpoch=curEpoch)
         bool _isEndEpochOver = (_curEpoch > numberOfEpochs);
 
-        uint256 _startEpoch = _epochOfTimestamp(lastTimeUserStakeUpdated[user]);
+        // caching
+        uint256 _balance = balances[user];
+        uint256 _lastTimeUserStakeUpdated = lastTimeUserStakeUpdated[user];
+        uint256 _totalStake = totalStake;
+        uint256 _startEpoch = _epochOfTimestamp(_lastTimeUserStakeUpdated);
 
         // Go through all epochs until now to update stakeUnitsForUser and availableRewardsForEpoch
         for (uint256 epochId = _startEpoch; epochId <= _endEpoch; epochId++) {
-            if (epochData[epochId].totalStakeUnits == 0 && totalStake == 0) {
-                // in the extreme extreme case of zero staked tokens for this expiry even now,
+            if (epochData[epochId].totalStakeUnits == 0) {
+                // in the extreme case of zero staked tokens for this expiry even now,
                 // => nothing to do from this epoch onwards
-                break;
+                if (_totalStake == 0) break;
+                // nobody stakes anything in this epoch
+                continue;
             }
-
             // updating stakeUnits for users. The logic of this is similar to _updateStakeDataForExpiry
             epochData[epochId].stakeUnitsForUser[user] = epochData[epochId]
             .stakeUnitsForUser[user]
-            .add(_calcUnitsStakeInEpoch(balances[user], lastTimeUserStakeUpdated[user], epochId));
+            .add(_calcUnitsStakeInEpoch(_balance, _lastTimeUserStakeUpdated, epochId));
 
             // all epochs prior to the endEpoch must have ended
             // if epochId == _endEpoch, we must check if the epoch has ended or not
@@ -306,18 +328,6 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
             }
 
             // Now this epoch has ended,let's distribute its reward to this user
-
-            /*
-            @Long: this can never happen because:
-            * if totalStake==0 => will break by conditions above
-            * else: totalStake!=0. Since every time the stakeToken balance changes, this function
-            will be called.
-                * => if startOfEpoch != now, the epoch must have a positive amount of units
-                * else startOfEpoch == now, but in this case it means that the epoch is not over
-                yet, so !_isEndEpochOver == false
-            */
-            require(epochData[epochId].totalStakeUnits != 0, "INTERNAL_ERROR");
-
             // calc the amount of rewards the user is eligible to receive from this epoch
             uint256 rewardsPerVestingEpoch = _calcAmountRewardsForUserInEpoch(user, epochId);
 
@@ -454,7 +464,6 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
 
         lastEpochClaimed[user] = _lastEpoch;
         emit PendleRewardsSettled(user, amountOut);
-        return amountOut;
     }
 
     /**
@@ -522,15 +531,10 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
         IERC20(stakeToken).safeTransferFrom(from, address(this), amount);
     }
 
-    function _pushStakeToken(address to, uint256 amount)
-        internal
-        virtual
-        returns (uint256 outAmount)
-    {
+    function _pushStakeToken(address to, uint256 amount) internal virtual {
         // For the case that we don't need to stake the stakeToken anywhere else, just transfer out
         // from the current contract
-        outAmount = Math.min(amount, IERC20(stakeToken).balanceOf(address(this)));
-        if (outAmount != 0) IERC20(stakeToken).safeTransfer(to, outAmount);
+        if (amount != 0) IERC20(stakeToken).safeTransfer(to, amount);
     }
 
     function _pushYieldToken(address to, uint256 amount)
