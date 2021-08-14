@@ -66,7 +66,7 @@ const config: HardhatUserConfig = {
         },
       ],
       allowUnlimitedContractSize: true,
-      blockGasLimit: 80000000,
+      blockGasLimit: 800000000000000,
       gas: 80000000,
       gasPrice: 1,
       loggingEnabled: false,
@@ -119,10 +119,10 @@ const config: HardhatUserConfig = {
   mocha: {
     timeout: 500000,
   },
-  tenderly: {
-    username: "Yongkhang",
-    project: "pendle-finance"
-  },
+  // tenderly: {
+  //   username: "Yongkhang",
+  //   project: "pendle-finance"
+  // },
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/

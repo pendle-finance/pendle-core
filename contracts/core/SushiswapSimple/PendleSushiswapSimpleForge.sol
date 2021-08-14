@@ -9,8 +9,6 @@ import "../../interfaces/IMasterChef.sol";
 /*
 - SushiswapSimpleForge is for tokens that are not in Sushi's Onsen program (i.e doesn't have a pid
 the MasterChef)
-- Sushiswap forks from Uniswap, so we just need to replace the verifyToken function & keep the rest
-of the logic
 */
 contract PendleSushiswapSimpleForge is PendleUniswapV2Forge {
     constructor(
@@ -20,7 +18,8 @@ contract PendleSushiswapSimpleForge is PendleUniswapV2Forge {
         address _rewardToken,
         address _rewardManager,
         address _yieldContractDeployer,
-        bytes memory _codeHash
+        bytes32 _codeHash,
+        address _pairFactory
     )
         PendleUniswapV2Forge(
             _governanceManager,
@@ -29,7 +28,8 @@ contract PendleSushiswapSimpleForge is PendleUniswapV2Forge {
             _rewardToken,
             _rewardManager,
             _yieldContractDeployer,
-            _codeHash
+            _codeHash,
+            _pairFactory
         )
     {}
 }

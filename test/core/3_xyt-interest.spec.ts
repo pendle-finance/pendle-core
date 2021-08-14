@@ -1,5 +1,5 @@
+import { checkDisabled, Mode } from '../fixtures/TestEnv';
 import { runTest } from './common-test/xyt-interest-test';
-import { Mode, checkDisabled } from './fixtures/TestEnv';
 
 describe('aaveV2-xyt-interest', function () {
   if (checkDisabled(Mode.AAVE_V2)) return;
@@ -9,6 +9,11 @@ describe('aaveV2-xyt-interest', function () {
 describe('compound-xyt-interest', function () {
   if (checkDisabled(Mode.COMPOUND)) return;
   runTest(Mode.COMPOUND);
+});
+
+describe('compoundV2-xyt-interest', function () {
+  if (checkDisabled(Mode.COMPOUND_V2)) return;
+  runTest(Mode.COMPOUND_V2);
 });
 
 describe('SushiswapComplex-xyt-interest', function () {

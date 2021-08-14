@@ -7,6 +7,7 @@ import "../../interfaces/IMasterChef.sol";
 
 contract PendleSushiswapComplexYieldTokenHolder is PendleYieldTokenHolderBaseV2 {
     using SafeERC20 for IERC20;
+    using SafeMath for uint256;
     IMasterChef public immutable masterChef;
     uint256 public immutable pid;
 
@@ -57,12 +58,11 @@ contract PendleSushiswapComplexYieldTokenHolder is PendleYieldTokenHolderBaseV2 
         address to,
         uint256 amount,
         uint256 minNYieldAfterPush
-    ) external virtual override onlyForge returns (uint256 outAmount) {
+    ) external virtual override onlyForge {
         uint256 yieldTokenBal = masterChef.userInfo(pid, address(this)).amount;
-        outAmount = Math.min(amount, yieldTokenBal);
-        require(yieldTokenBal - outAmount >= minNYieldAfterPush, "INVARIANCE_ERROR");
+        require(yieldTokenBal.sub(amount) >= minNYieldAfterPush, "INVARIANCE_ERROR");
 
-        masterChef.withdraw(pid, outAmount);
-        IERC20(yieldToken).safeTransfer(to, outAmount);
+        masterChef.withdraw(pid, amount);
+        IERC20(yieldToken).safeTransfer(to, amount);
     }
 }

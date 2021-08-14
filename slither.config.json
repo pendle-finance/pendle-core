@@ -1,0 +1,7 @@
+{
+  "detectors_to_exclude": "incorrect-equality,reentrancy-benign,reentrancy-events,timestamp,assembly,pragma,low-level-calls,unimplemented-functions,solc-version,naming-convention",
+  "exclude_informational": false,
+  "exclude_low": false,
+  "exclude_medium": false,
+  "exclude_high": false
+}

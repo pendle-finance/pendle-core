@@ -3,10 +3,11 @@ import IUniswapV2Router02 from '../../build/artifacts/contracts/interfaces/IUnis
 import IUniswapV2Pair from '../../build/artifacts/contracts/interfaces/IUniswapV2Pair.sol/IUniswapV2Pair.json';
 import MockPendleAaveMarket from '../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json';
 import PendleFutureYieldToken from '../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json';
-import { TestEnv } from '../core/fixtures/';
+import { TestEnv } from '../fixtures/';
 import { consts, tokens } from './Constants';
 import { amountToWei, sqrt } from './Numeric';
 import { mint, mintXytAave } from './TokenHelpers';
+import hre from 'hardhat';
 
 const { waffle } = require('hardhat');
 const { provider } = waffle;
@@ -115,4 +116,8 @@ export function wrapEth(object: any, ethAmount: BN): any {
   const cloneObj = JSON.parse(JSON.stringify(object));
   cloneObj.value = ethAmount;
   return cloneObj;
+}
+
+export async function getContractAt(ContractABIName: string, address: string): Promise<Contract> {
+  return await hre.ethers.getContractAt(ContractABIName, address);
 }

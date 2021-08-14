@@ -16,9 +16,11 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     using SafeMath for uint256;
     using Math for uint256;
 
+    mapping(address => uint256) public lastRateForUnderlyingAsset;
     mapping(address => mapping(uint256 => uint256)) public lastRateBeforeExpiry;
     mapping(address => mapping(uint256 => mapping(address => uint256))) public lastRate;
-    bytes internal codeHash;
+    bytes32 public immutable codeHash;
+    address public immutable pairFactory;
 
     constructor(
         address _governanceManager,
@@ -27,7 +29,8 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         address _rewardToken,
         address _rewardManager,
         address _yieldContractDeployer,
-        bytes memory _codeHash
+        bytes32 _codeHash,
+        address _pairFactory
     )
         PendleForgeBaseV2(
             _governanceManager,
@@ -39,6 +42,7 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         )
     {
         codeHash = _codeHash;
+        pairFactory = _pairFactory;
     }
 
     /**
@@ -50,10 +54,14 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         override
     {
         // in the case of Uniswap, _underlyingAsset == tokenAddr
-        require(_tokenInfo.length == 0, "INVALID_TOKEN_INFO");
+        require(
+            _tokenInfo.length == 1 && address(_tokenInfo[0]) == _underlyingAsset,
+            "INVALID_TOKEN_INFO"
+        );
+
         IUniswapV2Pair pair = IUniswapV2Pair(_underlyingAsset);
         address poolAddr = UniswapV2Library.pairFor(
-            pair.factory(),
+            pairFactory,
             pair.token0(),
             pair.token1(),
             codeHash
@@ -64,17 +72,13 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     /**
     @dev please refer to the specs
     */
-    function getExchangeRate(address _underlyingAsset)
-        public
-        view
-        override
-        returns (uint256 rate)
-    {
+    function getExchangeRate(address _underlyingAsset) public override returns (uint256 rate) {
         (uint256 reserve0, uint256 reserve1, ) = IUniswapV2Pair(_underlyingAsset).getReserves();
 
         uint256 currentK = Math.sqrt(reserve0.mul(reserve1));
         uint256 totalSupply = IUniswapV2Pair(_underlyingAsset).totalSupply();
-        rate = currentK.rdiv(totalSupply);
+        rate = Math.max(currentK.rdiv(totalSupply), lastRateForUnderlyingAsset[_underlyingAsset]);
+        lastRateForUnderlyingAsset[_underlyingAsset] = rate;
     }
 
     /**
@@ -84,7 +88,7 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         public
         view
         override(IPendleForge, PendleForgeBaseV2)
-        returns (address)
+        returns (address yieldBearingToken)
     {
         require(tokenInfo[_underlyingAsset].registered, "INVALID_UNDERLYING_ASSET");
         return _underlyingAsset;
@@ -103,15 +107,14 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
 
     function getExchangeRateBeforeExpiry(address _underlyingAsset, uint256 _expiry)
         internal
-        returns (uint256)
+        returns (uint256 exchangeRate)
     {
         if (block.timestamp > _expiry) {
             return lastRateBeforeExpiry[_underlyingAsset][_expiry];
         }
-        uint256 exchangeRate = getExchangeRate(_underlyingAsset);
+        exchangeRate = getExchangeRate(_underlyingAsset);
 
         lastRateBeforeExpiry[_underlyingAsset][_expiry] = exchangeRate;
-        return exchangeRate;
     }
 
     /**
@@ -119,7 +122,6 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     */
     function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
         internal
-        view
         override
         returns (uint256 underlyingToRedeem)
     {
@@ -131,7 +133,6 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     */
     function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)
         internal
-        view
         override
         returns (uint256 amountToMint)
     {

@@ -1,23 +1,24 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
-import hre from 'hardhat';
+import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../../fixtures';
 import {
   advanceTime,
+  advanceTimeAndBlock,
   approxBigNumber,
   consts,
+  errMsg,
   evm_revert,
   evm_snapshot,
-  mineBlock,
+  getContractAt,
+  mineAllPendingTransactions,
   minerStart,
   minerStop,
   redeemAfterExpiry,
   redeemUnderlying,
   tokenizeYield,
-  errMsg,
 } from '../../helpers';
 chai.use(solidity);
-import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 
 const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
@@ -53,7 +54,7 @@ export function runTest(mode: Mode) {
       globalSnapshotId = await evm_snapshot();
 
       userInitialYieldToken = (await env.yToken.balanceOf(alice.address)).div(4);
-      rewardToken = await hre.ethers.getContractAt('TestToken', await env.forge.rewardToken());
+      rewardToken = await getContractAt('TestToken', await env.forge.rewardToken());
       yieldTokenHolder = await env.forge.yieldTokenHolders(tokenToStake, env.EXPIRY);
 
       await minerStop();
@@ -62,6 +63,7 @@ export function runTest(mode: Mode) {
         await env.yToken.connect(person).approve(env.router.address, consts.INF);
       }
       await redeemRewardsFromProtocol([bob, charlie, dave]);
+      await mineAllPendingTransactions();
       await minerStart();
 
       snapshotId = await evm_snapshot();
@@ -78,17 +80,14 @@ export function runTest(mode: Mode) {
 
     async function redeemRewardsFromProtocol(users: Wallet[]) {
       if (mode == Mode.AAVE_V2) {
-        const incentiveController = await hre.ethers.getContractAt(
-          'IAaveIncentivesController',
-          consts.AAVE_INCENTIVES_CONTROLLER
-        );
+        const incentiveController = await getContractAt('IAaveIncentivesController', consts.AAVE_INCENTIVES_CONTROLLER);
         for (const person of users) {
           await incentiveController
             .connect(person)
             .claimRewards([env.yToken.address], consts.INF, person.address, consts.HG);
         }
       } else if (mode == Mode.COMPOUND) {
-        const comptroller = await hre.ethers.getContractAt('IComptroller', consts.COMPOUND_COMPTROLLER_ADDRESS);
+        const comptroller = await getContractAt('IComptroller', consts.COMPOUND_COMPTROLLER_ADDRESS);
         await comptroller.claimComp(
           users.map((u) => u.address),
           [env.yToken.address],
@@ -97,18 +96,11 @@ export function runTest(mode: Mode) {
           consts.HG
         );
       } else if (mode == Mode.SUSHISWAP_COMPLEX) {
-        const sushiswapMasterChef = await hre.ethers.getContractAt('IMasterChef', consts.MASTERCHEF_V1_ADDRESS);
+        const sushiswapMasterChef = await getContractAt('IMasterChef', consts.MASTERCHEF_V1_ADDRESS);
         for (const person of users) {
           const balance = (await sushiswapMasterChef.userInfo(SUSHI_USDT_WETH_PID, person.address)).amount;
           await sushiswapMasterChef.connect(person).withdraw(SUSHI_USDT_WETH_PID, balance, consts.HG);
         }
-      }
-    }
-
-    async function advanceTimeAndBlock(time: BN, blockCount: number) {
-      await advanceTime(time);
-      for (let i = 0; i < blockCount; i++) {
-        await mineBlock();
       }
     }
 
@@ -130,7 +122,7 @@ export function runTest(mode: Mode) {
           .redeemRewards(tokenToStake, env.EXPIRY, users[index].address, consts.HG);
       }
 
-      await mineBlock();
+      await mineAllPendingTransactions();
       await minerStart();
 
       for (const index of [0, 1, 2]) {
@@ -204,7 +196,7 @@ export function runTest(mode: Mode) {
       for (const person of [charlie, dave, eve]) {
         await env.rewardManager.redeemRewards(tokenToStake, env.EXPIRY, person.address);
       }
-      await mineBlock();
+      await mineAllPendingTransactions();
       await minerStart();
 
       const bobRewardBalance = await rewardToken.balanceOf(bob.address);

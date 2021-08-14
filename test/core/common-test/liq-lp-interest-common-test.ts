@@ -21,7 +21,7 @@ import {
   Mode,
   parseTestEnvLiquidityMiningFixture,
   TestEnv,
-} from '../fixtures';
+} from '../../fixtures';
 const { waffle } = require('hardhat');
 
 const { loadFixture, provider } = waffle;

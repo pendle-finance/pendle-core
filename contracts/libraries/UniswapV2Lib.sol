@@ -20,7 +20,7 @@ library UniswapV2Library {
         address factory,
         address tokenA,
         address tokenB,
-        bytes memory codeHash
+        bytes32 codeHash
     ) internal pure returns (address pair) {
         (address token0, address token1) = sortTokens(tokenA, tokenB);
         pair = address(

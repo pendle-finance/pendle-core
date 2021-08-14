@@ -2,6 +2,7 @@ import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
 import ERC20 from '../../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
+import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../../fixtures';
 import {
   addMarketLiquidityDual,
   addMarketLiquiditySingle,
@@ -22,7 +23,6 @@ import {
   swapExactOutXytToToken,
   tokens,
 } from '../../helpers';
-import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../fixtures';
 const { waffle } = require('hardhat');
 chai.use(solidity);
 

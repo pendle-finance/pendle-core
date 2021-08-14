@@ -1,4 +1,11 @@
-import { BigNumber as BN, utils } from 'ethers';
+import { BigNumber as BN } from 'ethers';
+import {
+  liquidityMiningFixture,
+  LiquidityMiningFixture,
+  Mode,
+  parseTestEnvLiquidityMiningFixture,
+  TestEnv,
+} from '../../fixtures';
 import {
   approxBigNumber,
   consts,
@@ -15,13 +22,6 @@ import {
   tokens,
   withdraw,
 } from '../../helpers';
-import {
-  liquidityMiningFixture,
-  LiquidityMiningFixture,
-  Mode,
-  parseTestEnvLiquidityMiningFixture,
-  TestEnv,
-} from '../fixtures';
 const { waffle } = require('hardhat');
 
 const { loadFixture, provider } = waffle;

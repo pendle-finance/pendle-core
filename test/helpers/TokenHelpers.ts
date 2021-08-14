@@ -2,14 +2,13 @@ import { assert } from 'chai';
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import { amountToWei, consts, impersonateAccount, impersonateAccountStop, Token, tokens, wrapEth } from '.';
 import ERC20 from '../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
-import AToken from '../../build/artifacts/contracts/interfaces/IAToken.sol/IAToken.json';
 import IUniswapV2Router02 from '../../build/artifacts/contracts/interfaces/IUniswapV2Router02.sol/IUniswapV2Router02.json';
 import TetherToken from '../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json';
 import IWETH from '../../build/artifacts/contracts/interfaces/IWETH.sol/IWETH.json';
 import ICEtherTest from '../../build/artifacts/contracts/mock/ICEtherTest.sol/ICEtherTest.json';
 import ICTokenTest from '../../build/artifacts/contracts/mock/ICTokenTest.sol/ICTokenTest.json';
-import { RouterFixture } from '../core/fixtures';
-import { aaveV2Fixture } from '../core/fixtures/aaveV2.fixture';
+import { RouterFixture } from '../fixtures';
+import { aaveV2Fixture } from '../fixtures/aaveV2.fixture';
 
 const hre = require('hardhat');
 const { waffle } = require('hardhat');
@@ -52,6 +51,32 @@ export async function mintXytCompound(
     .connect(user)
     .tokenizeYield(
       consts.FORGE_COMPOUND,
+      token.address,
+      expiry,
+      postCTokenBal.sub(preCTokenBal),
+      user.address,
+      consts.HG
+    );
+  return postCTokenBal.sub(preCTokenBal);
+}
+
+export async function mintXytCompoundV2(
+  token: Token,
+  user: Wallet,
+  amount: BN,
+  env: RouterFixture,
+  expiry: BN
+): Promise<BN> {
+  let router = env.core.router;
+  const cContract = await getCContract(user, token);
+  let preCTokenBal = await cContract.balanceOf(user.address);
+  await mintCompoundToken(token, user, amount);
+  await cContract.approve(router.address, consts.INF);
+  let postCTokenBal = await cContract.balanceOf(user.address);
+  await router
+    .connect(user)
+    .tokenizeYield(
+      consts.FORGE_COMPOUND_V2,
       token.address,
       expiry,
       postCTokenBal.sub(preCTokenBal),
@@ -167,7 +192,7 @@ export async function getCContract(alice: Wallet, token: Token): Promise<Contrac
 }
 
 export async function getERC20Contract(alice: Wallet, token: Token): Promise<Contract> {
-  return new Contract(token.address, AToken.abi, alice);
+  return new Contract(token.address, ERC20.abi, alice);
 }
 
 export async function emptyToken(tokenContract: Contract, person: Wallet) {

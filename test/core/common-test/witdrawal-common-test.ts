@@ -1,27 +1,24 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
-import { BigNumber as BN, Contract, Wallet } from 'ethers';
+import { BigNumber as BN, Contract } from 'ethers';
+import {
+  liquidityMiningFixture,
+  LiquidityMiningFixture,
+  Mode,
+  parseTestEnvLiquidityMiningFixture,
+  TestEnv,
+} from '../../fixtures';
 import {
   addMarketLiquidityDual,
-  bootstrapMarket,
   consts,
   emptyToken,
   evm_revert,
   evm_snapshot,
-  logTokenBalance,
-  mint,
   mintAaveV2Token,
   mintCompoundToken,
   tokenizeYield,
   tokens,
 } from '../../helpers';
-import {
-  Mode,
-  TestEnv,
-  liquidityMiningFixture,
-  LiquidityMiningFixture,
-  parseTestEnvLiquidityMiningFixture,
-} from '../fixtures';
 const { waffle } = require('hardhat');
 chai.use(solidity);
 

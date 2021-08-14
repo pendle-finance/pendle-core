@@ -1,4 +1,7 @@
 import { BigNumber as BN, Wallet } from 'ethers';
+import { checkDisabled, marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../fixtures';
+import * as scenario from '../fixtures/lpFormulaScenario.fixture';
+import { TestAddLiq, TestRemoveLiq } from '../fixtures/lpFormulaScenario.fixture';
 import {
   addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
@@ -15,9 +18,6 @@ import {
   toFixedPoint,
   tokens,
 } from '../helpers';
-import { checkDisabled, marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from './fixtures';
-import * as scenario from './fixtures/lpFormulaScenario.fixture';
-import { TestAddLiq, TestRemoveLiq } from './fixtures/lpFormulaScenario.fixture';
 const { waffle } = require('hardhat');
 
 const { loadFixture, provider } = waffle;

@@ -1,6 +1,7 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
+import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../../fixtures';
 import {
   addFakeIncomeSushi,
   amountToWei,
@@ -18,7 +19,6 @@ import {
   tokenizeYield,
   tokens,
 } from '../../helpers';
-import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 const { waffle } = require('hardhat');
 chai.use(solidity);
 
@@ -76,9 +76,9 @@ export function runTest(mode: Mode) {
       await tokenizeYield(env, alice, REF_AMOUNT, bob.address);
       let charlieInterest: BN = BN.from(0);
       if (mode == Mode.SUSHISWAP_COMPLEX || mode == Mode.SUSHISWAP_SIMPLE) {
-        const lastExchangeRate: BN = await env.forge.getExchangeRate(underlyingAsset.address);
+        const lastExchangeRate: BN = await env.forge.callStatic.getExchangeRate(underlyingAsset.address);
         await addFakeIncomeSushi(env, alice);
-        const nowExchangeRate: BN = await env.forge.getExchangeRate(underlyingAsset.address);
+        const nowExchangeRate: BN = await env.forge.callStatic.getExchangeRate(underlyingAsset.address);
         charlieInterest = REF_AMOUNT.mul(nowExchangeRate).div(lastExchangeRate).sub(REF_AMOUNT);
         await redeemDueInterests(env, bob);
       } else {

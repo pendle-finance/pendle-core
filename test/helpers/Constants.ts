@@ -1,4 +1,5 @@
 import { BigNumber as BN, utils } from 'ethers';
+import { web3 } from 'hardhat';
 export type Token = {
   address: string;
   decimal: number;
@@ -28,12 +29,13 @@ export const consts = {
   MARKET_FACTORY_AAVE_V2: utils.formatBytes32String('AaveV2'),
   FORGE_COMPOUND: utils.formatBytes32String('Compound'),
   MARKET_FACTORY_COMPOUND: utils.formatBytes32String('Compound'),
+  FORGE_COMPOUND_V2: utils.formatBytes32String('CompoundV2'),
   FORGE_SUSHISWAP_COMPLEX: utils.formatBytes32String('SushiswapComplex'),
-  CODE_HASH_SUSHISWAP: '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303',
-  CODE_HASH_UNISWAP: '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
+  CODE_HASH_SUSHISWAP: web3.utils.hexToBytes('0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303'),
+  CODE_HASH_UNISWAP: web3.utils.hexToBytes('0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f'),
+  FACTORY_SUSHISWAP: '0xc0aee478e3658e2610c5f7a4a2e1777ce9e4f2ac',
   FORGE_SUSHISWAP_SIMPLE: utils.formatBytes32String('SushiswapSimple'),
-  MARKET_FACTORY_SUSHISWAP_COMPLEX: utils.formatBytes32String('SushiswapComplex'),
-  MARKET_FACTORY_SUSHISWAP_SIMPLE: utils.formatBytes32String('SushiswapSimple'),
+  MARKET_FACTORY_GENERIC: utils.formatBytes32String('Generic'),
   ZERO_BYTES: utils.formatBytes32String(''),
   RANDOM_BYTES: utils.formatBytes32String('ZpTw6Y3Ft4ruk7pmwTJF'),
   ZERO_ADDRESS: '0x0000000000000000000000000000000000000000',
@@ -50,10 +52,11 @@ export const consts = {
   FIVE_MONTH: BN.from(2592000 * 5),
   SIX_MONTH: BN.from(2592000 * 6),
   ONE_YEAR: BN.from(31536000),
-  T0_A2: BN.from(1623715050), // the time that the first AaveV2_XYT is minted
-  T0_C: BN.from(1623715100), // the time that the first Compound_XYT is minted
-  T0_SC: BN.from(1623715150), // the time that the first SushiswapComplex_XYT is minted
-  T0_SS: BN.from(1623715200),
+  T0_A2: BN.from(1633715050), // the time that the first AaveV2_XYT is minted
+  T0_C: BN.from(1633715100), // the time that the first Compound_XYT is minted
+  T0_C2: BN.from(1633715150), // the time that the first SushiswapComplex_XYT is minted
+  T0_SC: BN.from(1633715200),
+  T0_SS: BN.from(1633715250),
   HG: { gasLimit: 80000000 },
   LG: { gasLimit: 200000 },
   INITIAL_AAVE_USDT_AMOUNT: BN.from(10 ** 5),

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { BigNumber as BN, BigNumberish } from 'ethers';
-import { LiqParams, TestEnv, UserStakeAction } from '../core/fixtures';
+import { LiqParams, TestEnv, UserStakeAction } from '../fixtures';
 const PRECISION = BN.from(2).pow(40);
 
 // returns a rewards object = BN[][]

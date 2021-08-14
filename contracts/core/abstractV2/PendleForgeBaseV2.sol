@@ -139,7 +139,7 @@ abstract contract PendleForgeBaseV2 is IPendleForgeV2, WithdrawableV2, Reentranc
         uint256 _expiry,
         address spender,
         bool extraFlag
-    ) public virtual override {
+    ) external virtual override {
         (, bool emergencyMode) = pausingManager.checkYieldContractStatus(
             forgeId,
             _underlyingAsset,
@@ -195,14 +195,14 @@ abstract contract PendleForgeBaseV2 is IPendleForgeV2, WithdrawableV2, Reentranc
         checkNotPaused(_underlyingAsset, _expiry);
         address yieldToken = getYieldBearingToken(_underlyingAsset);
 
-        uint8 yieldTokenDecimals = IPendleYieldToken(yieldToken).decimals();
+        uint8 underlyingAssetDecimals = IPendleYieldToken(_underlyingAsset).decimals();
 
         // Deploy the OT contract -> XYT contract -> yieldTokenHolder
         ot = yieldContractDeployer.forgeOwnershipToken(
             _underlyingAsset,
             OT.concat(IPendleBaseToken(yieldToken).name(), _expiry, " "),
             OT.concat(IPendleBaseToken(yieldToken).symbol(), _expiry, "-"),
-            yieldTokenDecimals,
+            underlyingAssetDecimals,
             _expiry
         );
 
@@ -210,7 +210,7 @@ abstract contract PendleForgeBaseV2 is IPendleForgeV2, WithdrawableV2, Reentranc
             _underlyingAsset,
             XYT.concat(IPendleBaseToken(yieldToken).name(), _expiry, " "),
             XYT.concat(IPendleBaseToken(yieldToken).symbol(), _expiry, "-"),
-            yieldTokenDecimals,
+            underlyingAssetDecimals,
             _expiry
         );
 
@@ -254,7 +254,7 @@ abstract contract PendleForgeBaseV2 is IPendleForgeV2, WithdrawableV2, Reentranc
         );
 
         // transfer back to the user
-        redeemedAmount = _pushYieldToken(_underlyingAsset, _expiry, _user, redeemedAmount);
+        _pushYieldToken(_underlyingAsset, _expiry, _user, redeemedAmount);
 
         // Notice for anyone taking values from this event:
         //   The redeemedAmount includes the interest due to any XYT held
@@ -299,7 +299,7 @@ abstract contract PendleForgeBaseV2 is IPendleForgeV2, WithdrawableV2, Reentranc
         );
 
         // transfer back to the user
-        redeemedAmount = _pushYieldToken(_underlyingAsset, _expiry, _user, redeemedAmount);
+        _pushYieldToken(_underlyingAsset, _expiry, _user, redeemedAmount);
 
         // Notice for anyone taking values from this event:
         //   The redeemedAmount includes the interest due to the XYT held
@@ -335,7 +335,7 @@ abstract contract PendleForgeBaseV2 is IPendleForgeV2, WithdrawableV2, Reentranc
         // update the dueInterests of the user before we transfer out
         amountOut = _beforeTransferDueInterests(tokens, _underlyingAsset, _expiry, _user, false);
 
-        amountOut = _pushYieldToken(_underlyingAsset, _expiry, _user, amountOut);
+        _pushYieldToken(_underlyingAsset, _expiry, _user, amountOut);
     }
 
     /**
@@ -444,7 +444,7 @@ abstract contract PendleForgeBaseV2 is IPendleForgeV2, WithdrawableV2, Reentranc
         totalFee[_underlyingAsset][_expiry] = 0;
 
         address treasuryAddress = data.treasury();
-        _totalFee = _pushYieldToken(_underlyingAsset, _expiry, treasuryAddress, _totalFee);
+        _pushYieldToken(_underlyingAsset, _expiry, treasuryAddress, _totalFee);
         emit ForgeFeeWithdrawn(forgeId, _underlyingAsset, _expiry, _totalFee);
     }
 
@@ -517,15 +517,18 @@ abstract contract PendleForgeBaseV2 is IPendleForgeV2, WithdrawableV2, Reentranc
         uint256 _expiry,
         address _user,
         uint256 _amount
-    ) internal virtual returns (uint256 outAmount) {
-        if (_amount == 0) return 0;
+    ) internal virtual {
+        if (_amount == 0) return;
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
         uint256 otBalance = tokens.ot.totalSupply();
         uint256 minNYieldAfterPush = block.timestamp < _expiry
             ? _calcUnderlyingToRedeem(_underlyingAsset, otBalance)
             : _calcTotalAfterExpiry(_underlyingAsset, _expiry, otBalance);
-        outAmount = IPendleYieldTokenHolderV2(yieldTokenHolders[_underlyingAsset][_expiry])
-        .pushYieldTokens(_user, _amount, minNYieldAfterPush);
+        IPendleYieldTokenHolderV2(yieldTokenHolders[_underlyingAsset][_expiry]).pushYieldTokens(
+            _user,
+            _amount,
+            minNYieldAfterPush
+        );
     }
 
     function _getTokens(address _underlyingAsset, uint256 _expiry)

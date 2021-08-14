@@ -598,6 +598,7 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
         return (t.sub(startTime)).div(epochDuration).add(1);
     }
 
+    // Although the name of this function is endTimeOfEpoch, it's actually the beginning of the next epoch
     function _endTimeOfEpoch(uint256 t) internal view returns (uint256) {
         // epoch id starting from 1
         return startTime.add(t.mul(epochDuration));

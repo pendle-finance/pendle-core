@@ -31,7 +31,7 @@ interface IPendleYieldTokenHolderV2 is IPendleYieldTokenHolder {
         address to,
         uint256 amount,
         uint256 minNYieldAfterPush
-    ) external returns (uint256);
+    ) external;
 
     function afterReceiveTokens(uint256 amount) external;
 }

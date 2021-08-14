@@ -21,7 +21,8 @@ contract PendleSushiswapComplexForge is PendleUniswapV2Forge {
         address _rewardToken,
         address _rewardManager,
         address _yieldContractDeployer,
-        bytes memory _codeHash,
+        bytes32 _codeHash,
+        address _pairFactory,
         address _masterChef
     )
         PendleUniswapV2Forge(
@@ -31,7 +32,8 @@ contract PendleSushiswapComplexForge is PendleUniswapV2Forge {
             _rewardToken,
             _rewardManager,
             _yieldContractDeployer,
-            _codeHash
+            _codeHash,
+            _pairFactory
         )
     {
         masterChef = IMasterChef(_masterChef);
@@ -50,5 +52,14 @@ contract PendleSushiswapComplexForge is PendleUniswapV2Forge {
             address(masterChef.poolInfo(pid).lpToken) == _underlyingAsset,
             "INVALID_TOKEN_INFO"
         );
+
+        IUniswapV2Pair pair = IUniswapV2Pair(_underlyingAsset);
+        address poolAddr = UniswapV2Library.pairFor(
+            pairFactory,
+            pair.token0(),
+            pair.token1(),
+            codeHash
+        );
+        require(poolAddr == _underlyingAsset, "INVALID_TOKEN_ADDR");
     }
 }

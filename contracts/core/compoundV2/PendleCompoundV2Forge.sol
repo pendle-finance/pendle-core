@@ -84,11 +84,10 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         public
         view
         override(IPendleForge, PendleForgeBaseV2)
-        returns (address)
+        returns (address cTokenAddr)
     {
         require(tokenInfo[_underlyingAsset].registered, "INVALID_UNDERLYING_ASSET");
-        address cTokenAddr = address(tokenInfo[_underlyingAsset].container[0]);
-        return cTokenAddr;
+        cTokenAddr = address(tokenInfo[_underlyingAsset].container[0]);
     }
 
     /**
@@ -108,15 +107,13 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     */
     function getExchangeRateBeforeExpiry(address _underlyingAsset, uint256 _expiry)
         internal
-        returns (uint256)
+        returns (uint256 exchangeRate)
     {
         if (block.timestamp > _expiry) {
             return lastRateBeforeExpiry[_underlyingAsset][_expiry];
         }
-        uint256 exchangeRate = getExchangeRate(_underlyingAsset);
-
+        exchangeRate = getExchangeRate(_underlyingAsset);
         lastRateBeforeExpiry[_underlyingAsset][_expiry] = exchangeRate;
-        return exchangeRate;
     }
 
     /**

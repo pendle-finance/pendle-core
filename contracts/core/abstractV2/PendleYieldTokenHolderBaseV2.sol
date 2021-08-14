@@ -11,6 +11,7 @@ import "../../libraries/MathLib.sol";
 contract PendleYieldTokenHolderBaseV2 is IPendleYieldTokenHolderV2, WithdrawableV2 {
     using SafeERC20 for IERC20;
     using Math for uint256;
+    using SafeMath for uint256;
 
     address public immutable override yieldToken;
     address public immutable override forge;
@@ -36,7 +37,6 @@ contract PendleYieldTokenHolderBaseV2 is IPendleYieldTokenHolderV2, Withdrawable
         rewardToken = _rewardToken;
         expiry = _expiry;
 
-        IERC20(_yieldToken).safeApprove(_forge, type(uint256).max);
         IERC20(_rewardToken).safeApprove(rewardManager, type(uint256).max);
     }
 
@@ -66,11 +66,10 @@ contract PendleYieldTokenHolderBaseV2 is IPendleYieldTokenHolderV2, Withdrawable
         address to,
         uint256 amount,
         uint256 minNYieldAfterPush
-    ) external virtual override onlyForge returns (uint256 outAmount) {
+    ) external virtual override onlyForge {
         uint256 yieldTokenBal = IERC20(yieldToken).balanceOf(address(this));
-        outAmount = Math.min(amount, yieldTokenBal);
-        require(yieldTokenBal - outAmount >= minNYieldAfterPush, "INVARIANCE_ERROR");
-        IERC20(yieldToken).safeTransfer(to, outAmount);
+        require(yieldTokenBal.sub(amount) >= minNYieldAfterPush, "INVARIANCE_ERROR");
+        IERC20(yieldToken).safeTransfer(to, amount);
     }
 
     // The governance address will be able to withdraw any tokens except for

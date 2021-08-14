@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { BigNumber as BN, Wallet } from 'ethers';
+import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../../fixtures';
 import {
   addFakeIncomeCompoundUSDT,
   addFakeIncomeSushi,
@@ -10,6 +11,7 @@ import {
   emptyToken,
   evm_revert,
   evm_snapshot,
+  getSushiLpValue,
   mintAaveV2Token,
   mintCompoundToken,
   mintSushiswapLpFixed,
@@ -22,9 +24,7 @@ import {
   setTimeNextBlock,
   tokenizeYield,
   yTokenBalance,
-  getSushiLpValue,
 } from '../../helpers';
-import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 
 const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
@@ -48,7 +48,7 @@ export async function runTest(mode: Mode) {
       globalSnapshotId = await evm_snapshot();
       for (var person of [bob, charlie, dave, eve]) {
         if (mode == Mode.AAVE_V2) await mintAaveV2Token(env.underlyingAsset, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
-        else if (mode == Mode.COMPOUND)
+        else if (mode == Mode.COMPOUND || mode == Mode.COMPOUND_V2)
           await mintCompoundToken(env.underlyingAsset, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
         else if (mode == Mode.SUSHISWAP_COMPLEX || mode == Mode.SUSHISWAP_SIMPLE) await mintSushiswapLpFixed(person);
         await env.yToken.connect(person).approve(env.router.address, consts.INF);
@@ -92,7 +92,7 @@ export async function runTest(mode: Mode) {
 
     async function addFakeIncome(rep?: number) {
       if (rep == null) rep = 1;
-      if (mode == Mode.COMPOUND) await addFakeIncomeCompoundUSDT(env, eve);
+      if (mode == Mode.COMPOUND || mode == Mode.COMPOUND_V2) await addFakeIncomeCompoundUSDT(env, eve);
       else if (mode == Mode.SUSHISWAP_COMPLEX || mode == Mode.SUSHISWAP_SIMPLE) await addFakeIncomeSushi(env, eve, rep);
     }
 
@@ -137,7 +137,7 @@ export async function runTest(mode: Mode) {
       const expectedBalance = await yTokenBalance(env, dave);
       if (mode == Mode.AAVE_V2) {
         for (var person of [alice, bob, charlie]) approxByPercent(await yTokenBalance(env, person), expectedBalance);
-      } else if (mode == Mode.COMPOUND) {
+      } else if (mode == Mode.COMPOUND || mode == Mode.COMPOUND_V2) {
         for (var person of [alice, bob, charlie]) approxByPercent(await yTokenBalance(env, person), expectedBalance);
       } else {
         for (var person of [alice, bob, charlie])
@@ -197,8 +197,7 @@ export async function runTest(mode: Mode) {
     });
 
     it('xyt interests should be the same regardless actions users took', async () => {
-      let amountToMove: BN = BN.from(100000000);
-      let amountToTokenize: BN = amountToMove.mul(10);
+      let amountToTokenize: BN = BN.from(1000000000);
       let period = env.EXPIRY.sub(env.T0).div(10);
 
       async function transferXyt(from: Wallet, to: Wallet, amount: BN) {
@@ -213,12 +212,12 @@ export async function runTest(mode: Mode) {
         await emptyToken(env.yToken, person);
       }
       await env.yToken.connect(eve).transfer(alice.address, amountToTokenize.mul(2), consts.HG);
+      let amountToMove: BN = (await env.xyt.balanceOf(alice.address)).div(10);
 
-      await addFakeIncome();
+      await addFakeIncome(2);
       await tokenizeYield(env, alice, amountToTokenize, alice.address);
       await tokenizeYield(env, alice, amountToTokenize.div(2), bob.address);
       await tokenizeYield(env, alice, amountToTokenize.div(4), charlie.address);
-      await addFakeIncome();
       await tokenizeYield(env, alice, amountToTokenize.div(4), dave.address);
 
       await setTimeNextBlock(env.T0.add(period.mul(1)));
@@ -274,7 +273,7 @@ export async function runTest(mode: Mode) {
         .add(await env.yToken.balanceOf(charlie.address))
         .add(await yTokenBalance(env, dave));
 
-      approxBigNumber(alice_yieldToken, bcd_yieldToken, BN.from(1000), true);
+      approxByPercent(alice_yieldToken, bcd_yieldToken);
     });
 
     it('Should get 0 interests for the 2th or later time using redeemAfterExpiry', async () => {
@@ -324,20 +323,18 @@ export async function runTest(mode: Mode) {
 
     it('Transfering xyt after expiry', async () => {
       const amount = BN.from(1000000000);
-      const transferAmount = amount.div(10);
 
       await emptyToken(env.yToken, bob);
       await emptyToken(env.yToken, charlie);
       await emptyToken(env.yToken, dave);
 
-      await addFakeIncome();
+      await addFakeIncome(5);
       await tokenizeYield(env, alice, amount, alice.address);
-      await addFakeIncome();
       await tokenizeYield(env, alice, amount, bob.address);
-      await addFakeIncome();
       await tokenizeYield(env, alice, amount, charlie.address);
-      await addFakeIncome();
       await tokenizeYield(env, alice, amount.mul(2), dave.address);
+
+      const transferAmount = (await env.xyt.balanceOf(bob.address)).div(10);
 
       /// before expiry
       await advanceTime(consts.THREE_MONTH);
@@ -346,7 +343,7 @@ export async function runTest(mode: Mode) {
       await env.xyt.connect(bob).transfer(charlie.address, transferAmount, consts.HG);
 
       /// Fake activity
-      await advanceTime(consts.THREE_MONTH.sub(consts.ONE_HOUR));
+      await advanceTime(consts.THREE_MONTH.sub(60));
       await redeemDueInterests(env, alice);
 
       /// after expiry
@@ -365,7 +362,7 @@ export async function runTest(mode: Mode) {
       const charlieBalance: BN = await env.yToken.balanceOf(charlie.address);
       const daveBalance: BN = await yTokenBalance(env, dave);
 
-      approxBigNumber(bobBalance.add(charlieBalance), daveBalance, 300, true);
+      approxByPercent(bobBalance.add(charlieBalance), daveBalance);
     });
   });
 }

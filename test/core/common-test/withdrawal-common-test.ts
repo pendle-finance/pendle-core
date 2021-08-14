@@ -1,33 +1,28 @@
-import PendleLpHolder from '../../../build/artifacts/contracts/core/PendleLpHolder.sol/PendleLpHolder.json';
-import PendleYieldTokenHolder from '../../../build/artifacts/contracts/core/abstract/PendleYieldTokenHolderBase.sol/PendleYieldTokenHolderBase.json';
-import hre from 'hardhat';
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
-import { BigNumber as BN, Contract, Wallet } from 'ethers';
+import { BigNumber as BN, Contract } from 'ethers';
+import PendleYieldTokenHolder from '../../../build/artifacts/contracts/core/abstract/PendleYieldTokenHolderBase.sol/PendleYieldTokenHolderBase.json';
+import PendleLpHolder from '../../../build/artifacts/contracts/core/PendleLpHolder.sol/PendleLpHolder.json';
+import {
+  liquidityMiningFixture,
+  LiquidityMiningFixture,
+  Mode,
+  parseTestEnvLiquidityMiningFixture,
+  TestEnv,
+} from '../../fixtures';
 import {
   addMarketLiquidityDual,
   advanceTime,
-  bootstrapMarket,
   consts,
-  emptyToken,
   evm_revert,
   evm_snapshot,
-  logTokenBalance,
-  mint,
+  getContractAt,
   mintAaveV2Token,
   mintCompoundToken,
-  setTimeNextBlock,
   stake,
   tokenizeYield,
   tokens,
 } from '../../helpers';
-import {
-  Mode,
-  TestEnv,
-  liquidityMiningFixture,
-  LiquidityMiningFixture,
-  parseTestEnvLiquidityMiningFixture,
-} from '../fixtures';
 const { waffle } = require('hardhat');
 chai.use(solidity);
 
@@ -47,7 +42,7 @@ export async function runTest(mode: Mode) {
   async function buildCommonEnv() {
     let fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);
     await parseTestEnvLiquidityMiningFixture(alice, mode, env, fixture);
-    rewardToken = await hre.ethers.getContractAt('TestToken', await env.forge.rewardToken());
+    rewardToken = await getContractAt('TestToken', await env.forge.rewardToken());
   }
 
   before(async () => {
