@@ -3,6 +3,7 @@ import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
 import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../../fixtures';
 import {
+  addFakeIncomeCompoundUSDT,
   addFakeIncomeSushi,
   amountToWei,
   approxBigNumber,
@@ -11,6 +12,7 @@ import {
   evm_revert,
   evm_snapshot,
   mintAaveV2Token,
+  mintCompoundToken,
   mintSushiswapLpFixed,
   randomBN,
   redeemDueInterests,
@@ -65,6 +67,10 @@ export function runTest(mode: Mode) {
         await mintSushiswapLpFixed(alice);
         REF_AMOUNT = BN.from(10000000);
         underlyingAsset = tokens.SUSHI_USDT_WETH_LP;
+      } else if (mode == Mode.COMPOUND_V2) {
+        underlyingAsset = env.underlyingAsset;
+        REF_AMOUNT = BN.from(10000000);
+        await mintCompoundToken(underlyingAsset, alice, REF_AMOUNT.mul(10).div(10 ** underlyingAsset.decimal));
       }
     });
 
@@ -78,6 +84,12 @@ export function runTest(mode: Mode) {
       if (mode == Mode.SUSHISWAP_COMPLEX || mode == Mode.SUSHISWAP_SIMPLE) {
         const lastExchangeRate: BN = await env.forge.callStatic.getExchangeRate(underlyingAsset.address);
         await addFakeIncomeSushi(env, alice);
+        const nowExchangeRate: BN = await env.forge.callStatic.getExchangeRate(underlyingAsset.address);
+        charlieInterest = REF_AMOUNT.mul(nowExchangeRate).div(lastExchangeRate).sub(REF_AMOUNT);
+        await redeemDueInterests(env, bob);
+      } else if (mode == Mode.COMPOUND_V2) {
+        const lastExchangeRate: BN = await env.forge.callStatic.getExchangeRate(underlyingAsset.address);
+        await addFakeIncomeCompoundUSDT(env, alice);
         const nowExchangeRate: BN = await env.forge.callStatic.getExchangeRate(underlyingAsset.address);
         charlieInterest = REF_AMOUNT.mul(nowExchangeRate).div(lastExchangeRate).sub(REF_AMOUNT);
         await redeemDueInterests(env, bob);
@@ -100,7 +112,10 @@ export function runTest(mode: Mode) {
         await addFakeIncomeSushi(env, alice);
       } else if (mode == Mode.AAVE_V2) {
         await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
+      } else if (mode == Mode.COMPOUND_V2) {
+        await addFakeIncomeCompoundUSDT(env, alice);
       }
+
       await redeemDueInterests(env, bob);
 
       const totalFee = await env.forge.totalFee(underlyingAsset.address, env.EXPIRY);

@@ -1,13 +1,13 @@
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
-import IUniswapV2Router02 from '../../build/artifacts/contracts/interfaces/IUniswapV2Router02.sol/IUniswapV2Router02.json';
+import hre from 'hardhat';
 import IUniswapV2Pair from '../../build/artifacts/contracts/interfaces/IUniswapV2Pair.sol/IUniswapV2Pair.json';
+import IUniswapV2Router02 from '../../build/artifacts/contracts/interfaces/IUniswapV2Router02.sol/IUniswapV2Router02.json';
 import MockPendleAaveMarket from '../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json';
 import PendleFutureYieldToken from '../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json';
-import { TestEnv } from '../fixtures/';
+import { Mode, TestEnv } from '../fixtures/';
 import { consts, tokens } from './Constants';
 import { amountToWei, sqrt } from './Numeric';
 import { mint, mintXytAave } from './TokenHelpers';
-import hre from 'hardhat';
 
 const { waffle } = require('hardhat');
 const { provider } = waffle;
@@ -62,6 +62,32 @@ export async function addFakeIncomeSushi(env: TestEnv, user: Wallet, numRep?: nu
         consts.INF,
         consts.HG
       );
+    }
+  }
+}
+
+export async function redeemRewardsFromProtocol(env: TestEnv, users: Wallet[]) {
+  if (env.mode == Mode.AAVE_V2) {
+    const incentiveController = await getContractAt('IAaveIncentivesController', consts.AAVE_INCENTIVES_CONTROLLER);
+    for (const person of users) {
+      await incentiveController
+        .connect(person)
+        .claimRewards([env.yToken.address], consts.INF, person.address, consts.HG);
+    }
+  } else if (env.mode == Mode.COMPOUND || env.mode == Mode.COMPOUND_V2) {
+    const comptroller = await getContractAt('IComptroller', consts.COMPOUND_COMPTROLLER_ADDRESS);
+    await comptroller.claimComp(
+      users.map((u) => u.address),
+      [env.yToken.address],
+      false,
+      true,
+      consts.HG
+    );
+  } else if (env.mode == Mode.SUSHISWAP_COMPLEX) {
+    const sushiswapMasterChef = await getContractAt('IMasterChef', consts.MASTERCHEF_V1_ADDRESS);
+    for (const person of users) {
+      const balance = (await sushiswapMasterChef.userInfo(consts.SUSHI_USDT_WETH_PID, person.address)).amount;
+      await sushiswapMasterChef.connect(person).withdraw(consts.SUSHI_USDT_WETH_PID, balance, consts.HG);
     }
   }
 }

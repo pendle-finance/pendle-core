@@ -34,8 +34,14 @@ export function runTest(mode: Mode) {
     let rewardToken: Contract;
     let yieldTokenHolder: string;
     let tokenToStake: String;
+    let exchangeRate: BN;
+    let compoundDenom: BN;
 
     let userInitialYieldToken: BN;
+
+    function toUnderlyingAmount(amount: BN) {
+      return amount.mul(exchangeRate).div(compoundDenom);
+    }
 
     async function buildTestEnv() {
       let fixture: RouterFixture = await loadFixture(routerFixture);
@@ -47,6 +53,8 @@ export function runTest(mode: Mode) {
       } else {
         tokenToStake = env.USDTContract.address;
       }
+      exchangeRate = await env.forge.callStatic.getExchangeRate(env.underlyingAsset.address);
+      compoundDenom = BN.from('1000000000000000000');
     }
 
     before(async () => {
@@ -111,8 +119,7 @@ export function runTest(mode: Mode) {
       }
 
       const rewardLeftInYieldTokenHolder = await rewardToken.balanceOf(yieldTokenHolder);
-      // not strict 0 since we buffered some tokens for sushi
-      approxBigNumber(rewardLeftInYieldTokenHolder, BN.from(0), BN.from(1000));
+      approxBigNumber(rewardLeftInYieldTokenHolder, BN.from(0), BN.from(10));
     }
 
     // async function printForgeStatus() {
@@ -139,9 +146,7 @@ export function runTest(mode: Mode) {
     //    - redeemRewards() at t5
     // => At t5, this must hold:
     //       reward(Bob) = reward(Charlie) = reward(Dave) + reward(Eve)
-    it('[Only Compound] OT users should receive same rewards as yToken holders', async () => {
-      if (mode !== Mode.COMPOUND) return;
-
+    it('OT users should receive same rewards as yToken holders', async () => {
       //t0
       await tokenizeYield(env, charlie, userInitialYieldToken);
 
@@ -152,16 +157,16 @@ export function runTest(mode: Mode) {
 
       //t2
       await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 3);
-      await redeemUnderlying(env, charlie, userInitialYieldToken.div(2)); // redeemUnderlying half of his OTs at t2
+      await redeemUnderlying(env, charlie, toUnderlyingAmount(userInitialYieldToken.div(2))); // redeemUnderlying half of his OTs at t2
 
       //t3
       await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 3);
-      await env.ot.connect(dave).transfer(eve.address, otMintedDave.mul(2).div(3));
+      await env.ot.connect(dave).transfer(eve.address, toUnderlyingAmount(otMintedDave.mul(2).div(3)));
 
       //t4
       await advanceTimeAndBlock(consts.SIX_MONTH, 5);
       await redeemAfterExpiry(env, charlie);
-      await env.ot.connect(eve).transfer(dave.address, otMintedDave.div(3));
+      await env.ot.connect(eve).transfer(dave.address, toUnderlyingAmount(otMintedDave.div(3)));
 
       //t5
       await advanceTimeAndBlock(consts.ONE_MONTH, 5);
@@ -218,7 +223,7 @@ export function runTest(mode: Mode) {
       await env.rewardManager.setUpdateFrequency([tokenToStake], [BN.from(10 ** 9)], consts.HG);
 
       for (let person of [bob, charlie, dave, eve]) {
-        await env.ot.connect(person).transfer(alice.address, amount.div(2), consts.LG);
+        await env.ot.connect(person).transfer(alice.address, toUnderlyingAmount(amount.div(2)), consts.LG);
 
         await advanceTime(consts.ONE_MONTH);
         await env.rewardManager.redeemRewards(tokenToStake, env.EXPIRY, person.address, consts.HG);
@@ -226,7 +231,7 @@ export function runTest(mode: Mode) {
 
       // Try updateParamLManual
       for (let person of [bob, charlie, dave, eve]) {
-        await env.ot.connect(person).transfer(alice.address, amount.div(2), consts.LG);
+        await env.ot.connect(person).transfer(alice.address, toUnderlyingAmount(amount.div(2)), consts.LG);
 
         await advanceTime(consts.ONE_MONTH);
         await env.rewardManager.redeemRewards(tokenToStake, env.EXPIRY, person.address, consts.HG);
@@ -256,10 +261,11 @@ export function runTest(mode: Mode) {
 
       for (let t = 0; t < 5; ++t) {
         for (let person of [bob, charlie, dave]) {
-          await env.ot.connect(person).transfer(alice.address, amountToTransfer, consts.LG);
+          await env.ot.connect(person).transfer(alice.address, toUnderlyingAmount(amountToTransfer), consts.LG);
         }
-        await expect(env.ot.connect(eve).transfer(alice.address, amountToTransfer, consts.LG)).to.be.reverted;
-        await env.ot.connect(eve).transfer(alice.address, amountToTransfer, consts.HG);
+        await expect(env.ot.connect(eve).transfer(alice.address, toUnderlyingAmount(amountToTransfer), consts.LG)).to.be
+          .reverted;
+        await env.ot.connect(eve).transfer(alice.address, toUnderlyingAmount(amountToTransfer), consts.HG);
       }
     });
 
@@ -314,7 +320,7 @@ export function runTest(mode: Mode) {
 
       // Transfering ot should be cheap
       for (let person of [bob, charlie, dave]) {
-        await env.ot.connect(person).transfer(alice.address, amount, consts.LG);
+        await env.ot.connect(person).transfer(alice.address, toUnderlyingAmount(amount), consts.LG);
       }
 
       // After skippingRewards, nothing should be able to change paramL

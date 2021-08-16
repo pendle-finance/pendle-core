@@ -1,4 +1,6 @@
 import { Contract, providers, Wallet } from 'ethers';
+import { checkDisabled, Mode } from '.';
+import IPendleYieldTokenHolderV2 from '../../build/artifacts/contracts/interfaces/IPendleYieldTokenHolderV2.sol/IPendleYieldTokenHolderV2.json';
 import {
   consts,
   convertToAaveV2Token,
@@ -19,8 +21,6 @@ import { coreFixture, CoreFixture } from './core.fixture';
 import { GovernanceFixture, governanceFixture } from './governance.fixture';
 import { SushiswapComplexForgeFixture, sushiswapComplexForgeFixture } from './SushiswapComplexForge.fixture';
 import { SushiswapSimpleForgeFixture, sushiswapSimpleForgeFixture } from './SushiswapSimpleForge.fixture';
-import { checkDisabled, Mode } from '.';
-import IPendleYieldTokenHolderV2 from '../../build/artifacts/contracts/interfaces/IPendleYieldTokenHolderV2.sol/IPendleYieldTokenHolderV2.json';
 const { waffle } = require('hardhat');
 const { loadFixture } = waffle;
 
@@ -80,10 +80,10 @@ async function bufferSushi(noMintFixture: RouterFixture) {
   );
   const scYieldTokenHolder = new Contract(scYieldTokenHolderAddr, IPendleYieldTokenHolderV2.abi, alice);
   const ssYieldTokenHolder = new Contract(ssYieldTokenHolderAddr, IPendleYieldTokenHolderV2.abi, alice);
-  await sushiPool.connect(eve).transfer(scYieldTokenHolderAddr, 1000);
-  await scYieldTokenHolder.afterReceiveTokens(1000);
-  await sushiPool.connect(eve).transfer(ssYieldTokenHolderAddr, 1000);
-  await ssYieldTokenHolder.afterReceiveTokens(1000);
+  await sushiPool.connect(eve).transfer(scYieldTokenHolderAddr, 10);
+  await scYieldTokenHolder.afterReceiveTokens(10);
+  await sushiPool.connect(eve).transfer(ssYieldTokenHolderAddr, 10);
+  await ssYieldTokenHolder.afterReceiveTokens(10);
   await emptyToken(sushiPool, eve);
 }
 

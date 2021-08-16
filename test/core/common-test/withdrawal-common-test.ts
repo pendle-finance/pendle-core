@@ -22,6 +22,7 @@ import {
   stake,
   tokenizeYield,
   tokens,
+  getContractAt,
 } from '../../helpers';
 const { waffle } = require('hardhat');
 chai.use(solidity);
