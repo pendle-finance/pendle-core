@@ -364,5 +364,25 @@ export async function runTest(mode: Mode) {
 
       approxByPercent(bobBalance.add(charlieBalance), daveBalance);
     });
+
+    it('[Only SushiComplex] users should still be able to redeem normally even if the exchangeRate decreases', async () => {
+      if (mode != Mode.SUSHISWAP_COMPLEX) return;
+      const totalTime = consts.SIX_MONTH;
+      const numTurns = 10;
+
+      let amountDave: BN = await yTokenBalance(env, dave);
+
+      for (let i = 1; i <= numTurns; i++) {
+        const testTime = env.T0.add(totalTime.div(numTurns).mul(i)).sub(100);
+        await setTimeNextBlock(testTime);
+
+        await addFakeIncome();
+        await tokenizeYield(env, dave, amountDave.div(numTurns * 2));
+
+        await mintSushiswapLpFixed(eve);
+        await redeemUnderlying(env, dave, await env.xyt.balanceOf(dave.address));
+      }
+      approxBigNumber(await env.xyt.balanceOf(dave.address), 0, 0);
+    });
   });
 }
