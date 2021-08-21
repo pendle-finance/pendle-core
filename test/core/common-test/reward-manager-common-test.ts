@@ -1,23 +1,25 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
-import hre from 'hardhat';
+import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../../fixtures';
 import {
   advanceTime,
+  advanceTimeAndBlock,
   approxBigNumber,
   consts,
+  errMsg,
   evm_revert,
   evm_snapshot,
-  mineBlock,
+  getContractAt,
+  mineAllPendingTransactions,
   minerStart,
   minerStop,
   redeemAfterExpiry,
+  redeemRewardsFromProtocol,
   redeemUnderlying,
   tokenizeYield,
-  errMsg,
 } from '../../helpers';
 chai.use(solidity);
-import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 
 const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
@@ -31,6 +33,7 @@ export function runTest(mode: Mode) {
     let env: TestEnv = {} as TestEnv;
     let rewardToken: Contract;
     let yieldTokenHolder: string;
+    let tokenToStake: String;
 
     let userInitialYieldToken: BN;
 
@@ -38,6 +41,12 @@ export function runTest(mode: Mode) {
       let fixture: RouterFixture = await loadFixture(routerFixture);
       await parseTestEnvRouterFixture(alice, mode, env, fixture);
       env.TEST_DELTA = BN.from(1500000);
+
+      if (mode == Mode.SUSHISWAP_COMPLEX) {
+        tokenToStake = env.underlyingAsset.address;
+      } else {
+        tokenToStake = env.USDTContract.address;
+      }
     }
 
     before(async () => {
@@ -45,16 +54,16 @@ export function runTest(mode: Mode) {
       globalSnapshotId = await evm_snapshot();
 
       userInitialYieldToken = (await env.yToken.balanceOf(alice.address)).div(4);
-      rewardToken = await hre.ethers.getContractAt('TestToken', await env.forge.rewardToken());
-      yieldTokenHolder = await env.forge.yieldTokenHolders(env.USDTContract.address, env.EXPIRY);
+      rewardToken = await getContractAt('TestToken', await env.forge.rewardToken());
+      yieldTokenHolder = await env.forge.yieldTokenHolders(tokenToStake, env.EXPIRY);
 
       await minerStop();
       for (const person of [bob, charlie, dave]) {
         await env.yToken.transfer(person.address, userInitialYieldToken);
         await env.yToken.connect(person).approve(env.router.address, consts.INF);
       }
-      await redeemRewardsFromProtocol([bob, charlie, dave]);
-      await mineBlock();
+      await redeemRewardsFromProtocol(env, [bob, charlie, dave]);
+      await mineAllPendingTransactions();
       await minerStart();
 
       snapshotId = await evm_snapshot();
@@ -69,33 +78,6 @@ export function runTest(mode: Mode) {
       snapshotId = await evm_snapshot();
     });
 
-    async function redeemRewardsFromProtocol(users: Wallet[]) {
-      if (mode == Mode.AAVE_V2) {
-        const incentiveController = await hre.ethers.getContractAt(
-          'IAaveIncentivesController',
-          consts.AAVE_INCENTIVES_CONTROLLER
-        );
-        for (const person of users) {
-          await incentiveController.connect(person).claimRewards([env.yToken.address], consts.INF, person.address);
-        }
-      } else if (mode == Mode.COMPOUND) {
-        const comptroller = await hre.ethers.getContractAt('IComptroller', consts.COMPOUND_COMPTROLLER_ADDRESS);
-        await comptroller.claimComp(
-          users.map((u) => u.address),
-          [env.yToken.address],
-          false,
-          true
-        );
-      }
-    }
-
-    async function advanceTimeAndBlock(time: BN, blockCount: number) {
-      await advanceTime(time);
-      for (let i = 0; i < blockCount; i++) {
-        await mineBlock();
-      }
-    }
-
     // check that the new rewards are distributed proportionally to OT balances
     async function redeemAndCheckRewardAndSendTnx(transaction: any) {
       await minerStop();
@@ -105,15 +87,16 @@ export function runTest(mode: Mode) {
       const rewardEarned: BN[] = new Array(3);
       const otTotalSupply = await env.ot.totalSupply();
       let totalRewardEarned = BN.from(0);
-
       await transaction();
       for (const index of [0, 1, 2]) {
         otBalance[index] = await env.ot.balanceOf(users[index].address);
         rewardBalanceBefore[index] = await rewardToken.balanceOf(users[index].address);
-        await env.rewardManager.redeemRewards(env.USDTContract.address, env.EXPIRY, users[index].address);
+        await env.rewardManager
+          .connect(users[index])
+          .redeemRewards(tokenToStake, env.EXPIRY, users[index].address, consts.HG);
       }
 
-      await mineBlock();
+      await mineAllPendingTransactions();
       await minerStart();
 
       for (const index of [0, 1, 2]) {
@@ -128,7 +111,8 @@ export function runTest(mode: Mode) {
       }
 
       const rewardLeftInYieldTokenHolder = await rewardToken.balanceOf(yieldTokenHolder);
-      approxBigNumber(rewardLeftInYieldTokenHolder, BN.from(0), BN.from(10));
+      // not strict 0 since we buffered some tokens for sushi
+      approxBigNumber(rewardLeftInYieldTokenHolder, BN.from(0), BN.from(1000));
     }
 
     // async function printForgeStatus() {
@@ -183,11 +167,11 @@ export function runTest(mode: Mode) {
       await advanceTimeAndBlock(consts.ONE_MONTH, 5);
 
       await minerStop();
-      await redeemRewardsFromProtocol([bob, charlie, dave, eve]);
+      await redeemRewardsFromProtocol(env, [bob, charlie, dave, eve]);
       for (const person of [charlie, dave, eve]) {
-        await env.rewardManager.redeemRewards(env.USDTContract.address, env.EXPIRY, person.address);
+        await env.rewardManager.redeemRewards(tokenToStake, env.EXPIRY, person.address);
       }
-      await mineBlock();
+      await mineAllPendingTransactions();
       await minerStart();
 
       const bobRewardBalance = await rewardToken.balanceOf(bob.address);
@@ -205,14 +189,16 @@ export function runTest(mode: Mode) {
       const otMinted = await env.ot.balanceOf(charlie.address);
 
       await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 20);
-      await redeemAndCheckRewardAndSendTnx(async () => tokenizeYield(env, dave, userInitialYieldToken.div(2)));
+      await redeemAndCheckRewardAndSendTnx(
+        async () => await tokenizeYield(env, alice, userInitialYieldToken.div(2), dave.address)
+      );
 
       await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 20);
-      await redeemAndCheckRewardAndSendTnx(async () => redeemUnderlying(env, charlie, otMinted.div(3)));
+      await redeemAndCheckRewardAndSendTnx(async () => await redeemUnderlying(env, charlie, otMinted.div(3)));
 
       await advanceTimeAndBlock(consts.ONE_DAY.mul(10), 20);
       await redeemAndCheckRewardAndSendTnx(
-        async () => await env.ot.connect(dave).transfer(eve.address, otMinted.div(4))
+        async () => await env.ot.connect(dave).transfer(eve.address, otMinted.div(4), consts.HG)
       );
 
       await advanceTimeAndBlock(consts.SIX_MONTH, 20);
@@ -229,13 +215,13 @@ export function runTest(mode: Mode) {
       }
 
       await advanceTime(consts.ONE_MONTH);
-      await env.rewardManager.setUpdateFrequency([env.USDTContract.address], [BN.from(10 ** 9)], consts.HG);
+      await env.rewardManager.setUpdateFrequency([tokenToStake], [BN.from(10 ** 9)], consts.HG);
 
       for (let person of [bob, charlie, dave, eve]) {
         await env.ot.connect(person).transfer(alice.address, amount.div(2), consts.LG);
 
         await advanceTime(consts.ONE_MONTH);
-        await env.rewardManager.redeemRewards(env.USDTContract.address, env.EXPIRY, person.address, consts.HG);
+        await env.rewardManager.redeemRewards(tokenToStake, env.EXPIRY, person.address, consts.HG);
       }
 
       // Try updateParamLManual
@@ -243,8 +229,8 @@ export function runTest(mode: Mode) {
         await env.ot.connect(person).transfer(alice.address, amount.div(2), consts.LG);
 
         await advanceTime(consts.ONE_MONTH);
-        await env.rewardManager.redeemRewards(env.USDTContract.address, env.EXPIRY, person.address, consts.HG);
-        await env.rewardManager.connect(person).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG);
+        await env.rewardManager.redeemRewards(tokenToStake, env.EXPIRY, person.address, consts.HG);
+        await env.rewardManager.connect(person).updateParamLManual(tokenToStake, env.EXPIRY, consts.HG);
       }
     });
 
@@ -265,8 +251,8 @@ export function runTest(mode: Mode) {
       }
 
       await advanceTime(consts.ONE_MONTH);
-      await env.rewardManager.setUpdateFrequency([env.USDTContract.address], [4], consts.HG);
-      await env.rewardManager.connect(alice).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG);
+      await env.rewardManager.setUpdateFrequency([tokenToStake], [4], consts.HG);
+      await env.rewardManager.connect(alice).updateParamLManual(tokenToStake, env.EXPIRY, consts.HG);
 
       for (let t = 0; t < 5; ++t) {
         for (let person of [bob, charlie, dave]) {
@@ -280,20 +266,18 @@ export function runTest(mode: Mode) {
     it('skippingRewards should work correctly', async () => {
       async function redeemRewardsToken(person: Wallet): Promise<BN> {
         let lastBalance: BN = await rewardToken.balanceOf(person.address);
-        await env.rewardManager.redeemRewards(env.USDTContract.address, env.EXPIRY, person.address, consts.HG);
+        await env.rewardManager.redeemRewards(tokenToStake, env.EXPIRY, person.address, consts.HG);
         let currentBalance: BN = await rewardToken.balanceOf(person.address);
         return currentBalance.sub(lastBalance);
       }
 
       async function ensureParamLUnchanged(functionToCall: any) {
         /// This function aims to check the change of paramL before and after a promise function is called
-        const paramLBefore: BN = (
-          await env.rewardManager.readRewardData(env.USDTContract.address, env.EXPIRY, alice.address)
-        ).paramL;
+        const paramLBefore: BN = (await env.rewardManager.readRewardData(tokenToStake, env.EXPIRY, alice.address))
+          .paramL;
         await functionToCall;
-        const paramLAfter: BN = (
-          await env.rewardManager.readRewardData(env.USDTContract.address, env.EXPIRY, alice.address)
-        ).paramL;
+        const paramLAfter: BN = (await env.rewardManager.readRewardData(tokenToStake, env.EXPIRY, alice.address))
+          .paramL;
         approxBigNumber(paramLBefore, paramLAfter, 0, false);
       }
 
@@ -321,8 +305,8 @@ export function runTest(mode: Mode) {
         }
       }
       // just to see if it affects the skipping rewards.
-      await env.rewardManager.setUpdateFrequency([env.USDTContract.address], [2], consts.HG);
-      await env.rewardManager.connect(alice).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG);
+      await env.rewardManager.setUpdateFrequency([tokenToStake], [2], consts.HG);
+      await env.rewardManager.connect(alice).updateParamLManual(tokenToStake, env.EXPIRY, consts.HG);
 
       for (let person of [bob, charlie, dave, eve]) {
         expect((await redeemRewardsToken(person)).eq(0)).to.be.equal(true);
@@ -339,10 +323,10 @@ export function runTest(mode: Mode) {
         await ensureParamLUnchanged(redeemRewardsToken(person));
         await ensureParamLUnchanged(env.ot.connect(alice).transfer(person.address, 1, consts.HG));
       }
-      await ensureParamLUnchanged(env.rewardManager.setUpdateFrequency([env.USDTContract.address], [2], consts.HG));
+      await ensureParamLUnchanged(env.rewardManager.setUpdateFrequency([tokenToStake], [2], consts.HG));
       await ensureParamLUnchanged(env.rewardManager.setSkippingRewards(true)); /// Must not set it false here :joy:
       await ensureParamLUnchanged(
-        env.rewardManager.connect(alice).updateParamLManual(env.USDTContract.address, env.EXPIRY, consts.HG)
+        env.rewardManager.connect(alice).updateParamLManual(tokenToStake, env.EXPIRY, consts.HG)
       );
     });
 
@@ -353,14 +337,14 @@ export function runTest(mode: Mode) {
     });
 
     it('onlyForge modifier should reject update reward request from non-forge', async () => {
-      await expect(
-        env.rewardManager.updatePendingRewards(env.USDTContract.address, env.EXPIRY, alice.address)
-      ).to.be.revertedWith(errMsg.ONLY_FORGE);
+      await expect(env.rewardManager.updatePendingRewards(tokenToStake, env.EXPIRY, alice.address)).to.be.revertedWith(
+        errMsg.ONLY_FORGE
+      );
     });
 
     it('setUpdateFrequency should reject inconsistent input array length', async () => {
       await expect(
-        env.rewardManager.setUpdateFrequency([env.USDTContract.address], [BN.from(100), consts.RONE])
+        env.rewardManager.setUpdateFrequency([tokenToStake], [BN.from(100), consts.RONE])
       ).to.be.revertedWith(errMsg.ARRAY_LENGTH_MISMATCH);
     });
 

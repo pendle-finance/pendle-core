@@ -1,5 +1,5 @@
+import { assert } from 'chai';
 import { BigNumber as BN } from 'ethers';
-
 const hre = require('hardhat');
 const { waffle } = require('hardhat');
 const { provider } = waffle;
@@ -46,8 +46,25 @@ export async function setTime(time: BN) {
   await provider.send('evm_mine', []);
 }
 
-export async function mineBlock() {
-  await provider.send('evm_mine', []);
+export async function advanceTimeAndBlock(time: BN, blockCount: number) {
+  assert(blockCount >= 1);
+  await advanceTime(time);
+  await mineBlock(blockCount - 1);
+}
+
+export async function mineAllPendingTransactions() {
+  while (true) {
+    const pendingBlock: any = await provider.send('eth_getBlockByNumber', ['pending', false]);
+    if (pendingBlock.transactions.length == 0) break;
+    await mineBlock();
+  }
+}
+
+export async function mineBlock(count?: number) {
+  if (count == null) count = 1;
+  while (count-- > 0) {
+    await provider.send('evm_mine', []);
+  }
 }
 
 export async function minerStart() {

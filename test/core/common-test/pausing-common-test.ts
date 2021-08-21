@@ -1,8 +1,8 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Wallet } from 'ethers';
+import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../../fixtures';
 import { advanceTime, consts, errMsg, evm_revert, evm_snapshot, mintCompoundToken, tokens } from '../../helpers';
-import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../fixtures';
 const { waffle } = require('hardhat');
 chai.use(solidity);
 

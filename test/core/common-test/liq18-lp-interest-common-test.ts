@@ -1,5 +1,12 @@
 import { BigNumber as BN } from 'ethers';
 import {
+  liquidityMiningFixture,
+  LiquidityMiningFixture,
+  Mode,
+  parseTestEnvLiquidityMiningFixture,
+  TestEnv,
+} from '../../fixtures';
+import {
   approxBigNumber,
   consts,
   emptyToken,
@@ -15,13 +22,6 @@ import {
   tokens,
   withdraw,
 } from '../../helpers';
-import {
-  liquidityMiningFixture,
-  LiquidityMiningFixture,
-  Mode,
-  parseTestEnvLiquidityMiningFixture,
-  TestEnv,
-} from '../fixtures';
 const { waffle } = require('hardhat');
 
 const { loadFixture, provider } = waffle;
@@ -42,7 +42,7 @@ export function runTest(mode: Mode) {
       env.market = env.market18;
       env.liq = env.liq18;
       env.underlyingAsset = tokens.UNI;
-      env.yToken = await getA2Contract(alice, env.routerFixture.a2Forge.aaveV2Forge, tokens.UNI);
+      env.yToken = await getA2Contract(alice, env.forge, tokens.UNI);
       env.TEST_DELTA = consts.ONE_E_12;
     }
 
@@ -50,7 +50,7 @@ export function runTest(mode: Mode) {
       await buildTestEnv();
       globalSnapshotId = await evm_snapshot();
 
-      // await env.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
+      await env.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
       for (let user of [bob, charlie, dave]) {
         await redeemDueInterests(env, user);
         await emptyToken(env.yToken, user);

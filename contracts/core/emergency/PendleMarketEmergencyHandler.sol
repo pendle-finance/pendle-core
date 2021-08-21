@@ -100,26 +100,26 @@ contract PendleMarketEmergencyHandler is PermissionsV2, ReentrancyGuard {
 
         if (!_checkForgeIsPaused(mad.xyt)) {
             uint256 amountXytOut = lpProportion.rmul(mad.xyt.balanceOf(_marketAddr));
-            mad.xyt.transferFrom(_marketAddr, msg.sender, amountXytOut);
+            IERC20(mad.xyt).safeTransferFrom(_marketAddr, msg.sender, amountXytOut);
         }
 
         uint256 amountTokenOut = lpProportion.rmul(mad.token.balanceOf(_marketAddr));
         mad.token.safeTransferFrom(_marketAddr, msg.sender, amountTokenOut);
 
-        uint256 amountYieldTokenOut =
-            lpProportion.rmul(mad.underlyingYieldToken.balanceOf(_marketAddr));
+        uint256 amountYieldTokenOut = lpProportion.rmul(
+            mad.underlyingYieldToken.balanceOf(_marketAddr)
+        );
         mad.underlyingYieldToken.safeTransferFrom(_marketAddr, msg.sender, amountYieldTokenOut);
 
         mad.totalLp = mad.totalLp.sub(amountLpUser);
     }
 
     function _checkForgeIsPaused(IPendleYieldToken _xyt) internal returns (bool isPaused) {
-        (bool paused, bool locked) =
-            pausingManager.checkYieldContractStatus(
-                _xyt.forge().forgeId(),
-                _xyt.underlyingAsset(),
-                _xyt.expiry()
-            );
+        (bool paused, bool locked) = pausingManager.checkYieldContractStatus(
+            _xyt.forge().forgeId(),
+            _xyt.underlyingAsset(),
+            _xyt.expiry()
+        );
         if (paused || locked) isPaused = true;
         else isPaused = false;
     }

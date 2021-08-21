@@ -1,4 +1,5 @@
 import { BigNumber as BN } from 'ethers';
+import { TestEnv } from '../../fixtures';
 import {
   addMarketLiquidityDual,
   approxBigNumber,
@@ -9,7 +10,6 @@ import {
   swapExactInTokenToXyt,
   swapExactInXytToToken,
 } from '../../helpers';
-import { TestEnv } from '../fixtures';
 
 export async function MultiExpiryMarketTest(environments: TestEnv[], wallets: any) {
   const [alice, bob, charlie, dave] = wallets;

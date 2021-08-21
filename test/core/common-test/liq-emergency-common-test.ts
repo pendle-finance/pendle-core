@@ -19,7 +19,7 @@ import {
   Mode,
   parseTestEnvLiquidityMiningFixture,
   TestEnv,
-} from '../fixtures';
+} from '../../fixtures';
 const { waffle } = require('hardhat');
 chai.use(solidity);
 

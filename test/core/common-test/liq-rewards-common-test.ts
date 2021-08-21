@@ -1,6 +1,15 @@
 import { assert, expect } from 'chai';
 import { BigNumber as BN } from 'ethers';
 import {
+  liquidityMiningFixture,
+  LiquidityMiningFixture,
+  Mode,
+  parseTestEnvLiquidityMiningFixture,
+  TestEnv,
+  UserStakeAction,
+} from '../../fixtures';
+import * as scenario from '../../fixtures/liquidityMiningScenario.fixture';
+import {
   approxBigNumber,
   calcExpectedRewards,
   consts,
@@ -15,15 +24,6 @@ import {
   startOfEpoch,
   withdraw,
 } from '../../helpers';
-import {
-  liquidityMiningFixture,
-  LiquidityMiningFixture,
-  Mode,
-  parseTestEnvLiquidityMiningFixture,
-  TestEnv,
-  UserStakeAction,
-} from '../fixtures';
-import * as scenario from '../fixtures/liquidityMiningScenario.fixture';
 const { waffle } = require('hardhat');
 
 const { loadFixture, provider } = waffle;

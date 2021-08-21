@@ -64,15 +64,15 @@ async function main() {
   const deployment = existingDeploymentJson as Deployment;
   // const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
 
-  const usdtCompoundContract = await (await hre.ethers.getContractFactory('TestToken')).attach(
-    consts.tokens.USDT_COMPOUND.address
-  );
-  const usdcCompoundContract = await (await hre.ethers.getContractFactory('TestToken')).attach(
-    consts.tokens.USDC.address
-  );
-  const usdtAaveContract = await (await hre.ethers.getContractFactory('TestToken')).attach(
-    consts.tokens.USDT_AAVE.address
-  );
+  const usdtCompoundContract = await (
+    await hre.ethers.getContractFactory('TestToken')
+  ).attach(consts.tokens.USDT_COMPOUND.address);
+  const usdcCompoundContract = await (
+    await hre.ethers.getContractFactory('TestToken')
+  ).attach(consts.tokens.USDC.address);
+  const usdtAaveContract = await (
+    await hre.ethers.getContractFactory('TestToken')
+  ).attach(consts.tokens.USDT_AAVE.address);
 
   const a2Forge = await hre.ethers.getContractAt('PendleAaveV2Forge', '0xc3352545F91B313A9C102ed8cB0299e61fc17829');
   const a2RewardManager = await hre.ethers.getContractAt('PendleRewardManager', await a2Forge.rewardManager());

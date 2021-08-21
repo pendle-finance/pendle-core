@@ -4,7 +4,7 @@ import path from 'path';
 
 import { devConstants, kovanConstants, mainnetConstants, goerliConstants } from '../helpers/constants';
 
-import { Deployment, getDeployment } from '../helpers/deployHelpers';
+import { deploy, Deployment, getDeployment } from '../helpers/deployHelpers';
 
 import { beforeAll } from './beforeAll';
 import { step0 } from './step0';
@@ -20,7 +20,12 @@ import { step9 } from './step9';
 import { step10 } from './step10';
 import { step11 } from './step11';
 import { step12 } from './step12';
-const NUMBER_OF_STEPS = 12;
+import { step13 } from './step13';
+import { step14 } from './step14';
+import { step15 } from './step15';
+import { step16 } from './step16';
+import { step17 } from './step17';
+const NUMBER_OF_STEPS = 17;
 
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
@@ -53,6 +58,8 @@ async function main() {
       contracts: {},
       variables: {},
       yieldContracts: {},
+      liquidityMiningV2Contracts: [],
+      directories: [],
     };
   }
   if (process.env.RESET == 'true') {
@@ -138,6 +145,39 @@ async function main() {
         await step12(deployer, hre, deployment, consts);
         break;
       } //DONE
+      case 13: {
+        console.log(
+          `\n[Step ${step}]: Deploying PendleSushiswapSimpleForge, sushiswapSimpleRewardManager (+init), sushiswapSimpleYieldContractDeployer (+init)`
+        );
+        await step13(deployer, hre, deployment, consts);
+        break;
+      }
+      case 14: {
+        console.log(
+          `\n[Step ${step}]: Deploying PendleSushiswapComplexForge, sushiswapComplexRewardManager (+init), sushiswapComplexYieldContractDeployer (+init)`
+        );
+        await step14(deployer, hre, deployment, consts);
+        break;
+      }
+      case 15: {
+        console.log(
+          `\n[Step ${step}]: Deploying PendleCompoundV2Forge, compoundV2RewardManager (+init), compoundV2YieldContractDeployer (+init)`
+        );
+        await step15(deployer, hre, deployment, consts);
+        break;
+      }
+      case 16: {
+        console.log(`\n[Step ${step}]: Deploying PendleGenericMarketFactory`);
+        await step16(deployer, hre, deployment, consts);
+        break;
+      }
+      case 17: {
+        console.log(
+          `\n[Step ${step}]: Add forges and market factories for sushiswap simple, sushiswap complex and compoundV2`
+        );
+        await step17(deployer, hre, deployment, consts);
+        break;
+      }
       // case 999: {
       //   console.log(`\n[Step ${step}]: Adding PendleCompoundForge + PendleCompoundMarketFactory`);
       //   await step9(deployer, hre, deployment, consts);
