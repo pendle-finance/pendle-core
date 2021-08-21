@@ -1,7 +1,7 @@
 import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
 import hre from 'hardhat';
-import PendleRedeemProxy from '../../build/artifacts/contracts/proxies/PendleRedeemProxy.sol/PendleRedeemProxy.json';
+import PendleRedeemProxy from '../../build/artifacts/contracts/misc/PendleRedeemProxy.sol/PendleRedeemProxy.json';
 import { checkDisabled, LiqParams, liquidityMiningFixture, Mode } from '../fixtures';
 import { approxBigNumber, consts, evm_revert, evm_snapshot, getA2Contract, setTimeNextBlock, tokens } from '../helpers';
 

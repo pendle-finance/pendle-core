@@ -68,14 +68,14 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
       blockGasLimit: 800000000000000,
       gas: 80000000,
-      gasPrice: 1,
+      gasPrice: 100e9,
       loggingEnabled: false,
     },
     development: {
       url: 'http://127.0.0.1:8545',
       gas: 12400000,
       timeout: 1000000,
-      gasPrice: 1
+      gasPrice: 100e9
     },
     kovan: {
       url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY || "dummyKey"}`,

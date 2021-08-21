@@ -12,7 +12,7 @@ async function main() {
 
   const liqMiningAddress = process.argv[2];
   const rewardPerEpoch = BN.from(process.argv[3]).mul(BN.from(10).pow(18));
-  const rewards = [rewardPerEpoch, rewardPerEpoch];
+  const rewards = [rewardPerEpoch, rewardPerEpoch, rewardPerEpoch, rewardPerEpoch];
 
   const liqMiningContract = await hre.ethers.getContractAt('IPendleLiquidityMining', liqMiningAddress);
 

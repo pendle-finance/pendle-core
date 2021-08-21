@@ -13,6 +13,8 @@ export interface Deployment {
   contracts: Record<string, DeployedContract>;
   variables: Record<string, any>;
   yieldContracts: Record<string, any>;
+  liquidityMiningV2Contracts: Record<string, any>[];
+  directories: Record<string, any>;
 }
 
 export function validAddress(variableName: string, address?: string): boolean {
@@ -86,6 +88,7 @@ export async function createNewYieldContract(
   const pendleData = await getContractFromDeployment(hre, deployment, 'PendleData');
 
   const underlyingAssetSymbol = await underlyingAssetContract.symbol();
+  const underlyingAssetName = await underlyingAssetContract.name();
   const forgeIdString = utils.parseBytes32String(forgeId);
 
   console.log(
@@ -106,16 +109,17 @@ export async function createNewYieldContract(
     deployment.yieldContracts[forgeIdString] = {};
   }
 
-  if (deployment.yieldContracts[forgeIdString][underlyingAssetSymbol] == null) {
-    deployment.yieldContracts[forgeIdString][underlyingAssetSymbol] = {
-      address: underlyingAssetContract.address,
+  if (deployment.yieldContracts[forgeIdString][underlyingAssetContract.address] == null) {
+    deployment.yieldContracts[forgeIdString][underlyingAssetContract.address] = {
+      symbol: underlyingAssetSymbol,
+      name: underlyingAssetName,
       expiries: {},
       PendleLiquidityMining: {},
     };
   }
 
-  if (deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[expiry] == null) {
-    deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[expiry] = {
+  if (deployment.yieldContracts[forgeIdString][underlyingAssetContract.address].expiries[expiry] == null) {
+    deployment.yieldContracts[forgeIdString][underlyingAssetContract.address].expiries[expiry] = {
       XYT: xytAddress,
       OT: otAddress,
       markets: {},
@@ -138,7 +142,7 @@ export async function createNewMarket(
   const baseTokenSymbol = await baseTokenContract.symbol();
   const forgeIdString = utils.parseBytes32String(forgeId);
 
-  const xytAddress = deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[expiry].XYT;
+  const xytAddress = deployment.yieldContracts[forgeIdString][underlyingAssetContract.address].expiries[expiry].XYT;
 
   console.log(
     `\tCreating new market for XYT (${forgeIdString} ${underlyingAssetSymbol} ${expiry}), baseToken-${baseTokenSymbol}`
@@ -154,7 +158,7 @@ export async function createNewMarket(
   const marketAddress = await pendleData.getMarket(marketFactoryId, xytAddress, baseTokenContract.address);
   console.log(`\t Market created at ${marketAddress}`);
 
-  deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].expiries[expiry].markets[baseTokenSymbol] =
+  deployment.yieldContracts[forgeIdString][underlyingAssetContract.address].expiries[expiry].markets[baseTokenSymbol] =
     marketAddress;
 }
 
@@ -293,7 +297,7 @@ export async function setupLiquidityMining(
     liqParams.VESTING_EPOCHS,
   ]);
 
-  deployment.yieldContracts[forgeIdString][underlyingAssetSymbol].PendleLiquidityMining[baseTokenSymbol] =
+  deployment.yieldContracts[forgeIdString][underlyingAssetContract.address].PendleLiquidityMining[baseTokenSymbol] =
     liqMiningContract.address;
   await sendAndWaitForTransaction(hre, pendle.approve, 'approve liq-mining for PENDLE', [
     liqMiningContract.address,

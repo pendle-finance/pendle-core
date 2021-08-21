@@ -45,7 +45,7 @@ export async function step8(deployer: any, hre: any, deployment: Deployment, con
 
   const pendleCompoundMarketFactory = await deploy(hre, deployment, 'PendleCompoundMarketFactory', [
     pendleRouterAddress,
-    consts.common.FORGE_COMPOUND,
+    consts.common.MARKET_FACTORY_COMPOUND,
   ]);
   console.log(`\t Done step 8, pendleCompoundMarketFactory = ${pendleCompoundMarketFactory.address}`);
 }

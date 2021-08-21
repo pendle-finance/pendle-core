@@ -10,6 +10,12 @@ export const common = {
   MARKET_FACTORY_AAVE: utils.formatBytes32String('Aave'),
   FORGE_COMPOUND: utils.formatBytes32String('CompoundV2'),
   MARKET_FACTORY_COMPOUND: utils.formatBytes32String('Compound'),
+  FORGE_SUSHISWAP_SIMPLE: utils.formatBytes32String('SushiswapSimple'),
+  FORGE_SUSHISWAP_COMPLEX: utils.formatBytes32String('SushiswapComplex'),
+  FORGE_COMPOUNDV2: utils.formatBytes32String('CompoundV2Upgraded'),
+  MARKET_FACTORY_GENERIC: utils.formatBytes32String('Generic'),
+  CODE_HASH_SUSHISWAP: '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303',
+  CODE_HASH_UNISWAP: '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
   ZERO_ADDRESS: '0x0000000000000000000000000000000000000000',
   MAX_ALLOWANCE: BN.from(2).pow(BN.from(256)).sub(BN.from(1)),
   ONE_DAY,
@@ -63,6 +69,10 @@ export const devConstants = {
     STKAAVE_ADDRESS: '0x4da27a545c0c5b758a6ba100e3a049001de870f5',
     COMP_ADDRESS: '0xc00e94cb662c3520282e6f5717214004a7f26888',
     AAVE_INCENTIVES_CONTROLLER: '0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5',
+    SUSHI_ADDRESS: '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2',
+    MASTER_CHEF: '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd',
+
+    SUSHISWAP_PAIR_FACTORY: '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac',
   },
   tokens: {
     USDT_AAVE: {
@@ -86,6 +96,15 @@ export const devConstants = {
       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
       decimal: 6,
       compound: '0x39aa39c021dfbae8fac545936693ac917d5e7563',
+    },
+    AUSDC: {
+      address: '0xbcca60bb61934080951369a648fb03df4f96263c',
+    },
+    CDAI: {
+      address: '0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643',
+    },
+    DAI: {
+      address: '0x6b175474e89094c44da98b954eedeac495271d0f',
     },
     AUSDT: {
       address: '0x71fc860F7D3A592A4a98740e39dB31d25db65ae8',
@@ -127,7 +146,10 @@ export const kovanConstants = {
     STKAAVE_ADDRESS: '0xa1c74a9a3e59ffe9bee7b85cd6e91c0751289ebd', //WETH for kovan
     COMP_ADDRESS: '0xa1c74a9a3e59ffe9bee7b85cd6e91c0751289ebd', //WETH for kovan
     AAVE_INCENTIVES_CONTROLLER: '0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5',
+    SUSHI_ADDRESS: '0x83e68b8E4CFA4d43A52d22709A626C0425036928', // Pendle clone of Sushiswap
+    MASTER_CHEF: '0x0780E33CD04e33A4960b14DC332e69C5fb6b3C90', // Pendle clone of Sushiswap
 
+    SUSHISWAP_PAIR_FACTORY: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
     // Fee
     FORGE_FEE: RONE.mul(3).div(100), // 3% forge fee
     SWAP_FEE: RONE.mul(35).div(10000), // 0.35%
@@ -214,6 +236,10 @@ export const mainnetConstants = {
     STKAAVE_ADDRESS: '0x4da27a545c0c5b758a6ba100e3a049001de870f5', // checked * 2
     COMP_ADDRESS: '0xc00e94cb662c3520282e6f5717214004a7f26888', // checked * 2
     AAVE_INCENTIVES_CONTROLLER: '0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5', //checked * 2
+    SUSHI_ADDRESS: '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2',
+    MASTER_CHEF: '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd',
+
+    SUSHISWAP_PAIR_FACTORY: '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac',
   },
   tokens: {
     USDT_AAVE: {
