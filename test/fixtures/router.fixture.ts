@@ -21,7 +21,7 @@ import { coreFixture, CoreFixture } from './core.fixture';
 import { GovernanceFixture, governanceFixture } from './governance.fixture';
 import { SushiswapComplexForgeFixture, sushiswapComplexForgeFixture } from './SushiswapComplexForge.fixture';
 import { SushiswapSimpleForgeFixture, sushiswapSimpleForgeFixture } from './SushiswapSimpleForge.fixture';
-const { waffle } = require('hardhat');
+const { waffle, network } = require('hardhat');
 const { loadFixture } = waffle;
 
 export interface RouterFixture {
@@ -36,8 +36,17 @@ export interface RouterFixture {
   minted: boolean;
 }
 
-const wallets = waffle.provider.getWallets();
-const [alice, bob, charlie, dave, eve] = wallets;
+let wallets = [];
+let alice: Wallet;
+let bob: Wallet;
+let charlie: Wallet;
+let dave: Wallet;
+let eve: Wallet;
+
+if (network.name == 'hardhat') {
+  wallets = waffle.provider.getWallets();
+  [alice, bob, charlie, dave, eve] = wallets;
+}
 
 export async function routerFixture(_: Wallet[], __: providers.Web3Provider): Promise<RouterFixture> {
   const noMintFixture: RouterFixture = await loadFixture(routerFixtureNoMint);

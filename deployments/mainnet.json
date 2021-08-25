@@ -106,8 +106,8 @@
       "tx": "0x1143ec73f2b221d8a9436cda66bcc377da2dc47dc1724f7452de73550c8e4232"
     },
     "PendleLiquidityMiningBaseV2": {
-      "address": "0x309d8Cf8f7C3340b50ff0ef457075A3c5792203f",
-      "tx": "0xd399b8d9562fc5e8a4850ba37f8c103258fd7941372438147486f3967364c69f"
+      "address": "0xFb0e378b3eD6D7F8b73230644D945E28fd7F7b03",
+      "tx": "0x98ee3b1c71d09331c20a1961a42e32bc492f1ff885929e7f873848b17a838acf"
     },
     "PendleRewardManagerSushiswapSimple": {
       "address": "0x5f183210d58EBA0812a2c33888786E7028B4E687",
@@ -177,7 +177,7 @@
             "markets": {
               "USDC": "0x9e382e5f78b06631e4109b5d48151f2b3f326df0"
             },
-            "OTSLPLiquidityMiningContract": "0xa26Da78fE6c8D4ba2f1779Fd36aEd994a8A50bee"
+            "OTSLPLiquidityMiningContract": "0x07C87cfE096c417212eAB4152d365F0F7dC6FCe4"
           },
           "1672272000": {
             "XYT": "0xcDb5b940E95C8632dEcDc806B90dD3fC44E699fE",
@@ -185,7 +185,7 @@
             "markets": {
               "USDC": "0x8315BcBC2c5C1Ef09B71731ab3827b0808A2D6bD"
             },
-            "OTSLPLiquidityMiningContract": "0x94A7432B811E29128964fba993f159928744e7C7"
+            "OTSLPLiquidityMiningContract": "0xFb0e378b3eD6D7F8b73230644D945E28fd7F7b03"
           }
         },
         "PendleLiquidityMining": {
@@ -204,7 +204,7 @@
             "markets": {
               "USDC": "0x944d1727d0b656f497e74044ff589871c330334f"
             },
-            "OTSLPLiquidityMiningContract": "0x31fC01529419Ee9623AFC5b65D7D72102D116e90"
+            "OTSLPLiquidityMiningContract": "0x071dc669Be57C1b3053F746Db20cb3Bf54383aeA"
           },
           "1672272000": {
             "XYT": "0xb7deFe73528942793649c0A950Ec528f66159047",
@@ -212,7 +212,7 @@
             "markets": {
               "USDC": "0xB26C86330FC7F97533051F2F8cD0a90C2E82b5EE"
             },
-            "OTSLPLiquidityMiningContract": "0xfc3468Da89cb5bDF893242ece0324b51EA6482c6"
+            "OTSLPLiquidityMiningContract": "0xa660c9aAa46b696Df01768E1D2d88CE2d5293778"
           }
         },
         "PendleLiquidityMining": {
@@ -315,6 +315,42 @@
       "type": "OTSLPLiquidityMiningContract",
       "forgeId": "SushiswapSimple",
       "underlyingAssetAddress": "0x37922c69b08babcceae735a31235c81f1d1e8e43",
+      "expiry": "1672272000"
+    },
+    {
+      "address": "0x071dc669Be57C1b3053F746Db20cb3Bf54383aeA",
+      "stakeToken": "0x2C80D72af9AB0bb9D98F607C817c6F512dd647e6",
+      "yieldToken": "0x0000000000000000000000000000000000000000",
+      "type": "OTSLPLiquidityMiningContract",
+      "forgeId": "CompoundV2",
+      "underlyingAssetAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
+      "expiry": "1640822400"
+    },
+    {
+      "address": "0xa660c9aAa46b696Df01768E1D2d88CE2d5293778",
+      "stakeToken": "0x4556C4488CC16D5e9552cC1a99a529c1392E4fe9",
+      "yieldToken": "0x0000000000000000000000000000000000000000",
+      "type": "OTSLPLiquidityMiningContract",
+      "forgeId": "CompoundV2",
+      "underlyingAssetAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
+      "expiry": "1672272000"
+    },
+    {
+      "address": "0x07C87cfE096c417212eAB4152d365F0F7dC6FCe4",
+      "stakeToken": "0x8B758d7fD0fC58FCA8caA5e53AF2c7Da5F5F8De1",
+      "yieldToken": "0x0000000000000000000000000000000000000000",
+      "type": "OTSLPLiquidityMiningContract",
+      "forgeId": "AaveV2",
+      "underlyingAssetAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "expiry": "1640822400"
+    },
+    {
+      "address": "0xFb0e378b3eD6D7F8b73230644D945E28fd7F7b03",
+      "stakeToken": "0x0D8a21f2Ea15269B7470c347083ee1f85e6A723B",
+      "yieldToken": "0x0000000000000000000000000000000000000000",
+      "type": "OTSLPLiquidityMiningContract",
+      "forgeId": "AaveV2",
+      "underlyingAssetAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "expiry": "1672272000"
     }
   ]

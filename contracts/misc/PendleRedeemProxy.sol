@@ -21,11 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
+pragma abicoder v2;
 
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleForge.sol";
-import "../interfaces/IPendleLiquidityMining.sol";
+import "../core/abstract/PendleLiquidityMiningBase.sol";
+import "../interfaces/IPendleLiquidityMiningV2.sol";
 import "../interfaces/IPendleYieldToken.sol";
+import "hardhat/console.sol";
 
 contract PendleRedeemProxy {
     IPendleRouter public immutable router;
@@ -35,29 +38,42 @@ contract PendleRedeemProxy {
         router = IPendleRouter(_router);
     }
 
-    function redeem(
-        address[] calldata _xyts,
-        address[] calldata _markets,
-        address[] calldata _liqMiningContracts,
-        uint256[] calldata _expiries,
-        uint256 _liqMiningRewardsCount
-    )
+    struct Args {
+        address[] xyts;
+        address[] markets;
+        address[] lmContractsForRewards;
+        uint256[] expiriesForRewards;
+        address[] lmContractsForInterests;
+        uint256[] expiriesForInterests;
+        address[] lmV2ContractsForRewards;
+        address[] lmV2ContractsForInterests;
+    }
+
+    function redeem(Args calldata args, address user)
         external
         returns (
             uint256[] memory xytInterests,
             uint256[] memory marketInterests,
-            uint256[] memory rewards,
-            uint256[] memory liqMiningInterests
+            uint256[] memory lmRewards,
+            uint256[] memory lmInterests,
+            uint256[] memory lmV2Rewards,
+            uint256[] memory lmV2Interests
         )
     {
-        xytInterests = redeemXyts(_xyts);
-        marketInterests = redeemMarkets(_markets);
+        xytInterests = redeemXyts(args.xyts);
+        marketInterests = redeemMarkets(args.markets);
 
-        (rewards, liqMiningInterests) = redeemLiqMining(
-            _liqMiningContracts,
-            _expiries,
-            _liqMiningRewardsCount
+        lmRewards = redeemLmRewards(args.lmContractsForRewards, args.expiriesForRewards, user);
+
+        lmInterests = redeemLmInterests(
+            args.lmContractsForInterests,
+            args.expiriesForInterests,
+            user
         );
+
+        lmV2Rewards = redeemLmV2Rewards(args.lmV2ContractsForRewards, user);
+
+        lmV2Interests = redeemLmV2Interests(args.lmV2ContractsForInterests, user);
     }
 
     function redeemXyts(address[] calldata xyts) public returns (uint256[] memory xytInterests) {
@@ -87,28 +103,70 @@ contract PendleRedeemProxy {
         }
     }
 
-    function redeemLiqMining(
-        address[] calldata liqMiningContracts,
-        uint256[] calldata expiries,
-        uint256 liqMiningRewardsCount
-    ) public returns (uint256[] memory rewards, uint256[] memory liqMiningInterests) {
-        require(liqMiningRewardsCount <= liqMiningContracts.length, "INVALID_REWARDS_COUNT");
-        require(expiries.length == liqMiningContracts.length, "ARRAY_LENGTH_MISMATCH");
+    function redeemLmRewards(
+        address[] calldata lmContractsForRewards,
+        uint256[] calldata expiriesForRewards,
+        address user
+    ) public returns (uint256[] memory lmRewards) {
+        uint256 count = expiriesForRewards.length;
+        require(count == lmContractsForRewards.length, "ARRAY_LENGTH_MISMATCH");
 
-        rewards = new uint256[](liqMiningRewardsCount);
-        for (uint256 i = 0; i < liqMiningRewardsCount; i++) {
-            rewards[i] = IPendleLiquidityMining(liqMiningContracts[i]).redeemRewards(
-                expiries[i],
-                msg.sender
+        lmRewards = new uint256[](count);
+        for (uint256 i = 0; i < count; i++) {
+            (, , , uint256 lastParamL, ) = PendleLiquidityMiningBase(lmContractsForRewards[i])
+            .readUserSpecificExpiryData(expiriesForRewards[i], user);
+            if (lastParamL == 0) {
+                lmRewards[i] = 0;
+            } else {
+                lmRewards[i] = PendleLiquidityMiningBase(lmContractsForRewards[i]).redeemRewards(
+                    expiriesForRewards[i],
+                    user
+                );
+            }
+        }
+    }
+
+    function redeemLmInterests(
+        address[] calldata lmContractsForInterests,
+        uint256[] calldata expiriesForInterests,
+        address user
+    ) public returns (uint256[] memory lmInterests) {
+        uint256 count = expiriesForInterests.length;
+        require(count == lmContractsForInterests.length, "ARRAY_LENGTH_MISMATCH");
+
+        lmInterests = new uint256[](count);
+        for (uint256 i = 0; i < count; i++) {
+            lmInterests[i] = IPendleLiquidityMining(lmContractsForInterests[i]).redeemLpInterests(
+                expiriesForInterests[i],
+                user
             );
         }
+    }
 
-        uint256 liqMiningInterestsCount = liqMiningContracts.length - liqMiningRewardsCount;
-        liqMiningInterests = new uint256[](liqMiningInterestsCount);
-        for (uint256 i = 0; i < liqMiningInterestsCount; i++) {
-            uint256 arrayIndex = i + liqMiningRewardsCount;
-            liqMiningInterests[i] = IPendleLiquidityMining(liqMiningContracts[arrayIndex])
-                .redeemLpInterests(expiries[arrayIndex], msg.sender);
+    function redeemLmV2Rewards(address[] calldata lmV2ContractsForRewards, address user)
+        public
+        returns (uint256[] memory lmV2Rewards)
+    {
+        uint256 count = lmV2ContractsForRewards.length;
+
+        lmV2Rewards = new uint256[](count);
+        for (uint256 i = 0; i < count; i++) {
+            lmV2Rewards[i] = IPendleLiquidityMiningV2(lmV2ContractsForRewards[i]).redeemRewards(
+                user
+            );
+        }
+    }
+
+    function redeemLmV2Interests(address[] calldata lmV2ContractsForInterests, address user)
+        public
+        returns (uint256[] memory lmV2Interests)
+    {
+        uint256 count = lmV2ContractsForInterests.length;
+
+        lmV2Interests = new uint256[](count);
+        for (uint256 i = 0; i < count; i++) {
+            lmV2Interests[i] = IPendleLiquidityMiningV2(lmV2ContractsForInterests[i])
+            .redeemDueInterests(user);
         }
     }
 }

@@ -7,10 +7,20 @@ import { LiqParams, LiquidityMiningFixture } from './liquidityMining.fixture';
 import { MarketFixture } from './market.fixture';
 import { RouterFixture } from './router.fixture';
 
-const { waffle } = require('hardhat');
-const { provider } = waffle;
-const wallets = provider.getWallets();
-const [alice, bob, charlie, dave, eve] = wallets;
+const { waffle, network } = require('hardhat');
+// const { provider } = waffle;
+
+let wallets = [];
+let alice: Wallet;
+let bob: Wallet;
+let charlie: Wallet;
+let dave: Wallet;
+let eve: Wallet;
+
+if (network.name == 'hardhat') {
+  wallets = waffle.provider.getWallets();
+  [alice, bob, charlie, dave, eve] = wallets;
+}
 
 export enum Mode {
   AAVE_V2 = 1,

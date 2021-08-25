@@ -9,10 +9,19 @@ import { consts, tokens } from './Constants';
 import { amountToWei, sqrt } from './Numeric';
 import { mint, mintXytAave } from './TokenHelpers';
 
-const { waffle } = require('hardhat');
-const { provider } = waffle;
-const wallets = provider.getWallets();
-const [alice, bob, charlie, dave, eve] = wallets;
+const { waffle, network } = require('hardhat');
+
+let wallets = [];
+let alice: Wallet;
+let bob: Wallet;
+let charlie: Wallet;
+let dave: Wallet;
+let eve: Wallet;
+
+if (network.name == 'hardhat') {
+  wallets = waffle.provider.getWallets();
+  [alice, bob, charlie, dave, eve] = wallets;
+}
 
 export async function logMarketReservesData(market: Contract) {
   let marketData = await market.getReserves();

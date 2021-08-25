@@ -10,7 +10,7 @@ task('verifyPendle', 'verify Pendle contracts').setAction(async (args, hre) => {
   const vars = deployment.variables;
   const weth = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
   const oneWeek = 604800;
-  const startTime = 1629331200; // 19th Aug 2021
+  const startTime = 1629936000; // 19th Aug 2021
   const network = hre.network.name;
   let consts;
 
@@ -23,132 +23,132 @@ task('verifyPendle', 'verify Pendle contracts').setAction(async (args, hre) => {
   console.log('Verifying Contracts');
   console.log('============================\n');
 
-  await hre.run('verify:verify', {
-    address:
-      deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000]
-        .markets.PENDLE,
-    contract: 'contracts/core/Generic/PendleGenericMarket.sol:PendleGenericMarket',
-    constructorArguments: [
-      ct.PendleGovernanceManagerMain.address,
-      deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000].XYT,
-      ct.PENDLE.address,
-    ],
-  });
-  console.log(
-    `Verified YT-PENDLEETH-SLP/PENDLE market: ${deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000].markets.PENDLE}\n\n`
-  );
-
-  await hre.run('verify:verify', {
-    address:
-      deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000].XYT,
-    constructorArguments: [
-      ct.PendleRouter.address,
-      ct.PendleSushiswapSimpleForge.address,
-      '0x37922c69b08babcceae735a31235c81f1d1e8e43',
-      '0x37922c69b08babcceae735a31235c81f1d1e8e43',
-      'YT SushiSwap LP Token 29DEC2022',
-      'YT-SLP-29DEC2022',
-      18,
-      1629205198,
-      1672272000,
-    ],
-  });
-  console.log(
-    `Verified Pendle YT: ${deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000].XYT}\n\n`
-  );
-
-  await hre.run('verify:verify', {
-    address:
-      deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000].OT,
-    constructorArguments: [
-      ct.PendleRouter.address,
-      ct.PendleSushiswapSimpleForge.address,
-      '0x37922c69b08babcceae735a31235c81f1d1e8e43',
-      '0x37922c69b08babcceae735a31235c81f1d1e8e43',
-      'OT SushiSwap LP Token 29DEC2022',
-      'OT-SLP-29DEC2022',
-      18,
-      1629205198,
-      1672272000,
-    ],
-  });
-  console.log(
-    `Verified Pendle OT: ${deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000].OT}\n\n`
-  );
-
-  await hre.run('verify:verify', {
-    address:
-      deployment.yieldContracts.SushiswapComplex['0x397ff1542f962076d0bfe58ea045ffa2d347aca0'].expiries[1672272000]
-        .markets.USDC,
-    contract: 'contracts/core/Generic/PendleGenericMarket.sol:PendleGenericMarket',
-    constructorArguments: [
-      ct.PendleGovernanceManagerMain.address,
-      deployment.yieldContracts.SushiswapComplex['0x397ff1542f962076d0bfe58ea045ffa2d347aca0'].expiries[1672272000].XYT,
-      consts.tokens.USDC.address,
-    ],
-  });
-  console.log(
-    `Verified YT-ETHUSDC-SLP/USDC market: ${deployment.yieldContracts.SushiswapComplex['0x397ff1542f962076d0bfe58ea045ffa2d347aca0'].expiries[1672272000].markets.USDC}\n\n`
-  );
-
-  await hre.run('verify:verify', {
-    address: ct.PendleRewardManagerSushiswapSimple.address,
-    contract: 'contracts/core/PendleRewardManager.sol:PendleRewardManager',
-    constructorArguments: [ct.PendleGovernanceManagerMain.address, consts.common.FORGE_SUSHISWAP_SIMPLE],
-  });
-  console.log(`Verified Pendle Sushiswap Simple RewardManager: ${ct.PendleRewardManagerSushiswapSimple.address}\n\n`);
-
-  await hre.run('verify:verify', {
-    address: ct.PendleRewardManagerSushiswapComplex.address,
-    contract: 'contracts/core/PendleRewardManager.sol:PendleRewardManager',
-    constructorArguments: [ct.PendleGovernanceManagerMain.address, consts.common.FORGE_SUSHISWAP_COMPLEX],
-  });
-  console.log(`Verified Pendle Sushiswap Complex RewardManager: ${ct.PendleRewardManagerSushiswapComplex.address}\n\n`);
-
-  await hre.run('verify:verify', {
-    address: ct.PendleRewardManagerCompoundV2.address,
-    contract: 'contracts/core/PendleRewardManager.sol:PendleRewardManager',
-    constructorArguments: [ct.PendleGovernanceManagerMain.address, consts.common.FORGE_COMPOUNDV2],
-  });
-  console.log(`Verified Pendle CompoundV2 RewardManager: ${ct.PendleRewardManagerCompoundV2.address}\n\n`);
-
-  await hre.run('verify:verify', {
-    address:
-      deployment.yieldContracts.SushiswapComplex['0x397ff1542f962076d0bfe58ea045ffa2d347aca0'].expiries[1672272000].XYT,
-    constructorArguments: [
-      ct.PendleRouter.address,
-      ct.PendleSushiswapComplexForge.address,
-      '0x397ff1542f962076d0bfe58ea045ffa2d347aca0',
-      '0x397ff1542f962076d0bfe58ea045ffa2d347aca0',
-      'YT SushiSwap LP Token 29DEC2022',
-      'YT-SLP-29DEC2022',
-      18,
-      1629205073,
-      1672272000,
-    ],
-  });
-  console.log(
-    `Verified Pendle YT: ${deployment.yieldContracts.SushiswapComplex['0x397ff1542f962076d0bfe58ea045ffa2d347aca0'].expiries[1672272000].XYT}\n\n`
-  );
-
-  await hre.run('verify:verify', {
-    address:
-      deployment.yieldContracts.SushiswapComplex['0x397ff1542f962076d0bfe58ea045ffa2d347aca0'].expiries[1672272000].OT,
-    constructorArguments: [
-      ct.PendleRouter.address,
-      ct.PendleSushiswapComplexForge.address,
-      '0x397ff1542f962076d0bfe58ea045ffa2d347aca0',
-      '0x397ff1542f962076d0bfe58ea045ffa2d347aca0',
-      'OT SushiSwap LP Token 29DEC2022',
-      'OT-SLP-29DEC2022',
-      18,
-      1629205073,
-      1672272000,
-    ],
-  });
-  console.log(
-    `Verified Pendle OT: ${deployment.yieldContracts.SushiswapComplex['0x397ff1542f962076d0bfe58ea045ffa2d347aca0'].expiries[1672272000].OT}\n\n`
-  );
+  // await hre.run('verify:verify', {
+  //   address:
+  //     deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000]
+  //       .markets.PENDLE,
+  //   contract: 'contracts/core/Generic/PendleGenericMarket.sol:PendleGenericMarket',
+  //   constructorArguments: [
+  //     ct.PendleGovernanceManagerMain.address,
+  //     deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000].XYT,
+  //     ct.PENDLE.address,
+  //   ],
+  // });
+  // console.log(
+  //   `Verified YT-PENDLEETH-SLP/PENDLE market: ${deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000].markets.PENDLE}\n\n`
+  // );
+  //
+  // await hre.run('verify:verify', {
+  //   address:
+  //     deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000].XYT,
+  //   constructorArguments: [
+  //     ct.PendleRouter.address,
+  //     ct.PendleSushiswapSimpleForge.address,
+  //     '0x37922c69b08babcceae735a31235c81f1d1e8e43',
+  //     '0x37922c69b08babcceae735a31235c81f1d1e8e43',
+  //     'YT SushiSwap LP Token 29DEC2022',
+  //     'YT-SLP-29DEC2022',
+  //     18,
+  //     1629205198,
+  //     1672272000,
+  //   ],
+  // });
+  // console.log(
+  //   `Verified Pendle YT: ${deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000].XYT}\n\n`
+  // );
+  //
+  // await hre.run('verify:verify', {
+  //   address:
+  //     deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000].OT,
+  //   constructorArguments: [
+  //     ct.PendleRouter.address,
+  //     ct.PendleSushiswapSimpleForge.address,
+  //     '0x37922c69b08babcceae735a31235c81f1d1e8e43',
+  //     '0x37922c69b08babcceae735a31235c81f1d1e8e43',
+  //     'OT SushiSwap LP Token 29DEC2022',
+  //     'OT-SLP-29DEC2022',
+  //     18,
+  //     1629205198,
+  //     1672272000,
+  //   ],
+  // });
+  // console.log(
+  //   `Verified Pendle OT: ${deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000].OT}\n\n`
+  // );
+  //
+  // await hre.run('verify:verify', {
+  //   address:
+  //     deployment.yieldContracts.SushiswapComplex['0x397ff1542f962076d0bfe58ea045ffa2d347aca0'].expiries[1672272000]
+  //       .markets.USDC,
+  //   contract: 'contracts/core/Generic/PendleGenericMarket.sol:PendleGenericMarket',
+  //   constructorArguments: [
+  //     ct.PendleGovernanceManagerMain.address,
+  //     deployment.yieldContracts.SushiswapComplex['0x397ff1542f962076d0bfe58ea045ffa2d347aca0'].expiries[1672272000].XYT,
+  //     consts.tokens.USDC.address,
+  //   ],
+  // });
+  // console.log(
+  //   `Verified YT-ETHUSDC-SLP/USDC market: ${deployment.yieldContracts.SushiswapComplex['0x397ff1542f962076d0bfe58ea045ffa2d347aca0'].expiries[1672272000].markets.USDC}\n\n`
+  // );
+  //
+  // await hre.run('verify:verify', {
+  //   address: ct.PendleRewardManagerSushiswapSimple.address,
+  //   contract: 'contracts/core/PendleRewardManager.sol:PendleRewardManager',
+  //   constructorArguments: [ct.PendleGovernanceManagerMain.address, consts.common.FORGE_SUSHISWAP_SIMPLE],
+  // });
+  // console.log(`Verified Pendle Sushiswap Simple RewardManager: ${ct.PendleRewardManagerSushiswapSimple.address}\n\n`);
+  //
+  // await hre.run('verify:verify', {
+  //   address: ct.PendleRewardManagerSushiswapComplex.address,
+  //   contract: 'contracts/core/PendleRewardManager.sol:PendleRewardManager',
+  //   constructorArguments: [ct.PendleGovernanceManagerMain.address, consts.common.FORGE_SUSHISWAP_COMPLEX],
+  // });
+  // console.log(`Verified Pendle Sushiswap Complex RewardManager: ${ct.PendleRewardManagerSushiswapComplex.address}\n\n`);
+  //
+  // await hre.run('verify:verify', {
+  //   address: ct.PendleRewardManagerCompoundV2.address,
+  //   contract: 'contracts/core/PendleRewardManager.sol:PendleRewardManager',
+  //   constructorArguments: [ct.PendleGovernanceManagerMain.address, consts.common.FORGE_COMPOUNDV2],
+  // });
+  // console.log(`Verified Pendle CompoundV2 RewardManager: ${ct.PendleRewardManagerCompoundV2.address}\n\n`);
+  //
+  // await hre.run('verify:verify', {
+  //   address:
+  //     deployment.yieldContracts.SushiswapComplex['0x397ff1542f962076d0bfe58ea045ffa2d347aca0'].expiries[1672272000].XYT,
+  //   constructorArguments: [
+  //     ct.PendleRouter.address,
+  //     ct.PendleSushiswapComplexForge.address,
+  //     '0x397ff1542f962076d0bfe58ea045ffa2d347aca0',
+  //     '0x397ff1542f962076d0bfe58ea045ffa2d347aca0',
+  //     'YT SushiSwap LP Token 29DEC2022',
+  //     'YT-SLP-29DEC2022',
+  //     18,
+  //     1629205073,
+  //     1672272000,
+  //   ],
+  // });
+  // console.log(
+  //   `Verified Pendle YT: ${deployment.yieldContracts.SushiswapComplex['0x397ff1542f962076d0bfe58ea045ffa2d347aca0'].expiries[1672272000].XYT}\n\n`
+  // );
+  //
+  // await hre.run('verify:verify', {
+  //   address:
+  //     deployment.yieldContracts.SushiswapComplex['0x397ff1542f962076d0bfe58ea045ffa2d347aca0'].expiries[1672272000].OT,
+  //   constructorArguments: [
+  //     ct.PendleRouter.address,
+  //     ct.PendleSushiswapComplexForge.address,
+  //     '0x397ff1542f962076d0bfe58ea045ffa2d347aca0',
+  //     '0x397ff1542f962076d0bfe58ea045ffa2d347aca0',
+  //     'OT SushiSwap LP Token 29DEC2022',
+  //     'OT-SLP-29DEC2022',
+  //     18,
+  //     1629205073,
+  //     1672272000,
+  //   ],
+  // });
+  // console.log(
+  //   `Verified Pendle OT: ${deployment.yieldContracts.SushiswapComplex['0x397ff1542f962076d0bfe58ea045ffa2d347aca0'].expiries[1672272000].OT}\n\n`
+  // );
 
   // await hre.run('verify:verify', {
   //   address: ct.Directory.address,
@@ -160,19 +160,19 @@ task('verifyPendle', 'verify Pendle contracts').setAction(async (args, hre) => {
   // });
   // console.log(`Verified PendleGenericMarketFactory: ${ct.PendleGenericMarketFactory.address}\n\n`);
 
-  await hre.run('verify:verify', {
-    address: ct.PendleCompoundV2Forge.address,
-    constructorArguments: [
-      ct.PendleGovernanceManagerMain.address,
-      ct.PendleRouter.address,
-      consts.misc.COMPOUND_COMPTROLLER_ADDRESS,
-      consts.common.FORGE_COMPOUNDV2,
-      consts.misc.COMP_ADDRESS,
-      ct.PendleRewardManagerCompoundV2.address,
-      ct.PendleCompoundV2YieldContractDeployer.address,
-      consts.tokens.WETH.compound,
-    ],
-  });
+  // await hre.run('verify:verify', {
+  //   address: ct.PendleCompoundV2Forge.address,
+  //   constructorArguments: [
+  //     ct.PendleGovernanceManagerMain.address,
+  //     ct.PendleRouter.address,
+  //     consts.misc.COMPOUND_COMPTROLLER_ADDRESS,
+  //     consts.common.FORGE_COMPOUNDV2,
+  //     consts.misc.COMP_ADDRESS,
+  //     ct.PendleRewardManagerCompoundV2.address,
+  //     ct.PendleCompoundV2YieldContractDeployer.address,
+  //     consts.tokens.WETH.compound,
+  //   ],
+  // });
   // console.log(`Verified PendleCompoundV2Forge: ${ct.PendleCompoundV2Forge.address}\n\n`);
 
   // await hre.run('verify:verify', {
@@ -257,19 +257,53 @@ task('verifyPendle', 'verify Pendle contracts').setAction(async (args, hre) => {
 
   // PendleLiquidityMiningBaseV2
   // await hre.run('verify:verify', {
-  //   address: '0x529c513DDE7968E19E79e38Ff94D36e4C3c21Eb7',
+  //   address: '0xa660c9aAa46b696Df01768E1D2d88CE2d5293778',
   //   constructorArguments: [
   //     ct.PendleGovernanceManagerLiqMining.address,
   //     ct.PendlePausingManagerLiqMiningV2.address,
   //     ct.PendleWhitelist.address,
   //     ct.PENDLE.address,
-  //     '0x72972b21ce425cfd67935e07c68e84300ce3f40f',
+  //     '0x4556C4488CC16D5e9552cC1a99a529c1392E4fe9',
   //     '0x0000000000000000000000000000000000000000',
   //     startTime,
   //     oneWeek,
   //     5,
   //   ],
   // });
+  console.log(`ct.PendleGovernanceManagerLiqMining.address=${ct.PendleGovernanceManagerLiqMining.address}`);
+  console.log(`ct.PendlePausingManagerLiqMiningV2.address=${ct.PendlePausingManagerLiqMiningV2.address}`);
+  console.log(`ct.PendleWhitelist.address=${ct.PendleWhitelist.address}`);
+  console.log(`ct.PENDLE.address=${ct.PENDLE.address}`);
+  console.log(`startTime=${startTime}`);
+  await hre.run('verify:verify', {
+    address: '0x07C87cfE096c417212eAB4152d365F0F7dC6FCe4',
+    constructorArguments: [
+      ct.PendleGovernanceManagerLiqMining.address,
+      ct.PendlePausingManagerLiqMiningV2.address,
+      ct.PendleWhitelist.address,
+      ct.PENDLE.address,
+      '0x8B758d7fD0fC58FCA8caA5e53AF2c7Da5F5F8De1',
+      '0x0000000000000000000000000000000000000000',
+      startTime,
+      oneWeek,
+      5,
+    ],
+  });
+
+  await hre.run('verify:verify', {
+    address: '0xFb0e378b3eD6D7F8b73230644D945E28fd7F7b03',
+    constructorArguments: [
+      ct.PendleGovernanceManagerLiqMining.address,
+      ct.PendlePausingManagerLiqMiningV2.address,
+      ct.PendleWhitelist.address,
+      ct.PENDLE.address,
+      '0x0D8a21f2Ea15269B7470c347083ee1f85e6A723B',
+      '0x0000000000000000000000000000000000000000',
+      startTime,
+      oneWeek,
+      5,
+    ],
+  });
   // console.log(`Verified PendleLiquidityMiningBaseV2: ${deployment.contracts.PendleLiquidityMiningBaseV2.address}\n\n`);
 
   // PendleAaveLiquidityMining
