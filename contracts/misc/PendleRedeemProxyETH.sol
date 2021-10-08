@@ -20,43 +20,25 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
+
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "../core/PendleRouter.sol";
+import "./PendleRedeemProxyBase.sol";
 
-contract GasTesting {
-    mapping(uint256 => uint256) test256;
-    mapping(uint256 => uint128) test128;
-    mapping(uint256 => uint32) test32;
+contract PendleRedeemProxyETH is PendleRedeemProxyBase {
+    constructor(address _router) PendleRedeemProxyBase(_router) {}
 
-    /* mapping(uint256 => uint256) test256;
-    mapping(uint256 => uint256) test256;
-    uint128 test128_1;
-    uint32 test32_1;
-    uint256 test256_2;
-    uint128 test128_2;
-    uint32 test32_2; */
-
-    function change256(uint256 times) public {
-        for (uint256 i = 0; i < times; i++) {
-            test256[i] = block.timestamp;
-        }
-    }
-
-    function change128(uint256 times) public {
-        for (uint256 i = 0; i < times; i++) {
-            test128[i] = uint128(block.timestamp);
-        }
-    }
-
-    function change32(uint256 times) public {
-        for (uint256 i = 0; i < times; i++) {
-            test32[i] = uint32(block.timestamp);
-        }
-    }
-
-    function convert(address a) public pure returns (uint256) {
-        return uint256(uint160(a));
+    function _redeemFromRewardManager(
+        address rewardManager,
+        address underlyingAsset,
+        uint256 expiry,
+        address to
+    ) internal override returns (OtRewards memory rewards) {
+        rewards.amountRewardOne = IPendleRewardManager(rewardManager).redeemRewards(
+            underlyingAsset,
+            expiry,
+            to
+        );
     }
 }

@@ -46,8 +46,8 @@
       "tx": "0x09cc149b0d942af659da6f7c488852474d09fbb8833b523b7c7e40b2d1a80ccc"
     },
     "PendleRedeemProxy": {
-      "address": "0xE7c04d10fdbe2fEBf9F5DCE7E1cD3A4580FE5aFB",
-      "tx": ""
+      "address": "0x3110aa44ca1ca8979e874b749e63550d3a0b832e",
+      "tx": "0xe77937041590ab51e5e3f265ed94f78dafecb623"
     },
     "PendleWhitelist": {
       "address": "0x365f3C32d8bF7fc01534c3a82357FDFF494C1719",

@@ -4,6 +4,7 @@ import "@nomiclabs/hardhat-web3";
 import "@tenderly/hardhat-tenderly";
 import "@nomiclabs/hardhat-etherscan";
 import * as dotenv from "dotenv";
+import "@nomiclabs/hardhat-ethers";
 // import "hardhat-gas-reporter";
 import "hardhat-typechain";
 import { HardhatUserConfig } from "hardhat/types";
@@ -100,6 +101,12 @@ const config: HardhatUserConfig = {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
       accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
       gasPrice: 16 * 1000000000,
+      timeout: 200000,
+    },
+    polygon: {
+      url: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
+      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
+      gasPrice: 60 * 1000000000,
       timeout: 200000,
     }
   },

@@ -46,8 +46,8 @@
       "tx": "0xdf867c0bc3d65737a8da2f58da6d51c11fda09cf717318ea9c81194228e2956e"
     },
     "PendleRedeemProxy": {
-      "address": "0xEaFedac4D569EC91FA1E6e53D6FEDC6DC9C60Db5",
-      "tx": ""
+      "address": "0x5d5C1238B1549Bcd7Ff9e8994045891EDd195568",
+      "tx": "0xcd7af5eed02e290829a4a94353bd5b5bd347983929aee0cf8aa3b8e252b937bb"
     },
     "PendleWhitelist": {
       "address": "0x6fa13469428e85E6aC12c84B73A19aeF7c53332A",
@@ -152,6 +152,10 @@
     "PendleGenericLiquidityMining": {
       "address": "0xA78029ab5235B9A83EC45eD036042Db26c6E4300",
       "tx": "0x11c7976cd2956eb4fec1af8af9f618d577c8402c0f712f8563f09b2a148826bb"
+    },
+    "EthReader": {
+      "address": "0x7549b6b7e067f0c79e1f40c5f7465e7161391532",
+      "tx": ""
     }
   },
   "variables": {

@@ -22,23 +22,4 @@
  */
 pragma solidity 0.7.6;
 
-import "../interfaces/IPendleRewardManager.sol";
-import "../interfaces/IPendleForge.sol";
-import "../interfaces/IPendleYieldToken.sol";
-
-contract PendleOtRedeemProxy {
-    function redeem(address[] calldata _ots, address _user)
-        external
-        returns (uint256[] memory rewards)
-    {
-        rewards = new uint256[](_ots.length);
-        for (uint256 i = 0; i < _ots.length; i++) {
-            IPendleYieldToken ot = IPendleYieldToken(_ots[i]);
-            IPendleForge forge = IPendleForge(ot.forge());
-            IPendleRewardManager rewardManager = forge.rewardManager();
-            address underlyingAsset = ot.underlyingAsset();
-            uint256 expiry = ot.expiry();
-            rewards[i] = rewardManager.redeemRewards(underlyingAsset, expiry, _user);
-        }
-    }
-}
+interface IPendleRewardManagerV2 {}

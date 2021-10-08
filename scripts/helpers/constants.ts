@@ -210,6 +210,63 @@ export const goerliConstants = {
   tokens: {},
 };
 
+export const polygonConstants = {
+  common,
+  misc: {
+    AAVE_V2_LENDING_POOL_ADDRESS: '0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf', //checked *2
+
+    // Pendle token distribution
+    INVESTOR_AMOUNT: BN.from(37417125).mul(ONE_E_18),
+    ADVISOR_AMOUNT: BN.from(2500000).mul(ONE_E_18),
+    TEAM_AMOUNT: BN.from(55000000).mul(ONE_E_18),
+    TEAM_INVESTOR_ADVISOR_AMOUNT: BN.from(94917125).mul(ONE_E_18),
+    ECOSYSTEM_FUND_TOKEN_AMOUNT: BN.from(46 * 10 ** 6).mul(ONE_E_18),
+    PUBLIC_SALES_TOKEN_AMOUNT: BN.from(16582875).mul(ONE_E_18),
+    INITIAL_LIQUIDITY_EMISSION: BN.from(1200000).mul(ONE_E_18),
+    CONFIG_DENOMINATOR: BN.from(72000000000),
+    CONFIG_CHANGES_TIME_LOCK: BN.from(7 * 24 * 3600),
+    PENDLE_START_TIME: BN.from(4000000000),
+    INITIAL_WEEKLY_EMISSION: BN.from(1200000).mul(ONE_E_18),
+    ONE_QUARTER: BN.from(7884000),
+
+    // OT rewards
+    STKAAVE_ADDRESS: '0xd6df932a45c0f255f85145f286ea0b292b21c90b', // Aave address
+    AAVE_INCENTIVES_CONTROLLER: '0x357D51124f59836DeD84c8a1730D72B749d8BC23', //checked
+    SUSHI_ADDRESS: '0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a',
+    MASTER_CHEF: '0x0769fd68dfb93167989c6f7254cd0d766fb2841f',
+
+    SUSHISWAP_PAIR_FACTORY: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+  },
+  tokens: {
+    USDT_AAVE: {
+      // USDT
+      address: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f',
+      decimal: 6,
+      owner: '0xf6422b997c7f54d1c6a6e103bcb1499eea0a7046',
+    },
+    WETH: {
+      // must check
+      address: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270', // checked * 2
+      decimal: 18,
+    },
+    USDC: {
+      address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', // checked * 2
+      decimal: 6,
+    },
+    AUSDC: {
+      address: '0x1a13f4ca1d028320a707d99520abfefca3998b7f',
+    },
+    WETHUSDC_SLP: {
+      address: '0x34965ba0ac2451A34a0471F04CCa3F990b8dea27',
+    },
+    // AUSDT: {
+    //   address: '0x71fc860F7D3A592A4a98740e39dB31d25db65ae8',
+    //   decimal: 6,
+    //   owner: '0x4188a7dca2757ebc7d9a5bd39134a15b9f3c6402',
+    // },
+  },
+};
+
 export const mainnetConstants = {
   common,
   misc: {

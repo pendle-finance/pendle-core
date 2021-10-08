@@ -2,7 +2,13 @@ import hre from 'hardhat';
 import fs from 'fs';
 import path from 'path';
 
-import { devConstants, kovanConstants, mainnetConstants, goerliConstants } from '../helpers/constants';
+import {
+  devConstants,
+  kovanConstants,
+  mainnetConstants,
+  goerliConstants,
+  polygonConstants,
+} from '../helpers/constants';
 
 import { deploy, Deployment, getDeployment } from '../helpers/deployHelpers';
 
@@ -43,8 +49,15 @@ async function main() {
     consts = goerliConstants;
   } else if (network == 'mainnet') {
     consts = mainnetConstants;
+  } else if (network == 'polygon') {
+    consts = polygonConstants;
   } else {
-    consts = devConstants;
+    if (process.env.ISPOLYGON) {
+      console.log('Dev network forking polygon');
+      consts = polygonConstants;
+    } else {
+      consts = devConstants;
+    }
   }
 
   if (fs.existsSync(filePath)) {
@@ -75,6 +88,10 @@ async function main() {
   for (let step = deployment.step + 1; step <= lastStep; step++) {
     switch (step) {
       case 0: {
+        if (network == 'polygon' || process.env.ISPOLYGON) {
+          console.log(`\nSkipping step ${step} because the network is Polygon.`);
+          break;
+        }
         console.log(`\n[Step ${step}]: Deploying PendleTeamTokens & PendleEcosystemFund's contracts`);
         await step0(deployer, hre, deployment, consts);
         break;
@@ -117,6 +134,10 @@ async function main() {
         break;
       } // DONE
       case 8: {
+        if (network == 'polygon' || process.env.ISPOLYGON) {
+          console.log(`\nSkipping step ${step} because the network is Polygon.`);
+          break;
+        }
         console.log(
           `\n[Step ${step}]: Deploying PendleCompoundForge, cRewardManager (+init), cYieldContractDeployer (+init) & PendleCompoundMarketFactory`
         );
@@ -160,6 +181,10 @@ async function main() {
         break;
       }
       case 15: {
+        if (network == 'polygon' || process.env.ISPOLYGON) {
+          console.log(`\nSkipping step ${step} because the network is Polygon.`);
+          break;
+        }
         console.log(
           `\n[Step ${step}]: Deploying PendleCompoundV2Forge, compoundV2RewardManager (+init), compoundV2YieldContractDeployer (+init)`
         );

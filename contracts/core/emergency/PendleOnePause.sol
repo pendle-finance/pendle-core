@@ -22,41 +22,31 @@
  */
 pragma solidity 0.7.6;
 pragma abicoder v2;
+import "../../interfaces/IPendlePausingManager.sol";
 
-import "../core/PendleRouter.sol";
-
-contract GasTesting {
-    mapping(uint256 => uint256) test256;
-    mapping(uint256 => uint128) test128;
-    mapping(uint256 => uint32) test32;
-
-    /* mapping(uint256 => uint256) test256;
-    mapping(uint256 => uint256) test256;
-    uint128 test128_1;
-    uint32 test32_1;
-    uint256 test256_2;
-    uint128 test128_2;
-    uint32 test32_2; */
-
-    function change256(uint256 times) public {
-        for (uint256 i = 0; i < times; i++) {
-            test256[i] = block.timestamp;
-        }
+contract PendleOnePause {
+    struct Call {
+        address target;
+        bytes callData;
     }
 
-    function change128(uint256 times) public {
-        for (uint256 i = 0; i < times; i++) {
-            test128[i] = uint128(block.timestamp);
-        }
+    IPendlePausingManager public immutable pausingManagerMain;
+    modifier isPausingAdmin {
+        require(pausingManagerMain.isPausingAdmin(msg.sender), "NOT_PAUSING_ADMIN");
+        _;
     }
 
-    function change32(uint256 times) public {
-        for (uint256 i = 0; i < times; i++) {
-            test32[i] = uint32(block.timestamp);
-        }
+    constructor(IPendlePausingManager _pausingManagerMain) {
+        pausingManagerMain = _pausingManagerMain;
     }
 
-    function convert(address a) public pure returns (uint256) {
-        return uint256(uint160(a));
+    function pauseByData(Call[] memory calls)
+        public
+        isPausingAdmin
+        returns (bool[] memory isSuccessful)
+    {
+        isSuccessful = new bool[](calls.length);
+        for (uint256 i = 0; i < calls.length; i++)
+            (isSuccessful[i], ) = calls[i].target.call(calls[i].callData);
     }
 }

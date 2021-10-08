@@ -206,6 +206,7 @@ export async function emptyToken(tokenContract: Contract, person: Wallet) {
 
 async function mintUSDT(user: Wallet, amount: BN) {
   let USDT: Token = tokens.USDT;
+  await provider.send('hardhat_setBalance', [USDT.owner, '0x1000000000000000000000000000']);
   await impersonateAccount(USDT.owner!);
   const signer = await provider.getSigner(USDT.owner!);
   const contractToken = new Contract(USDT.address, TetherToken.abi, signer);

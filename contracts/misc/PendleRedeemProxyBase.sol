@@ -28,9 +28,28 @@ import "../interfaces/IPendleForge.sol";
 import "../core/abstract/PendleLiquidityMiningBase.sol";
 import "../interfaces/IPendleLiquidityMiningV2.sol";
 import "../interfaces/IPendleYieldToken.sol";
+import "../interfaces/IPendleRewardManager.sol";
+import "../interfaces/IPendleRewardManagerV2.sol";
 import "hardhat/console.sol";
 
-contract PendleRedeemProxy {
+struct OtRewards {
+    uint256 amountRewardOne;
+    uint256 amountRewardTwo;
+}
+
+struct Args {
+    address[] xyts;
+    address[] ots;
+    address[] markets;
+    address[] lmContractsForRewards;
+    uint256[] expiriesForRewards;
+    address[] lmContractsForInterests;
+    uint256[] expiriesForInterests;
+    address[] lmV2ContractsForRewards;
+    address[] lmV2ContractsForInterests;
+}
+
+abstract contract PendleRedeemProxyBase {
     IPendleRouter public immutable router;
 
     constructor(address _router) {
@@ -38,34 +57,31 @@ contract PendleRedeemProxy {
         router = IPendleRouter(_router);
     }
 
-    struct Args {
-        address[] xyts;
-        address[] markets;
-        address[] lmContractsForRewards;
-        uint256[] expiriesForRewards;
-        address[] lmContractsForInterests;
-        uint256[] expiriesForInterests;
-        address[] lmV2ContractsForRewards;
-        address[] lmV2ContractsForInterests;
-    }
-
     function redeem(Args calldata args, address user)
         external
         returns (
             uint256[] memory xytInterests,
+            OtRewards[] memory otRewards,
             uint256[] memory marketInterests,
             uint256[] memory lmRewards,
+            string[] memory lmRewardsFailureReasons,
             uint256[] memory lmInterests,
+            string[] memory lmInterestsFailureReasons,
             uint256[] memory lmV2Rewards,
             uint256[] memory lmV2Interests
         )
     {
         xytInterests = redeemXyts(args.xyts);
+        otRewards = redeemOts(args.ots);
         marketInterests = redeemMarkets(args.markets);
 
-        lmRewards = redeemLmRewards(args.lmContractsForRewards, args.expiriesForRewards, user);
+        (lmRewards, lmRewardsFailureReasons) = redeemLmRewards(
+            args.lmContractsForRewards,
+            args.expiriesForRewards,
+            user
+        );
 
-        lmInterests = redeemLmInterests(
+        (lmInterests, lmInterestsFailureReasons) = redeemLmInterests(
             args.lmContractsForInterests,
             args.expiriesForInterests,
             user
@@ -92,6 +108,23 @@ contract PendleRedeemProxy {
         }
     }
 
+    function redeemOts(address[] calldata ots) public returns (OtRewards[] memory otRewards) {
+        otRewards = new OtRewards[](ots.length);
+        for (uint256 i = 0; i < ots.length; i++) {
+            IPendleYieldToken ot = IPendleYieldToken(ots[i]);
+            IPendleForge forge = IPendleForge(ot.forge());
+            address rewardManager = address(forge.rewardManager());
+            address underlyingAsset = ot.underlyingAsset();
+            uint256 expiry = ot.expiry();
+            otRewards[i] = _redeemFromRewardManager(
+                rewardManager,
+                underlyingAsset,
+                expiry,
+                msg.sender
+            );
+        }
+    }
+
     function redeemMarkets(address[] calldata markets)
         public
         returns (uint256[] memory marketInterests)
@@ -107,21 +140,24 @@ contract PendleRedeemProxy {
         address[] calldata lmContractsForRewards,
         uint256[] calldata expiriesForRewards,
         address user
-    ) public returns (uint256[] memory lmRewards) {
+    ) public returns (uint256[] memory lmRewards, string[] memory failureReasons) {
         uint256 count = expiriesForRewards.length;
         require(count == lmContractsForRewards.length, "ARRAY_LENGTH_MISMATCH");
 
         lmRewards = new uint256[](count);
+        failureReasons = new string[](count);
         for (uint256 i = 0; i < count; i++) {
-            (, , , uint256 lastParamL, ) = PendleLiquidityMiningBase(lmContractsForRewards[i])
-            .readUserSpecificExpiryData(expiriesForRewards[i], user);
-            if (lastParamL == 0) {
-                lmRewards[i] = 0;
-            } else {
-                lmRewards[i] = PendleLiquidityMiningBase(lmContractsForRewards[i]).redeemRewards(
+            try
+                PendleLiquidityMiningBase(lmContractsForRewards[i]).redeemRewards(
                     expiriesForRewards[i],
                     user
-                );
+                )
+            returns (uint256 lmReward) {
+                lmRewards[i] = lmReward;
+                failureReasons[i] = "";
+            } catch Error(string memory reason) {
+                lmRewards[i] = 0;
+                failureReasons[i] = reason;
             }
         }
     }
@@ -130,16 +166,25 @@ contract PendleRedeemProxy {
         address[] calldata lmContractsForInterests,
         uint256[] calldata expiriesForInterests,
         address user
-    ) public returns (uint256[] memory lmInterests) {
+    ) public returns (uint256[] memory lmInterests, string[] memory failureReasons) {
         uint256 count = expiriesForInterests.length;
         require(count == lmContractsForInterests.length, "ARRAY_LENGTH_MISMATCH");
 
         lmInterests = new uint256[](count);
+        failureReasons = new string[](count);
         for (uint256 i = 0; i < count; i++) {
-            lmInterests[i] = IPendleLiquidityMining(lmContractsForInterests[i]).redeemLpInterests(
-                expiriesForInterests[i],
-                user
-            );
+            try
+                IPendleLiquidityMining(lmContractsForInterests[i]).redeemLpInterests(
+                    expiriesForInterests[i],
+                    user
+                )
+            returns (uint256 lmInterest) {
+                lmInterests[i] = lmInterest;
+                failureReasons[i] = "";
+            } catch Error(string memory reason) {
+                lmInterests[i] = 0;
+                failureReasons[i] = reason;
+            }
         }
     }
 
@@ -166,7 +211,14 @@ contract PendleRedeemProxy {
         lmV2Interests = new uint256[](count);
         for (uint256 i = 0; i < count; i++) {
             lmV2Interests[i] = IPendleLiquidityMiningV2(lmV2ContractsForInterests[i])
-            .redeemDueInterests(user);
+                .redeemDueInterests(user);
         }
     }
+
+    function _redeemFromRewardManager(
+        address rewardManager,
+        address underlyingAsset,
+        uint256 expiry,
+        address to
+    ) internal virtual returns (OtRewards memory);
 }

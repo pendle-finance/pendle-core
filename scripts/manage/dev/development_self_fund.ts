@@ -10,6 +10,8 @@ async function main() {
     console.log(`balance of whale    = ${await token.balanceOf(whaleAddress)}`);
     console.log(`balance of alice = ${await token.balanceOf(alice.address)}`);
     console.log(`amount              = ${amount}`);
+    await alice.sendTransaction({ to: whaleAddress, value: BN.from(10).pow(18) });
+    console.log('Sent ETH');
     await impersonateAccount(whaleAddress);
     const whaleSigner = await hre.ethers.getSigner(whaleAddress);
     for (const person of [alice, bob, charlie]) {

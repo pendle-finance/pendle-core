@@ -79,14 +79,37 @@ export async function runTest(mode: Mode) {
 
       const balanceBeforeRedeem = await aUSDT.balanceOf(alice.address);
       const pendleBeforeRedeem = await pdl.balanceOf(alice.address);
-      await redeemProxy.redeem(
-        [xyt.address],
-        [market.address],
-        [liq.address, liq.address],
-        [EXPIRY, EXPIRY],
-        1,
+      const response = await redeemProxy.callStatic.redeem(
+        {
+          xyts: [xyt.address],
+          markets: [market.address],
+          lmContractsForRewards: [liq.address, liq.address],
+          expiriesForRewards: [EXPIRY, EXPIRY.add(consts.SIX_MONTH)],
+          lmContractsForInterests: [liq.address, liq.address],
+          expiriesForInterests: [EXPIRY, EXPIRY.add(consts.SIX_MONTH)],
+          lmV2ContractsForRewards: [],
+          lmV2ContractsForInterests: [],
+        },
+        alice.address,
         consts.HG
       );
+
+      await redeemProxy.redeem(
+        {
+          xyts: [xyt.address],
+          markets: [market.address],
+          lmContractsForRewards: [liq.address, liq.address],
+          expiriesForRewards: [EXPIRY, EXPIRY.add(consts.SIX_MONTH)],
+          lmContractsForInterests: [liq.address, liq.address],
+          expiriesForInterests: [EXPIRY, EXPIRY.add(consts.SIX_MONTH)],
+          lmV2ContractsForRewards: [],
+          lmV2ContractsForInterests: [],
+        },
+        alice.address,
+        consts.HG
+      );
+
+      console.log(response);
 
       const balanceAfterRedeem = await aUSDT.balanceOf(alice.address);
       const pendleAfterRedeem = await pdl.balanceOf(alice.address);
