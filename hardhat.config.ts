@@ -1,15 +1,14 @@
+import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-truffle5";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import "@tenderly/hardhat-tenderly";
-import "@nomiclabs/hardhat-etherscan";
-import * as dotenv from "dotenv";
-import "@nomiclabs/hardhat-ethers";
 // import "hardhat-gas-reporter";
-import "hardhat-typechain";
+import '@typechain/hardhat';
+import * as dotenv from "dotenv";
 import { HardhatUserConfig } from "hardhat/types";
 import "solidity-coverage";
-import "@tenderly/hardhat-tenderly";
 dotenv.config();
 
 require('./scripts/verification.js');
