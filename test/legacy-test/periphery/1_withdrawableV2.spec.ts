@@ -2,15 +2,13 @@ import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract, utils } from 'ethers';
 import hre from 'hardhat';
-import PendleGovernanceManager from '../../../build/artifacts/contracts/core/PendleGovernanceManager.sol/PendleGovernanceManager.json';
-import MockWithdrawableV2 from '../../../build/artifacts/contracts/mock/MockWithdrawableV2.sol/MockWithdrawableV2.json';
 import { errMsg, mint, tokens } from '../../helpers';
 chai.use(solidity);
 
 const { waffle } = require('hardhat');
 const { deployContract, provider } = waffle;
 
-describe('WithdrawableV2 @skip-on-coverage', () => {
+describe('WithdrawableV2 ', () => {
   const [alice] = provider.getWallets();
 
   let govManager: Contract;
@@ -18,8 +16,8 @@ describe('WithdrawableV2 @skip-on-coverage', () => {
   let usdt: Contract;
 
   before(async () => {
-    govManager = await deployContract(alice, PendleGovernanceManager, [alice.address]);
-    withdrawableV2 = await deployContract(alice, MockWithdrawableV2, [govManager.address]);
+    govManager = await deployContract('PendleGovernanceManager', [alice.address]);
+    withdrawableV2 = await deployContract('MockWithdrawableV2', [govManager.address]);
 
     await mint(tokens.USDT, alice, BN.from(10 ** 5));
     usdt = await hre.ethers.getContractAt('TestToken', tokens.USDT.address);

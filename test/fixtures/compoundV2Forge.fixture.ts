@@ -1,100 +1,80 @@
-import { Contract, providers, Wallet } from 'ethers';
-import PendleCompoundV2Forge from '../../build/artifacts/contracts/core/compoundV2/PendleCompoundV2Forge.sol/PendleCompoundV2Forge.json';
-import PendleCompoundV2YieldContractDeployer from '../../build/artifacts/contracts/core/compoundV2/PendleCompoundV2YieldContractDeployer.sol/PendleCompoundV2YieldContractDeployer.json';
-import MockPendleOwnershipToken from '../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json';
-import MockPendleRewardManager from '../../build/artifacts/contracts/mock/MockPendleRewardManager.sol/MockPendleRewardManager.json';
-import PendleFutureYieldToken from '../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json';
-import { consts, setTimeNextBlock, tokens } from '../helpers';
-import { CoreFixture } from './core.fixture';
-import { GovernanceFixture } from './governance.fixture';
+import { TestEnv } from '.';
+import { deployContract, setTimeNextBlock, teConsts } from '../helpers';
+import { getContract } from '../../pendle-deployment-scripts';
 
-const { waffle } = require('hardhat');
-const { deployContract } = waffle;
-
-export interface CompoundV2Fixture {
-  compoundV2Forge: Contract;
-  c2OwnershipToken: Contract;
-  c2FutureYieldToken: Contract;
-  c2OwnershipToken8: Contract;
-  c2FutureYieldToken8: Contract;
-  c2RewardManager: Contract;
-}
-
-export async function compoundV2ForgeFixture(
-  alice: Wallet,
-  provider: providers.Web3Provider,
-  { router, data, govManager }: CoreFixture,
-  { pendle }: GovernanceFixture
-): Promise<CompoundV2Fixture> {
-  const c2RewardManager = await deployContract(alice, MockPendleRewardManager, [
-    govManager.address, //governance
-    consts.FORGE_COMPOUND_V2,
+export async function compoundV2ForgeFixture(env: TestEnv) {
+  let consts = env.pconsts;
+  let tokens = env.ptokens;
+  env.c2RewardManager = await deployContract('MockPendleRewardManager', [
+    env.govManager.address,
+    consts.compound!.FORGE_ID_V2,
   ]);
 
-  const c2YieldContractDeployer = await deployContract(alice, PendleCompoundV2YieldContractDeployer, [
-    govManager.address, //governance
-    consts.FORGE_COMPOUND_V2,
+  const c2YieldContractDeployer = await deployContract('PendleCompoundV2YieldContractDeployer', [
+    env.govManager.address,
+    consts.compound!.FORGE_ID_V2,
   ]);
 
-  const compoundV2Forge = await deployContract(alice, PendleCompoundV2Forge, [
-    govManager.address,
-    router.address,
-    consts.COMPOUND_COMPTROLLER_ADDRESS,
-    consts.FORGE_COMPOUND_V2,
-    consts.COMP_ADDRESS,
-    c2RewardManager.address,
+  env.c2Forge = await deployContract('PendleCompoundV2Forge', [
+    env.govManager.address,
+    env.router.address,
+    consts.compound!.COMPTROLLER,
+    consts.compound!.FORGE_ID_V2,
+    consts.tokens.COMP!,
+    env.c2RewardManager.address,
     c2YieldContractDeployer.address,
-    consts.COMP_ETH,
+    tokens.NATIVE.compound!,
   ]);
-  await c2RewardManager.initialize(compoundV2Forge.address);
 
-  await c2YieldContractDeployer.initialize(compoundV2Forge.address);
+  await env.c2RewardManager.initialize(env.c2Forge.address);
 
-  await data.addForge(consts.FORGE_COMPOUND_V2, compoundV2Forge.address, consts.HG);
+  await c2YieldContractDeployer.initialize(env.c2Forge.address);
 
-  await compoundV2Forge.registerTokens([tokens.USDT.address], [[tokens.USDT.compound]]);
+  await env.data.addForge(consts.compound!.FORGE_ID_V2, env.c2Forge.address, teConsts.HG);
 
-  await setTimeNextBlock(consts.T0_C2); // set the minting time for the first OT and XYT
-  await router.newYieldContracts(consts.FORGE_COMPOUND_V2, tokens.USDT.address, consts.T0_C2.add(consts.SIX_MONTH));
+  await env.c2Forge.registerTokens([tokens.USDT!.address], [[tokens.USDT!.compound]]);
 
-  const otTokenAddress = await data.otTokens(
-    consts.FORGE_COMPOUND_V2,
-    tokens.USDT.address,
-    consts.T0_C2.add(consts.SIX_MONTH)
+  await setTimeNextBlock(teConsts.T0_C2);
+
+  await env.router.newYieldContracts(
+    consts.compound!.FORGE_ID_V2,
+    tokens.USDT!.address,
+    teConsts.T0_C2.add(env.pconsts.misc.SIX_MONTH)
   );
 
-  const xytTokenAddress = await data.xytTokens(
-    consts.FORGE_COMPOUND_V2,
-    tokens.USDT.address,
-    consts.T0_C2.add(consts.SIX_MONTH)
+  const otTokenAddress = await env.data.otTokens(
+    consts.compound!.FORGE_ID_V2,
+    tokens.USDT!.address,
+    teConsts.T0_C2.add(env.pconsts.misc.SIX_MONTH)
   );
 
-  const c2OwnershipToken = new Contract(otTokenAddress, MockPendleOwnershipToken.abi, alice);
-  const c2FutureYieldToken = new Contract(xytTokenAddress, PendleFutureYieldToken.abi, alice);
+  const xytTokenAddress = await env.data.xytTokens(
+    consts.compound!.FORGE_ID_V2,
+    tokens.USDT!.address,
+    teConsts.T0_C2.add(env.pconsts.misc.SIX_MONTH)
+  );
+
+  env.c2OwnershipToken = await getContract('MockPendleOwnershipToken', otTokenAddress);
+  env.c2FutureYieldToken = await getContract('PendleFutureYieldToken', xytTokenAddress);
 
   // ETH
-  await router.newYieldContracts(consts.FORGE_COMPOUND_V2, tokens.WETH.address, consts.T0_C2.add(consts.SIX_MONTH));
-  const otTokenAddress8 = await data.otTokens(
-    consts.FORGE_COMPOUND_V2,
-    tokens.WETH.address,
-    consts.T0_C2.add(consts.SIX_MONTH)
+  await env.router.newYieldContracts(
+    consts.compound!.FORGE_ID_V2,
+    tokens.WNATIVE!.address,
+    teConsts.T0_C2.add(env.pconsts.misc.SIX_MONTH)
+  );
+  const otTokenAddress8 = await env.data.otTokens(
+    consts.compound!.FORGE_ID_V2,
+    tokens.WNATIVE!.address,
+    teConsts.T0_C2.add(env.pconsts.misc.SIX_MONTH)
   );
 
-  const xytTokenAddress8 = await data.xytTokens(
-    consts.FORGE_COMPOUND_V2,
-    tokens.WETH.address,
-    consts.T0_C2.add(consts.SIX_MONTH)
+  const xytTokenAddress8 = await env.data.xytTokens(
+    consts.compound!.FORGE_ID_V2,
+    tokens.WNATIVE!.address,
+    teConsts.T0_C2.add(env.pconsts.misc.SIX_MONTH)
   );
 
-  const c2OwnershipToken8 = new Contract(otTokenAddress8, MockPendleOwnershipToken.abi, alice);
-  const c2FutureYieldToken8 = new Contract(xytTokenAddress8, PendleFutureYieldToken.abi, alice);
-
-  return {
-    compoundV2Forge,
-    c2OwnershipToken,
-    c2FutureYieldToken,
-    c2OwnershipToken8,
-    c2FutureYieldToken8,
-    c2RewardManager,
-  };
+  env.c2OwnershipToken8 = await getContract('MockPendleOwnershipToken', otTokenAddress8);
+  env.c2FutureYieldToken8 = await getContract('PendleFutureYieldToken', xytTokenAddress8);
 }

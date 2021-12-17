@@ -1,12 +1,11 @@
 import { expect } from 'chai';
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
-import MockPendle from '../../../build/artifacts/contracts/mock/MockPENDLE.sol/MockPENDLE.json';
 import { advanceTime, approxBigNumber, consts, evm_revert, evm_snapshot } from '../../helpers';
 
 const { waffle } = require('hardhat');
 const { provider, deployContract } = waffle;
 
-describe('Token name test @skip-on-coverage', async () => {
+describe('Token name test ', async () => {
   const wallets: Wallet[] = provider.getWallets();
 
   const [root, a1, a2, a3, a4] = wallets;
@@ -34,13 +33,7 @@ describe('Token name test @skip-on-coverage', async () => {
 
   beforeEach(async () => {
     await evm_revert(snapshotId);
-    PENDLE = await deployContract(root, MockPendle, [
-      root.address,
-      root.address,
-      root.address,
-      root.address,
-      a4.address,
-    ]);
+    PENDLE = await deployContract('MockPendle', [root.address, root.address, root.address, root.address, a4.address]);
     snapshotId = await evm_snapshot();
   });
 
@@ -200,7 +193,7 @@ describe('Token name test @skip-on-coverage', async () => {
           shouldBeClaiming = shouldBeClaiming.add(weeklyEmissions[j]);
         }
 
-        PENDLE = await deployContract(root, MockPendle, [root.address, a1.address, a2.address, a3.address, a4.address]);
+        PENDLE = await deployContract('MockPendle', [root.address, a1.address, a2.address, a3.address, a4.address]);
 
         const connected = PENDLE.connect(a4);
 

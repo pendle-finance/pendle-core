@@ -1,7 +1,6 @@
 import { createFixtureLoader } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
 import hre from 'hardhat';
-import PendleRedeemProxy from '../../build/artifacts/contracts/misc/PendleRedeemProxy.sol/PendleRedeemProxy.json';
 import { checkDisabled, LiqParams, liquidityMiningFixture, Mode } from '../fixtures';
 import { approxBigNumber, consts, evm_revert, evm_snapshot, getA2Contract, setTimeNextBlock, tokens } from '../helpers';
 
@@ -17,6 +16,7 @@ export async function runTest(mode: Mode) {
     let router: Contract;
     let market: Contract;
     let xyt: Contract;
+    let ot: Contract;
     let pdl: Contract;
     let params: LiqParams;
     let aUSDT: Contract;
@@ -32,9 +32,10 @@ export async function runTest(mode: Mode) {
       pdl = fixture.pdl;
       market = fixture.a2Market;
       xyt = fixture.marketFix.a2Forge.a2FutureYieldToken;
+      ot = fixture.marketFix.a2Forge.a2OwnershipToken;
       params = fixture.params;
       aUSDT = await getA2Contract(alice, fixture.marketFix.a2Forge.aaveV2Forge, tokens.USDT);
-      redeemProxy = await deployContract(alice, PendleRedeemProxy, [router.address]);
+      redeemProxy = await deployContract('PendleRedeemProxy', [router.address]);
       await fixture.core.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
       snapshotId = await evm_snapshot();
     });
@@ -82,6 +83,7 @@ export async function runTest(mode: Mode) {
       const response = await redeemProxy.callStatic.redeem(
         {
           xyts: [xyt.address],
+          ots: [ot.address],
           markets: [market.address],
           lmContractsForRewards: [liq.address, liq.address],
           expiriesForRewards: [EXPIRY, EXPIRY.add(consts.SIX_MONTH)],
@@ -97,6 +99,7 @@ export async function runTest(mode: Mode) {
       await redeemProxy.redeem(
         {
           xyts: [xyt.address],
+          ots: [ot.address],
           markets: [market.address],
           lmContractsForRewards: [liq.address, liq.address],
           expiriesForRewards: [EXPIRY, EXPIRY.add(consts.SIX_MONTH)],

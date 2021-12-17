@@ -28,14 +28,14 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
 
     // we only update the rewards for a yieldTokenHolder if it has been >= updateFrequency[underlyingAsset] blocks
     // since the last time rewards was updated for the yieldTokenHolder (lastUpdatedForYieldTokenHolder[underlyingAsset][expiry])
-    mapping(address => uint256) updateFrequency;
-    mapping(address => mapping(uint256 => uint256)) lastUpdatedForYieldTokenHolder;
+    mapping(address => uint256) public updateFrequency;
+    mapping(address => mapping(uint256 => uint256)) public lastUpdatedForYieldTokenHolder;
     bool public skippingRewards;
 
     // This MULTIPLIER is to scale the real paramL value up, to preserve precision
-    uint256 private constant MULTIPLIER = 1e20;
-    IPendleData private data;
-    IPendleRouter private router;
+    uint256 public constant MULTIPLIER = 1e20;
+    IPendleData public data;
+    IPendleRouter public router;
 
     struct RewardData {
         uint256 paramL;
@@ -292,8 +292,11 @@ contract PendleRewardManager is IPendleRewardManager, WithdrawableV2, Reentrancy
         // * firstTerm is always paramL. But we are still doing this way to make it consistent
         // in the way that we calculate interests/rewards, across Market, LiquidityMining and RewardManager
         // * paramR is basically the new amount of rewards that came in since the last time we called _updateParamL
-        (uint256 firstTerm, uint256 paramR) =
-            _getFirstTermAndParamR(_underlyingAsset, _expiry, currentRewardBalance);
+        (uint256 firstTerm, uint256 paramR) = _getFirstTermAndParamR(
+            _underlyingAsset,
+            _expiry,
+            currentRewardBalance
+        );
 
         uint256 totalOT = ot.totalSupply();
 

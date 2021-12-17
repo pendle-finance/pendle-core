@@ -72,7 +72,12 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     /**
     @dev please refer to the specs
     */
-    function getExchangeRate(address _underlyingAsset) public override returns (uint256 rate) {
+    function getExchangeRate(address _underlyingAsset)
+        public
+        virtual
+        override
+        returns (uint256 rate)
+    {
         (uint256 reserve0, uint256 reserve1, ) = IUniswapV2Pair(_underlyingAsset).getReserves();
 
         uint256 currentK = Math.sqrt(reserve0.mul(reserve1));
@@ -87,6 +92,7 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     function getYieldBearingToken(address _underlyingAsset)
         public
         view
+        virtual
         override(IPendleForge, PendleForgeBaseV2)
         returns (address yieldBearingToken)
     {
@@ -101,12 +107,13 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _redeemedAmount
-    ) internal view override returns (uint256 totalAfterExpiry) {
+    ) internal view virtual override returns (uint256 totalAfterExpiry) {
         totalAfterExpiry = _redeemedAmount.rdiv(lastRateBeforeExpiry[_underlyingAsset][_expiry]);
     }
 
     function getExchangeRateBeforeExpiry(address _underlyingAsset, uint256 _expiry)
         internal
+        virtual
         returns (uint256 exchangeRate)
     {
         if (block.timestamp > _expiry) {
@@ -122,6 +129,7 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     */
     function _calcUnderlyingToRedeem(address _underlyingAsset, uint256 _amountToRedeem)
         internal
+        virtual
         override
         returns (uint256 underlyingToRedeem)
     {
@@ -133,6 +141,7 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
     */
     function _calcAmountToMint(address _underlyingAsset, uint256 _amountToTokenize)
         internal
+        virtual
         override
         returns (uint256 amountToMint)
     {
@@ -147,7 +156,7 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         address _underlyingAsset,
         uint256 _expiry,
         address _user
-    ) internal override {
+    ) internal virtual override {
         uint256 prevRate = lastRate[_underlyingAsset][_expiry][_user];
         uint256 currentRate = getExchangeRateBeforeExpiry(_underlyingAsset, _expiry);
 
@@ -163,8 +172,7 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
 
         dueInterests[_underlyingAsset][_expiry][_user] = dueInterests[_underlyingAsset][_expiry][
             _user
-        ]
-        .add(interestFromXyt);
+        ].add(interestFromXyt);
     }
 
     /**
@@ -174,7 +182,7 @@ contract PendleUniswapV2Forge is PendleForgeBaseV2, IPendleGenericForge {
         address _underlyingAsset,
         uint256 _expiry,
         uint256 _feeAmount
-    ) internal override {
+    ) internal virtual override {
         totalFee[_underlyingAsset][_expiry] = totalFee[_underlyingAsset][_expiry].add(_feeAmount);
     }
 }

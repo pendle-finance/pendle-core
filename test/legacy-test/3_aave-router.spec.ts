@@ -3,7 +3,6 @@ import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Wallet } from 'ethers';
 import { checkDisabled, Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../fixtures';
 import {
-  amountToWei,
   approxBigNumber,
   consts,
   errMsg,
@@ -19,6 +18,7 @@ import {
   tokenizeYield,
   tokens,
 } from '../helpers';
+import { amountToWei } from '../../pendle-deployment-scripts';
 const { waffle } = require('hardhat');
 chai.use(solidity);
 

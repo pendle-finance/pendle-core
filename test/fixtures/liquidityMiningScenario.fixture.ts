@@ -1,6 +1,6 @@
 import { BigNumber as BN } from 'ethers';
-import { startOfEpoch } from '../helpers';
-import { LiqParams, UserStakeAction } from './liquidityMining.fixture';
+import { LiqParams, startOfEpoch } from '../helpers';
+import { UserStakeAction } from './liquidityMining.fixture';
 const SAME_AMOUNT: BN = BN.from(10000);
 
 export function scenario01(params: LiqParams): UserStakeAction[][][] {

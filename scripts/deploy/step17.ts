@@ -1,28 +1,27 @@
 import {
   Deployment,
-  validAddress,
-  deploy,
   getContractFromDeployment,
+  isNotAvax,
   sendAndWaitForTransaction,
+  validAddress,
 } from '../helpers/deployHelpers';
 
 export async function step17(deployer: any, hre: any, deployment: Deployment, consts: any) {
   const pendleSushiswapSimpleForgeAddress = deployment.contracts.PendleSushiswapSimpleForge.address;
   const pendleSushiswapComplexForgeAddress = deployment.contracts.PendleSushiswapComplexForge.address;
-  const pendleCompoundV2ForgeAddress =
-    hre.network.name != 'polygon' && !process.env.ISPOLYGON ? deployment.contracts.PendleCompoundV2Forge.address : '';
+  const pendleCompoundV2ForgeAddress = isNotAvax(hre) ? deployment.contracts.PendleCompoundV2Forge.address : '';
   const pendleGenericMarketFactoryAddress = deployment.contracts.PendleGenericMarketFactory.address;
 
   if (!validAddress('pendleSushiswapSimpleForgeAddress', pendleSushiswapSimpleForgeAddress)) process.exit(1);
   if (!validAddress('pendleSushiswapComplexForgeAddress', pendleSushiswapComplexForgeAddress)) process.exit(1);
-  if (hre.network.name != 'polygon' && !process.env.ISPOLYGON) {
+  if (isNotAvax(hre)) {
     if (!validAddress('pendleCompoundV2ForgeAddress', pendleCompoundV2ForgeAddress)) process.exit(1);
   }
   if (!validAddress('pendleGenericMarketFactoryAddress', pendleGenericMarketFactoryAddress)) process.exit(1);
 
   console.log(`\t pendleSushiswapSimpleForgeAddress used = ${pendleSushiswapSimpleForgeAddress}`);
   console.log(`\t pendleSushiswapComplexForgeAddress used = ${pendleSushiswapComplexForgeAddress}`);
-  if (hre.network.name != 'polygon' && !process.env.ISPOLYGON) {
+  if (isNotAvax(hre)) {
     console.log(`\t pendleCompoundV2ForgeAddress used = ${pendleCompoundV2ForgeAddress}`);
   }
   console.log(`\t pendleGenericMarketFactoryAddress used = ${pendleGenericMarketFactoryAddress}`);
@@ -32,7 +31,7 @@ export async function step17(deployer: any, hre: any, deployment: Deployment, co
   console.log(`\t MARKET_FACTORY_GENERIC = ${consts.common.MARKET_FACTORY_GENERIC}`);
   console.log(`\t FORGE_SUSHISWAP_SIMPLE = ${consts.common.FORGE_SUSHISWAP_SIMPLE}`);
   console.log(`\t FORGE_SUSHISWAP_COMPLEX = ${consts.common.FORGE_SUSHISWAP_COMPLEX}`);
-  if (hre.network.name != 'polygon' && !process.env.ISPOLYGON) {
+  if (isNotAvax(hre)) {
     console.log(`\t FORGE_COMPOUNDV2 = ${consts.common.FORGE_COMPOUNDV2}`);
   }
   await sendAndWaitForTransaction(hre, pendleData.addMarketFactory, 'add generic market factory', [
@@ -64,7 +63,7 @@ export async function step17(deployer: any, hre: any, deployment: Deployment, co
     [consts.common.FORGE_SUSHISWAP_COMPLEX, consts.common.MARKET_FACTORY_GENERIC, true]
   );
 
-  if (hre.network.name != 'polygon' && !process.env.ISPOLYGON) {
+  if (isNotAvax(hre)) {
     // Setup for CompoundV2
     await sendAndWaitForTransaction(hre, pendleData.addForge, 'add CompoundV2 forge', [
       consts.common.FORGE_COMPOUNDV2,

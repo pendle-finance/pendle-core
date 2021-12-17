@@ -1,8 +1,6 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { Contract } from 'ethers';
-import PendleGovernanceManager from '../../build/artifacts/contracts/core/PendleGovernanceManager.sol/PendleGovernanceManager.json';
-import MockPendleGovernanceManager from '../../build/artifacts/contracts/mock/MockPendleGovernanceManager.sol/MockPendleGovernanceManager.json';
 import { checkDisabled, Mode } from '../fixtures/TestEnv';
 import { consts, evm_revert, evm_snapshot } from '../helpers';
 chai.use(solidity);
@@ -22,7 +20,7 @@ export async function runTest(mode: Mode) {
 
     before(async () => {
       globalSnapshotId = await evm_snapshot();
-      pendleGovernanceManagerContract = await deployContract(alice, PendleGovernanceManager, [alice.address]);
+      pendleGovernanceManagerContract = await deployContract('PendleGovernanceManager', [alice.address]);
       snapshotId = await evm_snapshot();
     });
 
@@ -44,9 +42,7 @@ export async function runTest(mode: Mode) {
     });
 
     it('should not be able to deploy zero address as governance', async () => {
-      await expect(deployContract(alice, PendleGovernanceManager, [consts.ZERO_ADDRESS])).to.be.revertedWith(
-        'ZERO_ADDRESS'
-      );
+      await expect(deployContract('PendleGovernanceManager', [consts.ZERO_ADDRESS])).to.be.revertedWith('ZERO_ADDRESS');
     });
 
     it('should not be able to transfer governance to zero address', async () => {
@@ -94,7 +90,7 @@ export async function runTest(mode: Mode) {
 
     it('OnlyGovernance modifier should reject non-governance address', async () => {
       let MockPendleGovernanceManagerContract: Contract;
-      MockPendleGovernanceManagerContract = await deployContract(alice, MockPendleGovernanceManager, [alice.address]);
+      MockPendleGovernanceManagerContract = await deployContract('MockPendleGovernanceManager', [alice.address]);
       await expect(MockPendleGovernanceManagerContract.connect(bob).stub()).to.be.revertedWith('ONLY_GOVERNANCE');
     });
   });

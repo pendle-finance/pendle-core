@@ -1,29 +1,27 @@
 import {
   Deployment,
-  validAddress,
-  deploy,
   getContractFromDeployment,
+  isNotAvax,
   sendAndWaitForTransaction,
+  validAddress,
 } from '../helpers/deployHelpers';
 
 export async function step11(deployer: any, hre: any, deployment: Deployment, consts: any) {
-  const pendleCompoundForgeAddress =
-    hre.network.name != 'polygon' && !process.env.ISPOLYGON ? deployment.contracts.PendleCompoundForge.address : '';
-  const pendleCompoundMarketFactoryAddress =
-    hre.network.name != 'polygon' && !process.env.ISPOLYGON
-      ? deployment.contracts.PendleCompoundMarketFactory.address
-      : '';
+  const pendleCompoundForgeAddress = isNotAvax(hre) ? deployment.contracts.PendleCompoundForge.address : '';
+  const pendleCompoundMarketFactoryAddress = isNotAvax(hre)
+    ? deployment.contracts.PendleCompoundMarketFactory.address
+    : '';
   const pendleAaveV2ForgeAddress = deployment.contracts.PendleAaveV2Forge.address;
   const pendleAaveMarketFactoryAddress = deployment.contracts.PendleAaveMarketFactory.address;
 
-  if (hre.network.name != 'polygon' && !process.env.ISPOLYGON) {
+  if (isNotAvax(hre)) {
     if (!validAddress('pendleCompoundForge', pendleCompoundForgeAddress)) process.exit(1);
     if (!validAddress('pendleCompoundMarketFactory', pendleCompoundMarketFactoryAddress)) process.exit(1);
   }
   if (!validAddress('pendleAaveV2ForgeAddress', pendleAaveV2ForgeAddress)) process.exit(1);
   if (!validAddress('pendleAaveMarketFactoryAddress', pendleAaveMarketFactoryAddress)) process.exit(1);
 
-  if (hre.network.name != 'polygon' && !process.env.ISPOLYGON) {
+  if (isNotAvax(hre)) {
     console.log(`\t pendleCompoundForgeAddress used = ${pendleCompoundForgeAddress}`);
     console.log(`\t pendleCompoundMarketFactoryAddress used = ${pendleCompoundMarketFactoryAddress}`);
   }
@@ -33,7 +31,7 @@ export async function step11(deployer: any, hre: any, deployment: Deployment, co
   const pendleData = await getContractFromDeployment(hre, deployment, 'PendleData');
   console.log(`\t pendleData.address = ${pendleData.address}`);
 
-  if (hre.network.name != 'polygon' && !process.env.ISPOLYGON) {
+  if (isNotAvax(hre)) {
     await sendAndWaitForTransaction(hre, pendleData.addForge, 'add compound forge', [
       consts.common.FORGE_COMPOUND,
       pendleCompoundForgeAddress,

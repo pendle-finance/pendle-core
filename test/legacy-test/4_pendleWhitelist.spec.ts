@@ -1,9 +1,6 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { Contract } from 'ethers';
-import PendleGovernanceManager from '../../build/artifacts/contracts/core/PendleGovernanceManager.sol/PendleGovernanceManager.json';
-import PendleWhitelist from '../../build/artifacts/contracts/core/PendleWhitelist.sol/PendleWhitelist.json';
-import MockPendleWhitelist from '../../build/artifacts/contracts/mock/MockPendleWhitelist.sol/MockPendleWhitelist.json';
 import { checkDisabled, Mode } from '../fixtures/TestEnv';
 import { consts, evm_revert, evm_snapshot } from '../helpers';
 chai.use(solidity);
@@ -26,10 +23,10 @@ export async function runTest(mode: Mode) {
     before(async () => {
       globalSnapshotId = await evm_snapshot();
 
-      pendleGovernanceManagerContract = await deployContract(alice, PendleGovernanceManager, [governance.address]);
+      pendleGovernanceManagerContract = await deployContract('PendleGovernanceManager', [governance.address]);
 
-      pendleWhitelistContract = await deployContract(alice, PendleWhitelist, [pendleGovernanceManagerContract.address]);
-      mockPendleWhitelistContract = await deployContract(alice, MockPendleWhitelist, [
+      pendleWhitelistContract = await deployContract('PendleWhitelist', [pendleGovernanceManagerContract.address]);
+      mockPendleWhitelistContract = await deployContract('MockPendleWhitelist', [
         pendleGovernanceManagerContract.address,
       ]);
 
@@ -53,7 +50,7 @@ export async function runTest(mode: Mode) {
     });
 
     it('should not ba able to assign zero address as governance', async () => {
-      await expect(deployContract(bob, PendleWhitelist, [consts.ZERO_ADDRESS])).to.be.revertedWith('ZERO_ADDRESS');
+      await expect(deployContract('PendleWhitelist', [consts.ZERO_ADDRESS])).to.be.revertedWith('ZERO_ADDRESS');
     });
 
     it('should have empty whitelist after deployment', async () => {

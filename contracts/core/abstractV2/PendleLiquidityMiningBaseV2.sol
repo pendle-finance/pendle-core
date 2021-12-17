@@ -53,7 +53,7 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
     uint256 public override paramL;
 
     modifier hasStarted() {
-        require(_getCurrentEpochId() > 0, "NOT_STARTED");
+        require(getCurrentEpochId() > 0, "NOT_STARTED");
         _;
     }
 
@@ -67,7 +67,7 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
         (bool paused, ) = pausingManager.checkLiqMiningStatus(address(this));
         require(!paused, "LIQ_MINING_PAUSED");
         require(numberOfEpochs > 0, "NOT_FUNDED");
-        require(_getCurrentEpochId() > 0, "NOT_STARTED");
+        require(getCurrentEpochId() > 0, "NOT_STARTED");
         _;
     }
 
@@ -122,7 +122,7 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
     */
     function fund(uint256[] calldata rewards) external virtual override onlyGovernance {
         // Once the program is over, it cannot be extended
-        require(_getCurrentEpochId() <= numberOfEpochs, "LAST_EPOCH_OVER");
+        require(getCurrentEpochId() <= numberOfEpochs, "LAST_EPOCH_OVER");
 
         uint256 nNewEpochs = rewards.length;
         uint256 totalFunded;
@@ -149,7 +149,7 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
     {
         require(epochIds.length == rewards.length, "INVALID_ARRAYS");
 
-        uint256 curEpoch = _getCurrentEpochId();
+        uint256 curEpoch = getCurrentEpochId();
         uint256 endEpoch = numberOfEpochs;
         uint256 totalTopUp;
 
@@ -181,7 +181,7 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
     {
         require(forAddr != address(0), "ZERO_ADDRESS");
         require(amount != 0, "ZERO_AMOUNT");
-        require(_getCurrentEpochId() <= numberOfEpochs, "INCENTIVES_PERIOD_OVER");
+        require(getCurrentEpochId() <= numberOfEpochs, "INCENTIVES_PERIOD_OVER");
 
         _settleStake(forAddr, msg.sender, amount);
         emit Staked(forAddr, amount);
@@ -281,6 +281,10 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
         availableRewardsForUser = epochData[epochId].availableRewardsForUser[user];
     }
 
+    function getCurrentEpochId() public view returns (uint256) {
+        return _epochOfTimestamp(block.timestamp);
+    }
+
     /**
     @notice update all reward-related data for user
     @dev to be called before user's stakeToken balance changes
@@ -295,7 +299,7 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
             return;
         }
 
-        uint256 _curEpoch = _getCurrentEpochId();
+        uint256 _curEpoch = getCurrentEpochId();
         uint256 _endEpoch = Math.min(numberOfEpochs, _curEpoch);
 
         // if _curEpoch<=numberOfEpochs => the endEpoch hasn't ended yet (since endEpoch=curEpoch)
@@ -318,8 +322,8 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
             }
             // updating stakeUnits for users. The logic of this is similar to _updateStakeDataForExpiry
             epochData[epochId].stakeUnitsForUser[user] = epochData[epochId]
-            .stakeUnitsForUser[user]
-            .add(_calcUnitsStakeInEpoch(_balance, _lastTimeUserStakeUpdated, epochId));
+                .stakeUnitsForUser[user]
+                .add(_calcUnitsStakeInEpoch(_balance, _lastTimeUserStakeUpdated, epochId));
 
             // all epochs prior to the endEpoch must have ended
             // if epochId == _endEpoch, we must check if the epoch has ended or not
@@ -335,8 +339,8 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
             // to epochId + vestingEpochs
             for (uint256 i = epochId + 1; i <= epochId + vestingEpochs; i++) {
                 epochData[i].availableRewardsForUser[user] = epochData[i]
-                .availableRewardsForUser[user]
-                .add(rewardsPerVestingEpoch);
+                    .availableRewardsForUser[user]
+                    .add(rewardsPerVestingEpoch);
             }
         }
 
@@ -348,7 +352,7 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
     @dev same logic as the function in V1
     */
     function _updateStakeData() internal virtual {
-        uint256 _curEpoch = _getCurrentEpochId();
+        uint256 _curEpoch = getCurrentEpochId();
 
         // loop through all epochData in descending order
         for (uint256 i = Math.min(_curEpoch, numberOfEpochs); i > 0; i--) {
@@ -454,7 +458,7 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
     {
         _updatePendingRewards(user);
 
-        uint256 _lastEpoch = Math.min(_getCurrentEpochId(), numberOfEpochs + vestingEpochs);
+        uint256 _lastEpoch = Math.min(getCurrentEpochId(), numberOfEpochs + vestingEpochs);
         for (uint256 i = lastEpochClaimed[user]; i <= _lastEpoch; i++) {
             if (epochData[i].availableRewardsForUser[user] > 0) {
                 amountOut = amountOut.add(epochData[i].availableRewardsForUser[user]);
@@ -578,19 +582,15 @@ contract PendleLiquidityMiningBaseV2 is IPendleLiquidityMiningV2, WithdrawableV2
         returns (uint256 rewardsPerVestingEpoch)
     {
         rewardsPerVestingEpoch = epochData[epochId]
-        .totalRewards
-        .mul(epochData[epochId].stakeUnitsForUser[user])
-        .div(epochData[epochId].totalStakeUnits)
-        .div(vestingEpochs);
+            .totalRewards
+            .mul(epochData[epochId].stakeUnitsForUser[user])
+            .div(epochData[epochId].totalStakeUnits)
+            .div(vestingEpochs);
     }
 
     function _startTimeOfEpoch(uint256 t) internal view returns (uint256) {
         // epoch id starting from 1
         return startTime.add((t.sub(1)).mul(epochDuration));
-    }
-
-    function _getCurrentEpochId() internal view returns (uint256) {
-        return _epochOfTimestamp(block.timestamp);
     }
 
     function _epochOfTimestamp(uint256 t) internal view returns (uint256) {

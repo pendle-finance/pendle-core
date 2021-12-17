@@ -14,7 +14,7 @@ import "../../periphery/WithdrawableV2.sol";
 import "../../libraries/MathLib.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/// @notice Common contract base for a forge implementation.
+/// @notice common contract base for a forge implementation.
 /// @dev Each specific forge implementation will need to implement the virtual functions
 abstract contract PendleForgeBase is IPendleForge, WithdrawableV2, ReentrancyGuard {
     using ExpiryUtils for string;

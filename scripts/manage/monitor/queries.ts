@@ -4,7 +4,7 @@ import path from 'path';
 import { utils, BigNumber as BN } from 'ethers';
 import { mintAaveToken, mintCompoundToken, mint } from '../../test/helpers';
 import PendleRouter from '../../build/artifacts/contracts/core/PendleRouter.sol/PendleRouter.json';
-import PendleRedeemProxy from '../../build/artifacts/contracts/proxies/PendleRedeemProxy.sol/PendleRedeemProxy.json';
+import PendleRedeemProxyEth from '../../build/artifacts/contracts/proxies/PendleRedeemProxyEth.sol/PendleRedeemProxyEth.json';
 const { execSync } = require('child_process');
 
 const UNDERLYING_YIELD_TOKEN_TO_SEED = BN.from(1000000);

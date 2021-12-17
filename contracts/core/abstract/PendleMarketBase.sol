@@ -553,6 +553,7 @@ abstract contract PendleMarketBase is IPendleMarket, PendleBaseToken, Withdrawab
         checkAddRemoveSwapClaimAllowed(true);
         interests = _beforeTransferDueInterests(user);
         _safeTransferYieldToken(user, interests);
+        emit RedeemLpInterests(user, interests);
     }
 
     /**

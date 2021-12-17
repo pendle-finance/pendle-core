@@ -1,8 +1,6 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
-import PendleTokenDistribution from '../../build/artifacts/contracts/core/PendleTokenDistribution.sol/PendleTokenDistribution.json';
-import PENDLE from '../../build/artifacts/contracts/tokens/PENDLE.sol/PENDLE.json';
 import { checkDisabled, Mode } from '../fixtures/TestEnv';
 import { consts, errMsg, evm_revert, evm_snapshot, setTimeNextBlock } from '../helpers';
 chai.use(solidity);
@@ -30,7 +28,7 @@ export async function runTest(mode: Mode) {
     before(async () => {
       globalSnapshotId = await evm_snapshot();
 
-      teamTokensContract = await deployContract(governance, PendleTokenDistribution, [
+      teamTokensContract = await deployContract('PendleTokenDistribution', [
         governance.address,
         [
           consts.ONE_QUARTER,
@@ -53,14 +51,14 @@ export async function runTest(mode: Mode) {
           consts.INF,
         ],
       ]);
-      ecosystemFundContract = await deployContract(governance, PendleTokenDistribution, [
+      ecosystemFundContract = await deployContract('PendleTokenDistribution', [
         governance.address,
         [BN.from(0), consts.ONE_QUARTER.mul(4)],
         [consts.ECOSYSTEM_FUND_TOKEN_AMOUNT.div(2), consts.INF],
       ]);
 
       await setTimeNextBlock(consts.PENDLE_START_TIME);
-      pendle = await deployContract(governance, PENDLE, [
+      pendle = await deployContract('PENDLE', [
         governance.address,
         teamTokensContract.address,
         ecosystemFundContract.address,
@@ -247,7 +245,7 @@ export async function runTest(mode: Mode) {
     });
     it('should not be able to deploy with unequal lengths of durations and funds', async () => {
       await expect(
-        deployContract(governance, PendleTokenDistribution, [
+        deployContract('PendleTokenDistribution', [
           governance.address,
           [
             consts.ONE_QUARTER,
@@ -274,7 +272,7 @@ export async function runTest(mode: Mode) {
   });
 }
 
-describe('pendleTokenDistribution @skip-on-coverage', function () {
+describe('pendleTokenDistribution ', function () {
   if (checkDisabled(Mode.GENERAL_TEST)) return;
   runTest(Mode.GENERAL_TEST);
 });

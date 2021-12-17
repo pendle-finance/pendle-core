@@ -52,8 +52,8 @@ export async function runTest(mode: Mode) {
       await buildTestEnv();
       globalSnapshotId = await evm_snapshot();
       for (let user of [alice, bob, charlie, dave, eve]) {
-        await emptyToken(env.ot, user);
-        await emptyToken(env.xyt, user);
+        await emptyToken(env, env.ot, user);
+        await emptyToken(env, env.xyt, user);
       }
 
       await mintXytUSDT(alice, amountXytRef.div(10 ** 6).mul(4));
@@ -64,7 +64,7 @@ export async function runTest(mode: Mode) {
       }
 
       for (let user of [alice, bob, charlie, dave, eve]) {
-        await emptyToken(env.yToken, user);
+        await emptyToken(env, env.yToken, user);
       }
       snapshotId = await evm_snapshot();
     });

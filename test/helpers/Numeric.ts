@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { BigNumber as BN, BigNumberish } from 'ethers';
-import { LiqParams, TestEnv, UserStakeAction } from '../fixtures';
+import { TestEnv, UserStakeAction } from '../fixtures';
+import { LiqParams } from './Constants';
+
 const PRECISION = BN.from(2).pow(40);
 
 // returns a rewards object = BN[][]
@@ -130,15 +132,6 @@ export function startOfEpoch(params: LiqParams, e: number): BN {
   return params.EPOCH_DURATION.mul(e - 1).add(params.START_TIME);
 }
 
-/**
- * convert an amount to Wei
- * @param inp if inp is number => inp is the number of decimal digits
- *            if inp is Token => the number of decimal digits will be extracted from Token
- */
-export function amountToWei(amount: BN, decimal: number) {
-  return BN.from(10).pow(decimal).mul(amount);
-}
-
 export function toFixedPoint(val: string | number): BN {
   if (typeof val === 'number') {
     return BN.from(val).mul(PRECISION);
@@ -167,7 +160,7 @@ export function approxBigNumber(
   _actual: BigNumberish,
   _expected: BigNumberish,
   _delta: BigNumberish,
-  log: boolean = true
+  log: boolean = false
 ) {
   let actual: BN = BN.from(_actual);
   let expected: BN = BN.from(_expected);

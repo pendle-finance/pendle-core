@@ -1,14 +1,13 @@
+import { loadFixture } from 'ethereum-waffle';
 import { BigNumber as BN, Wallet } from 'ethers';
-import { checkDisabled, marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../fixtures';
+import { checkDisabled, marketFixture, Mode, parseTestEnvMarketFixture, TestEnv, wallets } from '../fixtures';
 import * as scenario from '../fixtures/lpFormulaScenario.fixture';
 import { TestAddLiq, TestRemoveLiq } from '../fixtures/lpFormulaScenario.fixture';
 import {
   addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
-  amountToWei,
   approxBigNumber,
   bootstrapMarket,
-  consts,
   evm_revert,
   evm_snapshot,
   mintXytAave,
@@ -16,36 +15,33 @@ import {
   removeMarketLiquiditySingle,
   setTimeNextBlock,
   toFixedPoint,
-  tokens,
 } from '../helpers';
-const { waffle } = require('hardhat');
-
-const { loadFixture, provider } = waffle;
+import { MiscConsts } from '@pendle/constants';
+import { amountToWei } from '../../pendle-deployment-scripts';
 
 export async function runTest(mode: Mode) {
   describe('', async () => {
-    const wallets = provider.getWallets();
     const [alice, bob, charlie] = wallets;
     let snapshotId: string;
     let globalSnapshotId: string;
-    let env: TestEnv = {} as TestEnv;
+    let env: TestEnv;
 
     const MINIMUM_LIQUIDITY: BN = BN.from(1000);
 
     async function buildTestEnv() {
-      let fixture: MarketFixture = await loadFixture(marketFixture);
-      await parseTestEnvMarketFixture(alice, Mode.AAVE_V2, env, fixture);
+      env = await loadFixture(marketFixture);
+      await parseTestEnvMarketFixture(env, mode);
       env.TEST_DELTA = BN.from(10000);
     }
 
     before(async () => {
-      const fixture = await loadFixture(marketFixture);
+      env = await loadFixture(marketFixture);
       globalSnapshotId = await evm_snapshot();
 
       await buildTestEnv();
       await env.data.setMarketFees(toFixedPoint('0.0035'), 0); // 0.35%
       for (var person of [alice, bob, charlie]) {
-        await mintXytAave(tokens.USDT, person, BN.from(10).pow(10), fixture.routerFix, env.T0.add(consts.SIX_MONTH));
+        await mintXytAave(env, env.ptokens.USDT!, person, BN.from(10).pow(10), env.T0.add(env.pconsts.misc.SIX_MONTH));
       }
       snapshotId = await evm_snapshot();
     });
@@ -65,7 +61,7 @@ export async function runTest(mode: Mode) {
 
     async function runTestAddLiqSingleToken(test: TestAddLiq) {
       const T1 = env.T0.add(test.timeOffset);
-      const T2 = T1.add(consts.ONE_DAY);
+      const T2 = T1.add(MiscConsts.ONE_DAY);
       await bootstrapMarket(env, alice, amountToWei(test.initXytAmount, 6), amountToWei(test.initTokenAmount, 6));
       await setTimeNextBlock(T1);
 
@@ -93,7 +89,7 @@ export async function runTest(mode: Mode) {
 
     async function runTestRemoveLiqSingleToken(test: TestRemoveLiq) {
       const T1 = env.T0.add(test.timeOffset);
-      const T2 = T1.add(consts.ONE_DAY);
+      const T2 = T1.add(MiscConsts.ONE_DAY);
       await bootstrapMarket(env, alice, amountToWei(test.initXytAmount, 6), amountToWei(test.initTokenAmount, 6));
 
       let lpBalanceAlice: BN = await env.market.balanceOf(alice.address);

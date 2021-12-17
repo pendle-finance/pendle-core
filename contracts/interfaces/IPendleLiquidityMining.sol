@@ -24,6 +24,7 @@
 pragma solidity 0.7.6;
 
 interface IPendleLiquidityMining {
+    event RedeemLpInterests(uint256 expiry, address user, uint256 interests);
     event Funded(uint256[] _rewards, uint256 numberOfEpochs);
     event RewardsToppedUp(uint256[] _epochIds, uint256[] _rewards);
     event AllocationSettingSet(uint256[] _expiries, uint256[] _allocationNumerators);
@@ -47,6 +48,15 @@ interface IPendleLiquidityMining {
     function stake(uint256 expiry, uint256 amount) external returns (address);
 
     /**
+     * @notice Stake an exact amount of LP_expiry
+     */
+    function stakeFor(
+        address to,
+        uint256 expiry,
+        uint256 amount
+    ) external returns (address);
+
+    /**
      * @notice Stake an exact amount of LP_expiry, using a permit
      */
     function stakeWithPermit(
@@ -62,6 +72,15 @@ interface IPendleLiquidityMining {
      * @notice Withdraw an exact amount of LP_expiry
      */
     function withdraw(uint256 expiry, uint256 amount) external;
+
+    /**
+     * @notice Withdraw an exact amount of LP_expiry
+     */
+    function withdrawTo(
+        address to,
+        uint256 expiry,
+        uint256 amount
+    ) external;
 
     /**
      * @notice Get the pending rewards for a user

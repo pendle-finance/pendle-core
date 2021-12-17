@@ -1,13 +1,12 @@
 import { expect } from 'chai';
 import { BigNumber as BN, Contract } from 'ethers';
-import MockMathLibrary from '../../../build/artifacts/contracts/mock/MockMathLibrary.sol/MockMathLibrary.json';
 import { evm_revert, evm_snapshot } from '../../helpers';
 import testData from './fixtures/pendleMockMathLibrary.json';
 
 const { waffle } = require('hardhat');
 const { provider, deployContract } = waffle;
 
-describe('Math tests @skip-on-coverage', async () => {
+describe('Math tests ', async () => {
   const wallets = provider.getWallets();
   const [alice, bob] = wallets;
   const RONE: BN = BN.from(2).pow(40);
@@ -16,7 +15,7 @@ describe('Math tests @skip-on-coverage', async () => {
   let rpowTest: string[][];
   before(async () => {
     globalSnapshotId = await evm_snapshot();
-    math = await deployContract(alice, MockMathLibrary, []);
+    math = await deployContract('MockMathLibrary', []);
     rpowTest = (<any>testData).test;
   });
 

@@ -1,14 +1,15 @@
+import { MiscConsts } from '@pendle/constants';
 import { BigNumber as BN } from 'ethers';
 import { TestEnv } from '../../fixtures';
 import {
   addMarketLiquidityDual,
   approxBigNumber,
   bootstrapMarket,
-  consts,
   randomNumber,
   setTimeNextBlock,
   swapExactInTokenToXyt,
   swapExactInXytToToken,
+  teConsts,
 } from '../../helpers';
 
 export async function MultiExpiryMarketTest(environments: TestEnv[], wallets: any) {
@@ -21,7 +22,7 @@ export async function MultiExpiryMarketTest(environments: TestEnv[], wallets: an
     await bootstrapMarket(environments[m], dave, amount, amount);
   }
 
-  let currentTime = (await env0.testToken.getTime(consts.HG)).sub(env0.T0);
+  let currentTime = (await env0.testToken.getTime(teConsts.HG)).sub(env0.T0);
 
   async function checkOutcome(outcomes: any) {
     for (let i = 0; i + 1 < nMarket; ++i) {
@@ -56,7 +57,7 @@ export async function MultiExpiryMarketTest(environments: TestEnv[], wallets: an
     return scenario;
   }
 
-  while (consts.SIX_MONTH.gt(currentTime.add(60).mul(2))) {
+  while (MiscConsts.SIX_MONTH.gt(currentTime.add(60).mul(2))) {
     let scenario = await generateRandomScenario(randomNumber(6) + 5);
     let outcomes = [];
 

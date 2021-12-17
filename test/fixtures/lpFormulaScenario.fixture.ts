@@ -1,5 +1,6 @@
+import { MiscConsts } from '@pendle/constants';
 import { BigNumber as BN } from 'ethers';
-import { consts } from '../helpers';
+
 export class TestAddLiq {
   timeOffset: BN;
   initTokenAmount: BN;
@@ -55,41 +56,41 @@ export class TestRemoveLiq {
 }
 
 export function scenarioRemove01(): TestRemoveLiq {
-  return new TestRemoveLiq(consts.THREE_MONTH, 2133, 1, 35334069, 4231, 99, 4222077082);
+  return new TestRemoveLiq(MiscConsts.THREE_MONTH, 2133, 1, 35334069, 4231, 99, 4222077082);
 }
 
 export function scenarioRemove02(): TestRemoveLiq {
-  return new TestRemoveLiq(consts.ONE_MONTH, 381, 34, 207998136, 167, 55, 162885525);
+  return new TestRemoveLiq(MiscConsts.ONE_MONTH, 381, 34, 207998136, 167, 55, 162885525);
 }
 
 export function scenarioRemove03(): TestRemoveLiq {
-  return new TestRemoveLiq(consts.FIVE_MONTH, 951, 50, 563319095, 45, 50, 44877732);
+  return new TestRemoveLiq(MiscConsts.FIVE_MONTH, 951, 50, 563319095, 45, 50, 44877732);
 }
 
 export function scenarioRemove04(): TestRemoveLiq {
-  return new TestRemoveLiq(consts.FIVE_MONTH, 34576, 98, 34331513798, 16424, 1, 15640454634);
+  return new TestRemoveLiq(MiscConsts.FIVE_MONTH, 34576, 98, 34331513798, 16424, 1, 15640454634);
 }
 
 export function scenarioRemove05(): TestRemoveLiq {
-  return new TestRemoveLiq(consts.ONE_MONTH, 45732, 1, 865753226, 78652, 1, 1663309227);
+  return new TestRemoveLiq(MiscConsts.ONE_MONTH, 45732, 1, 865753226, 78652, 1, 1663309227);
 }
 
 export function scenarioAdd01(): TestAddLiq {
-  return new TestAddLiq(consts.THREE_MONTH, 891, 50, '18085079', 331, 57, '36505357');
+  return new TestAddLiq(MiscConsts.THREE_MONTH, 891, 50, '18085079', 331, 57, '36505357');
 }
 
 export function scenarioAdd02(): TestAddLiq {
-  return new TestAddLiq(consts.ONE_MONTH, 381, 157, '50015925', 167, 36, '29257706');
+  return new TestAddLiq(MiscConsts.ONE_MONTH, 381, 157, '50015925', 167, 36, '29257706');
 }
 
 export function scenarioAdd03(): TestAddLiq {
-  return new TestAddLiq(consts.FIVE_MONTH, 594, 784334, '125153154247', 407, 397405, '460160784843');
+  return new TestAddLiq(MiscConsts.FIVE_MONTH, 594, 784334, '125153154247', 407, 397405, '460160784843');
 }
 
 export function scenarioAdd04(): TestAddLiq {
-  return new TestAddLiq(consts.THREE_MONTH, 891, 1000, '310064648', 331, 2697, '1201658307');
+  return new TestAddLiq(MiscConsts.THREE_MONTH, 891, 1000, '310064648', 331, 2697, '1201658307');
 }
 
 export function scenarioAdd05(): TestAddLiq {
-  return new TestAddLiq(consts.ONE_MONTH, 292, 4769482, '86452840114', 979, 5636155, '5182800312870');
+  return new TestAddLiq(MiscConsts.ONE_MONTH, 292, 4769482, '86452840114', 979, 5636155, '5182800312870');
 }

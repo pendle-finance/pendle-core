@@ -1,12 +1,5 @@
 import { BigNumber as BN } from 'ethers';
-import {
-  checkDisabled,
-  liquidityMiningFixture,
-  LiquidityMiningFixture,
-  Mode,
-  parseTestEnvLiquidityMiningFixture,
-  TestEnv,
-} from '../fixtures';
+import { checkDisabled, liquidityMiningFixture, Mode, parseTestEnvLiquidityMiningFixture, TestEnv } from '../fixtures';
 import {
   approxBigNumber,
   consts,
@@ -36,7 +29,7 @@ export async function runTest(mode: Mode) {
     let env: TestEnv = {} as TestEnv;
 
     async function buildTestEnv() {
-      let fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);
+      env = await loadFixture(liquidityMiningFixture);
       await parseTestEnvLiquidityMiningFixture(alice, Mode.COMPOUND, env, fixture);
       env.ot = env.ot8;
       env.xyt = env.xyt8;
@@ -54,8 +47,8 @@ export async function runTest(mode: Mode) {
       await env.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
       for (let user of [bob, charlie, dave, eve]) {
         await redeemDueInterests(env, user);
-        await emptyToken(env.yToken, user);
-        await emptyToken(env.xyt, user);
+        await emptyToken(env, env.yToken, user);
+        await emptyToken(env, env.xyt, user);
       }
 
       snapshotId = await evm_snapshot();
@@ -74,7 +67,7 @@ export async function runTest(mode: Mode) {
       await env.xyt.transfer(eve.address, (await env.xyt.balanceOf(env.market.address)).div(10));
       for (let user of [eve]) {
         await redeemDueInterests(env, user);
-        await emptyToken(env.yToken, user);
+        await emptyToken(env, env.yToken, user);
       }
 
       let totalTime = consts.SIX_MONTH;

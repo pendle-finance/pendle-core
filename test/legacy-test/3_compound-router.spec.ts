@@ -4,7 +4,6 @@ import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import { routerFixture } from '../fixtures';
 import { checkDisabled, Mode } from '../fixtures/TestEnv';
 import {
-  amountToWei,
   approxBigNumber,
   consts,
   errMsg,
@@ -16,6 +15,7 @@ import {
   Token,
   tokens,
 } from '../helpers';
+import { amountToWei } from '../../pendle-deployment-scripts';
 const { waffle } = require('hardhat');
 chai.use(solidity);
 

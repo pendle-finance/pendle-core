@@ -41,6 +41,12 @@ const LIST = [
   'PendleSushiswapComplexForge.sol',
   'PendleSushiswapComplexYieldContractDeployer.sol',
   'PendleSushiswapComplexYieldTokenHolder.sol',
+  'PendleTraderJoeForge.sol',
+  'PendleTraderJoeYieldContractDeployer.sol',
+  'PendleTraderJoeYieldTokenHolder.sol',
+  'PendleBenQiForge.sol',
+  'PendleBenQiYieldContractDeployer.sol',
+  'PendleBenQiYieldTokenHolder.sol',
   'PendleSushiswapSimpleForge.sol',
   'PendleUniswapV2Forge.sol',
   'PendleWhitelist.sol',
@@ -58,6 +64,7 @@ const LIST = [
   'PENDLE.sol',
   'PendleYieldContractDeployerBaseV2.sol',
   'PendleYieldTokenHolderBaseV2.sol',
+  'PendleSLPLiquidityMining.sol',
 ];
 
 async function generateReport() {

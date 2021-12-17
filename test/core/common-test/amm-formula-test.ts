@@ -1,14 +1,14 @@
+import { MiscConsts } from '@pendle/constants';
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, BigNumberish } from 'ethers';
+import { TestEnv, wallets } from '../../fixtures';
 import {
   addMarketLiquidityDual,
   addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
-  amountToWei,
   approxBigNumber,
   bootstrapMarket,
-  consts,
   errMsg,
   mineBlock,
   removeMarketLiquiditySingle,
@@ -17,21 +17,21 @@ import {
   swapExactInXytToToken,
   swapExactOutTokenToXyt,
   swapExactOutXytToToken,
+  teConsts,
   toFixedPoint,
 } from '../../helpers';
-import { TestEnv } from '../../fixtures';
+import { amountToWei } from '../../../pendle-deployment-scripts';
+
 chai.use(solidity);
 
-const { waffle } = require('hardhat');
-const { provider } = waffle;
-const wallets = provider.getWallets();
 const [alice, bob] = wallets;
 
 export async function AMMTest(env: TestEnv, useSwapIn: boolean) {
+  let consts = env.pconsts;
   /*-------------------------------------------------------------*/
   const amount = amountToWei(BN.from(1000), 6);
   await bootstrapMarket(env, alice, amount);
-  // await env.testToken.approve(env.market.address, consts.INF);
+  // await env.testToken.approve(env.market.address, MiscConsts.INF);
 
   await runTestTokenToXyt(env, env.T0.add(3600), BN.from(20405615), BN.from(20000000), useSwapIn);
   await runTestXytToToken(env, env.T0.add(3660), BN.from(120000000), BN.from(111303781), useSwapIn);
@@ -51,7 +51,7 @@ export async function AMMTestWhenBlockDeltaIsNonZero(env: TestEnv, useSwapIn: bo
   await bootstrapMarket(env, alice, amount);
   let BLOCK_DELTA = 3;
   await env.data.setCurveShiftBlockDelta(BLOCK_DELTA);
-  // await env.testToken.approve(env.market.address, consts.INF);
+  // await env.testToken.approve(env.market.address, MiscConsts.INF);
   for (let i = 0; i < BLOCK_DELTA; i++) {
     await mineBlock();
   }
@@ -72,7 +72,8 @@ export async function AMMNearCloseTest(
   env: TestEnv,
   useSwapIn: boolean // if this is true, use swapExactIn. use swapExactOut otherwise.
 ) {
-  let T1 = env.T0.add(consts.SIX_MONTH).sub(consts.ONE_DAY.add(consts.ONE_HOUR)),
+  let consts = env.pconsts;
+  let T1 = env.T0.add(consts.misc.SIX_MONTH).sub(MiscConsts.ONE_DAY.add(MiscConsts.ONE_HOUR)),
     seg = BN.from(60);
   const amount = amountToWei(BN.from(10000), 6);
   await bootstrapMarket(env, alice, amount, amount.div(BN.from(10).pow(5)));
@@ -92,6 +93,7 @@ export async function AMMNearCloseTest(
 }
 
 export async function AMMCheckLPNearCloseTest(env: TestEnv) {
+  let consts = env.pconsts;
   let bobLP = BN.from(0),
     bobXyt: BN = BN.from(0),
     bobToken: BN = BN.from(0);
@@ -117,7 +119,7 @@ export async function AMMCheckLPNearCloseTest(env: TestEnv) {
     approxBigNumber(xytGained, expectedXytGained, delta, true);
   }
 
-  let T1 = env.T0.add(consts.SIX_MONTH).sub(consts.ONE_DAY.add(consts.ONE_HOUR)),
+  let T1 = env.T0.add(consts.misc.SIX_MONTH).sub(MiscConsts.ONE_DAY.add(MiscConsts.ONE_HOUR)),
     seg = BN.from(60);
   const amount = amountToWei(BN.from(1000), 6);
   await bootstrapMarket(env, alice, amount, amount.div(BN.from(10).pow(5)));
@@ -154,11 +156,11 @@ export async function AMMCheckLPNearCloseTest(env: TestEnv) {
 }
 
 export async function MarketFeesTest(env: TestEnv, useSwapIn: boolean) {
-  await env.data.setMarketFees(toFixedPoint('0.0035'), toFixedPoint('0.2'), consts.HG);
+  await env.data.setMarketFees(toFixedPoint('0.0035'), toFixedPoint('0.2'), teConsts.HG);
 
   const amount = amountToWei(BN.from(1000), 6);
   await bootstrapMarket(env, alice, amount);
-  // await env.testToken.approve(env.market.address, consts.INF);
+  // await env.testToken.approve(env.market.address, MiscConsts.INF);
 
   await runTestTokenToXyt(env, env.T0.add(3600), BN.from(20405615), BN.from(19931395), useSwapIn);
 
@@ -174,18 +176,18 @@ export async function MarketFeesTest(env: TestEnv, useSwapIn: boolean) {
 }
 
 export async function ProtocolFeeTest(env: TestEnv, useSwapIn: boolean) {
-  await env.data.setMarketFees(toFixedPoint('0.0035'), toFixedPoint('0.2'), consts.HG);
+  await env.data.setMarketFees(toFixedPoint('0.0035'), toFixedPoint('0.2'), teConsts.HG);
 
   const amount = BN.from(10 ** 10);
   const constSwapAmount = BN.from(1500500 * 15);
 
   async function checkTreasuryLP(expectedLP: BN) {
     let currentTreasuryLP = BN.from(await env.market.balanceOf(env.treasury.address));
-    approxBigNumber(currentTreasuryLP, expectedLP, consts.TEST_TOKEN_DELTA.toNumber() * 2);
+    approxBigNumber(currentTreasuryLP, expectedLP, teConsts.TEST_TOKEN_DELTA.toNumber() * 2);
   }
 
   await bootstrapMarket(env, alice, amount);
-  // await testToken.approve(env.market.address, consts.INF);
+  // await testToken.approve(env.market.address, MiscConsts.INF);
 
   setTimeNextBlock(env.T0.add(3600));
   await env.xyt.connect(bob).transfer(alice.address, amount);
@@ -241,7 +243,7 @@ export async function marketBalanceNonZeroTest(env: TestEnv) {
       amount.sub(MINIMUM_LIQUIDITY),
       0,
       0,
-      consts.HG
+      teConsts.HG
     );
 
   approxBigNumber((await env.xyt.balanceOf(alice.address)).sub(lastAmount), amount.sub(MINIMUM_LIQUIDITY), BN.from(2));
@@ -249,9 +251,10 @@ export async function marketBalanceNonZeroTest(env: TestEnv) {
 }
 
 export async function marketBalanceNonZeroSwapTest(env: TestEnv) {
+  let consts = env.pconsts;
   const amount = BN.from(1000000000);
   await bootstrapMarket(env, alice, amount, BN.from(1));
-  await setTimeNextBlock(env.EXPIRY.sub(consts.ONE_DAY.add(consts.ONE_HOUR)));
+  await setTimeNextBlock(env.EXPIRY.sub(MiscConsts.ONE_DAY.add(MiscConsts.ONE_HOUR)));
   await expect(swapExactInTokenToXyt(env, alice, BN.from(1000000000))).to.be.revertedWith(errMsg.XYT_BALANCE_ERROR);
 }
 
@@ -276,7 +279,7 @@ async function runTestTokenToXyt(
   delta?: BigNumberish
 ) {
   if (delta == null) {
-    delta = consts.TEST_TOKEN_DELTA;
+    delta = teConsts.TEST_TOKEN_DELTA;
   }
   var { xytBalance: initialXytBalance, tokenBalance: initialTokenBalance } = await env.market.getReserves();
 
@@ -304,7 +307,7 @@ async function runTestXytToToken(
   delta?: BigNumberish
 ) {
   if (delta == null) {
-    delta = consts.TEST_TOKEN_DELTA;
+    delta = teConsts.TEST_TOKEN_DELTA;
   }
   var { xytBalance: initialXytBalance, tokenBalance: initialTokenBalance } = await env.market.getReserves();
 

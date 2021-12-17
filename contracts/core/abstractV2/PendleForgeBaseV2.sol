@@ -3,7 +3,6 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../../libraries/ExpiryUtilsLib.sol";
 import "../../interfaces/IPendleBaseToken.sol";
@@ -18,13 +17,12 @@ import "../../libraries/MathLib.sol";
 import "../../libraries/TokenUtilsLib.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/// @notice Common contract base for a forge implementation.
+/// @notice common contract base for a forge implementation.
 /// @dev Each specific forge implementation will need to override necessary virtual functions
 abstract contract PendleForgeBaseV2 is IPendleForgeV2, WithdrawableV2, ReentrancyGuard {
     using ExpiryUtils for string;
     using SafeMath for uint256;
     using Math for uint256;
-    using SafeERC20 for IERC20;
 
     struct PendleTokens {
         IPendleYieldToken xyt;
@@ -169,6 +167,7 @@ abstract contract PendleForgeBaseV2 is IPendleForgeV2, WithdrawableV2, Reentranc
             verifyToken(_underlyingAssets[i], _tokenInfos[i]);
             info.registered = true;
             info.container = _tokenInfos[i];
+            _registerNewAssetsWithRewardManager(_underlyingAssets[i], _tokenInfos[i]);
             emit RegisterTokens(forgeId, _underlyingAssets[i], _tokenInfos[i]);
         }
     }
@@ -401,8 +400,8 @@ abstract contract PendleForgeBaseV2 is IPendleForgeV2, WithdrawableV2, Reentranc
 
         // surely if any users call tokenizeYield, they will have to call this function
         IPendleYieldTokenHolderV2(yieldTokenHolders[_underlyingAsset][_expiry]).afterReceiveTokens(
-            _amountToTokenize
-        );
+                _amountToTokenize
+            );
 
         PendleTokens memory tokens = _getTokens(_underlyingAsset, _expiry);
 
@@ -530,6 +529,11 @@ abstract contract PendleForgeBaseV2 is IPendleForgeV2, WithdrawableV2, Reentranc
             minNYieldAfterPush
         );
     }
+
+    function _registerNewAssetsWithRewardManager(
+        address _underlyingAsset,
+        uint256[] calldata _tokenInfos
+    ) internal virtual {}
 
     function _getTokens(address _underlyingAsset, uint256 _expiry)
         internal
