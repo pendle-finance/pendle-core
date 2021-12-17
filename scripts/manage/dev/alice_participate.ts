@@ -4,6 +4,7 @@ import path from 'path';
 import { BigNumber as BN } from 'ethers';
 import { devConstants } from '../../helpers/constants';
 import { getDeployment, getContractFromDeployment } from '../../helpers/deployHelpers';
+import '@nomiclabs/hardhat-ethers/internal/type-extensions';
 
 async function main() {
   const [alice] = await hre.ethers.getSigners();

@@ -1,6 +1,6 @@
 import { assert } from 'chai';
 import { BigNumber as BN, Contract, utils, Wallet } from 'ethers';
-import { consts, wrapEth } from '.';
+import { teConsts, wrapEth } from '.';
 import { Mode, TestEnv } from '../fixtures';
 
 export async function tokenizeYield(env: TestEnv, user: Wallet, amount: BN, to?: string): Promise<BN> {
@@ -10,7 +10,7 @@ export async function tokenizeYield(env: TestEnv, user: Wallet, amount: BN, to?:
   let amountTokenMinted = await env.ot.balanceOf(to);
   await env.router
     .connect(user)
-    .tokenizeYield(env.FORGE_ID, env.underlyingAsset.address, env.EXPIRY, amount, to, consts.HG);
+    .tokenizeYield(env.FORGE_ID, env.underlyingAsset.address, env.EXPIRY, amount, to, teConsts.HG);
   amountTokenMinted = (await env.ot.balanceOf(to)).sub(amountTokenMinted);
   return amountTokenMinted;
 }
@@ -19,29 +19,29 @@ export async function redeemDueInterests(env: TestEnv, user: Wallet, expiry?: BN
   if (expiry == null) {
     expiry = env.EXPIRY;
   }
-  await env.router
-    .connect(user)
-    .redeemDueInterests(env.FORGE_ID, env.underlyingAsset.address, expiry, user.address, consts.HG);
+  await env.redeemProxy.redeem([[env.xyt.address], [], [], [], [], []], user.address, teConsts.HG);
 }
 
 export async function redeemAfterExpiry(env: TestEnv, user: Wallet, expiry?: BN) {
   if (expiry == null) {
     expiry = env.EXPIRY;
   }
-  await env.router.connect(user).redeemAfterExpiry(env.FORGE_ID, env.underlyingAsset.address, expiry, consts.HG);
+  await env.router.connect(user).redeemAfterExpiry(env.FORGE_ID, env.underlyingAsset.address, expiry, teConsts.HG);
 }
 
 export async function redeemUnderlying(env: TestEnv, user: Wallet, amount: BN, expiry?: BN) {
   if (expiry == null) {
     expiry = env.EXPIRY;
   }
-  await env.router.connect(user).redeemUnderlying(env.FORGE_ID, env.underlyingAsset.address, expiry, amount, consts.HG);
+  await env.router
+    .connect(user)
+    .redeemUnderlying(env.FORGE_ID, env.underlyingAsset.address, expiry, amount, teConsts.HG);
 }
 
 export async function bootstrapMarket(env: TestEnv, user: Wallet, amountXyt: BN, amountToken?: BN) {
   if (amountToken == null) amountToken = amountXyt;
-  let override: any = wrapEth(consts.HG, env.ETH_TEST ? amountToken : BN.from(0));
-  let tokenAddress: string = env.ETH_TEST ? consts.ETH_ADDRESS : env.testToken.address;
+  let override: any = wrapEth(teConsts.HG, env.ETH_TEST ? amountToken : BN.from(0));
+  let tokenAddress: string = env.ETH_TEST ? env.ptokens.NATIVE.address : env.testToken.address;
 
   await env.router
     .connect(user)
@@ -50,8 +50,8 @@ export async function bootstrapMarket(env: TestEnv, user: Wallet, amountXyt: BN,
 
 export async function swapExactInTokenToXyt(env: TestEnv, user: Wallet, inAmount: BN): Promise<BN> {
   let initialXytBalance = await env.xyt.balanceOf(user.address);
-  let override: any = wrapEth(consts.HG, env.ETH_TEST ? inAmount : BN.from(0));
-  let tokenAddress: string = env.ETH_TEST ? consts.ETH_ADDRESS : env.testToken.address;
+  let override: any = wrapEth(teConsts.HG, env.ETH_TEST ? inAmount : BN.from(0));
+  let tokenAddress: string = env.ETH_TEST ? env.ptokens.NATIVE.address : env.testToken.address;
   await env.router
     .connect(user)
     .swapExactIn(tokenAddress, env.xyt.address, inAmount, BN.from(0), env.MARKET_FACTORY_ID, override);
@@ -61,19 +61,19 @@ export async function swapExactInTokenToXyt(env: TestEnv, user: Wallet, inAmount
 
 export async function swapExactInXytToToken(env: TestEnv, user: Wallet, inAmount: BN): Promise<BN> {
   let initialTokenBalance = await env.testToken.balanceOf(user.address);
-  let tokenAddress: string = env.ETH_TEST ? consts.ETH_ADDRESS : env.testToken.address;
+  let tokenAddress: string = env.ETH_TEST ? env.ptokens.NATIVE.address : env.testToken.address;
   await env.router
     .connect(user)
-    .swapExactIn(env.xyt.address, tokenAddress, inAmount, BN.from(0), env.MARKET_FACTORY_ID, consts.HG);
+    .swapExactIn(env.xyt.address, tokenAddress, inAmount, BN.from(0), env.MARKET_FACTORY_ID, teConsts.HG);
   let postTokenBalance = await env.testToken.balanceOf(user.address);
   return postTokenBalance.sub(initialTokenBalance);
 }
 
 export async function swapExactOutTokenToXyt(env: TestEnv, user: Wallet, outAmount: BN, maxInAmount?: BN): Promise<BN> {
-  if (env.ETH_TEST) assert(maxInAmount != null, 'In eth tests, maxInAmount must be present');
-  if (maxInAmount == null) maxInAmount = consts.INF;
-  let override: any = wrapEth(consts.HG, env.ETH_TEST ? maxInAmount : BN.from(0));
-  let tokenAddress: string = env.ETH_TEST ? consts.ETH_ADDRESS : env.testToken.address;
+  if (env.ETH_TEST) assert(maxInAmount != null, 'In ethereum tests, maxInAmount must be present');
+  if (maxInAmount == null) maxInAmount = env.pconsts.misc.INF;
+  let override: any = wrapEth(teConsts.HG, env.ETH_TEST ? maxInAmount : BN.from(0));
+  let tokenAddress: string = env.ETH_TEST ? env.ptokens.NATIVE.address : env.testToken.address;
 
   let initialXytBalance = await env.xyt.balanceOf(user.address);
   await env.router
@@ -84,19 +84,19 @@ export async function swapExactOutTokenToXyt(env: TestEnv, user: Wallet, outAmou
 }
 
 export async function swapExactOutXytToToken(env: TestEnv, user: Wallet, outAmount: BN): Promise<BN> {
-  let tokenAddress: string = env.ETH_TEST ? consts.ETH_ADDRESS : env.testToken.address;
+  let tokenAddress: string = env.ETH_TEST ? env.ptokens.NATIVE.address : env.testToken.address;
   let initialTokenBalance = await env.testToken.balanceOf(user.address);
   await env.router
     .connect(user)
-    .swapExactOut(env.xyt.address, tokenAddress, outAmount, consts.INF, env.MARKET_FACTORY_ID, consts.HG);
+    .swapExactOut(env.xyt.address, tokenAddress, outAmount, env.pconsts.misc.INF, env.MARKET_FACTORY_ID, teConsts.HG);
   // For Eth, the returned result shouldn't be used
   let postTokenBalance = await env.testToken.balanceOf(user.address);
   return postTokenBalance.sub(initialTokenBalance);
 }
 
 export async function addMarketLiquiditySingle(env: TestEnv, user: Wallet, amount: BN, useXyt: boolean) {
-  let tokenAddress: string = env.ETH_TEST ? consts.ETH_ADDRESS : env.testToken.address;
-  let override: any = wrapEth(consts.HG, env.ETH_TEST && !useXyt ? amount : BN.from(0));
+  let tokenAddress: string = env.ETH_TEST ? env.ptokens.NATIVE.address : env.testToken.address;
+  let override: any = wrapEth(teConsts.HG, env.ETH_TEST && !useXyt ? amount : BN.from(0));
   await env.router
     .connect(user)
     .addMarketLiquiditySingle(
@@ -111,7 +111,7 @@ export async function addMarketLiquiditySingle(env: TestEnv, user: Wallet, amoun
 }
 
 export async function addMarketLiquidityDualXyt(env: TestEnv, user: Wallet, amountXyt: BN): Promise<BN> {
-  assert(!env.ETH_TEST, 'Please use addMarketLiquidityDual in eth tests instead');
+  assert(!env.ETH_TEST, 'Please use addMarketLiquidityDual in ethereum tests instead');
   let initialLpBalance = await env.market.balanceOf(user.address);
   await env.router
     .connect(user)
@@ -120,10 +120,10 @@ export async function addMarketLiquidityDualXyt(env: TestEnv, user: Wallet, amou
       env.xyt.address,
       env.testToken.address,
       amountXyt,
-      consts.INF,
+      env.pconsts.misc.INF,
       amountXyt,
       BN.from(0),
-      consts.HG
+      teConsts.HG
     );
   let postLpBalance = await env.market.balanceOf(user.address);
   return postLpBalance.sub(initialLpBalance);
@@ -131,13 +131,13 @@ export async function addMarketLiquidityDualXyt(env: TestEnv, user: Wallet, amou
 
 export async function addMarketLiquidityDual(env: TestEnv, user: Wallet, amountXyt: BN, amountToken?: BN): Promise<BN> {
   if (env.ETH_TEST) {
-    assert(amountToken != null, 'In eth tests, the amountToken must not be null');
+    assert(amountToken != null, 'In ethereum tests, the amountToken must not be null');
   }
 
   if (amountToken == null) amountToken = amountXyt;
 
-  let override: any = wrapEth(consts.HG, env.ETH_TEST ? amountToken : BN.from(0));
-  let tokenAddress: string = env.ETH_TEST ? consts.ETH_ADDRESS : env.testToken.address;
+  let override: any = wrapEth(teConsts.HG, env.ETH_TEST ? amountToken : BN.from(0));
+  let tokenAddress: string = env.ETH_TEST ? env.ptokens.NATIVE.address : env.testToken.address;
   let initialLpBalance = await env.market.balanceOf(user.address);
   await env.router
     .connect(user)
@@ -156,7 +156,7 @@ export async function addMarketLiquidityDual(env: TestEnv, user: Wallet, amountX
 }
 
 export async function removeMarketLiquidityDual(env: TestEnv, user: Wallet, amount: BN) {
-  let tokenAddress: string = env.ETH_TEST ? consts.ETH_ADDRESS : env.testToken.address;
+  let tokenAddress: string = env.ETH_TEST ? env.ptokens.NATIVE.address : env.testToken.address;
   await env.router
     .connect(user)
     .removeMarketLiquidityDual(
@@ -166,7 +166,7 @@ export async function removeMarketLiquidityDual(env: TestEnv, user: Wallet, amou
       amount,
       BN.from(0),
       BN.from(0),
-      consts.HG
+      teConsts.HG
     );
 }
 
@@ -177,7 +177,7 @@ export async function removeMarketLiquiditySingle(
   forXyt: boolean
 ): Promise<BN> {
   let initialBalance: BN = forXyt ? await env.xyt.balanceOf(user.address) : await env.testToken.balanceOf(user.address);
-  let tokenAddress: string = env.ETH_TEST ? consts.ETH_ADDRESS : env.testToken.address;
+  let tokenAddress: string = env.ETH_TEST ? env.ptokens.NATIVE.address : env.testToken.address;
 
   await env.router
     .connect(user)
@@ -188,9 +188,9 @@ export async function removeMarketLiquiditySingle(
       forXyt,
       amount,
       BN.from(0),
-      consts.HG
+      teConsts.HG
     );
-  // this won't work correctly for eth tests
+  // this won't work correctly for ethereum tests
   let postBalance: BN = forXyt ? await env.xyt.balanceOf(user.address) : await env.testToken.balanceOf(user.address);
   return postBalance.sub(initialBalance);
 }
@@ -199,7 +199,7 @@ export async function redeemLpInterests(env: TestEnv, user: Wallet, market?: Con
   if (market == null) {
     market = env.market;
   }
-  await env.router.connect(user).redeemLpInterests(market!.address, user.address, consts.HG);
+  await env.redeemProxy.redeem([[], [], [market.address], [], [], []], user.address, teConsts.HG);
 }
 
 export async function getMarketRateExactIn(
@@ -220,12 +220,13 @@ export async function getMarketRateExactOut(
   return await env.marketReader.getMarketRateExactOut(tokenIn, tokenOut, amount, env.MARKET_FACTORY_ID);
 }
 
-export async function stake(env: TestEnv, user: Wallet, amount: BN, expiry?: BN, forAddr?: Wallet) {
-  if (env.mode == Mode.SLP_LIQ) {
-    await env.liq.connect(user).stake(forAddr != null ? forAddr.address : user.address, amount, consts.HG);
+export async function stake(env: TestEnv, user: Wallet, amount: BN, expiry?: BN, forWallet?: Wallet) {
+  let forAddr = forWallet != null ? forWallet.address : user.address;
+  if (env.mode == Mode.SLP_LIQ || env.mode == Mode.JLP_LIQ) {
+    await env.liq.connect(user).stake(forAddr, amount, teConsts.HG);
   } else {
     if (expiry == null) expiry = env.EXPIRY;
-    await env.liq.connect(user).stake(expiry, amount, consts.HG);
+    await env.liq.connect(user).stakeFor(forAddr, expiry, amount, teConsts.HG);
   }
 }
 
@@ -235,7 +236,7 @@ export async function stakeWithPermit(env: TestEnv, user: Wallet, amount: BN, ex
   const Domain = (contract: any) => ({
     name: 'Pendle Market',
     version: '1',
-    chainId: consts.DEFAULT_CHAIN_ID,
+    chainId: teConsts.DEFAULT_CHAIN_ID,
     verifyingContract: contract.address,
   });
 
@@ -258,25 +259,41 @@ export async function stakeWithPermit(env: TestEnv, user: Wallet, amount: BN, ex
   };
 
   const { v, r, s } = utils.splitSignature(await user._signTypedData(Domain(env.market), Types, Data));
-  await env.liq.connect(user).stakeWithPermit(expiry, amount, 10e9, v, r, s, consts.HG);
+  await env.liq.connect(user).stakeWithPermit(expiry, amount, 10e9, v, r, s, teConsts.HG);
 }
 
-export async function withdraw(env: TestEnv, user: Wallet, amount: BN, expiry?: BN, to?: Wallet) {
-  if (env.mode == Mode.SLP_LIQ) {
-    await env.liq.connect(user).withdraw(to != null ? to.address : user.address, amount, consts.HG);
+export async function withdraw(env: TestEnv, user: Wallet, amount: BN, expiry?: BN, toWallet?: Wallet) {
+  let toAddr = toWallet != null ? toWallet.address : user.address;
+  if (env.mode == Mode.SLP_LIQ || env.mode == Mode.JLP_LIQ) {
+    await env.liq.connect(user).withdraw(toAddr, amount, teConsts.HG);
   } else {
     if (expiry == null) expiry = env.EXPIRY;
-    await env.liq.connect(user).withdraw(expiry, amount, consts.HG);
+    await env.liq.connect(user).withdrawTo(toAddr, expiry, amount, teConsts.HG);
   }
 }
 
-export async function redeemRewards(env: TestEnv, user: Wallet, expiry?: BN) {
-  if (env.mode == Mode.SLP_LIQ) {
-    await env.liq.connect(user).redeemRewards(user.address, consts.HG);
+export async function redeemLiqRewards(env: TestEnv, user: Wallet, expiry?: BN) {
+  if (env.mode == Mode.SLP_LIQ || env.mode == Mode.JLP_LIQ) {
+    await env.redeemProxy.redeem([[], [], [], [], [[env.liq.address, 0, 1]], []], user.address, teConsts.HG);
   } else {
     if (expiry == null) expiry = env.EXPIRY;
-    await env.liq.connect(user).redeemRewards(expiry, user.address, consts.HG);
+    await env.redeemProxy.redeem([[], [], [], [[env.liq.address, expiry, 1]], [], []], user.address, teConsts.HG);
   }
+}
+
+export async function redeemLiqInterest(env: TestEnv, user: Wallet, expiry?: BN) {
+  if (env.mode == Mode.SLP_LIQ || env.mode == Mode.JLP_LIQ) {
+    await env.redeemProxy.redeem([[], [], [], [], [[env.liq.address, 0, 0]], []], user.address, teConsts.HG);
+  } else {
+    if (expiry == null) expiry = env.EXPIRY;
+    await env.redeemProxy.redeem([[], [], [], [[env.liq.address, expiry, 0]], [], []], user.address, teConsts.HG);
+  }
+}
+
+export async function redeemOtRewards(env: TestEnv, underlyingAsset: string, _user: Wallet | string, expiry?: BN) {
+  let user = typeof _user == 'string' ? _user : _user.address;
+  if (expiry == null) expiry = env.EXPIRY;
+  await env.redeemProxy.redeem([[], [env.ot.address], [], [], [], []], user, teConsts.HG);
 }
 
 export async function otBalance(env: TestEnv, user: Wallet): Promise<BN> {

@@ -1,41 +1,31 @@
 import chai, { expect } from 'chai';
-import { solidity } from 'ethereum-waffle';
+import { loadFixture, solidity } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
+import { liquidityMiningFixture, Mode, parseTestEnvLiquidityMiningFixture, TestEnv, wallets } from '../../fixtures';
 import {
   advanceTime,
   approxBigNumber,
-  consts,
   emptyToken,
   errMsg,
   evm_revert,
   evm_snapshot,
-  redeemRewards,
+  redeemLiqRewards,
   stake,
+  teConsts,
   withdraw,
 } from '../../helpers';
-import {
-  liquidityMiningFixture,
-  LiquidityMiningFixture,
-  Mode,
-  parseTestEnvLiquidityMiningFixture,
-  TestEnv,
-} from '../../fixtures';
-const { waffle } = require('hardhat');
 chai.use(solidity);
-
-const { loadFixture, provider } = waffle;
 
 export function runTest(mode: Mode) {
   describe('', async () => {
-    const wallets = provider.getWallets();
     const [alice, bob, charlie, dave, eve] = wallets;
     let snapshotId: string;
     let globalSnapshotId: string;
     let env: TestEnv = {} as TestEnv;
 
     async function buildTestEnv() {
-      let fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);
-      await parseTestEnvLiquidityMiningFixture(alice, mode, env, fixture);
+      env = await loadFixture(liquidityMiningFixture);
+      await parseTestEnvLiquidityMiningFixture(env, mode);
     }
 
     before(async () => {
@@ -54,16 +44,16 @@ export function runTest(mode: Mode) {
     });
 
     async function checkLiquidityMiningEmergency() {
-      await expect(env.liq.fund([BN.from(10 ** 9), BN.from(10 ** 9)], consts.HG)).to.be.revertedWith(
+      await expect(env.liq.fund([BN.from(10 ** 9), BN.from(10 ** 9)], teConsts.HG)).to.be.revertedWith(
         errMsg.LIQ_MINING_PAUSED
       );
 
       await expect(
-        env.liq.topUpRewards([BN.from(100), BN.from(101)], [BN.from(1000), BN.from(1000)], consts.HG)
+        env.liq.topUpRewards([BN.from(100), BN.from(101)], [BN.from(1000), BN.from(1000)], teConsts.HG)
       ).to.be.revertedWith(errMsg.LIQ_MINING_PAUSED);
 
       await expect(
-        env.liq.setAllocationSetting([env.EXPIRY, env.EXPIRY.add(consts.SIX_MONTH)], [BN.from(1), BN.from(1)])
+        env.liq.setAllocationSetting([env.EXPIRY, env.EXPIRY.add(env.pconsts.misc.SIX_MONTH)], [BN.from(1), BN.from(1)])
       ).to.be.revertedWith(errMsg.LIQ_MINING_PAUSED);
 
       await expect(env.liq.connect(alice).stake(env.EXPIRY, BN.from(1000))).to.be.revertedWith(
@@ -84,14 +74,14 @@ export function runTest(mode: Mode) {
     }
 
     it('Should not be able to take liqMining actions while paused', async () => {
-      await env.pausingManager.setPausingAdmin(bob.address, true, consts.HG);
-      await env.pausingManager.connect(bob).setLiqMiningPaused(env.liq.address, true, consts.HG);
+      await env.pausingManagerLiqMining.setPausingAdmin(bob.address, true, teConsts.HG);
+      await env.pausingManagerLiqMining.connect(bob).setLiqMiningPaused(env.liq.address, true, teConsts.HG);
       await checkLiquidityMiningEmergency();
     });
 
     it('Should not be able to take liqMining actions after locked', async () => {
-      await env.pausingManager.setPausingAdmin(bob.address, true, consts.HG);
-      await env.pausingManager.setLiqMiningLocked(env.liq.address, consts.HG);
+      await env.pausingManagerLiqMining.setPausingAdmin(bob.address, true, teConsts.HG);
+      await env.pausingManagerLiqMining.setLiqMiningLocked(env.liq.address, teConsts.HG);
       await checkLiquidityMiningEmergency();
     });
 
@@ -100,7 +90,7 @@ export function runTest(mode: Mode) {
       for (let reward of env.liqParams.REWARDS_PER_EPOCH) {
         rewardLeft = rewardLeft.add(reward);
       }
-      let balanceWithoutReward: BN = (await env.pdl.balanceOf(env.liq.address)).sub(rewardLeft);
+      let balanceWithoutReward: BN = (await env.pendle.balanceOf(env.liq.address)).sub(rewardLeft);
 
       const amount = BN.from(10 ** 5);
 
@@ -119,37 +109,42 @@ export function runTest(mode: Mode) {
       await stake(env, bob, amount);
       await stake(env, charlie, amount.div(2));
 
-      await redeemRewards(env, alice);
-      await redeemRewards(env, bob);
-      await redeemRewards(env, charlie);
+      await redeemLiqRewards(env, alice);
+      await redeemLiqRewards(env, bob);
+      await redeemLiqRewards(env, charlie);
 
       for (let person of [alice, bob, charlie]) {
-        rewardLeft = rewardLeft.sub(await env.pdl.balanceOf(person.address));
+        rewardLeft = rewardLeft.sub(await env.pendle.balanceOf(person.address));
       }
 
-      await env.pausingManager.setPausingAdmin(bob.address, true, consts.HG);
-      await env.pausingManager.setLiqMiningLocked(env.liq.address, consts.HG);
+      await env.pausingManagerLiqMining.setPausingAdmin(bob.address, true, teConsts.HG);
+      await env.pausingManagerLiqMining.setLiqMiningLocked(env.liq.address, teConsts.HG);
 
-      await env.liq.setUpEmergencyMode([env.EXPIRY], dave.address, consts.HG);
+      await env.liq.setUpEmergencyMode([env.EXPIRY], dave.address, teConsts.HG);
 
-      await emptyToken(env.market, eve);
-      await emptyToken(env.pdl, eve);
+      await emptyToken(env, env.market, eve);
+      await emptyToken(env, env.pendle, eve);
 
       await env.market
         .connect(dave)
-        .transferFrom(lpHolder, eve.address, await env.market.balanceOf(lpHolder), consts.HG);
+        .transferFrom(lpHolder, eve.address, await env.market.balanceOf(lpHolder), teConsts.HG);
 
       await expect(
-        env.pdl
+        env.pendle
           .connect(dave)
-          .transferFrom(env.liq.address, eve.address, balanceWithoutReward.add(rewardLeft).add(1), consts.HG)
+          .transferFrom(env.liq.address, eve.address, balanceWithoutReward.add(rewardLeft).add(1), teConsts.HG)
       ).to.be.reverted;
 
-      await env.pdl
+      await env.pendle
         .connect(dave)
-        .transferFrom(env.liq.address, eve.address, await balanceWithoutReward.add(rewardLeft), consts.HG);
+        .transferFrom(env.liq.address, eve.address, await balanceWithoutReward.add(rewardLeft), teConsts.HG);
 
-      approxBigNumber((await env.pdl.balanceOf(eve.address)).sub(balanceWithoutReward), rewardLeft, BN.from(10), true);
+      approxBigNumber(
+        (await env.pendle.balanceOf(eve.address)).sub(balanceWithoutReward),
+        rewardLeft,
+        BN.from(10),
+        true
+      );
 
       approxBigNumber(await env.market.balanceOf(eve.address), amount.mul(4), BN.from(10), true);
     });

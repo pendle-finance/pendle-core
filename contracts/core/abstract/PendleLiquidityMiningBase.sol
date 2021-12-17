@@ -182,7 +182,7 @@ abstract contract PendleLiquidityMiningBase is
         for (uint256 i = 0; i < expiries.length; i++) {
             IPendleLpHolder(expiryData[expiries[i]].lpHolder).setUpEmergencyMode(spender);
         }
-        IERC20(pendleTokenAddress).approve(spender, type(uint256).max);
+        IERC20(pendleTokenAddress).safeApprove(spender, type(uint256).max);
     }
 
     /**
@@ -198,7 +198,7 @@ abstract contract PendleLiquidityMiningBase is
         // Can only be fund if there is already a setting
         require(latestSetting.id > 0, "NO_ALLOC_SETTING");
         // Once the program is over, cannot fund
-        require(_getCurrentEpochId() <= numberOfEpochs, "LAST_EPOCH_OVER");
+        require(getCurrentEpochId() <= numberOfEpochs, "LAST_EPOCH_OVER");
 
         uint256 nNewEpochs = _rewards.length;
         uint256 totalFunded;
@@ -231,7 +231,7 @@ abstract contract PendleLiquidityMiningBase is
         require(latestSetting.id > 0, "NO_ALLOC_SETTING");
         require(_epochIds.length == _rewards.length, "INVALID_ARRAYS");
 
-        uint256 curEpoch = _getCurrentEpochId();
+        uint256 curEpoch = getCurrentEpochId();
         uint256 endEpoch = numberOfEpochs;
         uint256 totalTopUp;
 
@@ -270,7 +270,7 @@ abstract contract PendleLiquidityMiningBase is
             require(block.timestamp < startTime, "LATE_FIRST_ALLOCATION");
         }
 
-        uint256 curEpoch = _getCurrentEpochId();
+        uint256 curEpoch = getCurrentEpochId();
         // set the settingId for past epochs
         for (uint256 i = latestSetting.firstEpochToApply; i <= curEpoch; i++) {
             epochData[i].settingId = latestSetting.id;
@@ -303,13 +303,25 @@ abstract contract PendleLiquidityMiningBase is
     function stake(uint256 expiry, uint256 amount)
         external
         override
+        returns (address newLpHoldingContractAddress)
+    {
+        return stakeFor(msg.sender, expiry, amount);
+    }
+
+    function stakeFor(
+        address forAddr,
+        uint256 expiry,
+        uint256 amount
+    )
+        public
+        override
         isFunded
         nonReentrant
         nonContractOrWhitelisted
         returns (address newLpHoldingContractAddress)
     {
         checkNotPaused();
-        newLpHoldingContractAddress = _stake(expiry, amount);
+        newLpHoldingContractAddress = _stake(forAddr, msg.sender, expiry, amount);
     }
 
     /**
@@ -344,7 +356,7 @@ abstract contract PendleLiquidityMiningBase is
             s
         );
 
-        newLpHoldingContractAddress = _stake(expiry, amount);
+        newLpHoldingContractAddress = _stake(msg.sender, msg.sender, expiry, amount);
     }
 
     /**
@@ -354,16 +366,28 @@ abstract contract PendleLiquidityMiningBase is
         * must have Reentrancy protection
         * only be called if 0 < current epoch (always can withdraw)
      */
-    function withdraw(uint256 expiry, uint256 amount) external override nonReentrant isFunded {
+    function withdraw(uint256 expiry, uint256 amount) external override {
+        withdrawTo(msg.sender, expiry, amount);
+    }
+
+    /**
+     * @notice Use to withdraw their LP from a specific expiry
+    Conditions:
+        * only be called if the contract has been funded.
+        * must have Reentrancy protection
+        * only be called if 0 < current epoch (always can withdraw)
+     */
+    function withdrawTo(
+        address to,
+        uint256 expiry,
+        uint256 amount
+    ) public override nonReentrant isFunded {
         checkNotPaused();
-        uint256 curEpoch = _getCurrentEpochId();
+        uint256 curEpoch = getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
         require(amount != 0, "ZERO_AMOUNT");
 
-        ExpiryData storage exd = expiryData[expiry];
-        require(exd.balances[msg.sender] >= amount, "INSUFFICIENT_BALANCE");
-
-        _pushLpToken(expiry, amount);
+        _pushLpToken(msg.sender, to, expiry, amount);
         emit Withdrawn(expiry, msg.sender, amount);
     }
 
@@ -383,7 +407,7 @@ abstract contract PendleLiquidityMiningBase is
         returns (uint256 rewards)
     {
         checkNotPaused();
-        uint256 curEpoch = _getCurrentEpochId();
+        uint256 curEpoch = getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
         require(user != address(0), "ZERO_ADDRESS");
         require(userExpiries[user].hasExpiry[expiry], "INVALID_EXPIRY");
@@ -411,6 +435,7 @@ abstract contract PendleLiquidityMiningBase is
         require(userExpiries[user].hasExpiry[expiry], "INVALID_EXPIRY");
         interests = _beforeTransferDueInterests(expiry, user);
         _safeTransferYieldToken(expiry, user, interests);
+        emit RedeemLpInterests(expiry, user, interests);
     }
 
     function totalRewardsForEpoch(uint256 epochId)
@@ -511,17 +536,24 @@ abstract contract PendleLiquidityMiningBase is
         length = allExpiries.length;
     }
 
+    // 1-indexed
+    function getCurrentEpochId() public view returns (uint256) {
+        return _epochOfTimestamp(block.timestamp);
+    }
+
     function checkNotPaused() internal {
         (bool paused, ) = pausingManager.checkLiqMiningStatus(address(this));
         require(!paused, "LIQ_MINING_PAUSED");
     }
 
-    function _stake(uint256 expiry, uint256 amount)
-        internal
-        returns (address newLpHoldingContractAddress)
-    {
+    function _stake(
+        address forAddr,
+        address payer,
+        uint256 expiry,
+        uint256 amount
+    ) internal returns (address newLpHoldingContractAddress) {
         ExpiryData storage exd = expiryData[expiry];
-        uint256 curEpoch = _getCurrentEpochId();
+        uint256 curEpoch = getCurrentEpochId();
         require(curEpoch > 0, "NOT_STARTED");
         require(curEpoch <= numberOfEpochs, "INCENTIVES_PERIOD_OVER");
         require(amount != 0, "ZERO_AMOUNT");
@@ -536,13 +568,13 @@ abstract contract PendleLiquidityMiningBase is
             newLpHoldingContractAddress = _addNewExpiry(expiry, marketAddress);
         }
 
-        if (!userExpiries[msg.sender].hasExpiry[expiry]) {
-            userExpiries[msg.sender].expiries.push(expiry);
-            userExpiries[msg.sender].hasExpiry[expiry] = true;
+        if (!userExpiries[forAddr].hasExpiry[expiry]) {
+            userExpiries[forAddr].expiries.push(expiry);
+            userExpiries[forAddr].hasExpiry[expiry] = true;
         }
 
-        _pullLpToken(marketAddress, expiry, amount);
-        emit Staked(expiry, msg.sender, amount);
+        _pullLpToken(forAddr, payer, marketAddress, expiry, amount);
+        emit Staked(expiry, forAddr, amount);
     }
 
     /**
@@ -559,7 +591,7 @@ abstract contract PendleLiquidityMiningBase is
     @dev to be called only by _updatePendingRewards
      */
     function _updateStakeDataForExpiry(uint256 expiry) internal {
-        uint256 _curEpoch = _getCurrentEpochId();
+        uint256 _curEpoch = getCurrentEpochId();
 
         // loop through all epochData in descending order
         for (uint256 i = Math.min(_curEpoch, numberOfEpochs); i > 0; i--) {
@@ -606,7 +638,7 @@ abstract contract PendleLiquidityMiningBase is
             return;
         }
 
-        uint256 _curEpoch = _getCurrentEpochId();
+        uint256 _curEpoch = getCurrentEpochId();
         uint256 _endEpoch = Math.min(numberOfEpochs, _curEpoch);
 
         // if _curEpoch<=numberOfEpochs
@@ -709,35 +741,41 @@ abstract contract PendleLiquidityMiningBase is
 
     /// @notice pull the lp token from users. This must be the only way to pull LP
     function _pullLpToken(
+        address forAddr,
+        address payer,
         address marketAddress,
         uint256 expiry,
         uint256 amount
     ) internal {
-        _updatePendingRewards(expiry, msg.sender);
-        _updateDueInterests(expiry, msg.sender);
+        _updatePendingRewards(expiry, forAddr);
+        _updateDueInterests(expiry, forAddr);
 
         ExpiryData storage exd = expiryData[expiry];
-        exd.balances[msg.sender] = exd.balances[msg.sender].add(amount);
+        exd.balances[forAddr] = exd.balances[forAddr].add(amount);
         exd.totalStakeLP = exd.totalStakeLP.add(amount);
 
-        IERC20(marketAddress).safeTransferFrom(msg.sender, expiryData[expiry].lpHolder, amount);
+        IERC20(marketAddress).safeTransferFrom(payer, expiryData[expiry].lpHolder, amount);
     }
 
     /// @notice push the lp token to users. This must be the only way to send LP out
-    function _pushLpToken(uint256 expiry, uint256 amount) internal {
-        _updatePendingRewards(expiry, msg.sender);
-        _updateDueInterests(expiry, msg.sender);
+    function _pushLpToken(
+        address payer,
+        address receiver,
+        uint256 expiry,
+        uint256 amount
+    ) internal {
+        _updatePendingRewards(expiry, payer);
+        _updateDueInterests(expiry, payer);
 
         ExpiryData storage exd = expiryData[expiry];
-        exd.balances[msg.sender] = exd.balances[msg.sender].sub(amount);
+        exd.balances[payer] = exd.balances[payer].sub(amount);
         exd.totalStakeLP = exd.totalStakeLP.sub(amount);
 
-        IPendleLpHolder(expiryData[expiry].lpHolder).sendLp(msg.sender, amount);
+        IPendleLpHolder(expiryData[expiry].lpHolder).sendLp(receiver, amount);
     }
 
     /**
-     * Very similar to the function in PendleMarketBase. Any major differences are likely to be bugs
-       Please refer to it for more details
+     * Same logic as the function in PendleMarketBase
      */
     function _beforeTransferDueInterests(uint256 expiry, address user)
         internal
@@ -755,7 +793,7 @@ abstract contract PendleLiquidityMiningBase is
 
     /**
     @dev Must be the only way to transfer aToken/cToken out
-    // Please refer to _safeTransfer of PendleForgeBase for the rationale of this function
+    @dev Please refer to _safeTransfer of PendleForgeBase for the rationale of this function
     */
     function _safeTransferYieldToken(
         uint256 _expiry,
@@ -780,7 +818,7 @@ abstract contract PendleLiquidityMiningBase is
     {
         _updatePendingRewards(expiry, user);
 
-        uint256 _lastEpoch = Math.min(_getCurrentEpochId(), numberOfEpochs + vestingEpochs);
+        uint256 _lastEpoch = Math.min(getCurrentEpochId(), numberOfEpochs + vestingEpochs);
         for (uint256 i = expiryData[expiry].lastEpochClaimed[user]; i <= _lastEpoch; i++) {
             if (epochData[i].availableRewardsForUser[user] > 0) {
                 amountOut = amountOut.add(epochData[i].availableRewardsForUser[user]);
@@ -794,17 +832,15 @@ abstract contract PendleLiquidityMiningBase is
     }
 
     /**
-    * Very similar to the function in PendleMarketBase. Any major differences are likely to be bugs
-        Please refer to it for more details
-    */
+     * @dev Same logic as the function in PendleMarketBase
+     */
     function checkNeedUpdateParamL(uint256 expiry) internal returns (bool) {
         return _getIncomeIndexIncreaseRate(expiry) > data.interestUpdateRateDeltaForMarket();
     }
 
     /**
      * @dev all LP interests related functions are almost identical to markets' functions
-     * Very similar to the function in PendleMarketBase. Any major differences are likely to be bugs
-       Please refer to it for more details
+     * @dev Same logic as the function in PendleMarketBase
      */
     function _updateParamL(uint256 expiry) internal {
         ExpiryData storage exd = expiryData[expiry];
@@ -844,11 +880,6 @@ abstract contract PendleLiquidityMiningBase is
         );
         expiryData[expiry].lpHolder = newLpHoldingContractAddress;
         _afterAddingNewExpiry(expiry);
-    }
-
-    // 1-indexed
-    function _getCurrentEpochId() internal view returns (uint256) {
-        return _epochOfTimestamp(block.timestamp);
     }
 
     function _epochOfTimestamp(uint256 t) internal view returns (uint256) {

@@ -1,6 +1,5 @@
 import { BigNumber as BN, utils } from 'ethers';
 import fs from 'fs';
-
 import { common as commonConsts } from './constants';
 
 export interface DeployedContract {
@@ -31,7 +30,13 @@ export function validAddress(variableName: string, address?: string): boolean {
   return true;
 }
 
-export async function deploy(hre: any, deployment: Deployment, contractName: string, args: any[]): Promise<any> {
+export async function deploy(
+  hre: any,
+  deployment: Deployment,
+  contractName: string,
+  args: any[],
+  verify: boolean = false
+): Promise<any> {
   const contractFactory = await hre.ethers.getContractFactory(contractName);
   const contractObject = await contractFactory.deploy(...args);
   await contractObject.deployed();
@@ -39,6 +44,15 @@ export async function deploy(hre: any, deployment: Deployment, contractName: str
     address: contractObject.address,
     tx: contractObject.deployTransaction.hash,
   };
+
+  if (verify) {
+    await hre.run('verify:verify', {
+      address: contractObject.address,
+      // contract: 'contracts/core/SushiswapComplex/PendleSLPLiquidityMining.sol:PendleSLPLiquidityMining',
+      constructorArguments: args,
+    });
+  }
+
   console.log(
     `\t[DEPLOYED] ${contractName} deployed to ${contractObject.address}, tx=${contractObject.deployTransaction.hash}`
   );
@@ -50,7 +64,8 @@ export async function deployWithName(
   deployment: Deployment,
   contractType: string,
   contractName: string,
-  args: any[]
+  args: any[],
+  verify: boolean = false
 ): Promise<any> {
   const contractFactory = await hre.ethers.getContractFactory(contractType);
   const contractObject = await contractFactory.deploy(...args);
@@ -60,6 +75,13 @@ export async function deployWithName(
       address: contractObject.address,
       tx: contractObject.deployTransaction.hash,
     };
+  }
+  if (verify) {
+    await hre.run('verify:verify', {
+      address: contractObject.address,
+      // contract: 'contracts/core/SushiswapComplex/PendleSLPLiquidityMining.sol:PendleSLPLiquidityMining',
+      constructorArguments: args,
+    });
   }
   console.log(
     `\t[DEPLOYED] ${contractName} deployed to ${contractObject.address}, tx=${contractObject.deployTransaction.hash}`
@@ -138,17 +160,21 @@ export async function createNewMarket(
 ) {
   const pendleRouter = await getContractFromDeployment(hre, deployment, 'PendleRouter');
   const pendleData = await getContractFromDeployment(hre, deployment, 'PendleData');
+  console.log('UnderlyingAsset = ', underlyingAssetContract.address);
+  console.log('baseToken = ', baseTokenContract.address);
   const underlyingAssetSymbol = await underlyingAssetContract.symbol();
   const baseTokenSymbol = await baseTokenContract.symbol();
   const forgeIdString = utils.parseBytes32String(forgeId);
 
   const xytAddress = deployment.yieldContracts[forgeIdString][underlyingAssetContract.address].expiries[expiry].XYT;
+  console.log(`is xyt valid ? ${await pendleData.isXyt(xytAddress)}`);
 
   console.log(
     `\tCreating new market for XYT (${forgeIdString} ${underlyingAssetSymbol} ${expiry}), baseToken-${baseTokenSymbol}`
   );
 
   console.log(`\tunderlyingAssetContract = ${underlyingAssetContract.address}`);
+  console.log(`\txytAddress = ${xytAddress}`);
 
   await sendAndWaitForTransaction(hre, pendleRouter.createMarket, 'createMarket', [
     marketFactoryId,
@@ -328,4 +354,8 @@ export async function sendAndWaitForTransaction(
   console.log(`\t\t\t[Broadcasted] transaction: ${transactionDescription}: ${tx.hash}, nonce:${tx.nonce}`);
   await hre.ethers.provider.waitForTransaction(tx.hash);
   console.log(`\t\t\t[Confirmed] transaction: ${transactionDescription}`);
+}
+
+export function isNotAvax(hre: any) {
+  return hre.network.name != 'avalanche' && !process.env.ISAVAX;
 }

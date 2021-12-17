@@ -25,91 +25,93 @@ pragma abicoder v2;
 
 import "../interfaces/IPendleRouter.sol";
 import "../interfaces/IPendleForge.sol";
-import "../core/abstract/PendleLiquidityMiningBase.sol";
+import "../libraries/TrioTokensLib.sol";
+import "../libraries/PairTokensLib.sol";
+import "../interfaces/IPendleLiquidityMining.sol";
+import "../interfaces/IPendleLiquidityMiningMulti.sol";
 import "../interfaces/IPendleLiquidityMiningV2.sol";
+import "../interfaces/IPendleLiquidityMiningV2Multi.sol";
 import "../interfaces/IPendleYieldToken.sol";
 import "../interfaces/IPendleRewardManager.sol";
-import "../interfaces/IPendleRewardManagerV2.sol";
-import "hardhat/console.sol";
+import "../interfaces/IPendleRewardManagerMulti.sol";
+import "../interfaces/IPendleRetroactiveDistribution.sol";
+import "../libraries/PairTokensLib.sol";
+import "../libraries/TrioTokensLib.sol";
 
-struct OtRewards {
-    uint256 amountRewardOne;
-    uint256 amountRewardTwo;
+enum LmRedeemMode {
+    INTEREST,
+    REWARDS,
+    BOTH
+}
+
+struct LmRedeemRequest {
+    address addr;
+    uint256 expiry;
+    LmRedeemMode mode;
+}
+
+struct LmRedeemResult {
+    PairTokenUints rewards;
+    PairTokenUints interests;
 }
 
 struct Args {
-    address[] xyts;
+    address[] yts;
     address[] ots;
     address[] markets;
-    address[] lmContractsForRewards;
-    uint256[] expiriesForRewards;
-    address[] lmContractsForInterests;
-    uint256[] expiriesForInterests;
-    address[] lmV2ContractsForRewards;
-    address[] lmV2ContractsForInterests;
+    LmRedeemRequest[] lmV1;
+    LmRedeemRequest[] lmV2;
+    address[] tokensDistribution;
 }
 
 abstract contract PendleRedeemProxyBase {
     IPendleRouter public immutable router;
+    IPendleRetroactiveDistribution public immutable tokenDistContract;
 
-    constructor(address _router) {
-        require(_router != address(0), "ZERO_ADDRESS");
-        router = IPendleRouter(_router);
+    constructor(IPendleRouter _router, IPendleRetroactiveDistribution _tokenDistContract) {
+        router = _router;
+        tokenDistContract = _tokenDistContract;
     }
 
+    /// @dev only OTs that has rewards should be passed in. SushiSimple & JoeSimple OTs shouldn't be passed in
     function redeem(Args calldata args, address user)
         external
         returns (
-            uint256[] memory xytInterests,
-            OtRewards[] memory otRewards,
+            uint256[] memory ytInterests,
+            TrioTokenUints[] memory otRewards,
             uint256[] memory marketInterests,
-            uint256[] memory lmRewards,
-            string[] memory lmRewardsFailureReasons,
-            uint256[] memory lmInterests,
-            string[] memory lmInterestsFailureReasons,
-            uint256[] memory lmV2Rewards,
-            uint256[] memory lmV2Interests
+            LmRedeemResult[] memory lmV1Returns,
+            LmRedeemResult[] memory lmV2Returns,
+            uint256[] memory tokenDistReturns
         )
     {
-        xytInterests = redeemXyts(args.xyts);
-        otRewards = redeemOts(args.ots);
-        marketInterests = redeemMarkets(args.markets);
-
-        (lmRewards, lmRewardsFailureReasons) = redeemLmRewards(
-            args.lmContractsForRewards,
-            args.expiriesForRewards,
-            user
-        );
-
-        (lmInterests, lmInterestsFailureReasons) = redeemLmInterests(
-            args.lmContractsForInterests,
-            args.expiriesForInterests,
-            user
-        );
-
-        lmV2Rewards = redeemLmV2Rewards(args.lmV2ContractsForRewards, user);
-
-        lmV2Interests = redeemLmV2Interests(args.lmV2ContractsForInterests, user);
+        ytInterests = redeemYts(args.yts, user);
+        otRewards = redeemOts(args.ots, user);
+        marketInterests = redeemMarkets(args.markets, user);
+        lmV1Returns = redeemLmV1(args.lmV1, user);
+        lmV2Returns = redeemLmV2(args.lmV2, user);
+        tokenDistReturns = redeemTokenDist(args.tokensDistribution, user);
     }
 
-    function redeemXyts(address[] calldata xyts) public returns (uint256[] memory xytInterests) {
-        xytInterests = new uint256[](xyts.length);
-        for (uint256 i = 0; i < xyts.length; i++) {
-            IPendleYieldToken xyt = IPendleYieldToken(xyts[i]);
-            bytes32 forgeId = IPendleForge(xyt.forge()).forgeId();
-            address underlyingAsset = xyt.underlyingAsset();
-            uint256 expiry = xyt.expiry();
-            xytInterests[i] = router.redeemDueInterests(
-                forgeId,
-                underlyingAsset,
-                expiry,
-                msg.sender
-            );
+    function redeemYts(address[] calldata yts, address user)
+        public
+        returns (uint256[] memory ytInterests)
+    {
+        ytInterests = new uint256[](yts.length);
+        for (uint256 i = 0; i < yts.length; i++) {
+            IPendleYieldToken yt = IPendleYieldToken(yts[i]);
+            bytes32 forgeId = IPendleForge(yt.forge()).forgeId();
+            address underlyingAsset = yt.underlyingAsset();
+            uint256 expiry = yt.expiry();
+            ytInterests[i] = router.redeemDueInterests(forgeId, underlyingAsset, expiry, user);
         }
     }
 
-    function redeemOts(address[] calldata ots) public returns (OtRewards[] memory otRewards) {
-        otRewards = new OtRewards[](ots.length);
+    function redeemOts(address[] calldata ots, address user)
+        public
+        returns (TrioTokenUints[] memory otRewards)
+    {
+        otRewards = new TrioTokenUints[](ots.length);
         for (uint256 i = 0; i < ots.length; i++) {
             IPendleYieldToken ot = IPendleYieldToken(ots[i]);
             IPendleForge forge = IPendleForge(ot.forge());
@@ -117,108 +119,86 @@ abstract contract PendleRedeemProxyBase {
             address underlyingAsset = ot.underlyingAsset();
             uint256 expiry = ot.expiry();
             otRewards[i] = _redeemFromRewardManager(
+                address(forge),
                 rewardManager,
                 underlyingAsset,
                 expiry,
-                msg.sender
+                user
             );
         }
     }
 
-    function redeemMarkets(address[] calldata markets)
+    function redeemMarkets(address[] calldata markets, address user)
         public
         returns (uint256[] memory marketInterests)
     {
         uint256 marketCount = markets.length;
         marketInterests = new uint256[](marketCount);
         for (uint256 i = 0; i < marketCount; i++) {
-            marketInterests[i] = router.redeemLpInterests(markets[i], msg.sender);
+            marketInterests[i] = router.redeemLpInterests(markets[i], user);
         }
     }
 
-    function redeemLmRewards(
-        address[] calldata lmContractsForRewards,
-        uint256[] calldata expiriesForRewards,
-        address user
-    ) public returns (uint256[] memory lmRewards, string[] memory failureReasons) {
-        uint256 count = expiriesForRewards.length;
-        require(count == lmContractsForRewards.length, "ARRAY_LENGTH_MISMATCH");
-
-        lmRewards = new uint256[](count);
-        failureReasons = new string[](count);
-        for (uint256 i = 0; i < count; i++) {
-            try
-                PendleLiquidityMiningBase(lmContractsForRewards[i]).redeemRewards(
-                    expiriesForRewards[i],
-                    user
-                )
-            returns (uint256 lmReward) {
-                lmRewards[i] = lmReward;
-                failureReasons[i] = "";
-            } catch Error(string memory reason) {
-                lmRewards[i] = 0;
-                failureReasons[i] = reason;
-            }
-        }
-    }
-
-    function redeemLmInterests(
-        address[] calldata lmContractsForInterests,
-        uint256[] calldata expiriesForInterests,
-        address user
-    ) public returns (uint256[] memory lmInterests, string[] memory failureReasons) {
-        uint256 count = expiriesForInterests.length;
-        require(count == lmContractsForInterests.length, "ARRAY_LENGTH_MISMATCH");
-
-        lmInterests = new uint256[](count);
-        failureReasons = new string[](count);
-        for (uint256 i = 0; i < count; i++) {
-            try
-                IPendleLiquidityMining(lmContractsForInterests[i]).redeemLpInterests(
-                    expiriesForInterests[i],
-                    user
-                )
-            returns (uint256 lmInterest) {
-                lmInterests[i] = lmInterest;
-                failureReasons[i] = "";
-            } catch Error(string memory reason) {
-                lmInterests[i] = 0;
-                failureReasons[i] = reason;
-            }
-        }
-    }
-
-    function redeemLmV2Rewards(address[] calldata lmV2ContractsForRewards, address user)
+    function redeemTokenDist(address[] calldata tokens, address user)
         public
-        returns (uint256[] memory lmV2Rewards)
+        returns (uint256[] memory results)
     {
-        uint256 count = lmV2ContractsForRewards.length;
-
-        lmV2Rewards = new uint256[](count);
-        for (uint256 i = 0; i < count; i++) {
-            lmV2Rewards[i] = IPendleLiquidityMiningV2(lmV2ContractsForRewards[i]).redeemRewards(
-                user
-            );
-        }
+        if (tokens.length != 0) results = tokenDistContract.redeem(tokens, payable(user));
     }
 
-    function redeemLmV2Interests(address[] calldata lmV2ContractsForInterests, address user)
+    function redeemLmV1(LmRedeemRequest[] calldata lm, address user)
         public
-        returns (uint256[] memory lmV2Interests)
+        returns (LmRedeemResult[] memory results)
     {
-        uint256 count = lmV2ContractsForInterests.length;
-
-        lmV2Interests = new uint256[](count);
-        for (uint256 i = 0; i < count; i++) {
-            lmV2Interests[i] = IPendleLiquidityMiningV2(lmV2ContractsForInterests[i])
-                .redeemDueInterests(user);
+        uint256 len = lm.length;
+        results = new LmRedeemResult[](len);
+        for (uint256 i = 0; i < len; i++) {
+            if (lm[i].mode == LmRedeemMode.INTEREST || lm[i].mode == LmRedeemMode.BOTH)
+                results[i].interests = _redeemLmV1Interest(lm[i], user);
+            if (lm[i].mode == LmRedeemMode.REWARDS || lm[i].mode == LmRedeemMode.BOTH)
+                results[i].rewards = _redeemLmV1Rewards(lm[i], user);
         }
     }
+
+    function redeemLmV2(LmRedeemRequest[] calldata lm, address user)
+        public
+        returns (LmRedeemResult[] memory results)
+    {
+        uint256 len = lm.length;
+        results = new LmRedeemResult[](len);
+        for (uint256 i = 0; i < len; i++) {
+            if (lm[i].mode == LmRedeemMode.INTEREST || lm[i].mode == LmRedeemMode.BOTH)
+                results[i].interests = _redeemLmV2Interest(lm[i], user);
+            if (lm[i].mode == LmRedeemMode.REWARDS || lm[i].mode == LmRedeemMode.BOTH)
+                results[i].rewards = _redeemLmV2Rewards(lm[i], user);
+        }
+    }
+
+    function _redeemLmV1Interest(LmRedeemRequest calldata lm, address user)
+        internal
+        virtual
+        returns (PairTokenUints memory);
+
+    function _redeemLmV1Rewards(LmRedeemRequest calldata lm, address user)
+        internal
+        virtual
+        returns (PairTokenUints memory);
+
+    function _redeemLmV2Interest(LmRedeemRequest calldata lm, address user)
+        internal
+        virtual
+        returns (PairTokenUints memory);
+
+    function _redeemLmV2Rewards(LmRedeemRequest calldata lm, address user)
+        internal
+        virtual
+        returns (PairTokenUints memory);
 
     function _redeemFromRewardManager(
+        address forge,
         address rewardManager,
         address underlyingAsset,
         uint256 expiry,
-        address to
-    ) internal virtual returns (OtRewards memory);
+        address user
+    ) internal virtual returns (TrioTokenUints memory);
 }

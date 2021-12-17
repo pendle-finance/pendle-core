@@ -1,15 +1,15 @@
+import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-truffle5";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import "@tenderly/hardhat-tenderly";
-import "@nomiclabs/hardhat-etherscan";
-import * as dotenv from "dotenv";
-import "@nomiclabs/hardhat-ethers";
 // import "hardhat-gas-reporter";
-import "hardhat-typechain";
+import '@typechain/hardhat';
+import * as dotenv from "dotenv";
 import { HardhatUserConfig } from "hardhat/types";
 import "solidity-coverage";
-import "@tenderly/hardhat-tenderly";
+
 dotenv.config();
 
 require('./scripts/verification.js');
@@ -32,21 +32,26 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+        url: `https://api.avax.network/ext/bc/C/rpc`,
         // url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
         // url: 'http://localhost:8545',
-        blockNumber: 12372265
+        blockNumber: 8311876
+        // url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+        // // url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+        // // url: 'http://localhost:8545',
+        // blockNumber: 13192440
       },
       accounts: [
         // 5 accounts with 10^14 ETH each
         // Addresses:
-        //   0x186e446fbd41dD51Ea2213dB2d3ae18B05A05ba8
+        //   your address generated from the private key
         //   0x6824c889f6EbBA8Dac4Dd4289746FCFaC772Ea56
         //   0xCFf94465bd20C91C86b0c41e385052e61ed49f37
         //   0xEBAf3e0b7dBB0Eb41d66875Dd64d9F0F314651B3
         //   0xbFe6D5155040803CeB12a73F8f3763C26dd64a92
+
         {
-          privateKey: '0xf269c6517520b4435128014f9c1e50c1c498374a7f5143f035bfb32153f3adab',
+          privateKey: `${process.env.PRIVATE_KEYS}`,
           balance: '1000000000000000000000000000000000000',
         },
         {
@@ -69,44 +74,50 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
       blockGasLimit: 800000000000000,
       gas: 80000000,
-      gasPrice: 100e9,
       loggingEnabled: false,
     },
     development: {
       url: 'http://127.0.0.1:8545',
+      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
       gas: 12400000,
       timeout: 1000000,
       gasPrice: 100e9
     },
-    kovan: {
-      url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY || "dummyKey"}`,
-      gas: 8000000,
-      timeout: 100000,
-      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
-    },
-    // kovantest: {
-    //   // url: `https://eth-kovan.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+    // kovan: {
     //   url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY || "dummyKey"}`,
     //   gas: 8000000,
-    //   gasPrice: 10*1000000000,
-    //   timeout: 1000000,
+    //   timeout: 100000,
     //   accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
     // },
-    // goerli: {
-    //   url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
+    // // kovantest: {
+    // //   // url: `https://eth-kovan.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+    // //   url: `https://kovan.infura.io/v3/${process.env.INFURA_KEY || "dummyKey"}`,
+    // //   gas: 8000000,
+    // //   gasPrice: 10*1000000000,
+    // //   timeout: 1000000,
+    // //   accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
+    // // },
+    // // goerli: {
+    // //   url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
+    // //   accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
+    // //   timeout: 20000,
+    // // },
+    // mainnet: {
+    //   url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
     //   accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
-    //   timeout: 20000,
+    //   gasPrice: 16 * 1000000000,
+    //   timeout: 200000,
     // },
-    mainnet: {
-      url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+    // polygon: {
+    //   url: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
+    //   accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
+    //   gasPrice: 60 * 1000000000,
+    //   timeout: 200000,
+    // }
+    avax: {
+      url: `https://api.avax.network/ext/bc/C/rpc`,
       accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
-      gasPrice: 16 * 1000000000,
-      timeout: 200000,
-    },
-    polygon: {
-      url: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
-      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
-      gasPrice: 60 * 1000000000,
+      gasPrice: 40 * 1000000000,
       timeout: 200000,
     }
   },
@@ -114,6 +125,15 @@ const config: HardhatUserConfig = {
     compilers: [
       {
         version: '0.7.6',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      {
+        version: '0.6.12',
         settings: {
           optimizer: {
             enabled: true,

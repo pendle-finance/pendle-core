@@ -1,24 +1,25 @@
+import { MiscConsts } from '@pendle/constants';
+import { loadFixture } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
-import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../../fixtures';
+import { Mode, parseTestEnvRouterFixture, routerFixture, TestEnv, wallets } from '../../fixtures';
 import {
+  approveAll,
   approxBigNumber,
-  consts,
   emptyToken,
   evm_revert,
   evm_snapshot,
   getSushiLpValue,
+  mint,
   mintAaveV2Token,
   mintCompoundToken,
+  mintQiToken,
   mintSushiswapLpFixed,
+  mintXJoe,
   tokenizeYield,
 } from '../../helpers';
 
-const { waffle } = require('hardhat');
-const { loadFixture, provider } = waffle;
-
 export async function runTest(mode: Mode) {
   describe('', async () => {
-    const wallets = provider.getWallets();
     const [alice, bob, charlie, dave, eve] = wallets;
 
     let snapshotId: string;
@@ -26,19 +27,25 @@ export async function runTest(mode: Mode) {
     let env: TestEnv = {} as TestEnv;
 
     async function buildTestEnv() {
-      let fixture: RouterFixture = await loadFixture(routerFixture);
-      await parseTestEnvRouterFixture(alice, mode, env, fixture);
+      env = await loadFixture(routerFixture);
+      await parseTestEnvRouterFixture(env, mode);
     }
 
     before(async () => {
       await buildTestEnv();
       globalSnapshotId = await evm_snapshot();
-      for (var person of [bob, charlie, dave, eve]) {
-        if (mode == Mode.AAVE_V2) await mintAaveV2Token(env.underlyingAsset, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
+      await approveAll([env.yToken], [env.router]);
+      for (var person of [alice, bob, charlie, dave, eve]) {
+        if (mode == Mode.AAVE_V2)
+          await mintAaveV2Token(env, env.underlyingAsset, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
         else if (mode == Mode.COMPOUND || mode == Mode.COMPOUND_V2)
-          await mintCompoundToken(env.underlyingAsset, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
-        else if (mode == Mode.SUSHISWAP_COMPLEX || mode == Mode.SUSHISWAP_SIMPLE) await mintSushiswapLpFixed(person);
-        await env.yToken.connect(person).approve(env.router.address, consts.INF);
+          await mintCompoundToken(env, env.underlyingAsset, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
+        else if (mode == Mode.SUSHISWAP_COMPLEX || mode == Mode.SUSHISWAP_SIMPLE)
+          await mintSushiswapLpFixed(env, person);
+        else if (mode == Mode.BENQI)
+          await mintQiToken(env, env.underlyingAsset, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
+        else if (mode == Mode.XJOE) await mintXJoe(env, env.xJoe, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
+        else if (mode == Mode.WONDERLAND) await mint(env, env.ptokens.wMEMO!, person, BN.from(0));
       }
       snapshotId = await evm_snapshot();
     });
@@ -52,32 +59,38 @@ export async function runTest(mode: Mode) {
       snapshotId = await evm_snapshot();
     });
 
-    enum Action {
-      TokenizeYield,
-      RedeemDueInterests,
-      RedeemUnderlying,
-    }
-
-    it('[Only CompoundV2]', async () => {
-      if (mode != Mode.COMPOUND_V2) return;
-      const amount = BN.from(1000000000);
-      const rate = await env.yToken.callStatic.exchangeRateCurrent();
-      const actualUnderlying = amount.mul(rate).div(consts.ONE_E_18);
-      console.log(amount, rate, actualUnderlying);
-      await emptyToken(env.yToken, bob);
+    it('[Only CompoundV2 like (Wonderland, ...) forges]', async () => {
+      if (mode != Mode.COMPOUND_V2 && mode != Mode.WONDERLAND) return;
+      const amount = env.INITIAL_YIELD_TOKEN_AMOUNT;
+      const rate = await env.forge.callStatic.getExchangeRate(env.underlyingAsset.address);
+      const actualUnderlying = amount.mul(rate).div(MiscConsts.ONE_E_18);
+      await emptyToken(env, env.yToken, bob);
       await tokenizeYield(env, alice, amount, bob.address);
       approxBigNumber(await env.xyt.balanceOf(bob.address), actualUnderlying, 5);
     });
+
     it('[Only Sushi]', async () => {
-      if (mode != Mode.SUSHISWAP_COMPLEX && mode != Mode.SUSHISWAP_SIMPLE) return;
+      if (mode != Mode.SUSHISWAP_COMPLEX && mode != Mode.SUSHISWAP_SIMPLE && mode != Mode.TRADER_JOE) return;
       const amount = BN.from(1000000000);
-      await emptyToken(env.yToken, bob);
+      await emptyToken(env, env.yToken, bob);
       await tokenizeYield(env, alice, amount, bob.address);
       approxBigNumber(
         await env.xyt.balanceOf(bob.address),
         (await getSushiLpValue(env, amount)).div(BN.from(10).pow(20)),
         5
       );
+    });
+
+    it('[Only xJoe]', async () => {
+      if (mode != Mode.XJOE) return;
+      const amount = BN.from(1000000000);
+      await emptyToken(env, env.yToken, bob);
+      const actualUnderlying = amount
+        .mul(await env.JOEContract.balanceOf(env.xJoe.address))
+        .div(await env.xJoe.totalSupply());
+      await emptyToken(env, env.yToken, bob);
+      await tokenizeYield(env, alice, amount, bob.address);
+      approxBigNumber(await env.xyt.balanceOf(bob.address), actualUnderlying, 5);
     });
   });
 }

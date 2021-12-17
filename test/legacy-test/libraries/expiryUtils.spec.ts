@@ -11,7 +11,7 @@ const XYT = 'YT';
 const AAVE_NAME = 'Aave interest bearing USDT';
 const AAVE_SYMBOL = 'aUSDT';
 
-describe('ExpiryUtils @skip-on-coverage', () => {
+describe('ExpiryUtils ', () => {
   const [alice] = provider.getWallets();
   const loadFixture = createFixtureLoader([alice], provider);
 

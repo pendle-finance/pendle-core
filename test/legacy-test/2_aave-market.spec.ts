@@ -19,7 +19,6 @@ import {
   addMarketLiquidityDualXyt,
   addMarketLiquiditySingle,
   advanceTime,
-  amountToWei,
   approxBigNumber,
   approxByPercent,
   bootstrapMarket,
@@ -37,6 +36,7 @@ import {
   swapExactOutXytToToken,
   toFixedPoint,
 } from '../helpers';
+import { amountToWei } from '../../pendle-deployment-scripts';
 const { waffle } = require('hardhat');
 chai.use(solidity);
 

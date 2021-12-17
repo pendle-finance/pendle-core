@@ -1,261 +1,431 @@
 import { assert } from 'chai';
 import { BigNumber as BN, Contract, Wallet } from 'ethers';
-import { amountToWei, consts, impersonateAccount, impersonateAccountStop, Token, tokens, wrapEth } from '.';
-import ERC20 from '../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
-import IUniswapV2Router02 from '../../build/artifacts/contracts/interfaces/IUniswapV2Router02.sol/IUniswapV2Router02.json';
-import TetherToken from '../../build/artifacts/contracts/interfaces/IUSDT.sol/IUSDT.json';
-import IWETH from '../../build/artifacts/contracts/interfaces/IWETH.sol/IWETH.json';
-import ICEtherTest from '../../build/artifacts/contracts/mock/ICEtherTest.sol/ICEtherTest.json';
-import ICTokenTest from '../../build/artifacts/contracts/mock/ICTokenTest.sol/ICTokenTest.json';
-import { RouterFixture } from '../fixtures';
-import { aaveV2Fixture } from '../fixtures/aaveV2.fixture';
+import hre from 'hardhat';
+import { getEth, impersonateAccount, impersonateAccountStop, teConsts, wrapEth } from '.';
+import { Mode, TestEnv, wallets } from '../fixtures';
+import { Erc20Token, MiscConsts } from '@pendle/constants';
+import { amountToWei, getContract, mintFromSource } from '../../pendle-deployment-scripts';
 
-const hre = require('hardhat');
-const { waffle } = require('hardhat');
-const { provider } = waffle;
-
-export async function mintXytAave(token: Token, user: Wallet, amount: BN, env: RouterFixture, expiry: BN): Promise<BN> {
-  let router = env.core.router;
-  const a2Contract = await getA2Contract(user, env.a2Forge.aaveV2Forge, token);
+export async function mintXytAave(env: TestEnv, token: Erc20Token, user: Wallet, amount: BN, expiry: BN): Promise<BN> {
+  const a2Contract = await getA2Token(env, token);
   let preA2TokenBal = await a2Contract.balanceOf(user.address);
-  await mintAaveV2Token(token, user, amount);
-  await a2Contract.approve(router.address, consts.INF);
+  await mintAaveV2Token(env, token, user, amount);
+  await approveAll([a2Contract], [env.router]);
   let postA2TokenBal = await a2Contract.balanceOf(user.address);
-  await router
+  await env.router
     .connect(user)
     .tokenizeYield(
-      consts.FORGE_AAVE_V2,
+      env.pconsts.aave!.FORGE_ID,
       token.address,
       expiry,
       postA2TokenBal.sub(preA2TokenBal),
       user.address,
-      consts.HG
+      teConsts.HG
     );
   return postA2TokenBal.sub(preA2TokenBal);
 }
 
 export async function mintXytCompound(
-  token: Token,
+  env: TestEnv,
+  mode: Mode,
+  token: Erc20Token,
   user: Wallet,
   amount: BN,
-  env: RouterFixture,
   expiry: BN
 ): Promise<BN> {
-  let router = env.core.router;
-  const cContract = await getCContract(user, token);
+  const cContract = await getCContract(env, token);
   let preCTokenBal = await cContract.balanceOf(user.address);
-  await mintCompoundToken(token, user, amount);
-  await cContract.approve(router.address, consts.INF);
+  await mintCompoundToken(env, token, user, amount);
+  await approveAll([cContract], [env.router]);
   let postCTokenBal = await cContract.balanceOf(user.address);
-  await router
+  let forgeId = mode == Mode.COMPOUND ? env.pconsts.compound!.FORGE_ID_V1 : env.pconsts.compound!.FORGE_ID_V2;
+  await env.router
     .connect(user)
-    .tokenizeYield(
-      consts.FORGE_COMPOUND,
-      token.address,
-      expiry,
-      postCTokenBal.sub(preCTokenBal),
-      user.address,
-      consts.HG
-    );
+    .tokenizeYield(forgeId, token.address, expiry, postCTokenBal.sub(preCTokenBal), user.address, teConsts.HG);
   return postCTokenBal.sub(preCTokenBal);
 }
 
-export async function mintXytCompoundV2(
-  token: Token,
-  user: Wallet,
-  amount: BN,
-  env: RouterFixture,
-  expiry: BN
-): Promise<BN> {
-  let router = env.core.router;
-  const cContract = await getCContract(user, token);
-  let preCTokenBal = await cContract.balanceOf(user.address);
-  await mintCompoundToken(token, user, amount);
-  await cContract.approve(router.address, consts.INF);
-  let postCTokenBal = await cContract.balanceOf(user.address);
-  await router
+export async function mintXytBenQi(env: TestEnv, token: Erc20Token, user: Wallet, amount: BN, expiry: BN): Promise<BN> {
+  let qiContract = await getQiContract(token);
+  let preQiTokenBal = await qiContract.balanceOf(user.address);
+  await mintQiToken(env, token, user, amount);
+  await approveAll([qiContract], [env.router]);
+  let postQiTokenBal = await qiContract.balanceOf(user.address);
+
+  let forgeId = env.pconsts.benqi!.FORGE_ID;
+  await env.router
     .connect(user)
-    .tokenizeYield(
-      consts.FORGE_COMPOUND_V2,
-      token.address,
-      expiry,
-      postCTokenBal.sub(preCTokenBal),
-      user.address,
-      consts.HG
-    );
-  return postCTokenBal.sub(preCTokenBal);
+    .tokenizeYield(forgeId, token.address, expiry, postQiTokenBal.sub(preQiTokenBal), user.address, teConsts.HG);
+
+  return postQiTokenBal.sub(preQiTokenBal);
 }
 
-export async function mintXytSushiswapComplexFixed(user: Wallet, env: RouterFixture, expiry: BN): Promise<BN> {
-  let router = env.core.router;
-  const scContract = await getERC20Contract(user, tokens.SUSHI_USDT_WETH_LP);
-  let preTokenBal = await scContract.balanceOf(user.address);
-  await mintSushiswapLpFixed(user);
-  await scContract.approve(router.address, consts.INF);
-  let postTokenBal = await scContract.balanceOf(user.address);
-  await router
+export async function mintXytSushiswapFixed(env: TestEnv, mode: Mode, user: Wallet, expiry: BN) {
+  let preTokenBal: BN = await env.sushiPool.balanceOf(user.address);
+  await mintSushiswapLpFixed(env, user);
+  await approveAll([env.sushiPool], [env.router]);
+  let postTokenBal: BN = await env.sushiPool.balanceOf(user.address);
+  let forgeId =
+    mode == Mode.SUSHISWAP_SIMPLE ? env.pconsts.sushi!.FORGE_ID_SIMPLE : env.pconsts.sushi!.FORGE_ID_COMPLEX;
+
+  await env.router
+    .connect(user)
+    .tokenizeYield(forgeId, env.sushiPool.address, expiry, postTokenBal.sub(preTokenBal), user.address, teConsts.HG);
+  return postTokenBal.sub(preTokenBal);
+}
+
+export async function mintXytUniswapFixed(env: TestEnv, user: Wallet, expiry: BN): Promise<BN> {
+  let preTokenBal = await env.uniPool.balanceOf(user.address);
+  await mintUniswapLpFixed(env, user);
+  await approveAll([env.uniPool], [env.router]);
+  let postTokenBal = await env.uniPool.balanceOf(user.address);
+  await env.router
     .connect(user)
     .tokenizeYield(
-      consts.FORGE_SUSHISWAP_COMPLEX,
-      tokens.SUSHI_USDT_WETH_LP.address,
+      env.pconsts.uni!.FORGE_ID,
+      env.ptokens.UNI_USDT_WETH_LP!.address,
       expiry,
       postTokenBal.sub(preTokenBal),
       user.address,
-      consts.HG
+      teConsts.HG
     );
   return postTokenBal.sub(preTokenBal);
 }
 
-export async function mintXytSushiswapSimpleFixed(user: Wallet, env: RouterFixture, expiry: BN): Promise<BN> {
-  let router = env.core.router;
-  const ssContract = await getERC20Contract(user, tokens.SUSHI_USDT_WETH_LP);
-  let preTokenBal = await ssContract.balanceOf(user.address);
-  await mintSushiswapLpFixed(user);
-  await ssContract.approve(router.address, consts.INF);
-  let postTokenBal = await ssContract.balanceOf(user.address);
-  await router
+export async function mintXytTraderJoeFixed(env: TestEnv, user: Wallet, expiry: BN): Promise<BN> {
+  const joeContract = env.joePool;
+  let preTokenBal = await joeContract.balanceOf(user.address);
+  await mintTraderJoeLpFixed(env, user);
+  await approveAll([joeContract], [env.router]);
+  let postTokenBal = await joeContract.balanceOf(user.address);
+  await env.router
     .connect(user)
     .tokenizeYield(
-      consts.FORGE_SUSHISWAP_SIMPLE,
-      tokens.SUSHI_USDT_WETH_LP.address,
+      env.pconsts.joe!.FORGE_ID_COMPLEX,
+      env.ptokens.JOE_WAVAX_DAI_LP!.address,
       expiry,
       postTokenBal.sub(preTokenBal),
       user.address,
-      consts.HG
+      teConsts.HG
+    );
+  return postTokenBal.sub(preTokenBal);
+}
+export async function mintXytKyberDMMFixed(env: TestEnv, user: Wallet, expiry: BN): Promise<BN> {
+  let kContract = await getContract('ERC20', env.ptokens.KYBER_USDT_WETH_LP!);
+  let preTokenBal = await kContract.balanceOf(user.address);
+  await mintKyberDMMFixed(env, user);
+
+  await approveAll([kContract], [env.router]);
+  let postTokenBal = await kContract.balanceOf(user.address);
+  await env.router
+    .connect(user)
+    .tokenizeYield(
+      env.pconsts.kyber!.FORGE_ID,
+      env.ptokens.KYBER_USDT_WETH_LP!.address,
+      expiry,
+      postTokenBal.sub(preTokenBal),
+      user.address,
+      teConsts.HG
     );
   return postTokenBal.sub(preTokenBal);
 }
 
-export async function mint(token: Token, alice: Wallet, amount: BN) {
-  if (token == tokens.USDT) {
-    await mintUSDT(alice, amount);
-  } else if (token == tokens.UNI) {
-    await mintUNI(alice, amount);
-  } else if (token == tokens.WETH) {
-    await mintWETH(alice, amount);
-  } else {
-    assert(false, 'Token not supported');
+export async function mintXytXJoeFixed(env: TestEnv, user: Wallet, expiry: BN): Promise<BN> {
+  let preTokenBal = await env.xJoe.balanceOf(user.address);
+  await mintXJoe(env, env.xJoe, user, teConsts.INITIAL_xJOE_AMOUNT);
+  let postTokenBal = await env.xJoe.balanceOf(user.address);
+  await approveAll([env.xJoe], [env.router]);
+
+  await env.router
+    .connect(user)
+    .tokenizeYield(
+      env.pconsts.joe!.FORGE_ID_XJOE,
+      env.ptokens.JOE!.address,
+      expiry,
+      postTokenBal.sub(preTokenBal),
+      user.address,
+      teConsts.HG
+    );
+  return postTokenBal.sub(preTokenBal);
+}
+
+export async function mintXytWMEMOFixed(env: TestEnv, user: Wallet, expiry: BN) {
+  await mintFixedWMEMO(env, user);
+  await approveAll([env.wMEMOContract], [env.router]);
+
+  await env.router
+    .connect(user)
+    .tokenizeYield(
+      env.pconsts.wonderland!.FORGE_ID,
+      env.ptokens.MEMO!.address,
+      expiry,
+      await env.wMEMOContract.balanceOf(user.address),
+      user.address,
+      teConsts.HG
+    );
+}
+
+export async function mint(env: TestEnv, token: Erc20Token, user: Wallet, amount: BN) {
+  switch (token) {
+    case env.ptokens.USDT!:
+      await mintUSDT(env, user, amount);
+      break;
+    case env.ptokens.DAI!:
+      await mintDAI(env, user, amount);
+      break;
+    case env.ptokens.WNATIVE!:
+      await mintWETH(env, user, amount);
+      break;
+    case env.ptokens.USDC!:
+      await mintUSDC(env, user, amount);
+      break;
+    case env.ptokens.JOE!:
+      await mintJOE(env, user, amount);
+      break;
+    case env.ptokens.TIME!:
+      await mintTIME(env, user, amount);
+      break;
+    case env.ptokens.wMEMO!:
+      await mintFixedWMEMO(env, user);
+      break;
+    default:
+      assert(false, 'Token not supported');
+      break;
   }
 }
 
-export async function convertToAaveV2Token(token: Token, alice: Wallet, amount: BN) {
-  const { lendingPool } = await aaveV2Fixture(alice);
+export async function convertToAaveV2Token(env: TestEnv, token: Erc20Token, user: Wallet, amount: BN) {
   const tokenAmount = amountToWei(amount, token.decimal);
-
-  const erc20 = new Contract(token.address, ERC20.abi, alice);
-  await erc20.approve(lendingPool.address, tokenAmount);
-
-  await lendingPool.deposit(token.address, tokenAmount, alice.address, 0);
+  await env.aaveLendingPool.connect(user).deposit(token.address, tokenAmount, user.address, 0);
 }
 
-export async function convertToCompoundToken(token: Token, alice: Wallet, amount: BN) {
+export async function convertToCompoundToken(env: TestEnv, token: Erc20Token, user: Wallet, amount: BN) {
   const tokenAmount = amountToWei(amount, token.decimal);
-  if (token == tokens.WETH) {
-    const cToken = new Contract(token.compound!, ICEtherTest.abi, alice);
-    let override: any = wrapEth(consts.HG, tokenAmount);
-    await cToken.mint(override);
+  if (token == env.ptokens.WNATIVE!) {
+    const cToken = await getContract('ICEtherTest', token.compound!);
+    let override: any = wrapEth(teConsts.HG, tokenAmount);
+    await cToken.connect(user).mint(override);
     return;
   }
-  const cToken = new Contract(token.compound!, ICTokenTest.abi, alice);
-  const erc20 = new Contract(token.address, ERC20.abi, alice);
-  await erc20.approve(cToken.address, tokenAmount);
-  await cToken.mint(tokenAmount);
+  const cToken = await getContract('ICTokenTest', token.compound!);
+  await approve(user, [token], [cToken]);
+  await cToken.connect(user).mint(tokenAmount);
 }
 
-export async function mintAaveV2Token(token: Token, alice: Wallet, amount: BN) {
-  await mint(token, alice, amount);
-  await convertToAaveV2Token(token, alice, amount);
+export async function convertToBenqiToken(token: Erc20Token, user: Wallet, amount: BN) {
+  const tokenAmount = amountToWei(amount, token.decimal);
+  const qiToken = await getContract('ICTokenTest', token.benqi!);
+  await approve(user, [token], [qiToken]);
+  await qiToken.connect(user).mint(tokenAmount);
 }
 
-export async function mintCompoundToken(token: Token, alice: Wallet, amount: BN) {
-  if (token != tokens.WETH) {
-    await mint(token, alice, amount);
+export async function mintAaveV2Token(env: TestEnv, token: Erc20Token, user: Wallet, amount: BN) {
+  await mint(env, token, user, amount);
+  await convertToAaveV2Token(env, token, user, amount);
+}
+
+export async function mintCompoundToken(env: TestEnv, token: Erc20Token, user: Wallet, amount: BN) {
+  if (token != env.ptokens.WNATIVE!) {
+    await mint(env, token, user, amount);
   }
-  await convertToCompoundToken(token, alice, amount);
+  await convertToCompoundToken(env, token, user, amount);
 }
 
-export async function transferToken(token: Token, from: Wallet, to: string, amount: BN) {
-  const erc20 = new Contract(token.address, ERC20.abi, from);
+export async function mintQiToken(env: TestEnv, token: Erc20Token, user: Wallet, amount: BN) {
+  await mint(env, token, user, amount);
+  await convertToBenqiToken(token, user, amount);
+}
+
+export async function mintXJoe(env: TestEnv, xJoe: Contract, user: Wallet, amount: BN) {
+  await mint(env, env.ptokens.JOE!, user, amount);
+  await xJoe.connect(user).enter(amountToWei(amount, env.ptokens.JOE!.decimal));
+}
+
+export async function transferToken(token: Erc20Token, from: Wallet, to: string, amount: BN) {
+  const erc20 = await getContract('ERC20', token.address);
   await erc20.transfer(to, amount);
 }
 
-export async function getA2Contract(alice: Wallet, aaveV2Forge: Contract, token: Token): Promise<Contract> {
-  const aContractAddress = await aaveV2Forge.callStatic.getYieldBearingToken(token.address);
-  return new Contract(aContractAddress, ERC20.abi, alice);
+export async function getA2Token(env: TestEnv, token: Erc20Token): Promise<Contract> {
+  const aContractAddress = await env.a2Forge.callStatic.getYieldBearingToken(token.address);
+  return await getContract('ERC20', aContractAddress);
 }
 
-export async function getCContract(alice: Wallet, token: Token): Promise<Contract> {
-  if (token == tokens.WETH) {
-    return new Contract(token.compound!, ICEtherTest.abi, alice);
+export async function getCContract(env: TestEnv, token: Erc20Token): Promise<Contract> {
+  if (token == env.ptokens.WNATIVE!) {
+    return await getContract('ICEtherTest', token.compound!);
   }
-  return new Contract(token.compound!, ICTokenTest.abi, alice);
+  return await getContract('ICTokenTest', token.compound!);
 }
 
-export async function getERC20Contract(alice: Wallet, token: Token): Promise<Contract> {
-  return new Contract(token.address, ERC20.abi, alice);
+export async function getQiContract(token: Erc20Token): Promise<Contract> {
+  return await getContract('ICTokenTest', token.benqi!);
 }
 
-export async function emptyToken(tokenContract: Contract, person: Wallet) {
-  let bal: BN = await tokenContract.balanceOf(person.address);
+export async function emptyToken(env: TestEnv, tokenContract: Contract, user: Wallet) {
+  let bal: BN = await tokenContract.balanceOf(user.address);
   if (bal.eq(0)) return;
-  await tokenContract.connect(person).transfer(consts.DUMMY_GOVERNANCE_ADDRESS, bal);
-  bal = await tokenContract.balanceOf(person.address);
+  await tokenContract.connect(user).transfer(MiscConsts.DUMMY_ADDRESS, bal);
+  bal = await tokenContract.balanceOf(user.address);
   if (bal.eq(0)) return;
-  await tokenContract.connect(person).transfer(consts.DUMMY_GOVERNANCE_ADDRESS, bal);
+  await tokenContract.connect(user).transfer(MiscConsts.DUMMY_ADDRESS, bal);
 }
 
-async function mintUSDT(user: Wallet, amount: BN) {
-  let USDT: Token = tokens.USDT;
-  await provider.send('hardhat_setBalance', [USDT.owner, '0x1000000000000000000000000000']);
-  await impersonateAccount(USDT.owner!);
-  const signer = await provider.getSigner(USDT.owner!);
-  const contractToken = new Contract(USDT.address, TetherToken.abi, signer);
+async function mintUSDT(env: TestEnv, user: Wallet, amount: BN) {
+  let USDT: Erc20Token = env.ptokens.USDT!;
+  await impersonateAccount(MiscConsts.USDT_OWNER_ON_ETH);
+  const signer = await hre.ethers.getSigner(MiscConsts.USDT_OWNER_ON_ETH);
+  const contractToken = await getContract('IUSDT', USDT.address);
   const tokenAmount = amountToWei(amount, USDT.decimal);
-  await contractToken.issue(tokenAmount);
-  await contractToken.transfer(user.address, tokenAmount);
+  await contractToken.connect(signer).issue(tokenAmount);
+  await contractToken.connect(signer).transfer(user.address, tokenAmount);
+  await impersonateAccountStop(MiscConsts.USDT_OWNER_ON_ETH);
 }
 
-async function mintUNI(user: Wallet, amount: BN) {
-  amount = amountToWei(amount, tokens.UNI.decimal);
-  let source: string = tokens.UNI.source!;
-  await impersonateAccount(source);
-  const signer = await provider.getSigner(source);
-  const contractToken = new Contract(tokens.UNI.address, ERC20.abi, signer);
-  let balanceOfSource: BN = await contractToken.balanceOf(source);
-  assert(amount <= balanceOfSource, 'Total amount of UNI minted exceeds limit');
-  await contractToken.transfer(user.address, amount);
-  await impersonateAccountStop(source);
+async function mintDAI(env: TestEnv, user: Wallet, amount: BN) {
+  await mintFromSource(user, amount, env.ptokens.DAI!);
 }
 
-async function mintWETH(user: Wallet, amount: BN) {
-  amount = amountToWei(amount, tokens.WETH.decimal);
-  let WETH: Contract = new Contract(tokens.WETH.address, IWETH.abi, user);
+async function mintJOE(env: TestEnv, user: Wallet, amount: BN) {
+  await mintFromSource(user, amount, env.ptokens.JOE!);
+}
+
+async function mintWETH(env: TestEnv, user: Wallet, amount: BN) {
+  await getEth(user.address);
+  amount = amountToWei(amount, env.ptokens.WNATIVE!.decimal);
+  let WETH: Contract = await getContract('IWETH', env.ptokens.WNATIVE!.address);
   await user.sendTransaction({ to: WETH.address, value: amount });
 }
 
-export async function mintSushiswapLpFixed(user: Wallet) {
-  let sushiRouter: Contract = new Contract(consts.SUSHISWAP_ROUTER_ADDRESS, IUniswapV2Router02.abi, user);
-  let USDTErc20: Contract = await getERC20Contract(user, tokens.USDT);
-  let WETHErc20: Contract = await getERC20Contract(user, tokens.WETH);
+async function mintUSDC(env: TestEnv, user: Wallet, amount: BN) {
+  await mintFromSource(user, amount, env.ptokens.USDC!);
+}
 
+async function mintTIME(env: TestEnv, user: Wallet, amount: BN) {
+  await mintFromSource(user, amount, env.ptokens.TIME!);
+}
+
+async function mintFixedWMEMO(env: TestEnv, user: Wallet) {
+  await mintTIME(env, user, BN.from(1000));
+  await env.wonderlandTimeStaking.connect(user).stake(await env.TIMEContract.balanceOf(user.address), user.address);
+  await env.wonderlandTimeStaking.connect(user).claim(user.address);
+  await env.wMEMOContract.connect(user).wrap(await env.MEMOContract.balanceOf(user.address));
+  // Burn so that it remains the same amount every time
+  await env.wMEMOContract
+    .connect(user)
+    .transfer(
+      env.wMEMOContract.address,
+      (await env.wMEMOContract.balanceOf(user.address)).sub(teConsts.INITIAL_wMEMO_TOKEN_AMOUNT)
+    );
+}
+
+export async function mintSushiswapLpFixed(env: TestEnv, user: Wallet) {
   const amountUSDT = BN.from(13000000);
   const amountWETH = BN.from(6100);
-  await mint(tokens.USDT, user, amountUSDT);
-  await mint(tokens.WETH, user, amountWETH);
-  await USDTErc20.connect(user).approve(consts.SUSHISWAP_ROUTER_ADDRESS, 0, consts.HG);
-  await WETHErc20.connect(user).approve(consts.SUSHISWAP_ROUTER_ADDRESS, 0, consts.HG);
-  await USDTErc20.connect(user).approve(consts.SUSHISWAP_ROUTER_ADDRESS, consts.INF, consts.HG);
-  await WETHErc20.connect(user).approve(consts.SUSHISWAP_ROUTER_ADDRESS, consts.INF, consts.HG);
+  await mint(env, env.ptokens.USDT!, user, amountUSDT);
+  await mint(env, env.ptokens.WNATIVE!, user, amountWETH);
 
-  await sushiRouter.addLiquidity(
-    tokens.USDT.address,
-    tokens.WETH.address,
+  await env.sushiRouter
+    .connect(user)
+    .addLiquidity(
+      env.ptokens.USDT!.address,
+      env.ptokens.WNATIVE!.address,
+      amountToWei(amountUSDT, 6),
+      amountToWei(amountWETH, 18),
+      0,
+      0,
+      user.address,
+      MiscConsts.INF,
+      teConsts.HG
+    );
+}
+
+export async function mintUniswapLpFixed(env: TestEnv, user: Wallet) {
+  const amountUSDT = BN.from(13000000);
+  const amountWETH = BN.from(6100);
+  await mint(env, env.ptokens.USDT!, user, amountUSDT);
+  await mint(env, env.ptokens.WNATIVE!, user, amountWETH);
+
+  await env.uniRouter
+    .connect(user)
+    .addLiquidity(
+      env.ptokens.USDT!.address,
+      env.ptokens.WNATIVE!.address,
+      amountToWei(amountUSDT, 6),
+      amountToWei(amountWETH, 18),
+      0,
+      0,
+      user.address,
+      MiscConsts.INF,
+      teConsts.HG
+    );
+}
+
+export async function mintTraderJoeLpFixed(env: TestEnv, user: Wallet) {
+  const amountDAI = BN.from(6600);
+  const amountWAVAX = BN.from(100);
+
+  await mint(env, env.ptokens.DAI!, user, amountDAI);
+  await mint(env, env.ptokens.WNATIVE!, user, amountWAVAX);
+
+  await env.joeRouter
+    .connect(user)
+    .addLiquidity(
+      env.ptokens.DAI!.address,
+      env.ptokens.WNATIVE!.address,
+      amountToWei(amountDAI, 18),
+      amountToWei(amountWAVAX, 18),
+      0,
+      0,
+      user.address,
+      MiscConsts.INF,
+      teConsts.HG
+    );
+}
+
+export async function mintKyberDMMFixed(env: TestEnv, user: Wallet) {
+  const amountUSDT = BN.from(13000000);
+  const amountWETH = BN.from(6100);
+  await mint(env, env.ptokens.USDT!, user, amountUSDT);
+  await mint(env, env.ptokens.WNATIVE!, user, amountWETH);
+  await env.kyberRouter.addLiquidity(
+    env.ptokens.WNATIVE!.address,
+    env.ptokens.USDT!.address,
+    env.ptokens.KYBER_USDT_WETH_LP!.address,
     amountToWei(amountUSDT, 6),
     amountToWei(amountWETH, 18),
     0,
     0,
+    [0, MiscConsts.INF],
     user.address,
-    consts.INF,
-    consts.HG
+    MiscConsts.INF,
+    teConsts.HG
   );
+}
+
+export async function approve(user: Wallet, _tokens: (string | Contract | Erc20Token)[], _tos: (string | Contract)[]) {
+  let tokens: Contract[] = [];
+  let tos: string[] = [];
+
+  for (let it of _tokens) {
+    if (typeof it == 'string') tokens.push!(await getContract('ERC20', it));
+    else tokens.push!(await getContract('ERC20', it.address));
+  }
+  for (let it of _tos) {
+    if (!it) continue;
+    tos.push(typeof it == 'string' ? it : it.address);
+  }
+
+  for (let token of tokens) {
+    for (let to of tos) {
+      await token.connect(user).approve(to, 0, teConsts.HG);
+      await token.connect(user).approve(to, MiscConsts.INF, teConsts.HG);
+    }
+  }
+}
+
+export async function approveAll(_tokens: (string | Contract | Erc20Token)[], _tos: (string | Contract)[]) {
+  for (let person of wallets) {
+    await approve(person, _tokens, _tos);
+  }
 }

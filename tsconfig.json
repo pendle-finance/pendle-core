@@ -1,16 +1,23 @@
 {
   "compilerOptions": {
-    "target": "es2018",
+    "target": "es2020",
     "module": "commonjs",
     "strict": true,
     "esModuleInterop": true,
     "outDir": "dist",
     "resolveJsonModule": true,
+    "sourceMap": true,
   },
   "include": [
-    "./scripts"
+    "pendle-deployment-scripts",
+    "pendle-constants",
+    "test",
+    "scripts-2",
+    "./hardhat.config.ts",
+    "typechain-types"
   ],
-  "files": [
-    "./hardhat.config.ts"
-  ]
+  "exclude": [
+    "test/legacy-test",
+    "scripts"
+  ],
 }

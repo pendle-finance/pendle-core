@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { BigNumber as BN, Contract } from 'ethers';
-import PendleData from '../../build/artifacts/contracts/core/PendleData.sol/PendleData.json';
 import { checkDisabled, marketFixture, MarketFixture, Mode } from '../fixtures';
 import { consts, errMsg, evm_revert, evm_snapshot, tokens } from '../helpers';
 const { waffle } = require('hardhat');
@@ -50,7 +49,7 @@ export async function runTest(mode: Mode) {
 
     it('Should not be able to construct with zero address as treasury', async () => {
       await expect(
-        deployContract(alice, PendleData, [
+        deployContract('PendleData', [
           fixture.core.govManager.address,
           consts.ZERO_ADDRESS,
           fixture.core.pausingManager.address,
@@ -60,7 +59,7 @@ export async function runTest(mode: Mode) {
 
     it('Should not be initialized by non-initializer and should not be able to initialize router to zero address', async () => {
       let testPendleDataContract: Contract;
-      testPendleDataContract = await deployContract(alice, PendleData, [
+      testPendleDataContract = await deployContract('PendleData', [
         fixture.core.govManager.address,
         fixture.core.treasury.address,
         fixture.core.pausingManager.address,

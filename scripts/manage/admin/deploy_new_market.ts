@@ -2,7 +2,7 @@ const hre = require('hardhat');
 import path from 'path';
 import { utils } from 'ethers';
 
-import { saveDeployment, getDeployment, createNewMarket } from '../../helpers/deployHelpers';
+import { saveDeployment, getDeployment, createNewMarket, getContractFromDeployment } from '../../helpers/deployHelpers';
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
   const network = hre.network.name;
@@ -27,6 +27,8 @@ async function main() {
   const deployment = getDeployment(filePath);
   const underlyingAsset = await hre.ethers.getContractAt('TestToken', underlyingAssetAddress);
   const baseToken = await hre.ethers.getContractAt('TestToken', baseTokenAddress);
+  const data = await getContractFromDeployment(hre, deployment, 'PendleData');
+  console.log(`market factory = ${await data.getMarketFactoryAddress(marketFactoryId)}`);
   await createNewMarket(hre, deployment, forgeId, marketFactoryId, underlyingAsset, expiry, baseToken);
 
   saveDeployment(filePath, deployment);

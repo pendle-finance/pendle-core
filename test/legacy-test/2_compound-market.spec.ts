@@ -2,7 +2,8 @@ import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
 import { checkDisabled, marketFixture, Mode } from '../fixtures';
-import { advanceTime, amountToWei, consts, evm_revert, evm_snapshot } from '../helpers';
+import { advanceTime, consts, evm_revert, evm_snapshot } from '../helpers';
+import { amountToWei } from '../../pendle-deployment-scripts';
 const { waffle } = require('hardhat');
 chai.use(solidity);
 

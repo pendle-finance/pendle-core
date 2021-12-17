@@ -1,36 +1,28 @@
+import { MiscConsts } from '@pendle/constants';
 import chai, { expect } from 'chai';
-import { solidity } from 'ethereum-waffle';
+import { loadFixture, solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
 import PendleYieldTokenHolder from '../../../build/artifacts/contracts/core/abstract/PendleYieldTokenHolderBase.sol/PendleYieldTokenHolderBase.json';
 import PendleLpHolder from '../../../build/artifacts/contracts/core/PendleLpHolder.sol/PendleLpHolder.json';
-import {
-  liquidityMiningFixture,
-  LiquidityMiningFixture,
-  Mode,
-  parseTestEnvLiquidityMiningFixture,
-  TestEnv,
-} from '../../fixtures';
+import { liquidityMiningFixture, Mode, parseTestEnvLiquidityMiningFixture, TestEnv, wallets } from '../../fixtures';
 import {
   addMarketLiquidityDual,
   advanceTime,
-  consts,
+  approveAll,
   evm_revert,
   evm_snapshot,
   mintAaveV2Token,
   mintCompoundToken,
+  redeemOtRewards,
   stake,
+  teConsts,
   tokenizeYield,
-  tokens,
-  getContractAt,
 } from '../../helpers';
-const { waffle } = require('hardhat');
-chai.use(solidity);
 
-const { loadFixture, provider } = waffle;
+chai.use(solidity);
 
 /// TODO: Modify this test to new format
 export async function runTest(mode: Mode) {
-  const wallets = provider.getWallets();
   const refAmount = BN.from(10 ** 5);
   const [alice, bob, charlie, dave, eve] = wallets;
 
@@ -40,9 +32,9 @@ export async function runTest(mode: Mode) {
   let rewardToken: Contract;
 
   async function buildCommonEnv() {
-    let fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);
-    await parseTestEnvLiquidityMiningFixture(alice, mode, env, fixture);
-    rewardToken = await getContractAt('TestToken', await env.forge.rewardToken());
+    env = await loadFixture(liquidityMiningFixture);
+    await parseTestEnvLiquidityMiningFixture(env, mode);
+    rewardToken = await getContract('TestToken', await env.forge.rewardToken());
   }
 
   before(async () => {
@@ -69,39 +61,39 @@ export async function runTest(mode: Mode) {
     for (let person of [alice, bob]) {
       for (let token of allowedTokens) {
         if (token.address != contract.address) {
-          await token.connect(person).transfer(contract.address, testAmount, consts.HG);
+          await token.connect(person).transfer(contract.address, testAmount, teConsts.HG);
         }
-        await contract.connect(alice).withdrawToken(token.address, testAmount, alice.address, consts.HG);
+        await contract.connect(alice).withdrawToken(token.address, testAmount, alice.address, teConsts.HG);
       }
       for (let token of disallowedTokens) {
         if (token.address != contract.address) {
-          await token.connect(person).transfer(contract.address, testAmount, consts.HG);
+          await token.connect(person).transfer(contract.address, testAmount, teConsts.HG);
         }
-        await expect(contract.connect(alice).withdrawToken(token.address, testAmount, alice.address, consts.HG)).to.be
+        await expect(contract.connect(alice).withdrawToken(token.address, testAmount, alice.address, teConsts.HG)).to.be
           .reverted;
       }
     }
   }
 
   async function distributeTokensEvenly(): Promise<void> {
-    const tokensToTest: Contract[] = [env.testToken, env.pdl, env.xyt, env.ot, env.market, env.yToken, rewardToken];
+    const tokensToTest: Contract[] = [env.testToken, env.pendle, env.xyt, env.ot, env.market, env.yToken, rewardToken];
 
+    await approveAll([env.yToken], [env.router]);
     // Prepare yeild token, marketToken
     for (let person of wallets) {
       if (mode == Mode.AAVE_V2) {
-        await mintAaveV2Token(tokens.USDT, person, refAmount.mul(3));
+        await mintAaveV2Token(env, env.ptokens.USDT!, person, refAmount.mul(3));
       } else {
-        await mintCompoundToken(tokens.USDT, person, refAmount.mul(3));
+        await mintCompoundToken(env, env.ptokens.USDT!, person, refAmount.mul(3));
       }
-      await env.yToken.connect(person).approve(env.router.address, refAmount.mul(2));
       await tokenizeYield(env, person, refAmount.mul(2));
       await addMarketLiquidityDual(env, person, refAmount);
     }
 
     // redeem rewardToken
-    await advanceTime(consts.ONE_MONTH);
+    await advanceTime(MiscConsts.ONE_MONTH);
     for (let person of wallets) {
-      await env.rewardManager.redeemRewards(env.underlyingAsset.address, env.EXPIRY, person.address, consts.HG);
+      await redeemOtRewards(env, env.underlyingAsset.address, person);
     }
 
     // stake to init a lpHolder contract
@@ -110,14 +102,14 @@ export async function runTest(mode: Mode) {
     for (let token of tokensToTest) {
       for (let person of [alice, bob, charlie, dave]) {
         const bal = await token.connect(person).balanceOf(person.address);
-        await token.connect(person).transfer(eve.address, bal, consts.HG);
+        await token.connect(person).transfer(eve.address, bal, teConsts.HG);
       }
     }
 
     // distribute tokens to alice and bob
     for (let token of tokensToTest) {
       for (let person of [alice, bob]) {
-        await token.connect(eve).transfer(person.address, 1000, consts.HG);
+        await token.connect(eve).transfer(person.address, 1000, teConsts.HG);
       }
     }
   }
@@ -125,7 +117,7 @@ export async function runTest(mode: Mode) {
   it('should be able to withdraw allowed (and not for disallowed) tokens', async () => {
     await distributeTokensEvenly();
 
-    const tokensToTest: Contract[] = [env.testToken, env.pdl, env.xyt, env.ot, env.market, env.yToken, rewardToken];
+    const tokensToTest: Contract[] = [env.testToken, env.pendle, env.xyt, env.ot, env.market, env.yToken, rewardToken];
 
     let lpHolderAddress = await env.liq.lpHolderForExpiry(env.EXPIRY);
     let lpHolderContract = new Contract(lpHolderAddress, PendleLpHolder.abi, alice);
@@ -133,22 +125,26 @@ export async function runTest(mode: Mode) {
     let yieldTokenHolderContract = new Contract(yieldTokenHolderAddress, PendleYieldTokenHolder.abi, alice);
 
     // market disallows (token, xyt, lpToken, yieldToken)
-    await checkWithdraw(env.market, [env.ot, env.pdl, rewardToken], [env.testToken, env.xyt, env.market, env.yToken]);
+    await checkWithdraw(
+      env.market,
+      [env.ot, env.pendle, rewardToken],
+      [env.testToken, env.xyt, env.market, env.yToken]
+    );
 
     // liquidityMining disallows PENDLE
-    await checkWithdraw(env.liq, [env.testToken, env.xyt, env.ot, env.market, env.yToken, rewardToken], [env.pdl]);
+    await checkWithdraw(env.liq, [env.testToken, env.xyt, env.ot, env.market, env.yToken, rewardToken], [env.pendle]);
 
     // yieldTokenHolder disallows (rewardToken, yieldToken)
     await checkWithdraw(
       yieldTokenHolderContract,
-      [env.testToken, env.pdl, env.xyt, env.ot, env.market],
+      [env.testToken, env.pendle, env.xyt, env.ot, env.market],
       [rewardToken, env.yToken]
     );
 
     // lpHolder disallows (lpToken-market, yieldToken)
     await checkWithdraw(
       lpHolderContract,
-      [env.testToken, env.pdl, env.xyt, env.ot, rewardToken],
+      [env.testToken, env.pendle, env.xyt, env.ot, rewardToken],
       [env.market, env.yToken]
     );
 
@@ -156,4 +152,7 @@ export async function runTest(mode: Mode) {
       await checkWithdraw(contract, tokensToTest, []);
     }
   });
+}
+function getContract(arg0: string, arg1: any): Contract | PromiseLike<Contract> {
+  throw new Error('Function not implemented.');
 }

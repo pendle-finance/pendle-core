@@ -3,8 +3,9 @@ import path from 'path';
 
 import { devConstants, kovanConstants, mainnetConstants, goerliConstants } from '../../helpers/constants';
 
-import { getDeployment, deploy } from '../../helpers/deployHelpers';
+import { getDeployment, deploy, isNotAvax } from '../../helpers/deployHelpers';
 
+// TODO: support AVAX
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
   const network = hre.network.name;
@@ -30,7 +31,9 @@ async function main() {
 
   const pendleRouterAddress = deployment.contracts.PendleRouter.address;
 
-  const contractFactory = await hre.ethers.getContractFactory('PendleRedeemProxy');
+  const contractFactory = isNotAvax(hre)
+    ? await hre.ethers.getContractFactory('PendleRedeemProxyEth')
+    : await hre.ethers.getContractFactory('PendleRedeemProxyAvax');
   const contractObject = await contractFactory.deploy(pendleRouterAddress);
   await contractObject.deployed();
 

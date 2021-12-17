@@ -1,137 +1,154 @@
-import { Contract, providers, Wallet } from 'ethers';
-import { checkDisabled, Mode } from '.';
-import IPendleYieldTokenHolderV2 from '../../build/artifacts/contracts/interfaces/IPendleYieldTokenHolderV2.sol/IPendleYieldTokenHolderV2.json';
+import { loadFixture } from 'ethereum-waffle';
+import { providers, Wallet, BigNumber as BN } from 'ethers';
+import { checkDisabled, Mode, TestEnv, wallets } from '.';
+import { DeployOrFetch, deployRedeemProxy, deployRetroactiveDist, getContract } from '../../pendle-deployment-scripts';
 import {
-  consts,
+  approveAll,
+  bufferJoe,
+  bufferKyber,
+  bufferSushi,
+  bufferUni,
+  bufferXJoe,
   convertToAaveV2Token,
   convertToCompoundToken,
-  emptyToken,
-  getA2Contract,
+  getA2Token,
   getCContract,
-  getERC20Contract,
+  getQiContract,
   mint,
+  mintKyberDMMFixed,
+  mintQiToken,
   mintSushiswapLpFixed,
-  tokens,
+  mintTraderJoeLpFixed,
+  mintUniswapLpFixed,
+  mintXJoe,
+  teConsts,
 } from '../helpers';
-import { aaveV2Fixture, AaveV2Fixture } from './aaveV2.fixture';
-import { aaveV2ForgeFixture, AaveV2ForgeFixture } from './aaveV2Forge.fixture';
-import { CompoundFixture, compoundForgeFixture } from './compoundForge.fixture';
-import { CompoundV2Fixture, compoundV2ForgeFixture } from './compoundV2Forge.fixture';
-import { coreFixture, CoreFixture } from './core.fixture';
-import { GovernanceFixture, governanceFixture } from './governance.fixture';
-import { SushiswapComplexForgeFixture, sushiswapComplexForgeFixture } from './SushiswapComplexForge.fixture';
-import { SushiswapSimpleForgeFixture, sushiswapSimpleForgeFixture } from './SushiswapSimpleForge.fixture';
-const { waffle, network } = require('hardhat');
-const { loadFixture } = waffle;
+import { deployAaveV2Forge } from './aaveV2Forge.fixture';
+import { deployBenQiForgeFixture } from './benqiForge.fixture';
+import { compoundForgeFixture as deployCompoundForge } from './compoundForge.fixture';
+import { compoundV2ForgeFixture as deployCompoundV2Forge } from './compoundV2Forge.fixture';
+import { coreFixture } from './core.fixture';
+import { deployKyberDMMForge } from './KyberDMMForge.fixture';
+import { deploySushiswapComplexForge } from './SushiswapComplexForge.fixture';
+import { deploySushiswapSimpleForge } from './SushiswapSimpleForge.fixture';
+import { deployTraderJoeForge } from './TraderJoeForge.fixture';
+import { uniswapV2ForgeFixture as deployUniswapV2Forge } from './UniswapV2Forge.fixture';
+import { deployWonderlandFixture } from './WonderlandForge.fixture';
+import { deployxJoeForge } from './XJoeForge.fixture';
 
-export interface RouterFixture {
-  core: CoreFixture;
-  governance: GovernanceFixture;
-  aaveV2: AaveV2Fixture;
-  a2Forge: AaveV2ForgeFixture;
-  cForge: CompoundFixture;
-  c2Forge: CompoundV2Fixture;
-  scForge: SushiswapComplexForgeFixture;
-  ssForge: SushiswapSimpleForgeFixture;
-  minted: boolean;
-}
-
-let wallets = [];
-let alice: Wallet;
-let bob: Wallet;
-let charlie: Wallet;
-let dave: Wallet;
-let eve: Wallet;
-
-if (network.name == 'hardhat') {
-  wallets = waffle.provider.getWallets();
-  [alice, bob, charlie, dave, eve] = wallets;
-}
-
-export async function routerFixture(_: Wallet[], __: providers.Web3Provider): Promise<RouterFixture> {
-  const noMintFixture: RouterFixture = await loadFixture(routerFixtureNoMint);
-
+export async function routerFixture(_: Wallet[], __: providers.Web3Provider): Promise<TestEnv> {
+  console.time('setupRouterFixture');
+  let env = await loadFixture(routerFixtureNoMint);
+  let tokens = env.ptokens;
+  let [alice] = wallets;
   if (!checkDisabled(Mode.AAVE_V2)) {
-    await mint(tokens.USDT, alice, consts.INITIAL_AAVE_TOKEN_AMOUNT);
-    await convertToAaveV2Token(tokens.USDT, alice, consts.INITIAL_AAVE_TOKEN_AMOUNT);
+    await mint(env, tokens.USDT!, alice, teConsts.INITIAL_AAVE_TOKEN_AMOUNT);
+    await convertToAaveV2Token(env, tokens.USDT!, alice, teConsts.INITIAL_AAVE_TOKEN_AMOUNT);
   }
   if (!checkDisabled(Mode.COMPOUND) || !checkDisabled(Mode.COMPOUND_V2)) {
-    await mint(tokens.USDT, alice, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
-    await convertToCompoundToken(tokens.USDT, alice, consts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    await mint(env, tokens.USDT!, alice, teConsts.INITIAL_COMPOUND_TOKEN_AMOUNT);
+    await convertToCompoundToken(env, tokens.USDT!, alice, teConsts.INITIAL_COMPOUND_TOKEN_AMOUNT);
   }
   if (!checkDisabled(Mode.SUSHISWAP_COMPLEX) || !checkDisabled(Mode.SUSHISWAP_SIMPLE)) {
-    await mintSushiswapLpFixed(alice);
-    await bufferSushi(noMintFixture);
+    await mintSushiswapLpFixed(env, alice);
+    await mintSushiswapLpFixed(env, env.eve);
+    if (!checkDisabled(Mode.SUSHISWAP_COMPLEX)) {
+      await bufferSushi(env, env.scForge, tokens.SUSHI_USDT_WETH_LP!.address, teConsts.T0_SS, false);
+    }
+    if (!checkDisabled(Mode.SUSHISWAP_SIMPLE)) {
+      await bufferSushi(env, env.ssForge, tokens.SUSHI_USDT_WETH_LP!.address, teConsts.T0_SC);
+    }
   }
-  return {
-    core: noMintFixture.core,
-    governance: noMintFixture.governance,
-    aaveV2: noMintFixture.aaveV2,
-    a2Forge: noMintFixture.a2Forge,
-    cForge: noMintFixture.cForge,
-    c2Forge: noMintFixture.c2Forge,
-    scForge: noMintFixture.scForge,
-    ssForge: noMintFixture.ssForge,
-    minted: true,
-  };
+  if (!checkDisabled(Mode.UNISWAPV2)) {
+    await mintUniswapLpFixed(env, alice);
+    await bufferUni(env);
+  }
+
+  if (!checkDisabled(Mode.BENQI)) {
+    await mintQiToken(env, tokens.DAI!, alice, teConsts.INITIAL_BENQI_DAI_AMOUNT);
+  }
+  if (!checkDisabled(Mode.TRADER_JOE)) {
+    await mintTraderJoeLpFixed(env, alice);
+    await bufferJoe(env);
+  }
+  if (!checkDisabled(Mode.XJOE)) {
+    await mintXJoe(env, env.xJoe, alice, teConsts.INITIAL_xJOE_AMOUNT);
+    await bufferXJoe(env);
+  }
+  if (!checkDisabled(Mode.KYBER_DMM)) {
+    await mintKyberDMMFixed(env, alice);
+    await bufferKyber(env);
+  }
+  if (!checkDisabled(Mode.WONDERLAND)) {
+    await mint(env, env.ptokens.wMEMO!, alice, BN.from(0));
+  }
+  console.timeEnd('setupRouterFixture');
+  return env;
 }
 
-async function bufferSushi(noMintFixture: RouterFixture) {
-  await mintSushiswapLpFixed(eve);
-  const sushiPool = await getERC20Contract(alice, tokens.SUSHI_USDT_WETH_LP);
-  const scYieldTokenHolderAddr = await noMintFixture.scForge.sushiswapComplexForge.yieldTokenHolders(
-    tokens.SUSHI_USDT_WETH_LP.address,
-    consts.T0_SC.add(consts.SIX_MONTH)
-  );
-  const ssYieldTokenHolderAddr = await noMintFixture.ssForge.sushiswapSimpleForge.yieldTokenHolders(
-    tokens.SUSHI_USDT_WETH_LP.address,
-    consts.T0_SS.add(consts.SIX_MONTH)
-  );
-  const scYieldTokenHolder = new Contract(scYieldTokenHolderAddr, IPendleYieldTokenHolderV2.abi, alice);
-  const ssYieldTokenHolder = new Contract(ssYieldTokenHolderAddr, IPendleYieldTokenHolderV2.abi, alice);
-  await sushiPool.connect(eve).transfer(scYieldTokenHolderAddr, 10);
-  await scYieldTokenHolder.afterReceiveTokens(10);
-  await sushiPool.connect(eve).transfer(ssYieldTokenHolderAddr, 10);
-  await ssYieldTokenHolder.afterReceiveTokens(10);
-  await emptyToken(sushiPool, eve);
-}
-
-export async function routerFixtureNoMint(_: Wallet[], provider: providers.Web3Provider): Promise<RouterFixture> {
-  const wallets = waffle.provider.getWallets();
-  const [alice] = wallets;
-  const core = await loadFixture(coreFixture);
-  const governance = await loadFixture(governanceFixture);
-
-  let aaveV2: AaveV2Fixture = {} as AaveV2Fixture;
-  let a2Forge: AaveV2ForgeFixture = {} as AaveV2ForgeFixture;
-  let cForge: CompoundFixture = {} as CompoundFixture;
-  let c2Forge: CompoundV2Fixture = {} as CompoundV2Fixture;
-  let scForge: SushiswapComplexForgeFixture = {} as SushiswapComplexForgeFixture;
-  let ssForge: SushiswapSimpleForgeFixture = {} as SushiswapSimpleForgeFixture;
+export async function routerFixtureNoMint(_: Wallet[], __: providers.Web3Provider): Promise<TestEnv> {
+  console.time('setupRouterFixtureNoMint');
+  let env = await coreFixture();
 
   if (!checkDisabled(Mode.AAVE_V2)) {
-    a2Forge = await aaveV2ForgeFixture(alice, provider, core, governance);
-    aaveV2 = await aaveV2Fixture(alice);
-    const a2Contract = await getA2Contract(alice, a2Forge.aaveV2Forge, tokens.USDT);
-    await a2Contract.approve(core.router.address, consts.INF);
+    await deployAaveV2Forge(env);
+    await approveAll([await getA2Token(env, env.ptokens.USDT!)], [env.router]);
   }
+  console.log('Done deploying AaveV2 Forge');
   if (!checkDisabled(Mode.COMPOUND)) {
-    cForge = await compoundForgeFixture(alice, provider, core, governance);
-    const cContract = await getCContract(alice, tokens.USDT);
-    await cContract.approve(core.router.address, consts.INF);
+    await deployCompoundForge(env);
+    await approveAll([await getCContract(env, env.ptokens.USDT!)], [env.router]);
   }
+  console.log('Done deploying Compound Forge');
   if (!checkDisabled(Mode.COMPOUND_V2)) {
-    c2Forge = await compoundV2ForgeFixture(alice, provider, core, governance);
-    const cContract = await getCContract(alice, tokens.USDT);
-    await cContract.approve(core.router.address, consts.INF);
+    await deployCompoundV2Forge(env);
+    await approveAll([await getCContract(env, env.ptokens.USDT!)], [env.router]);
   }
+  console.log('Done deploying CompoundV2 Forge');
   if (!checkDisabled(Mode.SUSHISWAP_COMPLEX)) {
-    scForge = await sushiswapComplexForgeFixture(alice, provider, core, governance);
-    const scContract = await getERC20Contract(alice, tokens.SUSHI_USDT_WETH_LP);
-    await scContract.approve(core.router.address, consts.INF);
+    await deploySushiswapComplexForge(env);
+    await approveAll([env.sushiPool], [env.router]);
   }
+  console.log('Done deploying SushiswapComplex Forge');
   if (!checkDisabled(Mode.SUSHISWAP_SIMPLE)) {
-    ssForge = await sushiswapSimpleForgeFixture(alice, provider, core, governance);
+    await deploySushiswapSimpleForge(env);
+    await approveAll([env.sushiPool], [env.router]);
   }
-  return { core, governance, aaveV2, a2Forge, cForge, c2Forge, scForge, ssForge, minted: false };
+  console.log('Done deploying SushiswapSimple Forge');
+  if (!checkDisabled(Mode.UNISWAPV2)) {
+    await deployUniswapV2Forge(env);
+    await approveAll([env.uniPool], [env.router]);
+  }
+  console.log('Done deploying UniswapV2 Forge');
+  if (!checkDisabled(Mode.BENQI)) {
+    await deployBenQiForgeFixture(env);
+    await approveAll([await getQiContract(env.ptokens.DAI!)], [env.router]);
+  }
+  console.log('Done deploying BenQi Forge');
+  if (!checkDisabled(Mode.TRADER_JOE)) {
+    await deployTraderJoeForge(env);
+    await approveAll([await getContract('ERC20', env.ptokens.JOE_WAVAX_DAI_LP!)], [env.router]);
+  }
+  console.log('Done deploying Trader Joe Forge');
+  if (!checkDisabled(Mode.KYBER_DMM)) {
+    await deployKyberDMMForge(env);
+    await approveAll([env.kyberPool], [env.router]);
+  }
+  console.log('Done deploying KyberDMM Forge');
+  if (!checkDisabled(Mode.XJOE)) {
+    await deployxJoeForge(env);
+    await approveAll([env.xJoe], [env.router]);
+  }
+  if (!checkDisabled(Mode.WONDERLAND)) {
+    await deployWonderlandFixture(env);
+    await approveAll([await getContract('ERC20', env.ptokens.wMEMO!)], [env.router]);
+  }
+  console.log('Done deploying xJoe Forge');
+
+  await deployRetroactiveDist(env.penv, DeployOrFetch.DEPLOY);
+  await deployRedeemProxy(env.penv, DeployOrFetch.DEPLOY);
+  env.redeemProxy = env.penv.redeemProxy;
+
+  console.timeEnd('setupRouterFixtureNoMint');
+  return env;
 }

@@ -7,7 +7,7 @@ import "../../interfaces/IPendleMarketFactory.sol";
 
 abstract contract PendleMarketFactoryBase is IPendleMarketFactory {
     IPendleRouter public immutable override router;
-    bytes32 public immutable override marketFactoryId;
+    bytes32 public override marketFactoryId; // no immutable to save bytecode size
 
     constructor(address _router, bytes32 _marketFactoryId) {
         require(address(_router) != address(0), "ZERO_ADDRESS");

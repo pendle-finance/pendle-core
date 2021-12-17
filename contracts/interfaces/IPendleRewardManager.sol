@@ -23,7 +23,11 @@
 pragma solidity 0.7.6;
 
 interface IPendleRewardManager {
-    event UpdateFrequencySet(address[], uint256[]);
+    /*
+    the on-chain contracts does not have names for the UpdateFrequencySet. The name is temporarily added to work with
+    Typechain
+    */
+    event UpdateFrequencySet(address[] underlyingAssets, uint256[] frequencies);
     event SkippingRewardsSet(bool);
 
     event DueRewardsSettled(

@@ -9,6 +9,7 @@ task('verifyPendle', 'verify Pendle contracts').setAction(async (args, hre) => {
   const ct = deployment.contracts;
   const vars = deployment.variables;
   const weth = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+  const sushi = '0x6b3595068778dd592e39a122f4f5a5cf09c90fe2';
   const oneWeek = 604800;
   const startTime = 1629936000; // 19th Aug 2021
   const network = hre.network.name;
@@ -270,40 +271,40 @@ task('verifyPendle', 'verify Pendle contracts').setAction(async (args, hre) => {
   //     5,
   //   ],
   // });
-  console.log(`ct.PendleGovernanceManagerLiqMining.address=${ct.PendleGovernanceManagerLiqMining.address}`);
-  console.log(`ct.PendlePausingManagerLiqMiningV2.address=${ct.PendlePausingManagerLiqMiningV2.address}`);
-  console.log(`ct.PendleWhitelist.address=${ct.PendleWhitelist.address}`);
-  console.log(`ct.PENDLE.address=${ct.PENDLE.address}`);
-  console.log(`startTime=${startTime}`);
-  await hre.run('verify:verify', {
-    address: '0x07C87cfE096c417212eAB4152d365F0F7dC6FCe4',
-    constructorArguments: [
-      ct.PendleGovernanceManagerLiqMining.address,
-      ct.PendlePausingManagerLiqMiningV2.address,
-      ct.PendleWhitelist.address,
-      ct.PENDLE.address,
-      '0x8B758d7fD0fC58FCA8caA5e53AF2c7Da5F5F8De1',
-      '0x0000000000000000000000000000000000000000',
-      startTime,
-      oneWeek,
-      5,
-    ],
-  });
+  // console.log(`ct.PendleGovernanceManagerLiqMining.address=${ct.PendleGovernanceManagerLiqMining.address}`);
+  // console.log(`ct.PendlePausingManagerLiqMiningV2.address=${ct.PendlePausingManagerLiqMiningV2.address}`);
+  // console.log(`ct.PendleWhitelist.address=${ct.PendleWhitelist.address}`);
+  // console.log(`ct.PENDLE.address=${ct.PENDLE.address}`);
+  // console.log(`startTime=${startTime}`);
+  // await hre.run('verify:verify', {
+  //   address: '0x07C87cfE096c417212eAB4152d365F0F7dC6FCe4',
+  //   constructorArguments: [
+  //     ct.PendleGovernanceManagerLiqMining.address,
+  //     ct.PendlePausingManagerLiqMiningV2.address,
+  //     ct.PendleWhitelist.address,
+  //     ct.PENDLE.address,
+  //     '0x8B758d7fD0fC58FCA8caA5e53AF2c7Da5F5F8De1',
+  //     '0x0000000000000000000000000000000000000000',
+  //     startTime,
+  //     oneWeek,
+  //     5,
+  //   ],
+  // });
 
-  await hre.run('verify:verify', {
-    address: '0xFb0e378b3eD6D7F8b73230644D945E28fd7F7b03',
-    constructorArguments: [
-      ct.PendleGovernanceManagerLiqMining.address,
-      ct.PendlePausingManagerLiqMiningV2.address,
-      ct.PendleWhitelist.address,
-      ct.PENDLE.address,
-      '0x0D8a21f2Ea15269B7470c347083ee1f85e6A723B',
-      '0x0000000000000000000000000000000000000000',
-      startTime,
-      oneWeek,
-      5,
-    ],
-  });
+  // await hre.run('verify:verify', {
+  //   address: '0xFb0e378b3eD6D7F8b73230644D945E28fd7F7b03',
+  //   constructorArguments: [
+  //     ct.PendleGovernanceManagerLiqMining.address,
+  //     ct.PendlePausingManagerLiqMiningV2.address,
+  //     ct.PendleWhitelist.address,
+  //     ct.PENDLE.address,
+  //     '0x0D8a21f2Ea15269B7470c347083ee1f85e6A723B',
+  //     '0x0000000000000000000000000000000000000000',
+  //     startTime,
+  //     oneWeek,
+  //     5,
+  //   ],
+  // });
   // console.log(`Verified PendleLiquidityMiningBaseV2: ${deployment.contracts.PendleLiquidityMiningBaseV2.address}\n\n`);
 
   // PendleAaveLiquidityMining
@@ -346,4 +347,25 @@ task('verifyPendle', 'verify Pendle contracts').setAction(async (args, hre) => {
   //   ],
   // });
   // console.log(`Verified PendleCompoundLiquidityMining: ${deployment.contracts.PendleCompoundLiquidityMining.address}\n\n`);
+
+  // PendleSLPLiquidityMining
+  await hre.run('verify:verify', {
+    address:
+      deployment.yieldContracts.SushiswapSimple['0x37922c69b08babcceae735a31235c81f1d1e8e43'].expiries[1672272000]
+        .OTSLPLiquidityMiningContract,
+    contract: 'contracts/core/SushiswapComplex/PendleSLPLiquidityMining.sol:PendleSLPLiquidityMining',
+    constructorArguments: [
+      ct.PendleGovernanceManagerLiqMining.address,
+      ct.PendlePausingManagerLiqMiningV2.address,
+      ct.PendleWhitelist.address,
+      ct.PENDLE.address,
+      '0xb124c4e18a282143d362a066736fd60d22393ef4',
+      sushi,
+      1631145600,
+      consts.common.liqParams.EPOCH_DURATION,
+      consts.common.liqParams.VESTING_EPOCHS,
+      consts.misc.MASTER_CHEF,
+      291,
+    ],
+  });
 });

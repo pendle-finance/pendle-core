@@ -1,297 +1,459 @@
-import { Contract, providers, Wallet } from 'ethers';
-import hre from 'hardhat';
-import PendleCompoundMarket from '../../build/artifacts/contracts/core/compound/PendleCompoundMarket.sol/PendleCompoundMarket.json';
-import PendleGenericMarket from '../../build/artifacts/contracts/core/Generic/PendleGenericMarket.sol/PendleGenericMarket.json';
-import MockMarketMath from '../../build/artifacts/contracts/mock/MockMarketMath.sol/MockMarketMath.json';
-import MockPendleAaveMarket from '../../build/artifacts/contracts/mock/MockPendleAaveMarket.sol/MockPendleAaveMarket.json';
-import TestToken from '../../build/artifacts/contracts/mock/TestToken.sol/TestToken.json';
+import { loadFixture } from 'ethereum-waffle';
+import { providers, Wallet } from 'ethers';
+import { checkDisabled, Mode, TestEnv, wallets } from '.';
+import { createNewYTMarket, getContract } from '../../pendle-deployment-scripts';
 import {
-  consts,
+  approveAll,
+  deployContract,
   mintXytAave,
+  mintXytBenQi,
   mintXytCompound,
-  mintXytCompoundV2,
-  mintXytSushiswapComplexFixed,
-  mintXytSushiswapSimpleFixed,
-  tokens,
+  mintXytKyberDMMFixed,
+  mintXytSushiswapFixed,
+  mintXytTraderJoeFixed,
+  mintXytUniswapFixed,
+  mintXytWMEMOFixed,
+  mintXytXJoeFixed,
+  teConsts,
 } from '../helpers';
-import { AaveV2ForgeFixture } from './aaveV2Forge.fixture';
-import { CompoundFixture } from './compoundForge.fixture';
-import { CoreFixture } from './core.fixture';
-import { RouterFixture, routerFixtureNoMint } from './router.fixture';
-import { SushiswapComplexForgeFixture } from './SushiswapComplexForge.fixture';
-import { SushiswapSimpleForgeFixture } from './SushiswapSimpleForge.fixture';
-import { Mode, checkDisabled } from '.';
-import { CompoundV2Fixture } from './compoundV2Forge.fixture';
-const { waffle } = hre;
-const { deployContract, loadFixture } = waffle;
+import { routerFixtureNoMint } from './router.fixture';
 
-export interface MarketFixture {
-  routerFix: RouterFixture;
-  core: CoreFixture;
-  a2Forge: AaveV2ForgeFixture;
-  cForge: CompoundFixture;
-  c2Forge: CompoundV2Fixture;
-  scForge: SushiswapComplexForgeFixture;
-  ssForge: SushiswapSimpleForgeFixture;
-  testToken: Contract;
-  a2Market: Contract;
-  a2Market18: Contract;
-  cMarket: Contract;
-  c2Market: Contract;
-  a2MarketEth: Contract;
-  cMarketEth: Contract;
-  cMarket8: Contract;
-  c2Market8: Contract;
-  scMarket: Contract;
-  ssMarket: Contract;
-  mockMarketMath: Contract;
+export async function marketFixture(_: Wallet[], provider: providers.Web3Provider): Promise<TestEnv> {
+  console.time('setupMarketFixture');
+  let env = await loadFixture(routerFixtureNoMint);
+  env.testToken = await deployContract('TestToken', ['Test Token', 'TEST', 6]);
+
+  await deployA2Markets(env);
+  await deployCMarkets(env);
+
+  await deployC2Markets(env);
+  await deploySCMarkets(env);
+  await deploySSMarkets(env);
+  await deployUMarkets(env);
+  await deployQiMarkets(env);
+  await deployKMarkets(env);
+  await distributeTestTokens(env);
+  await deployMockMarketMath(env);
+  await deployJoeMarkets(env);
+  await deployXJoeMarkets(env);
+  await deployWonderlandMarkets(env);
+  console.timeEnd('setupMarketFixture');
+  return env;
 }
 
-export async function marketFixture(_: Wallet[], provider: providers.Web3Provider): Promise<MarketFixture> {
-  const wallets = waffle.provider.getWallets();
-  const [alice, bob, charlie, dave, eve] = wallets;
-  const routerFix = await loadFixture(routerFixtureNoMint);
-  const { core, a2Forge, cForge, c2Forge, scForge, ssForge } = routerFix;
-  const { router, a2MarketFactory, cMarketFactory, data, genMarketFactory } = core;
-  const { a2FutureYieldToken, a2FutureYieldToken18 } = a2Forge;
-  const { cFutureYieldToken, cFutureYieldToken8 } = cForge;
-  const { c2FutureYieldToken, c2FutureYieldToken8 } = c2Forge;
-  const { scFutureYieldToken } = scForge;
-  const { ssFutureYieldToken } = ssForge;
-
-  const testToken = await deployContract(alice, TestToken, ['Test Token', 'TEST', 6]);
-  let a2Market: Contract = {} as Contract;
-  let a2Market18: Contract = {} as Contract;
-  let cMarket: Contract = {} as Contract;
-  let c2Market: Contract = {} as Contract;
-  let a2MarketEth: Contract = {} as Contract;
-  let cMarketEth: Contract = {} as Contract;
-  let cMarket8: Contract = {} as Contract;
-  let c2Market8: Contract = {} as Contract;
-  let scMarket: Contract = {} as Contract;
-  let ssMarket: Contract = {} as Contract;
-
-  if (!checkDisabled(Mode.AAVE_V2)) {
-    for (var person of [alice, bob, charlie, dave]) {
-      await mintXytAave(
-        tokens.USDT,
-        person,
-        consts.INITIAL_OT_XYT_AMOUNT,
-        routerFix,
-        consts.T0_A2.add(consts.SIX_MONTH)
-      );
-      await mintXytAave(
-        tokens.UNI,
-        person,
-        consts.INITIAL_OT_XYT_AMOUNT,
-        routerFix,
-        consts.T0_A2.add(consts.SIX_MONTH)
-      );
-    }
-    await data.addMarketFactory(consts.MARKET_FACTORY_AAVE_V2, a2MarketFactory.address, consts.HG);
-    await data.setForgeFactoryValidity(consts.FORGE_AAVE_V2, consts.MARKET_FACTORY_AAVE_V2, true, consts.HG);
-    // a2XYT - testToken
-    await router.createMarket(consts.MARKET_FACTORY_AAVE_V2, a2FutureYieldToken.address, testToken.address, consts.HG);
-    // a2XYT18 - testToken
-    await router.createMarket(
-      consts.MARKET_FACTORY_AAVE_V2,
-      a2FutureYieldToken18.address,
-      testToken.address,
-      consts.HG
+async function deployA2Markets(env: TestEnv) {
+  if (checkDisabled(Mode.AAVE_V2)) return;
+  for (let person of wallets) {
+    await mintXytAave(
+      env,
+      env.ptokens.USDT!,
+      person,
+      teConsts.INITIAL_OT_XYT_AMOUNT,
+      teConsts.T0_A2.add(env.pconsts.misc.SIX_MONTH)
     );
-    // a2XYT - WETH
-    await router.createMarket(
-      consts.MARKET_FACTORY_AAVE_V2,
-      a2FutureYieldToken.address,
-      tokens.WETH.address,
-      consts.HG
+    await mintXytAave(
+      env,
+      env.ptokens.DAI!,
+      person,
+      teConsts.INITIAL_OT_XYT_AMOUNT,
+      teConsts.T0_A2.add(env.pconsts.misc.SIX_MONTH)
     );
+  }
+  await env.data.addMarketFactory(env.pconsts.aave!.MARKET_FACTORY_ID, env.a2MarketFactory.address, teConsts.HG);
+  await env.data.setForgeFactoryValidity(
+    env.pconsts.aave!.FORGE_ID,
+    env.pconsts.aave!.MARKET_FACTORY_ID,
+    true,
+    teConsts.HG
+  );
+  // a2XYT - testToken
+  await env.router.createMarket(
+    env.pconsts.aave!.MARKET_FACTORY_ID,
+    env.a2FutureYieldToken.address,
+    env.testToken.address,
+    teConsts.HG
+  );
+  // a2XYT18 - testToken
+  await env.router.createMarket(
+    env.pconsts.aave!.MARKET_FACTORY_ID,
+    env.a2FutureYieldToken18.address,
+    env.testToken.address,
+    teConsts.HG
+  );
+  // a2XYT - WETH
+  await env.router.createMarket(
+    env.pconsts.aave!.MARKET_FACTORY_ID,
+    env.a2FutureYieldToken.address,
+    env.ptokens.WNATIVE!.address,
+    teConsts.HG
+  );
 
-    const a2MarketAddress = await data.getMarket(
-      consts.MARKET_FACTORY_AAVE_V2,
-      a2FutureYieldToken.address,
-      testToken.address
-    );
+  const a2MarketAddress = await env.data.getMarket(
+    env.pconsts.aave!.MARKET_FACTORY_ID,
+    env.a2FutureYieldToken.address,
+    env.testToken.address
+  );
 
-    const a2Market18Address = await data.getMarket(
-      consts.MARKET_FACTORY_AAVE_V2,
-      a2FutureYieldToken18.address,
-      testToken.address
-    );
+  const a2Market18Address = await env.data.getMarket(
+    env.pconsts.aave!.MARKET_FACTORY_ID,
+    env.a2FutureYieldToken18.address,
+    env.testToken.address
+  );
 
-    const a2MarketEthAddress = await data.getMarket(
-      consts.MARKET_FACTORY_AAVE_V2,
-      a2FutureYieldToken.address,
-      tokens.WETH.address
+  const a2MarketEthAddress = await env.data.getMarket(
+    env.pconsts.aave!.MARKET_FACTORY_ID,
+    env.a2FutureYieldToken.address,
+    env.ptokens.WNATIVE!.address
+  );
+  env.a2Market = await getContract('MockPendleAaveMarket', a2MarketAddress);
+  env.a2Market18 = await getContract('MockPendleAaveMarket', a2Market18Address);
+  env.a2MarketEth = await getContract('MockPendleAaveMarket', a2MarketEthAddress);
+
+  console.log('Done deploying AaveV2 Market');
+}
+
+async function deployCMarkets(env: TestEnv) {
+  if (checkDisabled(Mode.COMPOUND)) return;
+  for (let person of wallets) {
+    await mintXytCompound(
+      env,
+      Mode.COMPOUND,
+      env.ptokens.USDT!,
+      person,
+      teConsts.INITIAL_OT_XYT_AMOUNT,
+      teConsts.T0_C.add(env.pconsts.misc.SIX_MONTH)
     );
-    a2Market = new Contract(a2MarketAddress, MockPendleAaveMarket.abi, alice);
-    a2Market18 = new Contract(a2Market18Address, MockPendleAaveMarket.abi, alice);
-    a2MarketEth = new Contract(a2MarketEthAddress, MockPendleAaveMarket.abi, alice);
+    await mintXytCompound(
+      env,
+      Mode.COMPOUND,
+      env.ptokens.WNATIVE!,
+      person,
+      teConsts.INITIAL_OT_XYT_AMOUNT,
+      teConsts.T0_C.add(env.pconsts.misc.SIX_MONTH)
+    );
+  }
+  await env.data.addMarketFactory(env.pconsts.compound!.MARKET_FACTORY_ID, env.cMarketFactory.address, teConsts.HG);
+  await env.data.setForgeFactoryValidity(
+    env.pconsts.compound!.FORGE_ID_V1,
+    env.pconsts.compound!.MARKET_FACTORY_ID,
+    true,
+    teConsts.HG
+  );
+  // cXYT - testToken
+  await env.router.createMarket(
+    env.pconsts.compound!.MARKET_FACTORY_ID,
+    env.cFutureYieldToken.address,
+    env.testToken.address,
+    teConsts.HG
+  );
+  // cXYT18 - testToken
+  await env.router.createMarket(
+    env.pconsts.compound!.MARKET_FACTORY_ID,
+    env.cFutureYieldToken8.address,
+    env.testToken.address,
+    teConsts.HG
+  );
+  // cXYT - WETH
+  await env.router.createMarket(
+    env.pconsts.compound!.MARKET_FACTORY_ID,
+    env.cFutureYieldToken.address,
+    env.ptokens.WNATIVE!.address,
+    teConsts.HG
+  );
+  const cMarketAddress = await env.data.getMarket(
+    env.pconsts.compound!.MARKET_FACTORY_ID,
+    env.cFutureYieldToken.address,
+    env.testToken.address
+  );
+
+  const cMarket8Address = await env.data.getMarket(
+    env.pconsts.compound!.MARKET_FACTORY_ID,
+    env.cFutureYieldToken8.address,
+    env.testToken.address
+  );
+
+  const cMarketEthAddress = await env.data.getMarket(
+    env.pconsts.compound!.MARKET_FACTORY_ID,
+    env.cFutureYieldToken.address,
+    env.ptokens.WNATIVE!.address
+  );
+  env.cMarket = await getContract('PendleCompoundMarket', cMarketAddress);
+  env.cMarket8 = await getContract('PendleCompoundMarket', cMarket8Address);
+  env.cMarketEth = await getContract('MockPendleAaveMarket', cMarketEthAddress);
+  console.log('Done deploying Compound Market');
+}
+
+async function deployC2Markets(env: TestEnv) {
+  if (checkDisabled(Mode.COMPOUND_V2)) return;
+  for (let i = 0; i < 4; i++) {
+    let person = wallets[i];
+    await mintXytCompound(
+      env,
+      Mode.COMPOUND_V2,
+      env.ptokens.USDT!,
+      person,
+      teConsts.INITIAL_OT_XYT_AMOUNT,
+      teConsts.T0_C2.add(env.pconsts.misc.SIX_MONTH)
+    );
+    await mintXytCompound(
+      env,
+      Mode.COMPOUND_V2,
+      env.ptokens.WNATIVE!,
+      person,
+      teConsts.INITIAL_OT_XYT_AMOUNT,
+      teConsts.T0_C2.add(env.pconsts.misc.SIX_MONTH)
+    );
+  }
+  await env.data.setForgeFactoryValidity(
+    env.pconsts.compound!.FORGE_ID_V2,
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    true,
+    teConsts.HG
+  );
+  // c2XYT - testToken
+  await env.router.createMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.c2FutureYieldToken.address,
+    env.testToken.address,
+    teConsts.HG
+  );
+  // c2XYT18 - testToken
+  await env.router.createMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.c2FutureYieldToken8.address,
+    env.testToken.address,
+    teConsts.HG
+  );
+  // cXYT - WETH
+  await env.router.createMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.c2FutureYieldToken.address,
+    env.ptokens.WNATIVE!.address,
+    teConsts.HG
+  );
+  const c2MarketAddress = await env.data.getMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.c2FutureYieldToken.address,
+    env.testToken.address
+  );
+
+  const c2Market8Address = await env.data.getMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.c2FutureYieldToken8.address,
+    env.testToken.address
+  );
+
+  env.c2Market = await getContract('PendleCompoundMarket', c2MarketAddress);
+  env.c2Market8 = await getContract('PendleCompoundMarket', c2Market8Address);
+
+  console.log('Done deploying CompoundV2 Market');
+}
+
+async function deploySCMarkets(env: TestEnv) {
+  if (checkDisabled(Mode.SUSHISWAP_COMPLEX)) return;
+  for (let i = 0; i < 4; i++) {
+    let person = wallets[i];
+    await mintXytSushiswapFixed(env, Mode.SUSHISWAP_COMPLEX, person, teConsts.T0_SC.add(env.pconsts.misc.SIX_MONTH));
+  }
+  await env.data.setForgeFactoryValidity(
+    env.pconsts.sushi!.FORGE_ID_COMPLEX,
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    true,
+    teConsts.HG
+  );
+  // scXYT - testToken
+  await env.router.createMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.scFutureYieldToken.address,
+    env.testToken.address,
+    teConsts.HG
+  );
+  const scMarketAddress = await env.data.getMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.scFutureYieldToken.address,
+    env.testToken.address
+  );
+  env.scMarket = await getContract('PendleGenericMarket', scMarketAddress);
+}
+
+async function deployUMarkets(env: TestEnv) {
+  if (checkDisabled(Mode.UNISWAPV2)) return;
+  for (let i = 0; i < 4; i++) {
+    let person = wallets[i];
+    await mintXytUniswapFixed(env, person, teConsts.T0_UNI.add(env.pconsts.misc.SIX_MONTH));
   }
 
-  if (!checkDisabled(Mode.COMPOUND)) {
-    for (var person of [alice, bob, charlie, dave]) {
-      await mintXytCompound(
-        tokens.USDT,
-        person,
-        consts.INITIAL_OT_XYT_AMOUNT,
-        routerFix,
-        consts.T0_C.add(consts.SIX_MONTH)
-      );
-      await mintXytCompound(
-        tokens.WETH,
-        person,
-        consts.INITIAL_OT_XYT_AMOUNT,
-        routerFix,
-        consts.T0_C.add(consts.SIX_MONTH)
-      );
-    }
-    await data.addMarketFactory(consts.MARKET_FACTORY_COMPOUND, cMarketFactory.address, consts.HG);
-    await data.setForgeFactoryValidity(consts.FORGE_COMPOUND, consts.MARKET_FACTORY_COMPOUND, true, consts.HG);
-    // cXYT - testToken
-    await router.createMarket(consts.MARKET_FACTORY_COMPOUND, cFutureYieldToken.address, testToken.address, consts.HG);
-    // cXYT18 - testToken
-    await router.createMarket(consts.MARKET_FACTORY_COMPOUND, cFutureYieldToken8.address, testToken.address, consts.HG);
-    // cXYT - WETH
-    await router.createMarket(
-      consts.MARKET_FACTORY_COMPOUND,
-      cFutureYieldToken.address,
-      tokens.WETH.address,
-      consts.HG
-    );
-    const cMarketAddress = await data.getMarket(
-      consts.MARKET_FACTORY_COMPOUND,
-      cFutureYieldToken.address,
-      testToken.address
-    );
+  await env.data.setForgeFactoryValidity(
+    env.pconsts.uni!.FORGE_ID,
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    true,
+    teConsts.HG
+  );
+  // uniXYT - testToken
+  await env.router.createMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.uniFutureYieldToken.address,
+    env.testToken.address,
+    teConsts.HG
+  );
+  const uniMarketAddress = await env.data.getMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.uniFutureYieldToken.address,
+    env.testToken.address
+  );
+  env.uniMarket = await getContract('PendleGenericMarket', uniMarketAddress);
+  console.log('Done deploying UniswapV2 Market');
+}
 
-    const cMarket8Address = await data.getMarket(
-      consts.MARKET_FACTORY_COMPOUND,
-      cFutureYieldToken8.address,
-      testToken.address
-    );
+async function deploySSMarkets(env: TestEnv) {
+  if (checkDisabled(Mode.SUSHISWAP_SIMPLE)) return;
+  for (let i = 0; i < 4; i++) {
+    let person = wallets[i];
+    await mintXytSushiswapFixed(env, Mode.SUSHISWAP_SIMPLE, person, teConsts.T0_SS.add(env.pconsts.misc.SIX_MONTH));
+  }
+  await env.data.setForgeFactoryValidity(
+    env.pconsts.sushi!.FORGE_ID_SIMPLE,
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    true,
+    teConsts.HG
+  );
+  // ssXYT - testToken
+  await env.router.createMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.ssFutureYieldToken.address,
+    env.testToken.address,
+    teConsts.HG
+  );
+  const ssMarketAddress = await env.data.getMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.ssFutureYieldToken.address,
+    env.testToken.address
+  );
+  env.ssMarket = await getContract('PendleGenericMarket', ssMarketAddress);
+  console.log('Done deploying SushiswapComplexV2 Market');
+}
 
-    const cMarketEthAddress = await data.getMarket(
-      consts.MARKET_FACTORY_COMPOUND,
-      cFutureYieldToken.address,
-      tokens.WETH.address
+async function deployQiMarkets(env: TestEnv) {
+  if (checkDisabled(Mode.BENQI)) return;
+  for (let i = 0; i < 4; ++i) {
+    let person = wallets[i];
+    await mintXytBenQi(
+      env,
+      env.ptokens.DAI!,
+      person,
+      teConsts.INITIAL_OT_XYT_AMOUNT,
+      teConsts.T0_B.add(env.pconsts.misc.SIX_MONTH)
     );
-    cMarket = new Contract(cMarketAddress, PendleCompoundMarket.abi, alice);
-    cMarket8 = new Contract(cMarket8Address, PendleCompoundMarket.abi, alice);
-    cMarketEth = new Contract(cMarketEthAddress, MockPendleAaveMarket.abi, alice);
+  }
+  const marketDAI = await createNewYTMarket(
+    env.penv,
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.benQiYtDAI.address,
+    env.testToken.address
+  );
+  env.benQiMarket = await getContract('PendleGenericMarket', marketDAI);
+  console.log('Done deploying BenQi Market');
+}
+
+async function deployJoeMarkets(env: TestEnv) {
+  if (checkDisabled(Mode.TRADER_JOE)) return;
+  for (let i = 0; i < 4; ++i) {
+    let person = wallets[i];
+    await mintXytTraderJoeFixed(env, person, teConsts.T0_TJ.add(env.pconsts.misc.SIX_MONTH));
   }
 
-  if (
-    !checkDisabled(Mode.COMPOUND_V2) ||
-    !checkDisabled(Mode.SUSHISWAP_SIMPLE) ||
-    !checkDisabled(Mode.SUSHISWAP_COMPLEX)
-  ) {
-    await data.addMarketFactory(consts.MARKET_FACTORY_GENERIC, genMarketFactory.address, consts.HG);
+  let joeMarketAddr = await createNewYTMarket(
+    env.penv,
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.joeFutureYieldToken.address,
+    env.testToken.address
+  );
+
+  env.joeMarket = await getContract('PendleGenericMarket', joeMarketAddr);
+  console.log('Done deploying Trader Joe Market');
+}
+
+async function deployXJoeMarkets(env: TestEnv) {
+  if (checkDisabled(Mode.XJOE)) return;
+  for (let i = 0; i < 4; ++i) {
+    let person = wallets[i];
+    await mintXytXJoeFixed(env, person, teConsts.T0_XJ.add(env.pconsts.misc.SIX_MONTH));
   }
 
-  if (!checkDisabled(Mode.COMPOUND_V2)) {
-    for (var person of [alice, bob, charlie, dave]) {
-      await mintXytCompoundV2(
-        tokens.USDT,
-        person,
-        consts.INITIAL_OT_XYT_AMOUNT,
-        routerFix,
-        consts.T0_C2.add(consts.SIX_MONTH)
-      );
-      await mintXytCompoundV2(
-        tokens.WETH,
-        person,
-        consts.INITIAL_OT_XYT_AMOUNT,
-        routerFix,
-        consts.T0_C2.add(consts.SIX_MONTH)
-      );
-    }
-    await data.setForgeFactoryValidity(consts.FORGE_COMPOUND_V2, consts.MARKET_FACTORY_GENERIC, true, consts.HG);
-    // c2XYT - testToken
-    await router.createMarket(consts.MARKET_FACTORY_GENERIC, c2FutureYieldToken.address, testToken.address, consts.HG);
-    // c2XYT18 - testToken
-    await router.createMarket(consts.MARKET_FACTORY_GENERIC, c2FutureYieldToken8.address, testToken.address, consts.HG);
-    // cXYT - WETH
-    await router.createMarket(
-      consts.MARKET_FACTORY_GENERIC,
-      c2FutureYieldToken.address,
-      tokens.WETH.address,
-      consts.HG
-    );
-    const c2MarketAddress = await data.getMarket(
-      consts.MARKET_FACTORY_GENERIC,
-      c2FutureYieldToken.address,
-      testToken.address
-    );
+  let xJoeMarketAddr = await createNewYTMarket(
+    env.penv,
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.xJoeFutureYieldToken.address,
+    env.testToken.address
+  );
+  env.xJoeMarket = await getContract('PendleGenericMarket', xJoeMarketAddr);
+  console.log('Done deploying XJoe Market');
+}
 
-    const c2Market8Address = await data.getMarket(
-      consts.MARKET_FACTORY_GENERIC,
-      c2FutureYieldToken8.address,
-      testToken.address
-    );
+async function deployKMarkets(env: TestEnv) {
+  if (checkDisabled(Mode.KYBER_DMM)) return;
 
-    c2Market = new Contract(c2MarketAddress, PendleCompoundMarket.abi, alice);
-    c2Market8 = new Contract(c2Market8Address, PendleCompoundMarket.abi, alice);
+  for (let i = 0; i < 4; ++i) {
+    let person = wallets[i];
+    await mintXytKyberDMMFixed(env, person, teConsts.T0_K.add(env.pconsts.misc.SIX_MONTH));
   }
+  await env.data.setForgeFactoryValidity(
+    env.pconsts.kyber!.FORGE_ID,
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    true,
+    teConsts.HG
+  );
+  await env.router.createMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.kyberFutureYieldToken.address,
+    env.testToken.address,
+    teConsts.HG
+  );
+  const kyberMarketAddress = await env.data.getMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.kyberFutureYieldToken.address,
+    env.testToken.address
+  );
+  env.kyberMarket = await getContract('PendleGenericMarket', kyberMarketAddress);
+  console.log('Done deploying KyberDMM Market');
+}
 
-  if (!checkDisabled(Mode.SUSHISWAP_COMPLEX)) {
-    for (var person of [alice, bob, charlie, dave]) {
-      await mintXytSushiswapComplexFixed(person, routerFix, consts.T0_SC.add(consts.SIX_MONTH));
-    }
-    await data.setForgeFactoryValidity(consts.FORGE_SUSHISWAP_COMPLEX, consts.MARKET_FACTORY_GENERIC, true, consts.HG);
-    // scXYT - testToken
-    await router.createMarket(consts.MARKET_FACTORY_GENERIC, scFutureYieldToken.address, testToken.address, consts.HG);
-    const scMarketAddress = await data.getMarket(
-      consts.MARKET_FACTORY_GENERIC,
-      scFutureYieldToken.address,
-      testToken.address
-    );
-    scMarket = new Contract(scMarketAddress, PendleGenericMarket.abi, alice);
+async function deployWonderlandMarkets(env: TestEnv) {
+  if (checkDisabled(Mode.WONDERLAND)) return;
+  for (let i = 0; i < 4; ++i) {
+    let person = wallets[i];
+    await mintXytWMEMOFixed(env, person, teConsts.T0_WM.add(env.pconsts.misc.SIX_MONTH));
   }
+  await env.data.setForgeFactoryValidity(
+    env.pconsts.wonderland!.FORGE_ID,
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    true,
+    teConsts.HG
+  );
+  await env.router.createMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.wonderlandFutureYieldToken.address,
+    env.testToken.address,
+    teConsts.HG
+  );
+  const wonderlandMarket = await env.data.getMarket(
+    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
+    env.wonderlandFutureYieldToken.address,
+    env.testToken.address
+  );
+  env.wonderlandMarket = await getContract('PendleGenericMarket', wonderlandMarket);
+  console.log('Done deploying Wonderland Market');
+}
 
-  if (!checkDisabled(Mode.SUSHISWAP_SIMPLE)) {
-    for (var person of [alice, bob, charlie, dave]) {
-      await mintXytSushiswapSimpleFixed(person, routerFix, consts.T0_SS.add(consts.SIX_MONTH));
-    }
-    await data.setForgeFactoryValidity(consts.FORGE_SUSHISWAP_SIMPLE, consts.MARKET_FACTORY_GENERIC, true, consts.HG);
-    // ssXYT - testToken
-    await router.createMarket(consts.MARKET_FACTORY_GENERIC, ssFutureYieldToken.address, testToken.address, consts.HG);
-    const ssMarketAddress = await data.getMarket(
-      consts.MARKET_FACTORY_GENERIC,
-      ssFutureYieldToken.address,
-      testToken.address
-    );
-    ssMarket = new Contract(ssMarketAddress, PendleGenericMarket.abi, alice);
+async function distributeTestTokens(env: TestEnv) {
+  const totalSupply = await env.testToken.totalSupply();
+  for (let i = 1; i < 5; i++) {
+    let person = wallets[i];
+    await env.testToken.transfer(person.address, totalSupply.div(5), teConsts.HG);
   }
+  await approveAll([env.testToken], [env.router]);
+}
 
-  const totalSupply = await testToken.totalSupply();
-  for (var person of [bob, charlie, dave, eve]) {
-    await testToken.transfer(person.address, totalSupply.div(5), consts.HG);
-  }
-  for (var person of [alice, bob, charlie, dave, eve]) {
-    await testToken.connect(person).approve(router.address, totalSupply, consts.HG);
-  }
-  const mockMarketMath: Contract = await deployContract(alice, MockMarketMath);
-
-  return {
-    routerFix,
-    core,
-    a2Forge,
-    cForge,
-    c2Forge,
-    scForge,
-    testToken,
-    a2Market,
-    a2Market18,
-    cMarket,
-    c2Market,
-    cMarket8,
-    c2Market8,
-    a2MarketEth,
-    cMarketEth,
-    scMarket,
-    mockMarketMath,
-    ssForge,
-    ssMarket,
-  };
+async function deployMockMarketMath(env: TestEnv) {
+  env.mockMarketMath = await deployContract('MockMarketMath', []);
 }

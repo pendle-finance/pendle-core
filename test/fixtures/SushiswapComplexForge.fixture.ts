@@ -1,87 +1,58 @@
-import { Contract, providers, Wallet } from 'ethers';
-import PendleSushiswapComplexForge from '../../build/artifacts/contracts/core/SushiswapComplex/PendleSushiswapComplexForge.sol/PendleSushiswapComplexForge.json';
-import PendleSushiswapComplexYieldContractDeployer from '../../build/artifacts/contracts/core/SushiswapComplex/PendleSushiswapComplexYieldContractDeployer.sol/PendleSushiswapComplexYieldContractDeployer.json';
-import MockPendleOwnershipToken from '../../build/artifacts/contracts/mock/MockPendleOwnershipToken.sol/MockPendleOwnershipToken.json';
-import MockPendleRewardManager from '../../build/artifacts/contracts/mock/MockPendleRewardManager.sol/MockPendleRewardManager.json';
-import PendleFutureYieldToken from '../../build/artifacts/contracts/tokens/PendleFutureYieldToken.sol/PendleFutureYieldToken.json';
-import { consts, setTimeNextBlock, tokens } from '../helpers';
-import { CoreFixture } from './core.fixture';
-import { GovernanceFixture } from './governance.fixture';
+import { TestEnv } from '.';
+import { deployContract, setTimeNextBlock, teConsts } from '../helpers';
+import { getContract } from '../../pendle-deployment-scripts';
 
-const { waffle } = require('hardhat');
-const { deployContract } = waffle;
+export async function deploySushiswapComplexForge(env: TestEnv) {
+  let consts = env.pconsts;
+  let tokens = env.ptokens;
 
-export interface SushiswapComplexForgeFixture {
-  sushiswapComplexForge: Contract;
-  scOwnershipToken: Contract;
-  scFutureYieldToken: Contract;
-  scRewardManager: Contract;
-}
-
-export async function sushiswapComplexForgeFixture(
-  alice: Wallet,
-  provider: providers.Web3Provider,
-  { router, data, govManager }: CoreFixture,
-  { pendle }: GovernanceFixture
-): Promise<SushiswapComplexForgeFixture> {
-  const scRewardManager = await deployContract(alice, MockPendleRewardManager, [
-    govManager.address, //governance
-    consts.FORGE_SUSHISWAP_COMPLEX,
+  env.scRewardManager = await deployContract('MockPendleRewardManager', [
+    env.govManager.address,
+    consts.sushi!.FORGE_ID_COMPLEX,
   ]);
 
-  const scYieldContractDeployer = await deployContract(alice, PendleSushiswapComplexYieldContractDeployer, [
-    govManager.address, //governance
-    consts.FORGE_SUSHISWAP_COMPLEX,
-    consts.MASTERCHEF_V1_ADDRESS,
+  const scYieldContractDeployer = await deployContract('PendleSushiswapComplexYieldContractDeployer', [
+    env.govManager.address,
+    consts.sushi!.FORGE_ID_COMPLEX,
+    consts.sushi!.MASTERCHEF_V1,
   ]);
 
-  const sushiswapComplexForge = await deployContract(alice, PendleSushiswapComplexForge, [
-    govManager.address, // alice will be the governance address
-    router.address,
-    consts.FORGE_SUSHISWAP_COMPLEX,
-    consts.SUSHI_ADDRESS,
-    scRewardManager.address,
+  env.scForge = await deployContract('PendleSushiswapComplexForge', [
+    env.govManager.address,
+    env.router.address,
+    consts.sushi!.FORGE_ID_COMPLEX,
+    tokens.SUSHI!.address,
+    env.scRewardManager.address,
     scYieldContractDeployer.address,
-    consts.CODE_HASH_SUSHISWAP,
-    consts.FACTORY_SUSHISWAP,
-    consts.MASTERCHEF_V1_ADDRESS,
+    consts.sushi!.CODE_HASH,
+    consts.sushi!.PAIR_FACTORY,
+    consts.sushi!.MASTERCHEF_V1,
   ]);
 
-  await scRewardManager.initialize(sushiswapComplexForge.address);
+  await env.scRewardManager.initialize(env.scForge.address);
 
-  await scYieldContractDeployer.initialize(sushiswapComplexForge.address);
+  await scYieldContractDeployer.initialize(env.scForge.address);
 
-  await data.addForge(consts.FORGE_SUSHISWAP_COMPLEX, sushiswapComplexForge.address);
+  await env.data.addForge(consts.sushi!.FORGE_ID_COMPLEX, env.scForge.address);
 
-  const SUSHI_USDT_WETH_PID = 0;
-  await sushiswapComplexForge.registerTokens([tokens.SUSHI_USDT_WETH_LP.address], [[SUSHI_USDT_WETH_PID]], consts.HG);
-
-  await setTimeNextBlock(consts.T0_SC); // set the minting time for the first OT and XYT
-
-  await router.newYieldContracts(
-    consts.FORGE_SUSHISWAP_COMPLEX,
-    tokens.SUSHI_USDT_WETH_LP.address,
-    consts.T0_SC.add(consts.SIX_MONTH)
-  );
-  const otTokenAddress = await data.otTokens(
-    consts.FORGE_SUSHISWAP_COMPLEX,
-    tokens.SUSHI_USDT_WETH_LP.address,
-    consts.T0_SC.add(consts.SIX_MONTH)
+  await env.scForge.registerTokens(
+    [tokens.SUSHI_USDT_WETH_LP!.address],
+    [[tokens.SUSHI_USDT_WETH_LP!.pid]],
+    teConsts.HG
   );
 
-  const xytTokenAddress = await data.xytTokens(
-    consts.FORGE_SUSHISWAP_COMPLEX,
-    tokens.SUSHI_USDT_WETH_LP.address,
-    consts.T0_SC.add(consts.SIX_MONTH)
-  );
+  await setTimeNextBlock(teConsts.T0_SC);
 
-  const scOwnershipToken = new Contract(otTokenAddress, MockPendleOwnershipToken.abi, alice);
-  const scFutureYieldToken = new Contract(xytTokenAddress, PendleFutureYieldToken.abi, alice);
+  let scForgeArguments = [
+    consts.sushi!.FORGE_ID_COMPLEX,
+    tokens.SUSHI_USDT_WETH_LP!.address,
+    teConsts.T0_SC.add(env.pconsts.misc.SIX_MONTH),
+  ];
 
-  return {
-    sushiswapComplexForge,
-    scOwnershipToken,
-    scFutureYieldToken,
-    scRewardManager,
-  };
+  await env.router.newYieldContracts(...scForgeArguments);
+  const otTokenAddress = await env.data.otTokens(...scForgeArguments);
+  const xytTokenAddress = await env.data.xytTokens(...scForgeArguments);
+
+  env.scOwnershipToken = await getContract('MockPendleOwnershipToken', otTokenAddress);
+  env.scFutureYieldToken = await getContract('PendleFutureYieldToken', xytTokenAddress);
 }

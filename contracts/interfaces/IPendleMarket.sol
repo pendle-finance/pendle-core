@@ -38,6 +38,7 @@ interface IPendleMarket is IERC20 {
      * For the generic Token weight it can be inferred by (2^40) - weight0
      **/
     event Sync(uint256 reserve0, uint256 weight0, uint256 reserve1);
+    event RedeemLpInterests(address user, uint256 interests);
 
     function setUpEmergencyMode(address spender) external;
 

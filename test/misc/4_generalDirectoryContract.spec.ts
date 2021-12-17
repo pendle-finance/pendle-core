@@ -1,19 +1,14 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
-import { BigNumber as BN, Contract, ethers } from 'ethers';
-import DirectoryContract from '../../build/artifacts/contracts/misc/Directory.sol/Directory.json';
-import MockPendleWhitelist from '../../build/artifacts/contracts/mock/MockPendleWhitelist.sol/MockPendleWhitelist.json';
-import PendleGovernanceManager from '../../build/artifacts/contracts/core/PendleGovernanceManager.sol/PendleGovernanceManager.json';
-import { consts, evm_revert, evm_snapshot } from '../helpers';
-import { checkDisabled, Mode } from '../fixtures/TestEnv';
-chai.use(solidity);
+import { Contract, ethers } from 'ethers';
+import { checkDisabled, Mode, wallets } from '../fixtures/TestEnv';
+import { deployContract, evm_revert, evm_snapshot } from '../helpers';
+import { MiscConsts } from '@pendle/constants';
 
-const { waffle } = require('hardhat');
-const { provider, deployContract } = waffle;
+chai.use(solidity);
 
 export async function runTest(mode: Mode) {
   describe('', async () => {
-    const wallets = provider.getWallets();
     const [alice, bob, charlie, dave, governance] = wallets;
     const bytesString = ethers.utils.formatBytes32String('test');
 
@@ -25,10 +20,10 @@ export async function runTest(mode: Mode) {
     before(async () => {
       globalSnapshotId = await evm_snapshot();
 
-      //   pendleGovernanceManagerContract = await deployContract(alice, PendleGovernanceManager, [governance.address]);
+      //   pendleGovernanceManagerContract = await deployContract("PendleGovernanceManager", [governance.address]);
 
-      directoryContract = await deployContract(governance, DirectoryContract, []);
-      //   mockPendleWhitelistContract = await deployContract(alice, MockPendleWhitelist, [
+      directoryContract = await deployContract('DirectoryContract', []);
+      //   mockPendleWhitelistContract = await deployContract("MockPendleWhitelist", [
       //     pendleGovernanceManagerContract.address,
       //   ]);
 
@@ -61,7 +56,7 @@ export async function runTest(mode: Mode) {
 
     it('should not be able to add zero address to directory', async () => {
       await expect(
-        directoryContract.connect(governance).addAddress(bytesString, [bob.address, consts.ZERO_ADDRESS])
+        directoryContract.connect(governance).addAddress(bytesString, [bob.address, MiscConsts.ZERO_ADDRESS])
       ).to.be.revertedWith('ZERO_ADDRESS');
     });
 
@@ -101,14 +96,14 @@ export async function runTest(mode: Mode) {
 
     it('should not be able to remove zero address from directory', async () => {
       await expect(
-        directoryContract.connect(governance).removeAddress(bytesString, [consts.ZERO_ADDRESS])
+        directoryContract.connect(governance).removeAddress(bytesString, [MiscConsts.ZERO_ADDRESS])
       ).to.be.revertedWith('ZERO_ADDRESS');
     });
 
     it('should not be able to remove address that is not currently in directory', async () => {
       await directoryContract.connect(governance).addAddress(bytesString, [bob.address, charlie.address]);
       await expect(
-        directoryContract.connect(governance).removeAddress(bytesString, [bob.address, consts.DUMMY_ADDRESS])
+        directoryContract.connect(governance).removeAddress(bytesString, [bob.address, MiscConsts.DUMMY_ADDRESS])
       ).to.be.revertedWith('DOES_NOT_EXIST');
     });
 

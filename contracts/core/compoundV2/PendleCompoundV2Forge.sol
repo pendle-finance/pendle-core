@@ -162,8 +162,7 @@ contract PendleCompoundV2Forge is PendleForgeBaseV2, IPendleGenericForge {
 
         dueInterests[_underlyingAsset][_expiry][_user] = dueInterests[_underlyingAsset][_expiry][
             _user
-        ]
-        .add(interestFromXyt);
+        ].add(interestFromXyt);
     }
 
     /**

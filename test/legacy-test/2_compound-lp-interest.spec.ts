@@ -2,7 +2,6 @@ import { BigNumber as BN, Contract, Wallet } from 'ethers';
 import { checkDisabled, marketFixture, MarketFixture, Mode } from '../fixtures';
 import {
   advanceTime,
-  amountToWei,
   approxBigNumber,
   consts,
   emptyToken,
@@ -15,6 +14,7 @@ import {
   Token,
   tokens,
 } from '../helpers';
+import { amountToWei } from '../../pendle-deployment-scripts';
 const { waffle } = require('hardhat');
 const { loadFixture, provider } = waffle;
 
@@ -57,9 +57,9 @@ export async function runTest(mode: Mode) {
           user.address,
           consts.HG
         );
-        await emptyToken(ot, user);
-        await emptyToken(xyt, user);
-        await emptyToken(cUSDT, user);
+        await emptyToken(env, ot, user);
+        await emptyToken(env, xyt, user);
+        await emptyToken(env, cUSDT, user);
       }
 
       let res = await mintXytUSDT(alice, amountUSDTRef.div(10 ** 6).mul(4));
@@ -72,7 +72,7 @@ export async function runTest(mode: Mode) {
       }
 
       for (let user of [alice, bob, charlie, dave, eve]) {
-        await emptyToken(cUSDT, user);
+        await emptyToken(env, cUSDT, user);
       }
 
       // await fixture.core.data.setInterestUpdateRateDeltaForMarket(BN.from(0));

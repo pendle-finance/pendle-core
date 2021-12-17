@@ -1,16 +1,14 @@
 import chai, { expect } from 'chai';
-import { solidity } from 'ethereum-waffle';
+import { loadFixture, solidity } from 'ethereum-waffle';
 import { BigNumber as BN, Contract } from 'ethers';
 import ERC20 from '../../../build/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
-import { marketFixture, MarketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../../fixtures';
+import { marketFixture, Mode, parseTestEnvMarketFixture, TestEnv, wallets } from '../../fixtures';
 import {
   addMarketLiquidityDual,
   addMarketLiquiditySingle,
   advanceTime,
-  amountToWei,
   approxBigNumber,
   bootstrapMarket,
-  consts,
   evm_revert,
   evm_snapshot,
   getMarketRateExactIn,
@@ -21,16 +19,17 @@ import {
   swapExactInXytToToken,
   swapExactOutTokenToXyt,
   swapExactOutXytToToken,
-  tokens,
 } from '../../helpers';
+import { MiscConsts } from '@pendle/constants';
+import { amountToWei } from '../../../pendle-deployment-scripts';
+
 const { waffle } = require('hardhat');
 chai.use(solidity);
 
-const { loadFixture, provider } = waffle;
+const { provider } = waffle;
 
 export function runTest(mode: Mode) {
   describe('', async () => {
-    const wallets = provider.getWallets();
     const [alice, bob] = wallets;
     let snapshotId: string;
     let globalSnapshotId: string;
@@ -40,10 +39,10 @@ export function runTest(mode: Mode) {
     const REF_AMOUNT_TOKEN: BN = amountToWei(BN.from(100), 18);
 
     async function buildTestEnv() {
-      let fixture: MarketFixture = await loadFixture(marketFixture);
-      await parseTestEnvMarketFixture(alice, mode, env, fixture);
+      env = await loadFixture(marketFixture);
+      await parseTestEnvMarketFixture(env, mode);
 
-      env.testToken = new Contract(tokens.WETH.address, ERC20.abi, alice);
+      env.testToken = new Contract(env.ptokens.WNATIVE.address, ERC20.abi, alice);
       env.ETH_TEST = true;
       env.market = env.marketEth;
     }
@@ -84,7 +83,7 @@ export function runTest(mode: Mode) {
       let postEthBalance = await provider.getBalance(bob.address);
       let tokenAmountReceived = tokenBal.sub(REF_AMOUNT_TOKEN);
 
-      approxBigNumber(postEthBalance.add(tokenAmountReceived), preEthBalance, consts.ONE_E_18); // difference less than 1 ETH
+      approxBigNumber(postEthBalance.add(tokenAmountReceived), preEthBalance, MiscConsts.ONE_E_18); // difference less than 1 ETH
       expect(xytBal).to.be.equal(REF_AMOUNT_XYT.mul(2));
       expect(tokenBal).to.be.equal(REF_AMOUNT_TOKEN.mul(2));
       expect(await env.market.totalSupply()).to.be.equal(totalSupplyLP.mul(2));
@@ -104,8 +103,8 @@ export function runTest(mode: Mode) {
       let tokenBal = await env.testToken.balanceOf(env.market.address);
 
       approxBigNumber(await env.xyt.balanceOf(env.market.address), xytBalBefore.sub(amountOut), 0);
-      approxBigNumber(tokenBal, REF_AMOUNT_TOKEN.add(result[1]), consts.ONE_E_18);
-      approxBigNumber(postEthBalance.add(result[1]), preEthBalance, consts.ONE_E_18); // difference less than 1 ETH
+      approxBigNumber(tokenBal, REF_AMOUNT_TOKEN.add(result[1]), MiscConsts.ONE_E_18);
+      approxBigNumber(postEthBalance.add(result[1]), preEthBalance, MiscConsts.ONE_E_18); // difference less than 1 ETH
     });
 
     it('swapExactOutXytToToken', async () => {
@@ -123,7 +122,7 @@ export function runTest(mode: Mode) {
 
       approxBigNumber(await env.xyt.balanceOf(env.market.address), xytBalBefore.add(result[1]), 200);
       approxBigNumber(tokenBal, REF_AMOUNT_TOKEN.sub(amountOut), 0);
-      approxBigNumber(postEthBalance.sub(amountOut), preEthBalance, consts.ONE_E_18); // difference less than 1 ETH
+      approxBigNumber(postEthBalance.sub(amountOut), preEthBalance, MiscConsts.ONE_E_18); // difference less than 1 ETH
     });
 
     it('swapExactInTokenToXyt', async () => {
@@ -141,7 +140,7 @@ export function runTest(mode: Mode) {
 
       approxBigNumber(await env.xyt.balanceOf(env.market.address), xytBalBefore.sub(result[1]), 200);
       approxBigNumber(tokenBal, REF_AMOUNT_TOKEN.add(amountIn), 0);
-      approxBigNumber(postEthBalance.add(amountIn), preEthBalance, consts.ONE_E_18); // difference less than 1 ETH
+      approxBigNumber(postEthBalance.add(amountIn), preEthBalance, MiscConsts.ONE_E_18); // difference less than 1 ETH
     });
 
     it('swapExactInXytToToken', async () => {
@@ -158,13 +157,13 @@ export function runTest(mode: Mode) {
       let tokenBal = await env.testToken.balanceOf(env.market.address);
 
       approxBigNumber(await env.xyt.balanceOf(env.market.address), xytBalBefore.add(amountIn), 0);
-      approxBigNumber(tokenBal, REF_AMOUNT_TOKEN.sub(result[1]), consts.ONE_E_18);
-      approxBigNumber(postEthBalance.sub(result[1]), preEthBalance, consts.ONE_E_18); // difference less than 1 ETH
+      approxBigNumber(tokenBal, REF_AMOUNT_TOKEN.sub(result[1]), MiscConsts.ONE_E_18);
+      approxBigNumber(postEthBalance.sub(result[1]), preEthBalance, MiscConsts.ONE_E_18); // difference less than 1 ETH
     });
 
     it('removeMarketLiquidityDual', async () => {
       await bootstrapMarket(env, alice, REF_AMOUNT_XYT, REF_AMOUNT_TOKEN);
-      await advanceTime(consts.ONE_MONTH);
+      await advanceTime(MiscConsts.ONE_MONTH);
       const totalSupply = await env.market.totalSupply();
 
       let preEthBalance = await provider.getBalance(alice.address);
@@ -176,7 +175,7 @@ export function runTest(mode: Mode) {
 
       approxBigNumber(xytBal, REF_AMOUNT_XYT.sub(REF_AMOUNT_XYT.div(10)), 0);
       approxBigNumber(tokenBal, REF_AMOUNT_TOKEN.sub(REF_AMOUNT_TOKEN.div(10)), 0);
-      approxBigNumber(postEthBalance.sub(REF_AMOUNT_TOKEN.div(10)), preEthBalance, consts.ONE_E_18); // difference less than 1 ETH
+      approxBigNumber(postEthBalance.sub(REF_AMOUNT_TOKEN.div(10)), preEthBalance, MiscConsts.ONE_E_18); // difference less than 1 ETH
     });
 
     it('addMarketLiquiditySingle by token', async () => {
@@ -190,7 +189,7 @@ export function runTest(mode: Mode) {
       let tokenBal = await env.testToken.balanceOf(env.market.address);
       let postEthBalance = await provider.getBalance(bob.address);
 
-      approxBigNumber(postEthBalance.add(amountIn), preEthBalance, consts.ONE_E_18); // difference less than 1 ETH
+      approxBigNumber(postEthBalance.add(amountIn), preEthBalance, MiscConsts.ONE_E_18); // difference less than 1 ETH
       expect(xytBal).to.be.equal(REF_AMOUNT_XYT);
       expect(tokenBal).to.be.equal(REF_AMOUNT_TOKEN.add(amountIn));
     });
@@ -209,7 +208,7 @@ export function runTest(mode: Mode) {
       // we simply check the user receives all the WETH the market transfers out
       let outAmount = REF_AMOUNT_TOKEN.sub(tokenBal);
       approxBigNumber(xytBal, REF_AMOUNT_XYT, 0);
-      approxBigNumber(postEthBalance.sub(outAmount), preEthBalance, consts.ONE_E_18); // difference less than 1 ETH
+      approxBigNumber(postEthBalance.sub(outAmount), preEthBalance, MiscConsts.ONE_E_18); // difference less than 1 ETH
     });
   });
 }

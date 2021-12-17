@@ -1,14 +1,7 @@
 import chai, { expect } from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
-import {
-  checkDisabled,
-  liquidityMiningFixture,
-  LiquidityMiningFixture,
-  Mode,
-  parseTestEnvLiquidityMiningFixture,
-  TestEnv,
-} from '../fixtures';
+import { checkDisabled, liquidityMiningFixture, Mode, parseTestEnvLiquidityMiningFixture, TestEnv } from '../fixtures';
 import {
   advanceTime,
   approxBigNumber,
@@ -38,7 +31,7 @@ export async function runTest(mode: Mode) {
     let env: TestEnv = {} as TestEnv;
 
     async function buildTestEnv() {
-      let fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);
+      env = await loadFixture(liquidityMiningFixture);
       await parseTestEnvLiquidityMiningFixture(alice, Mode.AAVE_V2, env, fixture);
       env.TEST_DELTA = BN.from(60000);
     }
@@ -50,8 +43,8 @@ export async function runTest(mode: Mode) {
       // await env.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
       for (let user of [bob, charlie, dave]) {
         await redeemDueInterests(env, user);
-        await emptyToken(env.yToken, user);
-        await emptyToken(env.xyt, user);
+        await emptyToken(env, env.yToken, user);
+        await emptyToken(env, env.xyt, user);
       }
 
       snapshotId = await evm_snapshot();
@@ -130,8 +123,8 @@ export async function runTest(mode: Mode) {
 
       const amountToStake = await env.market.balanceOf(bob.address);
 
-      const pdlBalanceOfContract = await env.pdl.balanceOf(env.liq.address);
-      const pdlBalanceOfUser = await env.pdl.balanceOf(bob.address);
+      const pdlBalanceOfContract = await env.pendle.balanceOf(env.liq.address);
+      const pdlBalanceOfUser = await env.pendle.balanceOf(bob.address);
       const lpBalanceOfUser = await env.market.balanceOf(bob.address);
 
       console.log(`\tPDL balance of liq contract before: ${pdlBalanceOfContract}`);
@@ -153,8 +146,8 @@ export async function runTest(mode: Mode) {
       await withdraw(env, bob, amountToStake.div(2));
       await redeemRewards(env, bob);
 
-      const pdlBalanceOfContractAfter = await env.pdl.balanceOf(env.liq.address);
-      const pdlBalanceOfUserAfter = await env.pdl.balanceOf(bob.address);
+      const pdlBalanceOfContractAfter = await env.pendle.balanceOf(env.liq.address);
+      const pdlBalanceOfUserAfter = await env.pendle.balanceOf(bob.address);
       const expectedPdlBalanceOfUserAfter = env.liqParams.REWARDS_PER_EPOCH[0].div(4);
       console.log(`\tPDL balance of liq contract after: ${pdlBalanceOfContractAfter}`);
       console.log(`\tPDL balance of user after: ${pdlBalanceOfUserAfter}`);
@@ -181,7 +174,7 @@ export async function runTest(mode: Mode) {
       await withdraw(env, bob, amountToStake.div(2));
       await redeemRewards(env, bob);
 
-      const pdlBalanceOfUserAfter2ndTnx = await env.pdl.balanceOf(bob.address);
+      const pdlBalanceOfUserAfter2ndTnx = await env.pendle.balanceOf(bob.address);
       const expectedPdlBalanceOfUsersAfter2ndTnx = expectedPdlBalanceOfUserAfter.add(
         env.liqParams.REWARDS_PER_EPOCH[0]
           .div(2)

@@ -62,3 +62,7 @@ typechain
 # local deployments
 deployments/development.json
 deployments/hardhat.json
+.vscode/
+
+.idea/
+typechain-types

@@ -1,54 +1,51 @@
+import { Erc20Token, MiscConsts } from '@pendle/constants';
 import chai, { expect } from 'chai';
-import { solidity } from 'ethereum-waffle';
+import { loadFixture, solidity } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
-import { Mode, parseTestEnvRouterFixture, routerFixture, RouterFixture, TestEnv } from '../../fixtures';
+import { Mode, parseTestEnvRouterFixture, routerFixture, TestEnv, wallets } from '../../fixtures';
 import {
-  addFakeIncomeCompoundUSDT,
-  addFakeIncomeSushi,
-  amountToWei,
   approxBigNumber,
-  consts,
+  approxByPercent,
   errMsg,
   evm_revert,
   evm_snapshot,
+  mint,
   mintAaveV2Token,
   mintCompoundToken,
+  mintQiToken,
   mintSushiswapLpFixed,
-  randomBN,
+  mintTraderJoeLpFixed,
+  mintXJoe,
   redeemDueInterests,
   setTimeNextBlock,
-  Token,
+  teConsts,
   tokenizeYield,
-  tokens,
 } from '../../helpers';
-const { waffle } = require('hardhat');
-chai.use(solidity);
+import { amountToWei } from '../../../pendle-deployment-scripts';
 
-const { loadFixture, provider } = waffle;
+chai.use(solidity);
 
 export function runTest(mode: Mode) {
   describe('', async () => {
-    const wallets = provider.getWallets();
     const [alice, bob, charlie, dave] = wallets;
-    const forgeFee = randomBN(consts.RONE.div(10));
+    const forgeFee = MiscConsts.RONE.div(20);
 
-    let fixture: RouterFixture;
     let snapshotId: string;
     let globalSnapshotId: string;
-    let underlyingAsset: Token;
+    let underlyingAsset: Erc20Token;
     let REF_AMOUNT: BN;
     let env: TestEnv = {} as TestEnv;
 
     async function buildTestEnv() {
-      fixture = await loadFixture(routerFixture);
-      await parseTestEnvRouterFixture(alice, mode, env, fixture);
+      env = await loadFixture(routerFixture);
+      await parseTestEnvRouterFixture(env, mode);
       env.TEST_DELTA = BN.from(10000);
     }
 
     before(async () => {
       await buildTestEnv();
       globalSnapshotId = await evm_snapshot();
-      await env.data.setForgeFee(forgeFee, consts.HG);
+      await env.data.setForgeFee(forgeFee, teConsts.HG);
       snapshotId = await evm_snapshot();
     });
 
@@ -60,17 +57,33 @@ export function runTest(mode: Mode) {
       await evm_revert(snapshotId);
       snapshotId = await evm_snapshot();
       if (mode == Mode.AAVE_V2) {
-        underlyingAsset = tokens.USDT;
+        underlyingAsset = env.ptokens.USDT!;
         REF_AMOUNT = amountToWei(env.INITIAL_YIELD_TOKEN_AMOUNT, 6);
-        await mintAaveV2Token(underlyingAsset, alice, REF_AMOUNT.mul(10).div(10 ** underlyingAsset.decimal));
+        await mintAaveV2Token(env, underlyingAsset, alice, REF_AMOUNT.mul(10).div(10 ** underlyingAsset.decimal));
       } else if (mode == Mode.SUSHISWAP_COMPLEX || mode == Mode.SUSHISWAP_SIMPLE) {
-        await mintSushiswapLpFixed(alice);
+        await mintSushiswapLpFixed(env, alice);
         REF_AMOUNT = BN.from(10000000);
-        underlyingAsset = tokens.SUSHI_USDT_WETH_LP;
+        underlyingAsset = { address: env.ptokens.SUSHI_USDT_WETH_LP!.address, decimal: 12 };
       } else if (mode == Mode.COMPOUND_V2) {
         underlyingAsset = env.underlyingAsset;
         REF_AMOUNT = BN.from(10000000);
-        await mintCompoundToken(underlyingAsset, alice, REF_AMOUNT.mul(10).div(10 ** underlyingAsset.decimal));
+        await mintCompoundToken(env, underlyingAsset, alice, REF_AMOUNT.mul(10).div(10 ** underlyingAsset.decimal));
+      } else if (mode == Mode.BENQI) {
+        underlyingAsset = env.underlyingAsset;
+        REF_AMOUNT = BN.from(1000000000);
+        await mintQiToken(env, underlyingAsset, alice, env.INITIAL_YIELD_TOKEN_AMOUNT);
+      } else if (mode == Mode.TRADER_JOE) {
+        await mintTraderJoeLpFixed(env, alice);
+        REF_AMOUNT = BN.from(100000000);
+        underlyingAsset = { address: env.ptokens.JOE_WAVAX_DAI_LP!.address, decimal: 18 };
+      } else if (mode == Mode.XJOE) {
+        await mintXJoe(env, env.xJoe, alice, env.INITIAL_YIELD_TOKEN_AMOUNT);
+        REF_AMOUNT = BN.from(100000000);
+        underlyingAsset = env.underlyingAsset;
+      } else if (mode == Mode.WONDERLAND) {
+        await mint(env, env.ptokens.wMEMO!, alice, BN.from(0));
+        REF_AMOUNT = BN.from(100000000000000);
+        underlyingAsset = env.underlyingAsset;
       }
     });
 
@@ -78,60 +91,84 @@ export function runTest(mode: Mode) {
     // Charlie has equivalent amount of aUSDT
     // When bob redeem due interests, Bob should get the interest gotten by Charlie - fee portion
     it('User should get back interest minus forge fees', async () => {
-      await env.yToken.transfer(charlie.address, REF_AMOUNT, consts.HG);
+      await env.yToken.transfer(charlie.address, REF_AMOUNT, teConsts.HG);
       await tokenizeYield(env, alice, REF_AMOUNT, bob.address);
       let charlieInterest: BN = BN.from(0);
-      if (mode == Mode.SUSHISWAP_COMPLEX || mode == Mode.SUSHISWAP_SIMPLE) {
+
+      if (
+        mode == Mode.BENQI ||
+        mode == Mode.SUSHISWAP_COMPLEX ||
+        mode == Mode.SUSHISWAP_SIMPLE ||
+        mode == Mode.COMPOUND_V2 ||
+        mode == Mode.TRADER_JOE ||
+        mode == Mode.XJOE ||
+        mode == Mode.WONDERLAND
+      ) {
         const lastExchangeRate: BN = await env.forge.callStatic.getExchangeRate(underlyingAsset.address);
-        await addFakeIncomeSushi(env, alice);
+        await env.addGenericForgeFakeIncome(env);
         const nowExchangeRate: BN = await env.forge.callStatic.getExchangeRate(underlyingAsset.address);
-        charlieInterest = REF_AMOUNT.mul(nowExchangeRate).div(lastExchangeRate).sub(REF_AMOUNT);
-        await redeemDueInterests(env, bob);
-      } else if (mode == Mode.COMPOUND_V2) {
-        const lastExchangeRate: BN = await env.forge.callStatic.getExchangeRate(underlyingAsset.address);
-        await addFakeIncomeCompoundUSDT(env, alice);
-        const nowExchangeRate: BN = await env.forge.callStatic.getExchangeRate(underlyingAsset.address);
-        charlieInterest = REF_AMOUNT.mul(nowExchangeRate).div(lastExchangeRate).sub(REF_AMOUNT);
+        charlieInterest = REF_AMOUNT.sub(REF_AMOUNT.mul(lastExchangeRate).div(nowExchangeRate));
         await redeemDueInterests(env, bob);
       } else {
-        await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
+        await setTimeNextBlock(env.T0.add(MiscConsts.ONE_MONTH));
         await redeemDueInterests(env, bob);
         charlieInterest = (await env.yToken.balanceOf(charlie.address)).sub(REF_AMOUNT);
       }
-
       const bobInterest = await env.yToken.balanceOf(bob.address);
-      approxBigNumber(charlieInterest.mul(consts.RONE.sub(forgeFee)).div(consts.RONE), bobInterest, BN.from(200));
+
+      if (mode == Mode.WONDERLAND) {
+        approxByPercent(charlieInterest.mul(MiscConsts.RONE.sub(forgeFee)).div(MiscConsts.RONE), bobInterest, 1000);
+      } else {
+        approxBigNumber(
+          charlieInterest.mul(MiscConsts.RONE.sub(forgeFee)).div(MiscConsts.RONE),
+          bobInterest,
+          BN.from(200)
+        );
+      }
+
       const totalFee = await env.forge.totalFee(underlyingAsset.address, env.EXPIRY);
-      approxBigNumber(charlieInterest.sub(bobInterest), totalFee, BN.from(200));
+      if (mode == Mode.WONDERLAND) {
+        approxByPercent(charlieInterest.sub(bobInterest), totalFee, 1000);
+      } else {
+        approxBigNumber(charlieInterest.sub(bobInterest), totalFee, BN.from(200));
+      }
     });
 
     it('Governance address should be able to withdraw forge fees', async () => {
       await tokenizeYield(env, alice, REF_AMOUNT, bob.address);
+      await setTimeNextBlock(env.T0.add(MiscConsts.ONE_MONTH));
 
-      if (mode == Mode.SUSHISWAP_COMPLEX || mode == Mode.SUSHISWAP_SIMPLE) {
-        await addFakeIncomeSushi(env, alice);
-      } else if (mode == Mode.AAVE_V2) {
-        await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
-      } else if (mode == Mode.COMPOUND_V2) {
-        await addFakeIncomeCompoundUSDT(env, alice);
+      if (
+        mode == Mode.BENQI ||
+        mode == Mode.SUSHISWAP_COMPLEX ||
+        mode == Mode.SUSHISWAP_SIMPLE ||
+        mode == Mode.COMPOUND_V2 ||
+        mode == Mode.TRADER_JOE ||
+        mode == Mode.XJOE ||
+        mode == Mode.WONDERLAND
+      ) {
+        await env.addGenericForgeFakeIncome(env);
       }
 
       await redeemDueInterests(env, bob);
 
-      const totalFee = await env.forge.totalFee(underlyingAsset.address, env.EXPIRY);
-      await env.forge.withdrawForgeFee(underlyingAsset.address, env.EXPIRY, consts.HG);
       const treasuryAddress = await env.data.treasury();
-      const treasuryBalance = await env.yToken.balanceOf(treasuryAddress);
-      approxBigNumber(totalFee, treasuryBalance, BN.from(100));
+      const preTreasuryBalance = await env.yToken.balanceOf(treasuryAddress);
+
+      const totalFee = await env.forge.totalFee(underlyingAsset.address, env.EXPIRY);
+      await env.forge.withdrawForgeFee(underlyingAsset.address, env.EXPIRY, teConsts.HG);
+
+      const postTreasuryBalance = await env.yToken.balanceOf(treasuryAddress);
+
+      approxBigNumber(totalFee, postTreasuryBalance.sub(preTreasuryBalance), 100);
       const forgeFeeLeft = await env.forge.totalFee(underlyingAsset.address, env.EXPIRY);
-      approxBigNumber(forgeFeeLeft, BN.from(0), BN.from(100));
+      approxBigNumber(forgeFeeLeft, BN.from(0), 100);
     });
+
     it('Non-governance address should not be able to withdraw forge fees', async () => {
       await tokenizeYield(env, alice, REF_AMOUNT, bob.address);
-
-      await setTimeNextBlock(env.T0.add(consts.ONE_MONTH));
+      await setTimeNextBlock(env.T0.add(MiscConsts.ONE_MONTH));
       await redeemDueInterests(env, bob);
-
       await expect(env.forge.connect(bob).withdrawForgeFee(underlyingAsset.address, env.EXPIRY)).to.be.revertedWith(
         errMsg.ONLY_GOVERNANCE
       );

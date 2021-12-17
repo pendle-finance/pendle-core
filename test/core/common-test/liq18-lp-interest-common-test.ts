@@ -1,49 +1,40 @@
+import { MiscConsts } from '@pendle/constants';
+import { loadFixture } from 'ethereum-waffle';
 import { BigNumber as BN } from 'ethers';
-import {
-  liquidityMiningFixture,
-  LiquidityMiningFixture,
-  Mode,
-  parseTestEnvLiquidityMiningFixture,
-  TestEnv,
-} from '../../fixtures';
+import { liquidityMiningFixture, Mode, parseTestEnvLiquidityMiningFixture, TestEnv, wallets } from '../../fixtures';
 import {
   approxBigNumber,
-  consts,
   emptyToken,
   evm_revert,
   evm_snapshot,
-  getA2Contract,
+  getA2Token,
   randomBN,
   randomNumber,
   redeemDueInterests,
+  redeemLiqInterest,
   redeemLpInterests,
   setTimeNextBlock,
   stake,
-  tokens,
   withdraw,
 } from '../../helpers';
-const { waffle } = require('hardhat');
-
-const { loadFixture, provider } = waffle;
 
 export function runTest(mode: Mode) {
   describe('', async () => {
-    const wallets = provider.getWallets();
     const [alice, bob, charlie, dave, eve] = wallets;
     let snapshotId: string;
     let globalSnapshotId: string;
     let env: TestEnv = {} as TestEnv;
 
     async function buildTestEnv() {
-      let fixture: LiquidityMiningFixture = await loadFixture(liquidityMiningFixture);
-      await parseTestEnvLiquidityMiningFixture(alice, mode, env, fixture);
+      env = await loadFixture(liquidityMiningFixture);
+      await parseTestEnvLiquidityMiningFixture(env, mode);
       env.ot = env.ot18;
       env.xyt = env.xyt18;
       env.market = env.market18;
       env.liq = env.liq18;
-      env.underlyingAsset = tokens.UNI;
-      env.yToken = await getA2Contract(alice, env.forge, tokens.UNI);
-      env.TEST_DELTA = consts.ONE_E_12;
+      env.underlyingAsset = env.ptokens.DAI!;
+      env.yToken = await getA2Token(env, env.ptokens.DAI!);
+      env.TEST_DELTA = MiscConsts.ONE_E_12;
     }
 
     before(async () => {
@@ -53,8 +44,8 @@ export function runTest(mode: Mode) {
       await env.data.setInterestUpdateRateDeltaForMarket(BN.from(0));
       for (let user of [bob, charlie, dave]) {
         await redeemDueInterests(env, user);
-        await emptyToken(env.yToken, user);
-        await emptyToken(env.xyt, user);
+        await emptyToken(env, env.yToken, user);
+        await emptyToken(env, env.xyt, user);
       }
 
       snapshotId = await evm_snapshot();
@@ -72,7 +63,7 @@ export function runTest(mode: Mode) {
     it('test 1', async () => {
       await env.xyt.transfer(eve.address, (await env.xyt.balanceOf(env.market.address)).div(10));
 
-      let totalTime = consts.SIX_MONTH;
+      let totalTime = env.pconsts.misc.SIX_MONTH;
       let numTurnsBeforeExpiry = 40;
       let numTurnsAfterExpiry = 10;
       let numTurns = numTurnsBeforeExpiry + numTurnsAfterExpiry;
@@ -99,15 +90,15 @@ export function runTest(mode: Mode) {
           liqBalance[userID] = liqBalance[userID].sub(amount);
           lpBalance[userID] = lpBalance[userID].add(amount);
         } else if (actionType == 2) {
-          await env.liq.redeemLpInterests(env.EXPIRY, wallets[userID].address, consts.HG);
+          await redeemLiqInterest(env, wallets[userID]);
         }
-        // if (mode == Mode.COMPOUND) await addFakeIncomeCompoundUSDT(env, eve);
+        // if (mode == Mode.COMPOUND) await addFakeIncomeCompoundUSDT(env);
       }
 
       await redeemDueInterests(env, eve);
       let expectedGain: BN = await env.yToken.balanceOf(eve.address);
       for (let i = 1; i < 4; i++) {
-        await env.liq.redeemLpInterests(env.EXPIRY, wallets[i].address, consts.HG);
+        await redeemLiqInterest(env, wallets[i]);
         await redeemLpInterests(env, wallets[i]);
       }
       for (let i = 1; i < 4; i++) {

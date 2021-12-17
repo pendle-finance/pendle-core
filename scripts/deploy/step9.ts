@@ -1,4 +1,4 @@
-import { Deployment, validAddress, deploy, deployWithName, sendAndWaitForTransaction } from '../helpers/deployHelpers';
+import { deploy, Deployment, deployWithName, sendAndWaitForTransaction, validAddress } from '../helpers/deployHelpers';
 
 export async function step9(deployer: any, hre: any, deployment: Deployment, consts: any) {
   const governanceManagerMain = deployment.contracts.PendleGovernanceManagerMain.address;
@@ -13,7 +13,7 @@ export async function step9(deployer: any, hre: any, deployment: Deployment, con
 
   console.log(`\t AAVE_V2_LENDING_POOL_ADDRESS used = ${consts.misc.AAVE_V2_LENDING_POOL_ADDRESS}`);
   console.log(`\t STKAAVE_ADDRESS used = ${consts.misc.STKAAVE_ADDRESS}`);
-  console.log(`\t AAVE_INCENTIVES_CONTROLLER used = ${consts.misc.AAVE_INCENTIVES_CONTROLLER}`);
+  console.log(`\t INCENTIVES_CONTROLLER used = ${consts.misc.INCENTIVES_CONTROLLER}`);
 
   const a2RewardManager = await deployWithName(hre, deployment, 'PendleRewardManager', 'PendleRewardManagerAaveV2', [
     governanceManagerMain,
@@ -33,7 +33,7 @@ export async function step9(deployer: any, hre: any, deployment: Deployment, con
     consts.misc.STKAAVE_ADDRESS,
     a2RewardManager.address,
     a2YieldContractDeployer.address,
-    consts.misc.AAVE_INCENTIVES_CONTROLLER,
+    consts.misc.INCENTIVES_CONTROLLER,
   ]);
 
   await sendAndWaitForTransaction(hre, a2RewardManager.initialize, 'initialize a2RewardManager', [

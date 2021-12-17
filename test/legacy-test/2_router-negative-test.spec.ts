@@ -3,7 +3,6 @@ import { BigNumber as BN, utils } from 'ethers';
 import { checkDisabled, MarketFixture, marketFixture, Mode, parseTestEnvMarketFixture, TestEnv } from '../fixtures';
 import {
   advanceTime,
-  amountToWei,
   consts,
   createAaveMarketWithExpiry,
   errMsg,
@@ -13,6 +12,7 @@ import {
   Token,
   tokens,
 } from '../helpers';
+import { amountToWei } from '../../pendle-deployment-scripts';
 const { waffle } = require('hardhat');
 
 const { loadFixture, provider } = waffle;

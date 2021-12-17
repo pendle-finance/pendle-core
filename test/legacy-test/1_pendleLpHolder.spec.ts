@@ -1,7 +1,5 @@
 import { expect } from 'chai';
 import { BigNumber as BN, Contract } from 'ethers';
-import pendleLpHolder from '../../build/artifacts/contracts/core/PendleLpHolder.sol/PendleLpHolder.json';
-import mockPendleLpHolder from '../../build/artifacts/contracts/mock/MockPendleLpHolder.sol/MockPendleLpHolder.json';
 import { checkDisabled, liquidityMiningFixture, LiquidityMiningFixture, Mode } from '../fixtures';
 import { consts, errMsg, evm_revert, evm_snapshot, getCContract, tokens } from '../helpers';
 
@@ -26,13 +24,13 @@ export async function runTest(mode: Mode) {
       router = fixture.core.router;
       router = fixture.core.router;
       cUSDT = await getCContract(alice, tokens.USDT);
-      lpHolder = await deployContract(alice, pendleLpHolder, [
+      lpHolder = await deployContract('pendleLpHolder', [
         fixture.core.govManager.address,
         market.address,
         router.address,
         cUSDT.address,
       ]);
-      mockLpHolder = await deployContract(alice, mockPendleLpHolder, [
+      mockLpHolder = await deployContract('mockPendleLpHolder', [
         fixture.core.govManager.address,
         market.address,
         router.address,
@@ -52,7 +50,7 @@ export async function runTest(mode: Mode) {
 
     it('Cannot be initialized with zero address as argument(s)', async () => {
       await expect(
-        deployContract(alice, pendleLpHolder, [consts.ZERO_ADDRESS, market.address, router.address, cUSDT.address])
+        deployContract('pendleLpHolder', [consts.ZERO_ADDRESS, market.address, router.address, cUSDT.address])
       ).to.be.revertedWith(errMsg.ZERO_ADDRESS);
     });
 
