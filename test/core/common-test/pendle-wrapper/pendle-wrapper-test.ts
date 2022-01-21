@@ -201,6 +201,49 @@ export async function runTest(mode: Mode) {
       env.underlyingAsset = env.ptokens.DAI!;
       initialUnderlyingBalance = preInitialUnderlyingBalance;
     });
+
+    it('[ONLY BENQI]insTokenize should work correctly even if WAVAX->AVAX swap is required', async () => {
+      if (mode != Mode.BENQI) return;
+      const preInitialUnderlyingBalance = initialUnderlyingBalance;
+
+      env.ot = env.benQiOtAvax;
+      env.xyt = env.benQiYtAvax;
+      env.yToken = await getContract('ERC20', env.ptokens.NATIVE.benqi!);
+      env.underlyingAsset = env.ptokens.NATIVE;
+      initialUnderlyingBalance = amountToWei(1, env.ptokens.NATIVE.decimal);
+
+      // ----------------------------------------------------------------
+      await mint(env, env.ptokens.WNATIVE, bob, BN.from(1));
+      await manageApproval(env);
+      const tokensInvolved: (Contract | Erc20Token)[] = [env.ot, env.xyt, env.yToken];
+
+      tokensInvolved.push(env.underlyingAsset);
+
+      // swap from WAVAX to AVAX
+      let swapData: DataSwap[] = [
+        {
+          amountInMax: initialUnderlyingBalance,
+          amountOut: initialUnderlyingBalance,
+          path: [env.ptokens.WNATIVE!.address, env.ptokens.NATIVE.address],
+        },
+      ];
+      await approve(bob, [env.ptokens.WNATIVE], [env.pendleWrapper]);
+      let dataTknz: DataTknz = getDataTknzSingle(env, initialUnderlyingBalance);
+      await env.pendleWrapper
+        .connect(bob)
+        .insTokenize(ModeToModeMapping[mode], getPullData(swapData), dataTknz, teConsts.HG);
+
+      await expectNonZeroBalUser(env, bob, [env.ot, env.xyt]);
+      await expectZeroBalWrapper(env, tokensInvolved);
+
+      // ----------------------------------------------------------------
+      env.ot = env.benQiOtDAI;
+      env.xyt = env.benQiYtDAI;
+      env.yToken = await getContract('ERC20', env.ptokens.DAI!.benqi!);
+      env.underlyingAsset = env.ptokens.DAI!;
+      initialUnderlyingBalance = preInitialUnderlyingBalance;
+    });
+
     //
     it('[ONLY BENQI]insTokenize should work correctly even if SWAP FROM AVAX is required', async () => {
       if (mode != Mode.BENQI) return;
@@ -342,6 +385,7 @@ export async function runTest(mode: Mode) {
           getPullData([], dataTknz, undefined, dataAddLiqYt),
           dataTknz,
           dataAddLiqYt,
+          0,
           teConsts.HG
         );
 
@@ -390,6 +434,8 @@ export async function runTest(mode: Mode) {
           getPullData([], dataTknz, dataAddLiqOt),
           dataTknz,
           dataAddLiqOt,
+          0,
+          MiscConsts.ZERO_ADDRESS,
           teConsts.HG
         );
 
@@ -455,6 +501,7 @@ export async function runTest(mode: Mode) {
           dataTknz,
           dataAddLiqOt,
           dataAddLiqYt,
+          0,
           teConsts.HG
         );
 
@@ -587,6 +634,7 @@ export async function runTest(mode: Mode) {
           dataTknz,
           dataAddLiqOt,
           dataAddLiqYt,
+          0,
           teConsts.HG
         );
 

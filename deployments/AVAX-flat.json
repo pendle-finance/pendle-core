@@ -62,7 +62,11 @@
     "PENDLE_REDEEM_PROXY_MULTI": "0xeE206Ce750C86A438fAbCb9bBA2F1D69cebcE7B0",
     "PENDLE_WONDERLAND_YIELD_CONTRACT_DEPLOYER": "0xda575390e382CC9E76b6A523Ff04B8e9D67877A9",
     "PENDLE_ONE_PAUSE": "0xe4E6a91c524De1CA29475CE916dE63C373F8c630",
-    "PENDLE_WRAPPER": "0xA2BD794AA28a46f180fad87Ece6B56e910434946",
+    "PENDLE_ZAP_ESTIMATOR_PAP": "0x104BeBF28129C1261e6cC70f46B2A454f75c7660",
+    "PENDLE_ZAP_ESTIMATOR_SINGLE": "0xc9D2019377b8e07B187C0f28F6d0128a496915CB",
+    "PENDLE_PROXY_ADMIN": "0xdf54876BB6E74c46897f40c8B13989b046cd02B5",
+    "PENDLE_WRAPPER": "0x40484FC214885E071980E1Df660b2Da8dF734b45",
+    "PENDLE_WRAPPER_IMPLEMENTATION": "0x7d35aC8c808D47004616745320101E652D0aa9A9",
     "TOKEN_USDC": "0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664",
     "TOKEN_QIUSDC": "0xBEb5d47A3f720Ec0a390d04b4d41ED7d9688bC7F",
     "TOKEN_WAVAX": "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
@@ -75,5 +79,83 @@
     "TOKEN_PENDLE": "0xfB98B335551a418cD0737375a2ea0ded62Ea213b",
     "TOKEN_MIM": "0x130966628846BFd36ff31a822705796e8cb8C18D",
     "TOKEN_QI": "0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5",
-    "TOKEN_TIME": "0xb54f16fb19478766a268f172c9480f8da1a7c9c3"
+    "TOKEN_TIME": "0xb54f16fb19478766a268f172c9480f8da1a7c9c3",
+    "DETAILED_TOKEN_USDC": {
+        "address": "0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664",
+        "symbol": "USDC.e",
+        "decimal": 6,
+        "name": "USD Coin"
+    },
+    "DETAILED_TOKEN_QIUSDC": {
+        "address": "0xBEb5d47A3f720Ec0a390d04b4d41ED7d9688bC7F",
+        "symbol": "qiUSDC",
+        "decimal": 8,
+        "name": "Benqi USDC"
+    },
+    "DETAILED_TOKEN_WAVAX": {
+        "address": "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+        "symbol": "WAVAX",
+        "decimal": 18,
+        "name": "Wrapped AVAX"
+    },
+    "DETAILED_TOKEN_QIAVAX": {
+        "address": "0x5C0401e81Bc07Ca70fAD469b451682c0d747Ef1c",
+        "symbol": "qiAVAX",
+        "decimal": 8,
+        "name": "Benqi AVAX"
+    },
+    "DETAILED_TOKEN_JLP_WAVAX_PENDLE": {
+        "address": "0x3acD2FF1c3450bc8a9765AfD8d0DeA8E40822c86",
+        "symbol": "JLP",
+        "decimal": 18,
+        "name": "Joe LP Token"
+    },
+    "DETAILED_TOKEN_JOE": {
+        "address": "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd",
+        "symbol": "JOE",
+        "decimal": 18,
+        "name": "JoeToken"
+    },
+    "DETAILED_TOKEN_XJOE": {
+        "address": "0x57319d41F71E81F3c65F2a47CA4e001EbAFd4F33",
+        "symbol": "xJOE",
+        "decimal": 18,
+        "name": "JoeBar"
+    },
+    "DETAILED_TOKEN_MEMO": {
+        "address": "0x136Acd46C134E8269052c62A67042D6bDeDde3C9",
+        "symbol": "MEMO",
+        "decimal": 9,
+        "name": "MEMOries"
+    },
+    "DETAILED_TOKEN_WMEMO": {
+        "address": "0x0da67235dD5787D67955420C84ca1cEcd4E5Bb3b",
+        "symbol": "wMEMO",
+        "decimal": 18,
+        "name": "Wrapped MEMO"
+    },
+    "DETAILED_TOKEN_PENDLE": {
+        "address": "0xfB98B335551a418cD0737375a2ea0ded62Ea213b",
+        "symbol": "PENDLE",
+        "decimal": 18,
+        "name": "Pendle"
+    },
+    "DETAILED_TOKEN_MIM": {
+        "address": "0x130966628846BFd36ff31a822705796e8cb8C18D",
+        "symbol": "MIM",
+        "decimal": 18,
+        "name": "Magic Internet Money"
+    },
+    "DETAILED_TOKEN_QI": {
+        "address": "0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5",
+        "symbol": "QI",
+        "decimal": 18,
+        "name": "BENQI"
+    },
+    "DETAILED_TOKEN_TIME": {
+        "address": "0xb54f16fb19478766a268f172c9480f8da1a7c9c3",
+        "symbol": "TIME",
+        "decimal": 9,
+        "name": "Time"
+    }
 }

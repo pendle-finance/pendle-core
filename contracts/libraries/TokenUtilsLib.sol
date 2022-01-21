@@ -33,7 +33,7 @@ library TokenUtils {
     }
 
     function infinityApprove(IERC20 token, address spender) internal {
-        if (token.allowance(address(this), spender) <= type(uint256).max) {
+        if (token.allowance(address(this), spender) <= type(uint256).max / 2) {
             safeApprove(token, spender, type(uint256).max);
         }
     }

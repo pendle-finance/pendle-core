@@ -170,11 +170,6 @@
             "tx": "0x9f6c72aa2fafec7400c27bb9c96557a5d64d3b26bb1dd3b5e241f487aaa7bc4f",
             "abiType": "PendleOnePause"
         },
-        "PendleWrapper": {
-            "address": "0xA2BD794AA28a46f180fad87Ece6B56e910434946",
-            "tx": "0x829a474e5889d55957692172c266a3930a90a165891c9f25e81be0c313df0be8",
-            "abiType": "PendleWrapper"
-        },
         "LiqYT0x11B934": {
             "address": "0x9Ada5CE16Cdbd76aFDd28B891Cd0A1A9f659DAD6",
             "tx": "0xd2ef3bd60fbf61cac07c0f279349bab2ea978e4a980e0f893ec6ffc6d2cb9f7b",
@@ -184,6 +179,31 @@
             "address": "0x2aA0Bec34dEEB6987c118Ce353D14Eea6deF24Ce",
             "tx": "0xfeb81844c60585f4529e0499ff697a365a4004aeb98187ca8700c880f052b3d3",
             "abiType": "PendleLiquidityMiningBaseV2Multi"
+        },
+        "PendleZapEstimatorPAP": {
+            "address": "0x104BeBF28129C1261e6cC70f46B2A454f75c7660",
+            "tx": "0x4feb0bd403bb07e66ca39f162889ee1815f6feff188005508160e9de3324b677",
+            "abiType": "PendleZapEstimatorPAP"
+        },
+        "PendleZapEstimatorSingle": {
+            "address": "0xc9D2019377b8e07B187C0f28F6d0128a496915CB",
+            "tx": "0xc71289171ecf950d53c47cc993c4ca920229e0f1616ba2b563f035dcdf5013ae",
+            "abiType": "PendleZapEstimatorSingle"
+        },
+        "PendleProxyAdmin": {
+            "address": "0xdf54876BB6E74c46897f40c8B13989b046cd02B5",
+            "tx": "0xae1971a465debbf717838754c591c3aa4afbaa39191b8dc1a130eec9ffe68922",
+            "abiType": "ProxyAdmin"
+        },
+        "PendleWrapper": {
+            "address": "0x40484FC214885E071980E1Df660b2Da8dF734b45",
+            "tx": "0x22e45b4ad9da6d9dfd065a84392c6322602d6b78c79fedcc8a858931829a450e",
+            "abiType": "TransparentUpgradeableProxy"
+        },
+        "PendleWrapperImplementation": {
+            "address": "0x7d35aC8c808D47004616745320101E652D0aa9A9",
+            "tx": "0x58bf6db71212e5c7c3d5489ea7936cd4dabf2849021de3c1f6b33f6d85975709",
+            "abiType": "PendleWrapper"
         }
     },
     "forgeMap": {

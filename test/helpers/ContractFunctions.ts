@@ -1,6 +1,14 @@
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { assert } from 'chai';
-import { BigNumber as BN, Contract, utils, Wallet } from 'ethers';
+import { BigNumber as BN, BigNumberish, Contract, utils, Wallet } from 'ethers';
 import { teConsts, wrapEth } from '.';
+import { getContract } from '../../pendle-deployment-scripts';
+import {
+  IERC20,
+  IPendleLiquidityMining,
+  IPendleLiquidityMiningMulti,
+  IPendleLiquidityMiningV2Multi,
+} from '../../typechain-types';
 import { Mode, TestEnv } from '../fixtures';
 
 export async function tokenizeYield(env: TestEnv, user: Wallet, amount: BN, to?: string): Promise<BN> {
@@ -306,4 +314,24 @@ export async function xytBalance(env: TestEnv, user: Wallet): Promise<BN> {
 
 export async function yTokenBalance(env: TestEnv, user: Wallet): Promise<BN> {
   return env.yToken.balanceOf(user.address);
+}
+
+export async function getLiqOtBalance(liqAddr: string, of: Wallet | Contract | SignerWithAddress): Promise<BN> {
+  const liqContract = (await getContract('IPendleLiquidityMiningV2Multi', liqAddr)) as IPendleLiquidityMiningV2Multi;
+  const data = await liqContract.balances(of.address);
+  return data;
+}
+
+export async function getLiqYtBalance(
+  liqAddr: string,
+  expiry: BigNumberish,
+  of: Wallet | Contract | SignerWithAddress
+) {
+  const liqContract = (await getContract('IPendleLiquidityMiningMulti', liqAddr)) as IPendleLiquidityMiningMulti;
+  const data = await liqContract.getBalances(expiry, of.address);
+  return data;
+}
+
+export async function getERC20Balance(erc20: string, ofAddr: string): Promise<BN> {
+  return await ((await getContract('IERC20', erc20)) as IERC20).balanceOf(ofAddr);
 }

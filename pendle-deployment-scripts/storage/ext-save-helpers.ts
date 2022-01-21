@@ -10,7 +10,7 @@ import {
   SingleForge,
   SingleYieldContract,
 } from '.';
-import { DeployedContractData, hexToString, isLocalEnv, Network, PendleEnv } from '..';
+import { DeployedContractData, FlatEnv, hexToString, isLocalEnv, Network, PendleEnv } from '..';
 
 export function getPathDeployment(env: PendleEnv) {
   return path.resolve(__dirname, `../../deployments/${Network[env.network]}.json`);
@@ -21,7 +21,6 @@ export function getPathDeploymentFlat(env: PendleEnv) {
 }
 
 export async function saveContract(env: PendleEnv, name: string, deployed: DeployedContractData) {
-  if (name in env.contractMap) throw new Error("contract already exists, can't overwrite");
   env.contractMap[name] = deployed;
   await writeToDeploymentFile(env);
 }
@@ -37,14 +36,14 @@ export async function writeToDeploymentFile(env: PendleEnv) {
   fs.writeFileSync(getPathDeploymentFlat(env), JSON.stringify(flattendData), 'utf8');
 }
 
-function JSONReplacerBigNum(key: string, value: any): string {
+export function JSONReplacerBigNum(key: string, value: any): string {
   if (typeof value == 'object' && 'type' in value && value['type'] === 'BigNumber') {
     return BN.from(value['hex']).toString();
   }
   return value;
 }
 
-function JSONReviverBigNum(key: string, value: any): BN {
+export function JSONReviverBigNum(key: string, value: any): BN {
   if (typeof value == 'string' && /^\d+$/.test(value)) {
     return BN.from(value);
   }
@@ -144,5 +143,14 @@ export function readSavedData(env: PendleEnv) {
     env.contractMap = {};
     env.forgeMap = {};
     console.log(`\tNo existing deployment file`);
+  }
+}
+
+export function readFlattenedEnv(env: PendleEnv) {
+  if (fs.existsSync(getPathDeploymentFlat(env))) {
+    env.flat = JSON.parse(fs.readFileSync(getPathDeploymentFlat(env), 'utf8')) as FlatEnv;
+  } else {
+    env.flat = {} as FlatEnv;
+    console.log(`\tNo existing deployment flat file`);
   }
 }

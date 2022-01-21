@@ -20,14 +20,55 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
+
 pragma solidity 0.7.6;
+pragma abicoder v2;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface ITimeStaking {
-    function stake(uint256 _amount, address _recipient) external returns (bool);
+interface IPendleZapEstimator {
+    enum ZapMode {
+        ONLY_OT,
+        ONLY_YT,
+        BOTH
+    }
 
-    function claim(address _recipient) external;
+    enum ForgeMode {
+        SINGLE_UNDERLYING,
+        DOUBLE_UNDERLYING
+    }
 
-    function rebase() external;
+    struct ForgeData {
+        ForgeMode mode;
+        bytes32 forgeId;
+        address underlyingAsset;
+        uint256 expiry;
+    }
 
-    function warmupPeriod() external returns (uint256);
+    struct MintingData {
+        ForgeData forge;
+        address[] underlyingPath;
+        address[] underlyingPath2; // LP token case
+        address[] baseTokenPath;
+        uint256 inAmount;
+    }
+
+    struct SwapData {
+        uint256 amountIn;
+        uint256 exactOut;
+    }
+
+    struct AnyTokenZapData {
+        ZapMode mode;
+        MintingData mintingData;
+        uint256 slippage;
+    }
+
+    function estimateAnyTokenZap(AnyTokenZapData memory data)
+        external
+        view
+        returns (
+            SwapData memory,
+            SwapData memory,
+            SwapData memory
+        );
 }

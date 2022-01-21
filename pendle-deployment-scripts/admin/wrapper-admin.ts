@@ -12,5 +12,7 @@ export async function doInfinityApproveWrapper(
 }
 
 export async function addToWhitelist(env: PendleEnv, contracts: string[]) {
-  await sendAndWaitForTransaction(env.pendleWhitelist.addToWhitelist, 'add contract whitelist', [contracts]);
+  await sendAndWaitForTransaction(env.pendleWhitelist.connect(env.deployer).addToWhitelist, 'add contract whitelist', [
+    contracts,
+  ]);
 }

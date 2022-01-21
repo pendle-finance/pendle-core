@@ -82,3 +82,8 @@ export async function impersonateGov(env: PendleEnv) {
   env.deployer = await ethers.getSigner(env.consts.common.GOVERNANCE_MULTISIG);
   await getEth(env.deployer.address);
 }
+
+export async function impersonateSomeone(env: PendleEnv, user: string) {
+  await impersonateAccount(user);
+  env.deployer = await ethers.getSigner(user);
+}

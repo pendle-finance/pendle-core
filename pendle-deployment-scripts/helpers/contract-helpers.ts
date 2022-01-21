@@ -1,6 +1,6 @@
 import { Erc20Token, LpToken } from '@pendle/constants';
 import { Contract } from 'ethers';
-import { DeployOrFetch, getInfoYO, isOToffchain, PendleEnv, saveContract } from '..';
+import { DeployOrFetch, isOToffchain, PendleEnv, saveContract } from '..';
 
 const hre = require('hardhat');
 
@@ -23,7 +23,8 @@ export async function deployOrFetchContract(
     if (!(contractName in env.contractMap)) throw new Error('Action is FETCH but the contract does not exist');
     return getContract(contractAbiType, env.contractMap[contractName].address);
   }
-  if (contractName in env.contractMap) throw new Error('Action is DEPLOY but the contract has existed');
+  if (runMode !== DeployOrFetch.FORCE_DEPLOY && contractName in env.contractMap)
+    throw new Error('Action is DEPLOY but the contract has existed');
   const contractFactory = await hre.ethers.getContractFactory(contractAbiType);
   const contractObject = await contractFactory.deploy(...args);
   await contractObject.deployed();

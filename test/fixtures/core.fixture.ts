@@ -7,6 +7,7 @@ import {
   DeployOrFetch,
   deployPendleData,
   deployPendleMarketReader,
+  deployPendleProxyAdmin,
   deployPendleRouter,
   deployPendleWhitelist,
   deployPendleWrapper,
@@ -132,6 +133,8 @@ export async function coreFixture(): Promise<TestEnv> {
   await addGenericMarketFactoryToPendleData(env.penv);
 
   env.genMarketFactory = env.penv.pendleGenericMarketFactory;
+
+  await deployPendleProxyAdmin(env.penv, DeployOrFetch.DEPLOY);
 
   await deployPendleWrapper(env.penv, DeployOrFetch.DEPLOY);
   env.pendleWrapper = env.penv.pendleWrapper;

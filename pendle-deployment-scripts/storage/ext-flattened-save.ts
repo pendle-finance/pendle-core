@@ -1,6 +1,7 @@
 import {
   CaseInsensitiveRecord,
   FlattenedData,
+  getInfoDetailedToken,
   getInfoOTMarket,
   getInfoSimpleToken,
   getInfoYO,
@@ -137,6 +138,20 @@ async function getFlattenedBasicTokens(env: PendleEnv) {
   return info;
 }
 
+async function getDetailedBasicTokens() {
+  let info: Record<string, any> = {};
+  for (let tokenAddr of basicTokenList) {
+    const token = await getInfoDetailedToken(tokenAddr);
+    info[`DETAILED_TOKEN_${await getTokenSymbol(token)}`] = {
+      address: token.address,
+      symbol: token.symbol,
+      decimal: token.decimal,
+      name: token.name,
+    };
+  }
+  return info;
+}
+
 function replaceSpecialForgeName(env: PendleEnv, name: string): string {
   switch (env.network) {
     case Network.AVAX:
@@ -146,14 +161,22 @@ function replaceSpecialForgeName(env: PendleEnv, name: string): string {
   }
 }
 
+function applySpecialRuleForNames(name: string) {
+  if (name === 'PENDLE_ZAP_ESTIMATOR_P_A_P') {
+    return 'PENDLE_ZAP_ESTIMATOR_PAP';
+  }
+  return name;
+}
+
 function getFlattenedGeneralContracts(env: PendleEnv): FlattenedData {
   const contracts: FlattenedData = {};
   for (let contract in env.contractMap) {
     if (contract.startsWith('Liq') || contract.includes('RewardManager') || contract.includes('Forge')) continue;
-    const name = replaceSpecialForgeName(env, contract)
+    let name = replaceSpecialForgeName(env, contract)
       .split(/(?=[A-Z])/)
       .join('_')
       .toUpperCase();
+    name = applySpecialRuleForNames(name);
     contracts[name] = env.contractMap[contract].address;
   }
   return contracts;
@@ -163,7 +186,7 @@ async function mapFlattenedNamesToId(env: PendleEnv): Promise<void> {
   await mapYOTokenNames(env);
 }
 
-export async function getFlattenedInfo(env: PendleEnv): Promise<FlattenedData> {
+export async function getFlattenedInfo(env: PendleEnv) {
   await mapFlattenedNamesToId(env);
   let data: FlattenedData = {
     ...(await getFlattenedYieldContractsInfo(env)),
@@ -171,6 +194,7 @@ export async function getFlattenedInfo(env: PendleEnv): Promise<FlattenedData> {
     ...(await getFlattenedOTPools(env)),
     ...getFlattenedGeneralContracts(env),
     ...(await getFlattenedBasicTokens(env)),
+    ...(await getDetailedBasicTokens()),
   };
   return data;
 }

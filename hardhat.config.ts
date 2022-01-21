@@ -4,9 +4,9 @@ import "@nomiclabs/hardhat-truffle5";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import "@tenderly/hardhat-tenderly";
-// import "hardhat-gas-reporter";
 import '@typechain/hardhat';
 import * as dotenv from "dotenv";
+// import "hardhat-gas-reporter";
 import { HardhatUserConfig } from "hardhat/types";
 import "solidity-coverage";
 
@@ -35,7 +35,7 @@ const config: HardhatUserConfig = {
         url: `https://api.avax.network/ext/bc/C/rpc`,
         // url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
         // url: 'http://localhost:8545',
-        blockNumber: 8311876
+        blockNumber: 9537774
         // url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
         // // url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
         // // url: 'http://localhost:8545',
@@ -117,7 +117,7 @@ const config: HardhatUserConfig = {
     avax: {
       url: `https://api.avax.network/ext/bc/C/rpc`,
       accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
-      gasPrice: 40 * 1000000000,
+      gasPrice: 25 * 1000000000,
       timeout: 200000,
     }
   },
