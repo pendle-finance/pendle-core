@@ -41,6 +41,8 @@ import "../interfaces/ITimeStaking.sol";
 import "./ICEther.sol";
 import "../libraries/UniswapV2Lib.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/proxy/ProxyAdmin.sol"; // added for hardhat to generate typechains
+import "@openzeppelin/contracts/proxy/TransparentUpgradeableProxy.sol"; // added for hardhat to generate typechains
 
 enum Mode {
     BENQI,
@@ -178,6 +180,21 @@ library SwapHelper {
         }
     }
 
+    function wethConversion(DataSwap calldata data, IWETH weth) internal returns (bool) {
+        address[] calldata path = data.path;
+        if (path.length == 2 && path[0] == ETH_ADDRESS && path[1] == address(weth)) {
+            require(data.amountInMax == data.amountOut, "DIFF_AMOUNT_IN_OUT");
+            weth.deposit{value: data.amountInMax}();
+            return true;
+        }
+        if (path.length == 2 && path[0] == address(weth) && path[1] == ETH_ADDRESS) {
+            require(data.amountInMax == data.amountOut, "DIFF_AMOUNT_IN_OUT");
+            weth.withdraw(data.amountInMax);
+            return true;
+        }
+        return false;
+    }
+
     function swapSinglePath(
         IUniswapV2Router02 router,
         DataSwap calldata data,
@@ -185,6 +202,9 @@ library SwapHelper {
         uint256 deadline
     ) internal validateSingleSwap(data) {
         address[] memory path = data.path;
+        if (wethConversion(data, weth)) {
+            return;
+        }
         if (!_isETH(data.path[0])) {
             IERC20(data.path[0]).infinityApprove(address(router));
         }
@@ -222,6 +242,16 @@ library SwapHelper {
     }
 }
 
+/**
+- baseTokenForceZapThreshold: if the amount of baseToken left-over after Zapping is smaller
+or equal to this threshold, all of them will be force-zap in. Else, if they are greater than the
+threshold, they will be returned & nothing will happen
+- force zapping in will work as follows:
+    - if the zap action involves adding liquidity to YT pools, the left-over baseToken will be
+    used to addMarketLiquiditySingle to the YT pools
+    - if the zap action involves adding liquidity to OT pools (means YT is returned),
+    the left-over baseToken will be used to swapExactIn to YT pool to buy YT
+*/
 contract PendleWrapper is ReentrancyGuard {
     using TokenUtils for IERC20;
     using SmartArrayUtils for address[12];
@@ -309,7 +339,8 @@ contract PendleWrapper is ReentrancyGuard {
         Mode mode,
         DataPull calldata dataPull,
         DataTknz calldata dataTknz,
-        DataAddLiqYT calldata dataAddYT
+        DataAddLiqYT calldata dataAddYT,
+        uint256 baseTokenForceZapThreshold
     )
         external
         payable
@@ -326,6 +357,8 @@ contract PendleWrapper is ReentrancyGuard {
         dataYO = _insTokenize(mode, arr, address(this), dataTknz);
 
         (amountBaseTokenUsed, lpOut) = _addDualLiqYT(arr, dataYO, dataAddYT);
+
+        _forceAddSingleLiqBaseTokenYT(dataYO, dataAddYT, baseTokenForceZapThreshold);
 
         _pushAll(arr);
     }
@@ -349,11 +382,16 @@ contract PendleWrapper is ReentrancyGuard {
         _pushAll(arr);
     }
 
+    /**
+    @param marketToForceZap can be zero address if force zap is not necessary
+     */
     function insAddDualLiqForOT(
         Mode mode,
         DataPull calldata dataPull,
         DataTknz calldata dataTknz,
-        DataAddLiqOT calldata dataAddOT
+        DataAddLiqOT calldata dataAddOT,
+        uint256 baseTokenForceZapThreshold,
+        IPendleMarket marketToForceZap
     )
         external
         payable
@@ -371,6 +409,10 @@ contract PendleWrapper is ReentrancyGuard {
 
         (amountBaseTokenUsedOT, lpOutOT) = _addDualLiqOT(arr, dataYO, dataAddOT);
 
+        if (address(marketToForceZap) != address(0)) {
+            _forceBuyYT(marketToForceZap, baseTokenForceZapThreshold);
+        }
+
         _pushAll(arr);
     }
 
@@ -379,7 +421,8 @@ contract PendleWrapper is ReentrancyGuard {
         DataPull calldata dataPull,
         DataTknz calldata dataTknz,
         DataAddLiqOT calldata dataAddOT,
-        DataAddLiqYT calldata dataAddYT
+        DataAddLiqYT calldata dataAddYT,
+        uint256 baseTokenForceZapThreshold
     )
         external
         payable
@@ -400,6 +443,8 @@ contract PendleWrapper is ReentrancyGuard {
         (amountBaseTokenUsedOT, lpOutOT) = _addDualLiqOT(arr, dataYO, dataAddOT);
 
         (amountBaseTokenUsedYT, lpOutYT) = _addDualLiqYT(arr, dataYO, dataAddYT);
+
+        _forceAddSingleLiqBaseTokenYT(dataYO, dataAddYT, baseTokenForceZapThreshold);
 
         _pushAll(arr);
     }
@@ -625,6 +670,67 @@ contract PendleWrapper is ReentrancyGuard {
         emit SwapEventYT(msg.sender, dataYO.YT, baseToken, dataYO.amountYO, amountBaseTokenOut);
     }
 
+    function _forceAddSingleLiqBaseTokenYT(
+        DataYO memory dataYO,
+        DataAddLiqYT calldata dataAddYT,
+        uint256 baseTokenForceZapThreshold
+    ) internal returns (uint256 lpOut) {
+        uint256 amountToAdd = _selfBalanceOf(dataAddYT.baseToken);
+        if (amountToAdd > baseTokenForceZapThreshold || amountToAdd == 0) {
+            return 0;
+        }
+
+        bool addToLiqMining = dataAddYT.liqMiningAddr != address(0);
+
+        lpOut = pendleRouter.addMarketLiquiditySingle(
+            dataAddYT.marketFactoryId,
+            dataYO.YT,
+            dataAddYT.baseToken,
+            false,
+            amountToAdd,
+            0
+        );
+
+        if (addToLiqMining) {
+            _addToYTLiqMiningContract(
+                dataAddYT.liqMiningAddr,
+                IPendleYieldToken(dataYO.YT).expiry(),
+                lpOut
+            );
+        }
+
+        // the LP must have already been included in the arr of tokens
+
+        emit AddLiquidityYT(
+            msg.sender,
+            dataAddYT.marketFactoryId,
+            dataYO.YT,
+            dataAddYT.baseToken,
+            0,
+            amountToAdd,
+            lpOut
+        );
+    }
+
+    function _forceBuyYT(IPendleMarket market, uint256 baseTokenForceZapThreshold)
+        internal
+        returns (uint256 outAmount)
+    {
+        uint256 amountTokenToSwap = _selfBalanceOf(market.token());
+
+        if (amountTokenToSwap > baseTokenForceZapThreshold || amountTokenToSwap == 0) {
+            return 0;
+        }
+        outAmount = pendleRouter.swapExactIn(
+            market.token(),
+            market.xyt(),
+            amountTokenToSwap,
+            0,
+            market.factoryId()
+        );
+        emit SwapEventYT(msg.sender, market.token(), market.xyt(), amountTokenToSwap, outAmount);
+    }
+
     // end of Level-2 functions
 
     function _rawTokenToYToken(Mode mode, DataTknz calldata data)
@@ -790,7 +896,7 @@ contract PendleWrapper is ReentrancyGuard {
                 IERC20(swap.path[0]).safeTransferFrom(msg.sender, address(this), swap.amountInMax);
             }
         }
-        require(totalEthAmount >= _selfBalanceOf(ETH_ADDRESS), "INSUFFICIENT_ETH_AMOUNT");
+        require(totalEthAmount <= _selfBalanceOf(ETH_ADDRESS), "INSUFFICIENT_ETH_AMOUNT");
     }
 
     function _pushAll(address[12] memory arr) internal {

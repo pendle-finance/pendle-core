@@ -38,6 +38,16 @@ export interface SingleOTMarket {
   totalSupplyLP: BN;
 }
 
+export interface SingleJoePool {
+  address: string;
+  token0: SimpleTokenType;
+  token1: SimpleTokenType;
+
+  reserve0: BN;
+  reserve1: BN;
+  totalSupplyLP: BN;
+}
+
 export interface SingleLiq {
   address: string;
 
@@ -116,7 +126,8 @@ export interface SavedData {
   forgeMap: ForgeMap;
 }
 
-export type FlattenedData = Record<string, string | number>;
+export type FlattenedData = Record<string, any>;
+
 export class CaseInsensitiveRecord<V> {
   mset: Record<string, V>;
   constructor() {

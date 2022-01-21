@@ -2,9 +2,19 @@ import { cloneDeep } from 'lodash';
 import { MiscConsts } from '@pendle/constants';
 import { BigNumber as BN, Contract } from 'ethers';
 import path from 'path';
-import { PendleData, SavedData, SingleForge, SingleLiqOT, SingleLiqYT, SingleMarket, SingleOTMarket } from '.';
+import {
+  PendleData,
+  SavedData,
+  SingleForge,
+  SingleJoePool,
+  SingleLiqOT,
+  SingleLiqYT,
+  SingleMarket,
+  SingleOTMarket,
+} from '.';
 import { getBalanceToken, getContract, YOToken } from '..';
-import { ForgeMap, PendleEnv, SimpleTokenType } from '../type';
+import { ForgeMap, PendleEnv, SimpleTokenType, DetailedTokenType } from '../type';
+import { IJoePair, IPendleForge } from '../../typechain-types';
 
 export async function getInfoSimpleToken(addr: string): Promise<SimpleTokenType> {
   if (addr == MiscConsts.ZERO_ADDRESS) {
@@ -14,6 +24,19 @@ export async function getInfoSimpleToken(addr: string): Promise<SimpleTokenType>
   return {
     address: addr,
     symbol: await contract.symbol(),
+  };
+}
+
+export async function getInfoDetailedToken(addr: string): Promise<DetailedTokenType> {
+  if (addr == MiscConsts.ZERO_ADDRESS) {
+    return {} as DetailedTokenType;
+  }
+  let contract = await getContract('ERC20', addr);
+  return {
+    address: addr,
+    symbol: await contract.symbol(),
+    decimal: await contract.decimals(),
+    name: await contract.name(),
   };
 }
 
@@ -52,6 +75,20 @@ export async function getInfoOTMarket(marketAddr: string): Promise<SingleOTMarke
     OT,
     balanceBaseToken: await getBalanceToken(baseToken, marketAddr),
     balanceOT: await getBalanceToken(OT, marketAddr),
+    totalSupplyLP: await market.totalSupply(),
+  };
+}
+
+export async function getInfoJoePool(marketAddr: string): Promise<SingleJoePool> {
+  let market = (await getContract('IJoePair', marketAddr)) as IJoePair;
+
+  let { reserve0, reserve1 } = await market.getReserves();
+  return {
+    address: marketAddr,
+    token0: await getInfoSimpleToken(await market.token0()),
+    token1: await getInfoSimpleToken(await market.token1()),
+    reserve0,
+    reserve1,
     totalSupplyLP: await market.totalSupply(),
   };
 }
@@ -179,6 +216,11 @@ export async function getForgeIdFromYO(YOAddr: string): Promise<string> {
   let YOInfo = await getInfoYO(YOAddr);
   let forgeInfo = await getInfoSingleForge(YOInfo.forge);
   return forgeInfo.forgeId;
+}
+
+export async function getForgeIdFromForge(forgeAddr: string): Promise<string> {
+  let forge = (await getContract('IPendleForge', forgeAddr)) as IPendleForge;
+  return await forge.forgeId();
 }
 
 export async function getInfoPendleData(pendleData: Contract) {

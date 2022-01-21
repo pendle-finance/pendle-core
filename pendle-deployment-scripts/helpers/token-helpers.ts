@@ -7,6 +7,8 @@ import { AvaxConsts, Erc20Token, LpToken, MiscConsts } from '@pendle/constants';
 import { getEth, impersonateAccount, impersonateAccountStop } from './hardhat-helpers';
 import { sendAndWaitForTransaction } from './transaction-helpers';
 
+const INF_96bit = BN.from(2).pow(96);
+
 export async function mintFromSource(user: Wallet | SignerWithAddress, amount: BN, token: Erc20Token): Promise<void> {
   amount = amountToWei(amount, token.decimal);
   let source = token.whale!;
@@ -39,8 +41,9 @@ export async function getBalanceToken(
 
 export async function approveInfinityIfNeed(env: PendleEnv, tokenAddr: string, to: string) {
   let token = await getContract('IERC20', tokenAddr);
-  let curAllowance = await token.allowance(env.deployer.address, to);
-  if (curAllowance.gt(MiscConsts.INF.div(2))) {
+  let curAllowance: BN = await token.allowance(env.deployer.address, to);
+  // benQi is only 96 bit, so INF here will be 96 bit instead
+  if (curAllowance.gt(INF_96bit.div(2))) {
     console.log(`\t\t\tSkip unnecessary infinity approval of token ${tokenAddr} to ${to}`);
     return;
   }

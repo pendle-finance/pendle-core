@@ -4,6 +4,8 @@ import {
   deployJoeSimpleForge,
   deployOnePause,
   DeployOrFetch,
+  deployPendleProxyAdmin,
+  deployPendleZapEstimator,
   deployXJoeForge,
   FlatEnv,
   FlattenedData,
@@ -30,7 +32,9 @@ import { IJoeRouter01 } from '../typechain-types';
 
 export async function fetchAll(env: PendleEnv, network: Network) {
   await setUpEnv(env, network);
+  await fetchMiscContracts(env);
   await getPENDLEcontract(env);
+
   await deployGovernanceAndPausingManagers(env, DeployOrFetch.FETCH);
   await deployPendleData(env, DeployOrFetch.FETCH);
   await deployPendleRouter(env, DeployOrFetch.FETCH);
@@ -38,7 +42,9 @@ export async function fetchAll(env: PendleEnv, network: Network) {
   await deployRetroactiveDist(env, DeployOrFetch.FETCH);
   await deployRedeemProxy(env, DeployOrFetch.FETCH);
 
+  await deployPendleProxyAdmin(env, DeployOrFetch.FETCH);
   await deployPendleWrapper(env, DeployOrFetch.FETCH);
+
   await deployPendleWhitelist(env, DeployOrFetch.FETCH);
 
   await deployGenericMarketFactory(env, DeployOrFetch.FETCH);
@@ -46,9 +52,8 @@ export async function fetchAll(env: PendleEnv, network: Network) {
   await deployJoeSimpleForge(env, DeployOrFetch.FETCH);
   await deployXJoeForge(env, DeployOrFetch.FETCH);
   await deployOnePause(env, DeployOrFetch.FETCH);
-  await fetchMiscContracts(env);
+  await deployPendleZapEstimator(env, DeployOrFetch.FETCH);
   await deployWonderlandForge(env, DeployOrFetch.FETCH);
-  await fetchFlattenedEnv(env);
 }
 
 async function fetchMiscContracts(env: PendleEnv) {
@@ -56,8 +61,4 @@ async function fetchMiscContracts(env: PendleEnv) {
     env.joeFactory = await getContract('contracts/misc/JoePair.sol:IJoeFactory', env.consts.joe!.PAIR_FACTORY);
     env.joeRouter = (await getContract('IJoeRouter01', env.consts.joe!.ROUTER)) as IJoeRouter01;
   }
-}
-
-async function fetchFlattenedEnv(env: PendleEnv) {
-  env.flat = JSON.parse(fs.readFileSync(getPathDeploymentFlat(env), 'utf8')) as FlatEnv;
 }

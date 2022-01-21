@@ -2,7 +2,7 @@ import { DeployOrFetch, getContract, isAvax, isEth, isLocalEnv } from '..';
 import { deployOrFetchContract } from '../helpers/contract-helpers';
 import { Network, PendleEnv } from '../type/pendle-env';
 import { sendAndWaitForTransaction } from '../helpers';
-import { PendleRedeemProxyMulti, PendleRouter } from '../../typechain-types';
+import { PendleRedeemProxyMulti, PendleRetroactiveDistribution, PendleRouter } from "../../typechain-types";
 
 export async function getPENDLEcontract(env: PendleEnv) {
   if (isLocalEnv(env.network)) {
@@ -87,13 +87,13 @@ export async function deployRedeemProxy(env: PendleEnv, runMode: DeployOrFetch) 
 }
 
 export async function deployRetroactiveDist(env: PendleEnv, runMode: DeployOrFetch) {
-  env.retroDist = await deployOrFetchContract(
+  env.retroDist = (await deployOrFetchContract(
     env,
     runMode,
     'PendleRetroactiveDistribution',
     'PendleRetroactiveDistribution',
     []
-  );
+  )) as PendleRetroactiveDistribution;
 }
 
 export async function deployPendleWhitelist(env: PendleEnv, runMode: DeployOrFetch) {

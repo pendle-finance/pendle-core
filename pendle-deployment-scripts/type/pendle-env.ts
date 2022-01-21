@@ -1,10 +1,18 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { PendleConstsType, TokensConstsType } from '@pendle/constants';
-import { Contract } from 'ethers';
+import { BigNumber as BN, Contract } from 'ethers';
 import { ContractMap } from '.';
+import {
+  IJoeRouter01,
+  ProxyAdmin,
+  PendleRedeemProxyMulti,
+  PendleRouter,
+  PendleWrapper,
+  PendleZapEstimatorPAP,
+  PendleZapEstimatorSingle,
+  PendleRetroactiveDistribution,
+} from '../../typechain-types';
 import { ForgeMap } from './common-type';
-import { BigNumber as BN } from 'ethers';
-import { IJoeRouter01, PendleRedeemProxyMulti, PendleRouter, PendleWrapper } from '../../typechain-types';
 
 export enum Network {
   ETH,
@@ -14,7 +22,7 @@ export enum Network {
 }
 
 export interface PendleEnv {
-  retroDist: Contract;
+  retroDist: PendleRetroactiveDistribution;
   joeSimpleRewardManager: Contract;
   joeSimpleYieldContractDeployer: Contract;
   pendleTraderJoeSimpleForge: Contract;
@@ -51,13 +59,18 @@ export interface PendleEnv {
   pendleCompoundForge: Contract;
   pendleCompoundMarketFactory: Contract;
   pendleWhitelist: Contract;
-  pendleWrapper: PendleWrapper;
+  pendleZapEstimatorPAP: PendleZapEstimatorPAP;
+  pendleZapEstimatorSingle: PendleZapEstimatorSingle;
   pendleMarketReader: Contract;
   governanceManagerLiqMining: Contract;
   pausingManagerMain: Contract;
   pausingManagerLiqMining: Contract;
   pausingManagerLiqMiningV2: Contract;
   governanceManagerMain: Contract;
+
+  pendleWrapper: PendleWrapper;
+  pendleWrapperImplementation: PendleWrapper;
+  proxyAdmin: ProxyAdmin;
 
   joeFactory: Contract;
   joeRouter: IJoeRouter01;
@@ -77,6 +90,11 @@ export interface PendleEnv {
 }
 
 export interface FlatEnv {
+  FORGE_BENQI: string;
+  FORGEID_TRADERJOESIMPLE: string;
+  FORGE_TRADERJOESIMPLE: string;
+
+  TOKEN_JLP_WAVAX_PENDLE: string;
   TOKEN_OT_QIUSDC_28_DEC_2023: string;
   TOKEN_YT_QIUSDC_28_DEC_2023: string;
   TOKEN_OT_QIAVAX_28_DEC_2023: string;

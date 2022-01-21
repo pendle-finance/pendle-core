@@ -14,7 +14,8 @@
     "test",
     "scripts-2",
     "./hardhat.config.ts",
-    "typechain-types"
+    "typechain-types",
+    "onchain-tests"
   ],
   "exclude": [
     "test/legacy-test",
