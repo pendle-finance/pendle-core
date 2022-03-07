@@ -43,35 +43,6 @@ export async function addFakeIncomeBenQiDAI(env: TestEnv) {
   await env.yToken.balanceOfUnderlying(env.eve.address);
 }
 
-export async function addFakeIncomeKyber(env: TestEnv, numRep: number = 1) {
-  const amountUSDT = BN.from(13000000);
-  const amountWETH = BN.from(6100);
-  await mint(env, env.ptokens.USDT!, env.eve, amountUSDT);
-  await mint(env, env.ptokens.WNATIVE, env.eve, amountWETH);
-  while (numRep--) {
-    await env.kyberRouter
-      .connect(env.eve)
-      .swapExactTokensForTokens(
-        amountToWei(amountUSDT, 6),
-        0,
-        [env.ptokens.KYBER_USDT_WETH_LP!.address],
-        [env.ptokens.USDT!.address, env.ptokens!.WNATIVE.address],
-        env.eve.address,
-        env.pconsts.misc.INF
-      );
-    await env.kyberRouter
-      .connect(env.eve)
-      .swapExactTokensForTokens(
-        amountToWei(amountWETH, 18),
-        0,
-        [env.ptokens.KYBER_USDT_WETH_LP!.address],
-        [env.ptokens.WNATIVE.address, env.ptokens.USDT!.address],
-        env.eve.address,
-        env.pconsts.misc.INF
-      );
-  }
-}
-
 export async function addFakeIncomeSushi(env: TestEnv, numRep: number = 1) {
   let eve = env.eve;
   let token0: Contract;
@@ -164,7 +135,7 @@ export async function redeemRewardsFromProtocol(env: TestEnv, users: Wallet[]) {
         .connect(person)
         .claimRewards([env.yToken.address], env.pconsts.misc.INF, person.address, teConsts.HG);
     }
-  } else if (env.mode == Mode.COMPOUND || env.mode == Mode.COMPOUND_V2) {
+  } else if (env.mode == Mode.COMPOUND) {
     const comptroller = await getContract('IComptroller', env.pconsts.compound!.COMPTROLLER);
     await comptroller.claimComp(
       users.map((u) => u.address),
@@ -224,7 +195,7 @@ export function wrapEth(object: any, ethAmount: BN): any {
 }
 
 export async function createUniOrSushiPool(env: TestEnv, tokenA: string, tokenB: string) {
-  const factoryAddress = isAvax(env.penv.network) ? env.pconsts.joe!.PAIR_FACTORY : env.pconsts.sushi!.PAIR_FACTORY;
+  const factoryAddress = isAvax(env.penv) ? env.pconsts.joe!.PAIR_FACTORY : env.pconsts.sushi!.PAIR_FACTORY;
   const sushiFactory = await getContract('IUniswapV2Factory', factoryAddress);
   await sushiFactory.createPair(tokenA, tokenB, teConsts.HG);
   const poolAddress = await sushiFactory.getPair(tokenA, tokenB, teConsts.HG);
@@ -237,5 +208,5 @@ export function toAddress(input: string | Contract | Erc20Token) {
 }
 
 export function getOtRouter(env: TestEnv): string {
-  return isAvax(env.penv.network) ? env.pconsts.joe!.ROUTER : env.pconsts.sushi!.ROUTER;
+  return isAvax(env.penv) ? env.pconsts.joe!.ROUTER : env.pconsts.sushi!.ROUTER;
 }

@@ -20,15 +20,25 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
+
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-interface IPendleRetroactiveDistribution {
-    event DistributeReward(bytes32 indexed rewardType, address rewardToken, uint256 totalAmount);
-    event UndistributeReward(bytes32 indexed rewardType, address rewardToken, uint256 totalAmount);
-    event RedeemReward(address indexed user, address rewardToken, uint256 amount);
+import "./PendleRedeemProxyBaseDep1.sol";
 
-    function redeem(address[] calldata tokens, address payable forAddr)
-        external
-        returns (uint256[] memory);
+contract PendleRedeemProxyETHDep1 is PendleRedeemProxyBaseDep1 {
+    constructor(address _router) PendleRedeemProxyBaseDep1(_router) {}
+
+    function _redeemFromRewardManager(
+        address rewardManager,
+        address underlyingAsset,
+        uint256 expiry,
+        address to
+    ) internal override returns (OtRewards memory rewards) {
+        rewards.amountRewardOne = IPendleRewardManager(rewardManager).redeemRewards(
+            underlyingAsset,
+            expiry,
+            to
+        );
+    }
 }

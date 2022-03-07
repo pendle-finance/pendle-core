@@ -23,7 +23,7 @@ export async function verifyNewContracts(env: PendleEnv) {
     constructorArguments: [],
   });
   await hre.run('verify:verify', {
-    address: env.redeemProxy.address,
+    address: env.redeemProxyAvax.address,
     contract: 'contracts/misc/PendleRedeemProxyMulti.sol:PendleRedeemProxyMulti',
     constructorArguments: [env.pendleRouter.address, env.retroDist.address],
   });
@@ -64,7 +64,7 @@ export async function tryClaimingRewards(env: PendleEnv) {
     for (const token of tokenAddrs) {
       preBals.push((await getBalanceToken(token, user)).toString());
     }
-    await sendAndWaitForTransaction(env.redeemProxy.redeem, `redeeming for ${user}`, [
+    await sendAndWaitForTransaction(env.redeemProxyAvax.redeem, `redeeming for ${user}`, [
       [[], [], [], [], [], tokenAddrs],
       user,
     ]);

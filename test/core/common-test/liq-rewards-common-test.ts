@@ -206,13 +206,7 @@ export function runTest(mode: Mode) {
     });
 
     it('topUpRewards should work correctly', async () => {
-      if (
-        mode == Mode.BENQI ||
-        mode == Mode.TRADER_JOE ||
-        mode == Mode.KYBER_DMM ||
-        mode == Mode.XJOE ||
-        mode == Mode.WONDERLAND
-      ) {
+      if (mode == Mode.BENQI || mode == Mode.TRADER_JOE || mode == Mode.XJOE || mode == Mode.WONDERLAND) {
         return; /// temporarily skip this test for liquidity mining multi
       }
 

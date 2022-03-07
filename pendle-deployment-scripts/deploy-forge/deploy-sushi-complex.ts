@@ -3,7 +3,7 @@ import { deployOrFetchContract } from '../helpers/contract-helpers';
 import { PendleEnv } from '../type/pendle-env';
 import { sendAndWaitForTransaction } from '../helpers';
 
-async function deploySushiComplexForge(env: PendleEnv, runMode: DeployOrFetch) {
+export async function deploySushiComplexForge(env: PendleEnv, runMode: DeployOrFetch) {
   env.sushiComplexRewardManager = await deployOrFetchContract(
     env,
     runMode,

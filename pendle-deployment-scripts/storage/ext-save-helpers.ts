@@ -6,6 +6,8 @@ import {
   getInfoLiqOT,
   getInfoLiqYT,
   getInfoMarket,
+  getInfoSimpleToken,
+  getInfoYO,
   SavedData,
   SingleForge,
   SingleYieldContract,
@@ -26,7 +28,7 @@ export async function saveContract(env: PendleEnv, name: string, deployed: Deplo
 }
 
 export async function writeToDeploymentFile(env: PendleEnv) {
-  if (isLocalEnv(env.network)) return;
+  if (isLocalEnv(env)) return;
   let savedData: SavedData = {
     contractMap: env.contractMap,
     forgeMap: env.forgeMap,
@@ -62,13 +64,23 @@ export async function saveNewForge(env: PendleEnv, rawForgeId: string, address: 
   await writeToDeploymentFile(env);
 }
 
-export async function saveNewYieldContract(env: PendleEnv, _forgeId: string, data: SingleYieldContract) {
-  let forgeId = hexToString(_forgeId);
+export async function saveNewYieldContract(env: PendleEnv, forgeIdHex: string, OT: string, YT: string) {
+  let forgeId = hexToString(forgeIdHex);
   if (!(forgeId in env.forgeMap)) throw new Error("forgeId doesn't exist");
+
+  let infoYO = await getInfoYO(OT);
+  let data: SingleYieldContract = {
+    OT: await getInfoSimpleToken(OT),
+    YT: await getInfoSimpleToken(YT),
+    underlyingAsset: infoYO.underlyingAsset,
+    start: infoYO.start,
+    expiry: infoYO.expiry,
+    yieldTokenHolder: infoYO.yieldTokenHolder,
+  };
 
   for (let i = 0; i < env.forgeMap[forgeId].yieldContracts.length; i++) {
     let it = env.forgeMap[forgeId].yieldContracts[i];
-    if (it.OT.address == data.OT.address) {
+    if (it.OT.address == OT) {
       env.forgeMap[forgeId].yieldContracts[i] = data;
       return;
     }
@@ -77,8 +89,8 @@ export async function saveNewYieldContract(env: PendleEnv, _forgeId: string, dat
   await writeToDeploymentFile(env);
 }
 
-export async function saveNewMarket(env: PendleEnv, _forgeId: string, marketAddr: string) {
-  let forgeId = hexToString(_forgeId);
+export async function saveNewMarket(env: PendleEnv, forgeIdHex: string, marketAddr: string) {
+  let forgeId = hexToString(forgeIdHex);
   if (!(forgeId in env.forgeMap)) throw new Error("forgeId doesn't exist");
 
   for (let it of env.forgeMap[forgeId].markets) {
@@ -94,8 +106,8 @@ export async function saveNewMarket(env: PendleEnv, _forgeId: string, marketAddr
   await writeToDeploymentFile(env);
 }
 
-export async function saveNewLiqYT(env: PendleEnv, _forgeId: string, liqAddr: string) {
-  let forgeId = hexToString(_forgeId);
+export async function saveNewLiqYT(env: PendleEnv, forgeIdHex: string, liqAddr: string) {
+  let forgeId = hexToString(forgeIdHex);
   if (!(forgeId in env.forgeMap)) throw new Error("forgeId doesn't exist");
 
   for (let it of env.forgeMap[forgeId].liqYTs) {
@@ -118,7 +130,7 @@ export async function saveNewLiqOT(env: PendleEnv, _forgeId: string, liqAddr: st
   for (let it of env.forgeMap[forgeId].liqOTs) {
     if (it.address == liqAddr) throw new Error('liqOT already exists');
   }
-  let data = await getInfoLiqOT(liqAddr);
+  let data = await getInfoLiqOT(env, liqAddr);
 
   delete data.numberOfEpochs;
   delete data.currentEpoch;

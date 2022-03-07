@@ -24,4 +24,6 @@ export enum DeployOrFetch {
   DEPLOY,
   FETCH,
   FORCE_DEPLOY,
+  VERIFY,
+  DEPLOY_NOSAVE,
 }

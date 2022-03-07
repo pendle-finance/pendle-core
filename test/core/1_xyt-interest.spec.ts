@@ -11,11 +11,6 @@ describe('compound-xyt-interest', function () {
   runTest(Mode.COMPOUND);
 });
 
-describe('compoundV2-xyt-interest', function () {
-  if (checkDisabled(Mode.COMPOUND_V2)) return;
-  runTest(Mode.COMPOUND_V2);
-});
-
 describe('SushiswapComplex-xyt-interest', function () {
   if (checkDisabled(Mode.SUSHISWAP_COMPLEX)) return;
   runTest(Mode.SUSHISWAP_COMPLEX);
@@ -34,11 +29,6 @@ describe('BenQi-xyt-interest', function () {
 describe('TraderJoe-xyt-interest', function () {
   if (checkDisabled(Mode.TRADER_JOE)) return;
   runTest(Mode.TRADER_JOE);
-});
-
-describe('KyberDMM-xyt-interest', function () {
-  if (checkDisabled(Mode.KYBER_DMM)) return;
-  runTest(Mode.KYBER_DMM);
 });
 
 describe('xJoe-xyt-interest', function () {

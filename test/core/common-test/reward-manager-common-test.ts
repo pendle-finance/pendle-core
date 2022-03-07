@@ -51,13 +51,7 @@ export function runTest(mode: Mode) {
       await parseTestEnvRouterFixture(env, mode);
       env.TEST_DELTA = BN.from(1500000);
 
-      if (
-        mode == Mode.SUSHISWAP_COMPLEX ||
-        mode == Mode.BENQI ||
-        mode == Mode.TRADER_JOE ||
-        mode == Mode.KYBER_DMM ||
-        mode == Mode.XJOE
-      ) {
+      if (mode == Mode.SUSHISWAP_COMPLEX || mode == Mode.BENQI || mode == Mode.TRADER_JOE || mode == Mode.XJOE) {
         tokenToStake = env.underlyingAsset.address;
       } else {
         tokenToStake = env.USDTContract.address;

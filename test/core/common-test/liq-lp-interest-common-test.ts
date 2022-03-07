@@ -90,7 +90,6 @@ export function runTest(mode: Mode) {
           mode == Mode.SUSHISWAP_COMPLEX ||
           mode == Mode.SUSHISWAP_SIMPLE ||
           mode == Mode.TRADER_JOE ||
-          mode == Mode.KYBER_DMM ||
           mode == Mode.XJOE ||
           mode == Mode.WONDERLAND
         ) {

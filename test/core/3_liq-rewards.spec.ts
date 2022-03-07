@@ -16,10 +16,6 @@ describe('trader-joe-liquidity-mining-rewards ', function () {
   if (checkDisabled(Mode.TRADER_JOE)) return;
   runTest(Mode.TRADER_JOE);
 });
-describe('kyberDMM-liquidity-mining-rewards ', function () {
-  if (checkDisabled(Mode.KYBER_DMM)) return;
-  runTest(Mode.KYBER_DMM);
-});
 describe('xJoe-liquidity-mining-rewards ', function () {
   if (checkDisabled(Mode.XJOE)) return;
   runTest(Mode.XJOE);

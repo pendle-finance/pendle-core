@@ -2,10 +2,19 @@ import { DeployOrFetch, getContract, isAvax, isEth, isLocalEnv } from '..';
 import { deployOrFetchContract } from '../helpers/contract-helpers';
 import { Network, PendleEnv } from '../type/pendle-env';
 import { sendAndWaitForTransaction } from '../helpers';
-import { PendleRedeemProxyMulti, PendleRetroactiveDistribution, PendleRouter } from '../../typechain-types';
+import {
+  MultipleBalanceQuery,
+  PendleData,
+  PendleIncentiveData,
+  PendleMerkleDistributor,
+  PendleRedeemProxyETHDep1,
+  PendleRedeemProxyMulti,
+  PendleRetroactiveDistribution,
+  PendleRouter,
+} from '../../typechain-types';
 
 export async function getPENDLEcontract(env: PendleEnv) {
-  if (isLocalEnv(env.network)) {
+  if (isLocalEnv(env)) {
     env.PENDLE = await deployOrFetchContract(env, DeployOrFetch.DEPLOY, 'PENDLE', 'PENDLE', [
       env.deployer.address,
       env.deployer.address,
@@ -13,9 +22,10 @@ export async function getPENDLEcontract(env: PendleEnv) {
       env.deployer.address,
       env.deployer.address,
     ]);
+    env.tokens.PENDLE.address = env.PENDLE.address;
     return;
   }
-  if (env.network == Network.AVAX) {
+  if (isAvax(env)) {
     env.PENDLE = await getPENDLEonAvax(env);
   } else {
     env.PENDLE = await getPENDLEonEth(env);
@@ -23,11 +33,11 @@ export async function getPENDLEcontract(env: PendleEnv) {
 }
 
 export async function deployPendleData(env: PendleEnv, runMode: DeployOrFetch) {
-  env.pendleData = await deployOrFetchContract(env, runMode, 'PendleData', 'PendleData', [
+  env.pendleData = (await deployOrFetchContract(env, runMode, 'PendleData', 'PendleData', [
     env.governanceManagerMain.address,
     env.consts.common.TREASURY_MULTISIG,
     env.pausingManagerMain.address,
-  ]);
+  ])) as PendleData;
 }
 
 export async function initializeConfigPendleData(env: PendleEnv) {
@@ -73,16 +83,18 @@ export async function deployPendleRouter(env: PendleEnv, runMode: DeployOrFetch)
 }
 
 export async function deployRedeemProxy(env: PendleEnv, runMode: DeployOrFetch) {
-  if (isAvax(env.network)) {
-    env.redeemProxy = (await deployOrFetchContract(env, runMode, 'PendleRedeemProxyMulti', 'PendleRedeemProxyMulti', [
-      env.pendleRouter.address,
-      env.retroDist.address,
-    ])) as PendleRedeemProxyMulti;
+  if (isAvax(env)) {
+    env.redeemProxyAvax = (await deployOrFetchContract(
+      env,
+      runMode,
+      'PendleRedeemProxyMulti',
+      'PendleRedeemProxyMulti',
+      [env.pendleRouter.address, env.retroDist.address]
+    )) as PendleRedeemProxyMulti;
   } else {
-    env.redeemProxy = (await deployOrFetchContract(env, runMode, 'PendleRedeemProxySingle', 'PendleRedeemProxySingle', [
+    env.redeemProxyEth = (await deployOrFetchContract(env, runMode, 'PendleRedeemProxy', 'PendleRedeemProxyETHDep1', [
       env.pendleRouter.address,
-      env.retroDist.address,
-    ])) as PendleRedeemProxyMulti; // should be single instead
+    ])) as PendleRedeemProxyETHDep1;
   }
 }
 
@@ -96,10 +108,40 @@ export async function deployRetroactiveDist(env: PendleEnv, runMode: DeployOrFet
   )) as PendleRetroactiveDistribution;
 }
 
+export async function deployMerkleDistributor(env: PendleEnv, runMode: DeployOrFetch) {
+  env.merkleDistributor = (await deployOrFetchContract(
+    env,
+    runMode,
+    'PendleMerkleDistributor',
+    'PendleMerkleDistributor',
+    [env.tokens.PENDLE.address]
+  )) as PendleMerkleDistributor;
+}
+
+export async function deployIncentiveData(env: PendleEnv, runMode: DeployOrFetch) {
+  env.incentiveData = (await deployOrFetchContract(
+    env,
+    runMode,
+    'PendleIncentiveData',
+    'PendleIncentiveData',
+    []
+  )) as PendleIncentiveData;
+}
+
 export async function deployPendleWhitelist(env: PendleEnv, runMode: DeployOrFetch) {
   env.pendleWhitelist = await deployOrFetchContract(env, runMode, 'PendleWhitelist', 'PendleWhitelist', [
     env.governanceManagerLiqMining.address,
   ]);
+}
+
+export async function deployMultipleBalanceQuery(env: PendleEnv, runMode: DeployOrFetch) {
+  env.multipleBalanceQuery = (await deployOrFetchContract(
+    env,
+    runMode,
+    'MultipleBalanceQuery',
+    'MultipleBalanceQuery',
+    []
+  )) as MultipleBalanceQuery;
 }
 
 export async function getPENDLEonEth(env: PendleEnv) {

@@ -1,4 +1,4 @@
-import { DeployOrFetch, PendleEnv } from '../type';
+import { DeployOrFetch, isEth, PendleEnv } from '../type';
 import { deployOrFetchContract } from '../helpers';
 import { ProxyAdmin } from '../../typechain-types';
 

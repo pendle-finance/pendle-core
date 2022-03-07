@@ -15,8 +15,8 @@ export async function deploySushiSimpleForge(env: PendleEnv, runMode: DeployOrFe
   env.sushiSimpleYieldContractDeployer = await deployOrFetchContract(
     env,
     runMode,
-    'PendleYieldContractDeployerBaseV2',
     'PendleSushiswapSimpleYieldContractDeployer',
+    'PendleYieldContractDeployerBaseV2',
     [env.governanceManagerMain.address, env.consts.sushi!.FORGE_ID_SIMPLE]
   );
 

@@ -15,7 +15,6 @@ import {
   mint,
   mintAaveV2Token,
   mintCompoundToken,
-  mintKyberDMMFixed,
   mintQiToken,
   mintSushiswapLpFixed,
   mintTraderJoeLpFixed,
@@ -45,9 +44,7 @@ export async function runTest(mode: Mode) {
       env = await loadFixture(routerFixture);
       await parseTestEnvRouterFixture(env, mode);
       amountToMint = BN.from(10 ** 9);
-      if (mode == Mode.KYBER_DMM) {
-        amountToMint = BN.from(10 ** 7);
-      } else if (mode == Mode.WONDERLAND) {
+      if (mode == Mode.WONDERLAND) {
         amountToMint = env.INITIAL_YIELD_TOKEN_AMOUNT.div(10);
       }
     }
@@ -59,14 +56,13 @@ export async function runTest(mode: Mode) {
       for (var person of [bob, charlie, dave, eve]) {
         if (mode == Mode.AAVE_V2)
           await mintAaveV2Token(env, env.underlyingAsset, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
-        else if (mode == Mode.COMPOUND || mode == Mode.COMPOUND_V2)
+        else if (mode == Mode.COMPOUND)
           await mintCompoundToken(env, env.underlyingAsset, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
         else if (mode == Mode.SUSHISWAP_COMPLEX || mode == Mode.SUSHISWAP_SIMPLE)
           await mintSushiswapLpFixed(env, person);
         else if (mode == Mode.BENQI)
           await mintQiToken(env, env.underlyingAsset, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
         else if (mode == Mode.TRADER_JOE) await mintTraderJoeLpFixed(env, person);
-        else if (mode == Mode.KYBER_DMM) await mintKyberDMMFixed(env, person);
         else if (mode == Mode.XJOE) await mintXJoe(env, env.xJoe, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
         else if (mode == Mode.WONDERLAND) {
           await mint(env, env.ptokens.wMEMO!, person, BN.from(0));
@@ -123,6 +119,7 @@ export async function runTest(mode: Mode) {
     }
 
     async function addFakeIncome() {
+      if (env.addGenericForgeFakeIncome == null) return;
       await env.addGenericForgeFakeIncome(env);
     }
 
@@ -167,7 +164,7 @@ export async function runTest(mode: Mode) {
       const expectedBalance = await yTokenBalance(env, dave);
       if (mode == Mode.AAVE_V2) {
         for (var person of [alice, bob, charlie]) approxByPercent(await yTokenBalance(env, person), expectedBalance);
-      } else if (mode == Mode.COMPOUND || mode == Mode.COMPOUND_V2 || mode == Mode.BENQI || mode == Mode.WONDERLAND) {
+      } else if (mode == Mode.COMPOUND || mode == Mode.BENQI || mode == Mode.WONDERLAND) {
         for (var person of [alice, bob, charlie]) approxByPercent(await yTokenBalance(env, person), expectedBalance);
       } else {
         for (var person of [alice, bob, charlie])

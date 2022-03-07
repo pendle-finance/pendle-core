@@ -110,25 +110,6 @@ export async function mintXytTraderJoeFixed(env: TestEnv, user: Wallet, expiry: 
     );
   return postTokenBal.sub(preTokenBal);
 }
-export async function mintXytKyberDMMFixed(env: TestEnv, user: Wallet, expiry: BN): Promise<BN> {
-  let kContract = await getContract('ERC20', env.ptokens.KYBER_USDT_WETH_LP!);
-  let preTokenBal = await kContract.balanceOf(user.address);
-  await mintKyberDMMFixed(env, user);
-
-  await approveAll([kContract], [env.router]);
-  let postTokenBal = await kContract.balanceOf(user.address);
-  await env.router
-    .connect(user)
-    .tokenizeYield(
-      env.pconsts.kyber!.FORGE_ID,
-      env.ptokens.KYBER_USDT_WETH_LP!.address,
-      expiry,
-      postTokenBal.sub(preTokenBal),
-      user.address,
-      teConsts.HG
-    );
-  return postTokenBal.sub(preTokenBal);
-}
 
 export async function mintXytXJoeFixed(env: TestEnv, user: Wallet, expiry: BN): Promise<BN> {
   let preTokenBal = await env.xJoe.balanceOf(user.address);
@@ -381,26 +362,6 @@ export async function mintTraderJoeLpFixed(env: TestEnv, user: Wallet) {
       MiscConsts.INF,
       teConsts.HG
     );
-}
-
-export async function mintKyberDMMFixed(env: TestEnv, user: Wallet) {
-  const amountUSDT = BN.from(13000000);
-  const amountWETH = BN.from(6100);
-  await mint(env, env.ptokens.USDT!, user, amountUSDT);
-  await mint(env, env.ptokens.WNATIVE!, user, amountWETH);
-  await env.kyberRouter.addLiquidity(
-    env.ptokens.WNATIVE!.address,
-    env.ptokens.USDT!.address,
-    env.ptokens.KYBER_USDT_WETH_LP!.address,
-    amountToWei(amountUSDT, 6),
-    amountToWei(amountWETH, 18),
-    0,
-    0,
-    [0, MiscConsts.INF],
-    user.address,
-    MiscConsts.INF,
-    teConsts.HG
-  );
 }
 
 export async function approve(user: Wallet, _tokens: (string | Contract | Erc20Token)[], _tos: (string | Contract)[]) {

@@ -59,8 +59,6 @@ export async function deployAaveV2Forge(env: TestEnv) {
     teConsts.T0_A2.add(consts.misc.SIX_MONTH)
   );
 
-  env.a2OwnershipToken18 = await getContract('MockPendleOwnershipToken', otTokenAddress18);
-  env.a2FutureYieldToken18 = await getContract('PendleFutureYieldToken', xytTokenAddress18);
-
   env.aaveLendingPool = await getContract('IAaveV2LendingPool', consts.aave!.LENDING_POOL);
+  env.a2MarketFactory = env.penv.pendleAaveMarketFactory;
 }

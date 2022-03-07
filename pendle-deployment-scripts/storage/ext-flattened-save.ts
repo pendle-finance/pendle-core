@@ -7,8 +7,9 @@ import {
   getInfoYO,
   getUnderlyingYieldToken,
 } from '.';
-import { PendleEnv, SimpleTokenType } from '../type';
-import { convertUnixToDate, Network } from '..';
+import { Network, PendleEnv, SimpleTokenType } from '../type';
+import { convertUnixToDate, sameAddr } from '..';
+import { MiscConsts } from '@pendle/constants';
 
 const basicTokenList: string[] = [];
 const yoTokenNames: CaseInsensitiveRecord<string> = new CaseInsensitiveRecord();
@@ -18,6 +19,9 @@ async function getTokenSymbol(underlying: SimpleTokenType): Promise<string> {
   if (underlying.symbol.includes('JLP')) {
     const joePair = await getInfoOTMarket(underlying.address);
     return `JLP_${joePair.OT.symbol}_${joePair.baseToken.symbol}`.toUpperCase();
+  } else if (underlying.symbol.includes('SLP')) {
+    const sushiPair = await getInfoOTMarket(underlying.address);
+    return `SLP_${sushiPair.OT.symbol}_${sushiPair.baseToken.symbol}`.toUpperCase();
   } else {
     return underlying.symbol.toUpperCase();
   }
@@ -102,12 +106,17 @@ async function getFlattenedOTPools(env: PendleEnv) {
     for (let liqOT of forge.liqOTs) {
       const pool = await getInfoOTMarket(liqOT.stakeToken.address);
       const poolName = `OT_${yoTokenNames.get(pool.OT.address)}_X_${await getTokenSymbol(pool.baseToken)}`;
-      poolInfo[`POOL_${poolName}`] = pool.address;
-      liqInfo[`LIQ_${poolName}`] = liqOT.address;
-      basicTokenList.push(pool.baseToken.address);
 
-      const date = convertUnixToDate(liqOT.startTime.toNumber());
-      dates[`TIME_${date}`] = liqOT.startTime.toNumber();
+      poolInfo[`POOL_${poolName}`] = pool.address;
+      basicTokenList.push(pool.baseToken.address);
+      if (!sameAddr(liqOT.address, MiscConsts.ZERO_ADDRESS)) {
+        // not dummy liquidity mining
+        liqInfo[`LIQ_${poolName}`] = liqOT.address;
+        const date = convertUnixToDate(liqOT.startTime.toNumber());
+        dates[`TIME_${date}`] = liqOT.startTime.toNumber();
+      } else {
+        console.log(`Skipping dummy liquidity mining of ${poolName}`);
+      }
     }
   }
   return {
@@ -126,6 +135,12 @@ async function getFlattenedBasicTokens(env: PendleEnv) {
       basicTokenList.push(env.tokens.QI!.address);
       basicTokenList.push(env.tokens.WNATIVE.address);
       basicTokenList.push(env.tokens.TIME!.address);
+      break;
+    case Network.ETH:
+      basicTokenList.push(env.tokens.COMP!.address);
+      basicTokenList.push(env.tokens.STKAAVE!.address);
+      basicTokenList.push(env.tokens.SUSHI!.address);
+      basicTokenList.push(env.tokens.WNATIVE!.address);
       break;
     default:
       throw new Error('Unsupported Network');
@@ -157,7 +172,7 @@ function replaceSpecialForgeName(env: PendleEnv, name: string): string {
     case Network.AVAX:
       return name.replace('XJoe', 'Xjoe').replace('BenQi', 'Benqi');
     default:
-      throw new Error('Unsupported Network');
+      return name;
   }
 }
 

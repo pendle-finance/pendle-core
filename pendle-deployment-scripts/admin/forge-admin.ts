@@ -1,7 +1,7 @@
 import { Erc20Token, LpToken } from '@pendle/constants';
 import { BigNumber as BN } from 'ethers';
 import { sendAndWaitForTransaction } from '../helpers';
-import { getInfoSimpleToken, getInfoYO, saveNewYieldContract } from '../index';
+import { getInfoYO, saveNewYieldContract } from '../index';
 import { PendleEnv } from '../type/pendle-env';
 
 export interface JoeComplexTokens {
@@ -40,23 +40,24 @@ export async function registerNewWonderlandToken(env: PendleEnv) {
   );
 }
 
-export async function newYieldContracts(env: PendleEnv, forgeId: string, underlyingAssetAddr: string, expiry: BN) {
+export async function registerNewRedactedToken(env: PendleEnv) {
+  await sendAndWaitForTransaction(
+    env.pendleRedactedForge.connect(env.deployer).registerTokens,
+    'register new token for Redacted',
+    [[env.tokens.xBTRFLY!.address], [[env.tokens.wxBTRFLY!.address]]]
+  );
+}
+
+export async function newYieldContracts(env: PendleEnv, forgeIdHex: string, underlyingAssetAddr: string, expiry: BN) {
   await sendAndWaitForTransaction(env.pendleRouter.newYieldContracts, 'newYieldContract', [
-    forgeId,
+    forgeIdHex,
     underlyingAssetAddr,
     expiry,
   ]);
 
-  const YTAddr: string = await env.pendleData.xytTokens(forgeId, underlyingAssetAddr, expiry);
-  const OTAddr: string = await env.pendleData.otTokens(forgeId, underlyingAssetAddr, expiry);
-  let YOInfo = await getInfoYO(OTAddr);
-  await saveNewYieldContract(env, forgeId, {
-    OT: await getInfoSimpleToken(OTAddr),
-    YT: await getInfoSimpleToken(YTAddr),
-    expiry: YOInfo.expiry,
-    yieldTokenHolder: YOInfo.yieldTokenHolder,
-    underlyingAsset: await getInfoSimpleToken(underlyingAssetAddr),
-  });
+  const YTAddr: string = await env.pendleData.xytTokens(forgeIdHex, underlyingAssetAddr, expiry);
+  const OTAddr: string = await env.pendleData.otTokens(forgeIdHex, underlyingAssetAddr, expiry);
+  await saveNewYieldContract(env, forgeIdHex, OTAddr, YTAddr);
 
   return { YTAddr, OTAddr };
 }

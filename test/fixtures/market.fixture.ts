@@ -8,7 +8,6 @@ import {
   mintXytAave,
   mintXytBenQi,
   mintXytCompound,
-  mintXytKyberDMMFixed,
   mintXytSushiswapFixed,
   mintXytTraderJoeFixed,
   mintXytUniswapFixed,
@@ -26,12 +25,10 @@ export async function marketFixture(_: Wallet[], provider: providers.Web3Provide
   await deployA2Markets(env);
   await deployCMarkets(env);
 
-  await deployC2Markets(env);
   await deploySCMarkets(env);
   await deploySSMarkets(env);
   await deployUMarkets(env);
   await deployQiMarkets(env);
-  await deployKMarkets(env);
   await distributeTestTokens(env);
   await deployMockMarketMath(env);
   await deployJoeMarkets(env);
@@ -59,13 +56,6 @@ async function deployA2Markets(env: TestEnv) {
       teConsts.T0_A2.add(env.pconsts.misc.SIX_MONTH)
     );
   }
-  await env.data.addMarketFactory(env.pconsts.aave!.MARKET_FACTORY_ID, env.a2MarketFactory.address, teConsts.HG);
-  await env.data.setForgeFactoryValidity(
-    env.pconsts.aave!.FORGE_ID,
-    env.pconsts.aave!.MARKET_FACTORY_ID,
-    true,
-    teConsts.HG
-  );
   // a2XYT - testToken
   await env.router.createMarket(
     env.pconsts.aave!.MARKET_FACTORY_ID,
@@ -181,72 +171,6 @@ async function deployCMarkets(env: TestEnv) {
   env.cMarket8 = await getContract('PendleCompoundMarket', cMarket8Address);
   env.cMarketEth = await getContract('MockPendleAaveMarket', cMarketEthAddress);
   console.log('Done deploying Compound Market');
-}
-
-async function deployC2Markets(env: TestEnv) {
-  if (checkDisabled(Mode.COMPOUND_V2)) return;
-  for (let i = 0; i < 4; i++) {
-    let person = wallets[i];
-    await mintXytCompound(
-      env,
-      Mode.COMPOUND_V2,
-      env.ptokens.USDT!,
-      person,
-      teConsts.INITIAL_OT_XYT_AMOUNT,
-      teConsts.T0_C2.add(env.pconsts.misc.SIX_MONTH)
-    );
-    await mintXytCompound(
-      env,
-      Mode.COMPOUND_V2,
-      env.ptokens.WNATIVE!,
-      person,
-      teConsts.INITIAL_OT_XYT_AMOUNT,
-      teConsts.T0_C2.add(env.pconsts.misc.SIX_MONTH)
-    );
-  }
-  await env.data.setForgeFactoryValidity(
-    env.pconsts.compound!.FORGE_ID_V2,
-    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-    true,
-    teConsts.HG
-  );
-  // c2XYT - testToken
-  await env.router.createMarket(
-    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-    env.c2FutureYieldToken.address,
-    env.testToken.address,
-    teConsts.HG
-  );
-  // c2XYT18 - testToken
-  await env.router.createMarket(
-    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-    env.c2FutureYieldToken8.address,
-    env.testToken.address,
-    teConsts.HG
-  );
-  // cXYT - WETH
-  await env.router.createMarket(
-    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-    env.c2FutureYieldToken.address,
-    env.ptokens.WNATIVE!.address,
-    teConsts.HG
-  );
-  const c2MarketAddress = await env.data.getMarket(
-    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-    env.c2FutureYieldToken.address,
-    env.testToken.address
-  );
-
-  const c2Market8Address = await env.data.getMarket(
-    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-    env.c2FutureYieldToken8.address,
-    env.testToken.address
-  );
-
-  env.c2Market = await getContract('PendleCompoundMarket', c2MarketAddress);
-  env.c2Market8 = await getContract('PendleCompoundMarket', c2Market8Address);
-
-  console.log('Done deploying CompoundV2 Market');
 }
 
 async function deploySCMarkets(env: TestEnv) {
@@ -388,34 +312,6 @@ async function deployXJoeMarkets(env: TestEnv) {
   );
   env.xJoeMarket = await getContract('PendleGenericMarket', xJoeMarketAddr);
   console.log('Done deploying XJoe Market');
-}
-
-async function deployKMarkets(env: TestEnv) {
-  if (checkDisabled(Mode.KYBER_DMM)) return;
-
-  for (let i = 0; i < 4; ++i) {
-    let person = wallets[i];
-    await mintXytKyberDMMFixed(env, person, teConsts.T0_K.add(env.pconsts.misc.SIX_MONTH));
-  }
-  await env.data.setForgeFactoryValidity(
-    env.pconsts.kyber!.FORGE_ID,
-    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-    true,
-    teConsts.HG
-  );
-  await env.router.createMarket(
-    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-    env.kyberFutureYieldToken.address,
-    env.testToken.address,
-    teConsts.HG
-  );
-  const kyberMarketAddress = await env.data.getMarket(
-    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-    env.kyberFutureYieldToken.address,
-    env.testToken.address
-  );
-  env.kyberMarket = await getContract('PendleGenericMarket', kyberMarketAddress);
-  console.log('Done deploying KyberDMM Market');
 }
 
 async function deployWonderlandMarkets(env: TestEnv) {

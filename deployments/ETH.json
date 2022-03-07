@@ -1,0 +1,717 @@
+{
+  "contractMap": {
+    "PendleTeamTokens": {
+      "address": "0x8849d0d4c35679aA78Df1b5B4CecA358d57635dF",
+      "tx": "0x320c8c5e78728736db307253996dd62489b78e1a10e1f8cd429b37237da5475d",
+      "abiType": "PendleTeamTokens"
+    },
+    "PendleEcosystemFund": {
+      "address": "0xc21A74c7150fed22C7CA0Bf9A15BBe0DdB4977CC",
+      "tx": "0x255eceb20589efb04ec992a8b30d7d950c975b3a2c4130a343adfc77d58719f7",
+      "abiType": "PendleTokenDistribution"
+    },
+    "PendleGovernanceManagerMain": {
+      "address": "0x9b528BF0639fC31Ae6D698c48D830873227741F1",
+      "tx": "0x1e62fdc8b5f5c8e5991ad442af8e253c3aaf5e665ca8e1dc4d12d10f0f769f6c",
+      "abiType": "PendleGovernanceManager"
+    },
+    "PendleGovernanceManagerLiqMining": {
+      "address": "0x5a05a64115bd86f220a26461fDe3A011c7142476",
+      "tx": "0x96fe72cd67472516bd9fe09938926e4dece015b4b5619f2b9220badfc3ffc13b",
+      "abiType": "PendleGovernanceManager"
+    },
+    "PendlePausingManagerMain": {
+      "address": "0x0EF44218209D7d64737dD36f179d5e448df3EEd4",
+      "tx": "0xaa6725ec98b10feab4b631846a5a3bea3c8fe62d3d332214c1fd3a0a9f3362ce",
+      "abiType": "PendlePausingManager"
+    },
+    "PendlePausingManagerLiqMining": {
+      "address": "0xea2575F82C881b223208FA53982e6e09aB55CcDa",
+      "tx": "0xf40d3d9ca4281d6773b637cc7addff88cc7a77c47d1078a89a056cd6ae53a7e5",
+      "abiType": "PendlePausingManager"
+    },
+    "PendlePausingManagerLiqMiningV2": {
+      "address": "0x4dc6b6374e812E029937129a156Eec6344cDE8D1",
+      "tx": "",
+      "abiType": "PendlePausingManager"
+    },
+    "PendleData": {
+      "address": "0xE8A6916576832AA5504092C1cCCC46E3bB9491d6",
+      "tx": "0x0d290009c69a66f13eb678d1ec732fa3db97f629c6294f7ed814ed74d6caf832",
+      "abiType": "PendleData"
+    },
+    "PendleMarketReader": {
+      "address": "0x16b4AD69d414a197F9Cb98d06dB224646dc7CDc7",
+      "tx": "0x8b52c927a8133b0cb0608868d2928bcb7f809f18912dda88d370032494cd4960",
+      "abiType": "PendleMarketReader"
+    },
+    "PendleRouter": {
+      "address": "0x1b6d3E5Da9004668E14Ca39d1553E9a46Fe842B3",
+      "tx": "0xdf867c0bc3d65737a8da2f58da6d51c11fda09cf717318ea9c81194228e2956e",
+      "abiType": "PendleRouter"
+    },
+    "PendleRedeemProxy": {
+      "address": "0x5d5C1238B1549Bcd7Ff9e8994045891EDd195568",
+      "tx": "0xcd7af5eed02e290829a4a94353bd5b5bd347983929aee0cf8aa3b8e252b937bb",
+      "abiType": "PendleRedeemProxyETHDep1"
+    },
+    "PendleWhitelist": {
+      "address": "0x6fa13469428e85E6aC12c84B73A19aeF7c53332A",
+      "tx": "0xe90abffa34cc5bdc1b0aa87302d270e0cb5b21f0ba8b8ddf36efe29800e3344b",
+      "abiType": "PendleWhitelist"
+    },
+    "PendleRewardManagerCompound": {
+      "address": "0x17dF69a3a30dAE5Ad0F3734c93ddf94dBdC898dE",
+      "tx": "0xf513da66e8909950240e0ce2bfb2ebe93e55153cdb279b4b8026384f252d7f24",
+      "abiType": "PendleRewardManager"
+    },
+    "PendleCompoundYieldContractDeployer": {
+      "address": "0xA023FfA56e5672FDB87499144c96D481e6Aa55ce",
+      "tx": "0xb10820456b70b681ae75f3e9ec4c452cfd14bb7f9304108f980f92abf475dbb9",
+      "abiType": "PendleCompoundYieldContractDeployer"
+    },
+    "PendleCompoundForge": {
+      "address": "0xc02aC197a4D32D93D473779Fbea2DCA1fb313eD5",
+      "tx": "0xc8aae7c9668a42c5be9ef2aeb9685399053c53dd114c6f43919c8ad8680e02a7",
+      "abiType": "PendleCompoundForge"
+    },
+    "PendleCompoundMarketFactory": {
+      "address": "0x0f8e3237d074ce8a59aF5D0d476BCd5B85aEFe09",
+      "tx": "0xf1d926b574a3a5aeeb61eccf1dc608b24f6b0b82560d00f3443af0af52d98fc3",
+      "abiType": "PendleCompoundMarketFactory"
+    },
+    "PendleRewardManagerAaveV2": {
+      "address": "0xC93471fBC686bc0Aa5Fd102ad706ec180061461a",
+      "tx": "0x4be7816ebebcec46033bee007e405c5b506b5888eba54b4da40c393a6db1e219",
+      "abiType": "PendleRewardManager"
+    },
+    "PendleAaveV2YieldContractDeployer": {
+      "address": "0x2Ae9bCDF80871F5BA4bd591Bb07eB690951B3b93",
+      "tx": "0x7c37a25d7e9e21211ac195761b2be37beb4c6bfa6c1be91854797ea3cb9fbb87",
+      "abiType": "PendleAaveV2YieldContractDeployer"
+    },
+    "PendleAaveV2Forge": {
+      "address": "0x9902475a6Ffc0377b034Bf469EE0879f3Bd273FB",
+      "tx": "0x156f87bd05cf334a1aa4b001ae370c9e4e044ebe5a908311412e6bf7a403a0f2",
+      "abiType": "PendleAaveV2Forge"
+    },
+    "PendleAaveMarketFactory": {
+      "address": "0x753aE83C85daC24A91eF31D60B8400dDbCd53d62",
+      "tx": "0x7093e632ff44c27e29b5a437219656f436335ca5568be3443f2fadc0c88d1bdc",
+      "abiType": "PendleAaveMarketFactory"
+    },
+    "PendleAaveLiquidityMining": {
+      "address": "0x6f40A68E99645C60F14b497E75aE024777d61726",
+      "tx": "0x84fcc5a0a39ed48174a1fe842a8880dd278e1b21206451f36b3bac574eea9cca",
+      "abiType": "PendleAaveLiquidityMining"
+    },
+    "PendleCompoundLiquidityMining": {
+      "address": "0x5B1C59Eb6872f88a92469751a034B9B5ADA9A73F",
+      "tx": "0x315191175c071e310dea214f2bd369838b7853e908773afb99b08df68ac39674",
+      "abiType": "PendleCompoundLiquidityMining"
+    },
+    "Directory": {
+      "address": "0x702A893f712a59be72722e4078513A1FbA5CAf2D",
+      "tx": "0x1143ec73f2b221d8a9436cda66bcc377da2dc47dc1724f7452de73550c8e4232",
+      "abiType": "Directory"
+    },
+    "PendleRewardManagerSushiswapSimple": {
+      "address": "0x5f183210d58EBA0812a2c33888786E7028B4E687",
+      "tx": "0xff2ebc6bd81fcc7bbe5cb783df6526eacc07b381bca8e67758ec3545834089d9",
+      "abiType": "PendleRewardManager"
+    },
+    "PendleRedactedRewardManager": {
+      "address": "0x41cf5bbd11b8194ebcff7a8ae9ab8b6ddbd43e86",
+      "tx": "0x541f2abf6ab65af59b7dc0a64815c74d5adedcdc292327725e3c629f87f6f184",
+      "abiType": "PendleRewardManager"
+    },
+    "PendleSushiswapSimpleYieldContractDeployer": {
+      "address": "0x3714e5d5a32fDC16e3e6FEE6788AFC3Ac9Eb5762",
+      "tx": "0x00171cc8d1d0d0d2de119e751e9f379b5f91e36517f4228400e7a126a3ecaf28",
+      "abiType": "PendleYieldContractDeployerBaseV2"
+    },
+    "PendleSushiswapSimpleForge": {
+      "address": "0x6B0e6B4C0ee4b6460E5CD35A3625a172FE9d3930",
+      "tx": "0x3fe686a20e6a2c114718450687d29f18690b1ed7a261f113ab66d784ddef2af6",
+      "abiType": "PendleSushiswapSimpleForge"
+    },
+    "PendleRewardManagerSushiswapComplex": {
+      "address": "0x831Ab3253170EcED5C4Eef67606cCA1f6699fd68",
+      "tx": "0xd069130173c7a36230911d36737b2af90dc38d501a3ed832db24860bc18d8053",
+      "abiType": "PendleRewardManager"
+    },
+    "PendleSushiswapComplexYieldContractDeployer": {
+      "address": "0x2AB81E127c8f4df9F39ee639d09A35dED94171f0",
+      "tx": "0xa4044b56d1762d293bcff6bcffd237a4157a8d45f1ecfaf62e0adbfc9d86ab81",
+      "abiType": "PendleSushiswapComplexYieldContractDeployer"
+    },
+    "PendleSushiswapComplexForge": {
+      "address": "0xA71bdADD4AaBee6c5005aaAbAC0Ddd27a6657251",
+      "tx": "0x141448e9a3218bf7507138691118882f05fad4f7bb39cd4734c270d259aaf4fa",
+      "abiType": "PendleSushiswapComplexForge"
+    },
+    "PendleGenericMarketFactory": {
+      "address": "0xc02F1C34CdDe6D5b940a31B286A987E905ec5E8D",
+      "tx": "0x22a970cc7f7f9bdfe87150b4876cf88bd968c7f27ffb4b7a9cc58e6684c065c3",
+      "abiType": "PendleGenericMarketFactory"
+    },
+    "LiqYT0x9e382e": {
+      "address": "0x6f40A68E99645C60F14b497E75aE024777d61726",
+      "tx": "0x84fcc5a0a39ed48174a1fe842a8880dd278e1b21206451f36b3bac574eea9cca",
+      "abiType": "PendleAaveLiquidityMining"
+    },
+    "LiqOT0x0D8a21": {
+      "address": "0xFb0e378b3eD6D7F8b73230644D945E28fd7F7b03",
+      "tx": "0x98ee3b1c71d09331c20a1961a42e32bc492f1ff885929e7f873848b17a838acf",
+      "abiType": "PendleLiquidityMiningBaseV2"
+    },
+    "LiqOT0x8B758d": {
+      "address": "0x07C87cfE096c417212eAB4152d365F0F7dC6FCe4",
+      "tx": "0xec74918522b16bd066a282c19710fe98338d1b723cfb686a74c9fd3408dc45d6",
+      "abiType": "PendleLiquidityMiningBaseV2"
+    },
+    "LiqYT0xB26C86": {
+      "address": "0x5B1C59Eb6872f88a92469751a034B9B5ADA9A73F",
+      "tx": "0x315191175c071e310dea214f2bd369838b7853e908773afb99b08df68ac39674",
+      "abiType": "PendleCompoundLiquidityMining"
+    },
+    "LiqOT0x2C80D7": {
+      "address": "0x071dc669Be57C1b3053F746Db20cb3Bf54383aeA",
+      "tx": "0x91c1e6396e974a1bc47b06edcaf6871f35fa952a98d59c9f1da4fa68f60c0c4a",
+      "abiType": "PendleLiquidityMiningBaseV2"
+    },
+    "LiqOT0x4556C4": {
+      "address": "0xa660c9aAa46b696Df01768E1D2d88CE2d5293778",
+      "tx": "0x18b64731ad7adb441467d9c43646ee527a74314dfc0da935e51566725d727328",
+      "abiType": "PendleLiquidityMiningBaseV2"
+    },
+    "LiqYT0x685d32": {
+      "address": "0x0F3BCcBfEF1dC227f33A11d7a51cD02DEaD208c8",
+      "tx": "0xaf8e0aa8fb87b797c88944b0ee886b2f558975cde6b3802d35cfa0d3bdb9af2a",
+      "abiType": "PendleGenericLiquidityMining"
+    },
+    "LiqOT0x2c09fd": {
+      "address": "0x2c09fd74e80cE12bEbBC8f56FAB8633eA41C2bCc",
+      "tx": "0x32a4f748365934564c1a87ab1a7e963305652b8d04a32d6ebf5438934498c359",
+      "abiType": "PendleSLPLiquidityMining"
+    },
+    "LiqYT0x79c05D": {
+      "address": "0xA78029ab5235B9A83EC45eD036042Db26c6E4300",
+      "tx": "0x11c7976cd2956eb4fec1af8af9f618d577c8402c0f712f8563f09b2a148826bb",
+      "abiType": "PendleGenericLiquidityMining"
+    },
+    "LiqOT0x72972b": {
+      "address": "0x529c513DDE7968E19E79e38Ff94D36e4C3c21Eb7",
+      "tx": "0x1fac39d4f018fc3265ad9012bb43048feb2e2a4f03edfbde478020e927eef9ad",
+      "abiType": "PendleLiquidityMiningBaseV2"
+    },
+    "PendleMerkleDistributor": {
+      "address": "0x08c317D3F9D05B84cBA33876F1DbC7617954C2F0",
+      "tx": "0xeee6b2118ab6cb536daa66206cd9e4e5044ccdcc775e3a44eec77cf19bd53d8c",
+      "abiType": "PendleMerkleDistributor"
+    },
+    "PendleRedactedYieldContractDeployer": {
+      "address": "0x00fA04e424CBE24526949056b71e00d7eE6C24Fa",
+      "tx": "0xde0175d6715d7c9b778940a3255de2c962e148bf2f2d0c61b6d1eb82d2801ffb",
+      "abiType": "PendleYieldContractDeployerBaseV2"
+    },
+    "PendleRedactedForge": {
+      "address": "0x1b529558ACb255594d2FADf499bdBCbd288adc64",
+      "tx": "0xb5eff0e9de349de6126a3580c8256521230b68b6cd4957f422d16a099c9c1567",
+      "abiType": "PendleRedactedForge"
+    },
+    "PendleIncentiveData": {
+      "address": "0xcfa2Cd04C0a34793c25CDa392147ce463eA50CaB",
+      "tx": "0x467de6c9fbe688a518cf13b00fe294a88f4dcf70cf1a4dadae468a0dd17f0f4b",
+      "abiType": "PendleIncentiveData"
+    },
+    "MultipleBalanceQuery": {
+      "address": "0xFFb42B6F5a134A9EeF8fe5Da0856d627E2a7EeC9",
+      "tx": "0x064989b1f21875234ea42eb56cef5c54c49754dfbbd06a660c9e01def963a1fc",
+      "abiType": "MultipleBalanceQuery"
+    }
+  },
+  "forgeMap": {
+    "AaveV2": {
+      "yieldContracts": [
+        {
+          "OT": {
+            "address": "0x010a0288af52ed61e32674d82bbc7ddbfa9a1324",
+            "symbol": "OT-aUSDC-30DEC2021"
+          },
+          "YT": {
+            "address": "0xFfAf22DB1ff7e4983b57Ca9632f796f68EdedeF9",
+            "symbol": "YT-aUSDC-30DEC2021"
+          },
+          "underlyingAsset": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC"
+          },
+          "start": "1625560609",
+          "expiry": "1640822400",
+          "yieldTokenHolder": "0x1Ef8D200e0b4127C5E1183670eab37676fEDF579"
+        },
+        {
+          "OT": {
+            "address": "0x8fcb1783bF4b71A51F702aF0c266729C4592204a",
+            "symbol": "OT-aUSDC-29DEC2022"
+          },
+          "YT": {
+            "address": "0xcDb5b940E95C8632dEcDc806B90dD3fC44E699fE",
+            "symbol": "YT-aUSDC-29DEC2022"
+          },
+          "underlyingAsset": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC"
+          },
+          "start": "1623748371",
+          "expiry": "1672272000",
+          "yieldTokenHolder": "0x33d3071cfa7404a406edB5826A11620282021745"
+        }
+      ],
+      "markets": [
+        {
+          "address": "0x9e382e5f78b06631e4109b5d48151f2b3f326df0",
+          "baseToken": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC"
+          },
+          "YT": {
+            "address": "0xFfAf22DB1ff7e4983b57Ca9632f796f68EdedeF9",
+            "symbol": "YT-aUSDC-30DEC2021"
+          },
+          "factoryId": "0x4161766500000000000000000000000000000000000000000000000000000000",
+          "totalSupplyLP": "453031056270",
+          "pausingManager": "0x0EF44218209D7d64737dD36f179d5e448df3EEd4"
+        },
+        {
+          "address": "0x8315BcBC2c5C1Ef09B71731ab3827b0808A2D6bD",
+          "baseToken": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC"
+          },
+          "YT": {
+            "address": "0xcDb5b940E95C8632dEcDc806B90dD3fC44E699fE",
+            "symbol": "YT-aUSDC-29DEC2022"
+          },
+          "factoryId": "0x4161766500000000000000000000000000000000000000000000000000000000",
+          "totalSupplyLP": "1316468907944",
+          "pausingManager": "0x0EF44218209D7d64737dD36f179d5e448df3EEd4"
+        }
+      ],
+      "liqYTs": [
+        {
+          "address": "0x6f40A68E99645C60F14b497E75aE024777d61726",
+          "baseToken": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC"
+          },
+          "underlyingAsset": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC"
+          },
+          "startTime": "1623888000",
+          "epochDuration": "604800",
+          "vestingEpochs": "5",
+          "expiriesData": [
+            {
+              "expiry": "1672272000",
+              "alloc": "1000000000",
+              "lpHolder": "0x76A16d9325E9519Ef1819A4e7d16B168956f325F",
+              "lpBalance": "1254158908186"
+            }
+          ]
+        }
+      ],
+      "liqOTs": [
+        {
+          "address": "0xFb0e378b3eD6D7F8b73230644D945E28fd7F7b03",
+          "stakeToken": {
+            "address": "0x0D8a21f2Ea15269B7470c347083ee1f85e6A723B",
+            "symbol": "SLP"
+          },
+          "yieldTokens": [
+            {}
+          ],
+          "startTime": "1629936000",
+          "epochDuration": "604800",
+          "vestingEpochs": "5",
+          "rewardTokensHolder": ""
+        },
+        {
+          "address": "0x07C87cfE096c417212eAB4152d365F0F7dC6FCe4",
+          "stakeToken": {
+            "address": "0x8B758d7fD0fC58FCA8caA5e53AF2c7Da5F5F8De1",
+            "symbol": "SLP"
+          },
+          "yieldTokens": [
+            {}
+          ],
+          "startTime": "1629936000",
+          "epochDuration": "604800",
+          "vestingEpochs": "5",
+          "rewardTokensHolder": ""
+        }
+      ],
+      "forgeInfo": {
+        "address": "0x9902475a6Ffc0377b034Bf469EE0879f3Bd273FB",
+        "forgeId": "0x4161766556320000000000000000000000000000000000000000000000000000",
+        "rewardManager": "0xC93471fBC686bc0Aa5Fd102ad706ec180061461a",
+        "pausingManager": "0x0EF44218209D7d64737dD36f179d5e448df3EEd4"
+      }
+    },
+    "CompoundV2": {
+      "yieldContracts": [
+        {
+          "OT": {
+            "address": "0x3D4e7F52efaFb9E0C70179B688FC3965a75BCfEa",
+            "symbol": "OT-cDAI-29DEC2022"
+          },
+          "YT": {
+            "address": "0xb7deFe73528942793649c0A950Ec528f66159047",
+            "symbol": "YT-cDAI-29DEC2022"
+          },
+          "underlyingAsset": {
+            "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+            "symbol": "DAI"
+          },
+          "start": "1623884729",
+          "expiry": "1672272000",
+          "yieldTokenHolder": "0xb0aa68d8A0D56ae7276AB9E0E017965a67320c60"
+        },
+        {
+          "OT": {
+            "address": "0xe55e3b62005a2035d48ac0c41a5a9c799f04892c",
+            "symbol": "OT-cDAI-30DEC2021"
+          },
+          "YT": {
+            "address": "0x31654eb46a3a450265c6dfc4fc4fbbfe371e26fe",
+            "symbol": "YT-cDAI-30DEC2021"
+          },
+          "underlyingAsset": {
+            "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+            "symbol": "DAI"
+          },
+          "start": "1625568774",
+          "expiry": "1640822400",
+          "yieldTokenHolder": "0x75db58793F3943D84716FCAC1aC3258169E8D319"
+        }
+      ],
+      "markets": [
+        {
+          "address": "0x944d1727d0b656f497e74044ff589871c330334f",
+          "baseToken": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC"
+          },
+          "YT": {
+            "address": "0x31654eB46a3a450265C6Dfc4fC4FbBFe371e26Fe",
+            "symbol": "YT-cDAI-30DEC2021"
+          },
+          "factoryId": "0x436f6d706f756e64000000000000000000000000000000000000000000000000",
+          "totalSupplyLP": "38577885456174",
+          "pausingManager": "0x0EF44218209D7d64737dD36f179d5e448df3EEd4"
+        },
+        {
+          "address": "0xB26C86330FC7F97533051F2F8cD0a90C2E82b5EE",
+          "baseToken": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC"
+          },
+          "YT": {
+            "address": "0xb7deFe73528942793649c0A950Ec528f66159047",
+            "symbol": "YT-cDAI-29DEC2022"
+          },
+          "factoryId": "0x436f6d706f756e64000000000000000000000000000000000000000000000000",
+          "totalSupplyLP": "35177747597738",
+          "pausingManager": "0x0EF44218209D7d64737dD36f179d5e448df3EEd4"
+        }
+      ],
+      "liqYTs": [
+        {
+          "address": "0x5B1C59Eb6872f88a92469751a034B9B5ADA9A73F",
+          "baseToken": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC"
+          },
+          "underlyingAsset": {
+            "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+            "symbol": "DAI"
+          },
+          "startTime": "1623888000",
+          "epochDuration": "604800",
+          "vestingEpochs": "5",
+          "expiriesData": [
+            {
+              "expiry": "1672272000",
+              "alloc": "1000000000",
+              "lpHolder": "0x2F16B22C839FA995375602562ba5dD15A22d349d",
+              "lpBalance": "32943088610685"
+            }
+          ]
+        }
+      ],
+      "liqOTs": [
+        {
+          "address": "0x071dc669Be57C1b3053F746Db20cb3Bf54383aeA",
+          "stakeToken": {
+            "address": "0x2C80D72af9AB0bb9D98F607C817c6F512dd647e6",
+            "symbol": "SLP"
+          },
+          "yieldTokens": [
+            {}
+          ],
+          "startTime": "1629936000",
+          "epochDuration": "604800",
+          "vestingEpochs": "5",
+          "rewardTokensHolder": ""
+        },
+        {
+          "address": "0xa660c9aAa46b696Df01768E1D2d88CE2d5293778",
+          "stakeToken": {
+            "address": "0x4556C4488CC16D5e9552cC1a99a529c1392E4fe9",
+            "symbol": "SLP"
+          },
+          "yieldTokens": [
+            {}
+          ],
+          "startTime": "1629936000",
+          "epochDuration": "604800",
+          "vestingEpochs": "5",
+          "rewardTokensHolder": ""
+        }
+      ],
+      "forgeInfo": {
+        "address": "0xc02aC197a4D32D93D473779Fbea2DCA1fb313eD5",
+        "forgeId": "0x436f6d706f756e64563200000000000000000000000000000000000000000000",
+        "rewardManager": "0x17dF69a3a30dAE5Ad0F3734c93ddf94dBdC898dE",
+        "pausingManager": "0x0EF44218209D7d64737dD36f179d5e448df3EEd4"
+      }
+    },
+    "SushiswapSimple": {
+      "yieldContracts": [
+        {
+          "OT": {
+            "address": "0xbF682bd31a615123D28d611b38b0aE3d2b675C2C",
+            "symbol": "OT-SLP-29DEC2022"
+          },
+          "YT": {
+            "address": "0x49c8aC20dE6409c7e0B8f9867cffD1481D8206c6",
+            "symbol": "YT-SLP-29DEC2022"
+          },
+          "underlyingAsset": {
+            "address": "0x37922C69b08BABcCEaE735A31235c81f1d1e8E43",
+            "symbol": "SLP"
+          },
+          "start": "1629205198",
+          "expiry": "1672272000",
+          "yieldTokenHolder": "0xbFD6b497dCa3e5D1fA4BbD52996d400980C29Eb7"
+        }
+      ],
+      "markets": [
+        {
+          "address": "0x685d32f394a5F03e78a1A0F6A91B4E2bf6F52cfE",
+          "baseToken": {
+            "address": "0x808507121B80c02388fAd14726482e061B8da827",
+            "symbol": "PENDLE"
+          },
+          "YT": {
+            "address": "0x49c8aC20dE6409c7e0B8f9867cffD1481D8206c6",
+            "symbol": "YT-SLP-29DEC2022"
+          },
+          "factoryId": "0x47656e6572696300000000000000000000000000000000000000000000000000",
+          "totalSupplyLP": "278398664925038897757345",
+          "pausingManager": "0x0EF44218209D7d64737dD36f179d5e448df3EEd4"
+        }
+      ],
+      "liqYTs": [
+        {
+          "address": "0x0F3BCcBfEF1dC227f33A11d7a51cD02DEaD208c8",
+          "baseToken": {
+            "address": "0x808507121B80c02388fAd14726482e061B8da827",
+            "symbol": "PENDLE"
+          },
+          "underlyingAsset": {
+            "address": "0x37922C69b08BABcCEaE735A31235c81f1d1e8E43",
+            "symbol": "SLP"
+          },
+          "startTime": "1629331200",
+          "epochDuration": "604800",
+          "vestingEpochs": "5",
+          "expiriesData": [
+            {
+              "expiry": "1672272000",
+              "alloc": "1000000000",
+              "lpHolder": "0xaB30397316D06572968d068d16F1E611c46474e2",
+              "lpBalance": "273577711528196398604142"
+            }
+          ]
+        }
+      ],
+      "liqOTs": [
+        {
+          "address": "0x2c09fd74e80cE12bEbBC8f56FAB8633eA41C2bCc",
+          "stakeToken": {
+            "address": "0xb124C4e18A282143D362a066736FD60d22393Ef4",
+            "symbol": "SLP"
+          },
+          "yieldTokens": [
+            {}
+          ],
+          "startTime": "1629331200",
+          "epochDuration": "604800",
+          "vestingEpochs": "5",
+          "rewardTokensHolder": ""
+        }
+      ],
+      "forgeInfo": {
+        "address": "0x6B0e6B4C0ee4b6460E5CD35A3625a172FE9d3930",
+        "forgeId": "0x53757368697377617053696d706c650000000000000000000000000000000000",
+        "rewardManager": "0x5f183210d58EBA0812a2c33888786E7028B4E687",
+        "pausingManager": "0x0EF44218209D7d64737dD36f179d5e448df3EEd4"
+      }
+    },
+    "SushiswapComplex": {
+      "yieldContracts": [
+        {
+          "OT": {
+            "address": "0x322D6c69048330247165231EB7848A5C80a48878",
+            "symbol": "OT-SLP-29DEC2022"
+          },
+          "YT": {
+            "address": "0x311FCB5dB45A3a5876975f8108237F20525Fa7e0",
+            "symbol": "YT-SLP-29DEC2022"
+          },
+          "underlyingAsset": {
+            "address": "0x397FF1542f962076d0BFE58eA045FfA2d347ACa0",
+            "symbol": "SLP"
+          },
+          "start": "1629205073",
+          "expiry": "1672272000",
+          "yieldTokenHolder": "0xa06634BE609153b77355BFD09F9d59345939C59b"
+        }
+      ],
+      "markets": [
+        {
+          "address": "0x79c05Da47dC20ff9376B2f7DbF8ae0c994C3A0D0",
+          "baseToken": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC"
+          },
+          "YT": {
+            "address": "0x311FCB5dB45A3a5876975f8108237F20525Fa7e0",
+            "symbol": "YT-SLP-29DEC2022"
+          },
+          "factoryId": "0x47656e6572696300000000000000000000000000000000000000000000000000",
+          "totalSupplyLP": "140731438772734",
+          "pausingManager": "0x0EF44218209D7d64737dD36f179d5e448df3EEd4"
+        }
+      ],
+      "liqYTs": [
+        {
+          "address": "0xA78029ab5235B9A83EC45eD036042Db26c6E4300",
+          "baseToken": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC"
+          },
+          "underlyingAsset": {
+            "address": "0x397FF1542f962076d0BFE58eA045FfA2d347ACa0",
+            "symbol": "SLP"
+          },
+          "startTime": "1629331200",
+          "epochDuration": "604800",
+          "vestingEpochs": "5",
+          "expiriesData": [
+            {
+              "expiry": "1672272000",
+              "alloc": "1000000000",
+              "lpHolder": "0xb69DA28b6B5DdF0fd4Fee4823A3Ffd2243A13C92",
+              "lpBalance": "125195192815823"
+            }
+          ]
+        }
+      ],
+      "liqOTs": [
+        {
+          "address": "0x529c513DDE7968E19E79e38Ff94D36e4C3c21Eb7",
+          "stakeToken": {
+            "address": "0x72972b21Ce425cFd67935E07C68e84300cE3F40F",
+            "symbol": "SLP"
+          },
+          "yieldTokens": [
+            {}
+          ],
+          "startTime": "1629331200",
+          "epochDuration": "604800",
+          "vestingEpochs": "5",
+          "rewardTokensHolder": ""
+        }
+      ],
+      "forgeInfo": {
+        "address": "0xA71bdADD4AaBee6c5005aaAbAC0Ddd27a6657251",
+        "forgeId": "0x537573686973776170436f6d706c657800000000000000000000000000000000",
+        "rewardManager": "0x831Ab3253170EcED5C4Eef67606cCA1f6699fd68",
+        "pausingManager": "0x0EF44218209D7d64737dD36f179d5e448df3EEd4"
+      }
+    },
+    "Redacted": {
+      "forgeInfo": {
+        "address": "0x1b529558ACb255594d2FADf499bdBCbd288adc64",
+        "rewardManager": "0x41cf5bbd11b8194ebcff7a8ae9ab8b6ddbd43e86",
+        "forgeId": "0x5265646163746564000000000000000000000000000000000000000000000000"
+      },
+      "yieldContracts": [
+        {
+          "OT": {
+            "address": "0x189564397643D9e6173A002f1BA98da7d40a0FA6",
+            "symbol": "OT-wxBTRFLY-21APR2022"
+          },
+          "YT": {
+            "address": "0x0F2B3200d559C3877f11033551459000ab7C0d06",
+            "symbol": "YT-wxBTRFLY-21APR2022"
+          },
+          "underlyingAsset": {
+            "address": "0xCC94Faf235cC5D3Bf4bEd3a30db5984306c86aBC",
+            "symbol": "xBTRFLY"
+          },
+          "start": "1645353082",
+          "expiry": "1650499200",
+          "yieldTokenHolder": "0x47Aa8D126cF5031cC68449f678Edb28D61C72724"
+        }
+      ],
+      "markets": [
+        {
+          "address": "0x72283a76A0ddbB63c713F911f8568440f0B77804",
+          "baseToken": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC"
+          },
+          "YT": {
+            "address": "0x0F2B3200d559C3877f11033551459000ab7C0d06",
+            "symbol": "YT-wxBTRFLY-21APR2022"
+          },
+          "factoryId": "0x47656e6572696300000000000000000000000000000000000000000000000000",
+          "totalSupplyLP": "0",
+          "pausingManager": "0x0EF44218209D7d64737dD36f179d5e448df3EEd4"
+        }
+      ],
+      "liqYTs": [],
+      "liqOTs": [
+        {
+          "address": "0x0000000000000000000000000000000000000000",
+          "stakeToken": {
+            "address": "0x4C5BE0fEa74c33455F81c85561146BdAF09633dA",
+            "symbol": "SLP"
+          },
+          "yieldTokens": [
+            {}
+          ],
+          "startTime": "0",
+          "epochDuration": "0",
+          "vestingEpochs": "0",
+          "rewardTokensHolder": ""
+        }
+      ]
+    }
+  }
+}

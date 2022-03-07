@@ -1,5 +1,5 @@
 import { BigNumber as BN, Contract } from 'ethers';
-import { emptyToken, mintKyberDMMFixed, mintTraderJoeLpFixed, mintUniswapLpFixed, mintXJoe, teConsts } from '.';
+import { emptyToken, mintTraderJoeLpFixed, mintUniswapLpFixed, mintXJoe, teConsts } from '.';
 import { TestEnv } from '../fixtures';
 import { getContract } from '../../pendle-deployment-scripts';
 
@@ -64,20 +64,6 @@ export async function bufferUni(env: TestEnv) {
       1000
     );
   await emptyToken(env, env.uniPool, env.eve);
-}
-
-export async function bufferKyber(env: TestEnv) {
-  await mintKyberDMMFixed(env, env.eve);
-  await env.kyberPool
-    .connect(env.eve)
-    .transfer(
-      await env.kyberForge.yieldTokenHolders(
-        env.ptokens.KYBER_USDT_WETH_LP!.address,
-        teConsts.T0_K.add(env.pconsts.misc.SIX_MONTH)
-      ),
-      1000
-    );
-  await emptyToken(env, env.kyberPool, env.eve);
 }
 
 export async function bufferXJoe(env: TestEnv) {
