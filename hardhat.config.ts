@@ -12,8 +12,6 @@ import "solidity-coverage";
 
 dotenv.config();
 
-require('./scripts/verification.js');
-
 const dummyPrivateKey = '1111111111111111111111111111111111111111111111111111111111111111';
 
 const config: HardhatUserConfig = {
@@ -33,13 +31,10 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: `https://api.avax.network/ext/bc/C/rpc`,
-        // url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-        // url: 'http://localhost:8545',
         blockNumber: 9537774
+        // url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
         // url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-        // // url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-        // // url: 'http://localhost:8545',
-        // blockNumber: 13192440
+        // blockNumber: 14247055
       },
       accounts: [
         // 5 accounts with 10^14 ETH each
@@ -102,12 +97,12 @@ const config: HardhatUserConfig = {
     // //   accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
     // //   timeout: 20000,
     // // },
-    // mainnet: {
-    //   url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-    //   accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
-    //   gasPrice: 16 * 1000000000,
-    //   timeout: 200000,
-    // },
+    mainnet: {
+      url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+      accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],
+      gasPrice: 50 * 1000000000,
+      timeout: 200000,
+    },
     // polygon: {
     //   url: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
     //   accounts: [`${process.env.PRIVATE_KEYS || dummyPrivateKey}`],

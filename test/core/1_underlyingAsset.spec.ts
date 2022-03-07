@@ -11,11 +11,6 @@ describe('compound-underlyingAsset', function () {
   runTest(Mode.COMPOUND);
 });
 
-describe('compoundV2-underlyingAsset', function () {
-  if (checkDisabled(Mode.COMPOUND_V2)) return;
-  runTest(Mode.COMPOUND_V2);
-});
-
 describe('SushiswapComplex-underlyingAsset', function () {
   if (checkDisabled(Mode.SUSHISWAP_COMPLEX)) return;
   runTest(Mode.SUSHISWAP_COMPLEX);

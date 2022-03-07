@@ -19,8 +19,6 @@ export const ModeToModeMapping: Record<Mode, number> = {
   [Mode.TRADER_JOE]: 1,
   [Mode.XJOE]: 2,
   [Mode.WONDERLAND]: 3,
-  [Mode.KYBER_DMM]: -1,
-  [Mode.COMPOUND_V2]: -1,
   [Mode.SUSHISWAP_SIMPLE]: -1,
   [Mode.SUSHISWAP_COMPLEX]: -1,
   [Mode.UNISWAPV2]: -1,

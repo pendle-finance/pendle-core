@@ -1,9 +1,9 @@
-import { Contract } from 'ethers';
 import { checkDisabled, Mode, TestEnv, wallets } from '.';
 import {
   addGenericMarketFactoryToPendleData,
   deployGenericMarketFactory,
   deployGovernanceAndPausingManagers,
+  deployMerkleDistributor,
   DeployOrFetch,
   deployPendleData,
   deployPendleMarketReader,
@@ -46,15 +46,13 @@ async function basicSetup(env: TestEnv) {
   env.DAIContract = await getContract('ERC20', env.ptokens.DAI!);
   env.WNativeContract = await getContract('ERC20', env.ptokens.WNATIVE.address);
 
-  if (isEth(env.penv.network)) {
+  if (isEth(env.penv)) {
     env.sushiPool = await getContract('IUniswapV2Pair', env.ptokens.SUSHI_USDT_WETH_LP!.address);
     env.uniPool = await getContract('IUniswapV2Pair', env.ptokens.UNI_USDT_WETH_LP!.address);
-    env.kyberPool = await getContract('IERC20', env.ptokens.KYBER_USDT_WETH_LP!.address);
     env.SUSHIContract = await getContract('IERC20', env.ptokens.SUSHI!.address);
     env.MasterchefV1 = await getContract('IMasterChef', env.pconsts.sushi!.MASTERCHEF_V1);
     env.sushiRouter = await getContract('IUniswapV2Router02', env.pconsts.sushi!.ROUTER);
     env.uniRouter = await getContract('IUniswapV2Router02', env.pconsts.uni!.ROUTER);
-    env.kyberRouter = await getContract('IDMMRouter', env.pconsts.kyber!.ROUTER);
 
     await approveAll([env.USDTContract, env.WNativeContract], [env.pconsts.sushi!.ROUTER, env.pconsts.uni!.ROUTER]);
     await approveAll(
@@ -66,7 +64,7 @@ async function basicSetup(env: TestEnv) {
     }
   }
 
-  if (isAvax(env.penv.network)) {
+  if (isAvax(env.penv)) {
     env.xJoe = await getContract('IJoeBar', env.ptokens.XJOE!.address);
     env.JOEContract = await getContract('IERC20', env.ptokens.JOE!.address);
     env.joeMasterChefV2 = await getContract('IJoeMasterChefV2', env.pconsts.joe!.MASTERCHEF_V2);
@@ -99,12 +97,6 @@ export async function coreFixture(): Promise<TestEnv> {
 
   env.treasury = await deployContract('PendleTreasury', [alice.address]);
   await deployGovernanceAndPausingManagers(env.penv, DeployOrFetch.DEPLOY);
-  env.govManager = {} as Contract;
-  env.pausingManagerMain = {} as Contract;
-  env.pausingManagerLiqMining = {} as Contract;
-  env.pausingManagerLiqMiningV2 = {} as Contract;
-
-  await deployGovernanceAndPausingManagers(env.penv, DeployOrFetch.FETCH);
 
   env.govManager = env.penv.governanceManagerMain;
   env.pausingManagerMain = env.penv.pausingManagerMain;
@@ -122,7 +114,7 @@ export async function coreFixture(): Promise<TestEnv> {
   await deployPendleMarketReader(env.penv, DeployOrFetch.DEPLOY);
   env.marketReader = env.penv.pendleMarketReader;
 
-  if (!checkDisabled(Mode.COMPOUND) || !checkDisabled(Mode.COMPOUND_V2)) {
+  if (!checkDisabled(Mode.COMPOUND)) {
     env.cMarketFactory = await deployContract('PendleCompoundMarketFactory', [
       env.router.address,
       env.pconsts.compound!.MARKET_FACTORY_ID,
@@ -136,14 +128,19 @@ export async function coreFixture(): Promise<TestEnv> {
 
   await deployPendleProxyAdmin(env.penv, DeployOrFetch.DEPLOY);
 
-  await deployPendleWrapper(env.penv, DeployOrFetch.DEPLOY);
-  env.pendleWrapper = env.penv.pendleWrapper;
+  if (isAvax(env.penv)) {
+    await deployPendleWrapper(env.penv, DeployOrFetch.DEPLOY);
+    env.pendleWrapper = env.penv.pendleWrapper;
+  }
 
   await getPENDLEcontract(env.penv);
   env.pendle = env.penv.PENDLE;
 
   await deployPendleWhitelist(env.penv, DeployOrFetch.DEPLOY);
   env.whitelist = env.penv.pendleWhitelist;
+
+  await deployMerkleDistributor(env.penv, DeployOrFetch.DEPLOY);
+  env.merkleDistributor = env.penv.merkleDistributor;
 
   console.timeEnd('setupCoreFixutre');
   return env;

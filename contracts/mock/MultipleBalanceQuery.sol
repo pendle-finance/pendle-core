@@ -21,14 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
-pragma abicoder v2;
 
-interface IPendleRetroactiveDistribution {
-    event DistributeReward(bytes32 indexed rewardType, address rewardToken, uint256 totalAmount);
-    event UndistributeReward(bytes32 indexed rewardType, address rewardToken, uint256 totalAmount);
-    event RedeemReward(address indexed user, address rewardToken, uint256 amount);
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-    function redeem(address[] calldata tokens, address payable forAddr)
+/**
+ * @title Compound ERC20 CToken
+ *
+ * @dev Implementation of the interest bearing token for the DLP protocol.
+ * @author Compound
+ */
+contract MultipleBalanceQuery {
+    function query(IERC20 token, address[] calldata arr)
         external
-        returns (uint256[] memory);
+        view
+        returns (uint256[] memory res)
+    {
+        uint256 length = arr.length;
+        res = new uint256[](length);
+
+        for (uint256 i = 0; i < length; i++) {
+            res[i] = token.balanceOf(arr[i]);
+        }
+    }
 }

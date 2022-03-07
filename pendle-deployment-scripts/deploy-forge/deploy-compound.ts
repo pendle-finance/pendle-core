@@ -3,7 +3,7 @@ import { deployOrFetchContract } from '../helpers/contract-helpers';
 import { PendleEnv } from '../type/pendle-env';
 import { sendAndWaitForTransaction } from '../helpers';
 
-async function deployCompoundForgeAndMarketFactory(env: PendleEnv, runMode: DeployOrFetch) {
+export async function deployCompoundForgeAndMarketFactory(env: PendleEnv, runMode: DeployOrFetch) {
   env.compoundRewardManager = await deployOrFetchContract(
     env,
     runMode,

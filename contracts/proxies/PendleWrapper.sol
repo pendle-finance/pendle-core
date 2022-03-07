@@ -43,6 +43,7 @@ import "../libraries/UniswapV2Lib.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/ProxyAdmin.sol"; // added for hardhat to generate typechains
 import "@openzeppelin/contracts/proxy/TransparentUpgradeableProxy.sol"; // added for hardhat to generate typechains
+import "@openzeppelin/contracts/proxy/Initializable.sol"; // added for hardhat to generate typechains
 
 enum Mode {
     BENQI,

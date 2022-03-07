@@ -38,7 +38,7 @@ export async function runTest(mode: Mode) {
       for (var person of [alice, bob, charlie, dave, eve]) {
         if (mode == Mode.AAVE_V2)
           await mintAaveV2Token(env, env.underlyingAsset, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
-        else if (mode == Mode.COMPOUND || mode == Mode.COMPOUND_V2)
+        else if (mode == Mode.COMPOUND)
           await mintCompoundToken(env, env.underlyingAsset, person, env.INITIAL_YIELD_TOKEN_AMOUNT);
         else if (mode == Mode.SUSHISWAP_COMPLEX || mode == Mode.SUSHISWAP_SIMPLE)
           await mintSushiswapLpFixed(env, person);
@@ -60,7 +60,7 @@ export async function runTest(mode: Mode) {
     });
 
     it('[Only CompoundV2 like (Wonderland, ...) forges]', async () => {
-      if (mode != Mode.COMPOUND_V2 && mode != Mode.WONDERLAND) return;
+      if (mode != Mode.WONDERLAND) return;
       const amount = env.INITIAL_YIELD_TOKEN_AMOUNT;
       const rate = await env.forge.callStatic.getExchangeRate(env.underlyingAsset.address);
       const actualUnderlying = amount.mul(rate).div(MiscConsts.ONE_E_18);

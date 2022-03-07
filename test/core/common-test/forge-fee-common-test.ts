@@ -64,10 +64,6 @@ export function runTest(mode: Mode) {
         await mintSushiswapLpFixed(env, alice);
         REF_AMOUNT = BN.from(10000000);
         underlyingAsset = { address: env.ptokens.SUSHI_USDT_WETH_LP!.address, decimal: 12 };
-      } else if (mode == Mode.COMPOUND_V2) {
-        underlyingAsset = env.underlyingAsset;
-        REF_AMOUNT = BN.from(10000000);
-        await mintCompoundToken(env, underlyingAsset, alice, REF_AMOUNT.mul(10).div(10 ** underlyingAsset.decimal));
       } else if (mode == Mode.BENQI) {
         underlyingAsset = env.underlyingAsset;
         REF_AMOUNT = BN.from(1000000000);
@@ -99,7 +95,6 @@ export function runTest(mode: Mode) {
         mode == Mode.BENQI ||
         mode == Mode.SUSHISWAP_COMPLEX ||
         mode == Mode.SUSHISWAP_SIMPLE ||
-        mode == Mode.COMPOUND_V2 ||
         mode == Mode.TRADER_JOE ||
         mode == Mode.XJOE ||
         mode == Mode.WONDERLAND
@@ -142,7 +137,6 @@ export function runTest(mode: Mode) {
         mode == Mode.BENQI ||
         mode == Mode.SUSHISWAP_COMPLEX ||
         mode == Mode.SUSHISWAP_SIMPLE ||
-        mode == Mode.COMPOUND_V2 ||
         mode == Mode.TRADER_JOE ||
         mode == Mode.XJOE ||
         mode == Mode.WONDERLAND

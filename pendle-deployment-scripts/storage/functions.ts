@@ -12,8 +12,8 @@ import {
   SingleMarket,
   SingleOTMarket,
 } from '.';
-import { getBalanceToken, getContract, YOToken } from '..';
-import { ForgeMap, PendleEnv, SimpleTokenType, DetailedTokenType } from '../type';
+import { getBalanceToken, getContract, getCurrentTime, isEth, YOToken } from '..';
+import { DetailedTokenType, ForgeMap, PendleEnv, SimpleTokenType } from '../type';
 import { IJoePair, IPendleForge } from '../../typechain-types';
 
 export async function getInfoSimpleToken(addr: string): Promise<SimpleTokenType> {
@@ -93,15 +93,34 @@ export async function getInfoJoePool(marketAddr: string): Promise<SingleJoePool>
   };
 }
 
-export async function getInfoLiqYT(env: PendleEnv, liqAddr: string) {
-  let liq = await getContract('PendleGenericLiquidityMiningMulti', liqAddr);
+export async function getCurrentEpochId(startTime: BN, epochDuration: BN) {
+  let currentTime = BN.from(await getCurrentTime());
+  if (currentTime < startTime) return BN.from(0);
+  return currentTime.sub(startTime).div(epochDuration).add(1);
+}
 
-  let currentEpoch: BN = await liq.getCurrentEpochId();
+export async function getInfoLiqYT(env: PendleEnv, liqAddr: string) {
+  let liq: Contract;
+  if (isEth(env)) liq = await getContract('PendleGenericLiquidityMining', liqAddr);
+  else liq = await getContract('PendleGenericLiquidityMiningMulti', liqAddr);
+
+  let startTime = await liq.startTime();
+  let epochDuration = await liq.epochDuration();
+  let currentEpoch: BN;
+
+  if (isEth(env)) currentEpoch = await getCurrentEpochId(startTime, epochDuration);
+  else currentEpoch = await liq.getCurrentEpochId();
+
   let numberOfEpochs: BN = await liq.numberOfEpochs();
   let fundedFutureEpoch: [BN, BN][] = [];
   for (let i = currentEpoch; i <= numberOfEpochs; i = i.add(1)) {
-    let { totalRewards: rewards } = await liq.readEpochData(i);
-    fundedFutureEpoch.push(rewards);
+    if (isEth(env)) {
+      let { totalRewards: rewards }: { totalRewards: BN } = await liq.readEpochData(i);
+      fundedFutureEpoch.push([rewards, BN.from(0)]);
+    } else {
+      let { totalRewards: rewards } = await liq.readEpochData(i);
+      fundedFutureEpoch.push(rewards);
+    }
   }
 
   let expiries: Set<number> = new Set();
@@ -133,8 +152,8 @@ export async function getInfoLiqYT(env: PendleEnv, liqAddr: string) {
     address: liqAddr,
     baseToken: await getInfoSimpleToken(await liq.baseToken()),
     underlyingAsset: await getInfoSimpleToken(await liq.underlyingAsset()),
-    startTime: await liq.startTime(),
-    epochDuration: await liq.epochDuration(),
+    startTime,
+    epochDuration,
     vestingEpochs: await liq.vestingEpochs(),
     numberOfEpochs,
     currentEpoch,
@@ -145,30 +164,52 @@ export async function getInfoLiqYT(env: PendleEnv, liqAddr: string) {
   return res;
 }
 
-export async function getInfoLiqOT(liqAddr: string) {
-  let liq = await getContract('PendleLiquidityMiningBaseV2Multi', liqAddr);
+export async function getInfoLiqOT(env: PendleEnv, liqAddr: string) {
+  let liq: Contract;
+  if (isEth(env)) liq = await getContract('PendleLiquidityMiningBaseV2', liqAddr);
+  else liq = await getContract('PendleLiquidityMiningBaseV2Multi', liqAddr);
 
-  let currentEpoch: BN = await liq.getCurrentEpochId();
+  let startTime = await liq.startTime();
+  let epochDuration = await liq.epochDuration();
+  let currentEpoch: BN;
+
+  if (isEth(env)) currentEpoch = await getCurrentEpochId(startTime, epochDuration);
+  else currentEpoch = await liq.getCurrentEpochId();
+
   let numberOfEpochs: BN = await liq.numberOfEpochs();
   let fundedFutureEpoch: [BN, BN][] = [];
   for (let i = currentEpoch; i <= numberOfEpochs; i = i.add(1)) {
-    let { totalRewards: rewards } = await liq.readEpochData(i, MiscConsts.ZERO_ADDRESS);
-    fundedFutureEpoch.push(rewards);
+    if (isEth(env)) {
+      let { totalRewards: rewards }: { totalRewards: BN } = await liq.readEpochData(i, MiscConsts.ZERO_ADDRESS);
+      fundedFutureEpoch.push([rewards, BN.from(0)]);
+    } else {
+      let { totalRewards: rewards } = await liq.readEpochData(i, MiscConsts.ZERO_ADDRESS);
+      fundedFutureEpoch.push(rewards);
+    }
   }
 
-  let yieldTokenAddrs = await liq.yieldTokens();
-  let yieldTokens = [await getInfoSimpleToken(yieldTokenAddrs[0]), await getInfoSimpleToken(yieldTokenAddrs[1])];
+  let yieldTokens: SimpleTokenType[];
+  let rewardTokensHolder: string;
+  if (isEth(env)) {
+    yieldTokens = [await getInfoSimpleToken(await liq.yieldToken())];
+    rewardTokensHolder = '';
+  } else {
+    let yieldTokenAddrs = await liq.yieldTokens();
+    yieldTokens = [await getInfoSimpleToken(yieldTokenAddrs[0]), await getInfoSimpleToken(yieldTokenAddrs[1])];
+    rewardTokensHolder = await liq.rewardTokensHolder();
+  }
+
   let res: SingleLiqOT = {
     address: liqAddr,
     stakeToken: await getInfoSimpleToken(await liq.stakeToken()),
     yieldTokens,
-    startTime: await liq.startTime(),
-    epochDuration: await liq.epochDuration(),
+    startTime,
+    epochDuration,
     vestingEpochs: await liq.vestingEpochs(),
     numberOfEpochs,
     currentEpoch,
     fundedFutureEpoch,
-    rewardTokensHolder: await liq.rewardTokensHolder(),
+    rewardTokensHolder,
   };
 
   return res;
@@ -270,7 +311,7 @@ export async function getInfoForgeMap(env: PendleEnv) {
       res[key].liqYTs[i] = await getInfoLiqYT(env, res[key].liqYTs[i].address);
     }
     for (let i = 0; i < res[key].liqOTs.length; i++) {
-      res[key].liqOTs[i] = await getInfoLiqOT(res[key].liqOTs[i].address);
+      res[key].liqOTs[i] = await getInfoLiqOT(env, res[key].liqOTs[i].address);
     }
   }
   return res;

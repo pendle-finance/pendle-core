@@ -21,14 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 pragma solidity 0.7.6;
-pragma abicoder v2;
 
-interface IPendleRetroactiveDistribution {
-    event DistributeReward(bytes32 indexed rewardType, address rewardToken, uint256 totalAmount);
-    event UndistributeReward(bytes32 indexed rewardType, address rewardToken, uint256 totalAmount);
-    event RedeemReward(address indexed user, address rewardToken, uint256 amount);
+interface IRedactedStaking {
 
-    function redeem(address[] calldata tokens, address payable forAddr)
-        external
-        returns (uint256[] memory);
+    function stake(uint256 _amount, address _recipient) external returns (bool);
+
+    function claim(address _recipient) external;
+
+    function rebase() external;
+
+    function warmupPeriod() external returns (uint256);
+
+    function epoch() external view returns (
+      uint256 length,
+      uint256 number,
+      uint256 endBlock,
+      uint256 distribute
+    );
 }

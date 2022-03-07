@@ -6,11 +6,6 @@ describe('aave-forge-fee ', async () => {
   runTest(Mode.AAVE_V2);
 });
 
-describe('compoundV2-forge-fee', async () => {
-  if (checkDisabled(Mode.COMPOUND_V2)) return;
-  runTest(Mode.COMPOUND_V2);
-});
-
 describe('sushi-complex-forge-fee', async () => {
   if (checkDisabled(Mode.SUSHISWAP_COMPLEX)) return;
   runTest(Mode.SUSHISWAP_COMPLEX);
@@ -19,11 +14,6 @@ describe('sushi-complex-forge-fee', async () => {
 describe('sushi-simple-forge-fee', async () => {
   if (checkDisabled(Mode.SUSHISWAP_SIMPLE)) return;
   runTest(Mode.SUSHISWAP_SIMPLE);
-});
-
-describe('compound-v2-forge-fee', async () => {
-  if (checkDisabled(Mode.COMPOUND_V2)) return;
-  runTest(Mode.COMPOUND_V2);
 });
 
 describe('benqi-forge-fee', async () => {

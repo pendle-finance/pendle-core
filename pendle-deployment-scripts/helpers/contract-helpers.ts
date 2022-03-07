@@ -1,4 +1,5 @@
 import { Erc20Token, LpToken } from '@pendle/constants';
+import assert from 'assert';
 import { Contract } from 'ethers';
 import { DeployOrFetch, isOToffchain, PendleEnv, saveContract } from '..';
 
@@ -19,23 +20,41 @@ export async function deployOrFetchContract(
   args: any[],
   verify: boolean = false
 ): Promise<Contract> {
-  if (runMode == DeployOrFetch.FETCH) {
+  if (runMode == DeployOrFetch.FETCH || runMode == DeployOrFetch.VERIFY) {
     if (!(contractName in env.contractMap)) throw new Error('Action is FETCH but the contract does not exist');
-    return getContract(contractAbiType, env.contractMap[contractName].address);
+    let contract = await getContract(contractAbiType, env.contractMap[contractName].address);
+    if (runMode == DeployOrFetch.VERIFY) {
+      await hre.run('verify:verify', {
+        address: contract.address,
+        // contract: 'contracts/core/SushiswapComplex/PendleSLPLiquidityMining.sol:PendleSLPLiquidityMining',
+        constructorArguments: args,
+      });
+    }
+    return contract;
   }
-  if (runMode !== DeployOrFetch.FORCE_DEPLOY && contractName in env.contractMap)
+
+  assert(
+    runMode == DeployOrFetch.DEPLOY || runMode == DeployOrFetch.FORCE_DEPLOY || runMode == DeployOrFetch.DEPLOY_NOSAVE
+  );
+
+  if (runMode == DeployOrFetch.DEPLOY && contractName in env.contractMap)
     throw new Error('Action is DEPLOY but the contract has existed');
+
   const contractFactory = await hre.ethers.getContractFactory(contractAbiType);
   const contractObject = await contractFactory.deploy(...args);
   await contractObject.deployed();
   console.log(
     `\t[DEPLOYED] ${contractName} deployed to ${contractObject.address}, tx=${contractObject.deployTransaction.hash}`
   );
-  await saveContract(env, contractName, {
-    address: contractObject.address,
-    tx: contractObject.deployTransaction.hash,
-    abiType: contractAbiType,
-  });
+
+  if (runMode !== DeployOrFetch.DEPLOY_NOSAVE) {
+    await saveContract(env, contractName, {
+      address: contractObject.address,
+      tx: contractObject.deployTransaction.hash,
+      abiType: contractAbiType,
+    });
+  }
+
   if (verify) {
     await hre.run('verify:verify', {
       address: contractObject.address,

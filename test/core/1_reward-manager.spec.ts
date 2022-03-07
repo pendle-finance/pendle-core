@@ -14,10 +14,6 @@ describe('sushiswap-complex-reward-manager', function () {
   if (checkDisabled(Mode.SUSHISWAP_COMPLEX)) return;
   runTest(Mode.SUSHISWAP_COMPLEX);
 });
-describe('compound-v2-reward-manager', function () {
-  if (checkDisabled(Mode.COMPOUND_V2)) return;
-  runTestCv2(Mode.COMPOUND_V2);
-});
 
 describe('Benqi-reward-manager', function () {
   if (checkDisabled(Mode.BENQI)) return;
@@ -32,8 +28,4 @@ describe('Trader-Joe-reward-manager', function () {
 describe('xJoe-reward-manager', function () {
   if (checkDisabled(Mode.XJOE)) return;
   runTest(Mode.XJOE);
-});
-describe('KyberDMM-reward-manager', function () {
-  if (checkDisabled(Mode.KYBER_DMM)) return;
-  runTest(Mode.KYBER_DMM);
 });

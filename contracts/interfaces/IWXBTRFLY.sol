@@ -22,13 +22,11 @@
  */
 pragma solidity 0.7.6;
 pragma abicoder v2;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IPendleRetroactiveDistribution {
-    event DistributeReward(bytes32 indexed rewardType, address rewardToken, uint256 totalAmount);
-    event UndistributeReward(bytes32 indexed rewardType, address rewardToken, uint256 totalAmount);
-    event RedeemReward(address indexed user, address rewardToken, uint256 amount);
-
-    function redeem(address[] calldata tokens, address payable forAddr)
-        external
-        returns (uint256[] memory);
+interface IWXBTRFLY is IERC20 {
+  function wrapFromxBTRFLY(uint256 _amount) external returns (uint256);
+  function unwrapToxBTRFLY(uint256 _amount) external returns (uint256);
+  function xBTRFLY() external view returns (address);
+  function xBTRFLYValue(uint256 _amount) external view returns (uint256);
 }

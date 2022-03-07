@@ -8,12 +8,8 @@ import { getInfoJoePool, getInfoLiqOT, getInfoMarket, getInfoOTMarket } from '..
 import { doInfinityApproveWrapper } from '../admin';
 
 export async function deployPendleWrapper(env: PendleEnv, runMode: DeployOrFetch) {
-  if (isEth(env.network)) {
-    assert(false, 'Cannot deploy Wrapper on ETH');
-  } else {
-    await deployPendleWrapperImplementation(env, runMode);
-    await deployPendleWrapperProxy(env, runMode);
-  }
+  await deployPendleWrapperImplementation(env, runMode);
+  await deployPendleWrapperProxy(env, runMode);
 }
 
 export async function deployPendleWrapperImplementation(env: PendleEnv, runMode: DeployOrFetch) {
@@ -148,7 +144,7 @@ export async function supportWonderland(env: PendleEnv, YTMarketAddr: string, li
 }
 
 async function supportNewYoToken(env: PendleEnv, YTMarketAddr: string, liqYTAddr: string, liqOTAddr: string) {
-  let liqOT = await getInfoLiqOT(liqOTAddr);
+  let liqOT = await getInfoLiqOT(env, liqOTAddr);
   let YTMarket = await getInfoMarket(env, YTMarketAddr);
   let OTMarket = await getInfoOTMarket(liqOT.stakeToken.address);
   let OT = await getOTAddrFromJoePool(env, OTMarket.address);

@@ -11,7 +11,7 @@ export async function setUpEnv(env: PendleEnv, network: Network) {
   readFlattenedEnv(env);
 }
 
-function setUpConstants(env: PendleEnv) {
+export function setUpConstants(env: PendleEnv) {
   switch (env.network) {
     case Network.AVAX:
       env.consts = AvaxConsts;

@@ -1,4 +1,4 @@
-import { PendleEnv } from '../type';
+import { isEth, PendleEnv } from '../type';
 import { assert } from 'hardhat';
 import { MiscConsts } from '@pendle/constants';
 import { getInfoOTMarket, getInfoSimpleToken, getInfoYO } from '../storage';
@@ -9,10 +9,11 @@ export async function createNewOTMarket(env: PendleEnv, OTAddr: string, baseToke
   assert(baseTokenAddr != MiscConsts.ZERO_ADDRESS, 'BaseToken ZERO ADDRESS');
   let OT = await getInfoYO(OTAddr);
   let baseToken = await getInfoSimpleToken(baseTokenAddr);
+  let joeSushiFactory = isEth(env) ? env.sushiFactory : env.joeFactory;
 
-  let marketAddr: string = await env.joeFactory.callStatic.createPair(OT.address, baseToken.address);
+  let marketAddr: string = await joeSushiFactory.callStatic.createPair(OT.address, baseToken.address);
   await sendAndWaitForTransaction(
-    env.joeFactory.connect(env.deployer).createPair,
+    joeSushiFactory.connect(env.deployer).createPair,
     `Create market between ${OT.symbol} and ${baseToken.symbol}`,
     [OT.address, baseToken.address]
   );

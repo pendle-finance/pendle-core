@@ -2,14 +2,10 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { assert } from 'chai';
 import { BigNumber as BN, BigNumberish, Contract, utils, Wallet } from 'ethers';
 import { teConsts, wrapEth } from '.';
-import { getContract } from '../../pendle-deployment-scripts';
-import {
-  IERC20,
-  IPendleLiquidityMining,
-  IPendleLiquidityMiningMulti,
-  IPendleLiquidityMiningV2Multi,
-} from '../../typechain-types';
+import { getContract, isEth } from '../../pendle-deployment-scripts';
+import { IERC20, IPendleLiquidityMiningMulti, IPendleLiquidityMiningV2Multi } from '../../typechain-types';
 import { Mode, TestEnv } from '../fixtures';
+import exp from 'constants';
 
 export async function tokenizeYield(env: TestEnv, user: Wallet, amount: BN, to?: string): Promise<BN> {
   if (to == null) {
@@ -27,7 +23,28 @@ export async function redeemDueInterests(env: TestEnv, user: Wallet, expiry?: BN
   if (expiry == null) {
     expiry = env.EXPIRY;
   }
-  await env.redeemProxy.redeem([[env.xyt.address], [], [], [], [], []], user.address, teConsts.HG);
+  if (isEth(env.penv)) {
+    await env.redeemProxyEth.redeem(
+      {
+        xyts: [env.xyt.address],
+        ots: [],
+        markets: [],
+        lmContractsForRewards: [],
+        expiriesForRewards: [],
+        lmContractsForInterests: [],
+        expiriesForInterests: [],
+        lmV2ContractsForRewards: [],
+        lmV2ContractsForInterests: [],
+      },
+      user.address
+    );
+  } else {
+    await env.redeemProxyAvax.redeem(
+      { yts: [env.xyt.address], ots: [], markets: [], lmV1: [], lmV2: [], tokensDistribution: [] },
+      user.address,
+      teConsts.HG
+    );
+  }
 }
 
 export async function redeemAfterExpiry(env: TestEnv, user: Wallet, expiry?: BN) {
@@ -207,7 +224,35 @@ export async function redeemLpInterests(env: TestEnv, user: Wallet, market?: Con
   if (market == null) {
     market = env.market;
   }
-  await env.redeemProxy.redeem([[], [], [market.address], [], [], []], user.address, teConsts.HG);
+  if (isEth(env.penv)) {
+    await env.redeemProxyEth.redeem(
+      {
+        xyts: [],
+        ots: [],
+        markets: [market.address],
+        lmContractsForRewards: [],
+        expiriesForRewards: [],
+        lmContractsForInterests: [],
+        expiriesForInterests: [],
+        lmV2ContractsForRewards: [],
+        lmV2ContractsForInterests: [],
+      },
+      user.address
+    );
+  } else {
+    await env.redeemProxyAvax.redeem(
+      {
+        yts: [],
+        ots: [],
+        markets: [market.address],
+        lmV1: [],
+        lmV2: [],
+        tokensDistribution: [],
+      },
+      user.address,
+      teConsts.HG
+    );
+  }
 }
 
 export async function getMarketRateExactIn(
@@ -282,26 +327,166 @@ export async function withdraw(env: TestEnv, user: Wallet, amount: BN, expiry?: 
 
 export async function redeemLiqRewards(env: TestEnv, user: Wallet, expiry?: BN) {
   if (env.mode == Mode.SLP_LIQ || env.mode == Mode.JLP_LIQ) {
-    await env.redeemProxy.redeem([[], [], [], [], [[env.liq.address, 0, 1]], []], user.address, teConsts.HG);
+    if (isEth(env.penv)) {
+      await env.redeemProxyEth.redeem(
+        {
+          xyts: [],
+          ots: [],
+          markets: [],
+          lmContractsForRewards: [],
+          expiriesForRewards: [],
+          lmContractsForInterests: [],
+          expiriesForInterests: [],
+          lmV2ContractsForRewards: [env.liq.address],
+          lmV2ContractsForInterests: [],
+        },
+        user.address
+      );
+    } else {
+      await env.redeemProxyAvax.redeem(
+        {
+          yts: [],
+          ots: [],
+          markets: [],
+          lmV1: [],
+          lmV2: [{ addr: env.liq.address, expiry: 0, mode: 1 }],
+          tokensDistribution: [],
+        },
+        user.address,
+        teConsts.HG
+      );
+    }
   } else {
     if (expiry == null) expiry = env.EXPIRY;
-    await env.redeemProxy.redeem([[], [], [], [[env.liq.address, expiry, 1]], [], []], user.address, teConsts.HG);
+    if (isEth(env.penv)) {
+      await env.redeemProxyEth.redeem(
+        {
+          xyts: [],
+          ots: [],
+          markets: [],
+          lmContractsForRewards: [env.liq.address],
+          expiriesForRewards: [expiry],
+          lmContractsForInterests: [],
+          expiriesForInterests: [],
+          lmV2ContractsForRewards: [],
+          lmV2ContractsForInterests: [],
+        },
+        user.address
+      );
+    } else {
+      await env.redeemProxyAvax.redeem(
+        {
+          yts: [],
+          ots: [],
+          markets: [],
+          lmV1: [{ addr: env.liq.address, expiry, mode: 1 }],
+          lmV2: [],
+          tokensDistribution: [],
+        },
+        user.address,
+        teConsts.HG
+      );
+    }
   }
 }
 
 export async function redeemLiqInterest(env: TestEnv, user: Wallet, expiry?: BN) {
   if (env.mode == Mode.SLP_LIQ || env.mode == Mode.JLP_LIQ) {
-    await env.redeemProxy.redeem([[], [], [], [], [[env.liq.address, 0, 0]], []], user.address, teConsts.HG);
+    if (isEth(env.penv)) {
+      await env.redeemProxyEth.redeem(
+        {
+          xyts: [],
+          ots: [],
+          markets: [],
+          lmContractsForRewards: [],
+          expiriesForRewards: [],
+          lmContractsForInterests: [],
+          expiriesForInterests: [],
+          lmV2ContractsForRewards: [],
+          lmV2ContractsForInterests: [env.liq.address],
+        },
+        user.address
+      );
+    } else {
+      await env.redeemProxyAvax.redeem(
+        {
+          yts: [],
+          ots: [],
+          markets: [],
+          lmV1: [],
+          lmV2: [{ addr: env.liq.address, expiry: 0, mode: 0 }],
+          tokensDistribution: [],
+        },
+        user.address,
+        teConsts.HG
+      );
+    }
   } else {
     if (expiry == null) expiry = env.EXPIRY;
-    await env.redeemProxy.redeem([[], [], [], [[env.liq.address, expiry, 0]], [], []], user.address, teConsts.HG);
+    if (isEth(env.penv)) {
+      await env.redeemProxyEth.redeem(
+        {
+          xyts: [],
+          ots: [],
+          markets: [],
+          lmContractsForRewards: [],
+          expiriesForRewards: [],
+          lmContractsForInterests: [env.liq.address],
+          expiriesForInterests: [expiry],
+          lmV2ContractsForRewards: [],
+          lmV2ContractsForInterests: [],
+        },
+        user.address
+      );
+    } else {
+      await env.redeemProxyAvax.redeem(
+        {
+          yts: [],
+          ots: [],
+          markets: [],
+          lmV1: [{ addr: env.liq.address, expiry, mode: 0 }],
+          lmV2: [],
+          tokensDistribution: [],
+        },
+        user.address,
+        teConsts.HG
+      );
+    }
   }
 }
 
 export async function redeemOtRewards(env: TestEnv, underlyingAsset: string, _user: Wallet | string, expiry?: BN) {
   let user = typeof _user == 'string' ? _user : _user.address;
   if (expiry == null) expiry = env.EXPIRY;
-  await env.redeemProxy.redeem([[], [env.ot.address], [], [], [], []], user, teConsts.HG);
+  if (isEth(env.penv)) {
+    await env.redeemProxyEth.redeem(
+      {
+        xyts: [],
+        ots: [env.ot.address],
+        markets: [],
+        lmContractsForRewards: [],
+        expiriesForRewards: [],
+        lmContractsForInterests: [],
+        expiriesForInterests: [],
+        lmV2ContractsForRewards: [],
+        lmV2ContractsForInterests: [],
+      },
+      user
+    );
+  } else {
+    await env.redeemProxyAvax.redeem(
+      {
+        yts: [],
+        ots: [env.ot.address],
+        markets: [],
+        lmV1: [],
+        lmV2: [],
+        tokensDistribution: [],
+      },
+      user,
+      teConsts.HG
+    );
+  }
 }
 
 export async function otBalance(env: TestEnv, user: Wallet): Promise<BN> {

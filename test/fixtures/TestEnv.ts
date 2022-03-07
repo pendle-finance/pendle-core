@@ -5,7 +5,6 @@ import { waffle } from 'hardhat';
 import {
   addFakeIncomeBenQiDAI,
   addFakeIncomeCompoundUSDT,
-  addFakeIncomeKyber,
   addFakeIncomeSushi,
   addFakeIncomeTraderJoe,
   addFakeIncomeXJoe,
@@ -16,20 +15,18 @@ import {
   LiqParams,
   teConsts,
 } from '../helpers';
-import { PendleEnv } from '../../pendle-deployment-scripts';
-import { getContract } from '../../pendle-deployment-scripts';
+import { getContract, PendleEnv } from '../../pendle-deployment-scripts';
+import { PendleMerkleDistributor, PendleRedeemProxyETHDep1, PendleRedeemProxyMulti } from '../../typechain-types';
 
 export enum Mode {
   AAVE_V2 = 1,
   COMPOUND,
-  COMPOUND_V2,
   SUSHISWAP_COMPLEX,
   SUSHISWAP_SIMPLE,
   SLP_LIQ,
   UNISWAPV2,
   BENQI,
   TRADER_JOE,
-  KYBER_DMM,
   JLP_LIQ,
   XJOE,
   WONDERLAND,
@@ -49,7 +46,7 @@ for (let x of [
   Mode.TRADER_JOE,
   Mode.XJOE,
   Mode.WONDERLAND,
-  // Mode.KYBER_DMM, // NOT IN PRODUCTION USE
+  // Mode.GENERAL_TEST,
   // Mode.JLP_LIQ, // NOT IN PRODUCTION USE
 ]) {
   enabledMode.set(x, true);
@@ -65,13 +62,11 @@ export type TestEnv = CommonEnv &
   TokensEnv &
   AaveV2Env &
   CompoundEnv &
-  CompoundV2Env &
   SushiswapComplexEnv &
   SushiswapSimpleEnv &
   UniswapV2Env &
   BenQiEnv &
   TraderJoeEnv &
-  KyberDMMEnv &
   XJoeEnv &
   WonderlandEnv;
 
@@ -85,7 +80,8 @@ interface CommonEnv {
   data: Contract;
   pendleWrapper: Contract;
 
-  redeemProxy: Contract;
+  redeemProxyEth: PendleRedeemProxyETHDep1;
+  redeemProxyAvax: PendleRedeemProxyMulti;
   treasury: Contract;
   marketReader: Contract;
   pausingManagerMain: Contract;
@@ -98,7 +94,6 @@ interface CommonEnv {
   uniRouter: Contract;
   sushiRouter: Contract;
   joeRouter: Contract;
-  kyberRouter: Contract;
   wonderlandTimeStaking: Contract;
 
   forge: Contract;
@@ -120,6 +115,7 @@ interface CommonEnv {
   sushiLiquidityMiningV2: Contract;
   joeLiquidityMiningV2: Contract;
   whitelist: Contract;
+  merkleDistributor: PendleMerkleDistributor;
 
   MasterchefV1: Contract;
   joeMasterChefV2: Contract;
@@ -156,7 +152,6 @@ interface TokensEnv {
   sushiPool: Contract;
   uniPool: Contract;
   joePool: Contract;
-  kyberPool: Contract;
   xJoe: Contract;
   wMEMOContract: Contract;
   TIMEContract: Contract;
@@ -192,20 +187,6 @@ interface CompoundEnv {
   cMarket8: Contract;
   cLiquidityMining: Contract;
   cLiquidityMining8: Contract;
-}
-
-interface CompoundV2Env {
-  c2Forge: Contract;
-  c2OwnershipToken: Contract;
-  c2FutureYieldToken: Contract;
-  c2OwnershipToken8: Contract;
-  c2FutureYieldToken8: Contract;
-  c2RewardManager: Contract;
-  c2Market: Contract;
-  c2MarketEth: Contract;
-  c2Market8: Contract;
-  c2LiquidityMining: Contract;
-  c2LiquidityMining8: Contract;
 }
 
 interface SushiswapComplexEnv {
@@ -277,20 +258,12 @@ interface WonderlandEnv {
   wonderlandLiquidityMining: Contract;
   wonderlandRewardRedeemer: Contract;
 }
-interface KyberDMMEnv {
-  kyberForge: Contract;
-  kyberOwnershipToken: Contract;
-  kyberFutureYieldToken: Contract;
-  kyberRewardManager: Contract;
-  kyberMarket: Contract;
-  kyberLiquidityMining: Contract;
-}
 
 export async function parseTestEnvRouterFixture(env: TestEnv, mode: Mode) {
   let tokens = env.ptokens;
   let consts = env.pconsts;
   env.mode = mode;
-  if (env.mode == Mode.AAVE_V2 || env.mode == Mode.GENERAL_TEST) {
+  if (env.mode == Mode.AAVE_V2) {
     env.T0 = teConsts.T0_A2;
     env.EXPIRY = env.T0.add(env.pconsts.misc.SIX_MONTH);
     env.forge = env.a2Forge;
@@ -315,21 +288,6 @@ export async function parseTestEnvRouterFixture(env: TestEnv, mode: Mode) {
     env.rewardManager = env.cRewardManager;
     env.yToken = await getCContract(env, tokens.USDT!);
     env.FORGE_ID = consts.compound!.FORGE_ID_V1;
-    env.INITIAL_YIELD_TOKEN_AMOUNT = teConsts.INITIAL_COMPOUND_TOKEN_AMOUNT;
-    env.underlyingAsset = tokens.USDT!;
-    env.addGenericForgeFakeIncome = addFakeIncomeCompoundUSDT;
-  } else if (env.mode == Mode.COMPOUND_V2) {
-    env.T0 = teConsts.T0_C2;
-    env.EXPIRY = env.T0.add(env.pconsts.misc.SIX_MONTH);
-    env.forge = env.c2Forge;
-    env.ot = env.c2OwnershipToken;
-    env.xyt = env.c2FutureYieldToken;
-    env.ot8 = env.c2OwnershipToken8;
-    env.xyt8 = env.c2FutureYieldToken8;
-    // no ot18, xyt18
-    env.rewardManager = env.c2RewardManager;
-    env.yToken = await getCContract(env, tokens.USDT!);
-    env.FORGE_ID = consts.compound!.FORGE_ID_V2;
     env.INITIAL_YIELD_TOKEN_AMOUNT = teConsts.INITIAL_COMPOUND_TOKEN_AMOUNT;
     env.underlyingAsset = tokens.USDT!;
     env.addGenericForgeFakeIncome = addFakeIncomeCompoundUSDT;
@@ -385,7 +343,7 @@ export async function parseTestEnvRouterFixture(env: TestEnv, mode: Mode) {
     env.INITIAL_YIELD_TOKEN_AMOUNT = teConsts.INITIAL_BENQI_DAI_AMOUNT;
     env.underlyingAsset = tokens.DAI!;
     env.addGenericForgeFakeIncome = addFakeIncomeBenQiDAI;
-  } else if (mode == Mode.TRADER_JOE || mode == Mode.JLP_LIQ) {
+  } else if (mode == Mode.TRADER_JOE || mode == Mode.JLP_LIQ || mode == Mode.GENERAL_TEST) {
     env.T0 = teConsts.T0_TJ;
     env.EXPIRY = env.T0.add(env.pconsts.misc.SIX_MONTH);
     env.forge = env.joeForge;
@@ -400,18 +358,6 @@ export async function parseTestEnvRouterFixture(env: TestEnv, mode: Mode) {
     env.addGenericForgeFakeIncome = addFakeIncomeTraderJoe;
     env.MASTER_CHEF_PID = tokens.JOE_WAVAX_DAI_LP!.pid!;
     env.masterChefRewardRedeemer = env.joeRewardRedeemer;
-  } else if (mode == Mode.KYBER_DMM) {
-    env.T0 = teConsts.T0_K;
-    env.EXPIRY = env.T0.add(env.pconsts.misc.SIX_MONTH);
-    env.forge = env.kyberForge;
-    env.ot = env.kyberOwnershipToken;
-    env.xyt = env.kyberFutureYieldToken;
-    env.rewardManager = env.kyberRewardManager;
-    env.yToken = await getContract('ERC20', tokens.KYBER_USDT_WETH_LP!.address);
-    env.FORGE_ID = consts.kyber!.FORGE_ID;
-    env.INITIAL_YIELD_TOKEN_AMOUNT = teConsts.INITIAL_KYBER_TOKEN_AMOUNT;
-    env.underlyingAsset = { address: tokens.KYBER_USDT_WETH_LP!.address, decimal: 18 };
-    env.addGenericForgeFakeIncome = addFakeIncomeKyber;
   } else if (mode == Mode.XJOE) {
     env.T0 = teConsts.T0_XJ;
     env.EXPIRY = env.T0.add(env.pconsts.misc.SIX_MONTH);
@@ -451,7 +397,7 @@ export async function parseTestEnvMarketFixture(env: TestEnv, mode: Mode) {
   env.mode = mode;
   await parseTestEnvRouterFixture(env, mode);
 
-  if (env.mode == Mode.AAVE_V2 || mode == Mode.GENERAL_TEST) {
+  if (env.mode == Mode.AAVE_V2) {
     env.MARKET_FACTORY_ID = consts.aave!.MARKET_FACTORY_ID;
     env.market = env.a2Market;
     env.market18 = env.a2Market18;
@@ -462,10 +408,6 @@ export async function parseTestEnvMarketFixture(env: TestEnv, mode: Mode) {
     env.market8 = env.cMarket8;
     env.marketEth = env.cMarketEth;
     // no market18
-  } else if (env.mode == Mode.COMPOUND_V2) {
-    env.MARKET_FACTORY_ID = consts.common.GENERIC_MARKET_FACTORY_ID;
-    env.market = env.c2Market;
-    env.market8 = env.c2Market8;
   } else if (env.mode == Mode.SUSHISWAP_COMPLEX || env.mode == Mode.SLP_LIQ) {
     env.MARKET_FACTORY_ID = consts.common.GENERIC_MARKET_FACTORY_ID;
     env.market = env.scMarket;
@@ -478,12 +420,9 @@ export async function parseTestEnvMarketFixture(env: TestEnv, mode: Mode) {
   } else if (mode == Mode.BENQI) {
     env.MARKET_FACTORY_ID = consts.common.GENERIC_MARKET_FACTORY_ID;
     env.market = env.benQiMarket;
-  } else if (mode == Mode.TRADER_JOE || env.mode == Mode.JLP_LIQ) {
+  } else if (mode == Mode.TRADER_JOE || env.mode == Mode.JLP_LIQ || mode == Mode.GENERAL_TEST) {
     env.MARKET_FACTORY_ID = consts.common.GENERIC_MARKET_FACTORY_ID;
     env.market = env.joeMarket;
-  } else if (env.mode == Mode.KYBER_DMM) {
-    env.MARKET_FACTORY_ID = consts.common.GENERIC_MARKET_FACTORY_ID;
-    env.market = env.kyberMarket;
   } else if (env.mode == Mode.XJOE) {
     env.MARKET_FACTORY_ID = consts.common.GENERIC_MARKET_FACTORY_ID;
     env.market = env.xJoeMarket;
@@ -506,9 +445,6 @@ export async function parseTestEnvLiquidityMiningFixture(env: TestEnv, mode: Mod
     env.liq = env.cLiquidityMining;
     env.liq8 = env.cLiquidityMining8;
     // no liq18
-  } else if (env.mode == Mode.COMPOUND_V2) {
-    env.liq = env.c2LiquidityMining;
-    env.liq8 = env.c2LiquidityMining8;
   } else if (env.mode == Mode.SUSHISWAP_COMPLEX) {
     env.liq = env.scLiquidityMining;
   } else if (env.mode == Mode.SUSHISWAP_SIMPLE) {
@@ -519,8 +455,6 @@ export async function parseTestEnvLiquidityMiningFixture(env: TestEnv, mode: Mod
     env.liq = env.benQiLiquidityMining;
   } else if (env.mode == Mode.TRADER_JOE) {
     env.liq = env.joeLiquididtyMining;
-  } else if (env.mode == Mode.KYBER_DMM) {
-    env.liq = env.kyberLiquidityMining;
   } else if (env.mode == Mode.JLP_LIQ) {
     env.liq = env.joeLiquidityMiningV2;
   } else if (env.mode == Mode.XJOE) {

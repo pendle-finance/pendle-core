@@ -11,6 +11,14 @@ import {
   PendleZapEstimatorPAP,
   PendleZapEstimatorSingle,
   PendleRetroactiveDistribution,
+  IJoeFactory,
+  PendleMerkleDistributor,
+  PendleRedeemProxyETHDep1,
+  PendleData,
+  PendleRedactedForge,
+  IUniswapV2Router02,
+  PendleIncentiveData,
+  MultipleBalanceQuery,
 } from '../../typechain-types';
 import { ForgeMap } from './common-type';
 
@@ -22,14 +30,23 @@ export enum Network {
 }
 
 export interface PendleEnv {
+  multipleBalanceQuery: MultipleBalanceQuery;
+  sushiFactory: IJoeFactory;
+  sushiRouter: IUniswapV2Router02;
   retroDist: PendleRetroactiveDistribution;
+  merkleDistributor: PendleMerkleDistributor;
+  incentiveData: PendleIncentiveData;
   joeSimpleRewardManager: Contract;
   joeSimpleYieldContractDeployer: Contract;
   pendleTraderJoeSimpleForge: Contract;
-  redeemProxy: PendleRedeemProxyMulti;
+  redeemProxyAvax: PendleRedeemProxyMulti;
+  redeemProxyEth: PendleRedeemProxyETHDep1;
   wonderlandRewardManager: Contract;
+  redactedRewardManager: Contract;
   wonderlandYieldContractDeployer: Contract;
+  redactedYieldContractDeployer: Contract;
   pendleWonderlandForge: Contract;
+  pendleRedactedForge: PendleRedactedForge;
   xJoeRewardManager: Contract;
   xJoeYieldContractDeployer: Contract;
   pendleXJoeForge: Contract;
@@ -72,7 +89,7 @@ export interface PendleEnv {
   pendleWrapperImplementation: PendleWrapper;
   proxyAdmin: ProxyAdmin;
 
-  joeFactory: Contract;
+  joeFactory: IJoeFactory;
   joeRouter: IJoeRouter01;
   contractMap: ContractMap;
 
@@ -83,7 +100,7 @@ export interface PendleEnv {
   deployer: SignerWithAddress;
 
   pendleRouter: PendleRouter;
-  pendleData: Contract;
+  pendleData: PendleData;
   PENDLE: Contract;
 
   flat: FlatEnv;

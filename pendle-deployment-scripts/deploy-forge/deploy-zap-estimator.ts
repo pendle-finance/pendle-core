@@ -4,7 +4,7 @@ import { deployOrFetchContract } from '../helpers';
 import { DeployOrFetch, isEth, PendleEnv } from '../type';
 
 export async function deployPendleZapEstimator(env: PendleEnv, runMode: DeployOrFetch) {
-  if (isEth(env.network)) {
+  if (isEth(env)) {
     assert(false, 'Cannot deploy Estimator on ETH');
   }
   env.pendleZapEstimatorPAP = (await deployOrFetchContract(

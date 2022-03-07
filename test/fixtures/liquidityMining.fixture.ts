@@ -36,10 +36,8 @@ export async function liquidityMiningFixture(_: Wallet[], provider: providers.We
 
   await deployAaveV2Liq(env);
   await deployCompoundLiq(env);
-  await deployCompoundV2Liq(env);
   await deploySushiswapSimpleLiq(env);
   await deploySushiswapComplexLiq(env);
-  await deployKyberDMMLiq(env);
   await deploySLPLiq(env);
   await deployBenQiLiq(env);
   await deployTraderJoeLiq(env);
@@ -200,89 +198,6 @@ export async function deployCompoundLiq(env: TestEnv) {
   }
 }
 
-export async function deployCompoundV2Liq(env: TestEnv) {
-  let person;
-  if (checkDisabled(Mode.COMPOUND_V2)) return;
-  let [alice, bob, charlie, dave, eve] = wallets;
-  let c2Xyt = env.c2FutureYieldToken;
-  let c2Xyt8 = env.c2FutureYieldToken8;
-  await env.router.bootstrapMarket(
-    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-    c2Xyt.address,
-    env.testToken.address,
-    amount,
-    amount,
-    teConsts.HG
-  );
-
-  await env.router.bootstrapMarket(
-    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-    c2Xyt8.address,
-    env.testToken.address,
-    amount.mul(100),
-    amount.mul(100),
-    teConsts.HG
-  );
-  env.c2LiquidityMining = await deployContract('PendleCompoundLiquidityMining', [
-    env.govManager.address,
-    env.pausingManagerLiqMining.address,
-    env.whitelist.address,
-    env.pendle.address,
-    env.router.address,
-    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-    env.pconsts.compound!.FORGE_ID_V2,
-    env.ptokens.USDT!.address,
-    env.testToken.address,
-    env.liqParams.START_TIME,
-    env.liqParams.EPOCH_DURATION,
-    env.liqParams.VESTING_EPOCHS,
-  ]);
-
-  env.c2LiquidityMining8 = await deployContract('PendleCompoundLiquidityMining', [
-    env.govManager.address,
-    env.pausingManagerLiqMining.address,
-    env.whitelist.address,
-    env.pendle.address,
-    env.router.address,
-    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-    env.pconsts.compound!.FORGE_ID_V2,
-    env.ptokens.WNATIVE.address,
-    env.testToken.address,
-    env.liqParams.START_TIME,
-    env.liqParams.EPOCH_DURATION,
-    env.liqParams.VESTING_EPOCHS,
-  ]);
-
-  await approve(alice, [env.pendle], [env.c2LiquidityMining, env.c2LiquidityMining8]);
-  await approveAll([env.c2Market], [env.c2LiquidityMining]);
-  await approveAll([env.c2Market8], [env.c2LiquidityMining8]);
-
-  for (person of [alice, bob, charlie, dave]) {
-    await env.c2Market.connect(person).approve(env.c2LiquidityMining.address, MiscConsts.INF);
-    await env.c2Market8.connect(person).approve(env.c2LiquidityMining8.address, MiscConsts.INF);
-  }
-
-  await env.c2LiquidityMining.setAllocationSetting(
-    [teConsts.T0_C2.add(env.pconsts.misc.SIX_MONTH)],
-    [env.liqParams.TOTAL_NUMERATOR],
-    teConsts.HG
-  );
-  await env.c2LiquidityMining8.setAllocationSetting(
-    [teConsts.T0_C2.add(env.pconsts.misc.SIX_MONTH)],
-    [env.liqParams.TOTAL_NUMERATOR],
-    teConsts.HG
-  );
-
-  await env.c2LiquidityMining8.fund(env.liqParams.REWARDS_PER_EPOCH, teConsts.HG);
-  await env.c2LiquidityMining.fund(env.liqParams.REWARDS_PER_EPOCH, teConsts.HG);
-  let lpBalanceCMarket = await env.c2Market.balanceOf(alice.address);
-  let lpBalanceCMarket8 = await env.c2Market8.balanceOf(alice.address);
-  for (person of [bob, charlie, dave]) {
-    await env.c2Market.transfer(person.address, lpBalanceCMarket.div(10));
-    await env.c2Market8.transfer(person.address, lpBalanceCMarket8.div(10));
-  }
-}
-
 export async function deploySushiswapComplexLiq(env: TestEnv) {
   if (checkDisabled(Mode.SUSHISWAP_COMPLEX)) return;
   let [alice, bob, charlie, dave, eve] = wallets;
@@ -429,52 +344,6 @@ async function deployBenQiLiq(env: TestEnv) {
   let lpBalanceQiMarket = await env.benQiMarket.balanceOf(alice.address);
   for (let person of [bob, charlie, dave]) {
     await env.benQiMarket.transfer(person.address, lpBalanceQiMarket.div(10));
-  }
-}
-
-async function deployKyberDMMLiq(env: TestEnv) {
-  if (checkDisabled(Mode.KYBER_DMM)) return;
-  let [alice, bob, charlie, dave, eve] = wallets;
-  let kyberXyt = env.kyberFutureYieldToken;
-
-  await env.router.bootstrapMarket(
-    env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-    kyberXyt.address,
-    env.testToken.address,
-    amount.mul(10),
-    amount.mul(10),
-    teConsts.HG
-  );
-
-  env.kyberLiquidityMining = await deployContract('PendleGenericLiquidityMiningMulti', [
-    [
-      env.govManager.address,
-      env.pausingManagerLiqMining.address,
-      env.whitelist.address,
-      [env.pendle.address, MiscConsts.ZERO_ADDRESS],
-      env.router.address,
-      env.pconsts.common.GENERIC_MARKET_FACTORY_ID,
-      env.pconsts.kyber!.FORGE_ID,
-      env.ptokens.KYBER_USDT_WETH_LP!.address,
-      env.testToken.address,
-      env.liqParams.START_TIME,
-      env.liqParams.EPOCH_DURATION,
-      env.liqParams.VESTING_EPOCHS,
-    ],
-  ]);
-  await approve(alice, [env.pendle], [env.kyberLiquidityMining]);
-  await approveAll([env.kyberMarket], [env.kyberLiquidityMining]);
-
-  await env.kyberLiquidityMining.setAllocationSetting(
-    [teConsts.T0_K.add(env.pconsts.misc.SIX_MONTH)],
-    [env.liqParams.TOTAL_NUMERATOR],
-    teConsts.HG
-  );
-
-  await env.kyberLiquidityMining.fund(env.liqParams.REWARDS_PER_EPOCH2, teConsts.HG);
-  let lpBalanceKyberMarket = await env.kyberMarket.balanceOf(alice.address);
-  for (var person of [bob, charlie, dave]) {
-    await env.kyberMarket.transfer(person.address, lpBalanceKyberMarket.div(10));
   }
 }
 
